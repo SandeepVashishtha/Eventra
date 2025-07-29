@@ -9,7 +9,7 @@ const Footer = () => {
 
   const footerLinks = {
     community: [
-      { name: 'Create Event', href: '#create' },
+      { name: 'Create Event', href: '/create-event' },
       { name: 'Event Templates', href: '#templates' },
       { name: 'Community Events', href: '#community' },
       { name: 'Documentation', href: '#docs' }

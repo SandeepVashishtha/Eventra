@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import './Features.css';
 import { useTheme } from '../ThemeContext';
+import { Link } from 'react-router-dom';
+
 
 const Features = () => {
   const { theme } = useTheme();
@@ -65,7 +67,7 @@ const Features = () => {
   return (
     <section className={`features section-padding ${theme === 'dark' ? 'dark-theme' : ''}`} ref={ref}>
       <div className="container">
-        <motion.div 
+        <motion.div
           className="features-header"
           initial={{ opacity: 0, y: 30 }}
           animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
@@ -76,14 +78,14 @@ const Features = () => {
           </h2>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           className="features-grid"
           variants={containerVariants}
           initial="hidden"
           animate={inView ? "visible" : "hidden"}
         >
           {features.map((feature, index) => (
-            <motion.div 
+            <motion.div
               key={index}
               className={`feature-card ${feature.highlight ? 'feature-highlight' : ''}`}
               variants={itemVariants}
@@ -91,13 +93,22 @@ const Features = () => {
               <div className="feature-icon">{feature.icon}</div>
               <h3 className="feature-title">{feature.title}</h3>
               <p className="feature-description">{feature.description}</p>
-              <button 
-                className="feature-cta"
-                onClick={() => console.log(feature.cta)}
-              >
-                {feature.cta}
-                <span className="cta-arrow">→</span>
-              </button>
+
+              {feature.cta === 'Create Event' ? (
+                <Link to="/create-event" className="feature-cta">
+                  {feature.cta}
+                  <span className="cta-arrow">→</span>
+                </Link>
+              ) : (
+                <button
+                  className="feature-cta"
+                  onClick={() => console.log(feature.cta)}
+                >
+                  {feature.cta}
+                  <span className="cta-arrow">→</span>
+                </button>
+              )}
+
             </motion.div>
           ))}
         </motion.div>
