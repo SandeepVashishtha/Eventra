@@ -1,0 +1,157 @@
+.admin-dashboard {
+  padding: 2rem;
+  background-color: #f9f9f9;
+}
+
+.dashboard-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.dashboard-tabs {
+  display: flex;
+  border-bottom: 2px solid #ddd;
+  margin-bottom: 2rem;
+}
+
+.dashboard-tabs button {
+  padding: 12px 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.dashboard-tabs button:hover {
+  background-color: #f0f0f0;
+}
+
+.dashboard-tabs button.active {
+  border-bottom: 3px solid #007bff;
+  color: #007bff;
+  font-weight: 600;
+}
+
+.dashboard-content {
+  min-height: 400px;
+}
+
+.dashboard-stats {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  text-align: center;
+  width: 200px;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.dashboard-actions {
+  margin-bottom: 2rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.action-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+}
+
+.create-event { background-color: #4CAF50; }
+.edit-event { background-color: #FFC107; }
+.manage-participants { background-color: #FF9800; }
+.view-analytics { background-color: #2196F3; }
+
+.dashboard-section {
+  margin-bottom: 2rem;
+}
+
+.users-table, .events-table {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+tr, td, th {
+    padding-inline-start: 1rem;
+}
+
+.btn-small {
+    margin-right: 0.5rem;
+}
+
+.event-form {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  margin-bottom: 2rem;
+}
+
+.event-form h3 {
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.event-form input,
+.event-form textarea {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.event-form textarea {
+  height: 100px;
+  resize: vertical;
+}
+
+.event-form button {
+  background-color: #007bff;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.event-form button:hover {
+  background-color: #0056b3;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
+}
+

@@ -7,7 +7,8 @@ const Signup = () => {
     firstName: '',
     lastName: '',
     email: '',
-    password: ''
+    password: '',
+    role: 'USER' // Default to USER role
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -120,6 +121,27 @@ const Signup = () => {
               minLength="6"
               placeholder="Create a password (min. 6 characters)"
             />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="role">Account Type</label>
+            <select
+              id="role"
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              required
+              disabled={loading}
+              className="role-select"
+            >
+              <option value="USER">User - Register for events</option>
+              <option value="ADMIN">Admin - Create and manage events</option>
+            </select>
+            <small className="role-description">
+              {formData.role === 'USER' 
+                ? 'As a User, you can browse and register for events.' 
+                : 'As an Admin, you can create, manage, and organize events.'}
+            </small>
           </div>
 
           {error && <div className="error-message">{error}</div>}

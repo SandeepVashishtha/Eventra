@@ -63,7 +63,8 @@ const Navbar = () => {
         <div className="navbar-right desktop-nav">
           {isAuthenticated() ? (
             <>
-              <span className="user-greeting">Hi, {user?.name || user?.email}!</span>
+              <span className="user-greeting">Hi, {user?.firstName || user?.email}!</span>
+              <Link to="/dashboard" className="btn-secondary">Dashboard</Link>
               <button onClick={handleLogout} className="btn-secondary">
                 Logout
               </button>
@@ -108,7 +109,10 @@ const Navbar = () => {
           <div className="mobile-auth">
             {isAuthenticated() ? (
               <>
-                <span className="user-greeting">Hi, {user?.name || user?.email}!</span>
+                <span className="user-greeting">Hi, {user?.firstName || user?.email}!</span>
+                <Link to="/dashboard" className="btn-secondary" onClick={() => setIsMobileMenuOpen(false)}>
+                  Dashboard
+                </Link>
                 <button onClick={handleLogout} className="btn-secondary">
                   Logout
                 </button>

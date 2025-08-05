@@ -27,4 +27,29 @@ public class UserController {
         
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/events")
+    public ResponseEntity<java.util.List<UserEventInfo>> getUserEvents() {
+        // For now, return sample data since we don't have Event entity yet
+        java.util.List<UserEventInfo> events = java.util.List.of(
+            new UserEventInfo(1L, "My Event 1", "2025-08-10", "A sample event I'm attending"),
+            new UserEventInfo(2L, "My Event 2", "2025-08-12", "Another event I'm registered for")
+        );
+        return ResponseEntity.ok(events);
+    }
+
+    // Inner class for user event info
+    public static class UserEventInfo {
+        public Long id;
+        public String title;
+        public String date;
+        public String description;
+
+        public UserEventInfo(Long id, String title, String date, String description) {
+            this.id = id;
+            this.title = title;
+            this.date = date;
+            this.description = description;
+        }
+    }
 }

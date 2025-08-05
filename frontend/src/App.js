@@ -23,6 +23,10 @@ import Unauthorized from './components/auth/Unauthorized';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 
+// Import Dashboard components
+import Dashboard from './components/Dashboard';
+import AdminDashboard from './components/admin/AdminDashboard';
+
 
 function App() {
   useEffect(() => {
@@ -59,6 +63,24 @@ function App() {
                 element={
                   <ProtectedRoute requiredPermissions={['CREATE_EVENT']}>
                     <EventCreation />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Dashboard routes */}
+              <Route 
+                path="/admin" 
+                element={
+                  <ProtectedRoute requiredRoles={['ADMIN']}>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/dashboard" 
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
                   </ProtectedRoute>
                 } 
               />

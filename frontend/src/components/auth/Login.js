@@ -44,9 +44,9 @@ const Login = () => {
         login(data);
         
         // Redirect to dashboard or home page
-        navigate('/');
+        navigate('/dashboard');
       } else {
-        setError('Invalid email or password. Please try again.');
+        setError(data.message || 'Invalid email or password. Please try again.');
       }
     } catch (error) {
       setError('Network error. Please check your connection and try again.');

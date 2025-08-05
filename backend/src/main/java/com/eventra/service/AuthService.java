@@ -42,15 +42,49 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
         user.setEnabled(true);
         
-        // Assign default USER role - temporarily disabled
-        // Role userRole = roleRepository.findByName(Role.RoleName.USER)
-        //     .orElseThrow(() -> new RuntimeException("Default role not found"));
-        // Set<Role> roles = new HashSet<>();
-        // roles.add(userRole);
-        // user.setRoles(roles);
+        // Assign role based on selection
+        Role.RoleName selectedRole;
+        try {
+            selectedRole = Role.RoleName.valueOf(signupRequest.getRole().toUpperCase());
+            // Only allow ADMIN and USER roles for signup
+            if (selectedRole != Role.RoleName.ADMIN && selectedRole != Role.RoleName.USER) {
+                throw new RuntimeException("Invalid role selection. Only ADMIN and USER are allowed.");
+            }
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid role selection. Only ADMIN and USER are allowed.");
+        }
+        
+        Role role = roleRepository.findByName(selectedRole)
+            .orElseThrow(() -> new RuntimeException("Selected role not found"));
+        Set<Role> roles = new HashSet<>();
+        roles.add(role);
+        user.setRoles(roles);
 
         userRepository.save(user);
         return new MessageResponse("User registered successfully!");
+    }
+    
+    public MessageResponse createAdminUser(String email, String password, String firstName, String lastName) {
+        if (userRepository.existsByEmail(email)) {
+            throw new RuntimeException("Email already exists!");
+        }
+
+        User user = new User();
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(password));
+        user.setEnabled(true);
+        
+        // Assign ADMIN role
+        Role adminRole = roleRepository.findByName(Role.RoleName.ADMIN)
+            .orElseThrow(() -> new RuntimeException("Admin role not found"));
+        Set<Role> roles = new HashSet<>();
+        roles.add(adminRole);
+        user.setRoles(roles);
+
+        userRepository.save(user);
+        return new MessageResponse("Admin user created successfully!");
     }
 
     public AuthResponse login(LoginRequest loginRequest) {
@@ -67,15 +101,15 @@ public class AuthService {
         User user = userRepository.findByEmail(loginRequest.getEmail())
             .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Extract roles and permissions - temporarily return empty sets
-        Set<String> roles = new HashSet<>(); // user.getRoles().stream()
-            // .map(role -> role.getName().name())
-            // .collect(java.util.stream.Collectors.toSet());
+        // Extract roles and permissions
+        Set<String> roles = user.getRoles().stream()
+            .map(role -> role.getName().name())
+            .collect(java.util.stream.Collectors.toSet());
             
-        Set<String> permissions = new HashSet<>(); // user.getRoles().stream()
-            // .flatMap(role -> role.getPermissions().stream())
-            // .map(permission -> permission.getName().name())
-            // .collect(java.util.stream.Collectors.toSet());
+        Set<String> permissions = user.getRoles().stream()
+            .flatMap(role -> role.getPermissions().stream())
+            .map(permission -> permission.getName().name())
+            .collect(java.util.stream.Collectors.toSet());
 
         return new AuthResponse(jwt, user.getEmail(), user.getFirstName(), user.getLastName(), 
                                user.getId(), roles, permissions);

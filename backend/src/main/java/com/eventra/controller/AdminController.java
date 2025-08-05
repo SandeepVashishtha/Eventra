@@ -30,10 +30,24 @@ public class AdminController {
                     user.getFirstName(),
                     user.getLastName(),
                     user.getCreatedAt(),
-                    user.getEnabled()
+                    user.getEnabled(),
+                    user.getRoles().stream()
+                        .map(role -> role.getName().name())
+                        .collect(Collectors.toList())
                 ))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(userInfos);
+    }
+
+    @GetMapping("/events")
+    public ResponseEntity<List<EventInfo>> getAllEvents() {
+        // For now, return sample data since we don't have Event entity yet
+        List<EventInfo> events = List.of(
+            new EventInfo(1L, "Sample Event 1", "2025-08-15", 25, "Active"),
+            new EventInfo(2L, "Sample Event 2", "2025-08-20", 40, "Active"),
+            new EventInfo(3L, "Sample Event 3", "2025-08-25", 15, "Draft")
+        );
+        return ResponseEntity.ok(events);
     }
 
     // Inner class for user info without password
@@ -44,15 +58,34 @@ public class AdminController {
         public String lastName;
         public java.time.LocalDateTime createdAt;
         public Boolean enabled;
+        public java.util.List<String> roles;
 
         public UserInfo(Long id, String email, String firstName, String lastName, 
-                       java.time.LocalDateTime createdAt, Boolean enabled) {
+                       java.time.LocalDateTime createdAt, Boolean enabled, java.util.List<String> roles) {
             this.id = id;
             this.email = email;
             this.firstName = firstName;
             this.lastName = lastName;
             this.createdAt = createdAt;
             this.enabled = enabled;
+            this.roles = roles;
+        }
+    }
+
+    // Inner class for event info
+    public static class EventInfo {
+        public Long id;
+        public String title;
+        public String date;
+        public Integer participantCount;
+        public String status;
+
+        public EventInfo(Long id, String title, String date, Integer participantCount, String status) {
+            this.id = id;
+            this.title = title;
+            this.date = date;
+            this.participantCount = participantCount;
+            this.status = status;
         }
     }
 }
