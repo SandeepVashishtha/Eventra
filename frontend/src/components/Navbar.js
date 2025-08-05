@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import './shared-layout.css';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, logout, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,6 +24,12 @@ const Navbar = () => {
     { name: 'Projects', href: '/projects' },
     { name: 'About', href: '/about' }
   ];
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+    setIsMobileMenuOpen(false);
+  };
 
   return (
    <motion.nav 
@@ -52,8 +61,19 @@ const Navbar = () => {
 
         {/* Auth Buttons */}
         <div className="navbar-right desktop-nav">
-          <a href="#signin" className="btn-secondary">Sign In</a>
-          <a href="#signup" className="btn-primary">Get Started</a>
+          {isAuthenticated() ? (
+            <>
+              <span className="user-greeting">Hi, {user?.name || user?.email}!</span>
+              <button onClick={handleLogout} className="btn-secondary">
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="btn-secondary">Sign In</Link>
+              <Link to="/signup" className="btn-primary">Get Started</Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -86,8 +106,23 @@ const Navbar = () => {
             </Link>
           ))}
           <div className="mobile-auth">
-            <a href="#signin" className="btn-secondary">Sign In</a>
-            <a href="#signup" className="btn-primary">Get Started</a>
+            {isAuthenticated() ? (
+              <>
+                <span className="user-greeting">Hi, {user?.name || user?.email}!</span>
+                <button onClick={handleLogout} className="btn-secondary">
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="btn-secondary" onClick={() => setIsMobileMenuOpen(false)}>
+                  Sign In
+                </Link>
+                <Link to="/signup" className="btn-primary" onClick={() => setIsMobileMenuOpen(false)}>
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
         </motion.div>
       )}

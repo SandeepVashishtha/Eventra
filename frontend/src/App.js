@@ -16,42 +16,68 @@ import createScrollToTopButton from './components/scrolltotopButton';
 import NotFound from './components/NotFound';
 import './App.css';
 
+// Import Auth components
+import Login from './components/auth/Login';
+import Signup from './components/auth/Signup';
+import Unauthorized from './components/auth/Unauthorized';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import { AuthProvider } from './context/AuthContext';
+
+
 function App() {
   useEffect(() => {
     createScrollToTopButton(); 
   }, []);
 
   return (
-    <Router>
-      <div className="App">
-        <Navbar />
+    <AuthProvider>
+      <Router>
+        <div className="App">
+          <Navbar />
 
-        <main>
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <>
-                  <Hero />
-                  <WhatsHappening />
-                  <Features />
-                  <Testimonials />
-                  <Community />
-                </>
-              }
-            />
-            <Route path="/events" element={<EventsSection />} />
-            <Route path="/hackathons" element={<HackathonHub />} />
-            <Route path="/projects" element={<ProjectGallery />} />
-            <Route path="/create-event" element={<EventCreation />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/*" element={<NotFound />} />
-          </Routes>
-        </main>
+          <main>
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <>
+                    <Hero />
+                    <WhatsHappening />
+                    <Features />
+                    <Testimonials />
+                    <Community />
+                  </>
+                }
+              />
+              <Route path="/events" element={<EventsSection />} />
+              <Route path="/hackathons" element={<HackathonHub />} />
+              <Route path="/projects" element={<ProjectGallery />} />
+              
+              {/* Protected route for event creation */}
+              <Route 
+                path="/create-event" 
+                element={
+                  <ProtectedRoute requiredPermissions={['CREATE_EVENT']}>
+                    <EventCreation />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route path="/about" element={<AboutPage />} />
+              
+              {/* Auth routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/unauthorized" element={<Unauthorized />} />
 
-        <Footer />
-      </div>
-    </Router>
+              <Route path="/*" element={<NotFound />} />
+            </Routes>
+          </main>
+
+          <Footer />
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 

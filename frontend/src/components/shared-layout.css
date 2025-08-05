@@ -90,6 +90,23 @@
   gap: 16px;
   align-items: center;
 }
+
+.navbar-right {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.user-greeting {
+  color: #1a1a1a;
+  font-weight: 500;
+  font-size: 14px;
+  margin-right: 8px;
+}
+
+.navbar.dark-theme .user-greeting {
+  color: #f9fafb;
+}
 .theme-toggle {
   font-size: 20px;
   background: none;
