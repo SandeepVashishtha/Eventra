@@ -1,0 +1,111 @@
+.event-image-container {
+  overflow: hidden;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  transition: all 0.3s ease;
+}
+
+.event-image-container.showing-placeholder {
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  position: relative;
+}
+
+.event-image-container.showing-placeholder::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.1) 0%, transparent 50%),
+              radial-gradient(circle at 70% 70%, rgba(255,255,255,0.08) 0%, transparent 50%);
+  z-index: 0;
+  animation: pulse 3s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+/* Ensure placeholder images are always properly displayed */
+.event-image-container img {
+  position: relative;
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.event-image-container.showing-placeholder img {
+  /* Ensure SVG placeholders scale properly */
+  object-fit: contain;
+  background: transparent;
+}
+
+/* Hover effects for placeholder images */
+.event-image-container.showing-placeholder:hover::before {
+  animation-duration: 1.5s;
+}
+
+/* Special styling to ensure SVG renders correctly */
+.event-image-container.showing-placeholder img[src$='.svg'] {
+  object-fit: fill;
+  width: 100%;
+  height: 100%;
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .event-image-container.showing-placeholder::before {
+    animation: none;
+    opacity: 0.4;
+  }
+  
+  .spinner {
+    animation: none;
+    border: 3px solid rgba(255, 255, 255, 0.6);
+    border-top: 3px solid rgba(255, 255, 255, 0.9);
+  }
+}
+
+.image-loading-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  border-radius: inherit;
+  z-index: 1;
+}
+
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top: 3px solid rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive spinner sizing */
+@media (max-width: 768px) {
+  .spinner {
+    width: 30px;
+    height: 30px;
+    border-width: 2px;
+  }
+}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
 import { API_ENDPOINTS, apiUtils } from '../../config/api';
+import EventImage from '../common/EventImage';
 import './UserDashboard.css';
 
 const UserDashboard = () => {
@@ -110,14 +111,23 @@ const UserDashboard = () => {
           <div className="events-grid">
             {userEvents.map(event => (
               <div key={event.id} className="event-card">
-                <h3>{event.title}</h3>
-                <p className="event-date">{new Date(event.date).toLocaleDateString()}</p>
-                <p className="event-description">{event.description}</p>
-                <div className="event-actions">
-                  <button className="btn-small">View Details</button>
-                  {hasPermission('CREATE_FEEDBACK') && (
-                    <button className="btn-small">Leave Feedback</button>
-                  )}
+                <div className="event-image-small">
+                  <EventImage 
+                    src={event.image} 
+                    alt={event.title}
+                    style={{ height: '80px', borderRadius: '8px' }}
+                  />
+                </div>
+                <div className="event-info">
+                  <h3>{event.title}</h3>
+                  <p className="event-date">{new Date(event.date).toLocaleDateString()}</p>
+                  <p className="event-description">{event.description}</p>
+                  <div className="event-actions">
+                    <button className="btn-small">View Details</button>
+                    {hasPermission('CREATE_FEEDBACK') && (
+                      <button className="btn-small">Leave Feedback</button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -131,19 +141,28 @@ const UserDashboard = () => {
           <div className="events-grid">
             {availableEvents.slice(0, 6).map(event => (
               <div key={event.id} className="event-card available">
-                <h3>{event.title}</h3>
-                <p className="event-date">{new Date(event.date).toLocaleDateString()}</p>
-                <p className="event-description">{event.description}</p>
-                <div className="event-actions">
-                  <button className="btn-small">View Details</button>
-                  {hasPermission('PARTICIPATE_EVENT') && (
-                    <button 
-                      className="btn-small btn-primary"
-                      onClick={() => joinEvent(event.id)}
-                    >
-                      Join Event
-                    </button>
-                  )}
+                <div className="event-image-small">
+                  <EventImage 
+                    src={event.image} 
+                    alt={event.title}
+                    style={{ height: '80px', borderRadius: '8px' }}
+                  />
+                </div>
+                <div className="event-info">
+                  <h3>{event.title}</h3>
+                  <p className="event-date">{new Date(event.date).toLocaleDateString()}</p>
+                  <p className="event-description">{event.description}</p>
+                  <div className="event-actions">
+                    <button className="btn-small">View Details</button>
+                    {hasPermission('PARTICIPATE_EVENT') && (
+                      <button 
+                        className="btn-small btn-primary"
+                        onClick={() => joinEvent(event.id)}
+                      >
+                        Join Event
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

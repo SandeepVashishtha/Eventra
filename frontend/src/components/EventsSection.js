@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import '../components/styles/EventSection.css'; 
+import '../components/styles/EventSection.css';
+import EventImage from './common/EventImage';
 
 const EventsSection = () => {
   const [events, setEvents] = useState([]);
@@ -93,6 +94,48 @@ const EventsSection = () => {
         maxAttendees: 200,
         image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=400&h=200&fit=crop",
         tags: ["Security", "Privacy", "Protection"]
+      },
+      {
+        id: 7,
+        title: "Mobile App Development Workshop",
+        date: "2025-07-15",
+        time: "11:00 AM",
+        location: "Chicago, IL",
+        type: "workshop",
+        status: "upcoming",
+        description: "Build your first mobile app from scratch using modern frameworks and best practices.",
+        attendees: 95,
+        maxAttendees: 120,
+        image: null, // No image provided
+        tags: ["Mobile", "React Native", "Development"]
+      },
+      {
+        id: 8,
+        title: "Cloud Computing Summit",
+        date: "2025-08-20",
+        time: "9:00 AM",
+        location: "Denver, CO",
+        type: "summit",
+        status: "upcoming",
+        description: "Discover the latest trends in cloud computing and serverless architectures.",
+        attendees: 220,
+        maxAttendees: 280,
+        image: "", // Empty image string
+        tags: ["Cloud", "AWS", "Azure"]
+      },
+      {
+        id: 9,
+        title: "Data Science Bootcamp",
+        date: "2025-09-10",
+        time: "1:30 PM",
+        location: "Online",
+        type: "bootcamp",
+        status: "upcoming",
+        description: "Intensive data science training covering Python, machine learning, and data visualization.",
+        attendees: 45,
+        maxAttendees: 60,
+        image: "https://invalid-url-that-will-fail.com/image.jpg", // Invalid URL to test error handling
+        tags: ["Data Science", "Python", "Analytics"]
       }
     ];
     setEvents(mockEvents);
@@ -142,7 +185,7 @@ const EventsSection = () => {
       whileTap={{ scale: 0.98 }}
     >
       <div className="event-image">
-        <motion.img 
+        <EventImage 
           src={event.image} 
           alt={event.title}
           whileHover={{ scale: 1.1 }}
