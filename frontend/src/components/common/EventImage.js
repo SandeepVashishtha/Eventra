@@ -18,7 +18,7 @@ const EventImage = ({
 
   const placeholderPath = '/placeholder-event.svg';
   
-  // Check if we should use placeholder initially
+  
   useEffect(() => {
     const shouldUsePlaceholder = !src || src.trim() === '' || src === null;
     setIsPlaceholder(shouldUsePlaceholder);
@@ -43,7 +43,7 @@ const EventImage = ({
     setIsPlaceholder(false);
   };
 
-  // Determine which image source to use
+  
   const imageSrc = (isPlaceholder || imageError) ? placeholderPath : src;
 
   return (

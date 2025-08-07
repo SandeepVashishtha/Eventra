@@ -28,7 +28,7 @@
   50% { opacity: 0.6; }
 }
 
-/* Ensure placeholder images are always properly displayed */
+
 .event-image-container img {
   position: relative;
   z-index: 1;
@@ -36,24 +36,24 @@
 }
 
 .event-image-container.showing-placeholder img {
-  /* Ensure SVG placeholders scale properly */
+  
   object-fit: contain;
   background: transparent;
 }
 
-/* Hover effects for placeholder images */
+
 .event-image-container.showing-placeholder:hover::before {
   animation-duration: 1.5s;
 }
 
-/* Special styling to ensure SVG renders correctly */
+
 .event-image-container.showing-placeholder img[src$='.svg'] {
   object-fit: fill;
   width: 100%;
   height: 100%;
 }
 
-/* Accessibility improvements */
+
 @media (prefers-reduced-motion: reduce) {
   .event-image-container.showing-placeholder::before {
     animation: none;
@@ -101,7 +101,7 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Responsive spinner sizing */
+
 @media (max-width: 768px) {
   .spinner {
     width: 30px;
