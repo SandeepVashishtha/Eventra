@@ -4,7 +4,7 @@
   position: fixed;
   top: 0;
   background-color: #ffffff;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   z-index: 1000;
   padding: 1rem 2rem;
   display: flex;
@@ -14,7 +14,7 @@
 
 .navbar-scrolled {
   background-color: #f8f9fa;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .navbar-container {
@@ -81,7 +81,7 @@
   color: #5b21b6;
   border: 2px solid #5b21b6;
   background: white;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .signin-btn:hover {
@@ -122,17 +122,27 @@
 
 .mobile-menu {
   background-color: white;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
   padding: 1rem 2rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  position: absolute;
+  top: 100%;
+  width: 100%;
+  gap: 5px;
 }
 
 .mobile-nav-link {
+  padding: 8px;
+  border-radius: 5px;
   text-decoration: none;
   color: #333;
   font-weight: 500;
+}
+.mobile-nav-link:hover {
+  color: #fff;
+  background-color: #667eea;
 }
 
 .mobile-auth {
@@ -163,14 +173,22 @@
 }
 
 .footer::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at 20% 80%, rgba(102, 126, 234, 0.1) 0%, transparent 50%),
-              radial-gradient(circle at 80% 20%, rgba(118, 75, 162, 0.1) 0%, transparent 50%);
+  background: radial-gradient(
+      circle at 20% 80%,
+      rgba(102, 126, 234, 0.1) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 80% 20%,
+      rgba(118, 75, 162, 0.1) 0%,
+      transparent 50%
+    );
   pointer-events: none;
 }
 
@@ -374,7 +392,7 @@
     gap: 3rem;
     text-align: center;
   }
-  
+
   .footer-links {
     grid-template-columns: repeat(2, 1fr);
     gap: 2rem;
@@ -385,24 +403,24 @@
   .footer {
     padding: 3rem 0 1.5rem;
   }
-  
+
   .footer-content {
     gap: 2rem;
   }
-  
+
   .footer-links {
     grid-template-columns: 1fr;
     gap: 1.5rem;
   }
-  
+
   .social-links {
     justify-content: center;
   }
-  
+
   .footer-bottom {
     gap: 0.75rem;
   }
-  
+
   .footer-tech,
   .footer-copyright {
     font-size: 0.85rem;
