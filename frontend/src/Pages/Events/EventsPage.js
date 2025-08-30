@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import '../components/styles/EventSection.css'; 
+import '../../components/styles/EventSection.css'; 
 
 const EventsSection = () => {
   const [events, setEvents] = useState([]);
