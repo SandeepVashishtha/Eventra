@@ -24,6 +24,9 @@ import Unauthorized from './components/auth/Unauthorized';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 
+// Import Theme context
+import { ThemeProvider } from './context/ThemeContext';
+
 // Import Dashboard components
 import Dashboard from './components/Dashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
@@ -35,74 +38,76 @@ function App() {
   }, []);
 
   return (
-    <AuthProvider>
-      <Router>
-        <div className="App">
-          <Navbar />
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <div className="App">
+            <Navbar />
 
-          <main>
-            <Routes>
-              <Route
-                path="/"
-                element={
-                  <>
-                    <Hero />
-                    <WhatsHappening />
-                    <Features />
-                    <Testimonials />
-                    <Contributors />
-                    <Community />
-                  </>
-                }
-              />
-              <Route path="/events" element={<EventsSection />} />
-              <Route path="/hackathons" element={<HackathonHub />} />
-              <Route path="/projects" element={<ProjectGallery />} />
-              <Route path="/contributors" element={<Contributors />} />
-              
-              {/* Protected route for event creation */}
-              <Route 
-                path="/create-event" 
-                element={
-                  <ProtectedRoute requiredPermissions={['CREATE_EVENT']}>
-                    <EventCreation />
-                  </ProtectedRoute>
-                } 
-              />
-              
-              {/* Dashboard routes */}
-              <Route 
-                path="/admin" 
-                element={
-                  <ProtectedRoute requiredRoles={['ADMIN']}>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/dashboard" 
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              
-              <Route path="/about" element={<AboutPage />} />
-              
-              {/* Auth routes */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/unauthorized" element={<Unauthorized />} />
+            <main>
+              <Routes>
+                <Route
+                  path="/"
+                  element={
+                    <>
+                      <Hero />
+                      <WhatsHappening />
+                      <Features />
+                      <Testimonials />
+                      <Contributors />
+                      <Community />
+                    </>
+                  }
+                />
+                <Route path="/events" element={<EventsSection />} />
+                <Route path="/hackathons" element={<HackathonHub />} />
+                <Route path="/projects" element={<ProjectGallery />} />
+                <Route path="/contributors" element={<Contributors />} />
+                
+                {/* Protected route for event creation */}
+                <Route 
+                  path="/create-event" 
+                  element={
+                    <ProtectedRoute requiredPermissions={['CREATE_EVENT']}>
+                      <EventCreation />
+                    </ProtectedRoute>
+                  } 
+                />
+                
+                {/* Dashboard routes */}
+                <Route 
+                  path="/admin" 
+                  element={
+                    <ProtectedRoute requiredRoles={['ADMIN']}>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/dashboard" 
+                  element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  } 
+                />
+                
+                <Route path="/about" element={<AboutPage />} />
+                
+                {/* Auth routes */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/unauthorized" element={<Unauthorized />} />
 
-              <Route path="/*" element={<NotFound />} />
-            </Routes>
-          </main>
+                <Route path="/*" element={<NotFound />} />
+              </Routes>
+            </main>
 
-          <Footer />
-        </div>
-      </Router>
-    </AuthProvider>
+            <Footer />
+          </div>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

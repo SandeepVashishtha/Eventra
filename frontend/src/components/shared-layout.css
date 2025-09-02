@@ -7,31 +7,16 @@
   left: 0;
   right: 0;
   z-index: 1000;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--navbar-bg);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid var(--navbar-border);
   transition: all 0.3s ease;
 }
 
 .navbar-scrolled {
-  background: rgba(255, 255, 255, 0.98);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-/* Dark Theme Styles for Navbar */
-.navbar.dark-theme {
-  background: rgba(34, 34, 34, 0.95);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.navbar.dark-theme .nav-link,
-.navbar.dark-theme .navbar-brand h2 {
-  color: #f9fafb;
-}
-
-.navbar.dark-theme .nav-link:hover {
-  color: #a5b4fc;
+  background: var(--navbar-bg);
+  box-shadow: 0 4px 20px var(--shadow-light);
 }
 
 .navbar-container {
@@ -61,14 +46,14 @@
 
 .nav-link {
   text-decoration: none;
-  color: #1a1a1a;
+  color: var(--text-primary);
   font-weight: 500;
   transition: all 0.3s ease;
   position: relative;
 }
 
 .nav-link:hover {
-  color: #667eea;
+  color: var(--accent-primary);
 }
 
 .nav-link::after {
@@ -78,7 +63,7 @@
   left: 0;
   width: 0;
   height: 2px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--button-primary);
   transition: width 0.3s ease;
 }
 
@@ -98,7 +83,7 @@
   border: none;
   cursor: pointer;
   margin-left: 16px;
-  color: #1a1a1a;
+  color: var(--text-primary);
   transition: transform 0.3s ease;
 }
 
@@ -119,13 +104,13 @@
 .mobile-menu-button span {
   width: 24px;
   height: 2px;
-  background: #1a1a1a;
+  background: var(--text-primary);
   transition: all 0.3s ease;
 }
 
 .mobile-menu {
-  background: white;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-color);
   padding: 20px 24px;
 }
 
@@ -133,9 +118,9 @@
   display: block;
   padding: 12px 0;
   text-decoration: none;
-  color: #1a1a1a;
+  color: var(--text-primary);
   font-weight: 500;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .mobile-nav-link:last-of-type {
