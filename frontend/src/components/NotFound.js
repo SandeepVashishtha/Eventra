@@ -1,118 +1,155 @@
-import './styles/notFound.css';
-import React from 'react';
-import { motion } from 'framer-motion';
-import { useInView } from 'react-intersection-observer';
-import { Link } from 'react-router-dom';
+import React from "react";
+import { motion } from "framer-motion";
+import { useInView } from "react-intersection-observer";
+import { Link } from "react-router-dom";
 
 const NotFoundPage = () => {
-  const [ref, inView] = useInView({
-    triggerOnce: true,
-    threshold: 0.1
-  });
+  const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.1 });
 
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: {
+    visible: { 
       opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-        duration: 0.8
-      }
-    }
+      transition: { staggerChildren: 0.15, delayChildren: 0.3 }
+    },
   };
 
   const itemVariants = {
-    hidden: { y: 50, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: { duration: 0.8, ease: 'easeOut' }
-    }
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1, transition: { duration: 0.6, ease: "easeOut" } },
   };
 
   const floatingVariants = {
-    float: {
-      y: [0, -20, 0],
-      transition: {
-        duration: 4,
-        repeat: Infinity,
-        ease: "easeInOut"
-      }
-    }
+    float: (i) => ({
+      y: [0, -20 - i * 3, 0],
+      x: [0, 20 + i * 5, 0],
+      transition: { duration: 6 + i, repeat: Infinity, ease: "easeInOut" },
+    }),
   };
 
+  const suggestions = [
+    { name: "Tech Summit 2023", category: "Conference" },
+    { name: "Open Source Hackathon", category: "Hackathon" },
+    { name: "Developer Meetup", category: "Networking" },
+    { name: "AI Expo", category: "Exhibition" },
+    { name: "Startup Pitch Night", category: "Startup" },
+    { name: "Cloud Computing Workshop", category: "Workshop" },
+];
+
+
+  // Predefined bubble positions along edges (top, bottom, left, right)
+  const bubblePositions = [
+    { top: "5%", left: "10%" },
+    { top: "10%", right: "15%" },
+    { bottom: "5%", left: "20%" },
+    { bottom: "10%", right: "10%" },
+    { top: "50%", left: "2%" },
+    { top: "50%", right: "2%" },
+  ];
+
   return (
-    <section className="not-found" ref={ref} aria-labelledby="not-found-title">
-      <div className="not-found-background">
-        <div className="not-found-gradient" />
-        <motion.div 
-          className="floating-icon icon-1"
-          variants={floatingVariants}
-          animate="float"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M12 2L3 12L12 22L21 12L12 2Z" strokeWidth="1.5" />
-          </svg>
-        </motion.div>
-        <motion.div 
-          className="floating-icon icon-2"
-          variants={floatingVariants}
-          animate="float"
-          style={{ y: 10 }}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M7 3L17 3L21 7L21 17L17 21L7 21L3 17L3 7L7 3Z" strokeWidth="1.5" />
-          </svg>
-        </motion.div>
-      </div>
-
-      <div className="container">
+    <section
+      ref={ref}
+      className="relative min-h-screen flex flex-col justify-center items-center overflow-hidden bg-gradient-to-br from-indigo-900 via-blue-900 to-black p-6"
+    >
+      {/* Floating bubbles along edges */}
+      {bubblePositions.map((pos, i) => (
         <motion.div
-          className="not-found-content"
-          variants={containerVariants}
-          initial="hidden"
-          animate={inView ? 'visible' : 'hidden'}
+          key={i}
+          custom={i}
+          variants={floatingVariants}
+          animate="float"
+          className="absolute rounded-full bg-white/10"
+          style={{
+            width: `${50 + i * 10}px`,
+            height: `${50 + i * 10}px`,
+            ...pos,
+          }}
+        />
+      ))}
+
+      {/* Main content */}
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate={inView ? "visible" : "hidden"}
+        className="relative z-10 text-center max-w-4xl w-full"
+      >
+        {/* 404 */}
+        <motion.h1
+          variants={itemVariants}
+          className="text-[8rem] md:text-[10rem] font-extrabold text-white drop-shadow-lg"
         >
-          <motion.div variants={itemVariants} className="not-found-number">
-            <span className="text-gradient">404</span>
-          </motion.div>
+          <span className="relative">
+            <span className="absolute top-0 left-0 text-blue-400 opacity-70 blur-sm">
+              404
+            </span>
+            <span className="absolute top-0 left-0 text-indigo-400 opacity-70 blur-sm">
+              404
+            </span>
+            <span className="relative">404</span>
+          </span>
+        </motion.h1>
 
-          <motion.h1 variants={itemVariants} className="not-found-title" id="not-found-title">
-            Lost in <span className="text-gradient">Eventra</span> Space
-          </motion.h1>
+        {/* Title */}
+        <motion.h2
+          variants={itemVariants}
+          className="text-3xl md:text-4xl font-bold text-white mb-4"
+        >
+          Lost in the <span className="text-blue-400">Eventra</span> Space
+        </motion.h2>
 
-          <motion.p variants={itemVariants} className="not-found-subtitle">
-            The page you're looking for has either been moved or doesn't exist.
-            While you're here, check out these popular events instead!
-          </motion.p>
+        {/* Subtitle */}
+        <motion.p
+          variants={itemVariants}
+          className="text-white/80 mb-8 md:text-lg"
+        >
+          The page you’re looking for doesn’t exist. While you’re here, explore some of our popular events.
+        </motion.p>
 
-          <motion.div variants={itemVariants} className="not-found-actions">
-            <Link to="/" className="button button-primary">
-              Return Home
-            </Link>
-            <Link to="/events" className="button button-secondary">
-              Browse Events
-            </Link>
-          </motion.div>
-
-          <motion.div variants={itemVariants} className="not-found-suggestions">
-            <h3>Popular Events</h3>
-            <div className="suggestion-grid">
-              {[
-                { name: "Tech Summit 2023", category: "Conference" },
-                { name: "Open Source Hackathon", category: "Hackathon" },
-                { name: "Developer Meetup", category: "Networking" }
-              ].map((event, index) => (
-                <div key={index} className="suggestion-card">
-                  <div className="card-category">{event.category}</div>
-                  <h4>{event.name}</h4>
-                  <Link to="/events" className="card-link">View Event</Link>
-                </div>
-              ))}
-            </div>
-          </motion.div>
+        {/* Buttons */}
+        <motion.div
+          variants={itemVariants}
+          className="flex flex-wrap justify-center gap-4 mb-12"
+        >
+          <Link
+            to="/"
+            className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-full shadow-lg hover:bg-indigo-500 transition"
+          >
+            Return Home
+          </Link>
+          <Link
+            to="/events"
+            className="px-6 py-3 bg-blue-500 text-white font-semibold rounded-full shadow-lg hover:bg-blue-400 transition"
+          >
+            Browse Events
+          </Link>
         </motion.div>
-      </div>
+
+        {/* Suggestions */}
+        <motion.div variants={itemVariants} className="text-left">
+          <h3 className="text-2xl font-bold text-white mb-4">Popular Events</h3>
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+            {suggestions.map((event, i) => (
+              <motion.div
+                key={i}
+                whileHover={{ scale: 1.05, y: -5 }}
+                transition={{ type: "spring", stiffness: 300 }}
+                className="p-4 bg-white/10 backdrop-blur-md rounded-2xl text-white"
+              >
+                <div className="text-sm text-white/70">{event.category}</div>
+                <h4 className="font-semibold text-lg mt-1">{event.name}</h4>
+                <Link
+                  to="/events"
+                  className="mt-2 inline-block text-blue-400 underline font-medium"
+                >
+                  View Event
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      </motion.div>
     </section>
   );
 };

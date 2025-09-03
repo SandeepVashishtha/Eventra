@@ -9,6 +9,39 @@ Eventra is a comprehensive event management system that empowers organizers to c
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.1-green.svg)](https://spring.io/projects/spring-boot)
 [![React](https://img.shields.io/badge/React-18.2.0-blue.svg)](https://reactjs.org/)
 
+## 🌐 Live Demo
+
+- **Frontend**: [https://eventra-psi.vercel.app/](https://eventra-psi.vercel.app/)
+- **Backend API**: [https://eventra-backend-dgcae3etebbag8ft.centralindia-01.azurewebsites.net](https://eventra-backend-dgcae3etebbag8ft.centralindia-01.azurewebsites.net)
+- **API Documentation**: [Backend Swagger UI](https://eventra-backend-dgcae3etebbag8ft.centralindia-01.azurewebsites.net/swagger-ui.html)
+
+
+<h2 id="project-insights">📊 Project Insights</h2>
+
+<table align="center">
+    <thead align="center">
+        <tr>
+            <td><b>🌟 Stars</b></td>
+            <td><b>🍴 Forks</b></td>
+            <td><b>🐛 Issues</b></td>
+            <td><b>🔔 Open PRs</b></td>
+            <td><b>🔕 Closed PRs</b></td>
+            <td><b>🛠️ Languages</b></td>
+            <td><b>👥 Contributors</b></td>
+        </tr>
+     </thead>
+    <tbody>
+         <tr>
+            <td><img alt="Stars" src="https://img.shields.io/github/stars/SandeepVashishtha/Eventra?style=flat&logo=github"/></td>
+            <td><img alt="Forks" src="https://img.shields.io/github/forks/SandeepVashishtha/Eventra?style=flat&logo=github"/></td>
+            <td><img alt="Issues" src="https://img.shields.io/github/issues/SandeepVashishtha/Eventra?style=flat&logo=github"/></td>
+            <td><img alt="Open PRs" src="https://img.shields.io/github/issues-pr/SandeepVashishtha/Eventra?style=flat&logo=github"/></td>
+            <td><img alt="Closed PRs" src="https://img.shields.io/github/issues-pr-closed/SandeepVashishtha/Eventra?style=flat&color=critical&logo=github"/></td>
+            <td><img alt="Languages Count" src="https://img.shields.io/github/languages/count/SandeepVashishtha/Eventra?style=flat&color=green&logo=github"></td>
+            <td><img alt="Contributors Count" src="https://img.shields.io/github/contributors/SandeepVashishtha/Eventra?style=flat&color=blue&logo=github"/></td>
+        </tr>
+    </tbody>
+</table>
 ## 📋 Table of Contents
 
 - [Features](#-features)
@@ -16,9 +49,11 @@ Eventra is a comprehensive event management system that empowers organizers to c
 - [Architecture](#-architecture)
 - [Quick Start](#-quick-start)
 - [Installation](#-installation)
+- [Environment Configuration](#-environment-configuration)
+- [Deployment](#-deployment)
 - [API Documentation](#-api-documentation)
 - [Frontend Components](#-frontend-components)
-- [Configuration](#-configuration)
+- [Troubleshooting](#-troubleshooting)
 - [Contributing](#-contributing)
 - [License](#-license)
 
@@ -78,37 +113,137 @@ Eventra is a comprehensive event management system that empowers organizers to c
 
 ```
 Eventra/
-├── backend/                    # Spring Boot API Server
+├── .github/                   # GitHub workflows and templates
+├── .vscode/                   # VS Code settings
+├── backend/                   # Spring Boot API Server
 │   ├── src/main/java/com/eventra/
-│   │   ├── config/            # Configuration classes (CORS, OpenAPI)
+│   │   ├── config/            # Configuration classes
+│   │   │   ├── CorsConfig.java           # CORS configuration
+│   │   │   └── OpenApiConfig.java        # Swagger/OpenAPI setup
 │   │   ├── controller/        # REST API controllers
-│   │   ├── dto/              # Data Transfer Objects
-│   │   ├── entity/           # JPA entities (User, Event, Project)
-│   │   ├── service/          # Business logic services
-│   │   ├── repository/       # Data access layer
-│   │   ├── filter/          # JWT authentication filter
-│   │   ├── util/            # Utility classes (JWT, Validation)
-│   │   └── exception/        # Custom exceptions
-│   └── src/main/resources/    # Configuration files
-│       ├── application.properties      # Main configuration
-│       ├── application-dev.properties  # Development settings
-│       ├── application-prod.properties # Production settings
-│       └── application-azure.properties # Azure deployment
+│   │   │   ├── AdminController.java      # Admin management
+│   │   │   ├── AuthController.java       # Authentication endpoints
+│   │   │   ├── EventController.java      # Event management
+│   │   │   ├── HealthController.java     # Health check endpoint
+│   │   │   ├── HomeController.java       # Home page endpoint
+│   │   │   └── UserController.java       # User management
+│   │   ├── dto/               # Data Transfer Objects
+│   │   ├── entity/            # JPA entities
+│   │   │   ├── User.java                 # User entity
+│   │   │   ├── Event.java                # Event entity
+│   │   │   └── Project.java              # Project entity
+│   │   ├── exception/         # Custom exceptions
+│   │   ├── filter/            # Security filters
+│   │   ├── repository/        # Data access layer (JPA repositories)
+│   │   ├── service/           # Business logic services
+│   │   ├── util/              # Utility classes (JWT, validation)
+│   │   ├── BackendApplication.java       # Main Spring Boot application
+│   │   ├── SecurityConfig.java          # Security configuration
+│   │   └── StatusController.java        # Status endpoint
+│   ├── src/main/resources/    # Configuration files
+│   │   ├── application.properties        # Main configuration
+│   │   ├── application-dev.properties    # Development settings
+│   │   ├── application-mysql.properties  # MySQL configuration
+│   │   ├── application-prod.properties   # Production settings
+│   │   └── application-azure.properties  # Azure deployment config
+│   ├── src/test/java/         # Test files
+│   ├── target/                # Build output
+│   ├── azure-cors-variables.json        # Azure CORS environment variables
+│   ├── azure-environment-variables.json # Azure deployment variables
+│   ├── CLEANUP_SUMMARY.md               # Database cleanup documentation
+│   ├── DATABASE_MIGRATION.md            # Database migration guide
+│   ├── DEPLOYMENT_GUIDE.md              # Backend deployment guide
+│   ├── update-azure-cors.sh             # Azure CORS update script
+│   ├── mvnw / mvnw.cmd                   # Maven wrapper
+│   └── pom.xml                          # Maven configuration
 ├── frontend/                  # React Web Application
-│   ├── public/               # Static assets
-│   └── src/
-│       ├── components/       # React components
-│       │   ├── auth/        # Authentication components
-│       │   ├── admin/       # Admin dashboard
-│       │   ├── user/        # User dashboard
-│       │   ├── common/      # Shared components
-│       │   └── styles/      # Component styles
-│       ├── context/          # React context providers (AuthContext)
-│       ├── config/           # API configuration
-│       └── styles/           # Global CSS stylesheets
-└── docs/                     # API Documentation
-    ├── openapi.yaml          # OpenAPI specification
-    └── *.md                  # Endpoint documentation
+│   ├── public/                # Static assets
+│   │   ├── favicon.ico
+│   │   ├── index.html
+│   │   └── manifest.json
+│   ├── src/
+│   │   ├── components/        # React components
+│   │   │   ├── admin/         # Admin dashboard components
+│   │   │   │   ├── AdminDashboard.js
+│   │   │   │   └── AdminDashboard.css
+│   │   │   ├── auth/          # Authentication components
+│   │   │   │   ├── Auth.css
+│   │   │   │   ├── Login.js
+│   │   │   │   ├── PasswordReset.js
+│   │   │   │   ├── ProtectedRoute.js
+│   │   │   │   ├── Signup.js
+│   │   │   │   └── Unauthorized.js
+│   │   │   ├── common/        # Shared components
+│   │   │   │   ├── common-components.css
+│   │   │   │   ├── ErrorMessage.js
+│   │   │   │   ├── EventCreation.js
+│   │   │   │   ├── EventCreation.css
+│   │   │   │   └── Loading.js
+│   │   │   │   └── ProjectSubmission.js
+│   │   │   │   └── ProjectSubmission.css
+
+│   │   │   ├── Layout/        # Layout components
+│   │   │   │   ├── Footer.js
+│   │   │   │   └── Navbar.js
+│   │   │   ├── styles/        # Component-specific styles
+│   │   │   │   ├── components.css
+│   │   │   │   ├── Contributors.css
+│   │   │   │   ├── notFound.css
+│   │   │   │   └── scrolltotopButton.css
+│   │   │   │   └──shared-layout.css
+│   │   │   ├── user/          # User-specific components
+│   │   │   │   └──UserDashboard.css
+│   │   │   │   └──UserDashBoard.js
+│   │   │   ├── CollaborationHub.js       # Collaboration features
+│   │   │   ├── Contributors.js           # Contributors display
+│   │   │   ├── Dashboard.js              # Main dashboard
+│   │   │   ├── GitHubStats.jsx           # GitHub statistics
+│   │   │   ├── Leaderboard.js            # User leaderboard
+│   │   │   ├── NotFound.js               # 404 page
+│   │   │   ├── ScrollToTop.js            # Scroll to top button
+│   │   │   └── SearchFilter.js           # Search and filter
+│   │   ├── config/            # Configuration files
+│   │   │   └── api.js                    # API endpoints and utilities
+│   │   ├── context/           # React context providers
+│   │   │   └── AuthContext.js            # Authentication context
+│   │   ├── Pages/             # Page components
+│   │   │   ├── About/                    # About page
+│   │   │   ├── Events/                   # Events pages
+│   │   │   ├── Hackathons/               # Hackathons section
+│   │   │   ├── Home/                     # Home page
+│   │   │   └── Projects/                 # Projects section
+│   │   ├── App.js             # Main App component
+│   │   ├── App.css            # Global app styles
+│   │   ├── index.js           # React entry point
+│   │   └── index.css          # Global CSS styles
+│   ├── .env.example           # Environment variables template
+│   ├── .env.production        # Production environment config
+│   ├── CSS-CONSOLIDATION-SUMMARY.md     # CSS consolidation notes
+│   ├── package.json           # npm dependencies
+│   └── README.md              # Frontend documentation
+├── docs/                      # Project documentation
+│   ├── admin.md               # Admin functionality docs
+│   ├── authentication.md     # Authentication documentation
+│   ├── CHANGELOG.md           # Version history
+│   ├── checkin.md             # Check-in process docs
+│   ├── dashboards.md          # Dashboard documentation
+│   ├── errors.md              # Error handling docs
+│   ├── events.md              # Events API documentation
+│   ├── feedback.md            # Feedback system docs
+│   ├── frontend-integration.md # Frontend integration guide
+│   ├── index.md               # Documentation index
+│   ├── openapi.yaml           # OpenAPI specification
+│   ├── README.md              # Documentation README
+│   └── rsvp-attendees.md      # RSVP and attendee management
+├── .gitignore                 # Git ignore rules
+├── CODE_OF_CONDUCT.md         # Code of conduct
+├── CONTRIBUTING.md            # Contributing guidelines
+├── DEPLOYMENT_TROUBLESHOOTING.md # Deployment troubleshooting guide
+├── LICENSE                    # Apache 2.0 license
+├── package.json               # Root package configuration
+├── package-lock.json          # npm lock file
+├── README.md                  # Main project documentation
+└── vercel.json                # Vercel deployment configuration
 ```
 
 ## 🚀 Quick Start
@@ -168,27 +303,271 @@ The frontend will start on http://localhost:3000 and automatically connect to th
 - **API Documentation**: http://localhost:8080/swagger-ui.html
 - **H2 Database Console**: http://localhost:8080/h2-console (JDBC URL: jdbc:h2:mem:eventra)
 
-## 🔧 Installation
+## 🔧 Environment Configuration
 
-### Development Environment
+### Backend Environment Variables
 
-1. **Backend Configuration**
-   The backend is pre-configured for development with H2 database. No additional setup is required for local development.
+For production deployment, configure these environment variables:
 
-   For MySQL configuration, create `application.properties`:
+```bash
+# Database Configuration (Aiven MySQL)
+AIVEN_DATABASE_URL=jdbc:mysql://your-host:port/database?useSSL=true
+AIVEN_DATABASE_USERNAME=your_username
+AIVEN_DATABASE_PASSWORD=your_password
+DATABASE_DRIVER=com.mysql.cj.jdbc.Driver
+DATABASE_DIALECT=org.hibernate.dialect.MySQL8Dialect
+DDL_AUTO=update
+
+# Security Configuration
+JWT_SECRET=your_secure_jwt_secret_key_here
+JWT_EXPIRATION=86400000
+
+# CORS Configuration
+CORS_ALLOWED_ORIGINS=https://eventra-psi.vercel.app
+CORS_ALLOWED_METHODS=GET,POST,PUT,DELETE,OPTIONS,PATCH
+CORS_ALLOWED_HEADERS=*
+CORS_ALLOW_CREDENTIALS=true
+
+# Application Settings
+SHOW_SQL=false
+LOG_LEVEL=INFO
+```
+
+### Frontend Environment Variables
+
+Create `.env.production` in the frontend directory:
+
+```bash
+# Production API Configuration
+REACT_APP_API_URL=https://eventra-backend-dgcae3etebbag8ft.centralindia-01.azurewebsites.net/api
+REACT_APP_APP_NAME=Eventra
+REACT_APP_VERSION=1.0.0
+GENERATE_SOURCEMAP=false
+```
+
+## 🚀 Deployment
+
+### Backend Deployment (Azure App Service)
+
+1. **Build the application**:
    ```bash
    cd backend
-   # Copy and edit the properties file if needed
+   ./mvnw clean package -DskipTests
    ```
 
-2. **Environment Variables**
-   The application supports environment variables for configuration:
-   - `AIVEN_DATABASE_URL`: MySQL database URL
-   - `AIVEN_DATABASE_USERNAME`: Database username
-   - `AIVEN_DATABASE_PASSWORD`: Database password
-   - `JWT_SECRET`: Secret key for JWT tokens
-   - `JWT_EXPIRATION`: JWT expiration time in milliseconds
-   - `CORS_ALLOWED_ORIGINS`: CORS allowed origins
+2. **Deploy to Azure**:
+   - Upload the JAR file from `target/` directory
+   - Configure environment variables in Azure App Service
+   - Set the startup command: `java -jar /home/site/wwwroot/backend-0.0.1-SNAPSHOT.jar`
+
+3. **Environment Variables in Azure**:
+   Use the JSON format from `backend/azure-cors-variables.json` to configure CORS settings.
+
+### Frontend Deployment (Vercel)
+
+1. **Connect to Vercel**:
+   - Import your GitHub repository to Vercel
+   - Set build command: `npm run build`
+   - Set output directory: `build`
+
+2. **Environment Variables in Vercel**:
+   ```
+   REACT_APP_API_URL = https://eventra-backend-dgcae3etebbag8ft.centralindia-01.azurewebsites.net/api
+   ```
+
+## 📚 API Documentation
+
+### Available Endpoints
+
+The backend provides a comprehensive REST API documented with OpenAPI 3.0:
+
+- **Live API Documentation**: [Swagger UI](https://eventra-backend-dgcae3etebbag8ft.centralindia-01.azurewebsites.net/swagger-ui.html)
+- **OpenAPI Specification**: [API Docs](https://eventra-backend-dgcae3etebbag8ft.centralindia-01.azurewebsites.net/api-docs)
+
+### Key API Endpoints
+
+#### Authentication
+- `POST /api/auth/login` - User login
+- `POST /api/auth/signup` - User registration
+- `POST /api/auth/logout` - User logout
+- `GET /api/auth/verify` - Token verification
+
+#### Events
+- `GET /api/events` - List all events
+- `POST /api/events` - Create new event
+- `GET /api/events/{id}` - Get event details
+- `PUT /api/events/{id}` - Update event
+- `DELETE /api/events/{id}` - Delete event
+- `POST /api/events/{id}/join` - Join event
+- `DELETE /api/events/{id}/leave` - Leave event
+
+#### User Management
+- `GET /api/user/profile` - Get user profile
+- `PUT /api/user/update` - Update user profile
+- `GET /api/user/events` - Get user's events
+
+#### Admin
+- `GET /api/admin/dashboard` - Admin dashboard data
+- `GET /api/admin/users` - Manage users
+- `GET /api/admin/events` - Manage events
+
+## 🛠️ Troubleshooting
+
+### Common Issues
+
+#### 1. Network Error During Login
+**Problem**: "Network error. Please check your connection and try again."
+
+**Solution**:
+1. Verify backend is running: Visit [backend health endpoint](https://eventra-backend-dgcae3etebbag8ft.centralindia-01.azurewebsites.net/api/health)
+2. Check CORS configuration in Azure App Service
+3. Verify `REACT_APP_API_URL` environment variable in Vercel
+
+#### 2. CORS Issues
+**Problem**: Browser console shows CORS errors
+
+**Solution**:
+1. Add these environment variables to Azure App Service:
+   ```
+   CORS_ALLOWED_ORIGINS = *
+   CORS_ALLOWED_METHODS = GET,POST,PUT,DELETE,OPTIONS,PATCH
+   CORS_ALLOWED_HEADERS = *
+   CORS_ALLOW_CREDENTIALS = true
+   ```
+2. Restart the Azure App Service
+3. Clear browser cache
+
+#### 3. Database Connection Issues
+**Problem**: Backend fails to start or connect to database
+
+**Solution**:
+1. Verify database environment variables in Azure
+2. Check database connectivity and credentials
+3. Ensure database server allows connections from Azure IP ranges
+# Eventra
+
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Contributors](https://img.shields.io/badge/contributors-✨-yellow)
+
+## 📖 Project Overview
+
+Eventra is a full-stack event management platform that allows users to create, manage, and participate in events. It provides a seamless interface for both organizers and attendees and integrates backend APIs with a React frontend for a smooth user experience.
+
+**Purpose**:  
+- Simplify event creation and management  
+- Enable real-time updates and notifications  
+- Provide an intuitive and responsive interface  
+
+## ⚙️ Setup Instructions
+
+Follow these steps to set up the project locally:
+
+### Prerequisites
+- Node.js >= 18.x
+- Java >= 17
+- npm or yarn
+- H2 Database (for local development)
+
+### Backend Setup
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/sandeepvashishtha/eventra.git
+   cd eventra
+
+2. Configure environment variables in .env:
+DATABASE_URL=...
+JWT_SECRET=...
+SHOW_SQL=true
+
+3. Install dependencies:
+npm install
+
+4. Start the backend server:
+npm run start:backend
+
+## Frontend Setup
+
+1. Navigate to the frontend folder:
+   cd frontend
+
+2. Install dependencies:
+   npm install
+
+3. Start the frontend server:
+   npm start
+
+
+## 🛠 Development Tips
+
+- **Local Database**: Use H2 for quick setup
+- **Debugging**: Enable SQL logs with `SHOW_SQL=true`
+- **Frontend Development**: Start backend first, then frontend
+
+### Common Build Failures
+
+**Problem**: Vercel build fails with schema validation errors  
+**Solution**:
+1. Check `vercel.json` configuration
+2. Ensure all required environment variables are set
+3. Verify `package.json` dependencies
+
+### Getting Help
+
+- Check the [Deployment Troubleshooting Guide](DEPLOYMENT_TROUBLESHOOTING.md)
+- Review browser console for errors
+- Check Azure App Service logs for backend issues
+- Verify environment variables in both Vercel and Azure
+
+## 🤝 Contributing
+
+We welcome contributions! To get started:
+
+1. **Fork the repository**
+2. **Create a feature branch**:
+   ```
+   git checkout -b feature/amazing-feature
+   ```
+3. **Commit your changes**:
+
+```git commit -m "Add some amazing feature"```
+
+4. **Push to your branch**:
+```git push origin feature/amazing-feature```
+
+5. **Open a Pull Request**
+
+## Development Guidelines
+
+1. Follow Java coding conventions for backend
+2. Follow React best practices for frontend
+3. Write meaningful commit messages
+4. Update documentation for new features
+5. Test thoroughly before submitting PRs
+
+### Code Structure
+
+- **Backend**: Follow Spring Boot conventions and package structure
+- **Frontend**: Use functional components with hooks
+- **API**: Maintain RESTful design principles
+- **Documentation**: Update OpenAPI specifications for new endpoints
+
+## 📄 License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Spring Boot community for excellent framework and documentation
+- React community for powerful frontend library
+- Azure and Vercel for reliable cloud hosting
+- Aiven for managed MySQL database service
+
+---
+
+**Built with ❤️ by the Eventra Team**
+
+For more information, visit our [live application](https://eventra-psi.vercel.app/) or check out the [API documentation](https://eventra-backend-dgcae3etebbag8ft.centralindia-01.azurewebsites.net/swagger-ui.html).
 
 3. **Frontend Configuration**
    The frontend automatically connects to `http://localhost:8080/api`. To change the API URL:
@@ -366,13 +745,24 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 - **Issues**: [https://github.com/SandeepVashishtha/Eventra/issues](https://github.com/SandeepVashishtha/Eventra/issues)
 - **Discussions**: [https://github.com/SandeepVashishtha/Eventra/discussions](https://github.com/SandeepVashishtha/Eventra/discussions)
 
-## 👥 Contributors
+<h2 id="contribution-guidelines">🤝👤 Contributers</h2>
 
-Thanks to all the amazing people who have contributed to Eventra! 
+We love our contributors! If you'd like to help, please check out our [`CONTRIBUTE.md`](https://github.com/SandeepVashishtha/Eventra/blob/master/CONTRIBUTING.md) file for guidelines.
 
-<a href="https://github.com/SandeepVashishtha/Eventra/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=SandeepVashishtha/Eventra&t=${Math.floor(Date.now() / (1000 * 60 * 60 * 24))}" alt="Contributors" />
-</a>
+>Thank you once again to all our contributors who has contributed to **AlgoVisualizer!** Your efforts are truly appreciated. 💖👏
+
+<!-- Contributors badge (auto-updating) -->
+
+[![Contributors](https://img.shields.io/github/contributors/SandeepVashishtha/Eventra?style=for-the-badge)](https://github.com/SandeepVashishtha/Eventra/graphs/contributors)
+
+<!-- Contributors avatars (auto-updating) -->
+<p align="left">
+  <a href="https://github.com/SandeepVashishtha/Eventra/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=SandeepVashishtha/Eventra" alt="Contributors" />
+  </a>
+</p>
+
+See the full list of contributors and their contributions on the [`GitHub Contributors Graph`](https://github.com/SandeepVashishtha/Eventra/graphs/contributors).
 
 *Contributor updates automatically every 24 hours*
 
@@ -385,4 +775,4 @@ We'd love your help! Check out our [Contributing Guidelines](CONTRIBUTING.md) to
 
 ---
 
-Built with ❤️ for the community. Happy event organizing! 🎉
+Crafted with ❤️ for our amazing community. Let the events begin and the celebrations flow! 🎉

@@ -17,7 +17,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
@@ -45,11 +44,17 @@ public class Project {
 	@Size(max=255)
 	private String title;
 	
-	@Lob
+	@Column(columnDefinition = "TEXT")
 	private String description;
 	
 	@NotBlank(message="Author is required")
 	private String author;
+	
+	// Contributors list
+	@ElementCollection(fetch=FetchType.EAGER)
+	@CollectionTable(name="project_contributors", joinColumns=@JoinColumn(name="project_id"))
+	@Column(name="contributor")
+	private List<String> contributors;
 	
 	//User who submitted the project
 	@ManyToOne(fetch=FetchType.LAZY)
@@ -86,8 +91,16 @@ public class Project {
 	
 	@Size(max=50)
 	private String difficulty;
-	private Integer openIssues;
-	private Integer pullRequests;
-	private Integer stars;
-	private Integer forks;
+	
+	@Builder.Default
+	private Integer openIssues = 0;
+	
+	@Builder.Default
+	private Integer pullRequests = 0;
+	
+	@Builder.Default
+	private Integer stars = 0;
+	
+	@Builder.Default
+	private Integer forks = 0;
 }

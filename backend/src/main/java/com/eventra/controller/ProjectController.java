@@ -204,6 +204,117 @@ public class ProjectController {
         projectRepository.delete(project);
         return ResponseEntity.ok(new MessageResponse("Project deleted successfully"));
     }
+
+    // ================= NEW ENDPOINTS FOR FRONTEND PROJECT GALLERY =================
+    
+    /**
+     * Get all public projects with enhanced DTO response
+     */
+    @GetMapping("/public")
+    public ResponseEntity<List<com.eventra.dto.ProjectDTO>> getAllPublicProjects() {
+        try {
+            List<com.eventra.dto.ProjectDTO> projects = projectService.getAllPublicProjects();
+            log.info("Retrieved {} public projects for frontend", projects.size());
+            return ResponseEntity.ok(projects);
+        } catch (Exception e) {
+            log.error("Error retrieving public projects: ", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * Get projects with pagination, filtering, and sorting for frontend
+     */
+    @GetMapping("/public/paginated")
+    public ResponseEntity<org.springframework.data.domain.Page<com.eventra.dto.ProjectDTO>> getProjectsPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(defaultValue = "lastUpdated") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDirection,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String search) {
+        
+        try {
+            org.springframework.data.domain.Page<com.eventra.dto.ProjectDTO> projects = projectService.getProjectsWithPagination(
+                page, size, sortBy, sortDirection, category, search);
+            
+            log.info("Retrieved {} projects from page {} with category: {} and search: {}", 
+                    projects.getContent().size(), page, category, search);
+            
+            return ResponseEntity.ok(projects);
+        } catch (Exception e) {
+            log.error("Error retrieving paginated projects: ", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * Get project by ID with enhanced DTO response
+     */
+    @GetMapping("/public/{id}")
+    public ResponseEntity<com.eventra.dto.ProjectDTO> getPublicProjectById(@PathVariable Long id) {
+        try {
+            return projectService.getProjectById(id)
+                    .map(project -> {
+                        log.info("Retrieved public project: {}", project.getTitle());
+                        return ResponseEntity.ok(project);
+                    })
+                    .orElseGet(() -> {
+                        log.warn("Public project not found with id: {}", id);
+                        return ResponseEntity.notFound().build();
+                    });
+        } catch (Exception e) {
+            log.error("Error retrieving public project with id {}: ", id, e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * Get all available categories
+     */
+    @GetMapping("/categories")
+    public ResponseEntity<List<String>> getCategories() {
+        try {
+            List<String> categories = projectService.getCategories();
+            log.info("Retrieved {} categories", categories.size());
+            return ResponseEntity.ok(categories);
+        } catch (Exception e) {
+            log.error("Error retrieving categories: ", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * Get top projects by stars
+     */
+    @GetMapping("/public/top")
+    public ResponseEntity<List<com.eventra.dto.ProjectDTO>> getTopProjects(
+            @RequestParam(defaultValue = "10") int limit) {
+        try {
+            List<com.eventra.dto.ProjectDTO> projects = projectService.getTopProjectsByStars(limit);
+            log.info("Retrieved {} top projects", projects.size());
+            return ResponseEntity.ok(projects);
+        } catch (Exception e) {
+            log.error("Error retrieving top projects: ", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * Get recent projects
+     */
+    @GetMapping("/public/recent")
+    public ResponseEntity<List<com.eventra.dto.ProjectDTO>> getRecentProjects(
+            @RequestParam(defaultValue = "10") int limit) {
+        try {
+            List<com.eventra.dto.ProjectDTO> projects = projectService.getRecentProjects(limit);
+            log.info("Retrieved {} recent projects", projects.size());
+            return ResponseEntity.ok(projects);
+        } catch (Exception e) {
+            log.error("Error retrieving recent projects: ", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
     
 
 }

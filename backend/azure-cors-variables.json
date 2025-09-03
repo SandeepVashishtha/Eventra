@@ -1,0 +1,22 @@
+[
+  {
+    "name": "CORS_ALLOWED_ORIGINS",
+    "value": "*",
+    "slotSetting": false
+  },
+  {
+    "name": "CORS_ALLOWED_METHODS", 
+    "value": "GET,POST,PUT,DELETE,OPTIONS,PATCH",
+    "slotSetting": false
+  },
+  {
+    "name": "CORS_ALLOWED_HEADERS",
+    "value": "*",
+    "slotSetting": false
+  },
+  {
+    "name": "CORS_ALLOW_CREDENTIALS",
+    "value": "true",
+    "slotSetting": false
+  }
+]

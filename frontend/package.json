@@ -4,13 +4,16 @@
   "description": "A modern website for Eventra - platform for builders",
   "private": true,
   "dependencies": {
+    "@heroicons/react": "^2.0.16",
+    "@tailwindcss/cli": "^4.1.12",
+    "framer-motion": "^8.5.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1",
-    "react-router-dom": "^6.8.0",
-    "framer-motion": "^8.5.2",
+    "react-icons": "^5.5.0",
     "react-intersection-observer": "^9.4.1",
-    "@heroicons/react": "^2.0.16"
+    "react-router-dom": "^6.8.0",
+    "react-scripts": "^5.0.1",
+    "tailwindcss": "^4.1.12"
   },
   "scripts": {
     "start": "react-scripts start",
