@@ -119,38 +119,53 @@ const Contributors = () => {
     try {
       setLoading(true);
       
-      // Try to fetch real contributors from GitHub API
+      // Try to fetch real contributors from GitHub API with pagination
       try {
-        const response = await fetch('https://api.github.com/repos/sandeepvashishtha/Eventra/contributors');
-        if (response.ok) {
-          const githubContributors = await response.json();
-          
-          // Enhance GitHub data with additional profile info
-          const enhancedContributors = await Promise.all(
-            githubContributors.map(async (contributor) => {
-              const profileData = await fetchGitHubProfile(contributor.login);
-              
-              const enhancedContributor = {
-                ...contributor,
-                ...profileData,
-                id: contributor.id,
-                role: getRoleByGitHubActivity({
-                  ...contributor,
-                  ...profileData
-                }),
-                bio: contributor.login === 'sandeepvashishtha' 
-                  ? 'Passionate about building scalable web applications and event management systems.'
-                  : profileData.bio
-              };
-              
-              return enhancedContributor;
-            })
-          );
-          
-          setContributors(enhancedContributors);
-        } else {
-          throw new Error('GitHub API request failed');
+        let allContributors = [];
+        let page = 1;
+        const perPage = 100;
+
+        while (true) {
+          const response = await fetch(`https://api.github.com/repos/sandeepvashishtha/Eventra/contributors?page=${page}&per_page=${perPage}`);
+          if (!response.ok) {
+            throw new Error('GitHub API request failed');
+          }
+          const contributorsPage = await response.json();
+          if (contributorsPage.length === 0) {
+            break;
+          }
+          allContributors = allContributors.concat(contributorsPage);
+          page++;
+          if (contributorsPage.length < perPage) {
+            break;
+          }
+          // Small delay to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
+
+        // Enhance GitHub data with additional profile info
+        const enhancedContributors = await Promise.all(
+          allContributors.map(async (contributor) => {
+            const profileData = await fetchGitHubProfile(contributor.login);
+
+            const enhancedContributor = {
+              ...contributor,
+              ...profileData,
+              id: contributor.id,
+              role: getRoleByGitHubActivity({
+                ...contributor,
+                ...profileData
+              }),
+              bio: contributor.login === 'sandeepvashishtha'
+                ? 'Passionate about building scalable web applications and event management systems.'
+                : profileData.bio
+            };
+
+            return enhancedContributor;
+          })
+        );
+
+        setContributors(enhancedContributors);
       } catch (apiError) {
         console.log('GitHub API not available, using mock data');
         setContributors(mockContributors);
