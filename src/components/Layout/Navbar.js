@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { motion } from "framer-motion";
@@ -26,6 +26,11 @@ import { RocketLaunchIcon } from "@heroicons/react/20/solid";
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const drawerRef = useRef(null);
+  const closeBtnRef = useRef(null);
+  const toggleBtnRef = useRef(null);
+  const touchStartXRef = useRef(null);
+  const touchCurrentXRef = useRef(null);
 
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
@@ -53,7 +58,124 @@ const Navbar = () => {
   const closeAllMenus = () => {
     setShowProfileDropdown(false);
     setIsMobileMenuOpen(false);
+    // restore body scroll
     document.body.style.overflow = "";
+    // restore focus to the mobile toggle when the drawer is closed
+    if (toggleBtnRef.current) {
+      try {
+        toggleBtnRef.current.focus();
+      } catch (e) {
+        // ignore
+      }
+    }
+  };
+
+  // When mobile menu opens, lock body scroll and focus the close button.
+  useEffect(() => {
+    let prevScrollY;
+    if (isMobileMenuOpen) {
+      // store scroll position and lock the body by fixing its position
+      prevScrollY = window.scrollY || window.pageYOffset || 0;
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${prevScrollY}px`;
+      document.body.style.left = "0";
+      document.body.style.right = "0";
+      document.body.style.width = "100%";
+      // focus the close button shortly after open
+      setTimeout(() => closeBtnRef.current?.focus(), 50);
+    } else {
+      // restore body positioning and scroll
+      const stored = document.body.style.top;
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.left = "";
+      document.body.style.right = "";
+      document.body.style.width = "";
+      if (stored) {
+        const scrollY = parseInt(stored || "0", 10) * -1 || 0;
+        window.scrollTo(0, scrollY);
+      }
+    }
+
+    return () => {
+      // cleanup in case component unmounts while locked
+      if (document.body) {
+        const stored = document.body.style.top;
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.left = "";
+        document.body.style.right = "";
+        document.body.style.width = "";
+        if (stored) {
+          const scrollY = parseInt(stored || "0", 10) * -1 || 0;
+          window.scrollTo(0, scrollY);
+        }
+      }
+    };
+  }, [isMobileMenuOpen]);
+
+  // Close menus on route change for accessibility/usability
+  useEffect(() => {
+    closeAllMenus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  // Focus trap + Escape handling while drawer is open
+  useEffect(() => {
+    if (!isMobileMenuOpen || !drawerRef.current) return;
+
+    const drawer = drawerRef.current;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeAllMenus();
+        return;
+      }
+
+      if (e.key === "Tab") {
+        const focusable = drawer.querySelectorAll(
+          'a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobileMenuOpen]);
+
+  // Touch handlers for swipe-to-close on mobile (drawer anchored to right)
+  const handleTouchStart = (e) => {
+    touchStartXRef.current = e.touches[0].clientX;
+    touchCurrentXRef.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e) => {
+    touchCurrentXRef.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    const start = touchStartXRef.current;
+    const end = touchCurrentXRef.current;
+    if (typeof start !== "number" || typeof end !== "number") return;
+    const deltaX = end - start;
+    // if swiped left more than 50px, close
+    if (deltaX < -50) {
+      closeAllMenus();
+    }
+    touchStartXRef.current = null;
+    touchCurrentXRef.current = null;
   };
 
   const navItems = [
@@ -425,10 +547,14 @@ const Navbar = () => {
 
           <div className="lg:hidden">
             <button
+              ref={toggleBtnRef}
               onClick={(e) => {
                 e.stopPropagation();
                 setIsMobileMenuOpen(!isMobileMenuOpen);
               }}
+              aria-controls="mobile-drawer"
+              aria-expanded={isMobileMenuOpen}
+              aria-label={isMobileMenuOpen ? "Close navigation" : "Open navigation"}
               className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
               <svg
@@ -449,11 +575,19 @@ const Navbar = () => {
         </div>
 
         <div
+          id="mobile-drawer"
+          ref={drawerRef}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           className={`fixed top-0 right-0 h-screen overflow-y-auto w-72 bg-white dark:bg-gray-800 shadow-2xl z-50 flex flex-col transform transition-transform duration-300 ease-in-out 
           ${isMobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}
+          role="dialog"
+          aria-modal={isMobileMenuOpen}
         >
           <div className="flex items-center justify-end px-5 py-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
             <button
+              ref={closeBtnRef}
               onClick={closeAllMenus}
               className="p-2 rounded-full text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             >
