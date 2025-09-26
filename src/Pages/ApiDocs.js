@@ -120,13 +120,21 @@ const ApiDocs = () => {
           <table className="w-full border-collapse">
             <thead className="bg-gray-50 dark:bg-[#1c1c1c]">
               <tr>
-                <th className="p-4 text-left">API</th>
-                <th className="p-4 text-left">Method</th>
-                <th className="p-4 text-left">Endpoint</th>
-                <th className="p-4 text-left">Description</th>
+                <th className="p-4 text-left bg-gray-50 dark:bg-[#1c1c1c]">
+                  API
+                </th>
+                <th className="p-4 text-left bg-gray-50 dark:bg-[#1c1c1c]">
+                  Method
+                </th>
+                <th className="p-4 text-left bg-gray-50 dark:bg-[#1c1c1c]">
+                  Endpoint
+                </th>
+                <th className="p-4 text-left bg-gray-50 dark:bg-[#1c1c1c]">
+                  Description
+                </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="bg-gray-50 dark:bg-[#000000]">
               {endpoints.map((ep, idx) => (
                 <tr
                   key={idx}
@@ -187,7 +195,7 @@ const ApiDocs = () => {
       </section>
 
       {/* Error Codes */}
-      <section className="max-w-4xl mx-auto mb-16">
+      <section className="max-w-6xl mx-auto mb-16">
         <h2 className="text-3xl font-semibold mb-8 text-center">Error Codes</h2>
         <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl shadow p-6">
           <div className="flex items-center gap-2 mb-4">
@@ -198,11 +206,15 @@ const ApiDocs = () => {
             <table className="w-full border-collapse">
               <thead className="bg-gray-50 dark:bg-[#222]">
                 <tr>
-                  <th className="p-3 text-left">Code</th>
-                  <th className="p-3 text-left">Description</th>
+                  <th className="p-3 text-left bg-gray-50 dark:bg-[#000]">
+                    Code
+                  </th>
+                  <th className="p-3 text-left bg-gray-50 dark:bg-[#000]">
+                    Description
+                  </th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="bg-gray-50 dark:bg-[#151515]">
                 <tr className="border-t border-gray-200 dark:border-gray-800">
                   <td className="p-3 text-red-600 dark:text-red-400 font-bold">
                     400

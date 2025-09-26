@@ -23,6 +23,7 @@ import {
 import ModernAbout from "./ModernAbout";
 import MissionVision from "./MissionVision";
 import Features from "./Features";
+import AboutCTA from "./AboutCTA ";
 
 const AboutPage = () => {
   const [activeFeature, setActiveFeature] = useState(0);
@@ -189,7 +190,7 @@ const AboutPage = () => {
 
       {/* Why Choose Eventra Section */}
       {/* UPDATED: Section background */}
-      <section className="py-20 bg-gray-50 dark:bg-gray-900 relative">
+      <section className="flex flex-col min-h-screen py-20 bg-gray-50 dark:bg-gray-900 relative">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Heading */}
           <motion.div
@@ -199,10 +200,16 @@ const AboutPage = () => {
             className="text-center mb-16"
           >
             {/* UPDATED: Text colors */}
-            <motion.h2 variants={item} className="text-4xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-4xl">
+            <motion.h2
+              variants={item}
+              className="text-4xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-4xl"
+            >
               Why Choose Eventra
             </motion.h2>
-            <motion.p variants={item} className="mt-4 text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            <motion.p
+              variants={item}
+              className="mt-4 text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto"
+            >
               Built with transparency, scalability, and community at our core
             </motion.p>
           </motion.div>
@@ -245,7 +252,7 @@ const AboutPage = () => {
 
                   {/* UPDATED: Link colors */}
                   <a
-                    href="#" 
+                    href="#"
                     className="inline-flex items-center text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 group-hover:underline transition-all"
                   >
                     Learn More
@@ -261,30 +268,7 @@ const AboutPage = () => {
       </section>
 
       {/* 💡 NOTE: This CTA Section is already dark by design and works well in both modes. No changes are needed. */}
-      <section className="py-24 bg-gray-900 relative overflow-hidden">
-      {/* CTA Buttons */}
-      <motion.div
-        variants={container}
-        className="flex flex-col sm:flex-row justify-center gap-4"
-      >
-        <motion.div variants={buttonItem}>
-          <Link
-            to="/signup"
-            className="inline-flex items-center px-8 py-3 rounded-xl font-medium text-white bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
-          >
-            🚀 Get Started Free
-          </Link>
-        </motion.div>
-        <motion.div variants={buttonItem}>
-          <Link
-            to="/documentation"
-            className="inline-flex items-center px-8 py-3 rounded-xl font-medium border border-indigo-400/50 text-indigo-200 hover:bg-indigo-500/10 hover:border-indigo-300 transition-all duration-300"
-          >
-            📖 View Documentation
-          </Link>
-        </motion.div>
-        </motion.div>
-      </section>
+      <AboutCTA></AboutCTA>
     </>
   );
 };

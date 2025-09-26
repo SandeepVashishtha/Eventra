@@ -13,6 +13,7 @@ import {
 
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
+import ThemeToggleButton from "../common/ThemeToggleButton";
 
 const UserDashboard = () => {
   // Mock stats
@@ -172,22 +173,28 @@ const UserDashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8 mt-6"
-          >
-            {/* UPDATED: Text color and gradient */}
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-              <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 dark:from-indigo-400 dark:via-purple-400 dark:to-indigo-400 bg-clip-text text-transparent animate-gradient">
-                {displayText}
-                <span className="animate-pulse">|</span>
-              </span>
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              Here's what's happening with your events, hackathons, and projects.
-            </p>
-          </motion.div>
+          <div className="flex justify-between items-start mb-6">
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex-1"
+            >
+              {/* UPDATED: Text color and gradient */}
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 dark:from-indigo-400 dark:via-purple-400 dark:to-indigo-400 bg-clip-text text-transparent animate-gradient">
+                  {displayText}
+                  <span className="animate-pulse">|</span>
+                </span>
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 text-lg">
+                Here's what's happening with your events, hackathons, and projects.
+              </p>
+            </motion.div>
+            {/* Theme Toggle in Dashboard Header */}
+            <div className="ml-4">
+              <ThemeToggleButton size="default" showLabel={false} />
+            </div>
+          </div>
         </motion.div>
 
         <motion.div

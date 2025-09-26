@@ -53,14 +53,14 @@ const ProjectCard = ({ project }) => {
   return (
     <motion.div
       // UPDATED: Card background and border
-      className="bg-gradient-to-l from-indigo-200 to-white dark:from-indigo-950 dark:to-black rounded-xl shadow-md overflow-hidden border border-gray-100 dark:border-gray-700 max-w-sm mx-auto hover:shadow-lg transition-all duration-300"
+      className="bg-gradient-to-l from-white to-white dark:from-indigo-950 dark:to-black rounded-xl shadow-md overflow-hidden border border-indigo-300 dark:border-gray-700 max-w-sm mx-auto hover:shadow-lg transition-all duration-300"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4, scale: 1.02 }}
     >
       {/* Header */}
       {/* UPDATED: Header gradient, border, icon, and title text */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700 bbg-gradient-to-l from-indigo-200 to-white dark:from-indigo-950 dark:to-black">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-300 dark:border-gray-700 bbg-gradient-to-l from-indigo-200 to-white dark:from-indigo-950 dark:to-black">
         <div className="border-2 border-indigo-500 p-2 rounded-full flex items-center justify-center">
           <RandomIcon
             size={24}
@@ -81,7 +81,7 @@ const ProjectCard = ({ project }) => {
 
       {/* Image */}
       {/* UPDATED: Image container background and border */}
-      <div className="relative aspect-[16/9] bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="relative aspect-[16/9] bg-gray-100 dark:bg-gray-700 border-b border-gray-300 dark:border-gray-700 overflow-hidden">
         <img
           src={project.lowResImage || project.image}
           alt={project.title}
@@ -101,13 +101,13 @@ const ProjectCard = ({ project }) => {
 
       {/* Description */}
       {/* UPDATED: Description text and border */}
-      <p className="px-5 py-4 text-gray-600 dark:text-gray-400 text-sm border-b border-gray-200 dark:border-gray-700">
+      <p className="px-5 py-4 text-gray-600 dark:text-gray-400 text-sm border-b border-gray-300 dark:border-gray-700">
         {project.description}
       </p>
 
       {/* Category & Difficulty */}
       {/* UPDATED: Section border and category tag styles */}
-      <div className="px-5 py-2 flex flex-wrap gap-2 border-b border-gray-200 dark:border-gray-700">
+      <div className="px-5 py-2 flex flex-wrap gap-2 border-b border-gray-300 dark:border-gray-700">
         <span className="px-2.5 py-1 text-xs font-medium bg-indigo-50 text-indigo-700 rounded-full border border-indigo-300 dark:bg-indigo-900/40 dark:text-indigo-300 dark:border-indigo-700">
           {project.category}
         </span>
@@ -122,7 +122,7 @@ const ProjectCard = ({ project }) => {
 
       {/* Admin + Stats */}
       {/* UPDATED: Section border, author styles, and stat tag styles */}
-      <div className="px-5 py-4 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
+      <div className="px-5 py-4 flex justify-between items-center border-b border-gray-300 dark:border-gray-700">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-900 flex items-center justify-center text-sm font-medium text-indigo-600 dark:text-indigo-400 border-2 border-indigo-500">
             {project.author.charAt(0)}
@@ -149,7 +149,7 @@ const ProjectCard = ({ project }) => {
 
       {/* Tech Stack */}
       {/* UPDATED: Section border */}
-      <div className="px-5 py-4 flex flex-wrap gap-2 border-b border-gray-200 dark:border-gray-700">
+      <div className="px-5 py-4 flex flex-wrap gap-2 border-b border-gray-300 dark:border-gray-700">
         {project.techStack.map((tech, index) => (
           <span key={index} className={techTagStyle}>
             {tech}

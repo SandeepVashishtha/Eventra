@@ -19,7 +19,7 @@ const HackathonCard = ({ hackathon, isFeatured = false }) => {
   return (
     <motion.div
       // UPDATED: Card background, border, and featured ring
-      className={`bg-gradient-to-br from-indigo-200 to-white dark:from-gray-800 dark:to-black rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 dark:border-gray-700 overflow-hidden relative ${
+      className={`bg-gradient-to-br from-white to-white dark:from-gray-800 dark:to-black rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-indigo-300 dark:border-gray-700 overflow-hidden relative ${
         isFeatured ? "ring-2 ring-indigo-500 dark:ring-indigo-400" : ""
       }`}
       whileHover={{ y: -4 }}
@@ -60,7 +60,7 @@ const HackathonCard = ({ hackathon, isFeatured = false }) => {
 
         {/* Divider */}
         {/* UPDATED: Divider color */}
-        <div className="border-b border-gray-200 dark:border-gray-700" />
+        <div className="border-b border-gray-400 dark:border-gray-700" />
 
         {/* Title & Description */}
         <div>
@@ -74,7 +74,7 @@ const HackathonCard = ({ hackathon, isFeatured = false }) => {
         </div>
 
         {/* UPDATED: Divider color */}
-        <div className="border-b border-gray-200 dark:border-gray-700" />
+        <div className="border-b border-gray-400 dark:border-gray-700" />
 
         {/* Organizer */}
         {/* UPDATED: Text color */}
@@ -84,7 +84,7 @@ const HackathonCard = ({ hackathon, isFeatured = false }) => {
         </div>
 
         {/* UPDATED: Divider color */}
-        <div className="border-b border-gray-200 dark:border-gray-700" />
+        <div className="border-b border-gray-400 dark:border-gray-700" />
 
         {/* Date & Location */}
         {/* UPDATED: Text color */}
@@ -118,7 +118,7 @@ const HackathonCard = ({ hackathon, isFeatured = false }) => {
         </div>
 
         {/* UPDATED: Divider color */}
-        <div className="border-b border-gray-200 dark:border-gray-700" />
+        <div className="border-b border-gray-400 dark:border-gray-700" />
 
         {/* Tech Stack */}
         <div>
@@ -140,7 +140,7 @@ const HackathonCard = ({ hackathon, isFeatured = false }) => {
         </div>
 
         {/* UPDATED: Divider color */}
-        <div className="border-b border-gray-200 dark:border-gray-700" />
+        <div className="border-b border-gray-400 dark:border-gray-700" />
 
         {/* Rules */}
         {/* UPDATED: Text colors */}
@@ -157,7 +157,7 @@ const HackathonCard = ({ hackathon, isFeatured = false }) => {
         </div>
 
         {/* UPDATED: Divider color */}
-        <div className="border-b border-gray-200 dark:border-gray-700" />
+        <div className="border-b border-gray-400 dark:border-gray-700" />
 
         {/* Stats */}
         {/* UPDATED: Background and text colors */}
@@ -192,7 +192,7 @@ const HackathonCard = ({ hackathon, isFeatured = false }) => {
         </div>
 
         {/* UPDATED: Divider color */}
-        <div className="border-b border-gray-200 dark:border-gray-700" />
+        <div className="border-b border-gray-400 dark:border-gray-700" />
 
         {/* Winner */}
         {/* UPDATED: Background, border, and text colors */}
@@ -207,7 +207,7 @@ const HackathonCard = ({ hackathon, isFeatured = false }) => {
         </div>
 
         {/* UPDATED: Divider color */}
-        <div className="border-b border-gray-200 dark:border-gray-700" />
+        <div className="border-b border-gray-400 dark:border-gray-700" />
 
         {/* Action Buttons */}
         <div className="pt-3">

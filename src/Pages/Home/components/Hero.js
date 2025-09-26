@@ -1,6 +1,7 @@
 import { motion, useAnimation, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import ThemeToggleButton from "../../../components/common/ThemeToggleButton";
 
 const Hero = () => {
   const phrases = [
@@ -78,8 +79,11 @@ const Hero = () => {
   ];
 
   return (
-    // Main section background gradient for dark mode
-    <section className="relative min-h-screen overflow-hidden bg-gradient-to-b from-indigo-50 via-indigo-100 to-white dark:from-gray-900 dark:via-indigo-900/20 dark:to-black py-24 lg:py-32">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-black dark:to-gray-900">
+      {/* Floating Theme Toggle */}
+      <div className="absolute top-6 right-6 z-10">
+        <ThemeToggleButton size="small" showLabel={false} />
+      </div>
       {/* Floating Gradient Shapes */}
       {shapes.map((shape, i) => (
         <motion.div

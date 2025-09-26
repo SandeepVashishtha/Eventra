@@ -22,6 +22,7 @@ import {
   FaComments,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import ThemeToggleButton from "../common/ThemeToggleButton";
 
 // Toast Component
 const Toast = ({ message, type, onClose }) => {
@@ -308,11 +309,16 @@ const Footer = () => {
 
           {/* Copyright - Below the line, centered */}
           {/* UPDATED: Added dark mode border color */}
-          <div className="border-t border-gray-300 dark:border-gray-700 mt-8 pt-4 pb-2 flex justify-center">
+          <div className="border-t border-gray-300 dark:border-gray-700 mt-8 pt-4 pb-2 flex flex-col sm:flex-row justify-between items-center gap-4">
             {/* UPDATED: Added dark mode text color */}
             <p className="text-sm text-gray-500 dark:text-gray-400">
               © {currentYear} Eventra. All rights reserved.
             </p>
+            {/* Theme Toggle in Footer */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Theme:</span>
+              <ThemeToggleButton size="small" showLabel={true} />
+            </div>
           </div>
         </div>
       </footer>

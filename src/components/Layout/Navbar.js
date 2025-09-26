@@ -248,6 +248,24 @@ const Navbar = () => {
     navigate("/");
   };
 
+  const navRef = useRef(null);
+  const [navHeight, setNavHeight] = useState(0);
+
+  useEffect(() => {
+    if (navRef.current) {
+      setNavHeight(navRef.current.offsetHeight);
+    }
+
+    const handleResize = () => {
+      if (navRef.current) {
+        setNavHeight(navRef.current.offsetHeight);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const renderAuthSection = () => {
     if (isAuthenticated()) {
       return (
@@ -400,7 +418,7 @@ const Navbar = () => {
       );
     }
   };
-  const [hoveredNav, setHoveredNav] = useState(null);
+
   const [openDropdown, setOpenDropdown] = useState(null);
   React.useEffect(() => {
     const handleClickOutside = () => setOpenDropdown(null);
@@ -419,7 +437,7 @@ const Navbar = () => {
         onClick={closeAllMenus}
       />
 
-      <nav className="fixed top-0 left-0 w-full z-50 bg-white/70 backdrop-blur-md dark:bg-black border-b border-gray-300 dark:border-gray-800 py-5 transition-colors duration-300">
+      <nav ref={navRef} className="fixed top-0 left-0 w-full z-50 bg-white/70 backdrop-blur-md dark:bg-black border-b border-gray-300 dark:border-gray-800 py-5 transition-colors duration-300">
         {/* --- CHANGE 1: Reduced padding and gap --- */}
         <div className="max-w-screen-2xl mx-auto px-4 flex justify-between items-center gap-2">
           <Link to="/" className="flex-shrink-0">
@@ -825,7 +843,7 @@ const Navbar = () => {
           </div>
         </div>
       </nav>
-      <div className="h-20"></div>
+      <div style={{ height: navHeight }} />
     </>
   );
 };

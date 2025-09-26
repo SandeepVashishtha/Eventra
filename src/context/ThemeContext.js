@@ -6,14 +6,26 @@ import React, { createContext, useState, useEffect } from 'react';
 export const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  // State to hold the current theme. 'light' is the default.
-  const [theme, setTheme] = useState('light');
+  // Initialize theme from localStorage or default to 'light'
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('eventra-theme');
+      return savedTheme || 'light';
+    }
+    return 'light';
+  });
 
-  // Effect to apply the theme class to the body element
+  // Effect to apply the theme class to the body element and save to localStorage
   useEffect(() => {
     const root = document.documentElement; // Get the <html> element
-    root.className = ''; // Clear existing classes
-    root.classList.add(theme); // Add the current theme class 'light' or 'dark'
+    if (theme === 'dark') {
+      root.classList.add('dark'); // Add 'dark' class for Tailwind dark mode
+    } else {
+      root.classList.remove('dark'); // Remove 'dark' class for light mode
+    }
+    
+    // Save theme preference to localStorage
+    localStorage.setItem('eventra-theme', theme);
   }, [theme]);
 
   // Function to toggle between 'light' and 'dark'
