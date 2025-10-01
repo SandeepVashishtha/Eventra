@@ -130,9 +130,7 @@ function App() {
 
 
 
-            <ScrollToTop 
-              
-            />
+            <ScrollToTop/>
 
 
             {/* Global floating Feedback button */}

@@ -252,6 +252,26 @@ const Signup = () => {
             className="space-y-2 text-center"
           >
             {/* UPDATED: Header text */}
+            <motion.div
+              whileHover={{ scale: 1.05, rotate: 5 }}
+              whileTap={{ scale: 0.95 }}
+              className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg transform transition-transform duration-200"
+            >
+              <svg
+                className="w-8 h-8 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
+              </svg>
+            </motion.div>
             <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
               Create Your Account
             </h1>
@@ -276,9 +296,12 @@ const Signup = () => {
             >
               <div className="space-y-2">
                 {/* UPDATED: Label text */}
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="firstName"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   First name <sup className="ml-1 text-red-500">*</sup>
-                </label> 
+                </label>
                 <motion.input
                   id="firstName"
                   name="firstName"
@@ -287,7 +310,7 @@ const Signup = () => {
                   onChange={handleChange}
                   required
                   disabled={loading}
-                  placeholder="Enter your first name"
+                  placeholder="First name"
                   // UPDATED: Input styles
                   className="w-full px-3 py-2 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
                   whileFocus={{ scale: 1.02 }}
@@ -295,12 +318,17 @@ const Signup = () => {
                 />
                 {/* IMPROVEMENT: Replaced inline style with theme-aware classes */}
                 {firstNameError && (
-                  <p className="text-red-500 dark:text-red-400 text-xs">{firstNameError}</p>
+                  <p className="text-red-500 dark:text-red-400 text-xs">
+                    {firstNameError}
+                  </p>
                 )}
               </div>
               <div className="space-y-2">
                 {/* UPDATED: Label text */}
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="lastName"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   Last name<sup className="ml-1 text-red-500">*</sup>
                 </label>
                 <motion.input
@@ -311,7 +339,7 @@ const Signup = () => {
                   onChange={handleChange}
                   required
                   disabled={loading}
-                  placeholder="Enter your last name"
+                  placeholder="Last name"
                   // UPDATED: Input styles
                   className="w-full px-3 py-2 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
                   whileFocus={{ scale: 1.02 }}
@@ -319,7 +347,9 @@ const Signup = () => {
                 />
                 {/* IMPROVEMENT: Replaced inline style with theme-aware classes */}
                 {lastNameError && (
-                  <p className="text-red-500 dark:text-red-400 text-xs">{lastNameError}</p>
+                  <p className="text-red-500 dark:text-red-400 text-xs">
+                    {lastNameError}
+                  </p>
                 )}
               </div>
             </motion.div>
@@ -331,25 +361,42 @@ const Signup = () => {
               className="space-y-2"
             >
               {/* UPDATED: Label text */}
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
                 Email address<sup className="ml-1 text-red-500">*</sup>
               </label>
-              <motion.input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                disabled={loading}
-                placeholder="Enter your email address"
-                // UPDATED: Input styles
-                className={`w-full px-3 py-2 bg-white dark:bg-gray-700/50 border rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed ${
-                  emailError ? "border-red-500 dark:border-red-400" : "border-gray-300 dark:border-gray-600"
-                }`}
-                whileFocus={{ scale: 1.02 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              />
+              <div className="relative group">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.3, delay: 0.7 }}
+                  className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                  aria-hidden
+                >
+                  <svg className="h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                  </svg>
+                </motion.div>
+                <motion.input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  disabled={loading}
+                  placeholder="Email address"
+                  // UPDATED: Input styles
+                  className={`w-full px-10 py-2 bg-white dark:bg-gray-700/50 border rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed ${emailError
+                      ? "border-red-500 dark:border-red-400"
+                      : "border-gray-300 dark:border-gray-600"
+                    }`}
+                  whileFocus={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                />
+              </div>
               <AnimatePresence>
                 {emailError && (
                   <motion.p
@@ -373,11 +420,8 @@ const Signup = () => {
               className="space-y-2"
             >
               {/* UPDATED: Label text */}
-              
 
-      
-
-                {/* <motion.input
+            {/* <motion.input
                   id="phone"
                   name="phone"
                   type="tel"
@@ -418,24 +462,40 @@ const Signup = () => {
               className="space-y-2"
             >
               {/* UPDATED: Label text */}
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
                 Password<sup className="ml-1 text-red-500">*</sup>
               </label>
-              <motion.input
-                id="password"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                disabled={loading}
-                minLength="8"
-                placeholder="Password: 8+ chars with uppercase, lowercase, number, and special character"
-                // UPDATED: Input styles
-                className="w-full px-3 py-2 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
-                whileFocus={{ scale: 1.02 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              />
+              <div className="relative group">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.3, delay: 0.9 }}
+                  className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                  aria-hidden
+                >
+                  <svg className="h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </motion.div>
+                <motion.input
+                  id="password"
+                  name="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  disabled={loading}
+                  minLength="8"
+                  placeholder="Password"
+                  // UPDATED: Input styles
+                  className="w-full px-10 py-2 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
+                  whileFocus={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                />
+              </div>
 
               <AnimatePresence>
                 {formData.password && (
@@ -462,19 +522,18 @@ const Signup = () => {
                     {/* UPDATED: Strength bar background */}
                     <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5 mt-1">
                       <motion.div
-                        className={`h-1.5 rounded-full ${
-                          passwordStrength.score === 0
+                        className={`h-1.5 rounded-full ${passwordStrength.score === 0
                             ? "bg-red-500 w-0"
                             : passwordStrength.score === 1
-                            ? "bg-red-500 w-1/5"
-                            : passwordStrength.score === 2
-                            ? "bg-orange-500 w-2/5"
-                            : passwordStrength.score === 3
-                            ? "bg-yellow-500 w-3/5"
-                            : passwordStrength.score === 4
-                            ? "bg-blue-500 w-4/5"
-                            : "bg-green-500 w-full"
-                        }`}
+                              ? "bg-red-500 w-1/5"
+                              : passwordStrength.score === 2
+                                ? "bg-orange-500 w-2/5"
+                                : passwordStrength.score === 3
+                                  ? "bg-yellow-500 w-3/5"
+                                  : passwordStrength.score === 4
+                                    ? "bg-blue-500 w-4/5"
+                                    : "bg-green-500 w-full"
+                          }`}
                         initial={{ width: "0%" }}
                         animate={{
                           width: `${(passwordStrength.score / 5) * 100}%`,
@@ -484,11 +543,10 @@ const Signup = () => {
                     </div>
                     <motion.p
                       // UPDATED: Strength feedback text
-                      className={`text-xs mt-1 ${
-                        passwordStrength.score >= 4
+                      className={`text-xs mt-1 ${passwordStrength.score >= 4
                           ? "text-green-600 dark:text-green-400"
                           : "text-yellow-600 dark:text-yellow-400"
-                      }`}
+                        }`}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.2 }}
@@ -508,26 +566,43 @@ const Signup = () => {
               className="space-y-2"
             >
               {/* UPDATED: Label text */}
-              <label htmlFor="confirm_password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label
+                htmlFor="confirm_password"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
                 Confirm Password<sup className="ml-1 text-red-500">*</sup>
               </label>
-              <motion.input
-                id="confirm_password"
-                name="confirm_password"
-                type="password"
-                value={formData.confirm_password}
-                onChange={handleChange}
-                required
-                disabled={loading}
-                minLength="8"
-                placeholder="Confirm Password"
-                // UPDATED: Input styles
-                className="w-full px-3 py-2 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
-                whileFocus={{ scale: 1.02 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              />
+              <div className="relative group">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.3, delay: 0.9 }}
+                  className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                  aria-hidden
+                >
+                  <svg className="h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </motion.div>
+    
+                <motion.input
+                  id="confirm_password"
+                  name="confirm_password"
+                  type="password"
+                  value={formData.confirm_password}
+                  onChange={handleChange}
+                  required
+                  disabled={loading}
+                  minLength="8"
+                  placeholder="Confirm Password"
+                  // UPDATED: Input styles
+                  className="w-full px-10 py-2 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
+                  whileFocus={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                />
+                </div>
             </motion.div>
-
+            
             {/* Error & Success Messages */}
             <AnimatePresence>
               {error && (
@@ -627,11 +702,16 @@ const Signup = () => {
             {/* UPDATED: Text and link colors */}
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Already have an account?{" "}
-              <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
+              <Link
+                to="/login"
+                className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+              >
                 Sign in here
               </Link>
             </p>
-            <p className="text-gray-500 dark:text-gray-500 text-sm mb-4">* indicates required fields</p>
+            <p className="text-gray-500 dark:text-gray-500 text-sm mb-4">
+              * indicates required fields
+            </p>
           </motion.div>
 
           <motion.p
@@ -642,13 +722,19 @@ const Signup = () => {
             className="text-xs text-center text-gray-500 dark:text-gray-500"
           >
             By clicking on sign up, you agree to our{" "}
-            <Link to="/terms" className="hover:underline text-blue-600 dark:text-blue-400 font-semibold transition-colors">
-                Terms of Service
-              </Link>{" "}
-              and{" "}
-              <Link to="/privacy" className="hover:underline text-blue-600 dark:text-blue-400 font-semibold transition-colors">
-                Privacy Policy
-              </Link>
+            <Link
+              to="/terms"
+              className="hover:underline text-blue-600 dark:text-blue-400 font-semibold transition-colors"
+            >
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link
+              to="/privacy"
+              className="hover:underline text-blue-600 dark:text-blue-400 font-semibold transition-colors"
+            >
+              Privacy Policy
+            </Link>
           </motion.p>
         </motion.div>
 

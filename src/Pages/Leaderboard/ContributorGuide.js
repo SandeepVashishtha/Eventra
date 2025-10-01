@@ -39,7 +39,7 @@ const ContributorGuide = () => {
     {
       id: "clone",
       title: "Clone Repository",
-      cmd: "git clone https://github.com/YOUR-USERNAME/Eventra.git",
+      cmd: "git clone https://github.com/sandeepvashishtha/Eventra.git",
     },
     {
       id: "branch",

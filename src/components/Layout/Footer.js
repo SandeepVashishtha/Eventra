@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FaLinkedin, FaDiscord, FaTelegram } from "react-icons/fa";
+import { FaLinkedin, FaDiscord, FaTelegram, FaInstagram } from "react-icons/fa";
 import { SiX } from "react-icons/si";
 import {
   FaInfoCircle,
@@ -22,13 +22,13 @@ import {
   FaComments,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import ThemeToggleButton from "../common/ThemeToggleButton";
+
 
 // Toast Component
 const Toast = ({ message, type, onClose }) => {
   return (
     <div
-      className={`fixed bottom-4 right-4 p-4 rounded-md shadow-lg text-white ${
+      className={`fixed bottom-4 left-4 p-4 rounded-md shadow-lg text-white ${
         type === "success" ? "bg-green-500" : "bg-red-500"
       } transition-opacity duration-300`}
     >
@@ -161,16 +161,6 @@ const Footer = () => {
       ),
     },
     {
-      name: "X (formerly Twitter)",
-      href: "https://x.com/#",
-      icon: (
-        <SiX
-          className="size-10 p-2 rounded-full text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black hover:scale-110 hover:-translate-y-1"
-          size={20}
-        />
-      ),
-    },
-    {
       name: "LinkedIn",
       href: "https://www.linkedin.com/in/sandeepvashishtha/",
       icon: (
@@ -182,24 +172,35 @@ const Footer = () => {
     },
     {
       name: "Discord",
-      href: "#discord",
+      href: "https://discord.com/",
       icon: (
         <FaDiscord
-          className="size-10 p-2 rounded-full text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white hover:scale-110 hover:-translate-y-1"
+          className="size-10 p-2 rounded-full text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-blue-900 hover:text-white dark:hover:bg-black-600 dark:hover:text-white hover:scale-110 hover:-translate-y-1"
           size={20}
         />
       ),
     },
     {
       name: "Telegram",
-      href: "https://t.me/eventra",
+      href: "https://telegram.com/",
       icon: (
         <FaTelegram
-          className="size-10 p-2 rounded-full text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-500 dark:hover:text-white hover:scale-110 hover:-translate-y-1"
+          className="size-10 p-2 rounded-full text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-blue-700 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white hover:scale-110 hover:-translate-y-1"
           size={20}
         />
       ),
     },
+    {
+      name: "Instagram",
+      href: "https://instagram.com/",
+      icon: (
+        <FaInstagram
+          className="size-10 p-2 rounded-full text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-pink-600 hover:text-white dark:hover:bg-pink-600 dark:hover:text-white hover:scale-110 hover:-translate-y-1"
+          size={20}
+        />
+      ),
+    },
+    
   ];
 
   return (
@@ -312,13 +313,9 @@ const Footer = () => {
           <div className="border-t border-gray-300 dark:border-gray-700 mt-8 pt-4 pb-2 flex flex-col sm:flex-row justify-between items-center gap-4">
             {/* UPDATED: Added dark mode text color */}
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              © {currentYear} Eventra. All rights reserved.
+              © {currentYear} Eventra. All rights reserved. Created with ❤️ by Sandeep Vashishtha, Rhythm and the amazing open-source community.
             </p>
-            {/* Theme Toggle in Footer */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500 dark:text-gray-400">Theme:</span>
-              <ThemeToggleButton size="small" showLabel={true} />
-            </div>
+            
           </div>
         </div>
       </footer>

@@ -2,10 +2,6 @@ name: Feature request
 description: Suggest an idea for this project
 labels: enhancement
 body:
-  - type: markdown
-    attributes:
-      value: |
-        📝 **Assignment Policy**: Issues are auto-unassigned after 7 days if no PR is opened. Open a draft PR to maintain assignment. [Learn more](.github/AUTO_UNASSIGN.md)
   - type: textarea
     attributes:
       label: Is your feature request related to a problem or challenge?

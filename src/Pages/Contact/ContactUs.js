@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaGithub, FaLinkedin, FaDiscord } from "react-icons/fa";
+import { User, Mail, Phone, FileText, MessageSquare } from "lucide-react";
+
 
 // Toast Component
 const Toast = ({ message, type = "success", onClose }) => {
@@ -78,14 +80,18 @@ const FloatingInput = ({
   onChange,
   required = true,
   error,
+  icon: Icon,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
 
   return (
     <div className="relative mt-6">
+      {Icon && (
+        <Icon className="absolute left-3 top-4 text-gray-400 w-5 h-5 pointer-events-none" />
+      )}
       <motion.label
         htmlFor={id}
-        className={`absolute left-4 transition-all duration-300 ${
+        className={`absolute transition-all duration-300 ${
           isFocused || value
             ? "top-0 text-xs text-indigo-600 dark:text-indigo-400 font-medium"
             : "top-4 text-sm text-gray-500 dark:text-gray-400"
@@ -94,10 +100,13 @@ const FloatingInput = ({
         animate={{
           y: isFocused || value ? -20 : 0,
           scale: isFocused || value ? 0.85 : 1,
+          left: isFocused || value ? "0.75rem" : "2.5rem", 
+          transformOrigin: "left",
         }}
       >
-        {label} {required && "*"}
+        {label} {required && <span className="text-red-500">*</span>}
       </motion.label>
+
       <input
         id={id}
         name={id}
@@ -106,7 +115,7 @@ const FloatingInput = ({
         onChange={onChange}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        className={`w-full pt-5 pb-2 px-4 border rounded-lg focus:ring-2 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
+        className={`w-full py-3 pl-10 pr-4 border rounded-lg focus:ring-2 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
           error
             ? "border-red-500 focus:ring-red-200"
             : "border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-200 dark:focus:ring-indigo-900/50"
@@ -125,18 +134,10 @@ const FloatingInput = ({
   );
 };
 
+
 // Contact Us Page Component
 
 const socialLinks = [
-  {
-    name: "X",
-    icon: (
-      <span className="w-5 h-5 flex items-center justify-center font-bold">
-        X
-      </span>
-    ),
-    href: "https://x.com",
-  },
   {
     name: "GitHub",
     icon: <FaGithub className="w-5 h-5" />,
@@ -146,11 +147,6 @@ const socialLinks = [
     name: "LinkedIn",
     icon: <FaLinkedin className="w-5 h-5" />,
     href: "https://www.linkedin.com/in/sandeepvashishtha/",
-  },
-  {
-    name: "Discord",
-    icon: <FaDiscord className="w-5 h-5" />,
-    href: "https://discord.gg/",
   },
 ];
 
@@ -262,7 +258,7 @@ const ContactUs = () => {
       }, 5000);
     }
   };
-
+  const [isFocused, setIsFocused] = useState(false);
   return (
     <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       <div className="max-w-4xl w-full mx-auto">
@@ -303,61 +299,7 @@ const ContactUs = () => {
                     <div>
                       <p className="font-medium">Email Us</p>
                       <p className="text-sm opacity-80">
-                        support@techevents.com
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center">
-                    <div className="bg-white bg-opacity-20 p-2 rounded-full mr-4">
-                      <svg
-                        className="w-6 h-6"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                        ></path>
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="font-medium">Call Us</p>
-                      <p className="text-sm opacity-80">+1 (555) 123-4567</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center">
-                    <div className="bg-white bg-opacity-20 p-2 rounded-full mr-4">
-                      <svg
-                        className="w-6 h-6"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                        ></path>
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                        ></path>
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="font-medium">Visit Us</p>
-                      <p className="text-sm opacity-80">
-                        123 Tech Street, San Francisco, CA
+                        sandeepvashishtha@outlook.in
                       </p>
                     </div>
                   </div>
@@ -401,6 +343,7 @@ const ContactUs = () => {
                   value={formData.name}
                   onChange={handleChange}
                   error={errors.name}
+                  icon={User}
                 />
 
                 <FloatingInput
@@ -410,38 +353,8 @@ const ContactUs = () => {
                   value={formData.email}
                   onChange={handleChange}
                   error={errors.email}
-                />
-
-                <div className="flex items-end space-x-2">
-                  {/* Country code select */}
-                  <select
-                    name="countryCode"
-                    value={formData.countryCode}
-                    onChange={handleChange}
-                    className="border dark:border-gray-600 h-[50px] rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200"
-                  >
-                    <option value="+1">+1 (US)</option>
-                    <option value="+91">+91 (IN)</option>
-                    <option value="+44">+44 (UK)</option>
-                    {/* Add more country codes */}
-                  </select>
-
-                  {/* Phone number input */}
-                  <FloatingInput
-                  // className="px-2 py-1"
-                    id="phone"
-                    label="Contact Number (Optional)"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    error={errors.phone}
-                    type="number"
-                    inputMode="numeric" 
-                    pattern="[0-9]*" 
-                    name="phone"
-                    maxLenght={10}
-                    className="h-[45px]"
-                  />
-                </div>
+                  icon={Mail}
+                />        
 
                 <FloatingInput
                   id="subject"
@@ -449,23 +362,27 @@ const ContactUs = () => {
                   value={formData.subject}
                   onChange={handleChange}
                   error={errors.subject}
+                  icon={FileText}
                 />
 
                 <div className="relative mt-6">
+                  <MessageSquare className="absolute left-3 top-4 text-gray-400 w-5 h-5 pointer-events-none" />
                   <motion.label
                     htmlFor="message"
-                    className={`absolute left-4 transition-all duration-300 ${
-                      formData.message
+                    className={`absolute left-10 transition-all duration-300 ${
+                      isFocused || formData.message
                         ? "top-0 text-xs text-indigo-600 dark:text-indigo-400 font-medium"
                         : "top-4 text-sm text-gray-500 dark:text-gray-400"
                     } ${errors.message ? "text-red-500 dark:text-red-400" : ""}`}
                     initial={false}
                     animate={{
-                      y: formData.message ? -20 : 0,
-                      scale: formData.message ? 0.85 : 1,
+                      y: isFocused || formData.message ? -20 : 0,
+                      scale: isFocused || formData.message ? 0.85 : 1,
+                      left: isFocused || formData.message ? "0.75rem" : "2.5rem", 
+                      transformOrigin: "left",
                     }}
                   >
-                    Your Message *
+                    Your Message <span className="text-red-500">*</span>
                   </motion.label>
                   <textarea
                     id="message"
@@ -473,25 +390,9 @@ const ContactUs = () => {
                     rows="4"
                     value={formData.message}
                     onChange={handleChange}
-                    onFocus={(e) => {
-                      if (!formData.message) {
-                        e.target.parentElement
-                          .querySelector("label")
-                          .classList.add("top-0", "text-xs", "text-indigo-600");
-                      }
-                    }}
-                    onBlur={(e) => {
-                      if (!formData.message) {
-                        e.target.parentElement
-                          .querySelector("label")
-                          .classList.remove(
-                            "top-0",
-                            "text-xs",
-                            "text-indigo-600"
-                          );
-                      }
-                    }}
-                    className={`w-full pt-5 pb-2 px-4 border rounded-lg focus:ring-2 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    className={`w-full py-3 pl-10 pr-4 border rounded-lg focus:ring-2 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
                       errors.message
                         ? "border-red-500 focus:ring-red-200"
                         : "border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-200 dark:focus:ring-indigo-900/50"

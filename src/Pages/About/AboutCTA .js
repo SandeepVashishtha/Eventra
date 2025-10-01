@@ -62,7 +62,7 @@ const AboutCTA = () => {
   ];
 
   return (
-    <section className="relative py-16 px-12 m-8 rounded-3xl bg-gradient-to-r from-black via-indigo-950 via-purple-950 to-pink-950 text-center overflow-hidden shadow-2xl">
+    <section className="relative py-16 px-12 m-8 rounded-3xl bg-gradient-to-r from-black via-purple-950 to-pink-950 text-center overflow-hidden shadow-2xl">
       {/* Animated Bubbles */}
       {bubbles.map((bubble, idx) => (
         <motion.div

@@ -1,4 +1,4 @@
-import { useEffect, useState, Fragment, useRef } from "react";
+import { useEffect, useState, Fragment } from "react";
 import {
   FaCode,
   FaStar,
@@ -14,9 +14,6 @@ import GSSoCContribution from "./GSSoCContribution";
 const GITHUB_REPO = "SandeepVashishtha/Eventra";
 const TOKEN = process.env.REACT_APP_GITHUB_TOKEN || "";
 
-const CACHE_KEY = "leaderboardData";
-const MAX_AGE_MS = 2 * 60 * 60 * 1000; // 2 hours
-
 const POINTS = {
   "level-1": 3,
   "level-2": 7,
@@ -26,7 +23,6 @@ const POINTS = {
 export default function LeaderBoard() {
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState("");
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -34,9 +30,8 @@ export default function LeaderBoard() {
   const [isDark, setIsDark] = useState(false);
 
   const CONTRIBUTORS_PER_PAGE = 10;
-  const hasMountedRef = useRef(false);
 
-  // 🎉 Confetti on first mount
+  // 🎉 Confetti on page load
   useEffect(() => {
     confetti({
       particleCount: 150,
@@ -48,166 +43,122 @@ export default function LeaderBoard() {
     });
   }, []);
 
-  useEffect(() => {
-    // on mount: show cache if present, then refresh if stale
-    initLoad();
+  const loadLeaderboardData = async () => {
+    setLoading(true);
+    const cachedData = localStorage.getItem("leaderboardData");
+    const now = Date.now();
 
-    // also: auto-refresh every 2 hours while page open
-    const interval = setInterval(() => {
-      refreshInBackground(); // will keep old data on failure
-    }, MAX_AGE_MS);
-
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const initLoad = async () => {
-    const cached = readCache();
-    if (cached) {
-      setContributors(cached.data);
-      setLastUpdated(
-        `Last updated: ${new Date(cached.timestamp).toLocaleString()} (cached)`
-      );
-      setLoading(false);
-
-      // if stale => background refresh; else do nothing
-      if (Date.now() - cached.timestamp > MAX_AGE_MS) {
-        refreshInBackground();
+    if (cachedData) {
+      try {
+        const { data, timestamp } = JSON.parse(cachedData);
+        if (now - timestamp < 60 * 60 * 1000) {
+          setContributors(data);
+          setLastUpdated(
+            `Last updated: ${new Date(timestamp).toLocaleString()} (cached)`
+          );
+          setLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.error("Error parsing cached data:", error);
       }
-    } else {
-      // No cache yet -> show loader (NOT zeros), then foreground fetch
-      setLoading(true);
-      await fetchAndUpdate({ background: false });
     }
-    hasMountedRef.current = true;
+    await fetchContributors();
   };
 
-  const refreshInBackground = () => fetchAndUpdate({ background: true });
-
-  const fetchAndUpdate = async ({ background }) => {
-    if (background) setIsRefreshing(true);
-
-    const headers = {
-      ...(TOKEN ? { Authorization: `token ${TOKEN}` } : {}),
-      Accept: "application/vnd.github+json",
-    };
-
+  const fetchContributors = async () => {
     try {
-      // meta
-      const cRes = await fetch(
-        `https://api.github.com/repos/${GITHUB_REPO}/contributors`,
-        { headers }
-      );
-      if (!cRes.ok) throw new Error(`contributors ${cRes.status}`);
-      const contributorsData = await cRes.json();
+      let contributorsMap = {};
+      let page = 1;
+      let hasMore = true;
 
+      const contributorsRes = await fetch(
+        `https://api.github.com/repos/${GITHUB_REPO}/contributors`,
+        { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} }
+      );
+
+      if (!contributorsRes.ok) throw new Error("Failed to fetch contributors");
+      const contributorsData = await contributorsRes.json();
       const contributorsInfo = {};
-      (contributorsData || []).forEach((c) => {
-        contributorsInfo[c.login] = {
-          name: c.login,
-          avatar: c.avatar_url,
-          profile: c.html_url,
+
+      contributorsData.forEach((contributor) => {
+        contributorsInfo[contributor.login] = {
+          name: contributor.name || contributor.login,
+          avatar: contributor.avatar_url,
+          profile: contributor.html_url,
         };
       });
 
-      // aggregate PRs
-      const map = {};
-      let page = 1;
-
-      /* IMPORTANT: do NOT clear state while fetching pages */
-      // fetch all closed PRs (paginated)
-      // stop when a page returns empty
-      while (true) {
+      while (hasMore) {
         const res = await fetch(
           `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`,
-          { headers }
+          { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} }
         );
-        if (!res.ok) throw new Error(`pulls ${res.status}`);
         const prs = await res.json();
-        if (!Array.isArray(prs) || prs.length === 0) break;
+        if (prs.length === 0) {
+          hasMore = false;
+          break;
+        }
 
         prs.forEach((pr) => {
-          if (!pr?.merged_at) return;
-
-          const labels = (pr.labels || []).map((l) =>
-            String(l?.name || "").toLowerCase()
-          );
+          if (!pr.merged_at) return;
+          const labels = pr.labels.map((l) => l.name.toLowerCase());
           const hasGsocLabel = labels.some(
             (label) => label.includes("gssoc") || label.includes("gsoc")
           );
           if (!hasGsocLabel) return;
 
-          const author = pr.user?.login;
-          if (!author) return;
-
+          const author = pr.user.login;
           let points = 0;
           labels.forEach((label) => {
-            const m = label.match(/level[\s-]?([1-3])/);
-            if (m) points += POINTS[`level-${m[1]}`] || 0;
+            const normalized = label.replace(/\s+/g, "").toLowerCase();
+            if (POINTS[normalized]) points += POINTS[normalized];
           });
 
-          if (!map[author]) {
-            const info = contributorsInfo[author] || {
+          if (!contributorsMap[author]) {
+            const contributorInfo = contributorsInfo[author] || {
               name: author,
-              avatar: pr.user?.avatar_url,
-              profile: pr.user?.html_url,
+              avatar: pr.user.avatar_url,
+              profile: pr.user.html_url,
             };
-            map[author] = {
+            contributorsMap[author] = {
               username: author,
-              name: info.name,
-              avatar: info.avatar,
-              profile: info.profile,
+              name: contributorInfo.name,
+              avatar: contributorInfo.avatar,
+              profile: contributorInfo.profile,
               points: 0,
               prs: 0,
             };
           }
-          map[author].points += points;
-          map[author].prs += 1;
+
+          contributorsMap[author].points += points;
+          contributorsMap[author].prs += 1;
         });
 
-        page += 1;
+        page++;
       }
 
-      const next = Object.values(map).sort((a, b) => b.points - a.points);
-
-      // Only update if we have non-empty data
-      if (next.length > 0) {
-        setContributors(next);
-        const ts = Date.now();
-        setLastUpdated(`Last updated: ${new Date(ts).toLocaleString()}`);
-        writeCache({ data: next, timestamp: ts });
-      } else {
-        // keep old data; DO NOT show zeros
-        console.warn("Refresh returned empty; keeping previous cache/UI");
-      }
+      const sortedContributors = Object.values(contributorsMap).sort(
+        (a, b) => b.points - a.points
+      );
+      setContributors(sortedContributors);
+      setLastUpdated(new Date().toLocaleString());
+      localStorage.setItem(
+        "leaderboardData",
+        JSON.stringify({ data: sortedContributors, timestamp: Date.now() })
+      );
     } catch (err) {
-      console.error("Fetch error:", err);
-      // keep old data; DO NOT show zeros
+      console.error("Error fetching contributors:", err);
     } finally {
-      if (background) setIsRefreshing(false);
       setLoading(false);
     }
   };
 
-  // cache helpers
-  const readCache = () => {
-    try {
-      const raw = localStorage.getItem(CACHE_KEY);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed?.data) && parsed.data.length > 0) return parsed;
-      return null;
-    } catch {
-      return null;
-    }
-  };
-  const writeCache = (payload) => {
-    try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
-    } catch {}
-  };
+  useEffect(() => {
+    loadLeaderboardData();
+  }, []);
 
-  // ===== Derived UI state
+  // Filter & sort
   const filteredContributors = contributors.filter((c) => {
     const q = search.trim().toLowerCase();
     if (!q) return true;
@@ -224,18 +175,27 @@ export default function LeaderBoard() {
     return 0;
   });
 
+  // Pagination
   const indexOfLast = currentPage * CONTRIBUTORS_PER_PAGE;
   const indexOfFirst = indexOfLast - CONTRIBUTORS_PER_PAGE;
-  const currentContributors = sortedContributors.slice(indexOfFirst, indexOfLast);
-  const totalPages = Math.ceil(sortedContributors.length / CONTRIBUTORS_PER_PAGE);
+  const currentContributors = sortedContributors.slice(
+    indexOfFirst,
+    indexOfLast
+  );
+  const totalPages = Math.ceil(
+    sortedContributors.length / CONTRIBUTORS_PER_PAGE
+  );
 
   const ranksMap = {};
-  contributors.forEach((c, i) => (ranksMap[c.username] = i + 1));
+  contributors.forEach((c, i) => {
+    ranksMap[c.username] = i + 1;
+  });
 
+  // Calculate stats
   const stats = {
     totalContributors: contributors.length,
-    flooredTotalPRs: contributors.reduce((s, c) => s + c.prs, 0),
-    flooredTotalPoints: contributors.reduce((s, c) => s + c.points, 0),
+    flooredTotalPRs: contributors.reduce((sum, c) => sum + c.prs, 0),
+    flooredTotalPoints: contributors.reduce((sum, c) => sum + c.points, 0),
   };
 
   const sortOptions = [
@@ -244,24 +204,25 @@ export default function LeaderBoard() {
     { label: "Username", value: "username" },
   ];
 
-  // helper to avoid showing 0s when empty
-  const displayNum = (n) =>
-    loading ? "…" : contributors.length === 0 ? "—" : n;
-
   return (
     <div className="bg-white dark:bg-black py-12 sm:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
+          {/* UPDATED: Header text */}
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            <span className="block text-indigo-700 dark:text-indigo-400">GSSoC'25</span>
-            <span className="text-gray-800 dark:text-gray-200">Contributor Leaderboard</span>
+            <span className="block text-indigo-700 dark:text-indigo-400">
+              GSSoC'25
+            </span>
+            <span className="text-gray-800 dark:text-gray-200">
+              Contributor Leaderboard
+            </span>
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
             Recognizing the amazing contributions from our open source community
           </p>
         </div>
 
-        {/* Search + Sort */}
+        {/* Search + Modern Dropdown */}
         <div className="flex justify-center items-center mb-6 space-x-4">
           <input
             type="text"
@@ -271,14 +232,15 @@ export default function LeaderBoard() {
               setCurrentPage(1);
             }}
             placeholder="Search contributors..."
-            className="w-full max-w-xs px-4 py-2 border border-gray-300 dark:border-gray-800 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+            className="w-full max-w-xs px-4 py-2 border border-gray-300 dark:border-gray-800 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           />
-
           <Menu as="div" className="relative inline-block text-left">
-            <Menu.Button className="inline-flex justify-center w-48 px-4 py-2 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400">
+            {/* UPDATED: Sort dropdown button */}
+            <Menu.Button className="inline-flex justify-center w-48 px-4 py-2 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400">
               Sort by: {sortOptions.find((opt) => opt.value === sortBy)?.label}
               <FaChevronDown className="ml-2 h-4 w-4" />
             </Menu.Button>
+
             <Transition
               as={Fragment}
               enter="transition ease-out duration-100"
@@ -288,14 +250,18 @@ export default function LeaderBoard() {
               leaveFrom="transform opacity-100 scale-100"
               leaveTo="transform opacity-0 scale-95"
             >
+              {/* UPDATED: Dropdown menu */}
               <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700 rounded-md shadow-lg focus:outline-none z-50">
                 {sortOptions.map((option) => (
                   <Menu.Item key={option.value}>
                     {({ active }) => (
                       <button
                         onClick={() => setSortBy(option.value)}
+                        // Active state is fine, just need to update inactive text
                         className={`${
-                          active ? "bg-indigo-500 text-white" : "text-gray-700 dark:text-gray-300"
+                          active
+                            ? "bg-indigo-500 text-white"
+                            : "text-gray-700 dark:text-gray-300"
                         } group flex w-full items-center px-4 py-2 text-sm`}
                       >
                         {option.label}
@@ -306,74 +272,90 @@ export default function LeaderBoard() {
               </Menu.Items>
             </Transition>
           </Menu>
+
+          
+
+          
         </div>
 
-        {/* Stats */}
+
+        {/* stats */}
         <div style={{ display: "flex", gap: 18, marginBottom: 16, flexWrap: "wrap" }}>
-          <StatCard
-            isDark={isDark}
-            icon={<FaUsers style={{ fontSize: 22 }} />}
-            title="Contributors"
-            value={displayNum(stats.totalContributors)}
-            iconBgLight="#dbeafe"
-            iconColorLight="#2563eb"
-            iconBgDark="rgba(59,130,246,0.2)"
-            iconColorDark="#60a5fa"
-          />
-          <StatCard
-            isDark={isDark}
-            icon={<FaCode style={{ fontSize: 22 }} />}
-            title="Pull Requests"
-            value={displayNum(stats.flooredTotalPRs)}
-            iconBgLight="#bbf7d0"
-            iconColorLight="#059669"
-            iconBgDark="rgba(16,185,129,0.2)"
-            iconColorDark="#34d399"
-          />
-          <StatCard
-            isDark={isDark}
-            icon={<FaStar style={{ fontSize: 22 }} />}
-            title="Total Points"
-            value={displayNum(stats.flooredTotalPoints)}
-            iconBgLight="#ede9fe"
-            iconColorLight="#7c3aed"
-            iconBgDark="rgba(139,92,246,0.2)"
-            iconColorDark="#a78bfa"
-          />
+          <div style={{ flex: 1, minWidth: 220, padding: 24, borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.04)", border: `1px solid ${isDark ? "#444" : "#eee"}`, background: isDark ? "linear-gradient(135deg,#23272f,#1a1d23)" : "linear-gradient(135deg,#e0e7ff,#f3f4f6)" }}>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <div style={{ padding: 12, borderRadius: 12, background: isDark ? "rgba(59,130,246,0.2)" : "#dbeafe", color: isDark ? "#60a5fa" : "#2563eb", marginRight: 16 }}>
+                <FaUsers style={{ fontSize: 22 }} />
+              </div>
+              <div>
+                <p style={{ fontSize: 14, color: isDark ? "#b3b3b3" : "#555" }}>Contributors</p>
+                <p style={{ fontSize: 22, fontWeight: 700, color: isDark ? "#fff" : "#222" }}>
+                  {loading ? "..." : stats.totalContributors}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div style={{ flex: 1, minWidth: 220, padding: 24, borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.04)", border: `1px solid ${isDark ? "#444" : "#eee"}`, background: isDark ? "linear-gradient(135deg,#23272f,#1a1d23)" : "linear-gradient(135deg,#e0e7ff,#f3f4f6)" }}>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <div style={{ padding: 12, borderRadius: 12, background: isDark ? "rgba(16,185,129,0.2)" : "#bbf7d0", color: isDark ? "#34d399" : "#059669", marginRight: 16 }}>
+                <FaCode style={{ fontSize: 22 }} />
+              </div>
+              <div>
+                <p style={{ fontSize: 14, color: isDark ? "#b3b3b3" : "#555" }}>Pull Requests</p>
+                <p style={{ fontSize: 22, fontWeight: 700, color: isDark ? "#fff" : "#222" }}>
+                  {loading ? "..." : stats.flooredTotalPRs}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div style={{ flex: 1, minWidth: 220, padding: 24, borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.04)", border: `1px solid ${isDark ? "#444" : "#eee"}`, background: isDark ? "linear-gradient(135deg,#23272f,#1a1d23)" : "linear-gradient(135deg,#e0e7ff,#f3f4f6)" }}>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <div style={{ padding: 12, borderRadius: 12, background: isDark ? "rgba(139,92,246,0.2)" : "#ede9fe", color: isDark ? "#a78bfa" : "#7c3aed", marginRight: 16 }}>
+                <FaStar style={{ fontSize: 22 }} />
+              </div>
+              <div>
+                <p style={{ fontSize: 14, color: isDark ? "#b3b3b3" : "#555" }}>Total Points</p>
+                <p style={{ fontSize: 22, fontWeight: 700, color: isDark ? "#fff" : "#222" }}>
+                  {loading ? "..." : stats.flooredTotalPoints}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Table */}
+        {/* UPDATED: Table container */}
         <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl shadow-lg overflow-hidden">
           {loading ? (
-            <div className="p-6 text-sm text-gray-500 dark:text-gray-400">
-              Loading leaderboard…
-            </div>
+            <div className="overflow-x-auto">{/* Skeleton loader */}</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-500">
                 <thead className="bg-gray-50 dark:bg-gray-900">
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Rank
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Contributor
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Points
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       PRs
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-gradient-to-b from-indigo-50 to-white dark:from-gray-900 dark:to-black divide-y divide-gray-400 dark:divide-gray-500">
+                <tbody className="bg-gradient-to-b from-indigo-50 to-white dark:from-gray-900  dark:to-black  divide-y divide-gray-400 dark:divide-gray-500">
                   {currentContributors.map((c) => {
                     const rank = ranksMap[c.username];
                     return (
-                      <tr key={c.username} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150">
+                      <tr
+                        key={c.username}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 border-b border-gray-100 dark:border-gray-700"
+                      >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
+                            // UPDATED: Rank badges
                             className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-medium ${
                               rank === 1
                                 ? "bg-yellow-500 text-white"
@@ -389,17 +371,19 @@ export default function LeaderBoard() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <img
-                              className="h-10 w-10 rounded-full border-2 border-indigo-200 dark:border-gray-600"
-                              src={c.avatar}
-                              alt={c.username}
-                            />
+                            <div className="flex-shrink-0 h-10 w-10">
+                              <img
+                                className="h-10 w-10 rounded-full border-2 border-indigo-200 dark:border-gray-600"
+                                src={c.avatar}
+                                alt={c.username}
+                              />
+                            </div>
                             <div className="ml-4">
                               <a
                                 href={c.profile}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-indigo-600 dark:hover:text-indigo-400"
+                                className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                               >
                                 {c.username}
                               </a>
@@ -451,7 +435,9 @@ export default function LeaderBoard() {
                     </button>
                   ))}
                   <button
-                    onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(p + 1, totalPages))
+                    }
                     disabled={currentPage === totalPages}
                     className="px-3 py-1 text-sm rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-50 flex items-center bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
                   >
@@ -462,68 +448,17 @@ export default function LeaderBoard() {
             </div>
           )}
 
-          {/* Footer */}
-          <div className="bg-gray-50 dark:bg-black/70 px-6 py-2 text-right border-t border-gray-200 dark:border-gray-700 flex items-center justify-end gap-3">
-            {isRefreshing && (
-              <span className="text-xs text-indigo-600 dark:text-indigo-300 animate-pulse">
-                Refreshing…
-              </span>
-            )}
+          {/* UPDATED: Table footer */}
+          <div className="bg-gray-50 dark:bg-black/70 px-6 py-2 text-right border-t border-gray-200 dark:border-gray-700">
             {lastUpdated && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">{lastUpdated}• Updates every 2 hours</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                {lastUpdated}
+              </span>
             )}
           </div>
         </div>
       </div>
-
       <GSSoCContribution />
-    </div>
-  );
-}
-
-function StatCard({
-  isDark,
-  icon,
-  title,
-  value,
-  iconBgLight,
-  iconColorLight,
-  iconBgDark,
-  iconColorDark,
-}) {
-  return (
-    <div
-      style={{
-        flex: 1,
-        minWidth: 220,
-        padding: 24,
-        borderRadius: 16,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-        border: `1px solid ${isDark ? "#444" : "#eee"}`,
-        background: isDark
-          ? "linear-gradient(135deg,#23272f,#1a1d23)"
-          : "linear-gradient(135deg,#e0e7ff,#f3f4f6)",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <div
-          style={{
-            padding: 12,
-            borderRadius: 12,
-            background: isDark ? iconBgDark : iconBgLight,
-            color: isDark ? iconColorDark : iconColorLight,
-            marginRight: 16,
-          }}
-        >
-          {icon}
-        </div>
-        <div>
-          <p style={{ fontSize: 14, color: isDark ? "#b3b3b3" : "#555" }}>{title}</p>
-          <p style={{ fontSize: 22, fontWeight: 700, color: isDark ? "#fff" : "#222" }}>
-            {value}
-          </p>
-        </div>
-      </div>
     </div>
   );
 }

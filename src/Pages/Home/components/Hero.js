@@ -147,7 +147,7 @@ const Hero = () => {
   ];
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-black dark:to-gray-900">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-black dark:to-gray-900 xl:pt-28 pt-24">
       {/* Floating Gradient Shapes */}
       {shapes.map((shape, i) => (
         <motion.div
@@ -172,10 +172,10 @@ const Hero = () => {
           animate={controls}
         >
           {/* Headline */}
-          <motion.h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-snug">
+          <motion.h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-snug">
             <motion.span
               // Main headline text color
-              className="block text-gray-900 dark:text-gray-100"
+              className="block text-gray-900 dark:text-gray-100 mb-2 md:mb-0"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
@@ -183,12 +183,12 @@ const Hero = () => {
               Discover & Join
             </motion.span>
 
-            <div className="relative h-16 sm:h-20 md:h-24 lg:h-28 overflow-hidden flex justify-center items-center">
+            <div className="relative mt-3 h-16 sm:h-20 md:h-24 lg:h-28 overflow-hidden flex justify-center items-center">
               <AnimatePresence mode="wait">
                 <motion.span
                   key={index}
                   // Animated text gradient for dark mode
-                  className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl bg-clip-text text-transparent bg-gradient-to-r from-indigo-800 via-blue-500 to-purple-700 dark:from-indigo-400 dark:via-blue-400 dark:to-purple-500 mb-4"
+                  className="text-2xl mt-2 sm:text-3xl md:text-4xl lg:text-5xl bg-clip-text text-transparent bg-gradient-to-r from-indigo-800 via-blue-500 to-purple-700 dark:from-indigo-400 dark:via-blue-400 dark:to-purple-500 mb-4 pb-2"
                   initial={{ opacity: 0, y: 40 }}
                   animate={{
                     opacity: 1,

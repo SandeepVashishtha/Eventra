@@ -26,7 +26,6 @@ const getRoleByGitHubActivity = (contributor) => {
   if (login === "sandeepvashishtha") return "Project Lead";
 
   if (contributions > 100 && followers > 50) return "Core Maintainer";
-  if (contributions > 50 && followers > 20) return "Senior Dev";
   if (contributions > 20) return "Active Contributor";
   if (contributions > 10) return "Regular Contributor";
   return "New Contributor";

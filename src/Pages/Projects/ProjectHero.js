@@ -160,9 +160,9 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
           </motion.button>
           {/* Explore Projects Button */}
           <motion.button
-            className="bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 px-6 py-3 rounded-2xl font-semibold flex items-center gap-2 shadow-md hover:shadow-xl hover:bg-indigo-50 dark:hover:bg-gray-700 transition-all duration-300"
-            whileTap={{ scale: 0.95 }}
-            onClick={scrollToCard}
+          className="bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 px-6 py-3 rounded-2xl font-semibold flex items-center gap-2 shadow-md hover:shadow-xl hover:bg-indigo-50 dark:hover:bg-gray-700 transition-all duration-300"
+          whileTap={{ scale: 0.95}}
+          onClick={scrollToCard}
           >
             Explore Projects
             <motion.span

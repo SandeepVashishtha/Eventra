@@ -145,10 +145,12 @@ const EventCard = ({ event }) => {
           <span className="font-medium">{event.type}</span>
         </motion.div>
         
-        <motion.div 
+        
+
+        <motion.div
           className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all duration-300"
-          whileHover={{ x: 2 }}
-        >
+          whileHover={{ x: 2 }} 
+          >
           <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
             <Calendar size={16} className="text-indigo-500" />
           </div>

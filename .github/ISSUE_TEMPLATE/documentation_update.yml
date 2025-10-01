@@ -1,0 +1,27 @@
+name: Documentation update
+description: Suggest improvements or updates to the project documentation
+labels: documentation
+body:
+  - type: textarea
+    attributes:
+      label: What part of the documentation should be updated?
+      description: Clearly mention the section, page, or file that needs updating.
+      placeholder: >
+        Ex. The installation guide is missing steps for Windows setup.
+  - type: textarea
+    attributes:
+      label: What changes are you suggesting?
+      description: Explain what needs to be added, removed, or modified.
+      placeholder: >
+        Ex. Add detailed steps with screenshots for configuring environment variables.
+  - type: textarea
+    attributes:
+      label: Why is this update needed?
+      description: Describe the benefit of this change for users or contributors.
+      placeholder: >
+        Ex. This will help new users set up the project faster without errors.
+  - type: textarea
+    attributes:
+      label: Additional context
+      placeholder: >
+        Add any other context, references, or screenshots that help explain the update.

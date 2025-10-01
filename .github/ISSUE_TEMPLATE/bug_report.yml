@@ -2,10 +2,6 @@ name: Bug report
 description: Create a report to help us improve
 labels: bug
 body:
-  - type: markdown
-    attributes:
-      value: |
-        📝 **Assignment Policy**: Issues are auto-unassigned after 7 days if no PR is opened. Open a draft PR to maintain assignment. [Learn more](.github/AUTO_UNASSIGN.md)
   - type: textarea
     attributes:
       label: Describe the bug
