@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
-import { Mail, MessageCircle } from "lucide-react";
 
 import {
   Search,
@@ -11,6 +10,9 @@ import {
   Star,
   Calendar,
   Settings,
+  BookOpen,
+  Mail, 
+  MessageCircle,
 } from "lucide-react";
 import {
   FaDiscord,
@@ -99,26 +101,41 @@ const categories = [
 
 const faqs = [
   {
+    id: 1,
+    category: "Hackathons",
+    icon: <Calendar className="w-5 h-5" />,
     question: "How do I host a hackathon?",
     answer:
       "Go to the 'Host Hackathon' page, fill in the details including title, dates, description, prizes, and publish. Ensure all fields are correctly filled.",
   },
   {
+    id: 2,
+    category: "Project Submission",
+    icon: <BookOpen  className="w-5 h-5" />,
     question: "How can I submit a project?",
     answer:
       "Navigate to 'Submit Project', fill in the required fields, upload your files, and submit before the deadline.",
   },
   {
+    id: 3,
+    category: "Leaderboard",
+    icon: <Award className="w-5 h-5" />,
     question: "How are leaderboard points calculated?",
     answer:
       "Points are awarded based on hackathon wins, contributions, and project submissions. Leaderboard updates in real-time.",
   },
   {
-    question: "How can I contribute to GSOC tasks?",
+    id: 4,
+    category: "Contributing",
+    icon: <Users className="w-5 h-5" />,
+    question: "How can I contribute to GSSOC tasks?",
     answer:
       "Check the 'Contribute' page for open issues, fork the repository, make a PR, and follow contribution guidelines.",
   },
   {
+    id: 5,
+    category: "Explore Projects",
+    icon: <Search className="w-5 h-5" />,
     question: "Can I explore projects without signing up?",
     answer:
       "Yes, projects are publicly viewable, but you need an account to submit or bookmark projects.",
@@ -127,7 +144,9 @@ const faqs = [
 
 const HelpCenter = () => {
   const [expandedFAQ, setExpandedFAQ] = useState(null);
-
+   const toggleFAQ = (id) => {
+    setExpandedFAQ(expandedFAQ === id ? null : id);
+  };
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       {/* Hero Section */}
@@ -319,35 +338,81 @@ const HelpCenter = () => {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-16 px-4 max-w-4xl mx-auto">
-        <h2 className="text-3xl font-semibold mb-8 text-center">
-          Frequently Asked Questions
-        </h2>
-        <div className="space-y-4">
-          {faqs.map((faq, idx) => (
-            <div
-              key={idx}
-              className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow cursor-pointer"
-              onClick={() => setExpandedFAQ(expandedFAQ === idx ? null : idx)}
-            >
-              <div className="flex justify-between items-center">
-                <h4 className="font-medium">{faq.question}</h4>
-                {expandedFAQ === idx ? <FiChevronUp /> : <FiChevronDown />}
-              </div>
-              {expandedFAQ === idx && (
-                <motion.p
-                  className="mt-2 text-gray-600 dark:text-gray-300"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
+      <section className="py-20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-center mb-4 text-gray-900 dark:text-white">
+            Frequently Asked Questions
+          </h2>
+          <p className="text-center text-gray-600 dark:text-gray-300 mb-12 max-w-2xl mx-auto">
+            Everything you need to know about using our platform. Can't find what you're looking for? 
+            Reach out to our community!
+          </p>
+          
+          <div className="space-y-6">
+            {faqs.map((faq) => (
+              <motion.div
+                key={faq.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className={`rounded-2xl shadow-lg transition-shadow duration-300 border 
+                ${expandedFAQ === faq.id 
+                  ? "border-blue-500 ring-2 ring-blue-300" 
+                  : "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:shadow-xl"}`}
+              >
+                <button
+                  onClick={() => toggleFAQ(faq.id)}
+                  className="w-full p-6 text-left rounded-2xl transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
-                  {faq.answer}
-                </motion.p>
-              )}
-            </div>
-          ))}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex-shrink-0">
+                        <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl flex items-center justify-center">
+                          <span className="text-indigo-600 dark:text-indigo-400">
+                            {faq.icon}
+                          </span>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">
+                          {faq.category}
+                        </span>
+                        <h3 className="text-md md:text-lg font-semibold text-gray-900 dark:text-white mt-1">
+                          {faq.question}
+                        </h3>
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0 ml-4">
+                      {expandedFAQ === faq.id ? (
+                        <FiChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                      ) : (
+                        <FiChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                      )}
+                    </div>
+                  </div>
+                </button>
+                
+                {expandedFAQ === faq.id && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="px-6 pb-6"
+                  >
+                    <div className="ml-16 pt-4 border-t border-gray-300 dark:border-gray-700">
+                      <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                        {faq.answer}
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
+
       {/* Modern CTA Section */}
       <section className="relative py-16 px-8 m-8 rounded-3xl bg-gradient-to-tr from-black via-purple-800 via-indigo-900 to-pink-900 text-white shadow-xl overflow-hidden">
         <motion.div
