@@ -12,28 +12,23 @@ import { FiRefreshCw } from "react-icons/fi";
 import { FiArrowRight } from "react-icons/fi";
 import EventCTA from "./EventCTA";
 import Fuse from "fuse.js";
-
 // -----------------------------
 // Main Events Page Component
 // -----------------------------
 const EventsPage = () => {
-  // State to store all events (raw data from mock file)
+  // tate to store all events (raw data from mock file)
   const [events, setEvents] = useState([]);
-
   // State for filter type (all, upcoming, past, conference, workshop)
   const [filterType, setFilterType] = useState("all");
-
   // State for switching between grid view and list view
   const [viewMode, setViewMode] = useState("grid");
-
   // State for storing user’s search query (from search bar)
   const [searchQuery, setSearchQuery] = useState("");
-
   // State for storing the filtered + searched list of events
   const [filteredEvents, setFilteredEvents] = useState([]);
-
+  // Sort type state
+  const [sortType, setSortType] = useState("newest");
   const cardSectionRef = useRef();
-
   // -----------------------------
   // Load events from mock JSON when component mounts
   // -----------------------------
@@ -76,6 +71,24 @@ const EventsPage = () => {
     handleSearch(searchQuery);
   }, [events, filterType]);
 
+  // Sort handler
+  const handleSortChange = (type) => {
+    setSortType(type);
+    let sorted = [...filteredEvents];
+    if (type === "newest") {
+      sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
+    } else if (type === "upcoming") {
+      sorted.sort((a, b) => new Date(a.date) - new Date(b.date));
+    }
+    setFilteredEvents(sorted);
+  };
+
+  // Ensure sorting is applied when filter/search changes
+  useEffect(() => {
+    handleSortChange(sortType);
+    // eslint-disable-next-line
+  }, [filterType, searchQuery]);
+
   // -----------------------------
   // Animation Variants
   // -----------------------------
@@ -116,14 +129,14 @@ const EventsPage = () => {
         ref={cardSectionRef}
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
       >
-        {/* Filters + Toggle View Section */}
+        {/* Filters + Sort + Toggle View Section */}
         <motion.div
           className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          {/* Filter Buttons */}
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 items-center">
+            {/* Filter Buttons */}
             {[
               { key: "all", label: "All" },
               { key: "upcoming", label: "Upcoming" },
@@ -134,43 +147,56 @@ const EventsPage = () => {
               <button
                 key={filter.key}
                 onClick={() => setFilterType(filter.key)}
-                // UPDATED: Inactive button styles for dark mode
                 className={`px-4 py-2 text-sm rounded-full transition ${
                   filterType === filter.key
                     ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white"
                     : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-700"
                 }`}
+                aria-pressed={filterType === filter.key}
               >
                 {filter.label}
               </button>
             ))}
+
+            {/* Sort Dropdown */}
+            <div className="ml-4">
+              <label htmlFor="sort-events" className="sr-only">Sort events</label>
+              <select
+                id="sort-events"
+                className="px-4 py-2 text-sm rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                value={sortType}
+                onChange={e => handleSortChange(e.target.value)}
+                aria-label="Sort events"
+              >
+                <option value="newest">Newest</option>
+                <option value="upcoming">Upcoming Soonest</option>
+              </select>
+            </div>
           </div>
 
           {/* Toggle View Buttons (Grid / List) */}
-          {/* UPDATED: Toggle container background */}
           <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
-            {/* Grid View Button */}
             <button
               onClick={() => setViewMode("grid")}
-              // UPDATED: Inactive toggle styles
               className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
                 viewMode === "grid"
                   ? "bg-gradient-to-r from-indigo-400 to-purple-400 text-white shadow-md"
                   : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
               }`}
+              aria-label="Grid view"
+              aria-pressed={viewMode === "grid"}
             >
               <Grid size={16} />
             </button>
-
-            {/* List View Button */}
             <button
               onClick={() => setViewMode("list")}
-              // UPDATED: Inactive toggle styles
               className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
                 viewMode === "list"
                   ? "bg-gradient-to-r from-indigo-400 to-purple-400 text-white shadow-md"
                   : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
               }`}
+              aria-label="List view"
+              aria-pressed={viewMode === "list"}
             >
               <List size={16} />
             </button>
