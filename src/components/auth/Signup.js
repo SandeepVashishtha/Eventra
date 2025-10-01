@@ -310,7 +310,7 @@ const Signup = () => {
                   onChange={handleChange}
                   required
                   disabled={loading}
-                  placeholder="Enter your first name"
+                  placeholder="First name"
                   // UPDATED: Input styles
                   className="w-full px-3 py-2 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
                   whileFocus={{ scale: 1.02 }}
@@ -339,7 +339,7 @@ const Signup = () => {
                   onChange={handleChange}
                   required
                   disabled={loading}
-                  placeholder="Enter your last name"
+                  placeholder="Last name"
                   // UPDATED: Input styles
                   className="w-full px-3 py-2 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
                   whileFocus={{ scale: 1.02 }}
@@ -367,24 +367,36 @@ const Signup = () => {
               >
                 Email address<sup className="ml-1 text-red-500">*</sup>
               </label>
-              <motion.input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                disabled={loading}
-                placeholder="Enter your email address"
-                // UPDATED: Input styles
-                className={`w-full px-3 py-2 bg-white dark:bg-gray-700/50 border rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed ${
-                  emailError
-                    ? "border-red-500 dark:border-red-400"
-                    : "border-gray-300 dark:border-gray-600"
-                }`}
-                whileFocus={{ scale: 1.02 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              />
+              <div className="relative group">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.3, delay: 0.7 }}
+                  className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                  aria-hidden
+                >
+                  <svg className="h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                  </svg>
+                </motion.div>
+                <motion.input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  disabled={loading}
+                  placeholder="Email address"
+                  // UPDATED: Input styles
+                  className={`w-full px-10 py-2 bg-white dark:bg-gray-700/50 border rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed ${emailError
+                      ? "border-red-500 dark:border-red-400"
+                      : "border-gray-300 dark:border-gray-600"
+                    }`}
+                  whileFocus={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                />
+              </div>
               <AnimatePresence>
                 {emailError && (
                   <motion.p
@@ -456,21 +468,34 @@ const Signup = () => {
               >
                 Password<sup className="ml-1 text-red-500">*</sup>
               </label>
-              <motion.input
-                id="password"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                disabled={loading}
-                minLength="8"
-                placeholder="Password: 8+ chars with uppercase, lowercase, number, and special character"
-                // UPDATED: Input styles
-                className="w-full px-3 py-2 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
-                whileFocus={{ scale: 1.02 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              />
+              <div className="relative group">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.3, delay: 0.9 }}
+                  className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                  aria-hidden
+                >
+                  <svg className="h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </motion.div>
+                <motion.input
+                  id="password"
+                  name="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  disabled={loading}
+                  minLength="8"
+                  placeholder="Password"
+                  // UPDATED: Input styles
+                  className="w-full px-10 py-2 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
+                  whileFocus={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                />
+              </div>
 
               <AnimatePresence>
                 {formData.password && (
@@ -497,19 +522,18 @@ const Signup = () => {
                     {/* UPDATED: Strength bar background */}
                     <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5 mt-1">
                       <motion.div
-                        className={`h-1.5 rounded-full ${
-                          passwordStrength.score === 0
+                        className={`h-1.5 rounded-full ${passwordStrength.score === 0
                             ? "bg-red-500 w-0"
                             : passwordStrength.score === 1
-                            ? "bg-red-500 w-1/5"
-                            : passwordStrength.score === 2
-                            ? "bg-orange-500 w-2/5"
-                            : passwordStrength.score === 3
-                            ? "bg-yellow-500 w-3/5"
-                            : passwordStrength.score === 4
-                            ? "bg-blue-500 w-4/5"
-                            : "bg-green-500 w-full"
-                        }`}
+                              ? "bg-red-500 w-1/5"
+                              : passwordStrength.score === 2
+                                ? "bg-orange-500 w-2/5"
+                                : passwordStrength.score === 3
+                                  ? "bg-yellow-500 w-3/5"
+                                  : passwordStrength.score === 4
+                                    ? "bg-blue-500 w-4/5"
+                                    : "bg-green-500 w-full"
+                          }`}
                         initial={{ width: "0%" }}
                         animate={{
                           width: `${(passwordStrength.score / 5) * 100}%`,
@@ -519,11 +543,10 @@ const Signup = () => {
                     </div>
                     <motion.p
                       // UPDATED: Strength feedback text
-                      className={`text-xs mt-1 ${
-                        passwordStrength.score >= 4
+                      className={`text-xs mt-1 ${passwordStrength.score >= 4
                           ? "text-green-600 dark:text-green-400"
                           : "text-yellow-600 dark:text-yellow-400"
-                      }`}
+                        }`}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.2 }}
@@ -549,23 +572,37 @@ const Signup = () => {
               >
                 Confirm Password<sup className="ml-1 text-red-500">*</sup>
               </label>
-              <motion.input
-                id="confirm_password"
-                name="confirm_password"
-                type="password"
-                value={formData.confirm_password}
-                onChange={handleChange}
-                required
-                disabled={loading}
-                minLength="8"
-                placeholder="Confirm Password"
-                // UPDATED: Input styles
-                className="w-full px-3 py-2 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
-                whileFocus={{ scale: 1.02 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              />
+              <div className="relative group">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.3, delay: 0.9 }}
+                  className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                  aria-hidden
+                >
+                  <svg className="h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </motion.div>
+    
+                <motion.input
+                  id="confirm_password"
+                  name="confirm_password"
+                  type="password"
+                  value={formData.confirm_password}
+                  onChange={handleChange}
+                  required
+                  disabled={loading}
+                  minLength="8"
+                  placeholder="Confirm Password"
+                  // UPDATED: Input styles
+                  className="w-full px-10 py-2 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 dark:disabled:bg-gray-700/50 disabled:cursor-not-allowed"
+                  whileFocus={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                />
+                </div>
             </motion.div>
-
+            
             {/* Error & Success Messages */}
             <AnimatePresence>
               {error && (
