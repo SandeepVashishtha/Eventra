@@ -460,6 +460,10 @@ const Navbar = () => {
                   "linear-gradient(135deg, #4f46e5, #8b8dffff, #4f46e5)",
                 backgroundSize: "200% 200%",
                 animation: "shimmer 2.5s linear infinite",
+                fontFamily: "Dancing Script",
+                fontSize: "40px",
+                marginLeft: "25px"
+
               }}
             >
               Eventra
