@@ -2,7 +2,13 @@ import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaGithub, FaLinkedin, FaDiscord } from "react-icons/fa";
 import { User, Mail, Phone, FileText, MessageSquare } from "lucide-react";
-
+import {
+  FiStar,
+  FiMessageSquare,
+  FiUser,
+  FiMail,
+  FiCheckCircle,
+} from "react-icons/fi";
 
 // Toast Component
 const Toast = ({ message, type = "success", onClose }) => {
@@ -100,7 +106,7 @@ const FloatingInput = ({
         animate={{
           y: isFocused || value ? -20 : 0,
           scale: isFocused || value ? 0.85 : 1,
-          left: isFocused || value ? "0.75rem" : "2.5rem", 
+          left: isFocused || value ? "0.75rem" : "2.5rem",
           transformOrigin: "left",
         }}
       >
@@ -133,7 +139,6 @@ const FloatingInput = ({
     </div>
   );
 };
-
 
 // Contact Us Page Component
 
@@ -304,6 +309,31 @@ const ContactUs = () => {
                     </div>
                   </div>
                 </div>
+                <div className="space-y-4 mt-10"></div>
+                <div className="flex items-center">
+                  <div className="bg-white bg-opacity-20 p-2 rounded-full mr-4">
+                    <FiMessageSquare className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Quick Response</p>
+                    <p className="text-sm opacity-80">
+                      We aim to reply to all inquiries within 24 hours.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4 mt-10"></div>
+                <div className="flex items-center">
+                  <div className="bg-white bg-opacity-20 p-2 rounded-full mr-4">
+                    <FiStar className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Multiple Channels</p>
+                    <p className="text-sm opacity-80">
+                      Reach us via email, phone, or the contact form.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div className="mt-10">
@@ -354,7 +384,7 @@ const ContactUs = () => {
                   onChange={handleChange}
                   error={errors.email}
                   icon={Mail}
-                />        
+                />
 
                 <FloatingInput
                   id="subject"
@@ -373,12 +403,15 @@ const ContactUs = () => {
                       isFocused || formData.message
                         ? "top-0 text-xs text-indigo-600 dark:text-indigo-400 font-medium"
                         : "top-4 text-sm text-gray-500 dark:text-gray-400"
-                    } ${errors.message ? "text-red-500 dark:text-red-400" : ""}`}
+                    } ${
+                      errors.message ? "text-red-500 dark:text-red-400" : ""
+                    }`}
                     initial={false}
                     animate={{
                       y: isFocused || formData.message ? -20 : 0,
                       scale: isFocused || formData.message ? 0.85 : 1,
-                      left: isFocused || formData.message ? "0.75rem" : "2.5rem", 
+                      left:
+                        isFocused || formData.message ? "0.75rem" : "2.5rem",
                       transformOrigin: "left",
                     }}
                   >
