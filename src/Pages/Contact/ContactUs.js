@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaGithub, FaLinkedin, FaDiscord } from "react-icons/fa";
 import { User, Mail, Phone, FileText, MessageSquare } from "lucide-react";
 
 
@@ -136,19 +135,6 @@ const FloatingInput = ({
 
 
 // Contact Us Page Component
-
-const socialLinks = [
-  {
-    name: "GitHub",
-    icon: <FaGithub className="w-5 h-5" />,
-    href: "https://github.com/SandeepVashishtha/Eventra",
-  },
-  {
-    name: "LinkedIn",
-    icon: <FaLinkedin className="w-5 h-5" />,
-    href: "https://www.linkedin.com/in/sandeepvashishtha/",
-  },
-];
 
 const ContactUs = () => {
   const [formData, setFormData] = useState({
@@ -303,25 +289,6 @@ const ContactUs = () => {
                       </p>
                     </div>
                   </div>
-                </div>
-              </div>
-
-              <div className="mt-10">
-                <h3 className="font-medium mb-4">Follow Us</h3>
-                <div className="flex space-x-4">
-                  {socialLinks.map(({ name, icon, href }) => (
-                    <motion.a
-                      key={name}
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      whileHover={{ y: -3 }}
-                      className="bg-white bg-opacity-20 p-2 rounded-full"
-                    >
-                      <span className="sr-only">{name}</span>
-                      {icon}
-                    </motion.a>
-                  ))}
                 </div>
               </div>
             </div>
