@@ -460,7 +460,7 @@ const FeedbackPage = () => {
                   Your feedback helps us improve Eventra and create better experiences for our community. We value your input!
                 </p>
 
-                <div className="space-y-4 mt-10">
+                <div className="space-y-4 mt-16">
                   <div className="flex items-center">
                     <div className="bg-white bg-opacity-20 p-2 rounded-full mr-4">
                       <FiMessageSquare className="w-6 h-6" />
