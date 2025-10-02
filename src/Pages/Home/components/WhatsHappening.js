@@ -15,6 +15,7 @@ const WhatsHappening = () => {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  
 
   // Combine and format events and hackathons data
   const formatEventsData = (events) => {
@@ -83,33 +84,59 @@ const WhatsHappening = () => {
       "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300",
   };
 
-  // Auto-slide functionality - now moves 3 cards at a time
-  const nextSlide = useCallback(() => {
-    setDirection(1);
-    setCurrent((prev) => (prev + 3) % upcomingEvents.length);
-  }, [upcomingEvents.length]);
 
-  const prevSlide = () => {
-    setDirection(-1);
-    setCurrent((prev) => {
-      const newIndex = prev - 3;
-      return newIndex < 0 ? Math.max(0, upcomingEvents.length - 3) : newIndex;
-    });
-    setIsAutoPlaying(false); // Stop auto-play when user manually navigates
-  };
+    const [cardsPerView, setCardsPerView] = useState(1);
 
-  // Auto-play effect
   useEffect(() => {
-    if (!isAutoPlaying || upcomingEvents.length <= 3) return;
+    const updateCardsPerView = () => {
+      if (window.innerWidth < 640) {
+        setCardsPerView(1); // Mobile
+      } else if (window.innerWidth < 1024) {
+        setCardsPerView(2); // Tablet
+      } else {
+        setCardsPerView(3); // Desktop
+      }
+    };
 
-    const interval = setInterval(() => {
-      nextSlide();
-    }, 2500); // Change slide every 2.5 seconds (faster)
+    updateCardsPerView();
+    window.addEventListener("resize", updateCardsPerView);
+    return () => window.removeEventListener("resize", updateCardsPerView);
+  }, []);
 
-    return () => clearInterval(interval);
-  }, [isAutoPlaying, nextSlide, upcomingEvents.length]);
 
-  // Resume auto-play after 10 seconds of no interaction
+    const nextSlide = useCallback(() => {
+      setDirection(1);
+      setCurrent((prev) => (prev + cardsPerView) % upcomingEvents.length);
+    }, [upcomingEvents.length, cardsPerView]);
+
+    const prevSlide = () => {
+      setDirection(-1);
+      setCurrent((prev) => {
+        const newIndex = prev - cardsPerView;
+        return newIndex < 0
+          ? Math.max(0, upcomingEvents.length - cardsPerView)
+          : newIndex;
+      });
+      setIsAutoPlaying(false);
+    };
+
+
+
+  
+    useEffect(() => {
+    let timer;
+    if (isAutoPlaying) {
+      timer = setInterval(() => {
+        nextSlide();
+      }, 2500);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isAutoPlaying, nextSlide]);
+
+
+  
   useEffect(() => {
     if (isAutoPlaying) return;
 
@@ -123,14 +150,16 @@ const WhatsHappening = () => {
   const cardVariants = {
     enter: (dir) => ({
       opacity: 0,
-      x: dir > 0 ? 300 : -300, // Increased distance for 3-card layout
+      x: dir > 0 ? 300 : -300, 
     }),
     center: { opacity: 1, x: 0 },
     exit: (dir) => ({
       opacity: 0,
-      x: dir > 0 ? -300 : 300, // Increased distance for 3-card layout
+      x: dir > 0 ? -300 : 300, 
     }),
   };
+
+  const activeDotIndex = Math.floor(current / cardsPerView) % Math.ceil(upcomingEvents.length / cardsPerView);
 
   return (
     // UPDATED: Section background
@@ -190,7 +219,7 @@ const WhatsHappening = () => {
           <button
             onClick={() => {
               setDirection(1);
-              setCurrent((prev) => (prev + 3) % upcomingEvents.length);
+              setCurrent((prev) => (prev + cardsPerView) % upcomingEvents.length); 
               setIsAutoPlaying(false);
             }}
             className="absolute right-2 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white dark:bg-gray-700 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 z-10 text-gray-700 dark:text-gray-200 transition-all hover:scale-105"
@@ -202,20 +231,20 @@ const WhatsHappening = () => {
 
           {/* Cards Container */}
           <div 
-            className="overflow-hidden px-16"
+            className="overflow-hidden px-16 py-5 pointer-events-none"
             onMouseEnter={() => setIsAutoPlaying(false)}
             onMouseLeave={() => setIsAutoPlaying(true)}
           >
             <AnimatePresence mode="wait" custom={direction}>
               <motion.div
-                key={Math.floor(current / 3)}
+                key={Math.floor(current / cardsPerView)} 
                 variants={cardVariants}
                 custom={direction}
                 initial="enter"
                 animate="center"
                 exit="exit"
                 transition={{ duration: 0.4, ease: "easeInOut" }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pointer-events-auto"
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.2}
@@ -224,20 +253,24 @@ const WhatsHappening = () => {
                     prevSlide();
                   } else if (info.offset.x < -100) {
                     setDirection(1);
-                    setCurrent((prev) => (prev + 3) % upcomingEvents.length);
+                    setCurrent((prev) => (prev + cardsPerView) % upcomingEvents.length);
                     setIsAutoPlaying(false);
                   }
                 }}
               >
                 {/* Show 3 cards at a time */}
-                {upcomingEvents.slice(current, current + 3).concat(
-                  current + 3 > upcomingEvents.length 
-                    ? upcomingEvents.slice(0, (current + 3) % upcomingEvents.length)
-                    : []
-                ).slice(0, 3).map((event, index) => (
+                {upcomingEvents
+                  .slice(current, current + cardsPerView)
+                  .concat(
+                    current + cardsPerView > upcomingEvents.length
+                      ? upcomingEvents.slice(0, (current + cardsPerView) % upcomingEvents.length)
+                      : []
+                  )
+                  .slice(0, cardsPerView)
+                  .map((event) => (
                   <div
                     key={event.id}
-                    className={`flex flex-col rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 bg-white dark:bg-black/60 transform hover:scale-105 ${
+                    className={`flex flex-col rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 bg-white dark:bg-black/60 transform hover:scale-105 min-h-[360px] ${
                       event.featured
                         ? "ring-2 ring-indigo-500 dark:ring-indigo-400"
                         : "border border-gray-100 dark:border-gray-700"
@@ -352,38 +385,38 @@ const WhatsHappening = () => {
         </div>
 
         {/* Dots with progress indicator - Updated for 3-card pagination */}
-        <div className="flex justify-center items-center mt-4 space-x-2">
-          {Array.from({ length: Math.ceil(upcomingEvents.length / 3) }, (_, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                setCurrent(index * 3);
-                setDirection(index * 3 > current ? 1 : -1);
-                setIsAutoPlaying(false);
-              }}
-              className="relative group"
-            >
-              <div
-                className={`w-8 h-2.5 sm:w-10 sm:h-3 rounded-full transition-colors duration-300 ${
-                  Math.floor(current / 3) === index
-                    ? "bg-indigo-600 dark:bg-indigo-400"
-                    : "bg-gray-300 dark:bg-gray-600 group-hover:bg-gray-400 dark:group-hover:bg-gray-500"
-                }`}
-              />
-              {/* Auto-play progress indicator for current slide group */}
-              {Math.floor(current / 3) === index && isAutoPlaying && (
-                <div className="absolute inset-0 rounded-full border-2 border-indigo-600 dark:border-indigo-400">
-                  <div 
-                    className="w-full h-full rounded-full bg-indigo-600/20 dark:bg-indigo-400/20"
-                    style={{
-                      animation: 'progress 2.5s linear infinite'
-                    }}
-                  />
-                </div>
-              )}
-            </button>
-          ))}
-        </div>
+        <div className="flex justify-center items-center mt-4 space-x-1 sm:space-x-2">
+        {Array.from({ length: Math.ceil(upcomingEvents.length / cardsPerView) }, (_, index) => (
+          <button
+            key={index}
+            onClick={() => {
+              setCurrent(index * cardsPerView);
+              setDirection(index * cardsPerView > current ? 1 : -1);
+              setIsAutoPlaying(false);
+            }}
+            className="relative group"
+          >
+            <div
+              className={`w-3 h-2.5 sm:w-8 sm:h-2.5 rounded-full transition-colors duration-300 ${
+                activeDotIndex === index
+                  ? "bg-indigo-600 dark:bg-indigo-400"
+                  : "bg-gray-300 dark:bg-gray-600 group-hover:bg-gray-400 dark:group-hover:bg-gray-500"
+              }`}
+            />
+            {/* Auto-play progress indicator for current slide group */}
+            {activeDotIndex === index && isAutoPlaying && (
+              <div className="absolute inset-0 rounded-full border-2 border-indigo-600 dark:border-indigo-400">
+                <div 
+                  className="w-full h-full rounded-full bg-indigo-600/20 dark:bg-indigo-400/20"
+                  style={{
+                    animation: 'progress 2.5s linear infinite'
+                  }}
+                />
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
 
         {/* Add progress animation keyframes - Updated timing */}
         <style jsx>{`
