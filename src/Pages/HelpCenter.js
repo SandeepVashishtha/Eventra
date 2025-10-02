@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
-
 import {
   Search,
   Award,
@@ -11,8 +10,14 @@ import {
   Calendar,
   Settings,
   BookOpen,
-  Mail, 
+  Mail,
   MessageCircle,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  FileSearch,
+  GitPullRequest,
+  HelpCircle,
 } from "lucide-react";
 import {
   FaDiscord,
@@ -311,29 +316,108 @@ const HelpCenter = () => {
       </section>
 
       {/* Guidelines Section */}
-      <section className="py-8 px-4 max-w-6xl mx-auto mt-2 mb-6">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-          <h3 className="text-2xl font-semibold mb-4 text-center">
-            Guidelines for Using the Platform
-          </h3>
-          <ul className="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
-            <li>
-              Always check the hackathon rules before submitting a project.
-            </li>
-            <li>
-              Use descriptive titles and proper documentation for your
-              submissions.
-            </li>
-            <li>
-              Follow contribution guidelines for GSOC or other open-source
-              tasks.
-            </li>
-            <li>Respect deadlines for hackathons and project submissions.</li>
-            <li>
-              Explore existing projects before submitting to avoid duplicates.
-            </li>
-            <li>Reach out to support if you encounter any issues or errors.</li>
-          </ul>
+      <section className="py-16 px-4 max-w-6xl mx-auto">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">
+            Platform Guidelines
+          </h2>
+          <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            Follow these best practices to make the most of your experience and contribute effectively to the community.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[
+            {
+              icon: <CheckCircle className="w-6 h-6" />,
+              title: "Check Hackathon Rules",
+              description: "Always review the hackathon rules and requirements before submitting a project.",
+              highlight: "rules",
+              color: "from-blue-500 to-cyan-500",
+              link: "/hackathons",
+            },
+            {
+              icon: <FileText className="w-6 h-6" />,
+              title: "Document Your Work",
+              description: "Use descriptive titles and provide proper documentation for all your submissions.",
+              highlight: "documentation",
+              color: "from-green-500 to-emerald-500",
+              link: "/documentation",
+            },
+            {
+              icon: <GitPullRequest className="w-6 h-6" />,
+              title: "Follow Contribution Guidelines",
+              description: "Adhere to contribution guidelines for GSOC and other open-source tasks.",
+              highlight: "guidelines",
+              color: "from-purple-500 to-pink-500",
+              link: "/contributorguide",
+            },
+            {
+              icon: <Clock className="w-6 h-6" />,
+              title: "Respect Deadlines",
+              description: "Submit your projects and contributions before the specified deadlines to ensure participation.",
+              highlight: "deadlines",
+              color: "from-orange-500 to-red-500",
+            },
+            {
+              icon: <FileSearch className="w-6 h-6" />,
+              title: "Avoid Duplicates",
+              description: "Explore existing projects before submitting to ensure your work is unique and adds value.",
+              highlight: "duplicates",
+              color: "from-yellow-500 to-orange-400",
+              link: "/projects",
+            },
+            {
+              icon: <HelpCircle className="w-6 h-6" />,
+              title: "Get Support",
+              description: "Reach out to our support team if you encounter any issues, errors, or have questions.",
+              highlight: "support",
+              color: "from-indigo-500 to-purple-500",
+              link: "/contact",
+            },
+          ].map((guideline, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: idx * 0.1 }}
+              whileHover={{ y: -5 }}
+              className="group relative bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700"
+            >
+              <div className={`absolute top-0 left-0 w-full h-1 rounded-t-2xl bg-gradient-to-r ${guideline.color}`}></div>
+              
+              <div className="flex items-start space-x-4">
+                <div className={`flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br ${guideline.color} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                  {guideline.icon}
+                </div>
+                
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                    {guideline.title}
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                    {guideline.description}
+                  </p>
+                  
+                  {guideline.link && (
+                    <Link
+                      to={guideline.link}
+                      className="inline-flex items-center mt-3 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+                    >
+                      Learn more
+                      <AlertCircle className="w-4 h-4 ml-1" />
+                    </Link>
+                  )}
+                </div>
+              </div>
+              
+              <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <span className={`text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r ${guideline.color}`}>
+                  {String(idx + 1).padStart(2, '0')}
+                </span>
+              </div>
+            </motion.div>
+          ))}
         </div>
       </section>
 
