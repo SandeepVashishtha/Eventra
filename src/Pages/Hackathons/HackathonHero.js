@@ -149,7 +149,7 @@ export default function HackathonHero({
               if (!user) {
                 navigate("/login");
               } else {
-                navigate("/submit-project");
+                navigate("/host-hackathon");
               }
             }}
             className="relative px-7 py-3.5 rounded-xl font-medium text-gray-800 dark:text-gray-100 shadow-md backdrop-blur-md border border-gray-300 hover:border-indigo-400 transition-all duration-300 bg-white/70 dark:bg-gray-800"
