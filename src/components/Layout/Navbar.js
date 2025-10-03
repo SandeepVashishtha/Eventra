@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+
 import ThemeToggleButton from "../common/ThemeToggleButton";
+
+import { UserCog } from "lucide-react";
 import {
   Home,
   Calendar,
@@ -15,8 +18,6 @@ import {
   User as UserIcon,
   LogOut,
   LogIn,
-  ArrowRight,
-  ShieldUser,
   MessageSquare,
   Book,
   HelpCircle,
@@ -363,85 +364,113 @@ const Navbar = () => {
             <ThemeToggleButton />
             <div className="flex items-center space-x-2 ml-2">
               {isAuthenticated() ? (
-                <div className="relative">
+                <div className="relative profile-container">
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowProfileDropdown(!showProfileDropdown);
-                    }}
+                    onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                    className="flex items-center gap-2 text-sm font-medium text-white/90 hover:text-white transition-colors"
                   >
                     {user?.profilePicture ? (
                       <img
                         src={user.profilePicture}
                         alt="Profile"
-                        className={`w-9 h-9 rounded-full object-cover border-2 transition-all ${
-                          showProfileDropdown
-                            ? "border-purple-400 ring-2 ring-purple-400/50"
-                            : "border-transparent hover:border-purple-400/50"
-                        }`}
+                        className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20"
+                        onError={(e) =>
+                          (e.currentTarget.style.display = "none")
+                        }
                       />
                     ) : (
-                      <div
-                        className={`w-9 h-9 flex items-center justify-center rounded-full transition-all bg-gray-300 dark:bg-white/10 text-gray-600 dark:text-white border-2 ${
-                          showProfileDropdown
-                            ? "border-purple-400 ring-2 ring-purple-400/50"
-                            : "border-transparent hover:border-purple-400/50"
-                        }`}
-                      >
-                        <UserIcon className="w-5 h-5" />
+                      <div className="w-8 h-8 rounded-full dark:bg-white/20 bg-gray-300 flex items-center justify-center">
+                        <UserIcon className="w-4 h-4 text-gray-600  dark:text-white" />
                       </div>
-                    )}
+                    )}                   
                   </button>
-                  {showProfileDropdown && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className="absolute top-full right-0 mt-4 w-64 bg-white dark:bg-gray-900/90 backdrop-blur-md rounded-lg shadow-2xl z-50 border border-gray-200 dark:border-gray-700"
-                    >
-                      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                        <p className="font-semibold text-gray-800 dark:text-white truncate">
-                          {primaryLine}
-                        </p>
-                        {secondaryLine && (
-                          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                            {secondaryLine}
-                          </p>
-                        )}
-                      </div>
-                      <div className="p-2">
-                        <Link
-                          to="/dashboard"
-                          onClick={() => setShowProfileDropdown(false)}
-                          className={`block w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                            location.pathname === "/dashboard"
-                              ? "text-indigo-600 dark:text-white bg-white/20 dark:bg-white/10 backdrop-blur-md border border-white/30 dark:border-white/20"
-                              : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-indigo-600 dark:hover:text-white"
-                          }`}
-                        >
-                          Dashboard
-                        </Link>
 
-                        <Link
-                          to="/profile"
-                          onClick={() => setShowProfileDropdown(false)}
-                          className={`block w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                            location.pathname === "/profile"
-                              ? "text-indigo-600 dark:text-white bg-white/20 dark:bg-white/10 backdrop-blur-md border border-white/30 dark:border-white/20"
-                              : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-indigo-600 dark:hover:text-white"
-                          }`}
-                        >
-                          Edit Profile
-                        </Link>
-                        <button
-                          onClick={handleLogout}
-                          className="block w-full text-left px-3 py-2 text-sm rounded-md text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/20 hover:text-red-700 dark:hover:text-red-300 transition-colors"
-                        >
-                          Logout
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
+                  <AnimatePresence>
+                    {showProfileDropdown && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-full mt-2 w-64 
+                 bg-white dark:bg-gray-900 
+                 rounded-lg shadow-2xl overflow-hidden 
+                 border border-gray-200 dark:border-gray-800"
+                      >
+                        {/* Profile header */}
+                        <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+                          <div className="flex items-center gap-3">
+                            {user?.profilePicture ? (
+                              <img
+                                src={user.profilePicture}
+                                alt="Profile"
+                                className="w-12 h-12 rounded-full object-cover ring-2 ring-purple-500/20"
+                                onError={(e) =>
+                                  (e.currentTarget.style.display = "none")
+                                }
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-800 to-indigo-950 flex items-center justify-center">
+                                <UserIcon className="w-6 h-6 text-white" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                                {primaryLine}
+                              </p>
+                              {secondaryLine && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                  {secondaryLine}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Menu items */}
+                        <div className="p-2 bg-white dark:bg-gray-900">
+                          <Link
+                            to="/dashboard"
+                            onClick={() => setShowProfileDropdown(false)}
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                              location.pathname === "/dashboard"
+                                ? "bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
+                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                            }`}
+                          >
+                            <LayoutDashboard className="w-4 h-4" />
+                            Dashboard
+                          </Link>
+
+                          <Link
+                            to="/profile"
+                            onClick={() => setShowProfileDropdown(false)}
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                              location.pathname === "/profile"
+                                ? "bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
+                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                            }`}
+                          >
+                            <UserCog className="w-4 h-4" />
+                            Edit Profile
+                          </Link>
+                        </div>
+
+                        {/* Logout */}
+                        <div className="p-2 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+                          <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm 
+                     text-red-600 dark:text-red-400 
+                     hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            Logout
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               ) : (
                 <div className="flex items-center space-x-1">
@@ -650,7 +679,7 @@ const Navbar = () => {
                     : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
                 }`}
               >
-                <ShieldUser className="w-5 h-5" />
+                <UserCog className="w-5 h-5" />
                 Edit Profile
               </Link>
               <button
@@ -674,7 +703,7 @@ const Navbar = () => {
               <Link
                 to="/signup"
                 onClick={closeAllMenus}
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-white bg-gradient-to-r from-indigo-500 to-purple-500"
+                className="flex items-center justify-center gap-2 w-full py-2.5 text-white transition-all bg-indigo-600 hover:bg-indigo-700 dark:bg-white/10 dark:border dark:border-white/20 rounded-lg dark:hover:bg-white/20"
               >
                 Get Started
               </Link>
