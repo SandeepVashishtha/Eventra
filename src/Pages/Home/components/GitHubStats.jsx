@@ -190,7 +190,7 @@ export default function GitHubStats() {
       label: "Languages",
       value: Object.keys(stats.languages).length
         ? Object.keys(stats.languages).join(", ")
-        : "N/A",
+        : "React",
       icon: <Languages className="text-amber-600" size={40} />,
       link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}`,
     },
