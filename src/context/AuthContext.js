@@ -111,7 +111,7 @@ const login = async (email, password) => {
     const userData = {
       ...(rawUser || {}),
       roles: (rawUser?.roles) || [],
-      permissions: (rawUser?.permissions) || [],
+      permissions: (rawUser?.permissions) || ["HOST_HACKATHON"],
       email: rawUser?.email || email, // best-effort fill
     };
 
