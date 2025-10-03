@@ -175,7 +175,7 @@ const Footer = () => {
       href: "https://discord.com/",
       icon: (
         <FaDiscord
-          className="size-10 p-2 rounded-full text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-blue-900 hover:text-white dark:hover:bg-black-600 dark:hover:text-white hover:scale-110 hover:-translate-y-1"
+          className="size-10 p-2 rounded-full text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-blue-900 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white hover:scale-110 hover:-translate-y-1"
           size={20}
         />
       ),
