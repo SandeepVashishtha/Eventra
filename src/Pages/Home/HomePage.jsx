@@ -1,8 +1,9 @@
+// src/Pages/Home/HomePage.jsx
 import Hero from "./components/Hero";
 import WhatsHappening from "./components/WhatsHappening";
 import GitHubStats from "./components/GitHubStats";
 import Contributors from "./components/ContributorsCarousel";
-import NewsletterSubscribe from "./components/NewsletterSubscribe";
+
 
 const HomePage = () => {
   return (
@@ -11,7 +12,6 @@ const HomePage = () => {
       <WhatsHappening />
       <GitHubStats />
       <Contributors />
-      <NewsletterSubscribe />
     </>
   );
 };
