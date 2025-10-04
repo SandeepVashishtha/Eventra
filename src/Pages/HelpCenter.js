@@ -18,6 +18,10 @@ import {
   FileSearch,
   GitPullRequest,
   HelpCircle,
+  CalendarClock,
+  FileCode2,
+  CalendarDays,
+  GitMerge,
 } from "lucide-react";
 import {
   FaDiscord,
@@ -116,7 +120,7 @@ const faqs = [
   {
     id: 2,
     category: "Project Submission",
-    icon: <BookOpen  className="w-5 h-5" />,
+    icon: <BookOpen className="w-5 h-5" />,
     question: "How can I submit a project?",
     answer:
       "Navigate to 'Submit Project', fill in the required fields, upload your files, and submit before the deadline.",
@@ -149,7 +153,7 @@ const faqs = [
 
 const HelpCenter = () => {
   const [expandedFAQ, setExpandedFAQ] = useState(null);
-   const toggleFAQ = (id) => {
+  const toggleFAQ = (id) => {
     setExpandedFAQ(expandedFAQ === id ? null : id);
   };
   return (
@@ -272,45 +276,152 @@ const HelpCenter = () => {
       </section>
 
       {/* Tutorials / Guides Section */}
-      <section className="py-16 px-4 max-w-6xl mx-auto">
-        <h2 className="text-3xl font-semibold mb-8 text-center">
-          Step-by-Step Guides
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <section className="py-16 px-4 max-w-7xl mx-auto">
+        <div className="text-center mb-12">
+          <motion.h2
+            className="text-3xl md:text-4xl font-bold mb-4 text-gray-900 dark:text-white"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            Step-by-Step Tutorials
+          </motion.h2>
+          <motion.p
+            className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8 }}
+          >
+            Master every aspect of the platform with our comprehensive guides.
+            From hosting events to contributing code.
+          </motion.p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {[
             {
               title: "Hosting a Hackathon",
-              icon: (
-                <Calendar className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-              ),
-              link: "/guides/hosting",
+              description:
+                "Learn to create, manage, and publish successful hackathons with prizes and timelines.",
+              icon: <CalendarDays className="w-8 h-8" />,
+              link: "/host-hackathon",
+              gradient: "from-blue-500 via-blue-600 to-indigo-600",
+              difficulty: "Beginner",
+              time: "10 min",
+              step: "01",
             },
             {
               title: "Submitting a Project",
-              icon: (
-                <FileText className="w-12 h-12 text-green-500 mx-auto mb-4" />
-              ),
-              link: "/guides/submission",
+              description:
+                "Complete guide to submitting projects with proper documentation and meeting deadlines.",
+              icon: <FileCode2 className="w-8 h-8" />,
+              link: "/submit-project",
+              gradient: "from-green-500 via-emerald-600 to-teal-600",
+              difficulty: "Beginner",
+              time: "8 min",
+              step: "02",
+            },
+             {
+              title: "Creating an Event",
+              description:
+                "Step-by-step guide to creating and managing events on the platform with ease.",
+              icon: <CalendarClock className="w-8 h-8" />,
+              link: "/create-event",
+              gradient: "from-purple-500 via-purple-600 to-pink-600 ",
+              difficulty: "Beginner",
+              time: "12 min",
+              step: "03",
             },
             {
               title: "Contributing to GSOC",
-              icon: (
-                <Users className="w-12 h-12 text-purple-500 mx-auto mb-4" />
-              ),
-              link: "/guides/contributing",
+              description:
+                "Follow best practices for open-source contributions and GSOC participation.",
+              icon: <GitMerge className="w-8 h-8" />,
+              link: "/contributorguide",
+              gradient: "from-yellow-500 via-orange-500 to-red-500",
+              difficulty: "Intermediate",
+              time: "15 min",
+              step: "04",
             },
           ].map((guide, idx) => (
-            <motion.a
-              href={guide.link}
+            <motion.div
               key={idx}
-              whileHover={{ scale: 1.05 }}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow hover:shadow-lg p-6 flex flex-col items-center justify-center"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: idx * 0.1 }}
+              whileHover={{ y: -8, scale: 1.02 }}
+              className="group relative"
             >
-              {guide.icon}
-              <h3 className="font-semibold text-lg text-center">
-                {guide.title}
-              </h3>
-            </motion.a>
+              <Link
+                to={guide.link}
+                className="block h-full bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700"
+              >
+                {/* Gradient Header */}
+                <div className={`h-3 bg-gradient-to-r ${guide.gradient}`}></div>
+
+                {/* Card Content */}
+                <div className="p-6">
+                  {/* Step Number Badge */}
+                  <div className="absolute top-6 right-6 opacity-20 group-hover:opacity-40 transition-opacity duration-300">
+                    <span className="text-6xl font-black text-gray-300 dark:text-gray-600">
+                      {guide.step}
+                    </span>
+                  </div>
+
+                  {/* Icon Container */}
+                  <div
+                    className={`relative z-10 w-16 h-16 mb-4 rounded-xl bg-gradient-to-br ${guide.gradient} flex items-center justify-center text-white shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}
+                  >
+                    {guide.icon}
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white transition-all duration-300">
+                    {guide.title}
+                  </h3>
+
+                  {/* Description */}
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
+                    {guide.description}
+                  </p>
+
+                  {/* Meta Information */}
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center space-x-4">
+                      <span
+                        className={`text-xs font-semibold px-3 py-1 rounded-full bg-gradient-to-r ${guide.gradient} text-white`}
+                      >
+                        {guide.difficulty}
+                      </span>
+                      <span className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                        <Clock className="w-3 h-3 mr-1" />
+                        {guide.time}
+                      </span>
+                    </div>
+                    <div className="text-indigo-600 dark:text-indigo-400 group-hover:translate-x-2 transition-transform duration-300">
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Hover Glow Effect */}
+                <div
+                  className={`absolute inset-0 opacity-0 group-hover:opacity-20 bg-gradient-to-br ${guide.gradient} transition-opacity duration-300 pointer-events-none`}
+                ></div>
+              </Link>
+            </motion.div>
           ))}
         </div>
       </section>
@@ -322,7 +433,8 @@ const HelpCenter = () => {
             Platform Guidelines
           </h2>
           <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Follow these best practices to make the most of your experience and contribute effectively to the community.
+            Follow these best practices to make the most of your experience and
+            contribute effectively to the community.
           </p>
         </div>
 
@@ -331,7 +443,8 @@ const HelpCenter = () => {
             {
               icon: <CheckCircle className="w-6 h-6" />,
               title: "Check Hackathon Rules",
-              description: "Always review the hackathon rules and requirements before submitting a project.",
+              description:
+                "Always review the hackathon rules and requirements before submitting a project.",
               highlight: "rules",
               color: "from-blue-500 to-cyan-500",
               link: "/hackathons",
@@ -339,7 +452,8 @@ const HelpCenter = () => {
             {
               icon: <FileText className="w-6 h-6" />,
               title: "Document Your Work",
-              description: "Use descriptive titles and provide proper documentation for all your submissions.",
+              description:
+                "Use descriptive titles and provide proper documentation for all your submissions.",
               highlight: "documentation",
               color: "from-green-500 to-emerald-500",
               link: "/documentation",
@@ -347,7 +461,8 @@ const HelpCenter = () => {
             {
               icon: <GitPullRequest className="w-6 h-6" />,
               title: "Follow Contribution Guidelines",
-              description: "Adhere to contribution guidelines for GSOC and other open-source tasks.",
+              description:
+                "Adhere to contribution guidelines for GSOC and other open-source tasks.",
               highlight: "guidelines",
               color: "from-purple-500 to-pink-500",
               link: "/contributorguide",
@@ -355,14 +470,16 @@ const HelpCenter = () => {
             {
               icon: <Clock className="w-6 h-6" />,
               title: "Respect Deadlines",
-              description: "Submit your projects and contributions before the specified deadlines to ensure participation.",
+              description:
+                "Submit your projects and contributions before the specified deadlines to ensure participation.",
               highlight: "deadlines",
               color: "from-orange-500 to-red-500",
             },
             {
               icon: <FileSearch className="w-6 h-6" />,
               title: "Avoid Duplicates",
-              description: "Explore existing projects before submitting to ensure your work is unique and adds value.",
+              description:
+                "Explore existing projects before submitting to ensure your work is unique and adds value.",
               highlight: "duplicates",
               color: "from-yellow-500 to-orange-400",
               link: "/projects",
@@ -370,7 +487,8 @@ const HelpCenter = () => {
             {
               icon: <HelpCircle className="w-6 h-6" />,
               title: "Get Support",
-              description: "Reach out to our support team if you encounter any issues, errors, or have questions.",
+              description:
+                "Reach out to our support team if you encounter any issues, errors, or have questions.",
               highlight: "support",
               color: "from-indigo-500 to-purple-500",
               link: "/contact",
@@ -384,13 +502,17 @@ const HelpCenter = () => {
               whileHover={{ y: -5 }}
               className="group relative bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700"
             >
-              <div className={`absolute top-0 left-0 w-full h-1 rounded-t-2xl bg-gradient-to-r ${guideline.color}`}></div>
-              
+              <div
+                className={`absolute top-0 left-0 w-full h-1 rounded-t-2xl bg-gradient-to-r ${guideline.color}`}
+              ></div>
+
               <div className="flex items-start space-x-4">
-                <div className={`flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br ${guideline.color} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                <div
+                  className={`flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br ${guideline.color} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                >
                   {guideline.icon}
                 </div>
-                
+
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                     {guideline.title}
@@ -398,7 +520,7 @@ const HelpCenter = () => {
                   <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                     {guideline.description}
                   </p>
-                  
+
                   {guideline.link && (
                     <Link
                       to={guideline.link}
@@ -410,10 +532,12 @@ const HelpCenter = () => {
                   )}
                 </div>
               </div>
-              
+
               <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <span className={`text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r ${guideline.color}`}>
-                  {String(idx + 1).padStart(2, '0')}
+                <span
+                  className={`text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r ${guideline.color}`}
+                >
+                  {String(idx + 1).padStart(2, "0")}
                 </span>
               </div>
             </motion.div>
@@ -428,10 +552,10 @@ const HelpCenter = () => {
             Frequently Asked Questions
           </h2>
           <p className="text-center text-gray-600 dark:text-gray-300 mb-12 max-w-2xl mx-auto">
-            Everything you need to know about using our platform. Can't find what you're looking for? 
-            Reach out to our community!
+            Everything you need to know about using our platform. Can't find
+            what you're looking for? Reach out to our community!
           </p>
-          
+
           <div className="space-y-6">
             {faqs.map((faq) => (
               <motion.div
@@ -440,9 +564,11 @@ const HelpCenter = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
                 className={`rounded-2xl shadow-lg transition-shadow duration-300 border 
-                ${expandedFAQ === faq.id 
-                  ? "border-blue-500 ring-2 ring-blue-300" 
-                  : "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:shadow-xl"}`}
+                ${
+                  expandedFAQ === faq.id
+                    ? "border-blue-500 ring-2 ring-blue-300"
+                    : "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:shadow-xl"
+                }`}
               >
                 <button
                   onClick={() => toggleFAQ(faq.id)}
@@ -475,7 +601,7 @@ const HelpCenter = () => {
                     </div>
                   </div>
                 </button>
-                
+
                 {expandedFAQ === faq.id && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
