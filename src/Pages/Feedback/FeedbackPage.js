@@ -498,28 +498,6 @@ const FeedbackPage = () => {
                   </div>
                 </div>
               </div>
-
-              <div className="mt-10">
-                              <h3 className="font-medium mb-4">Follow Us</h3>
-                              <div className="flex space-x-4">
-                                {socialLinks.map(
-                                  ({name , icon , href}) => (
-                                    <motion.a
-                                      key={name}
-                                      href={href}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      whileHover={{ y: -3 }}
-                                      className="bg-white bg-opacity-20 p-2 rounded-full"
-                                    >
-                                      <span className="sr-only">{name}</span>
-                                      {icon}
-                                    </motion.a>
-                                  )
-                                )}
-                              </div>
-                            </div>
-
               </div>
 
             <div className="md:w-3/5 p-10">
