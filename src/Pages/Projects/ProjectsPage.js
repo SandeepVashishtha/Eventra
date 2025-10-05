@@ -234,10 +234,10 @@ const ProjectGallery = () => {
                     className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-700 hover:ring-2 hover:ring-indigo-500 transition-all"
                     onClick={() => setSortOpen((prev) => !prev)}
                   >
-                    <span className="text-gray-700">
+                    <span className="text-gray-700 dark:text-gray-300">
                       {sortByLabels[sortBy]}
                     </span>
-                    <FiX className="ml-2 text-gray-400" />
+                    <FiX className="ml-2 text-gray-400 dark:text-gray-500" />
                   </div>
 
                   {/* Sort Dropdown Menu */}
