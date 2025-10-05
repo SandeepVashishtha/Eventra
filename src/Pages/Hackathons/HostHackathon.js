@@ -65,7 +65,7 @@ const HostHackathon = () => {
           <ClipboardDocumentListIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
           <h2 className="text-xl font-semibold text-indigo-700 dark:text-indigo-400">Guidelines</h2>
         </div>
-        <ul className="list-disc pl-6 space-y-3 text-gray-700 text-sm sm:text-base">
+        <ul className="list-disc pl-6 space-y-3 text-gray-700 dark:text-gray-300 text-sm sm:text-base">
           <li>
             Clearly define the{" "}
             <span className="font-medium">objectives, theme, and rules</span> of
