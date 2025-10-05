@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
@@ -8,10 +8,20 @@ import {
   FaGlobe,
   FaEnvelope,
   FaShieldAlt,
+  FaChevronDown,
+  FaChevronUp,
 } from "react-icons/fa";
 
 export const Privacy = () => {
   const controls = useAnimation();
+  const [openSections, setOpenSections] = useState({});
+
+  const toggleSection = (index) => {
+    setOpenSections((prev) => ({
+      ...prev,
+      [index]: !prev[index],
+    }));
+  };
 
   const container = {
     hidden: { opacity: 0 },
@@ -84,7 +94,6 @@ export const Privacy = () => {
   ];
 
   return (
-    // UPDATED: Main page background
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-12 px-4 sm:px-6 lg:px-8">
       {/* Header Section */}
       <motion.div
@@ -93,7 +102,6 @@ export const Privacy = () => {
         animate={controls}
         className="max-w-4xl mx-auto text-center mb-16"
       >
-        {/* UPDATED: Text colors */}
         <motion.h1
           variants={item}
           className="text-4xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-5xl mb-4"
@@ -118,15 +126,16 @@ export const Privacy = () => {
       >
         <motion.div
           variants={item}
-          // UPDATED: Card background and border
           className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl border border-gray-200 dark:border-gray-700 p-8 shadow-md"
         >
-          {/* UPDATED: Text colors */}
           <p className="text-lg text-gray-800 dark:text-gray-200">
-            At <span className="font-bold text-indigo-600 dark:text-indigo-400">Eventra</span>, we
-            are committed to protecting your personal information and your right
-            to privacy. As an open-source event management platform, we value
-            transparency in how we handle your data.
+            At{" "}
+            <span className="font-bold text-indigo-600 dark:text-indigo-400">
+              Eventra
+            </span>
+            , we are committed to protecting your personal information and your
+            right to privacy. As an open-source event management platform, we
+            value transparency in how we handle your data.
           </p>
           <p className="mt-4 text-gray-700 dark:text-gray-300">
             This Privacy Policy explains how we collect, use, disclose, and
@@ -136,41 +145,64 @@ export const Privacy = () => {
         </motion.div>
       </motion.div>
 
-
       {/* Policy Sections */}
       <div className="max-w-6xl mx-auto">
-        {/* Container for all policy sections - 
-            This ensures a max width for readability and centers the grid */}
         <motion.div
-          variants={container} // Animation variants for staggering children (if defined outside)
-          initial="hidden"     // Initial animation state for the container
-          animate={controls}   // Controlled animation trigger (could be from intersection observer, etc.)
+          variants={container}
+          initial="hidden"
+          animate={controls}
           className="grid grid-cols-1 md:grid-cols-2 gap-8"
         >
-          {/* Mapping through all sections dynamically from policySections array */}
           {policySections.map((section, index) => (
             <motion.div
-              key={index} // Unique key for React reconciliation
-              variants={item} // Animation variant for each individual card
-              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl border border-gray-200 dark:border-gray-700 p-8 shadow-md relative overflow-hidden group hover:border-blue-400 dark:hover:border-blue-500 transition-colors duration-300"
+              key={index}
+              variants={item}
+              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl border border-gray-200 dark:border-gray-700 shadow-md relative overflow-hidden group hover:border-blue-400 dark:hover:border-blue-500 transition-colors duration-300"
             >
-              {/* UPDATED: Gradient glow background */}
               <div className="absolute inset-0 bg-gradient-to-r from-indigo-50 via-purple-50 dark:from-indigo-900/40 dark:via-purple-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              
+
               <div className="relative z-10">
-                <div className="flex items-center mb-6">
-                  {/* UPDATED: Icon wrapper */}
-                  <div className="flex items-center justify-center w-12 h-12 bg-indigo-100 dark:bg-gray-700 rounded-xl text-indigo-600 dark:text-indigo-400 text-2xl mr-4">
-                    {section.icon}
+                {/* Toggle Button Header */}
+                <button
+                  onClick={() => toggleSection(index)}
+                  className="w-full flex items-center justify-between p-8 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 rounded-t-2xl"
+                >
+                  <div className="flex items-center">
+                    <div className="flex items-center justify-center w-12 h-12 bg-indigo-100 dark:bg-gray-700 rounded-xl text-indigo-600 dark:text-indigo-400 text-2xl mr-4">
+                      {section.icon}
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                      {section.title}
+                    </h2>
                   </div>
-                  {/* UPDATED: Text colors */}
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                    {section.title}
-                  </h2>
-                </div>
-                <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                  {section.content}
-                </p>
+                  <div className="flex-shrink-0 ml-4">
+                    {openSections[index] ? (
+                      <FaChevronUp className="text-indigo-600 dark:text-indigo-400 text-lg" />
+                    ) : (
+                      <FaChevronDown className="text-indigo-600 dark:text-indigo-400 text-lg" />
+                    )}
+                  </div>
+                </button>
+
+                {/* Collapsible Content */}
+                <motion.div
+                  initial={false}
+                  animate={{
+                    height: openSections[index] ? "auto" : 0,
+                    opacity: openSections[index] ? 1 : 0,
+                  }}
+                  transition={{
+                    duration: 0.3,
+                    ease: "easeInOut",
+                  }}
+                  className="overflow-hidden"
+                >
+                  <div className="px-8 pb-8">
+                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                      {section.content}
+                    </p>
+                  </div>
+                </motion.div>
               </div>
             </motion.div>
           ))}
@@ -186,10 +218,8 @@ export const Privacy = () => {
       >
         <motion.div
           variants={item}
-          // UPDATED: Card background and border
           className="bg-indigo-50 dark:bg-gray-800 rounded-2xl border border-indigo-100 dark:border-gray-700 p-8"
         >
-          {/* UPDATED: Text colors */}
           <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             Policy Updates
           </h3>
@@ -220,7 +250,6 @@ export const Privacy = () => {
           variants={item}
           className="bg-gray-900 rounded-2xl p-8 text-center relative overflow-hidden"
         >
-          {/* Background Glow */}
           <div className="absolute inset-0">
             <div className="absolute -top-32 -left-32 w-96 h-96 bg-indigo-600/30 rounded-full blur-3xl"></div>
             <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-purple-600/30 rounded-full blur-3xl"></div>
