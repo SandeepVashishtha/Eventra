@@ -14,6 +14,11 @@ const ErrorMessage = ({ title = "Error", message }) => {
     return null;
   }
 
+  // 🔹 Custom handling for Google Sign-In errors
+  const displayMessage = message.includes("Google") 
+    ? "Google Sign-In failed. Please try again." 
+    : message;
+
   return (
     <div
       className="flex items-start gap-4 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-700 dark:bg-red-900/40"
@@ -28,7 +33,7 @@ const ErrorMessage = ({ title = "Error", message }) => {
           {title}
         </strong>
         <p className="mt-1 text-sm text-red-700 dark:text-red-300">
-          {message}
+          {displayMessage} /* 🔹 Updated to use custom Google message */
         </p>
       </div>
     </div>
