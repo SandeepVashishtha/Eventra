@@ -1,0 +1,47 @@
+name: "⚡ Performance Issue"
+description: "Report performance issues such as lag or slowness"
+title: "[Performance] <short-title>"
+labels: ["performance", "needs-triage"]
+assignees: []
+
+body:
+  - type: checkboxes
+    id: search
+    attributes:
+      label: "🔍 Have You Searched Existing Issues?"
+      options:
+        - label: "I have searched the existing issues to avoid duplicates"
+          required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "📉 Describe the Performance Issue"
+      description: "What is slow or lagging? When does it happen?"
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: "🧪 Environment Details"
+      description: "OS, browser, device, version, etc."
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: "🔁 Steps to Reproduce"
+      description: "Explain how someone else can experience this issue."
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: "📋 Logs / Screenshots (Optional)"
+      description: "Paste logs or upload visuals that show the issue."
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: "🙌 Contributor Checklist"
+      options:
+        - label: "I agree to follow this project's Code of Conduct"
+        - label: "I want to work on this issue"
+        - label: "I am a GSSOC'25 contributor"
