@@ -1,0 +1,34 @@
+name: "❓ Question / Help"
+description: "Ask a question or request help"
+title: "[Help] <short-title>"
+labels: ["question", "needs-triage"]
+assignees: []
+
+body:
+  - type: checkboxes
+    id: search
+    attributes:
+      label: "🔍 Have You Searched Existing Issues for the same Question?"
+      options:
+        - label: "I have searched the existing issues to avoid duplicates"
+          required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: "🧠 What's Your Question?"
+      description: "Be specific so others can help you quickly."
+
+  - type: textarea
+    id: context
+    attributes:
+      label: "📘 Context"
+      description: "Include screenshots, links, or any other relevant info."
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: "🙌 Contributor Checklist"
+      options:
+        - label: "I have searched existing issues"
+        - label: "I agree to follow this project's Code of Conduct"
