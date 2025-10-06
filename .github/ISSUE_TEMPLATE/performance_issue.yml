@@ -43,5 +43,5 @@ body:
       label: "🙌 Contributor Checklist"
       options:
         - label: "I agree to follow this project's Code of Conduct"
+        - label: "I am a GSSOC'25 and hacktoberfest contributor"
         - label: "I want to work on this issue"
-        - label: "I am a GSSOC'25 contributor"
