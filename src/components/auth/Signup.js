@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import GoogleSignInButton from "../components/GoogleSignInButton";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -240,6 +241,11 @@ const Signup = () => {
           // UPDATED: Main card background and border
           className="space-y-6 bg-white dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700/80 p-8 rounded-lg shadow-lg backdrop-blur-xl"
         >
+          /* 🔹 GOOGLE SIGN-IN ADDITION */
+          <div className="mb-4">
+            <GoogleSignInButton className="w-full" />
+          </div>
+            
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
