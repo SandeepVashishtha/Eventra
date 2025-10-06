@@ -11,6 +11,7 @@ import {
   BookOpen,
   Gift,
 } from "lucide-react";
+import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
 
 const EventCard = ({ event }) => {
   // Array of icons to choose from
@@ -96,14 +97,28 @@ const EventCard = ({ event }) => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent group-hover:from-black/50 transition-all duration-500"></div>
         
-        {/* Floating badge on image */}
-        <motion.div 
-          className="absolute top-4 right-4 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full p-2 shadow-lg"
-          whileHover={{ scale: 1.1, rotate: 5 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+        {/* Google Calendar button */}
+        <a 
+          href={addEventToGoogleCalendar(event)}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          title="Add to Google Calendar"
+          className="group/cal"
         >
-          <Calendar size={16} className="text-indigo-500" />
-        </motion.div>
+          <motion.div 
+            className="absolute top-4 right-4 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full p-2 shadow-lg cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/40"
+            whileHover={{ scale: 1.1, rotate: 5 }}
+            transition={{ type: "spring", stiffness: 400, damping: 10 }}
+          >
+            <Calendar size={16} className="text-indigo-500" />
+            
+            {/* Tooltip */}
+            <div className="absolute invisible group-hover/cal:visible opacity-0 group-hover/cal:opacity-100 transition-opacity duration-300 -top-10 left-1/2 transform -translate-x-1/2 bg-indigo-600 text-white text-xs py-1 px-2 rounded whitespace-nowrap">
+              Add to Google Calendar
+            </div>
+          </motion.div>
+        </a>
       </div>
 
       {/* --- Enhanced Description --- */}
