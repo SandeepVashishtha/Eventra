@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
@@ -13,7 +13,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
 
   // Email regex for validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -49,6 +49,13 @@ const Login = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Redirect if already authenticated (e.g., came back here or state just updated)
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
   // Handle Form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -58,8 +65,11 @@ const Login = () => {
     setLoading(true);
     try {
       // assuming login(email, password) exists in your auth context
-      await login(formData.email, formData.password);
-      navigate("/dashboard");
+      const ok = await login(formData.email, formData.password);
+      if (ok) {
+        // Defer navigation until auth state is reflected
+        navigate('/dashboard', { replace: true });
+      }
     } catch (err) {
       console.error("Login error:", err);
       setError({ general: "Invalid email or password" });
