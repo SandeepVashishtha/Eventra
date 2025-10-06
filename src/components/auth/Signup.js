@@ -27,8 +27,8 @@ const Signup = () => {
     feedback: "",
   });
   
-/* ADD: Show/Hide password state */
-  const [showPassword, setShowPassword] = useState(false);
+ /* ADD: Show/Hide password state */
+  const [showPassword, setShowPassword] = useState(false); /* ADD */
   
   const navigate = useNavigate();
 
@@ -106,9 +106,9 @@ const Signup = () => {
     
     if (e.target.name === "confirm_password") {
       if (e.target.value !== formData.password) {
-        setError("Passwords do not match"); 
+        setError("Passwords do not match"); /* ADD */
       } else {
-        setError(""); 
+        setError(""); /* ADD */
       }
       
     }
@@ -148,9 +148,9 @@ const Signup = () => {
     if (error) setError("");
   };
 
-  const togglePasswordVisibility = () => { 
-    setShowPassword(!showPassword); 
-  }; 
+  const togglePasswordVisibility = () => { /* ADD */
+    setShowPassword(!showPassword); /* ADD */
+  }; /* ADD */
   
   const handleSubmit = async (e) => {
     e.preventDefault();
