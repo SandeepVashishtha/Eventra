@@ -10,7 +10,9 @@ export const API_ENDPOINTS = {
   REGISTER: `${API_BASE_PATH}/auth/signup`,
   LOGOUT: `${API_BASE_PATH}/auth/logout`,
   REFRESH: `${API_BASE_PATH}/auth/refresh`,
-  VERIFY: `${API_BASE_PATH}/auth/verify`
+  VERIFY: `${API_BASE_PATH}/auth/verify`,
+   // ✅ New: Google login endpoint
+    GOOGLE_LOGIN: `${API_BASE_PATH}/auth/google`
   },
   USER: {
   PROFILE: `${API_BASE_PATH}/user/profile`,
@@ -105,6 +107,22 @@ export const apiUtils = {
       return response;
     } catch (error) {
       console.error('API DELETE Error:', error);
+      throw error;
+    }
+  },
+  
+// ✅ New: Google Login helper
+  googleLogin: async (googleToken) => {
+    try {
+      console.log('Google Login with token:', googleToken);
+      const response = await fetch(API_ENDPOINTS.AUTH.GOOGLE_LOGIN, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: googleToken })
+      });
+      return response;
+    } catch (error) {
+      console.error('Google Login API Error:', error);
       throw error;
     }
   }
