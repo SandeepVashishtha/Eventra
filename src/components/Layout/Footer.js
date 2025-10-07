@@ -280,7 +280,7 @@ const Footer = () => {
             </div>
 
             {Object.entries(footerLinks).map(([key, links]) => (
-              <div key={key} className="space-y-3">
+              <div key={key} className="space-y-3 ml-12">
                 {/* UPDATED: Added dark mode text color */}
                 <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
                   {key.replace("_", " ")}
@@ -290,7 +290,7 @@ const Footer = () => {
                     <li key={link.name}>
                       <Link
                         to={link.href}
-                        className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-2 transition-all duration-300 hover:translate-x-1 group"
+                        className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-4 transition-all duration-300 hover:translate-x-1 group"
                       >
                         {link.icon && (
                           <span className="text-indigo-500 dark:text-indigo-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-300 group-hover:scale-110 transition-all duration-300">
