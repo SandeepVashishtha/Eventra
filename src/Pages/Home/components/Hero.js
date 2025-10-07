@@ -170,6 +170,10 @@ const Hero = () => {
           variants={container}
           initial="hidden"
           animate={controls}
+          // AOS Implementation (Fallback/Enhancement)
+          data-aos="zoom-in"
+          data-aos-once="true"
+          data-aos-duration="1000"
         >
           {/* Headline */}
           <motion.h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-snug">

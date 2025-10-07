@@ -122,6 +122,7 @@ const FAQPage = () => {
   };
 
   useEffect(() => {
+    // Retain Framer Motion for hero entrance (above the fold)
     controls.start("show");
     window.scrollTo({
       top: 0,
@@ -132,7 +133,13 @@ const FAQPage = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       {/* Hero Section */}
-      <section className="py-20 bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-black dark:to-gray-800 relative overflow-hidden">
+      <section 
+        className="py-20 bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-black dark:to-gray-800 relative overflow-hidden"
+        // AOS Implementation on Hero (in addition to Framer Motion for immediate load)
+        data-aos="fade-down"
+        data-aos-once="true"
+        data-aos-duration="1000"
+      >
         {/* Background decoration */}
         <div className="absolute inset-0 opacity-10 dark:opacity-5">
           <div className="absolute top-10 left-10 w-72 h-72 bg-indigo-500 rounded-full filter blur-3xl animate-pulse"></div>
@@ -167,19 +174,30 @@ const FAQPage = () => {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 bg-gray-50 dark:bg-gray-900">
+      <section 
+        className="py-20 bg-gray-50 dark:bg-gray-900"
+        // AOS Implementation
+        data-aos="fade-up"
+        data-aos-duration="1000"
+        data-aos-offset="150"
+      >
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
-            variants={container}
-            initial="hidden"
-            animate={controls}
+            // Removing Framer Motion scroll-related animation on this main list
+            // variants={container}
+            // initial="hidden"
+            // animate={controls}
             className="space-y-6"
           >
-            {faqData.map((faq) => (
+            {faqData.map((faq, index) => (
               <motion.div
                 key={faq.id}
-                variants={item}
+                // Removing Framer Motion item animation
+                // variants={item}
                 className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100 dark:border-gray-700"
+                // AOS Implementation on individual FAQs
+                data-aos="zoom-in-up"
+                data-aos-delay={index * 100}
               >
                 <button
                   onClick={() => toggleFAQ(faq.id)}
@@ -235,7 +253,12 @@ const FAQPage = () => {
       </section>
 
       {/* Help Section */}
-      <section className="py-16 bg-white dark:bg-black">
+      <section 
+        className="py-16 bg-white dark:bg-black"
+        // AOS Implementation
+        data-aos="fade-up"
+        data-aos-offset="100"
+      >
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             variants={container}
@@ -253,6 +276,8 @@ const FAQPage = () => {
                 <Link
                   to="/contact"
                   className="inline-flex items-center justify-center px-6 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
+                  data-aos="zoom-in"
+                  data-aos-delay="200"
                 >
                   <MessageCircle className="w-5 h-5 mr-2" />
                   Contact Support
@@ -260,6 +285,8 @@ const FAQPage = () => {
                 <Link
                   to="/communityEvent"
                   className="inline-flex items-center justify-center px-6 py-3 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-medium rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 border border-gray-200 dark:border-gray-700"
+                  data-aos="zoom-in"
+                  data-aos-delay="400"
                 >
                   <Users className="w-5 h-5 mr-2" />
                   Join Community

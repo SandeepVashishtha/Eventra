@@ -163,7 +163,12 @@ export default function HackathonHero({
       </div>
 
       {/* ======================= STATS SECTION ======================= */}
-      <div className="relative max-w-6xl mx-auto px-6 mt-20 mb-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div 
+        className="relative max-w-6xl mx-auto px-6 mt-20 mb-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
+        data-aos="fade-up"
+        data-aos-duration="1000"
+        data-aos-delay="200"
+      >
         {[
           { label: "Hackathons Hosted", value: "120+", icon: Rocket },
           { label: "Participants", value: "50k+", icon: Users },
@@ -177,6 +182,9 @@ export default function HackathonHero({
             viewport={{ once: true }}
             transition={{ delay: 0.2 + idx * 0.15, duration: 0.6 }}
             whileHover={{ scale: 1.05 }}
+            // AOS Implementation on individual stats
+            data-aos="zoom-in"
+            data-aos-delay={200 + idx * 150}
             // UPDATED: Stat card styles
             className="relative bg-gradient-to-br from-indigo-50 to-white dark:from-gray-800 dark:to-gray-800 rounded-3xl shadow-lg p-6 flex flex-col items-center text-center hover:shadow-2xl transition-all duration-300"
           >

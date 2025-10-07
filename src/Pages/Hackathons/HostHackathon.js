@@ -43,6 +43,8 @@ const HostHackathon = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7 }}
         className="text-center mb-10"
+        data-aos="fade-down"
+        data-aos-once="true"
       >
         {/* UPDATED: Text colors */}
         <h1 className="text-4xl sm:text-5xl font-extrabold text-indigo-800 dark:text-indigo-300 mb-4">
@@ -60,6 +62,8 @@ const HostHackathon = () => {
         viewport={{ once: true }}
         transition={{ duration: 0.7 }}
         className="w-full max-w-4xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 border border-indigo-200 dark:border-gray-700 shadow-lg rounded-2xl p-6 mb-10"
+        data-aos="fade-up"
+        data-aos-delay="200"
       >
         <div className="flex items-center gap-2 mb-3">
           <ClipboardDocumentListIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
@@ -126,6 +130,8 @@ const HostHackathon = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         className="w-full max-w-4xl bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 border border-indigo-300 dark:border-gray-700"
+        data-aos="fade-up"
+        data-aos-delay="400"
       >
         <form className="space-y-6" onSubmit={handleSubmit}>
           {[
@@ -178,13 +184,15 @@ const HostHackathon = () => {
               placeholder: "https://example.com",
               required: false,
             },
-          ].map((field) => (
+          ].map((field, index) => (
             <motion.div
               key={field.name}
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
+              data-aos="fade-right"
+              data-aos-delay={index * 50 + 500}
             >
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {field.label}
@@ -202,7 +210,11 @@ const HostHackathon = () => {
           ))}
 
           {/* Date Fields */}
-          <motion.div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <motion.div 
+            className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+            data-aos="fade-up"
+            data-aos-delay="900"
+          >
             {["Start Date", "End Date"].map((label, index) => (
               <motion.div
                 key={label}
@@ -236,6 +248,8 @@ const HostHackathon = () => {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
+            data-aos="fade-up"
+            data-aos-delay="1000"
           >
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Description
@@ -257,6 +271,8 @@ const HostHackathon = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold p-3 rounded-xl shadow-lg hover:from-indigo-600 hover:to-purple-600 transition-all duration-300"
+            data-aos="zoom-in"
+            data-aos-delay="1100"
           >
             Submit Hackathon <ArrowRightIcon className="w-5 h-5" />
           </motion.button>
@@ -270,6 +286,8 @@ const HostHackathon = () => {
         viewport={{ once: true }}
         transition={{ duration: 0.7 }}
         className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-4xl mb-8 mt-12"
+        data-aos="fade-up"
+        data-aos-delay="1200"
       >
         {[
           { number: "500+", label: "Hackathons Hosted", icon: ChartBarIcon },
@@ -284,6 +302,8 @@ const HostHackathon = () => {
             key={index}
             whileHover={{ scale: 1.08, rotate: 1 }}
             className="bg-white dark:bg-gray-800 border border-indigo-200 dark:border-gray-700 rounded-2xl shadow-md p-6 text-center flex flex-col items-center"
+            data-aos="zoom-in"
+            data-aos-delay={1200 + index * 100}
           >
             {/* UPDATED: Icon and text colors */}
             <stat.icon className="w-10 h-10 text-indigo-600 dark:text-indigo-400 mb-3 animate-bounce" />
@@ -302,6 +322,8 @@ const HostHackathon = () => {
         viewport={{ once: true }}
         transition={{ duration: 0.7 }}
         className="w-full max-w-4xl mt-10 text-center bg-gradient-to-r from-gray-900 via-indigo-900 to-purple-900 border border-indigo-800 rounded-2xl p-10 shadow-2xl"
+        data-aos="fade-up"
+        data-aos-delay="1600"
       >
         <div className="flex items-center justify-center gap-2 mb-4">
           <RocketLaunchIcon className="w-8 h-8 text-indigo-400" />

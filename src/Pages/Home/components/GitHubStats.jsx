@@ -206,6 +206,9 @@ export default function GitHubStats() {
           transition={{ duration: 0.8 }}
           // UPDATED: Title text color
           className="text-4xl font-extrabold text-center text-gray-900 dark:text-gray-100 mb-10"
+          // AOS Implementation (Title)
+          data-aos="fade-zoom-in"
+          data-aos-once="true"
         >
           Project Statistics
         </motion.h2>
@@ -214,8 +217,12 @@ export default function GitHubStats() {
           initial="hidden"
           animate="show"
           className="flex flex-wrap justify-center gap-6"
+          // AOS Implementation (Card Grid)
+          data-aos="fade-up"
+          data-aos-duration="1000"
+          data-aos-delay="200"
         >
-          {statCards.map(({ label, value, icon, link }) => (
+          {statCards.map(({ label, value, icon, link }, index) => (
             <motion.a
               key={label}
               href={link}
@@ -225,6 +232,9 @@ export default function GitHubStats() {
               whileTap={{ scale: 0.95 }}
               // UPDATED: Card background and border
               className="group flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-2xl px-8 py-6 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 relative overflow-hidden w-52"
+              // Staggered AOS delay for individual cards
+              data-aos="zoom-in" 
+              data-aos-delay={index * 50} 
             >
               {/* Glow effect */}
               {/* UPDATED: Glow effect for dark mode */}

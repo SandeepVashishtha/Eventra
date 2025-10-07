@@ -21,7 +21,13 @@ export default function EventHero({
 
   return (
     // UPDATED: Main background gradient and base text color
-    <div className="relative bg-gradient-to-l from-indigo-200 to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 py-24 overflow-hidden">
+    <div 
+      className="relative bg-gradient-to-l from-indigo-200 to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 py-24 overflow-hidden"
+      // AOS Implementation
+      data-aos="fade-down"
+      data-aos-once="true"
+      data-aos-duration="1000"
+    >
       {/* Floating Circles (vibrant colors work on both themes) */}
       {floatingCircles.map((circle, idx) => (
         <motion.div
@@ -157,6 +163,8 @@ export default function EventHero({
             whileTap={{ scale: 0.95 }}
             className="relative px-7 py-3.5 rounded-xl font-semibold text-white shadow-lg overflow-hidden group"
             onClick={scrollToCard}
+            data-aos="zoom-in"
+            data-aos-delay="600"
           >
             <span className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-800 group-hover:from-indigo-500 group-hover:to-indigo-600 transition-all duration-500" />
             <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700 ease-in-out" />
@@ -172,6 +180,8 @@ export default function EventHero({
             onClick={() => navigate("/create-event")}
             // UPDATED: Secondary button styles
             className="relative px-7 py-3.5 rounded-xl font-medium text-gray-800 dark:text-gray-200 shadow-md backdrop-blur-md border border-gray-300 dark:border-gray-600 hover:border-indigo-400 transition-all duration-300 bg-white/70 dark:bg-gray-800/70"
+            data-aos="zoom-in"
+            data-aos-delay="800"
           >
             <span className="relative flex items-center">
               {/* UPDATED: Icon color */}
@@ -202,6 +212,9 @@ export default function EventHero({
               ease: "easeOut",
             }}
             whileHover={{ scale: 1.05 }}
+            // AOS Implementation on individual stats
+            data-aos="zoom-in"
+            data-aos-delay={200 + idx * 150}
             // UPDATED: Stat card styles
             className="relative group bg-white dark:bg-gray-900 rounded-2xl shadow-md shadow-blue-200/40 dark:shadow-indigo-900/80 p-5 flex flex-col items-center text-center hover:shadow-lg transition-all duration-300"
           >
