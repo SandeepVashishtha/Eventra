@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
-import GoogleSignInButton from "../components/GoogleSignInButton";
+import GoogleSignInButton from "../GoogleSignInButton";
 
 const Signup = () => {
   const [formData, setFormData] = useState({

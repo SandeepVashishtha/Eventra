@@ -1,9 +1,9 @@
-import React, { useContext, useEffect } from "react";
-import { AuthContext } from "../context/AuthContext";
+import React, { useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
 
 // Props: optional for button styling
 const GoogleSignInButton = ({ className }) => {
-  const { signInWithGoogle } = useContext(AuthContext);
+  const { signInWithGoogle } = useAuth();
 
   // Load Google script if not already loaded
   useEffect(() => {

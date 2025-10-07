@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 
 // ADD: Import GoogleSignInButton
-import GoogleSignInButton from '../../components/GoogleSignInButton';
+import GoogleSignInButton from '../GoogleSignInButton';
 
 const Login = () => {
   const [formData, setFormData] = useState({
