@@ -6,34 +6,51 @@ on:
   pull_request:
     types: [opened]
 
+permissions:
+  issues: write
+  pull-requests: write
+
 jobs:
   auto-label:
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_REPOSITORY: ${{ github.repository }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up labels
-        uses: octokit/request-action@v2
-        id: create-labels
-        with:
-          route: POST /repos/${{ github.repository }}/labels
-          mediaType: '{"previews":["symmetra"]}'
-          # We'll create labels one by one in script below
-
       - name: Create labels if missing and assign
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          #!/bin/bash
+          set -e
+
+          # Determine if it's issue or PR
+          if [ "${{ github.event_name }}" == "issues" ]; then
+            ISSUE_NUMBER=${{ github.event.issue.number }}
+            TITLE="${{ github.event.issue.title }}"
+            BODY="${{ github.event.issue.body }}"
+            CREATOR="${{ github.event.issue.user.login }}"
+          else
+            ISSUE_NUMBER=${{ github.event.pull_request.number }}
+            TITLE="${{ github.event.pull_request.title }}"
+            BODY="${{ github.event.pull_request.body }}"
+            CREATOR="${{ github.event.pull_request.user.login }}"
+          fi
+
+          echo "Number: $ISSUE_NUMBER"
+          echo "Title: $TITLE"
+          echo "Creator: $CREATOR"
+
           # Define labels and colors
           declare -A labels
           labels["Level 1 / Beginner"]="#7AE7FF"
           labels["Level 2 / Intermediate"]="#FFAB70"
           labels["Level 3 / Advanced"]="#FF7F7F"
           labels["GSSoC 25"]="#6F42C1"
-          labels["Hacktoberfest"]="#0DAB76"   # Added Hacktoberfest label with green color
+          labels["Hacktoberfest"]="#0DAB76"
 
-          # Create labels if they don't exist
+          # Create labels if missing
           for label in "${!labels[@]}"; do
             response=$(curl -s -o /dev/null -w "%{http_code}" \
               -X POST \
@@ -41,32 +58,36 @@ jobs:
               -H "Accept: application/vnd.github+json" \
               https://api.github.com/repos/${GITHUB_REPOSITORY}/labels \
               -d "{\"name\":\"$label\",\"color\":\"${labels[$label]}\"}")
+
             if [[ "$response" == "422" ]]; then
-              echo "Label '$label' already exists, skipping."
+              echo "Label '$label' already exists."
             else
               echo "Label '$label' created."
             fi
           done
 
-          # Determine complexity based on title/body
-          TITLE="${{ github.event.issue.title || github.event.pull_request.title }}"
-          BODY="${{ github.event.issue.body || github.event.pull_request.body }}"
+          sleep 2  # Ensure labels are registered
 
-          LEVEL_LABEL=""
+          # Determine complexity label
+          LEVEL_LABEL="Level 3 / Advanced"
           if echo "$TITLE$BODY" | grep -iqE "typo|doc|readme|ui"; then
             LEVEL_LABEL="Level 1 / Beginner"
           elif echo "$TITLE$BODY" | grep -iqE "feature|bug|small"; then
             LEVEL_LABEL="Level 2 / Intermediate"
-          else
-            LEVEL_LABEL="Level 3 / Advanced"
           fi
 
-          # Assign labels to issue or PR
-          ISSUE_NUMBER="${{ github.event.issue.number || github.event.pull_request.number }}"
-          curl -s -X POST \
+          echo "Level label: $LEVEL_LABEL"
+
+          # Assign labels and creator
+          ASSIGN_RESPONSE=$(curl -s -w "%{http_code}" -o /dev/null \
+            -X POST \
             -H "Authorization: token $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/$ISSUE_NUMBER/labels \
-            -d "{\"labels\":[\"GSSoC 25\",\"Hacktoberfest\",\"$LEVEL_LABEL\"]}"
-          
-          echo "Labels assigned: GSSoC 25, Hacktoberfest, $LEVEL_LABEL"
+            -d "{\"labels\":[\"GSSoC 25\",\"Hacktoberfest\",\"$LEVEL_LABEL\"]}")
+
+          if [[ "$ASSIGN_RESPONSE" == "200" ]]; then
+            echo "Labels successfully assigned: GSSoC 25, Hacktoberfest, $LEVEL_LABEL"
+          else
+            echo "Failed to assign labels. Response code: $ASSIGN_RESPONSE"
+          fi
