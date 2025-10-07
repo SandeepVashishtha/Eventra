@@ -6,6 +6,7 @@
   "dependencies": {
     "@headlessui/react": "^2.2.8",
     "@heroicons/react": "^2.0.16",
+    "aos": "^2.3.4",
     "canvas-confetti": "^1.9.3",
     "framer-motion": "^8.5.2",
     "fuse.js": "^7.1.0",

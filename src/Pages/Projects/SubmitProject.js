@@ -54,6 +54,8 @@ const SubmitProject = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7 }}
         className="text-center mb-10"
+        data-aos="fade-down"
+        data-aos-once="true"
       >
         {/* UPDATED: Text colors */}
         <h1 className="text-4xl sm:text-5xl font-extrabold text-indigo-700 dark:text-indigo-400 mb-4">
@@ -69,6 +71,8 @@ const SubmitProject = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         className="w-full max-w-4xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 border border-indigo-200 dark:border-gray-700 shadow-lg rounded-2xl p-6 mb-10"
+        data-aos="fade-up"
+        data-aos-delay="200"
       >
         <div className="flex items-center gap-2 mb-4">
           {/* UPDATED: Icon and title colors */}
@@ -130,6 +134,8 @@ const SubmitProject = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         className="w-full max-w-4xl bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 border border-indigo-300 dark:border-gray-700"
+        data-aos="fade-up"
+        data-aos-delay="400"
       >
         <form className="space-y-6" onSubmit={handleSubmit}>
           {[
@@ -238,6 +244,8 @@ const SubmitProject = () => {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
+              data-aos="fade-right"
+              data-aos-delay={index * 50 + 600}
             >
               {/* UPDATED: Label color */}
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -273,6 +281,8 @@ const SubmitProject = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold p-3 rounded-xl shadow-lg hover:from-indigo-600 hover:to-purple-600 transition-all duration-300"
+            data-aos="zoom-in"
+            data-aos-delay="1400"
           >
             Submit Project <ArrowRightIcon className="w-5 h-5" />
           </motion.button>
@@ -286,6 +296,8 @@ const SubmitProject = () => {
         viewport={{ once: true }}
         transition={{ duration: 0.7 }}
         className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-5xl mb-8 mt-12"
+        data-aos="fade-up"
+        data-aos-delay="1500"
       >
         {[
           { number: "150+", label: "Projects Submitted", icon: FolderOpenIcon },
@@ -301,6 +313,8 @@ const SubmitProject = () => {
             whileHover={{ scale: 1.05 }}
             // UPDATED: Stat card background and border
             className="bg-white dark:bg-gray-800 border border-indigo-300 dark:border-gray-700 rounded-2xl shadow-xl p-6 text-center flex flex-col items-center"
+            data-aos="zoom-in"
+            data-aos-delay={1500 + index * 100}
           >
             {/* UPDATED: Icon and text colors */}
             <stat.icon className="w-10 h-10 text-indigo-600 dark:text-indigo-400 mb-3 animate-bounce" />
@@ -319,6 +333,8 @@ const SubmitProject = () => {
         viewport={{ once: true }}
         transition={{ duration: 0.8, ease: "easeOut" }}
         className="w-full max-w-5xl mt-10 text-center bg-gradient-to-r from-black via-indigo-900 via-purple-900 to-indigo-800 border border-indigo-700 rounded-2xl p-10 shadow-2xl"
+        data-aos="fade-up"
+        data-aos-delay="1900"
       >
         <div className="flex items-center justify-center gap-2 mb-4">
           <ArrowUpTrayIcon className="w-8 h-8 text-white animate-bounce" />

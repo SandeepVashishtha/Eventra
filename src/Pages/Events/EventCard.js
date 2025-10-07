@@ -27,6 +27,10 @@ const EventCard = ({ event }) => {
 
   return (
     <motion.div
+      // AOS Implementation
+      data-aos="zoom-in"
+      data-aos-duration="1000"
+      // Removed Framer Motion initial/animate/transition to prevent conflicts with parent container animation
       className="group relative bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/20 dark:from-gray-900 dark:via-indigo-950/40 dark:to-purple-950/20 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl overflow-hidden border border-gray-200/60 dark:border-gray-700/50 backdrop-blur-sm transition-all duration-500 flex flex-col"
       whileHover={{ 
         y: -8, 
@@ -35,13 +39,6 @@ const EventCard = ({ event }) => {
         scale: 1.02
       }}
       whileTap={{ scale: 0.98 }}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{
-        type: "spring",
-        stiffness: 300,
-        damping: 20
-      }}
       style={{
         boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
       }}

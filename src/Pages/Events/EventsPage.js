@@ -134,6 +134,9 @@ const EventsPage = () => {
           className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          // AOS Implementation
+          data-aos="fade-up"
+          data-aos-duration="800"
         >
           <div className="flex flex-wrap gap-3 items-center">
             {/* Filter Buttons */}
@@ -143,7 +146,7 @@ const EventsPage = () => {
               { key: "past", label: "Past" },
               { key: "conference", label: "Conferences" },
               { key: "workshop", label: "Workshops" },
-            ].map((filter) => (
+            ].map((filter, index) => (
               <button
                 key={filter.key}
                 onClick={() => setFilterType(filter.key)}
@@ -153,6 +156,8 @@ const EventsPage = () => {
                     : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-700"
                 }`}
                 aria-pressed={filterType === filter.key}
+                data-aos="zoom-in"
+                data-aos-delay={index * 50}
               >
                 {filter.label}
               </button>
@@ -167,6 +172,8 @@ const EventsPage = () => {
                 value={sortType}
                 onChange={e => handleSortChange(e.target.value)}
                 aria-label="Sort events"
+                data-aos="zoom-in"
+                data-aos-delay="300"
               >
                 <option value="newest">Newest</option>
                 <option value="upcoming">Upcoming Soonest</option>
@@ -175,7 +182,11 @@ const EventsPage = () => {
           </div>
 
           {/* Toggle View Buttons (Grid / List) */}
-          <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
+          <div 
+            className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm"
+            data-aos="zoom-in"
+            data-aos-delay="400"
+          >
             <button
               onClick={() => setViewMode("grid")}
               className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
@@ -217,6 +228,8 @@ const EventsPage = () => {
               initial="hidden"
               animate="show"
               exit={{ opacity: 0 }}
+              data-aos="fade-up"
+              data-aos-delay="500"
             >
               {filteredEvents.map((event) => (
                 <EventCard key={event.id} event={event} />
@@ -226,7 +239,10 @@ const EventsPage = () => {
             <motion.div
               // UPDATED: "No Events Found" message styles
               className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-gradient-to-br from-white via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-indigo-900/20 dark:to-purple-900/20 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]"
-              // ... animation props
+              initial={{ opacity: 0, y: 30, scale: 0.95 }} // Initial animation state
+              animate={{ opacity: 1, y: 0, scale: 1 }} // Animate to visible
+              transition={{ duration: 0.6, ease: "easeOut" }} // Animation timing
+              data-aos="zoom-in"
             >
               {/* NOTE: You'll need to update the text colors inside this block as well */}
             </motion.div>

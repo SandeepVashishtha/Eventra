@@ -9,7 +9,7 @@ import {
   DocumentTextIcon,
 } from "@heroicons/react/24/outline";
 
-const HackathonCard = ({ hackathon, isFeatured = false }) => {
+const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
   const stats = {
     participants: hackathon.status === "live" ? hackathon.participants : 0,
     teams: hackathon.status === "live" ? hackathon.teams : 0,
@@ -18,11 +18,14 @@ const HackathonCard = ({ hackathon, isFeatured = false }) => {
 
   return (
     <motion.div
+      // AOS Implementation
+      data-aos="zoom-in"
       // UPDATED: Card background, border, and featured ring
       className={`bg-gradient-to-br from-white to-white dark:from-gray-800 dark:to-black rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-indigo-300 dark:border-gray-700 overflow-hidden relative ${
         isFeatured ? "ring-2 ring-indigo-500 dark:ring-indigo-400" : ""
       }`}
       whileHover={{ y: -4 }}
+      {...props} // Spread props to include data-aos attributes from parent
     >
       {/* Featured Ribbon */}
       {isFeatured && (

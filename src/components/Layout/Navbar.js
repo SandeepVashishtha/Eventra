@@ -254,6 +254,11 @@ const Navbar = () => {
 
       <nav
         ref={navRef}
+        // AOS Implementation
+        data-aos="fade-down"
+        data-aos-once="true"
+        data-aos-duration="1000"
+        // End AOS Implementation
         className="fixed top-0 left-0 w-full z-40 shadow-lg 
              bg-gradient-to-r from-purple-100/80 via-white to-indigo-100 backdrop-blur-lg border-b border-indigo-100
              dark:bg-gradient-to-r dark:from-gray-900 dark:via-indigo-950 dark:to-gray-900 dark:border-indigo-950"

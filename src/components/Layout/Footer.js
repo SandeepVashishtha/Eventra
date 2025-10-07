@@ -206,10 +206,22 @@ const Footer = () => {
   return (
     <>
       {/* UPDATED: Added dark mode background and border colors */}
-      <footer className="bg-indigo-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
+      <footer 
+        className="bg-indigo-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
+        // AOS Implementation
+        data-aos="fade-up"
+        data-aos-duration="1000"
+        data-aos-offset="100" // Start animation a bit earlier
+        // End AOS Implementation
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-4">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
-            <div className="space-y-4 md:col-span-2">
+            <div 
+              className="space-y-4 md:col-span-2"
+              // AOS Implementation - Logo/Newsletter Column
+              data-aos="fade-up"
+              data-aos-delay="0"
+            >
               {/* UPDATED: Added dark mode text color */}
               <h2 className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
                 Eventra
@@ -279,8 +291,14 @@ const Footer = () => {
               </div>
             </div>
 
-            {Object.entries(footerLinks).map(([key, links]) => (
-              <div key={key} className="space-y-3">
+            {Object.entries(footerLinks).map(([key, links], index) => (
+              <div 
+                key={key} 
+                className="space-y-3"
+                // AOS Implementation - Staggered columns
+                data-aos="fade-up"
+                data-aos-delay={(index + 1) * 150} // 150ms delay for each column
+              >
                 {/* UPDATED: Added dark mode text color */}
                 <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
                   {key.replace("_", " ")}

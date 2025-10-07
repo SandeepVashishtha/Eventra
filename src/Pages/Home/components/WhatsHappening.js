@@ -166,6 +166,10 @@ const WhatsHappening = () => {
     <section
       ref={ref}
       className="py-12 sm:py-16 bg-gradient-to-t from-indigo-50 via-indigo-100 to-white dark:from-gray-900 dark:via-indigo-900/20 dark:to-black "
+      // AOS Implementation
+      data-aos="fade-up"
+      data-aos-duration="1000"
+      data-aos-offset="150"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Heading */}
@@ -332,8 +336,7 @@ const WhatsHappening = () => {
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 
-                            00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                           />
                         </svg>
                         {event.date}
@@ -437,6 +440,10 @@ const WhatsHappening = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6, delay: 0.3 }}
+          // AOS Implementation (Enhancement)
+          data-aos="zoom-in-up"
+          data-aos-delay="200"
+          data-aos-once="true"
         >
           <div className="md:flex md:items-center md:justify-between">
             <div className="md:flex-1 md:pr-8">

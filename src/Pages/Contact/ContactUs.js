@@ -257,11 +257,21 @@ const ContactUs = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
+          // AOS Implementation on main card
+          data-aos="fade-up"
+          data-aos-duration="1000"
+          data-aos-once="true"
           // UPDATED: Card background and border
           className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
         >
           <div className="md:flex">
-            <div className="md:w-2/5 bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-10 flex flex-col justify-between">
+            <div 
+              className="md:w-2/5 bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-10 flex flex-col justify-between"
+              // AOS Implementation for sidebar
+              data-aos="fade-right"
+              data-aos-duration="1000"
+              data-aos-anchor=".ContactUs"
+            >
               <div>
                 <h2 className="text-3xl font-bold mb-4">Get in Touch</h2>
                 <p className="mb-6 opacity-90">
@@ -270,7 +280,11 @@ const ContactUs = () => {
                 </p>
 
                 <div className="space-y-4 mt-10">
-                  <div className="flex items-center">
+                  <div 
+                    className="flex items-center"
+                    data-aos="zoom-in"
+                    data-aos-delay="200"
+                  >
                     <div className="bg-white bg-opacity-20 p-2 rounded-full mr-4">
                       <svg
                         className="w-6 h-6"
@@ -296,7 +310,11 @@ const ContactUs = () => {
                   </div>
                 </div>
                 <div className="space-y-4 mt-10"></div>
-                <div className="flex items-center">
+                <div 
+                  className="flex items-center"
+                  data-aos="zoom-in"
+                  data-aos-delay="300"
+                >
                   <div className="bg-white bg-opacity-20 p-2 rounded-full mr-4">
                     <FiMessageSquare className="w-6 h-6" />
                   </div>
@@ -309,7 +327,11 @@ const ContactUs = () => {
                 </div>
 
                 <div className="space-y-4 mt-10"></div>
-                <div className="flex items-center">
+                <div 
+                  className="flex items-center"
+                  data-aos="zoom-in"
+                  data-aos-delay="400"
+                >
                   <div className="bg-white bg-opacity-20 p-2 rounded-full mr-4">
                     <FiStar className="w-6 h-6" />
                   </div>
@@ -323,7 +345,13 @@ const ContactUs = () => {
               </div>
             </div>
 
-            <div className="md:w-3/5 p-10">
+            <div 
+              className="md:w-3/5 p-10"
+              // AOS Implementation for form
+              data-aos="fade-left"
+              data-aos-duration="1000"
+              data-aos-anchor=".ContactUs"
+            >
               <div className="text-center mb-8">
                 <h2 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100">
                   Send us a Message

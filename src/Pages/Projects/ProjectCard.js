@@ -11,8 +11,11 @@ import {
 } from "react-icons/fi";
 
 // Status color gradients
-// UPDATED: Added dark mode classes for all statuses
+// UPDATED: Added null/undefined check for 'status' to fix runtime error.
 const getStatusColor = (status) => {
+  if (!status) {
+    return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"; // Default for undefined status
+  }
   switch (status.toLowerCase()) {
     case "active":
       return "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300";
@@ -27,6 +30,9 @@ const getStatusColor = (status) => {
 
 // UPDATED: Added dark mode classes for all difficulties
 const getDifficultyColor = (difficulty) => {
+  if (!difficulty) {
+    return "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500"; // Default for undefined difficulty
+  }
   switch (difficulty.toLowerCase()) {
     case "beginner":
       return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700";
@@ -43,8 +49,12 @@ const getDifficultyColor = (difficulty) => {
 const techTagStyle =
   "px-2 py-1 text-xs font-medium rounded-full bg-indigo-100 text-indigo-900 border border-indigo-300 dark:bg-indigo-900/60 dark:text-indigo-300 dark:border-indigo-700";
 
-const ProjectCard = ({ project }) => {
+const ProjectCard = ({ project, index }) => {
   const [isLoaded, setIsLoaded] = useState(false);
+  
+  // Guard clause for rendering ProjectCard without a valid project prop
+  if (!project) return null;
+
 
   // Random CS-themed icons
   const csIcons = [FiCode, FiCpu, FiGitPullRequest];
@@ -52,6 +62,10 @@ const ProjectCard = ({ project }) => {
 
   return (
     <motion.div
+      // AOS Implementation
+      data-aos="flip-up"
+      data-aos-delay={index * 100}
+      data-aos-duration="1000"
       // UPDATED: Card background and border
       className="bg-gradient-to-l from-white to-white dark:from-indigo-950 dark:to-black rounded-xl shadow-md overflow-hidden border border-indigo-300 dark:border-gray-700 max-w-sm mx-auto hover:shadow-lg transition-all duration-300"
       initial={{ opacity: 0, y: 20 }}
@@ -125,7 +139,7 @@ const ProjectCard = ({ project }) => {
       <div className="px-5 py-4 flex justify-between items-center border-b border-gray-300 dark:border-gray-700">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-900 flex items-center justify-center text-sm font-medium text-indigo-600 dark:text-indigo-400 border-2 border-indigo-500">
-            {project.author.charAt(0)}
+            {project.author?.charAt(0)}
           </div>
           <span className="text-sm text-gray-700 dark:text-gray-300">
             {project.author}
@@ -150,7 +164,7 @@ const ProjectCard = ({ project }) => {
       {/* Tech Stack */}
       {/* UPDATED: Section border */}
       <div className="px-5 py-4 flex flex-wrap gap-2 border-b border-gray-300 dark:border-gray-700">
-        {project.techStack.map((tech, index) => (
+        {project.techStack?.map((tech, index) => (
           <span key={index} className={techTagStyle}>
             {tech}
           </span>

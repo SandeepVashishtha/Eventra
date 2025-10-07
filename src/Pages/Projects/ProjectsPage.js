@@ -9,6 +9,8 @@ import FeedbackButton from "../../components/FeedbackButton"; // Feedback floati
 import { useNavigate } from "react-router-dom"; // Navigation hook from React Router
 import { Link } from "react-router-dom"; // Link component for routing
 import ProjectCTA from "./ProjectCTA";
+// Import mock data directly (assuming it's named mockProjectsData.json in the same folder as ProjectsPage.js)
+import mockProjects from "./mockProjectsData.json"; 
 
 // Skeleton loader for project cards while data is loading
 const SkeletonCard = () => (
@@ -17,7 +19,7 @@ const SkeletonCard = () => (
     <div className="p-6">
       <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded w-3/4 mb-4"></div>
       <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-full mb-2"></div>
-      <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-5/6 mb-4"></div>
+      <div className="h-4 w-5/6 bg-gray-100 dark:bg-gray-600 rounded w-5/6 mb-4"></div>
       <div className="flex flex-wrap gap-2 mb-4">
         <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-16"></div>
         <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-24"></div>
@@ -64,39 +66,51 @@ const ProjectGallery = () => {
 
   const navigate = useNavigate(); // Navigation function
 
-  // Fetch projects and categories from API
+  // Fetch projects and categories from API (or mock data)
   useEffect(() => {
     const fetchProjects = async () => {
       try {
         setIsLoading(true); // Set loading before fetching
         setError(""); // Reset error
 
-        // Fetch project list
+        // --- PRODUCTION LOGIC (Commented out for reliable local run) ---
+        /*
         const response = await apiUtils.get(API_ENDPOINTS.PROJECTS.LIST);
         if (response.ok) {
           const projectsData = await response.json();
-          setProjects(projectsData); // Store fetched projects
+          setProjects(projectsData);
+          const categoriesResponse = await apiUtils.get(
+            API_ENDPOINTS.PROJECTS.CATEGORIES
+          );
+          if (categoriesResponse.ok) {
+            const categoriesData = await categoriesResponse.json();
+            setCategories(["all", ...categoriesData]);
+          }
         } else {
-          throw new Error("Failed to fetch projects");
+          throw new Error("Failed to fetch projects from API");
         }
+        */
 
-        // Fetch project categories
-        const categoriesResponse = await apiUtils.get(
-          API_ENDPOINTS.PROJECTS.CATEGORIES
-        );
-        if (categoriesResponse.ok) {
-          const categoriesData = await categoriesResponse.json();
-          setCategories(["all", ...categoriesData]); // Add "all" option
-        }
+        // --- MOCK DATA FALLBACK/REPLACEMENT ---
+        // Load mock data and simulate network delay
+        setTimeout(() => {
+            const projectsData = mockProjects;
+            setProjects(projectsData);
+            
+            // Extract unique categories from mock data
+            const uniqueCategories = [...new Set(projectsData.map(p => p.category))];
+            setCategories(["all", ...uniqueCategories]);
+            setIsLoading(false);
+        }, 500);
+
       } catch (error) {
         console.error("Error fetching projects:", error);
-        setError("Failed to load projects. Please try again later."); // Show error
-      } finally {
-        setIsLoading(false); // Stop loading
+        setError("Failed to load projects. Please try again later."); 
+        setIsLoading(false);
       }
     };
 
-    fetchProjects(); // Trigger API fetch
+    fetchProjects(); // Trigger data fetch
   }, []);
 
   // Filter, search, and sort projects dynamically
@@ -112,9 +126,9 @@ const ProjectGallery = () => {
         return (
           project.title.toLowerCase().includes(query) ||
           project.description.toLowerCase().includes(query) ||
-          project.techStack.some((tech) =>
+          (project.techStack && project.techStack.some((tech) =>
             tech.toLowerCase().includes(query)
-          ) ||
+          )) ||
           project.category.toLowerCase().includes(query) ||
           project.author.toLowerCase().includes(query)
         );
@@ -157,6 +171,9 @@ const ProjectGallery = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
+          // AOS Implementation
+          data-aos="fade-up"
+          data-aos-duration="800"
         >
           <div className="flex flex-col md:flex-row gap-4 md:items-center">
             {/* Search Input Box */}
@@ -186,6 +203,8 @@ const ProjectGallery = () => {
                   className="cursor-pointer relative"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
+                  data-aos="zoom-in"
+                  data-aos-delay="200"
                 >
                   <div
                     // UPDATED: Dropdown button styles
@@ -228,6 +247,8 @@ const ProjectGallery = () => {
                   className="cursor-pointer relative"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
+                  data-aos="zoom-in"
+                  data-aos-delay="300"
                 >
                   <div
                     // UPDATED: Dropdown button styles
@@ -278,6 +299,8 @@ const ProjectGallery = () => {
                   setSearchQuery(""); // Clear search
                   setSortBy("recent"); // Reset sort
                 }}
+                data-aos="zoom-in"
+                data-aos-delay="400"
               >
                 <FiX className="w-4 h-4 animate-pulse" />
                 Clear Filters
@@ -302,6 +325,7 @@ const ProjectGallery = () => {
               className="bg-red-50 dark:bg-red-900/40 border border-red-200 dark:border-red-700 rounded-xl p-8 text-center"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
+              data-aos="zoom-in"
             >
               <div className="mx-auto max-w-md">
                 <FiAlertCircle className="mx-auto h-12 w-12 text-red-400" />
@@ -334,9 +358,12 @@ const ProjectGallery = () => {
                   },
                 },
               }}
+              // AOS Implementation on the grid container
+              data-aos="fade-up"
+              data-aos-delay="500"
             >
-              {filteredAndSortedProjects.map((project) => (
-                <ProjectCard key={project.id} project={project} />
+              {filteredAndSortedProjects.map((project, index) => (
+                <ProjectCard key={project.id} project={project} index={index} />
               ))}
             </motion.div>
           ) : (
@@ -347,6 +374,7 @@ const ProjectGallery = () => {
               initial={{ opacity: 0, y: 30, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.6, ease: "easeOut" }}
+              data-aos="zoom-in"
             >
               {/* UPDATED: Glowing gradient background */}
               <motion.div
