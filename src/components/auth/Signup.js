@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import GoogleSignInButton from "../components/GoogleSignInButton";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -25,7 +26,10 @@ const Signup = () => {
     score: 0,
     feedback: "",
   });
-
+  
+/* ADD: Show/Hide password state */
+  const [showPassword, setShowPassword] = useState(false);
+  
   const navigate = useNavigate();
 
   // Test backend connectivity on component mount
@@ -99,7 +103,15 @@ const Signup = () => {
       const strength = checkPasswordStrength(e.target.value);
       setPasswordStrength(strength);
     }
-
+    
+    if (e.target.name === "confirm_password") {
+      if (e.target.value !== formData.password) {
+        setError("Passwords do not match"); 
+      } else {
+        setError(""); 
+      }
+      
+    }
     if (e.target.name === "email") {
       if (!validateEmail(e.target.value)) {
         setEmailError("Please enter a valid email address");
@@ -136,6 +148,10 @@ const Signup = () => {
     if (error) setError("");
   };
 
+  const togglePasswordVisibility = () => { 
+    setShowPassword(!showPassword); 
+  }; 
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -144,6 +160,11 @@ const Signup = () => {
       return;
     }
 
+      if (formData.password !== formData.confirm_password) { 
+      setError("Passwords do not match");
+      return;
+    } 
+    
     setLoading(true);
     setError("");
 
@@ -240,6 +261,11 @@ const Signup = () => {
           // UPDATED: Main card background and border
           className="space-y-6 bg-white dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700/80 p-8 rounded-lg shadow-lg backdrop-blur-xl"
         >
+          /* 🔹 GOOGLE SIGN-IN ADDITION */
+          <div className="mb-4">
+            <GoogleSignInButton className="w-full" />
+          </div>
+            
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -483,7 +509,7 @@ const Signup = () => {
                 <motion.input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"} /* ADD */
                   value={formData.password}
                   onChange={handleChange}
                   required
@@ -495,6 +521,25 @@ const Signup = () => {
                   whileFocus={{ scale: 1.02 }}
                   transition={{ type: "spring", stiffness: 300 }}
                 />
+
+                   {/* ADD: Toggle Button */}
+                <button
+                  type="button"
+                  onClick={togglePasswordVisibility} /* ADD */
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 dark:text-gray-400"
+                >
+                  {showPassword ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10a9.958 9.958 0 012.09-6.019M21.364 21.364l-18.728-18.728" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  )}
+                </button> /* ADD */
+                  
               </div>
 
               <AnimatePresence>
@@ -588,7 +633,7 @@ const Signup = () => {
                 <motion.input
                   id="confirm_password"
                   name="confirm_password"
-                  type="password"
+                  type={showPassword ? "text" : "password"} /* ADD */
                   value={formData.confirm_password}
                   onChange={handleChange}
                   required

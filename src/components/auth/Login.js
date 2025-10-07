@@ -3,6 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 
+// ADD: Import GoogleSignInButton
+import GoogleSignInButton from '../../components/GoogleSignInButton';
+
 const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
@@ -246,6 +249,7 @@ const Login = () => {
                   </AnimatePresence>
                 </motion.button>
               </div>
+
               {error.password && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{error.password}</p>}
               <div className="flex justify-end">
                 <Link
@@ -343,6 +347,9 @@ const Login = () => {
                 <div className="flex-grow border-t border-gray-200 dark:border-gray-700" />
               </div>
 
+               <div className="pt-4">
+                       <GoogleSignInButton />
+               </div>
 
             </div>
           </motion.form>
