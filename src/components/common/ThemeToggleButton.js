@@ -7,13 +7,13 @@ const ThemeToggleButton = () => {
   );
 
   useEffect(() => {
-    const root = document.documentElement; 
+    const root = document.documentElement;
     if (darkMode) {
-      root.classList.add("dark"); 
-      localStorage.setItem("theme", "dark"); 
+      root.classList.add("dark");
+      localStorage.setItem("theme", "dark");
     } else {
-      root.classList.remove("dark"); 
-      localStorage.setItem("theme", "light"); 
+      root.classList.remove("dark");
+      localStorage.setItem("theme", "light");
     }
   }, [darkMode]);
 
@@ -23,17 +23,17 @@ const ThemeToggleButton = () => {
       onClick={() => setDarkMode((prev) => !prev)}
     >
       <div
-        className={`w-16 h-8 rounded-full p-1 bg-gray-300 dark:bg-gray-700 relative`}
+        className={`w-12 h-6 rounded-full p-1 bg-gray-300 dark:bg-gray-700 relative`} // reduced size
       >
         <div
-          className={`w-6 h-6 bg-white rounded-full shadow-lg flex items-center justify-center
-            transform transition-all duration-300 ease-in-out absolute top-1
-            ${darkMode ? "translate-x-8" : "translate-x-0"}`}
+          className={`w-5 h-5 bg-white rounded-full shadow-lg flex items-center justify-center
+            transform transition-all duration-300 ease-in-out absolute top-0.5
+            ${darkMode ? "translate-x-6" : "translate-x-0"}`} // adjusted translation
         >
           {darkMode ? (
-            <FiSun className="text-yellow-500" /> 
+            <FiSun className="text-yellow-500 text-sm" /> // smaller icon
           ) : (
-            <FiMoon className="text-gray-700" /> 
+            <FiMoon className="text-gray-700 text-sm" /> // smaller icon
           )}
         </div>
       </div>
