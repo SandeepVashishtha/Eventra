@@ -14,6 +14,7 @@ import {
   Globe,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import FAQCTA from "./FaqCTA";
 
 const FAQPage = () => {
   const [openFAQ, setOpenFAQ] = useState(null);
@@ -131,7 +132,7 @@ const FAQPage = () => {
   }, [controls]);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-black">
       {/* Hero Section */}
       <section 
         className="py-20 bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-black dark:to-gray-800 relative overflow-hidden"
@@ -252,50 +253,8 @@ const FAQPage = () => {
         </div>
       </section>
 
-      {/* Help Section */}
-      <section 
-        className="py-16 bg-white dark:bg-black"
-        // AOS Implementation
-        data-aos="fade-up"
-        data-aos-offset="100"
-      >
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            variants={container}
-            initial="hidden"
-            animate={controls}
-          >
-            <motion.div variants={item}>
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                Still have questions?
-              </h2>
-              <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
-                Our community and support team are here to help you succeed with your events.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link
-                  to="/contact"
-                  className="inline-flex items-center justify-center px-6 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
-                  data-aos="zoom-in"
-                  data-aos-delay="200"
-                >
-                  <MessageCircle className="w-5 h-5 mr-2" />
-                  Contact Support
-                </Link>
-                <Link
-                  to="/communityEvent"
-                  className="inline-flex items-center justify-center px-6 py-3 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-medium rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 border border-gray-200 dark:border-gray-700"
-                  data-aos="zoom-in"
-                  data-aos-delay="400"
-                >
-                  <Users className="w-5 h-5 mr-2" />
-                  Join Community
-                </Link>
-              </div>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
+      
+      <FAQCTA></FAQCTA>
     </div>
   );
 };
