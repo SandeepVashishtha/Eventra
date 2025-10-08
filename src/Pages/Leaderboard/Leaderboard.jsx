@@ -11,9 +11,12 @@ import { Menu, Transition } from "@headlessui/react";
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
 
+// Repository constant — update if the leaderboard should point to another repo
 const GITHUB_REPO = "SandeepVashishtha/Eventra";
+// Token read from env for higher rate limits (optional)
 const TOKEN = process.env.REACT_APP_GITHUB_TOKEN || "";
 
+// Points mapping for PR labels (keeps scoring logic centralized)
 const POINTS = {
   "level-1": 3,
   "level-2": 7,
@@ -21,6 +24,7 @@ const POINTS = {
 };
 
 export default function LeaderBoard() {
+  // Local state: contributors list and UI state
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState("");
@@ -29,10 +33,12 @@ export default function LeaderBoard() {
   const [sortBy, setSortBy] = useState("points");
   const [isDark, setIsDark] = useState(false);
 
+  // Constants for pagination and UI
   const CONTRIBUTORS_PER_PAGE = 10;
 
-  // 🎉 Confetti on page load
+  // 🎉 Confetti on page load — small celebratory effect
   useEffect(() => {
+    // Only visual — does not affect data or app logic
     confetti({
       particleCount: 150,
       spread: 80,
@@ -43,11 +49,13 @@ export default function LeaderBoard() {
     });
   }, []);
 
+  // Load data from cache or network
   const loadLeaderboardData = async () => {
     setLoading(true);
     const cachedData = localStorage.getItem("leaderboardData");
     const now = Date.now();
 
+    // If cached data exists and is fresh (1 hour), use it to avoid rate limits
     if (cachedData) {
       try {
         const { data, timestamp } = JSON.parse(cachedData);
@@ -60,18 +68,22 @@ export default function LeaderBoard() {
           return;
         }
       } catch (error) {
+        // If cache parse fails, proceed to fetch fresh data
         console.error("Error parsing cached data:", error);
       }
     }
     await fetchContributors();
   };
 
+  // Fetch contributors and PRs from GitHub REST API
   const fetchContributors = async () => {
     try {
+      // contributorsMap accumulates scoring per username
       let contributorsMap = {};
       let page = 1;
       let hasMore = true;
 
+      // Fetch contributor metadata (avatar, profile)
       const contributorsRes = await fetch(
         `https://api.github.com/repos/${GITHUB_REPO}/contributors`,
         { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} }
@@ -81,7 +93,9 @@ export default function LeaderBoard() {
       const contributorsData = await contributorsRes.json();
       const contributorsInfo = {};
 
+      // Store basic contributor info for later use when building the map
       contributorsData.forEach((contributor) => {
+        // Note: contributor.name might be undefined in this endpoint response
         contributorsInfo[contributor.login] = {
           name: contributor.name || contributor.login,
           avatar: contributor.avatar_url,
@@ -89,32 +103,40 @@ export default function LeaderBoard() {
         };
       });
 
+      // Paginate through closed PRs to find merged GSoc-related PRs
       while (hasMore) {
         const res = await fetch(
           `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`,
           { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} }
         );
         const prs = await res.json();
+        // If no PRs returned, stop paginating
         if (prs.length === 0) {
           hasMore = false;
           break;
         }
 
         prs.forEach((pr) => {
+          // Only count merged PRs
           if (!pr.merged_at) return;
+
+          // Normalize labels for matching against POINTS map
           const labels = pr.labels.map((l) => l.name.toLowerCase());
           const hasGsocLabel = labels.some(
             (label) => label.includes("gssoc") || label.includes("gsoc")
           );
+          // Skip PRs that are not GSoc-related
           if (!hasGsocLabel) return;
 
           const author = pr.user.login;
           let points = 0;
+          // Sum points for all matching labels on the PR
           labels.forEach((label) => {
             const normalized = label.replace(/\s+/g, "").toLowerCase();
             if (POINTS[normalized]) points += POINTS[normalized];
           });
 
+          // Initialize contributor entry if needed
           if (!contributorsMap[author]) {
             const contributorInfo = contributorsInfo[author] || {
               name: author,
@@ -131,16 +153,21 @@ export default function LeaderBoard() {
             };
           }
 
+          // Increment totals for this contributor
           contributorsMap[author].points += points;
           contributorsMap[author].prs += 1;
         });
 
+        // Proceed to next page of PRs
         page++;
       }
 
+      // Convert map to array and sort by points descending
       const sortedContributors = Object.values(contributorsMap).sort(
         (a, b) => b.points - a.points
       );
+
+      // Update UI state and cache the results for future loads
       setContributors(sortedContributors);
       setLastUpdated(new Date().toLocaleString());
       localStorage.setItem(
@@ -148,18 +175,21 @@ export default function LeaderBoard() {
         JSON.stringify({ data: sortedContributors, timestamp: Date.now() })
       );
     } catch (err) {
+      // Log errors but keep the app functional (shows empty state)
       console.error("Error fetching contributors:", err);
     } finally {
       setLoading(false);
     }
   };
 
+  // Initial data load on component mount
   useEffect(() => {
     loadLeaderboardData();
   }, []);
 
   // Filter & sort
   const filteredContributors = contributors.filter((c) => {
+    // Simple search across username and name
     const q = search.trim().toLowerCase();
     if (!q) return true;
     return (
@@ -169,13 +199,14 @@ export default function LeaderBoard() {
   });
 
   const sortedContributors = [...filteredContributors].sort((a, b) => {
+    // Sorting options: points, prs, username
     if (sortBy === "points") return b.points - a.points;
     if (sortBy === "prs") return b.prs - a.prs;
     if (sortBy === "username") return a.username.localeCompare(b.username);
     return 0;
   });
 
-  // Pagination
+  // Pagination calculations
   const indexOfLast = currentPage * CONTRIBUTORS_PER_PAGE;
   const indexOfFirst = indexOfLast - CONTRIBUTORS_PER_PAGE;
   const currentContributors = sortedContributors.slice(
@@ -186,12 +217,13 @@ export default function LeaderBoard() {
     sortedContributors.length / CONTRIBUTORS_PER_PAGE
   );
 
+  // Build a quick lookup for ranks based on the original sorted list
   const ranksMap = {};
   contributors.forEach((c, i) => {
     ranksMap[c.username] = i + 1;
   });
 
-  // Calculate stats
+  // Calculate aggregate stats used in the dashboard cards
   const stats = {
     totalContributors: contributors.length,
     flooredTotalPRs: contributors.reduce((sum, c) => sum + c.prs, 0),
@@ -228,6 +260,7 @@ export default function LeaderBoard() {
             type="text"
             value={search}
             onChange={(e) => {
+              // When searching, reset to first page to show results from start
               setSearch(e.target.value);
               setCurrentPage(1);
             }}
@@ -272,49 +305,135 @@ export default function LeaderBoard() {
               </Menu.Items>
             </Transition>
           </Menu>
-
-          
-
-          
         </div>
 
-
         {/* stats */}
-        <div style={{ display: "flex", gap: 18, marginBottom: 16, flexWrap: "wrap" }}>
-          <div style={{ flex: 1, minWidth: 220, padding: 24, borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.04)", border: `1px solid ${isDark ? "#444" : "#eee"}`, background: isDark ? "linear-gradient(135deg,#23272f,#1a1d23)" : "linear-gradient(135deg,#e0e7ff,#f3f4f6)" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 18,
+            marginBottom: 16,
+            flexWrap: "wrap",
+          }}
+        >
+          <div
+            style={{
+              flex: 1,
+              minWidth: 220,
+              padding: 24,
+              borderRadius: 16,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+              border: `1px solid ${isDark ? "#444" : "#eee"}`,
+              background: isDark
+                ? "linear-gradient(135deg,#23272f,#1a1d23)"
+                : "linear-gradient(135deg,#e0e7ff,#f3f4f6)",
+            }}
+          >
             <div style={{ display: "flex", alignItems: "center" }}>
-              <div style={{ padding: 12, borderRadius: 12, background: isDark ? "rgba(59,130,246,0.2)" : "#dbeafe", color: isDark ? "#60a5fa" : "#2563eb", marginRight: 16 }}>
+              <div
+                style={{
+                  padding: 12,
+                  borderRadius: 12,
+                  background: isDark ? "rgba(59,130,246,0.2)" : "#dbeafe",
+                  color: isDark ? "#60a5fa" : "#2563eb",
+                  marginRight: 16,
+                }}
+              >
                 <FaUsers style={{ fontSize: 22 }} />
               </div>
               <div>
-                <p style={{ fontSize: 14, color: isDark ? "#b3b3b3" : "#555" }}>Contributors</p>
-                <p style={{ fontSize: 22, fontWeight: 700, color: isDark ? "#fff" : "#222" }}>
+                <p style={{ fontSize: 14, color: isDark ? "#b3b3b3" : "#555" }}>
+                  Contributors
+                </p>
+                <p
+                  style={{
+                    fontSize: 22,
+                    fontWeight: 700,
+                    color: isDark ? "#fff" : "#222",
+                  }}
+                >
                   {loading ? "..." : stats.totalContributors}
                 </p>
               </div>
             </div>
           </div>
-          <div style={{ flex: 1, minWidth: 220, padding: 24, borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.04)", border: `1px solid ${isDark ? "#444" : "#eee"}`, background: isDark ? "linear-gradient(135deg,#23272f,#1a1d23)" : "linear-gradient(135deg,#e0e7ff,#f3f4f6)" }}>
+          <div
+            style={{
+              flex: 1,
+              minWidth: 220,
+              padding: 24,
+              borderRadius: 16,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+              border: `1px solid ${isDark ? "#444" : "#eee"}`,
+              background: isDark
+                ? "linear-gradient(135deg,#23272f,#1a1d23)"
+                : "linear-gradient(135deg,#e0e7ff,#f3f4f6)",
+            }}
+          >
             <div style={{ display: "flex", alignItems: "center" }}>
-              <div style={{ padding: 12, borderRadius: 12, background: isDark ? "rgba(16,185,129,0.2)" : "#bbf7d0", color: isDark ? "#34d399" : "#059669", marginRight: 16 }}>
+              <div
+                style={{
+                  padding: 12,
+                  borderRadius: 12,
+                  background: isDark ? "rgba(16,185,129,0.2)" : "#bbf7d0",
+                  color: isDark ? "#34d399" : "#059669",
+                  marginRight: 16,
+                }}
+              >
                 <FaCode style={{ fontSize: 22 }} />
               </div>
               <div>
-                <p style={{ fontSize: 14, color: isDark ? "#b3b3b3" : "#555" }}>Pull Requests</p>
-                <p style={{ fontSize: 22, fontWeight: 700, color: isDark ? "#fff" : "#222" }}>
+                <p style={{ fontSize: 14, color: isDark ? "#b3b3b3" : "#555" }}>
+                  Pull Requests
+                </p>
+                <p
+                  style={{
+                    fontSize: 22,
+                    fontWeight: 700,
+                    color: isDark ? "#fff" : "#222",
+                  }}
+                >
                   {loading ? "..." : stats.flooredTotalPRs}
                 </p>
               </div>
             </div>
           </div>
-          <div style={{ flex: 1, minWidth: 220, padding: 24, borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.04)", border: `1px solid ${isDark ? "#444" : "#eee"}`, background: isDark ? "linear-gradient(135deg,#23272f,#1a1d23)" : "linear-gradient(135deg,#e0e7ff,#f3f4f6)" }}>
+          <div
+            style={{
+              flex: 1,
+              minWidth: 220,
+              padding: 24,
+              borderRadius: 16,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+              border: `1px solid ${isDark ? "#444" : "#eee"}`,
+              background: isDark
+                ? "linear-gradient(135deg,#23272f,#1a1d23)"
+                : "linear-gradient(135deg,#e0e7ff,#f3f4f6)",
+            }}
+          >
             <div style={{ display: "flex", alignItems: "center" }}>
-              <div style={{ padding: 12, borderRadius: 12, background: isDark ? "rgba(139,92,246,0.2)" : "#ede9fe", color: isDark ? "#a78bfa" : "#7c3aed", marginRight: 16 }}>
+              <div
+                style={{
+                  padding: 12,
+                  borderRadius: 12,
+                  background: isDark ? "rgba(139,92,246,0.2)" : "#ede9fe",
+                  color: isDark ? "#a78bfa" : "#7c3aed",
+                  marginRight: 16,
+                }}
+              >
                 <FaStar style={{ fontSize: 22 }} />
               </div>
               <div>
-                <p style={{ fontSize: 14, color: isDark ? "#b3b3b3" : "#555" }}>Total Points</p>
-                <p style={{ fontSize: 22, fontWeight: 700, color: isDark ? "#fff" : "#222" }}>
+                <p style={{ fontSize: 14, color: isDark ? "#b3b3b3" : "#555" }}>
+                  Total Points
+                </p>
+                <p
+                  style={{
+                    fontSize: 22,
+                    fontWeight: 700,
+                    color: isDark ? "#fff" : "#222",
+                  }}
+                >
                   {loading ? "..." : stats.flooredTotalPoints}
                 </p>
               </div>
