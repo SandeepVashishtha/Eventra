@@ -86,7 +86,7 @@ export default function CTASection() {
             -------------------------- */}
             <a
               href="#hackathons"
-              className="inline-flex items-center gap-3 bg-white text-indigo-900 font-semibold px-8 py-4 rounded-full shadow-lg hover:bg-white/90 transition"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:scale-105 transition-all duration-300 ease-out"
             >
               Explore Hackathons
               <ArrowRight className="w-5 h-5" />
