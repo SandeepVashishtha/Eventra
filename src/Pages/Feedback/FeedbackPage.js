@@ -443,7 +443,11 @@ const FeedbackPage = () => {
 
   return (
     // UPDATED: Main page background
-    <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden" onClick={(e) => {
+    if (e.target === e.currentTarget) {
+      navigate("/"); // Closes the form when clicking outside
+    }
+  }}>
       <div className="max-w-4xl w-full mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
