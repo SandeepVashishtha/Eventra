@@ -22,10 +22,87 @@ export default function HackathonHero({
   // React Router hook to navigate programmatically
   const navigate = useNavigate();
   const { user, token } = useAuth();
+    const container = {
+    hidden: {},
+    show: { transition: { staggerChildren: 0.15 } },
+  };
+
+  const fadeUp = {
+    hidden: { y: 40, opacity: 0 },
+    show: { y: 0, opacity: 1, transition: { duration: 0.8, ease: "easeOut" } },
+  };
+
+  const floatShape = (i) => ({
+    y: [0, -20 - i * 5, 0],
+    x: [0, 20 + i * 5, 0],
+    rotate: [0, 15, -15, 0],
+    transition: { duration: 6 + i, repeat: Infinity, ease: "easeInOut" },
+  });
+
+  const shapes = [
+    {
+      size: 60,
+      pos: { top: "10%", left: "5%" },
+      color: "from-indigo-400 to-blue-400",
+    },
+    {
+      size: 60,
+      pos: { top: "12%", left: "45%" },
+      color: "from-indigo-300 to-blue-200",
+    },
+    {
+      size: 60,
+      pos: { top: "2%", left: "10%" },
+      color: "from-purple-400 to-pink-400",
+    },
+    {
+      size: 50,
+      pos: { top: "4%", right: "20%" },
+      color: "from-indigo-300 to-blue-200",
+    },
+    {
+      size: 70,
+      pos: { top: "1%", right: "5%" },
+      color: "from-pink-300 to-purple-300",
+    },
+    {
+      size: 80,
+      pos: { top: "10%", right: "10%" },
+      color: "from-purple-400 to-pink-400",
+    },
+    {
+      size: 100,
+      pos: { bottom: "20%", left: "25%" },
+      color: "from-blue-300 to-indigo-300",
+    },
+    {
+      size: 70,
+      pos: { bottom: "15%", right: "15%" },
+      color: "from-pink-300 to-purple-300",
+    },
+    {
+      size: 50,
+      pos: { top: "50%", left: "2%" },
+      color: "from-indigo-300 to-blue-200",
+    },
+  ];
 
   return (
     // UPDATED: Main background gradient and base text color
     <div className="bg-gradient-to-l from-indigo-200 to-white dark:from-gray-900 dark:to-black">
+      {shapes.map((shape, i) => (
+              <motion.div
+                key={i}
+                animate={floatShape(i)}
+                // Reduced shape opacity in dark mode for a subtler effect
+                className={`absolute rounded-full bg-gradient-to-tr ${shape.color} opacity-30 dark:opacity-15`}
+                style={{
+                  width: `${shape.size}px`,
+                  height: `${shape.size}px`,
+                  ...shape.pos,
+                }}
+              />
+            ))}
       <div className="relative max-w-6xl mx-auto px-8 text-center mt-12">
         <motion.h1
           initial={{ opacity: 0, y: -30 }}
