@@ -34,6 +34,7 @@ const HackathonHub = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isScrollVisible, setIsScrollVisible] = useState(false);
   const [filters, setFilters] = useState({
     difficulty: "",
     prize: "",
@@ -55,6 +56,15 @@ const HackathonHub = () => {
   const scrollToCards = () => {
     cardsSectionRef.current?.scrollIntoView({ behavior: "smooth" }); // scroll function
   };
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrollVisible(window.scrollY > 50); 
+    };
+    window.addEventListener("scroll", handleScroll);
+    handleScroll(); 
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -141,7 +151,11 @@ const HackathonHub = () => {
     <div className="bg-gradient-to-l from-indigo-200 to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 py-6 ">
       {/* Floating Action Button */}
       <motion.div
-        className="fixed bottom-6 right-6 z-50"
+        className="fixed right-6 z-50"
+        animate={{
+          bottom: isScrollVisible ? 92 : 24, 
+        }}
+        transition={{ type: "spring", stiffness: 300, damping: 25 }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
@@ -198,7 +212,7 @@ const HackathonHub = () => {
       {/* Featured Hackathons */}
       {!isLoading && featuredHackathons.length > 0 && (
         // AOS Implementation
-        <div 
+        <div
           className="bg-white dark:bg-black py-8 border-b border-gray-200 dark:border-gray-800"
           data-aos="fade-up"
           data-aos-duration="1000"
@@ -395,9 +409,9 @@ const HackathonHub = () => {
               exit={{ opacity: 0 }}
             >
               {filteredHackathons.map((hackathon, index) => (
-                <HackathonCard 
-                  key={hackathon.id} 
-                  hackathon={hackathon} 
+                <HackathonCard
+                  key={hackathon.id}
+                  hackathon={hackathon}
                   // AOS Implementation on individual cards
                   data-aos="flip-up"
                   data-aos-delay={index * 100}
