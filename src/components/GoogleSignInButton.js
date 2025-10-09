@@ -7,7 +7,7 @@ const GoogleSignInButton = ({ className }) => {
 
   // Load Google script if not already loaded
   useEffect(() => {
-    const id = "google-client-script";
+    const id = "google-client-script";  
     if (!document.getElementById(id)) {
       const script = document.createElement("script");
       script.src = "https://accounts.google.com/gsi/client";
@@ -31,27 +31,38 @@ const GoogleSignInButton = ({ className }) => {
 
   // Render the Google button
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (window.google && window.google.accounts) {
-        window.google.accounts.id.initialize({
-          client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
-          callback: handleGoogleResponse,
-        });
+    const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      console.error(
+        "FATAL ERROR: REACT_APP_GOOGLE_CLIENT_ID is missing! Check your .env file or hosting environment variables."
+      );
+      
+      return; 
+    }
+    
+    
+    const interval = setInterval(() => {
+      if (window.google && window.google.accounts) {
+        
+        
+        window.google.accounts.id.initialize({
+          client_id: clientId, 
+          callback: handleGoogleResponse,
+        });
+        
+        window.google.accounts.id.renderButton(
+          document.getElementById("google-signin-button"),
+          {
+            theme: "outline",
+            size: "large",
+            width: "100%",
+            type: "standard",
+          }
+        );
 
-        window.google.accounts.id.renderButton(
-          document.getElementById("google-signin-button"),
-          {
-            theme: "outline",
-            size: "large",
-            width: "100%",
-            type: "standard",
-          }
-        );
-
-        clearInterval(interval); // Stop checking after initialization
-      }
-    }, 500);
-
+        clearInterval(interval); 
+      }
+    }, 500);
     return () => clearInterval(interval);
   }, []);
 
