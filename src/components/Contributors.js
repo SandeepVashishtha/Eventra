@@ -52,6 +52,7 @@ const cacheContributors = (data) => {
 const Contributors = () => {
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch GitHub profile details
   const fetchGitHubProfile = useCallback(async (username) => {
@@ -135,6 +136,12 @@ const Contributors = () => {
     fetchContributors();
   }, [fetchContributors]);
 
+  // Filter contributors based on search term
+  const filteredContributors = contributors.filter((c) =>
+    c.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+
   // UPDATED: Loading text color
   if (loading)
     return <p className="text-center py-20 text-gray-600 dark:text-gray-400">Loading contributors...</p>;
@@ -143,6 +150,18 @@ const Contributors = () => {
     // UPDATED: Section background
     <section className="py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
       <div className="max-w-7xl mx-auto px-6">
+
+      {/* Added The Search Bar */}
+        <div className="flex justify-center mb-8">
+          <input
+            type="text"
+            placeholder="Search contributors..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="px-4 py-2 rounded-lg w-64 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+          />
+        </div>
+
         <motion.h2
           // UPDATED: Title text
           className="text-5xl font-extrabold text-center mb-16 text-gray-800 dark:text-gray-100 tracking-tight"
