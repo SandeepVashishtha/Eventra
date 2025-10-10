@@ -151,11 +151,6 @@ const FAQPage = () => {
           color: "from-indigo-400 to-blue-400",
         },
         {
-          size: 50,
-          pos: { top: "2%", left: "40%" },
-          color: "from-pink-400 to-purple-300",
-        },
-        {
           size: 70,
           pos: { top: "3%", right: "10%" },
           color: "from-indigo-400 to-blue-400",
