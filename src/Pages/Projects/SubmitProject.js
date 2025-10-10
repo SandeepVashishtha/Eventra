@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { toast } from "react-toastify";
 import {
   ArrowRightIcon,
   ChartBarIcon,
@@ -38,8 +39,28 @@ const SubmitProject = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Basic validation (optional)
+    if (!formData.projectName || !formData.teamName || !formData.githubLink) {
+      toast.error("❌ Please fill all required fields before submitting!");
+      return;
+    }
+
     console.log("Project Submitted:", formData);
-    alert("Project submitted successfully!");
+
+    toast.success("Project submitted successfully!");
+    setFormData({
+      projectName: "",
+      teamName: "",
+      email: "",
+      githubLink: "",
+      liveDemoLink: "",
+      description: "",
+      projectType: "",
+      techStack: "",
+      additionalNotes: "",
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -321,7 +342,9 @@ const SubmitProject = () => {
             <h3 className="text-3xl font-bold text-indigo-700 dark:text-indigo-400">
               {stat.number}
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">{stat.label}</p>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              {stat.label}
+            </p>
           </motion.div>
         ))}
       </motion.div>

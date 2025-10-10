@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
+import ToastProvider from "./components/Toastprovider";
 
 // --------------- LAYOUT
 import Navbar from "./components/Layout/Navbar";
@@ -44,7 +45,7 @@ import ApiDocs from "./Pages/ApiDocs";
 import HelpCenter from "./Pages/HelpCenter";
 import FAQPage from "./Pages/FAQ/FAQPage";
 
-import { ThemeProvider } from './context/ThemeContext';
+import { ThemeProvider } from "./context/ThemeContext";
 function App() {
   return (
     <ThemeProvider>
@@ -52,6 +53,7 @@ function App() {
         <Router>
           <div className="App">
             <Navbar />
+            <ToastProvider/>
 
             <main className="min-h-screen bg-white dark:bg-black">
               <Routes>
@@ -62,7 +64,10 @@ function App() {
                 <Route path="/contributors" element={<Contributors />} />
                 <Route path="/communityEvent" element={<CommunityEvent />} />
                 <Route path="/leaderBoard" element={<LeaderBoard />} />
-                <Route path="/contributorguide" element={<ContributorGuide />} />
+                <Route
+                  path="/contributorguide"
+                  element={<ContributorGuide />}
+                />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/faq" element={<FAQPage />} />
                 <Route path="/terms" element={<Terms />} />
@@ -128,10 +133,7 @@ function App() {
               </Routes>
             </main>
 
-
-
-            <ScrollToTop/>
-
+            <ScrollToTop />
 
             {/* Global floating Feedback button */}
             <FeedbackButton />

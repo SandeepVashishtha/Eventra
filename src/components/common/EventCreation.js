@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { toast } from "react-toastify";
 import {
   ArrowRightIcon,
   CalendarIcon,
@@ -335,18 +336,19 @@ const EventCreation = () => {
 
       const token = localStorage.getItem("token");
       if (!token) {
-        alert("Authentication required. Please log in and try again.");
+        toast.error("Authentication required. Please log in and try again.");
         setCurrentStep("form");
         return;
       }
 
+      // Mock success if API inactive
       if (
         !API_ENDPOINTS.EVENTS.CREATE ||
         process.env.NODE_ENV === "development"
       ) {
         console.warn("⚠️ Mocking event creation success (API inactive)");
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // simulate delay
-        setSuccessMessage("Event created successfully!");
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        toast.success("Event created successfully!");
         resetForm();
         setCurrentStep("form");
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -359,35 +361,20 @@ const EventCreation = () => {
         eventData,
         token
       );
-
-      let result;
-      try {
-        result = await response.json();
-      } catch (parseError) {
-        console.error("Failed to parse response:", parseError);
-        throw new Error("Invalid response from server");
-      }
+      const result = await response.json();
 
       if (response.ok && result.success) {
-        setSuccessMessage("Event created successfully!");
+        toast.success("Event created successfully!");
         resetForm();
         setCurrentStep("form");
       } else {
-        if (result.errors && typeof result.errors === "object") {
-          setErrors(result.errors);
-          setCurrentStep("form");
-        } else {
-          const errorMessage =
-            result.message ||
-            result.error ||
-            `Server error: ${response.status}`;
-          setGeneralError(`Error creating event: ${errorMessage}`);
-        }
+        const errorMessage =
+          result.message || result.error || `Server error: ${response.status}`;
+        toast.error(`❌ Error creating event: ${errorMessage}`);
         setCurrentStep("form");
       }
     } catch (error) {
       console.error("Error creating event:", error);
-
       let errorMessage = "Failed to create event. ";
       if (error.name === "TypeError" && error.message.includes("fetch")) {
         errorMessage += "Network error - please check your connection.";
@@ -396,8 +383,7 @@ const EventCreation = () => {
       } else {
         errorMessage += error.message || "Please try again.";
       }
-
-      setGeneralError(errorMessage);
+      toast.error(errorMessage);
       setCurrentStep("form");
     } finally {
       setLoading(false);
