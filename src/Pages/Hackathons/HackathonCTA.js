@@ -81,7 +81,7 @@ const HackathonCTA = () => {
         <motion.button
           onClick={() => setShowModal(true)}
           // UPDATED: The secondary button needs a subtle dark mode style
-          className="inline-flex items-center justify-center gap-2 bg-white text-indigo-700 dark:bg-gray-200 dark:text-indigo-800 font-semibold px-8 py-4 rounded-full shadow-lg hover:scale-105 transition-transform duration-300"
+          className="inline-flex items-center justify-center gap-2 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:dark:bg-gray-700 hover:dark:text-white font-semibold px-8 py-4 rounded-full shadow-lg hover:scale-105 transition-transform duration-300"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           data-aos="zoom-in"
