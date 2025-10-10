@@ -60,11 +60,11 @@ const EventCard = ({ event }) => {
       <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-pink-500/20 blur-sm -z-10"></div>
       
       {/* Action buttons container positioned at the top-right of the entire card */}
-      <div className="absolute top-2 right-2 z-[200] flex space-x-2">
+      <div className="absolute top-20 right-4 z-[200] flex space-x-2">
         {/* Share Menu */}
         <ShareMenu 
           shareData={eventSharingData} 
-          position="bottom-right"
+          position="above"
           menuClassName="!z-[999] shadow-2xl"
           buttonClassName=""
         >
