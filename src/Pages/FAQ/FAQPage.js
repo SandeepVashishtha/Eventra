@@ -26,74 +26,84 @@ const FAQPage = () => {
       category: "Getting Started",
       icon: <Rocket className="w-5 h-5" />,
       question: "How do I register for a hackathon or event?",
-      answer: "Registering for events on Eventra is simple! Browse available events on our Events or Hackathons pages, click on the event you're interested in, and click the 'Register' or 'Join Event' button. You'll need to create an account if you don't have one. Follow the registration prompts, provide any required information, and you're all set! You'll receive a confirmation email with event details and check-in instructions."
+      answer:
+        "Registering for events on Eventra is simple! Browse available events on our Events or Hackathons pages, click on the event you're interested in, and click the 'Register' or 'Join Event' button. You'll need to create an account if you don't have one. Follow the registration prompts, provide any required information, and you're all set! You'll receive a confirmation email with event details and check-in instructions.",
     },
     {
       id: 2,
       category: "Event Creation",
       icon: <Calendar className="w-5 h-5" />,
       question: "How can I create and host my own event on Eventra?",
-      answer: "Creating your own event is easy! Sign up for an account, navigate to your dashboard, and click 'Create Event' or 'Host Event'. Choose your event type (workshop, hackathon, conference, etc.), fill in the event details like title, description, date, location, and capacity. You can customize registration requirements, add team collaboration features, and set up check-in options. Once published, your event will be visible to the community and you'll have access to management tools and analytics."
+      answer:
+        "Creating your own event is easy! Sign up for an account, navigate to your dashboard, and click 'Create Event' or 'Host Event'. Choose your event type (workshop, hackathon, conference, etc.), fill in the event details like title, description, date, location, and capacity. You can customize registration requirements, add team collaboration features, and set up check-in options. Once published, your event will be visible to the community and you'll have access to management tools and analytics.",
     },
     {
       id: 3,
       category: "Event Types",
       icon: <BookOpen className="w-5 h-5" />,
       question: "What is the difference between a workshop and a hackathon?",
-      answer: "Workshops are typically educational or skill-building sessions focused on learning specific topics, tools, or techniques. They're usually shorter (a few hours to a full day) and more structured. Hackathons are competitive coding events where participants work in teams to build projects within a limited timeframe (usually 24-48 hours). Hackathons emphasize innovation, collaboration, and rapid prototyping, often with prizes and judging involved."
+      answer:
+        "Workshops are typically educational or skill-building sessions focused on learning specific topics, tools, or techniques. They're usually shorter (a few hours to a full day) and more structured. Hackathons are competitive coding events where participants work in teams to build projects within a limited timeframe (usually 24-48 hours). Hackathons emphasize innovation, collaboration, and rapid prototyping, often with prizes and judging involved.",
     },
     {
       id: 4,
       category: "Pricing",
       icon: <Zap className="w-5 h-5" />,
       question: "Is it free to participate in or create an event?",
-      answer: "Yes! Eventra is an open-source platform that's completely free to use for both participants and event organizers. You can join events, create your own events, and access most features without any cost. Some premium features for large-scale events or enterprise users may have associated costs, but the core platform remains free for communities, educational institutions, and individual organizers."
+      answer:
+        "Yes! Eventra is an open-source platform that's completely free to use for both participants and event organizers. You can join events, create your own events, and access most features without any cost. Some premium features for large-scale events or enterprise users may have associated costs, but the core platform remains free for communities, educational institutions, and individual organizers.",
     },
     {
       id: 5,
       category: "Community",
       icon: <Users className="w-5 h-5" />,
       question: "How do the community links (Discord, Telegram, etc.) work?",
-      answer: "Our community links connect you to various chat platforms where Eventra users gather to discuss events, share opportunities, network, and collaborate. These external communities are managed by volunteers and provide spaces for ongoing conversations beyond individual events. You can join these communities to stay updated on upcoming events, find team members for hackathons, get help with the platform, and connect with like-minded people in your area or field of interest."
+      answer:
+        "Our community links connect you to various chat platforms where Eventra users gather to discuss events, share opportunities, network, and collaborate. These external communities are managed by volunteers and provide spaces for ongoing conversations beyond individual events. You can join these communities to stay updated on upcoming events, find team members for hackathons, get help with the platform, and connect with like-minded people in your area or field of interest.",
     },
     {
       id: 6,
       category: "Account Management",
       icon: <Shield className="w-5 h-5" />,
       question: "How do I edit my profile and manage my account?",
-      answer: "After logging in, click on your profile picture in the top navigation bar and select 'Edit Profile' or access your 'Dashboard'. From there, you can update your personal information, profile picture, bio, interests, and notification preferences. You can also view your event history, manage your created events, and track your participation in the community leaderboard."
+      answer:
+        "After logging in, click on your profile picture in the top navigation bar and select 'Edit Profile' or access your 'Dashboard'. From there, you can update your personal information, profile picture, bio, interests, and notification preferences. You can also view your event history, manage your created events, and track your participation in the community leaderboard.",
     },
     {
       id: 7,
       category: "Technical Support",
       icon: <MessageCircle className="w-5 h-5" />,
       question: "What should I do if I encounter technical issues?",
-      answer: "If you experience technical problems, first try refreshing your browser or clearing your cache. For persistent issues, you can contact our support team through the Contact page, join our community Discord for real-time help from other users, or check our documentation page for troubleshooting guides. Since we're open-source, you can also report bugs or request features on our GitHub repository."
+      answer:
+        "If you experience technical problems, first try refreshing your browser or clearing your cache. For persistent issues, you can contact our support team through the Contact page, join our community Discord for real-time help from other users, or check our documentation page for troubleshooting guides. Since we're open-source, you can also report bugs or request features on our GitHub repository.",
     },
     {
       id: 8,
       category: "Event Features",
       icon: <Globe className="w-5 h-5" />,
       question: "Can I host virtual or hybrid events?",
-      answer: "Absolutely! Eventra supports in-person, virtual, and hybrid events. When creating an event, you can specify the format and add relevant details like meeting links, platform requirements, or special instructions for virtual attendees. Our platform handles registration and check-ins for all event types, making it easy to manage diverse event formats."
+      answer:
+        "Absolutely! Eventra supports in-person, virtual, and hybrid events. When creating an event, you can specify the format and add relevant details like meeting links, platform requirements, or special instructions for virtual attendees. Our platform handles registration and check-ins for all event types, making it easy to manage diverse event formats.",
     },
     {
       id: 9,
       category: "Event Management",
       icon: <Calendar className="w-5 h-5" />,
       question: "How do I manage attendees and check-ins?",
-      answer: "Event organizers have access to a comprehensive dashboard with attendee management tools. You can view registration lists, send announcements to participants, generate QR codes for quick check-ins, track attendance in real-time, and export attendee data. The platform also provides analytics on registration patterns, no-shows, and engagement metrics to help you improve future events."
+      answer:
+        "Event organizers have access to a comprehensive dashboard with attendee management tools. You can view registration lists, send announcements to participants, generate QR codes for quick check-ins, track attendance in real-time, and export attendee data. The platform also provides analytics on registration patterns, no-shows, and engagement metrics to help you improve future events.",
     },
     {
       id: 10,
       category: "Privacy & Security",
       icon: <Shield className="w-5 h-5" />,
       question: "How is my personal data protected?",
-      answer: "We take privacy and security seriously. Eventra follows industry-standard security practices including data encryption, secure user authentication, and GDPR compliance. Your personal information is only used for platform functionality and event coordination. We never sell user data to third parties. You can review our full privacy policy for detailed information about data handling and your rights as a user."
-    }
+      answer:
+        "We take privacy and security seriously. Eventra follows industry-standard security practices including data encryption, secure user authentication, and GDPR compliance. Your personal information is only used for platform functionality and event coordination. We never sell user data to third parties. You can review our full privacy policy for detailed information about data handling and your rights as a user.",
+    },
   ];
 
-  const categories = [...new Set(faqData.map(faq => faq.category))];
+  const categories = [...new Set(faqData.map((faq) => faq.category))];
 
   const toggleFAQ = (id) => {
     setOpenFAQ(openFAQ === id ? null : id);
@@ -132,22 +142,124 @@ const FAQPage = () => {
   }, [controls]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-black">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-black dark:to-gray-900">
       {/* Hero Section */}
-      <section 
-        className="py-20 bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-black dark:to-gray-800 relative overflow-hidden"
-        // AOS Implementation on Hero (in addition to Framer Motion for immediate load)
-        data-aos="fade-down"
-        data-aos-once="true"
-        data-aos-duration="1000"
-      >
-        {/* Background decoration */}
-        <div className="absolute inset-0 opacity-10 dark:opacity-5">
-          <div className="absolute top-10 left-10 w-72 h-72 bg-indigo-500 rounded-full filter blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-purple-500 rounded-full filter blur-3xl animate-pulse delay-1000"></div>
-        </div>
+      {[
+        {
+          size: 60,
+          pos: { top: "5%", left: "10%" },
+          color: "from-indigo-400 to-blue-400",
+        },
+        {
+          size: 50,
+          pos: { top: "2%", left: "40%" },
+          color: "from-pink-400 to-purple-300",
+        },
+        {
+          size: 70,
+          pos: { top: "3%", right: "10%" },
+          color: "from-indigo-400 to-blue-400",
+        },
+        {
+          size: 80,
+          pos: { top: "15%", right: "15%" },
+          color: "from-purple-400 to-pink-400",
+        },
+        {
+          size: 100,
+          pos: { bottom: "5%", left: "20%" },
+          color: "from-blue-300 to-indigo-300",
+        },
+        {
+          size: 100,
+          pos: { top: "15%", left: "15%" },
+          color: "from-pink-300 to-purple-200",
+        },
+        {
+          size: 70,
+          pos: { bottom: "10%", right: "10%" },
+          color: "from-pink-300 to-purple-300",
+        },
+        {
+          size: 50,
+          pos: { top: "50%", left: "2%" },
+          color: "from-indigo-300 to-blue-200",
+        },
+        {
+          size: 90,
+          pos: { top: "40%", right: "15%" },
+          color: "from-purple-300 to-indigo-300",
+        },
+        {
+          size: 65,
+          pos: { top: "30%", left: "3%" },
+          color: "from-blue-200 to-indigo-400",
+        },
+        {
+          size: 75,
+          pos: { bottom: "20%", right: "30%" },
+          color: "from-pink-200 to-purple-400",
+        },
+        {
+          size: 55,
+          pos: { bottom: "35%", left: "10%" },
+          color: "from-indigo-200 to-blue-300",
+        },
+        {
+          size: 85,
+          pos: { top: "70%", right: "5%" },
+          color: "from-blue-300 to-indigo-400",
+        },
+        {
+          size: 50,
+          pos: { top: "80%", left: "40%" },
+          color: "from-purple-200 to-pink-300",
+        },
+        {
+          size: 95,
+          pos: { top: "60%", right: "40%" },
+          color: "from-indigo-400 to-blue-500",
+        },
+        {
+          size: 45,
+          pos: { top: "30%", right: "5%" },
+          color: "from-pink-200 to-purple-300",
+        },
+        {
+          size: 70,
+          pos: { bottom: "45%", left: "45%" },
+          color: "from-blue-300 to-indigo-300",
+        },
+        {
+          size: 60,
+          pos: { top: "10%", left: "70%" },
+          color: "from-indigo-200 to-blue-300",
+        },
+      ].map((shape, i) => (
+        <motion.div
+          key={i}
+          animate={{
+            y: [0, -20 - i * 5, 0],
+            x: [0, 20 + i * 5, 0],
+            rotate: [0, 15, -15, 0],
+          }}
+          transition={{
+            duration: 6 + i,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className={`absolute rounded-full bg-gradient-to-tr ${shape.color} opacity-30 dark:opacity-10`}
+          style={{
+            width: `${shape.size}px`,
+            height: `${shape.size}px`,
+            ...shape.pos,
+          }}
+        />
+      ))}
 
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+      <section className="py-20 relative overflow-hidden">
+        {/* Animated Floating Gradient Shapes */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <motion.div
             variants={container}
             initial="hidden"
@@ -165,9 +277,9 @@ const FAQPage = () => {
                 </span>
               </h1>
               <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
-                Everything you need to know about using Eventra, from getting started 
-                to hosting your own events. Can't find what you're looking for? 
-                Reach out to our community!
+                Everything you need to know about using Eventra, from getting
+                started to hosting your own events. Can't find what you're
+                looking for? Reach out to our community!
               </p>
             </motion.div>
           </motion.div>
@@ -175,8 +287,8 @@ const FAQPage = () => {
       </section>
 
       {/* FAQ Section */}
-      <section 
-        className="py-20 bg-gray-50 dark:bg-gray-900"
+      <section
+        className="py-20 "
         // AOS Implementation
         data-aos="fade-up"
         data-aos-duration="1000"
@@ -231,7 +343,7 @@ const FAQPage = () => {
                     </div>
                   </div>
                 </button>
-                
+
                 {openFAQ === faq.id && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
@@ -253,7 +365,6 @@ const FAQPage = () => {
         </div>
       </section>
 
-      
       <FAQCTA></FAQCTA>
     </div>
   );
