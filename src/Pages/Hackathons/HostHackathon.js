@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { toast } from "react-toastify";
 
 import {
   ArrowRightIcon,
@@ -29,15 +30,52 @@ const HostHackathon = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("Form Data Submitted:", formData);
-    alert("Hackathon submitted successfully!");
-  };
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  try {
+    const requiredFields = [
+      "hackathonName",
+      "organizerName",
+      "email",
+      "location",
+      "startDate",
+      "endDate",
+      "description",
+    ];
+
+    for (const field of requiredFields) {
+      if (!formData[field]?.trim()) {
+        throw new Error(`${field.replace(/([A-Z])/g, " $1")} is required!`);
+      }
+    }
+
+    toast.success("Hackathon submitted successfully!");
+
+    setFormData({
+      hackathonName: "",
+      organizerName: "",
+      email: "",
+      startDate: "",
+      endDate: "",
+      description: "",
+      location: "",
+      participantLimit: "",
+      prizeDetails: "",
+      website: "",
+    });
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } catch (error) {
+    toast.error(error.message || "Something went wrong!");
+  }
+};
+
+
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-indigo-100 to-white dark:from-gray-900 dark:to-black flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      {/* Heading Section */}
+    <div className="min-h-screen bg-gradient-to-r from-indigo-100 to-white dark:from-gray-900 dark:to-black flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
+           {/* Heading Section */}
       <motion.div
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -67,7 +105,9 @@ const HostHackathon = () => {
       >
         <div className="flex items-center gap-2 mb-3">
           <ClipboardDocumentListIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-          <h2 className="text-xl font-semibold text-indigo-700 dark:text-indigo-400">Guidelines</h2>
+          <h2 className="text-xl font-semibold text-indigo-700 dark:text-indigo-400">
+            Guidelines
+          </h2>
         </div>
         <ul className="list-disc pl-6 space-y-3 text-gray-700 dark:text-gray-300 text-sm sm:text-base">
           <li>
@@ -122,7 +162,6 @@ const HostHackathon = () => {
           </li>
         </ul>
       </motion.div>
-
 
       {/* Form Section */}
       <motion.div
@@ -210,7 +249,7 @@ const HostHackathon = () => {
           ))}
 
           {/* Date Fields */}
-          <motion.div 
+          <motion.div
             className="grid grid-cols-1 sm:grid-cols-2 gap-4"
             data-aos="fade-up"
             data-aos-delay="900"
@@ -237,8 +276,8 @@ const HostHackathon = () => {
                   onChange={handleChange}
                   required
                   className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
-              />
-            </motion.div>
+                />
+              </motion.div>
             ))}
           </motion.div>
 
@@ -262,20 +301,16 @@ const HostHackathon = () => {
               placeholder="Briefly describe your hackathon"
               required
               className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
-              />
-            </motion.div>
+            />
+          </motion.div>
 
           {/* Submit Button */}
-          <motion.button
+          <button
             type="submit"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
             className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold p-3 rounded-xl shadow-lg hover:from-indigo-600 hover:to-purple-600 transition-all duration-300"
-            data-aos="zoom-in"
-            data-aos-delay="1100"
           >
             Submit Hackathon <ArrowRightIcon className="w-5 h-5" />
-          </motion.button>
+          </button>
         </form>
       </motion.div>
 
@@ -310,7 +345,9 @@ const HostHackathon = () => {
             <h3 className="text-3xl font-bold text-indigo-700 dark:text-indigo-400">
               {stat.number}
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">{stat.label}</p>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              {stat.label}
+            </p>
           </motion.div>
         ))}
       </motion.div>
