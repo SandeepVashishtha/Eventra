@@ -268,7 +268,7 @@ const Hero = () => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 max-h-96 overflow-y-auto z-50"
+                  className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl pb-12 border border-gray-200 dark:border-gray-700 max-h-96 overflow-y-auto z-50"
                 >
                   <div className="p-4">
                     <div className="text-sm text-gray-500 dark:text-gray-400 mb-3 font-medium">
@@ -287,7 +287,7 @@ const Hero = () => {
                           <div className="flex-shrink-0 p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-200 dark:group-hover:bg-indigo-800/50 transition-colors">
                             {getResultIcon(result.item.type)}
                           </div>
-                          <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-0 relative">
                             <div className="flex items-center gap-2 mb-1">
                               <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                                 {result.item.title}
@@ -296,9 +296,9 @@ const Hero = () => {
                                 {result.item.searchType}
                               </span>
                             </div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
-                              {result.item.description?.substring(0, 100)}...
-                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 absolute left-0">
+                              {result.item.description?.substring(0, 80)}...
+                            </p> 
                           </div>
                           <ExternalLink className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors" />
                         </motion.div>
