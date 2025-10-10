@@ -57,7 +57,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
         >
           <motion.div 
             className="bg-white rounded-full p-3 shadow-lg cursor-pointer hover:shadow-xl border border-gray-200 group/share"
-            whileHover={{ scale: 1.1, rotate: -5 }}
+            whileHover={{ scale: 1.1 }}
             transition={{ type: "spring", stiffness: 400, damping: 10 }}
           >
             <ShareIcon className="w-4 h-4 text-gray-600" />
