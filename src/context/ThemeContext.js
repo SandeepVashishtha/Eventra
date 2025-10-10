@@ -1,40 +1,46 @@
-// src/context/ThemeContext.js
+import { createContext, useState, useEffect } from 'react';
 
-import React, { createContext, useState, useEffect } from 'react';
+const THEME_STORAGE_KEY = 'theme';
 
-// Create the context with a default value
 export const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  // Initialize theme from localStorage or default to 'light'
   const [theme, setTheme] = useState(() => {
     if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('eventra-theme');
+      const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
       return savedTheme || 'light';
     }
     return 'light';
   });
 
-  // Effect to apply the theme class to the body element and save to localStorage
   useEffect(() => {
-    const root = document.documentElement; // Get the <html> element
-    if (theme === 'dark') {
-      root.classList.add('dark'); // Add 'dark' class for Tailwind dark mode
-    } else {
-      root.classList.remove('dark'); // Remove 'dark' class for light mode
-    }
-    
-    // Save theme preference to localStorage
-    localStorage.setItem('eventra-theme', theme);
+    const syncTheme = () => {
+      const currentTheme = localStorage.getItem(THEME_STORAGE_KEY);
+      if (currentTheme && currentTheme !== theme) {
+        setTheme(currentTheme);
+      }
+    };
+
+    const intervalId = setInterval(syncTheme, 500);
+    return () => clearInterval(intervalId);
   }, [theme]);
 
-  // Function to toggle between 'light' and 'dark'
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  }, [theme]);
+
   const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem(THEME_STORAGE_KEY, newTheme);
   };
 
   return (
-    // Provide the theme and toggle function to all child components
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
