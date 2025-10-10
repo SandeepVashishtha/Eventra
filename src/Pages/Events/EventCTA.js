@@ -70,7 +70,7 @@ const EventCTA = () => {
           {/* UPDATED: The secondary button needs dark mode styles for when the main page is dark. */}
           <motion.button
             onClick={() => setShowModal(true)}
-            className="inline-flex items-center justify-center gap-2 bg-white text-purple-700 dark:bg-gray-200 dark:text-purple-800 font-semibold px-8 py-4 rounded-full shadow-lg hover:scale-105 transition-transform duration-300"
+            className="relative inline-flex items-center px-8 py-4 rounded-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-semibold shadow hover:shadow-lg hover:bg-gray-100 hover:text-gray-900 hover:dark:bg-gray-700 hover:dark:text-white hover:scale-105 transition-all duration-300"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             data-aos="zoom-in"
