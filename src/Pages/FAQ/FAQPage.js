@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { motion, useAnimation } from "framer-motion";
-import './faq.css';
+import "./faq.css";
 import {
   HelpCircle,
   ChevronDown,
-  ChevronUp,
   Users,
   Calendar,
   Zap,
@@ -14,7 +13,6 @@ import {
   Rocket,
   Globe,
 } from "lucide-react";
-import { Link } from "react-router-dom";
 import FAQCTA from "./FaqCTA";
 
 const FAQPage = () => {
@@ -134,234 +132,141 @@ const FAQPage = () => {
   };
 
   useEffect(() => {
-    // Retain Framer Motion for hero entrance (above the fold)
     controls.start("show");
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, [controls]);
 
-  return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-black dark:to-gray-900">
-      {/* Hero Section */}
-      {[
-        {
-          size: 60,
-          pos: { top: "5%", left: "10%" },
-          color: "from-indigo-400 to-blue-400",
-        },
-        {
-          size: 70,
-          pos: { top: "3%", right: "10%" },
-          color: "from-indigo-400 to-blue-400",
-        },
-        {
-          size: 80,
-          pos: { top: "15%", right: "15%" },
-          color: "from-purple-400 to-pink-400",
-        },
-        {
-          size: 100,
-          pos: { bottom: "5%", left: "20%" },
-          color: "from-blue-300 to-indigo-300",
-        },
-        {
-          size: 100,
-          pos: { top: "15%", left: "15%" },
-          color: "from-pink-300 to-purple-200",
-        },
-        {
-          size: 70,
-          pos: { bottom: "10%", right: "10%" },
-          color: "from-pink-300 to-purple-300",
-        },
-        {
-          size: 50,
-          pos: { top: "50%", left: "2%" },
-          color: "from-indigo-300 to-blue-200",
-        },
-        {
-          size: 90,
-          pos: { top: "40%", right: "15%" },
-          color: "from-purple-300 to-indigo-300",
-        },
-        {
-          size: 65,
-          pos: { top: "30%", left: "3%" },
-          color: "from-blue-200 to-indigo-400",
-        },
-        {
-          size: 75,
-          pos: { bottom: "20%", right: "30%" },
-          color: "from-pink-200 to-purple-400",
-        },
-        {
-          size: 55,
-          pos: { bottom: "35%", left: "10%" },
-          color: "from-indigo-200 to-blue-300",
-        },
-        {
-          size: 85,
-          pos: { top: "70%", right: "5%" },
-          color: "from-blue-300 to-indigo-400",
-        },
-        {
-          size: 50,
-          pos: { top: "80%", left: "40%" },
-          color: "from-purple-200 to-pink-300",
-        },
-        {
-          size: 95,
-          pos: { top: "60%", right: "40%" },
-          color: "from-indigo-400 to-blue-500",
-        },
-        {
-          size: 45,
-          pos: { top: "30%", right: "5%" },
-          color: "from-pink-200 to-purple-300",
-        },
-        {
-          size: 70,
-          pos: { bottom: "45%", left: "45%" },
-          color: "from-blue-300 to-indigo-300",
-        },
-        {
-          size: 60,
-          pos: { top: "10%", left: "70%" },
-          color: "from-indigo-200 to-blue-300",
-        },
-      ].map((shape, i) => (
-        <motion.div
-          key={i}
-          animate={{
-            y: [0, -20 - i * 5, 0],
-            x: [0, 20 + i * 5, 0],
-            rotate: [0, 15, -15, 0],
-          }}
-          transition={{
-            duration: 6 + i,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          className={`absolute rounded-full bg-gradient-to-tr ${shape.color} opacity-30 dark:opacity-10`}
-          style={{
-            width: `${shape.size}px`,
-            height: `${shape.size}px`,
-            ...shape.pos,
-          }}
-        />
-      ))}
+  // Floating shapes data
+  const shapes = [
+    { size: 60, pos: { top: "5%", left: "10%" }, color: "from-indigo-400 to-blue-400" },
+    { size: 70, pos: { top: "3%", right: "10%" }, color: "from-indigo-400 to-blue-400" },
+    { size: 80, pos: { top: "15%", right: "15%" }, color: "from-purple-400 to-pink-400" },
+    { size: 100, pos: { bottom: "5%", left: "20%" }, color: "from-blue-300 to-indigo-300" },
+    { size: 100, pos: { top: "15%", left: "15%" }, color: "from-pink-300 to-purple-200" },
+    { size: 70, pos: { bottom: "10%", right: "10%" }, color: "from-pink-300 to-purple-300" },
+    { size: 50, pos: { top: "50%", left: "2%" }, color: "from-indigo-300 to-blue-200" },
+    { size: 90, pos: { top: "40%", right: "15%" }, color: "from-purple-300 to-indigo-300" },
+    { size: 65, pos: { top: "30%", left: "3%" }, color: "from-blue-200 to-indigo-400" },
+  ];
 
-      <section className="py-20 relative overflow-hidden">
-        {/* Animated Floating Gradient Shapes */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+  return (
+    <div className="relative flex flex-col min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-black dark:to-gray-900 overflow-hidden">
+      {/* Floating Background Layer */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        {shapes.map((shape, i) => (
           <motion.div
-            variants={container}
-            initial="hidden"
-            animate={controls}
-            className="text-center"
-          >
-            <motion.div variants={item} className="mb-8">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-indigo-600 rounded-full mb-6 question-icon">
-                <HelpCircle className="w-10 h-10 text-white" />
-              </div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-                Frequently Asked{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600">
-                  Questions
-                </span>
-              </h1>
-              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
-                Everything you need to know about using Eventra, from getting
+            key={i}
+            animate={{
+              y: [0, -20 - i * 5, 0],
+              x: [0, 20 + i * 5, 0],
+              rotate: [0, 15, -15, 0],
+            }}
+            transition={{
+              duration: 6 + i,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className={`absolute rounded-full bg-gradient-to-tr ${shape.color} opacity-30 dark:opacity-10`}
+            style={{
+              width: `${shape.size}px`,
+              height: `${shape.size}px`,
+              ...shape.pos,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Foreground Content Layer */}
+      <div className="relative z-10">
+        {/* HERO */}
+        <section className="py-20 relative overflow-hidden">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <motion.div
+              variants={container}
+              initial="hidden"
+              animate={controls}
+            >
+              <motion.div variants={item}>
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-indigo-600 rounded-full mb-6 question-icon">
+                  <HelpCircle className="w-10 h-10 text-white" />
+                </div>
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+                  Frequently Asked{" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600">
+                    Questions
+                  </span>
+                </h1>
+                <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
+                  Everything you need to know about using Eventra, from getting
                 started to hosting your own events. Can't find what you're
                 looking for? Reach out to our community!
-              </p>
+                </p>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        </div>
-      </section>
+          </div>
+        </section>
 
-      {/* FAQ Section */}
-      <section
-        className="py-20 "
-        // AOS Implementation
-        data-aos="fade-up"
-        data-aos-duration="1000"
-        data-aos-offset="150"
-      >
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            // Removing Framer Motion scroll-related animation on this main list
-            // variants={container}
-            // initial="hidden"
-            // animate={controls}
-            className="space-y-6"
-          >
+        {/* FAQ SECTION */}
+        <section className="pb-20" data-aos="fade-up" data-aos-duration="1000">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             {faqData.map((faq, index) => (
               <motion.div
                 key={faq.id}
-                // Removing Framer Motion item animation
-                // variants={item}
-                className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100 dark:border-gray-700"
-                // AOS Implementation on individual FAQs
+                className="bg-white dark:bg-gray-800 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100 dark:border-gray-700 overflow-hidden"
                 data-aos="zoom-in-up"
                 data-aos-delay={index * 100}
               >
                 <button
                   onClick={() => toggleFAQ(faq.id)}
-                  className="w-full p-6 text-left focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 rounded-2xl transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="w-full p-6 text-left flex items-center justify-between outline-none focus:outline-none focus:ring-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex-shrink-0">
-                        <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl flex items-center justify-center">
-                          <span className="text-indigo-600 dark:text-indigo-400">
-                            {faq.icon}
-                          </span>
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">
-                          {faq.category}
-                        </span>
-                        <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mt-1">
-                          {faq.question}
-                        </h3>
-                      </div>
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl flex items-center justify-center">
+                      <span className="text-indigo-600 dark:text-indigo-400">
+                        {faq.icon}
+                      </span>
                     </div>
-                    <div className="flex-shrink-0 ml-4">
-                      {openFAQ === faq.id ? (
-                        <ChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                      )}
+                    <div>
+                      <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">
+                        {faq.category}
+                      </span>
+                      <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mt-1">
+                        {faq.question}
+                      </h3>
                     </div>
                   </div>
+
+                  <motion.div
+                    animate={{ rotate: openFAQ === faq.id ? 180 : 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  </motion.div>
                 </button>
 
-                {openFAQ === faq.id && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3, ease: "easeInOut" }}
-                    className="px-6 pb-6"
-                  >
-                    <div className="ml-16 pt-4 border-t border-gray-100 dark:border-gray-700">
-                      <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                        {faq.answer}
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={
+                    openFAQ === faq.id
+                      ? { height: "auto", opacity: 1 }
+                      : { height: 0, opacity: 0 }
+                  }
+                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                  className="px-6 overflow-hidden"
+                >
+                  <div className="ml-16 pt-4 pb-6 border-t border-gray-100 dark:border-gray-700">
+                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                      {faq.answer}
+                    </p>
+                  </div>
+                </motion.div>
               </motion.div>
             ))}
-          </motion.div>
-        </div>
-      </section>
+          </div>
+        </section>
 
-      <FAQCTA></FAQCTA>
+        <FAQCTA />
+      </div>
     </div>
   );
 };
