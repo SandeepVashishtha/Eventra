@@ -40,6 +40,7 @@ const EventCreation = () => {
     title: "",
     description: "",
     category: "",
+    isMultiDay: false,
     date: "",
     startTime: "",
     endTime: "",
@@ -99,22 +100,26 @@ const EventCreation = () => {
       newErrors.description = "Event description is required";
     if (!formData.category) newErrors.category = "Please select a category";
 
-    if (!formData.date) {
-      newErrors.date = "Event date is required";
+    if (formData.isMultiDay) {
+      if (!formData.startDate) newErrors.startDate = "Start date is required";
+      if (!formData.endDate) newErrors.endDate = "End date is required";
+
+      if (formData.startDate && formData.endDate) {
+        if (new Date(formData.endDate) < new Date(formData.startDate)) {
+          newErrors.endDate = "End date must be after start date";
+        }
+      }
     } else {
-      const selectedDate = new Date(formData.date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (selectedDate < today)
-        newErrors.date = "Event date cannot be in the past";
+      if (!formData.date) newErrors.date = "Event date is required";
     }
 
     if (!formData.startTime) newErrors.startTime = "Start time is required";
     if (!formData.endTime) newErrors.endTime = "End time is required";
 
     if (
-      formData.startTime &&
-      formData.endTime &&
+      !newErrors.startTime &&
+      !newErrors.endTime &&
+      !formData.isMultiDay &&
       formData.startTime >= formData.endTime
     ) {
       newErrors.endTime = "End time must be after start time";
@@ -291,8 +296,16 @@ const EventCreation = () => {
         }
       }
 
-      const eventStartDate = new Date(`${formData.date}T${formData.startTime}`);
-      const eventEndDate = new Date(`${formData.date}T${formData.endTime}`);
+      const eventStartDate = new Date(
+        `${formData.isMultiDay ? formData.startDate : formData.date}T${
+          formData.startTime
+        }`
+      );
+      const eventEndDate = new Date(
+        `${formData.isMultiDay ? formData.endDate : formData.date}T${
+          formData.endTime
+        }`
+      );
 
       if (isNaN(eventStartDate.getTime()) || isNaN(eventEndDate.getTime())) {
         throw new Error("Invalid date or time format");
@@ -766,84 +779,248 @@ const EventCreation = () => {
                 )}
               </motion.div>
 
-              {/* Date and Time Row */}
+              {/* Event Duration Type */}
               <motion.div
-                className="grid grid-cols-1 sm:grid-cols-3 gap-4"
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.4 }}
+                transition={{ duration: 0.5 }}
               >
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <Calendar className="w-5 h-5 text-indigo-500 inline-block mr-2" />
-                    Event Date <span className="text-red-600">*</span>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <Calendar className="w-5 h-5 text-indigo-500 inline-block mr-2" />
+                  Event Duration
+                </label>
+                <div className="flex gap-6">
+                  {/* Single-day Event Option */}
+                  <label className="flex items-center text-gray-700 dark:text-white gap-2">
+                    <input
+                      type="radio"
+                      name="eventType"
+                      checked={!formData.isMultiDay}
+                      onChange={() => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          isMultiDay: false,
+                          startDate: "",
+                          endDate: "",
+                          date: "",
+                          startTime: "",
+                          endTime: "",
+                        }));
+                        setErrors({});
+                      }}
+                    />
+                    Single-day Event
                   </label>
-                  <input
-                    type="date"
-                    name="date"
-                    value={formData.date}
-                    onChange={handleInputChange}
-                    min={todayString}
-                    className={`w-full border ${
-                      errors.date
-                        ? "border-red-500"
-                        : "border-gray-300 dark:border-gray-600"
-                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
-                  />
-                  {errors.date && (
-                    <span className="text-red-500 text-sm mt-1">
-                      {errors.date}
-                    </span>
-                  )}
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <Clock className="w-5 h-5 text-indigo-500 inline-block mr-2" />
-                    Start Time <span className="text-red-600">*</span>
+                  {/* Multi-day Event Option */}
+                  <label className="flex items-center text-gray-700 dark:text-white gap-2">
+                    <input
+                      type="radio"
+                      name="eventType"
+                      checked={formData.isMultiDay}
+                      onChange={() => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          isMultiDay: true,
+                          date: "",
+                          startDate: "",
+                          endDate: "",
+                          startTime: "",
+                          endTime: "",
+                        }));
+                        setErrors({});
+                      }}
+                    />
+                    Multi-day Event
                   </label>
-                  <input
-                    type="time"
-                    name="startTime"
-                    value={formData.startTime}
-                    onChange={handleInputChange}
-                    className={`w-full border ${
-                      errors.startTime
-                        ? "border-red-500"
-                        : "border-gray-300 dark:border-gray-600"
-                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
-                  />
-                  {errors.startTime && (
-                    <span className="text-red-500 text-sm mt-1">
-                      {errors.startTime}
-                    </span>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <Clock className="w-5 h-5 text-indigo-500 inline-block mr-2" />
-                    End Time <span className="text-red-600">*</span>
-                  </label>
-                  <input
-                    type="time"
-                    name="endTime"
-                    value={formData.endTime}
-                    onChange={handleInputChange}
-                    className={`w-full border ${
-                      errors.endTime
-                        ? "border-red-500"
-                        : "border-gray-300 dark:border-gray-600"
-                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
-                  />
-                  {errors.endTime && (
-                    <span className="text-red-500 text-sm mt-1">
-                      {errors.endTime}
-                    </span>
-                  )}
                 </div>
               </motion.div>
+
+              {/* Date and Time Fields */}
+              {formData.isMultiDay ? (
+                // 🔹 Multi-day Event
+                <motion.div
+                  className="grid grid-cols-1 sm:grid-cols-4 gap-4"
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                >
+                  {/* Start Date */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Start Date <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      name="startDate"
+                      value={formData.startDate}
+                      onChange={handleInputChange}
+                      min={todayString}
+                      className={`w-full border ${
+                        errors.startDate
+                          ? "border-red-500"
+                          : "border-gray-300 dark:border-gray-600"
+                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                    />
+                    {errors.startDate && (
+                      <span className="text-red-500 text-sm mt-1 block">
+                        {errors.startDate}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* End Date */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      End Date <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      name="endDate"
+                      value={formData.endDate}
+                      onChange={handleInputChange}
+                      min={formData.startDate || todayString}
+                      className={`w-full border ${
+                        errors.endDate
+                          ? "border-red-500"
+                          : "border-gray-300 dark:border-gray-600"
+                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                    />
+                    {errors.endDate && (
+                      <span className="text-red-500 text-sm mt-1 block">
+                        {errors.endDate}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Start Time */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Start Time <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="time"
+                      name="startTime"
+                      value={formData.startTime}
+                      onChange={handleInputChange}
+                      className={`w-full border ${
+                        errors.startTime
+                          ? "border-red-500"
+                          : "border-gray-300 dark:border-gray-600"
+                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                    />
+                    {errors.startTime && (
+                      <span className="text-red-500 text-sm mt-1 block">
+                        {errors.startTime}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* End Time */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      End Time <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="time"
+                      name="endTime"
+                      value={formData.endTime}
+                      onChange={handleInputChange}
+                      className={`w-full border ${
+                        errors.endTime
+                          ? "border-red-500"
+                          : "border-gray-300 dark:border-gray-600"
+                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                    />
+                    {errors.endTime && (
+                      <span className="text-red-500 text-sm mt-1 block">
+                        {errors.endTime}
+                      </span>
+                    )}
+                  </div>
+                </motion.div>
+              ) : (
+                // 🔸 Single-day Event
+                <motion.div
+                  className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                >
+                  {/* Event Date */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Event Date <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      name="date"
+                      value={formData.date}
+                      onChange={handleInputChange}
+                      min={todayString}
+                      className={`w-full border ${
+                        errors.date
+                          ? "border-red-500"
+                          : "border-gray-300 dark:border-gray-600"
+                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                    />
+                    {errors.date && (
+                      <span className="text-red-500 text-sm mt-1 block">
+                        {errors.date}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Start Time */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Start Time <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="time"
+                      name="startTime"
+                      value={formData.startTime}
+                      onChange={handleInputChange}
+                      className={`w-full border ${
+                        errors.startTime
+                          ? "border-red-500"
+                          : "border-gray-300 dark:border-gray-600"
+                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                    />
+                    {errors.startTime && (
+                      <span className="text-red-500 text-sm mt-1 block">
+                        {errors.startTime}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* End Time */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      End Time <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="time"
+                      name="endTime"
+                      value={formData.endTime}
+                      onChange={handleInputChange}
+                      className={`w-full border ${
+                        errors.endTime
+                          ? "border-red-500"
+                          : "border-gray-300 dark:border-gray-600"
+                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                    />
+                    {errors.endTime && (
+                      <span className="text-red-500 text-sm mt-1 block">
+                        {errors.endTime}
+                      </span>
+                    )}
+                  </div>
+                </motion.div>
+              )}
 
               {/* Virtual Event Checkbox */}
               <motion.div
@@ -1373,8 +1550,13 @@ const EventCreation = () => {
                       Date & Time
                     </p>
                     <p className="text-gray-600 dark:text-gray-400">
-                      {formatDate(formData.date)}
+                      {formData.isMultiDay
+                        ? `${formatDate(formData.startDate)} - ${formatDate(
+                            formData.endDate
+                          )}`
+                        : formatDate(formData.date)}
                     </p>
+
                     <p className="text-gray-600 dark:text-gray-400">
                       {formatTime(formData.startTime)} -{" "}
                       {formatTime(formData.endTime)}
