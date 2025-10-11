@@ -16,7 +16,7 @@ const FeedbackButton = () => {
     >
       <Link
         to="/feedback"
-        className="relative flex items-center justify-center p-3.5 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-full shadow-lg hover:from-purple-600 hover:to-pink-700 transition-all duration-300 border-2 border-white group"
+        className="relative flex items-center justify-center p-3.5 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-full shadow-lg hover:from-purple-600 hover:to-pink-700 transition-all duration-300  group"
         // title="Share Feedback"
         aria-label="Share Feedback"
       >
