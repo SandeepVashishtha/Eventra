@@ -308,132 +308,50 @@ export default function LeaderBoard() {
         </div>
 
         {/* stats */}
-        <div
-          style={{
-            display: "flex",
-            gap: 18,
-            marginBottom: 16,
-            flexWrap: "wrap",
-          }}
-        >
-          <div
-            style={{
-              flex: 1,
-              minWidth: 220,
-              padding: 24,
-              borderRadius: 16,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-              border: `1px solid ${isDark ? "#444" : "#eee"}`,
-              background: isDark
-                ? "linear-gradient(135deg,#23272f,#1a1d23)"
-                : "linear-gradient(135deg,#e0e7ff,#f3f4f6)",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <div
-                style={{
-                  padding: 12,
-                  borderRadius: 12,
-                  background: isDark ? "rgba(59,130,246,0.2)" : "#dbeafe",
-                  color: isDark ? "#60a5fa" : "#2563eb",
-                  marginRight: 16,
-                }}
-              >
-                <FaUsers style={{ fontSize: 22 }} />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {/* Contributors Card */}
+          <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
+            <div className="flex items-center">
+              <div className="p-3 rounded-xl mr-4 bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+                <FaUsers className="text-2xl" />
               </div>
               <div>
-                <p style={{ fontSize: 14, color: isDark ? "#b3b3b3" : "#555" }}>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Contributors
                 </p>
-                <p
-                  style={{
-                    fontSize: 22,
-                    fontWeight: 700,
-                    color: isDark ? "#fff" : "#222",
-                  }}
-                >
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
                   {loading ? "..." : stats.totalContributors}
                 </p>
               </div>
             </div>
           </div>
-          <div
-            style={{
-              flex: 1,
-              minWidth: 220,
-              padding: 24,
-              borderRadius: 16,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-              border: `1px solid ${isDark ? "#444" : "#eee"}`,
-              background: isDark
-                ? "linear-gradient(135deg,#23272f,#1a1d23)"
-                : "linear-gradient(135deg,#e0e7ff,#f3f4f6)",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <div
-                style={{
-                  padding: 12,
-                  borderRadius: 12,
-                  background: isDark ? "rgba(16,185,129,0.2)" : "#bbf7d0",
-                  color: isDark ? "#34d399" : "#059669",
-                  marginRight: 16,
-                }}
-              >
-                <FaCode style={{ fontSize: 22 }} />
+          {/* Pull Requests Card */}
+          <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
+            <div className="flex items-center">
+              <div className="p-3 rounded-xl mr-4 bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400">
+                <FaCode className="text-2xl" />
               </div>
               <div>
-                <p style={{ fontSize: 14, color: isDark ? "#b3b3b3" : "#555" }}>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Pull Requests
                 </p>
-                <p
-                  style={{
-                    fontSize: 22,
-                    fontWeight: 700,
-                    color: isDark ? "#fff" : "#222",
-                  }}
-                >
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
                   {loading ? "..." : stats.flooredTotalPRs}
                 </p>
               </div>
             </div>
           </div>
-          <div
-            style={{
-              flex: 1,
-              minWidth: 220,
-              padding: 24,
-              borderRadius: 16,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-              border: `1px solid ${isDark ? "#444" : "#eee"}`,
-              background: isDark
-                ? "linear-gradient(135deg,#23272f,#1a1d23)"
-                : "linear-gradient(135deg,#e0e7ff,#f3f4f6)",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <div
-                style={{
-                  padding: 12,
-                  borderRadius: 12,
-                  background: isDark ? "rgba(139,92,246,0.2)" : "#ede9fe",
-                  color: isDark ? "#a78bfa" : "#7c3aed",
-                  marginRight: 16,
-                }}
-              >
-                <FaStar style={{ fontSize: 22 }} />
+          {/* Total Points Card */}
+          <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
+            <div className="flex items-center">
+              <div className="p-3 rounded-xl mr-4 bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-400">
+                <FaStar className="text-2xl" />
               </div>
               <div>
-                <p style={{ fontSize: 14, color: isDark ? "#b3b3b3" : "#555" }}>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Total Points
                 </p>
-                <p
-                  style={{
-                    fontSize: 22,
-                    fontWeight: 700,
-                    color: isDark ? "#fff" : "#222",
-                  }}
-                >
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
                   {loading ? "..." : stats.flooredTotalPoints}
                 </p>
               </div>
