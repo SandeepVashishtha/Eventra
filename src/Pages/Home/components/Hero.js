@@ -41,9 +41,21 @@ const Hero = () => {
 
   // Global search functionality
   const allData = [
-    ...eventsData.map(item => ({ ...item, type: 'event', searchType: 'Events' })),
-    ...hackathonsData.map(item => ({ ...item, type: 'hackathon', searchType: 'Hackathons' })),
-    ...projectsData.map(item => ({ ...item, type: 'project', searchType: 'Projects' }))
+    ...eventsData.map((item) => ({
+      ...item,
+      type: "event",
+      searchType: "Events",
+    })),
+    ...hackathonsData.map((item) => ({
+      ...item,
+      type: "hackathon",
+      searchType: "Hackathons",
+    })),
+    ...projectsData.map((item) => ({
+      ...item,
+      type: "project",
+      searchType: "Projects",
+    })),
   ];
 
   const fuse = new Fuse(allData, {
@@ -56,7 +68,7 @@ const Hero = () => {
       "category",
       "author",
       "organizer",
-      "type"
+      "type",
     ],
     threshold: 0.3,
     includeScore: true,
@@ -77,21 +89,25 @@ const Hero = () => {
   const handleResultClick = (result, type) => {
     setShowResults(false);
     setSearchQuery("");
-    if (type === 'event') {
-      navigate('/events');
-    } else if (type === 'hackathon') {
-      navigate('/hackathons');
-    } else if (type === 'project') {
-      navigate('/projects');
+    if (type === "event") {
+      navigate("/events");
+    } else if (type === "hackathon") {
+      navigate("/hackathons");
+    } else if (type === "project") {
+      navigate("/projects");
     }
   };
 
   const getResultIcon = (type) => {
     switch (type) {
-      case 'event': return <Calendar className="w-4 h-4" />;
-      case 'hackathon': return <Trophy className="w-4 h-4" />;
-      case 'project': return <Code className="w-4 h-4" />;
-      default: return <Search className="w-4 h-4" />;
+      case "event":
+        return <Calendar className="w-4 h-4" />;
+      case "hackathon":
+        return <Trophy className="w-4 h-4" />;
+      case "project":
+        return <Code className="w-4 h-4" />;
+      default:
+        return <Search className="w-4 h-4" />;
     }
   };
 
@@ -141,9 +157,21 @@ const Hero = () => {
   ];
 
   const stats = [
-    { value: "1500+", label: "Developers Joined", color: "text-indigo-500 dark:text-indigo-400" },
-    { value: "75", label: "Events Organized", color: "text-pink-500 dark:text-pink-400" },
-    { value: "30+", label: "Partners & Sponsors", color: "text-purple-500 dark:text-purple-400" },
+    {
+      value: "1500+",
+      label: "Developers Joined",
+      color: "text-indigo-500 dark:text-indigo-400",
+    },
+    {
+      value: "75",
+      label: "Events Organized",
+      color: "text-pink-500 dark:text-pink-400",
+    },
+    {
+      value: "30+",
+      label: "Partners & Sponsors",
+      color: "text-purple-500 dark:text-purple-400",
+    },
   ];
 
   return (
@@ -281,7 +309,9 @@ const Hero = () => {
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: index * 0.05 }}
-                          onClick={() => handleResultClick(result.item, result.item.type)}
+                          onClick={() =>
+                            handleResultClick(result.item, result.item.type)
+                          }
                           className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors group"
                         >
                           <div className="flex-shrink-0 p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-200 dark:group-hover:bg-indigo-800/50 transition-colors">
@@ -298,7 +328,7 @@ const Hero = () => {
                             </div>
                             <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 absolute left-0">
                               {result.item.description?.substring(0, 80)}...
-                            </p> 
+                            </p>
                           </div>
                           <ExternalLink className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors" />
                         </motion.div>
@@ -309,7 +339,7 @@ const Hero = () => {
                         <button
                           onClick={() => {
                             setShowResults(false);
-                            navigate('/events');
+                            navigate("/events");
                           }}
                           className="w-full text-center text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition-colors"
                         >
@@ -403,7 +433,9 @@ const Hero = () => {
                   {stat.value}
                 </p>
                 {/* Stat label text */}
-                <p className="text-gray-700 dark:text-gray-300 text-sm">{stat.label}</p>
+                <p className="text-gray-700 dark:text-gray-300 text-sm">
+                  {stat.label}
+                </p>
               </motion.div>
             ))}
           </motion.div>
