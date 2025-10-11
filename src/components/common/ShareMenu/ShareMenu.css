@@ -1,0 +1,87 @@
+/* Hide scrollbar while allowing scroll */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Animation for loading indicator */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Animation for pop-out effect */
+@keyframes pop-in {
+  0% {
+    transform: translateY(10px) scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.share-button-pop {
+  animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Floating effect for share button */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.share-button-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Ensure share menu doesn't get clipped */
+.share-menu-container {
+  position: relative;
+  z-index: 200;
+}
+
+.share-menu-dropdown {
+  position: absolute;
+  z-index: 999 !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Enhanced positioning for bottom-right placement */
+.share-menu-bottom-right {
+  transform-origin: top right;
+}
+
+/* Better shadow for card-based share menus */
+.share-menu-card-shadow {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Card containers that need to allow overflow for floating elements */
+.card-with-floating-elements {
+  overflow: visible !important;
+}
+
+/* Content sections that need controlled overflow */
+.card-content-overflow {
+  overflow: hidden;
+}
