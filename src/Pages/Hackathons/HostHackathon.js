@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
+import { useRef } from "react";
 
 import {
   ArrowRightIcon,
@@ -12,6 +13,7 @@ import {
 } from "@heroicons/react/24/solid";
 
 const HostHackathon = () => {
+  const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     hackathonName: "",
     organizerName: "",
@@ -24,30 +26,119 @@ const HostHackathon = () => {
     prizeDetails: "",
     website: "",
   });
+  const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+
+  const inputRefs = {
+    hackathonName: useRef(null),
+    organizerName: useRef(null),
+    email: useRef(null),
+    location: useRef(null),
+    startDate: useRef(null),
+    endDate: useRef(null),
+    description: useRef(null),
+    participantLimit: useRef(null),
+    prizeDetails: useRef(null),
+    website: useRef(null),
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
+  const requiredFields = [
+    "hackathonName",
+    "organizerName",
+    "email",
+    "location",
+    "startDate",
+    "endDate",
+    "description",
+  ];
 
-  try {
-    const requiredFields = [
-      "hackathonName",
-      "organizerName",
-      "email",
-      "location",
-      "startDate",
-      "endDate",
-      "description",
-    ];
+  const validateForm = (data) => {
+    const newErrors = {};
 
+    // Required fields
     for (const field of requiredFields) {
-      if (!formData[field]?.trim()) {
-        throw new Error(`${field.replace(/([A-Z])/g, " $1")} is required!`);
+      if (!data[field]?.trim()) {
+        newErrors[field] = `${field.replace(/([A-Z])/g, " $1")} is required!`;
       }
+    }
+
+    // Hackathon Name validation
+    if (data.hackathonName && data.hackathonName.trim().length < 3) {
+      newErrors.hackathonName =
+        "Hackathon Name must be at least 3 characters long!";
+    }
+
+    // Organizer validation
+    if (data.organizerName && data.organizerName.trim().length < 3) {
+      newErrors.organizerName =
+        "Organizer/Organization Name must be at least 3 characters long!";
+    }
+
+    // Location validation
+    if (data.location && data.location.trim().length < 3) {
+      newErrors.location = "Location must be at least 3 characters long!";
+    }
+
+    // ✅ Email validation — works even for incomplete email
+    if (data.email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(data.email.trim())) {
+        newErrors.email = "Please enter a valid email address!";
+      }
+    }
+
+    // Website (optional)
+    if (data.website?.trim()) {
+      const urlRegex = /^(https?:\/\/)?([\w-]+(\.[\w-]+)+)(\/[\w-./?%&=]*)?$/i;
+      if (!urlRegex.test(data.website)) {
+        newErrors.website = "Please enter a valid URL!";
+      }
+    }
+
+    // Date validations
+    const today = new Date().toISOString().split("T")[0];
+    if (data.startDate && data.startDate < today) {
+      newErrors.startDate = "Start date cannot be in the past!";
+    }
+    if (data.endDate && data.startDate && data.endDate < data.startDate) {
+      newErrors.endDate = "End date cannot be before start date!";
+    }
+
+    // Description validation
+    if (data.description && data.description.trim().length < 20) {
+      newErrors.description =
+        "Description must be at least 20 characters long!";
+    }
+
+    return newErrors;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const validationErrors = validateForm({ ...formData });
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      toast.error("Please fix the errors before submitting.");
+
+      const firstErrorField =
+        requiredFields.find((field) => validationErrors[field]) ||
+        Object.keys(validationErrors)[0];
+
+      if (inputRefs[firstErrorField]?.current) {
+        inputRefs[firstErrorField].current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+        inputRefs[firstErrorField].current.focus();
+      }
+
+      return;
     }
 
     toast.success("Hackathon submitted successfully!");
@@ -66,16 +157,11 @@ const HostHackathon = () => {
     });
 
     window.scrollTo({ top: 0, behavior: "smooth" });
-  } catch (error) {
-    toast.error(error.message || "Something went wrong!");
-  }
-};
-
-
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-indigo-100 to-white dark:from-gray-900 dark:to-black flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
-           {/* Heading Section */}
+      {/* Heading Section */}
       <motion.div
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -172,56 +258,49 @@ const HostHackathon = () => {
         data-aos="fade-up"
         data-aos-delay="400"
       >
-        <form className="space-y-6" onSubmit={handleSubmit}>
+        <form className="space-y-6" onSubmit={handleSubmit} noValidate>
           {[
             {
               label: "Hackathon Name",
               name: "hackathonName",
               type: "text",
               placeholder: "Enter hackathon name",
-              required: true,
             },
             {
               label: "Organization/Organizer Name",
               name: "organizerName",
               type: "text",
               placeholder: "Enter your name or organization",
-              required: true,
             },
             {
               label: "Email",
               name: "email",
               type: "email",
               placeholder: "your@email.com",
-              required: true,
             },
             {
               label: "Location (Online / City)",
               name: "location",
               type: "text",
               placeholder: "e.g., Online or New York City",
-              required: true,
             },
             {
               label: "Participant Limit",
               name: "participantLimit",
               type: "number",
               placeholder: "Maximum number of participants",
-              required: false,
             },
             {
               label: "Prize Details",
               name: "prizeDetails",
               type: "text",
               placeholder: "Mention prizes if any",
-              required: false,
             },
             {
               label: "Website / Registration Link",
               name: "website",
               type: "url",
               placeholder: "https://example.com",
-              required: false,
             },
           ].map((field, index) => (
             <motion.div
@@ -234,17 +313,25 @@ const HostHackathon = () => {
               data-aos-delay={index * 50 + 500}
             >
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {field.label}
+                {field.label}{" "}
+                {requiredFields.includes(field.name) && (
+                  <span className="text-red-500">*</span>
+                )}
               </label>
               <input
                 type={field.type}
                 name={field.name}
                 value={formData[field.name]}
                 onChange={handleChange}
-                required={field.required}
                 placeholder={field.placeholder}
+                ref={inputRefs[field.name]}
                 className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
               />
+              {errors[field.name] && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors[field.name]}
+                </p>
+              )}
             </motion.div>
           ))}
 
@@ -254,30 +341,31 @@ const HostHackathon = () => {
             data-aos="fade-up"
             data-aos-delay="900"
           >
-            {["Start Date", "End Date"].map((label, index) => (
-              <motion.div
-                key={label}
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-              >
+            {["startDate", "endDate"].map((name) => (
+              <div key={name}>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {label}
+                  {name === "startDate" ? "Start Date" : "End Date"}{" "}
+                  <span className="text-red-500">*</span>
                 </label>
                 <input
+                  ref={inputRefs[name]}
                   type="date"
-                  name={label === "Start Date" ? "startDate" : "endDate"}
-                  value={
-                    label === "Start Date"
-                      ? formData.startDate
-                      : formData.endDate
-                  }
+                  name={name}
+                  value={formData[name]}
                   onChange={handleChange}
-                  required
-                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
+                  min={today}
+                  className="w-full text-gray-700 dark:text-gray-300 
+          bg-white dark:bg-gray-700 
+          rounded-lg p-3 
+          border border-gray-300 dark:border-gray-600
+          focus:outline-none 
+          focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400
+          transition duration-150 ease-in-out"
                 />
-              </motion.div>
+                {errors[name] && (
+                  <p className="text-red-500 text-xs mt-1">{errors[name]}</p>
+                )}
+              </div>
             ))}
           </motion.div>
 
@@ -291,17 +379,20 @@ const HostHackathon = () => {
             data-aos-delay="1000"
           >
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Description
+              Description <span className="text-red-500">*</span>
             </label>
             <textarea
               name="description"
               value={formData.description}
               onChange={handleChange}
+              ref={inputRefs.description}
               rows="4"
               placeholder="Briefly describe your hackathon"
-              required
               className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
             />
+            {errors.description && (
+              <p className="text-red-500 text-xs mt-1">{errors.description}</p>
+            )}
           </motion.div>
 
           {/* Submit Button */}
