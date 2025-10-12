@@ -44,7 +44,8 @@ const EventCard = ({ event }) => {
       data-aos="zoom-in"
       data-aos-duration="1000"
       // Removed Framer Motion initial/animate/transition to prevent conflicts with parent container animation
-      className="group relative bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/20 dark:from-gray-900 dark:via-indigo-950/40 dark:to-purple-950/20 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl border border-gray-200/60 dark:border-gray-700/50 backdrop-blur-sm transition-all duration-500 flex flex-col card-with-floating-elements"
+      className="group relative bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/20 dark:from-gray-900 dark:via-indigo-950/40 dark:to-purple-950/20 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl   
+      backdrop-blur-sm transition-all duration-500 flex flex-col card-with-floating-elements z-10 hover:z-50"
       whileHover={{ 
         y: -8, 
         rotateX: 2,
@@ -52,12 +53,9 @@ const EventCard = ({ event }) => {
         scale: 1.02
       }}
       whileTap={{ scale: 0.98 }}
-      style={{
-        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
-      }}
     >
       {/* Animated gradient border overlay */}
-      <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-pink-500/20 blur-sm -z-10"></div>
+      <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-90 transition-opacity duration-500 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-pink-500/20 -z-10"></div>
       
       {/* Action buttons container positioned at the top-right of the entire card */}
       <div className="absolute top-20 right-4 z-[200] flex space-x-2">
