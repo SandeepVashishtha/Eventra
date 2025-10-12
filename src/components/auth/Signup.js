@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import GoogleSignInButton from "../GoogleSignInButton";
+import PasswordStrengthIndicator from "./PasswordStrengthIndicator"; // Import the new component
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -21,10 +22,6 @@ const Signup = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState({
-    score: 0,
-    feedback: "",
-  });
 
   const navigate = useNavigate();
 
@@ -45,41 +42,9 @@ const Signup = () => {
 
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const checkPasswordStrength = (password) => {
-    let score = 0;
-    let feedback = [];
-
-    if (password.length >= 8) score += 1;
-    else feedback.push("at least 8 characters");
-
-    if (/[a-z]/.test(password)) score += 1;
-    else feedback.push("one lowercase letter");
-
-    if (/[A-Z]/.test(password)) score += 1;
-    else feedback.push("one uppercase letter");
-
-    if (/[0-9]/.test(password)) score += 1;
-    else feedback.push("one number");
-
-    if (/[@$!%*?&]/.test(password)) score += 1;
-    else feedback.push("one special character");
-
-    return {
-      score,
-      feedback:
-        feedback.length > 0
-          ? `Needs: ${feedback.join(", ")}`
-          : "Strong password!",
-    };
-  };
-
   const handleChange = (e) => {
     const newData = { ...formData, [e.target.name]: e.target.value };
     setFormData(newData);
-
-    if (e.target.name === "password") {
-      setPasswordStrength(checkPasswordStrength(e.target.value));
-    }
 
     if (e.target.name === "confirm_password") {
       setError(
@@ -173,7 +138,6 @@ const Signup = () => {
             <GoogleSignInButton className="w-full" />
           </div>
 
-          {/* Header */}
           <div className="text-center space-y-2">
             <motion.div
               whileHover={{ scale: 1.05 }}
@@ -202,9 +166,7 @@ const Signup = () => {
             </p>
           </div>
 
-          {/* Signup Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Name Fields */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm text-gray-700 dark:text-gray-300">
@@ -222,7 +184,6 @@ const Signup = () => {
                   <p className="text-red-500 text-xs">{firstNameError}</p>
                 )}
               </div>
-
               <div>
                 <label className="block text-sm text-gray-700 dark:text-gray-300">
                   Last name <sup className="text-red-500">*</sup>
@@ -241,7 +202,6 @@ const Signup = () => {
               </div>
             </div>
 
-            {/* Email */}
             <div>
               <label className="block text-sm text-gray-700 dark:text-gray-300">
                 Email address <sup className="text-red-500">*</sup>
@@ -275,7 +235,6 @@ const Signup = () => {
               )}
             </div>
 
-            {/* Password */}
             <div>
               <label className="block text-sm text-gray-700 dark:text-gray-300">
                 Password <sup className="text-red-500">*</sup>
@@ -345,9 +304,12 @@ const Signup = () => {
                   )}
                 </button>
               </div>
+              {/* --- ADDED COMPONENT HERE --- */}
+              {formData.password && (
+                <PasswordStrengthIndicator password={formData.password} />
+              )}
             </div>
 
-            {/* Confirm Password */}
             <div>
               <label className="block text-sm text-gray-700 dark:text-gray-300">
                 Confirm Password <sup className="text-red-500">*</sup>
@@ -378,7 +340,6 @@ const Signup = () => {
               </div>
             </div>
 
-            {/* Error / Success */}
             {error && (
               <div className="text-sm text-red-500 bg-red-50 dark:bg-red-900/40 p-2 rounded-md">
                 {error}
@@ -390,7 +351,6 @@ const Signup = () => {
               </div>
             )}
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
@@ -400,7 +360,6 @@ const Signup = () => {
             </button>
           </form>
 
-          {/* Footer */}
           <p className="text-xs text-center text-gray-500 dark:text-gray-500 mt-4 leading-relaxed">
             By clicking on sign up, you agree to our{" "}
             <Link
