@@ -238,7 +238,7 @@ const Contributors = () => {
           data-aos="fade-zoom-in"
           data-aos-once="true"
         >
-          検 Our Amazing {/* UPDATED: Gradient text for dark mode */}
+          Our Amazing {/* UPDATED: Gradient text for dark mode */}
           <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 dark:from-indigo-400 dark:via-purple-500 dark:to-pink-500 bg-clip-text text-transparent animate-pulse">
             Contributors
           </span>
