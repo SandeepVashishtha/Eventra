@@ -1,15 +1,11 @@
 // Importing necessary React hooks and libraries
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion"; // for animations
-import { Link } from "react-router-dom"; // navigation
 import mockEvents from "./eventsMockData.json"; // mock data file
 import EventHero from "./EventHero"; // Hero section with search
 import EventCard from "./EventCard"; // Card for displaying event details
 import { Grid, List } from "lucide-react"; // icons for toggle view
 import FeedbackButton from "../../components/FeedbackButton"; // Feedback button component
-import { FiCalendar } from "react-icons/fi";
-import { FiRefreshCw } from "react-icons/fi";
-import { FiArrowRight } from "react-icons/fi";
 import EventCTA from "./EventCTA";
 import Fuse from "fuse.js";
 // -----------------------------
@@ -168,7 +164,9 @@ const EventsPage = () => {
               <label htmlFor="sort-events" className="sr-only">Sort events</label>
               <select
                 id="sort-events"
-                className="px-4 py-2 text-sm rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="p-2 text-sm rounded-3xl border border-gray-200 
+                dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 
+                focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={sortType}
                 onChange={e => handleSortChange(e.target.value)}
                 aria-label="Sort events"
