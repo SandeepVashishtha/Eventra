@@ -46,15 +46,15 @@ import HelpCenter from "./Pages/HelpCenter";
 import FAQPage from "./Pages/FAQ/FAQPage";
 
 import { ThemeProvider } from "./context/ThemeContext";
+
 function App() {
   return (
     <ThemeProvider>
+      <ToastProvider /> {/* MOVED HERE - Outside Router but inside ThemeProvider */}
       <AuthProvider>
         <Router>
           <div className="App">
             <Navbar />
-            <ToastProvider/>
-
             <main className="min-h-screen bg-white dark:bg-black">
               <Routes>
                 <Route path="/" element={<HomePage />} />
