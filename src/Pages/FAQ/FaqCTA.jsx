@@ -98,7 +98,14 @@ export default function FAQCTA() {
           >
             <LifeBuoy className="w-10 h-10 text-purple-400" />
             <h3 className="text-white font-semibold text-lg text-center">
-              <Link to="/faq">Browse FAQs</Link>
+              <Link
+                to="/faq"
+                onClick={() => {
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+              >
+                Browse FAQs
+              </Link>
             </h3>
             <p className="text-white/70 text-sm text-center">
               Quickly find answers to common questions about our platform.
