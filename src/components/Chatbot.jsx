@@ -206,11 +206,11 @@ const Chatbot = () => {
   ];
 
   const quickActions = [
-    { label: "Find Events", query: "Show me upcoming events" },
-    { label: "Join Hackathons", query: "How do I join a hackathon?" },
-    { label: "Submit Project", query: "How can I submit my project?" },
-    { label: "Get Help", query: "I need help with something" },
-  ];
+  { label: "Find Events", query: "Show me upcoming events", route: "/events" },
+  { label: "Join Hackathons", query: "How do I join a hackathon?", route: "/hackathons" },
+  { label: "Submit Project", query: "How can I submit my project?", route: "/projects" },
+  { label: "Get Help", query: "I need help with something", route: "/contact" },
+];
 
   const QuickActionsMenu = ({ quickActions, onActionClick }) => (
   <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 border border-gray-200 dark:border-gray-700">
@@ -231,7 +231,12 @@ const Chatbot = () => {
           key={index}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          onClick={() => onActionClick(action.query)}
+          onClick={() => {
+            if (action.route) {
+              navigate(action.route);
+            }
+            onActionClick(action.query);
+          }}
           className="px-3 py-2.5 text-xs font-medium bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:border-indigo-300 dark:hover:border-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-300 transition-all duration-200 text-left break-words min-h-[44px] flex items-center"
         >
           {action.label}
@@ -634,28 +639,31 @@ const Chatbot = () => {
           </p>
           <div className="grid grid-cols-2 gap-2">
             {quickActions.map((action, index) => (
-              <motion.button
-                key={index}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.5 + index * 0.1 }}
-                whileHover={{ 
-                  scale: 1.02,
-                  backgroundColor: "rgba(99, 102, 241, 0.1)"
-                }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  setInputValue(action.query);
-                  setTimeout(() => {
-                    handleSendMessage();
-                    setShowQuickActions(false);
-                  }, 100);
-                }}
-                className="px-3 py-2.5 text-xs font-medium bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:border-indigo-300 dark:hover:border-indigo-600 hover:text-indigo-700 dark:hover:text-indigo-300 transition-all duration-200 text-left break-words min-h-[44px] flex items-center"
-              >
-                {action.label}
-              </motion.button>
-            ))}
+  <motion.button
+    key={index}
+    initial={{ opacity: 0, scale: 0.8 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ delay: 0.5 + index * 0.1 }}
+    whileHover={{ 
+      scale: 1.02,
+      backgroundColor: "rgba(99, 102, 241, 0.1)"
+    }}
+    whileTap={{ scale: 0.98 }}
+    onClick={() => {
+      if (action.route) {
+        navigate(action.route);
+      }
+      setInputValue(action.query);
+      setTimeout(() => {
+        handleSendMessage();
+        setShowQuickActions(false);
+      }, 100);
+    }}
+    className="px-3 py-2.5 text-xs font-medium bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:border-indigo-300 dark:hover:border-indigo-600 hover:text-indigo-700 dark:hover:text-indigo-300 transition-all duration-200 text-left break-words min-h-[44px] flex items-center"
+  >
+    {action.label}
+  </motion.button>
+))}
           </div>
         </div>
       </div>
@@ -719,13 +727,17 @@ const Chatbot = () => {
         className="mt-3 overflow-hidden"
       >
         <QuickActionsMenu 
-          quickActions={quickActions}
-          onActionClick={(query) => {
-            setInputValue(query);
-            setTimeout(handleSendMessage, 100);
-            setIsQuickActionsExpanded(false);
-          }}
-        />
+  quickActions={quickActions}
+  onActionClick={(query) => {
+    const action = quickActions.find(a => a.query === query);
+    if (action && action.route) {
+      navigate(action.route);
+    }
+    setInputValue(query);
+    setTimeout(handleSendMessage, 100);
+    setIsQuickActionsExpanded(false);
+  }}
+/>
       </motion.div>
     )}
   </AnimatePresence>
