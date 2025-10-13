@@ -201,15 +201,15 @@ export default function GitHubStats() {
     <section className="py-16 bg-gradient-to-t from-indigo-50 via-indigo-100 to-white dark:from-gray-900 dark:via-indigo-900/20 dark:to-black ">
       <div className="max-w-7xl mx-auto px-6">
         <motion.h2
-  initial={{ opacity: 0, y: -30 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.8 }}
-  className="text-4xl font-extrabold text-center bg-gradient-to-r from-indigo-600 via-purple-500 to-pink-500 text-transparent bg-clip-text mb-10"
-  data-aos="fade-zoom-in"
-  data-aos-once="true"
->
-  Project Statistics
-</motion.h2>
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-4xl font-extrabold text-center bg-gradient-to-r from-indigo-600 via-purple-500 to-pink-500 text-transparent bg-clip-text mb-10"
+          data-aos="fade-zoom-in"
+          data-aos-once="true"
+        >
+          Project Statistics
+        </motion.h2>
 
 
         <motion.div
@@ -228,7 +228,7 @@ export default function GitHubStats() {
               target="_blank"
               rel="noopener noreferrer"
               whileHover={{ scale: 1.1, rotate: 1 }}
-whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: 0.95 }}
 
               // UPDATED: Card background and border
               className="group flex flex-col items-center justify-center bg-white/70 dark:bg-white/10 backdrop-blur-lg rounded-2xl px-8 py-6 shadow-xl hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-white/20 relative overflow-hidden w-52"
@@ -239,7 +239,7 @@ whileTap={{ scale: 0.95 }}
             >
               {/* Glow effect */}
               {/* UPDATED: Glow effect for dark mode */}
-<div className="absolute inset-0 bg-gradient-to-br from-purple-100 via-transparent to-indigo-200 dark:from-indigo-700/30 dark:via-transparent dark:to-purple-800/30 opacity-0 group-hover:opacity-100 transition duration-700 blur-3xl rounded-2xl"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-100 via-transparent to-indigo-200 dark:from-indigo-700/30 dark:via-transparent dark:to-purple-800/30 opacity-0 group-hover:opacity-100 transition duration-700 blur-3xl rounded-2xl"></div>
 
               <div className="z-10 flex flex-col items-center space-y-3">
                 {/* UPDATED: Icon wrapper background */}
