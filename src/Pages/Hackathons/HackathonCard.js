@@ -19,14 +19,14 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
     teams: hackathon.status === "live" ? hackathon.teams : 0,
     submissions: hackathon.status === "live" ? hackathon.submissions : 0,
   };
-  
+
   // Generate sharing data for this hackathon
   const hackathonSharingData = generateEventSharingData({
     ...hackathon,
     title: hackathon.title,
     description: hackathon.description,
     date: hackathon.startDate,
-    id: hackathon.id
+    id: hackathon.id,
   });
 
   return (
@@ -46,22 +46,28 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
           Featured
         </div>
       )}
-      
+
       {/* Share button in top-right corner */}
-      <div className="absolute top-2 right-2 z-[200]">
-        <ShareMenu 
-          shareData={hackathonSharingData} 
+      <div className="absolute -top-4 -right-4 z-[200]">
+        <ShareMenu
+          shareData={hackathonSharingData}
           position="bottom-right"
           menuClassName="!z-[999] shadow-2xl"
           buttonClassName=""
         >
-          <motion.div 
-            className="bg-white rounded-full p-3 shadow-lg cursor-pointer hover:shadow-xl border border-gray-200 group/share"
+          <motion.div
+            className="
+  bg-white dark:bg-gray-800 
+  rounded-full p-3 
+  shadow-lg cursor-pointer hover:shadow-xl 
+  border border-gray-200 dark:border-gray-600 
+  group/share
+"
             whileHover={{ scale: 1.1 }}
             transition={{ type: "spring", stiffness: 400, damping: 10 }}
           >
-            <ShareIcon className="w-4 h-4 text-gray-600" />
-            
+            <ShareIcon className="w-4 h-4 text-gray-400" />
+
             {/* Tooltip */}
             <div className="absolute invisible group-hover/share:visible opacity-0 group-hover/share:opacity-100 transition-opacity duration-300 -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10">
               Share Hackathon
@@ -267,9 +273,9 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
                 <button className="flex-1 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-colors">
                   Register
                 </button>
-                
+
                 {/* Google Calendar integration */}
-                <a 
+                <a
                   href={addHackathonToGoogleCalendar(hackathon)}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -281,7 +287,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
                     <CalendarIcon className="w-4 h-4 text-indigo-500" />
                     <span className="hidden sm:inline">Set Reminder</span>
                   </button>
-                  
+
                   {/* Tooltip */}
                   <div className="absolute invisible group-hover/calendar:visible opacity-0 group-hover/calendar:opacity-100 transition-opacity duration-300 -top-8 left-1/2 transform -translate-x-1/2 bg-indigo-600 text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10">
                     Add to Google Calendar
