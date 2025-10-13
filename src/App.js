@@ -7,6 +7,7 @@ import Navbar from "./components/Layout/Navbar";
 import Footer from "./components/Layout/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
+import Chatbot from "./components/Chatbot";
 
 // --------------- PAGES
 import Contributors from "./components/Contributors";
@@ -132,8 +133,9 @@ function App() {
                 <Route path="/*" element={<NotFound />} />
               </Routes>
             </main>
-
+            
             <ScrollToTop />
+            <Chatbot />
 
             {/* Global floating Feedback button */}
             <FeedbackButton />
