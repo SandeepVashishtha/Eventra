@@ -134,8 +134,8 @@ function App() {
               </Routes>
             </main>
             
-            <Chatbot />
             <ScrollToTop />
+            <Chatbot />
 
             {/* Global floating Feedback button */}
             <FeedbackButton />
