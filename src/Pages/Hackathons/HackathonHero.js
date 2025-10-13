@@ -208,12 +208,13 @@ export default function HackathonHero({
           <motion.button
             whileHover={{ scale: 1.07 }}
             whileTap={{ scale: 0.95 }}
+            className="relative px-7 py-3.5 rounded-xl font-semibold text-white shadow-lg overflow-hidden group"
             onClick={scrollToCards}
-            className="relative px-7 py-3.5 rounded-xl font-medium text-gray-800 dark:text-gray-200 shadow-md backdrop-blur-md border border-gray-300 dark:border-gray-600 hover:border-indigo-400 transition-all duration-300 bg-white/70 dark:bg-gray-800/70"
           >
+            <span className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-800 group-hover:from-indigo-500 group-hover:to-indigo-600 transition-all duration-500" />
+            <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700 ease-in-out" />
             <span className="relative flex items-center">
-              {/* UPDATED: Icon color */}
-              <Users className="inline-block w-5 h-5 mr-2 text-indigo-600 dark:text-indigo-400" />
+              <Rocket className="inline-block w-5 h-5 mr-2" />
               Explore Hackathons
             </span>
           </motion.button>
@@ -229,7 +230,7 @@ export default function HackathonHero({
                 navigate("/host-hackathon");
               }
             }}
-            className="relative px-7 py-3.5 rounded-xl font-medium text-gray-800 dark:text-gray-100 shadow-md backdrop-blur-md border border-gray-300 hover:border-indigo-400 transition-all duration-300 bg-white/70 dark:bg-gray-800"
+            className="relative px-7 py-3.5 rounded-xl font-medium text-gray-800 dark:text-gray-100 shadow-md backdrop-blur-md border border-gray-300 dark:border-gray-600 hover:border-indigo-400 transition-all duration-300 bg-white/70 dark:bg-gray-800"
           >
             <span className="relative flex items-center">
               <Users className="inline-block w-5 h-5 mr-2 text-indigo-600" />
