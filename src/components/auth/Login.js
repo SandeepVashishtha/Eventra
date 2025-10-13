@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import GoogleSignInButton from '../GoogleSignInButton';
+import { toast } from 'react-toastify';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -44,10 +45,20 @@ const Login = () => {
     setLoading(true);
     try {
       const ok = await login(formData.email, formData.password);
-      if (ok) navigate('/dashboard', { replace: true });
+      if (ok) {
+        // Show success toast
+        toast.success('Login successful! Redirecting to dashboard...');
+        
+        // Redirect after a brief delay to show the toast
+        setTimeout(() => {
+          navigate('/dashboard', { replace: true });
+        }, 1500);
+      }
     } catch (err) {
       console.error("Login error:", err);
       setError({ general: "Invalid email or password" });
+      // Show error toast
+      toast.error(' Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
