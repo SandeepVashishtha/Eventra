@@ -104,7 +104,7 @@ export default function EventHero({
 
             {searchQuery && (
               <motion.button
-                whileHover={{ scale: 1.1}}
+                whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => handleSearch("")}
                 className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors z-10"
@@ -177,9 +177,13 @@ export default function EventHero({
           </motion.button>
         </motion.div>
       </div>
-
       {/* Stats Section */}
-      <div className="relative max-w-6xl mx-auto px-6 mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div
+        className="relative max-w-6xl mx-auto px-6 mt-20 mb-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
+        data-aos="fade-up"
+        data-aos-duration="1000"
+        data-aos-delay="200"
+      >
         {[
           { label: "Events Hosted", value: "120+", icon: Rocket },
           { label: "Active Participants", value: "50k+", icon: Users },
@@ -188,32 +192,37 @@ export default function EventHero({
         ].map((stat, idx) => (
           <motion.div
             key={idx}
-            initial={{ opacity: 0, y: 30, scale: 0.95 }}
-            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{
-              delay: 0.1 + idx * 0.1,
-              duration: 0.5,
-              ease: "easeOut",
-            }}
+            transition={{ delay: 0.2 + idx * 0.15, duration: 0.6 }}
             whileHover={{ scale: 1.05 }}
+            // AOS Implementation on individual stats
             data-aos="zoom-in"
             data-aos-delay={200 + idx * 150}
-            className="relative group bg-white dark:bg-gray-900 rounded-2xl shadow-md shadow-blue-200/40 dark:shadow-indigo-900/80 p-5 flex flex-col items-center text-center hover:shadow-lg transition-all duration-300"
+            // UPDATED: Stat card styles
+            className="relative bg-gradient-to-br from-indigo-50 to-white dark:from-gray-800 dark:to-gray-800 rounded-3xl shadow-lg p-6 flex flex-col items-center text-center hover:shadow-2xl transition-all duration-300"
           >
+            {/* Animated Icon in a circular container */}
             <motion.div
-              whileHover={{ scale: 1.2 }}
-              transition={{ type: "spring", stiffness: 200, damping: 12 }}
-              className="mb-3 flex items-center justify-center h-14 w-14 rounded-full bg-blue-50 dark:bg-indigo-900/50 text-blue-500 dark:text-indigo-400"
+              whileHover={{ rotate: 360, scale: 1.2 }}
+              transition={{ type: "spring", stiffness: 200, damping: 10 }}
+              className="mb-4 flex items-center justify-center h-14 w-14 rounded-full bg-gradient-to-tr from-indigo-800 to-indigo-300 shadow-md"
             >
-              <stat.icon className="h-7 w-7" />
+              <stat.icon className="h-7 w-7 text-white" />
             </motion.div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+
+            {/* Stat Value (big bold number) */}
+            {/* UPDATED: Text colors */}
+            <p className="text-3xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight">
               {stat.value}
             </p>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-sm font-medium text-gray-600 dark:text-gray-400">
               {stat.label}
             </p>
+
+            {/* UPDATED: Decorative glow */}
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-indigo-500/10 to-indigo-600/10 dark:from-indigo-500/20 dark:to-indigo-600/20 blur-2xl opacity-40 -z-10" />
           </motion.div>
         ))}
       </div>
