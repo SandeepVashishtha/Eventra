@@ -3,7 +3,33 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import GoogleSignInButton from "../GoogleSignInButton";
-import PasswordStrengthIndicator from "./PasswordStrengthIndicator"; // Import the new component
+import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
+
+const assessStrength = (password) => {
+  if (!password) {
+    return { criteriaMet: 0 };
+  }
+
+  let criteriaMet = 0;
+
+  if (password.length >= 8) {
+      criteriaMet++;
+  }
+  if (/[A-Z]/.test(password)) {
+    criteriaMet++;
+  }
+  if (/[a-z]/.test(password)) {
+    criteriaMet++;
+  }
+  if (/\d/.test(password)) {
+    criteriaMet++;
+  }
+  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    criteriaMet++;
+  }
+  
+  return { criteriaMet };
+};
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -21,7 +47,13 @@ const Signup = () => {
   const [emailError, setEmailError] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  
+  // State for the main password visibility
+  const [showPassword, setShowPassword] = useState(false); 
+  // NEW STATE: For confirm password visibility
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [passwordMatchMessage, setPasswordMatchMessage] = useState("");
 
   const navigate = useNavigate();
 
@@ -46,10 +78,24 @@ const Signup = () => {
     const newData = { ...formData, [e.target.name]: e.target.value };
     setFormData(newData);
 
-    if (e.target.name === "confirm_password") {
-      setError(
-        e.target.value !== formData.password ? "Passwords do not match" : ""
-      );
+    if (e.target.name === "confirm_password" || e.target.name === "password") {
+        const password = e.target.name === "password" ? e.target.value : newData.password;
+        const confirmPassword = e.target.name === "confirm_password" ? e.target.value : newData.confirm_password;
+        
+        if (password && confirmPassword) {
+            if (password === confirmPassword) {
+                setError("");
+                setPasswordMatchMessage("Passwords match!");
+            } else {
+                setError("Passwords do not match");
+                setPasswordMatchMessage("");
+            }
+        } else {
+             setPasswordMatchMessage("");
+             if (e.target.name === "confirm_password" && e.target.value) {
+                setError("Passwords do not match");
+             }
+        }
     }
 
     if (e.target.name === "email") {
@@ -79,7 +125,10 @@ const Signup = () => {
     if (error) setError("");
   };
 
+  // Toggle function for main password
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
+  // NEW Toggle function for confirm password
+  const toggleConfirmPasswordVisibility = () => setShowConfirmPassword(!showConfirmPassword);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -93,7 +142,13 @@ const Signup = () => {
       setError("Passwords do not match");
       return;
     }
-
+    
+    const { criteriaMet } = assessStrength(formData.password);
+    if (criteriaMet < 5) {
+      setError("Password doesn't meet the security criteria (must meet all 5 requirements).");
+      return;
+    }
+    
     setLoading(true);
     setError("");
 
@@ -304,7 +359,6 @@ const Signup = () => {
                   )}
                 </button>
               </div>
-              {/* --- ADDED COMPONENT HERE --- */}
               {formData.password && (
                 <PasswordStrengthIndicator password={formData.password} />
               )}
@@ -330,14 +384,66 @@ const Signup = () => {
                 </svg>
                 <input
                   name="confirm_password"
-                  type={showPassword ? "text" : "password"}
+                  type={showConfirmPassword ? "text" : "password"} // Use new state here
                   value={formData.confirm_password}
                   onChange={handleChange}
                   placeholder="Confirm your password"
                  className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                   required
                 />
+                {/* NEW Toggle Button */}
+                <button
+                  type="button"
+                  onClick={toggleConfirmPasswordVisibility}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                >
+                  {showConfirmPassword ? (
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10a9.958 9.958 0 012.09-6.019M21.364 21.364l-18.728-18.728"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                      />
+                    </svg>
+                  )}
+                </button>
               </div>
+              {passwordMatchMessage && (
+                <motion.p 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    transition={{ duration: 0.3 }}
+                    className="text-xs mt-1 text-green-600 dark:text-green-400"
+                >
+                    {passwordMatchMessage}
+                </motion.p>
+              )}
             </div>
 
             {error && (
