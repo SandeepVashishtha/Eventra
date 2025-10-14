@@ -135,21 +135,7 @@ const Login = () => {
                 Email address <sup className='ml-1 text-sm text-red-500'>*</sup>
               </label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg
-                    className="h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-500 transition-colors"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 12a4 4 0 10-8 0 4 4 0 008 0z"
-                    />
-                  </svg>
-                </div>
+                
                 <input
                   id="email"
                   name="email"
@@ -157,9 +143,9 @@ const Login = () => {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  disabled={loading}
-                  placeholder="Enter your email address"
-                  className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                  // disabled={loading}
+                  placeholder="@ Enter your email address"
+                  className="w-full pl-3 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                 />
               </div>
               {error.email && (
