@@ -51,13 +51,13 @@ export default function HackathonHero({
   );
 
   return (
-    <div className="bg-gradient-to-l from-indigo-200 to-white dark:from-gray-900 dark:to-black relative overflow-visible">
+    <div className="bg-gradient-to-l from-indigo-200 to-white dark:from-gray-900 dark:to-black relative overflow-hidden">
       {/* ======================= FLOATING SHAPES ======================= */}
       {shapes.map((shape, i) => (
         <motion.div
           key={i}
           animate={floatShape(i)}
-          className={`absolute rounded-full bg-gradient-to-tr ${shape.color} opacity-30 dark:opacity-15`}
+          className={`hidden sm:block absolute rounded-full bg-gradient-to-tr ${shape.color} opacity-30 dark:opacity-15`}
           style={{
             width: `${shape.size}px`,
             height: `${shape.size}px`,
@@ -67,7 +67,7 @@ export default function HackathonHero({
       ))}
 
       {/* ======================= HERO SECTION ======================= */}
-      <div className="relative max-w-6xl mx-auto px-8 text-center mt-12">
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 md:px-8 text-center mt-8 sm:mt-12">
         <motion.h1
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -186,7 +186,7 @@ export default function HackathonHero({
 
       {/* ======================= STATS SECTION ======================= */}
       <div
-        className="relative max-w-6xl mx-auto px-6 mt-20 mb-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
+        className="relative max-w-6xl mx-auto px-4 sm:px-6 mt-12 sm:mt-16 md:mt-20 mb-12 sm:mb-16 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8"
         data-aos="fade-up"
         data-aos-duration="1000"
         data-aos-delay="200"
