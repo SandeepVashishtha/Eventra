@@ -47,14 +47,9 @@ const Signup = () => {
   const [emailError, setEmailError] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  
-  // State for the main password visibility
   const [showPassword, setShowPassword] = useState(false); 
-  // NEW STATE: For confirm password visibility
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   const [passwordMatchMessage, setPasswordMatchMessage] = useState("");
-
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -125,9 +120,7 @@ const Signup = () => {
     if (error) setError("");
   };
 
-  // Toggle function for main password
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
-  // NEW Toggle function for confirm password
   const toggleConfirmPasswordVisibility = () => setShowConfirmPassword(!showConfirmPassword);
 
   const handleSubmit = async (e) => {
@@ -384,14 +377,13 @@ const Signup = () => {
                 </svg>
                 <input
                   name="confirm_password"
-                  type={showConfirmPassword ? "text" : "password"} // Use new state here
+                  type={showConfirmPassword ? "text" : "password"} 
                   value={formData.confirm_password}
                   onChange={handleChange}
                   placeholder="Confirm your password"
                  className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                   required
                 />
-                {/* NEW Toggle Button */}
                 <button
                   type="button"
                   onClick={toggleConfirmPasswordVisibility}
