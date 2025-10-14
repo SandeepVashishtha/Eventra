@@ -8,16 +8,27 @@
   box-sizing: border-box;
 }
 
+/* Theme variables */
 :root {
   --bg-color: #ffffff;
   --text-color: #1a1a1a;
-  --text-color-light: #4a4a4a; /* Lighter text for secondary content */
+  --text-color-light: #4a4a4a;
   --border-color: #e1e5e9;
   --card-bg-color: #ffffff;
   --scrollbar-track-color: #f1f1f1;
   --scrollbar-thumb-color: #c1c1c1;
   --scrollbar-thumb-hover-color: #a8a8a8;
   --btn-secondary-text: #4a4a4a;
+
+  /* Font sizes */
+  --font-body: 16px;
+  --font-nav: 16px;
+  --font-h1: 32px;
+  --font-h2: 28px;
+  --font-h3: 24px;
+  --font-h4: 22px;
+  --font-h5: 20px;
+  --font-h6: 18px;
 }
 
 body.dark {
@@ -32,7 +43,7 @@ body.dark {
   --btn-secondary-text: #e0e0e0;
 }
 
-
+/* Global styles */
 html {
   scroll-behavior: smooth;
   overflow-x: hidden;
@@ -49,42 +60,39 @@ body {
   color: var(--text-color);
   background-color: var(--bg-color);
   transition: background-color 0.3s ease, color 0.3s ease;
+
+  /* Body font size */
+  font-size: var(--font-body);
 }
 
+/* Headings */
+h1 { font-size: var(--font-h1); }
+h2 { font-size: var(--font-h2); }
+h3 { font-size: var(--font-h3); }
+h4 { font-size: var(--font-h4); }
+h5 { font-size: var(--font-h5); }
+h6 { font-size: var(--font-h6); }
+
+/* Navigation items */
+nav, nav a {
+  font-size: var(--font-nav);
+}
+
+/* Code block */
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+  font-size: 14px;
 }
 
 /* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--scrollbar-track-color);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb-color);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover-color);
-}
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--scrollbar-track-color); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb-color); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover-color); }
 
 /* Utilities */
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px;
-}
-
-.section-padding {
-  padding: 80px 0;
-}
-
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+.section-padding { padding: 80px 0; }
 .text-gradient {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   -webkit-background-clip: text;
@@ -92,19 +100,19 @@ code {
   background-clip: text;
 }
 
+/* Buttons */
 .btn-primary {
-  /* add text color */
   background: linear-gradient(135deg, #667eea 0%, #fbf7ffff 100%);
   color: white;
   padding: 12px 32px;
   border: none;
   border-radius: 8px;
   font-weight: 600;
+  font-size: 16px;
   text-decoration: none;
   display: inline-block;
   transition: all 0.3s ease;
   cursor: pointer;
-  font-size: 16px;
 }
 
 .btn-primary:hover {
@@ -120,11 +128,11 @@ code {
   border: 2px solid var(--border-color);
   border-radius: 8px;
   font-weight: 600;
+  font-size: 16px;
   text-decoration: none;
   display: inline-block;
   transition: all 0.3s ease;
   cursor: pointer;
-  font-size: 16px;
 }
 
 .btn-secondary:hover {
@@ -133,40 +141,26 @@ code {
   transform: translateY(-2px);
 }
 
-.fade-in {
-  opacity: 0;
-  transform: translateY(30px);
-  animation: fadeIn 0.8s ease forwards;
-}
+/* Fade animation */
+.fade-in { opacity: 0; transform: translateY(30px); animation: fadeIn 0.8s ease forwards; }
+@keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
 
-@keyframes fadeIn {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Responsive */
+/* Responsive adjustments */
 @media (max-width: 768px) {
-  .container {
-    padding: 0 16px;
-  }
+  .container { padding: 0 16px; }
+  .section-padding { padding: 60px 0; }
+  .btn-primary, .btn-secondary { padding: 10px 24px; font-size: 14px; }
 
-  .section-padding {
-    padding: 60px 0;
-  }
-
-  .btn-primary,
-  .btn-secondary {
-    padding: 10px 24px;
-    font-size: 14px;
-  }
+  h1 { font-size: 28px; }
+  h2 { font-size: 24px; }
+  h3 { font-size: 22px; }
+  h4 { font-size: 20px; }
+  h5, h6 { font-size: 18px; }
+  body, nav, nav a { font-size: 16px; }
 }
+
+/* Remove input clear buttons */
 input::-ms-reveal,
 input::-ms-clear,
 input::-webkit-clear-button,
-input::-webkit-password-toggle {
-  display: none !important;
-}
-
-
+input::-webkit-password-toggle { display: none !important; }
