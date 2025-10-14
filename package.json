@@ -16,7 +16,9 @@
     "react-icons": "^5.5.0",
     "react-intersection-observer": "^9.4.1",
     "react-router-dom": "^6.8.0",
-    "react-scripts": "^5.0.1"
+    "react-scripts": "^5.0.1",
+    "react-toastify": "^11.0.5",
+    "zxcvbn": "^4.4.2"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -44,8 +46,11 @@
   },
   "proxy": "https://eventra-backend-dgcae3etebbag8ft.centralindia-01.azurewebsites.net",
   "devDependencies": {
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.1",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^3.4.17",
+    "typescript": "^4.9.5"
   }
 }

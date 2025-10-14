@@ -10,7 +10,11 @@ import {
   Zap,
   BookOpen,
   Gift,
+  Share2,
 } from "lucide-react";
+import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
+import ShareMenu from "../../components/common/ShareMenu";
+import { generateEventSharingData } from "../../utils/shareUtils";
 
 const EventCard = ({ event }) => {
   // Array of icons to choose from
@@ -24,6 +28,15 @@ const EventCard = ({ event }) => {
 
   // Pick a random icon each render
   const randomIcon = icons[Math.floor(Math.random() * icons.length)];
+  
+  // Generate sharing data for this event
+  const eventSharingData = generateEventSharingData({
+    ...event,
+    title: event.title,
+    description: event.description,
+    date: event.date,
+    id: event.id
+  });
 
   return (
     <motion.div
@@ -31,7 +44,8 @@ const EventCard = ({ event }) => {
       data-aos="zoom-in"
       data-aos-duration="1000"
       // Removed Framer Motion initial/animate/transition to prevent conflicts with parent container animation
-      className="group relative bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/20 dark:from-gray-900 dark:via-indigo-950/40 dark:to-purple-950/20 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl overflow-hidden border border-gray-200/60 dark:border-gray-700/50 backdrop-blur-sm transition-all duration-500 flex flex-col"
+      className="group relative bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/20 dark:from-gray-900 dark:via-indigo-950/40 dark:to-purple-950/20 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl   
+      backdrop-blur-sm transition-all duration-500 flex flex-col card-with-floating-elements z-10 hover:z-50"
       whileHover={{ 
         y: -8, 
         rotateX: 2,
@@ -39,12 +53,56 @@ const EventCard = ({ event }) => {
         scale: 1.02
       }}
       whileTap={{ scale: 0.98 }}
-      style={{
-        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
-      }}
     >
       {/* Animated gradient border overlay */}
-      <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-pink-500/20 blur-sm -z-10"></div>
+      <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-90 transition-opacity duration-500 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-pink-500/20 -z-10"></div>
+      
+      {/* Action buttons container positioned at the top-right of the entire card */}
+      <div className="absolute top-20 right-4 z-[200] flex space-x-2">
+        {/* Share Menu */}
+        <ShareMenu 
+          shareData={eventSharingData} 
+          position="above"
+          menuClassName="!z-[999] shadow-2xl"
+          buttonClassName=""
+        >
+          <motion.div 
+            className="bg-white rounded-full p-3 shadow-lg cursor-pointer hover:shadow-xl border border-gray-200 group/share share-button-pop share-button-float"
+            whileHover={{ scale: 1.1, rotate: -5 }}
+            transition={{ type: "spring", stiffness: 400, damping: 10 }}
+          >
+            <Share2 size={18} className="text-gray-600" />
+            
+            {/* Tooltip */}
+            <div className="absolute invisible group-hover/share:visible opacity-0 group-hover/share:opacity-100 transition-opacity duration-300 -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap">
+              Share Event
+            </div>
+          </motion.div>
+        </ShareMenu>
+        
+        {/* Google Calendar button */}
+        <a 
+          href={addEventToGoogleCalendar(event)}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          title="Add to Google Calendar"
+          className="group/cal"
+        >
+          <motion.div 
+            className="bg-white rounded-full p-3 shadow-lg cursor-pointer hover:shadow-xl border border-gray-200 share-button-pop share-button-float"
+            whileHover={{ scale: 1.1, rotate: 5 }}
+            transition={{ type: "spring", stiffness: 400, damping: 10 }}
+          >
+            <Calendar size={18} className="text-gray-600" />
+            
+            {/* Tooltip */}
+            <div className="absolute invisible group-hover/cal:visible opacity-0 group-hover/cal:opacity-100 transition-opacity duration-300 -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap">
+              Add to Google Calendar
+            </div>
+          </motion.div>
+        </a>
+      </div>
       
       {/* Floating particles effect */}
       <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
@@ -83,7 +141,7 @@ const EventCard = ({ event }) => {
       </div>
 
       {/* --- Enhanced Event Image --- */}
-      <div className="relative h-64 overflow-hidden">
+      <div className="relative h-64 card-content-overflow">
         <motion.img
           src={event.image}
           alt={event.title}
@@ -92,15 +150,6 @@ const EventCard = ({ event }) => {
           transition={{ duration: 0.7 }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent group-hover:from-black/50 transition-all duration-500"></div>
-        
-        {/* Floating badge on image */}
-        <motion.div 
-          className="absolute top-4 right-4 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full p-2 shadow-lg"
-          whileHover={{ scale: 1.1, rotate: 5 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-        >
-          <Calendar size={16} className="text-indigo-500" />
-        </motion.div>
       </div>
 
       {/* --- Enhanced Description --- */}

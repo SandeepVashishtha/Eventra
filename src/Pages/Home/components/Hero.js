@@ -41,9 +41,21 @@ const Hero = () => {
 
   // Global search functionality
   const allData = [
-    ...eventsData.map(item => ({ ...item, type: 'event', searchType: 'Events' })),
-    ...hackathonsData.map(item => ({ ...item, type: 'hackathon', searchType: 'Hackathons' })),
-    ...projectsData.map(item => ({ ...item, type: 'project', searchType: 'Projects' }))
+    ...eventsData.map((item) => ({
+      ...item,
+      type: "event",
+      searchType: "Events",
+    })),
+    ...hackathonsData.map((item) => ({
+      ...item,
+      type: "hackathon",
+      searchType: "Hackathons",
+    })),
+    ...projectsData.map((item) => ({
+      ...item,
+      type: "project",
+      searchType: "Projects",
+    })),
   ];
 
   const fuse = new Fuse(allData, {
@@ -56,7 +68,7 @@ const Hero = () => {
       "category",
       "author",
       "organizer",
-      "type"
+      "type",
     ],
     threshold: 0.3,
     includeScore: true,
@@ -77,21 +89,25 @@ const Hero = () => {
   const handleResultClick = (result, type) => {
     setShowResults(false);
     setSearchQuery("");
-    if (type === 'event') {
-      navigate('/events');
-    } else if (type === 'hackathon') {
-      navigate('/hackathons');
-    } else if (type === 'project') {
-      navigate('/projects');
+    if (type === "event") {
+      navigate("/events");
+    } else if (type === "hackathon") {
+      navigate("/hackathons");
+    } else if (type === "project") {
+      navigate("/projects");
     }
   };
 
   const getResultIcon = (type) => {
     switch (type) {
-      case 'event': return <Calendar className="w-4 h-4" />;
-      case 'hackathon': return <Trophy className="w-4 h-4" />;
-      case 'project': return <Code className="w-4 h-4" />;
-      default: return <Search className="w-4 h-4" />;
+      case "event":
+        return <Calendar className="w-4 h-4" />;
+      case "hackathon":
+        return <Trophy className="w-4 h-4" />;
+      case "project":
+        return <Code className="w-4 h-4" />;
+      default:
+        return <Search className="w-4 h-4" />;
     }
   };
 
@@ -124,6 +140,26 @@ const Hero = () => {
       color: "from-purple-400 to-pink-400",
     },
     {
+      size: 40,
+      pos: { top: "30%", right: "30%" },
+      color: "from-purple-400 to-pink-400",
+    },
+    {
+      size: 80,
+      pos: { top: "70%", right: "15%" },
+      color: "from-purple-400 to-pink-400",
+    },
+    {
+      size: 60,
+      pos: { top: "15%", right: "70%" },
+      color: "from-purple-400 to-pink-400",
+    },
+    {
+      size: 30,
+      pos: { top: "40%", right: "40%" },
+      color: "from-purple-400 to-pink-400",
+    },
+    {
       size: 100,
       pos: { bottom: "5%", left: "20%" },
       color: "from-blue-300 to-indigo-300",
@@ -141,13 +177,25 @@ const Hero = () => {
   ];
 
   const stats = [
-    { value: "1500+", label: "Developers Joined", color: "text-indigo-500 dark:text-indigo-400" },
-    { value: "75", label: "Events Organized", color: "text-pink-500 dark:text-pink-400" },
-    { value: "30+", label: "Partners & Sponsors", color: "text-purple-500 dark:text-purple-400" },
+    {
+      value: "1500+",
+      label: "Developers Joined",
+      color: "text-indigo-500 dark:text-indigo-400",
+    },
+    {
+      value: "75",
+      label: "Events Organized",
+      color: "text-pink-500 dark:text-pink-400",
+    },
+    {
+      value: "30+",
+      label: "Partners & Sponsors",
+      color: "text-purple-500 dark:text-purple-400",
+    },
   ];
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-black dark:to-gray-900 xl:pt-28 pt-24">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-black dark:to-gray-900 xl:py-28 py-24">
       {/* Floating Gradient Shapes */}
       {shapes.map((shape, i) => (
         <motion.div
@@ -226,38 +274,48 @@ const Hero = () => {
             variants={fadeUp}
             className="w-full max-w-2xl mx-auto mb-12 relative"
           >
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-6 flex items-center z-10 pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-indigo-500 dark:group-focus-within:text-indigo-400 transition-colors duration-300" />
+            <div className="flex w-full max-w-3xl mx-auto gap-2 items-center">
+              {/* Left Column: Search Input */}
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  placeholder="Search events, hackathons, projects..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="w-full py-4 px-6 text-lg text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-gray-200 dark:border-gray-700 rounded-l-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/20 dark:focus:ring-indigo-400/20 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300 shadow-lg hover:shadow-xl"
+                  onFocus={() => searchQuery && setShowResults(true)}
+                  onBlur={() => setTimeout(() => setShowResults(false), 200)}
+                />
+
+                {/* Optional: Clear Button inside input */}
+                {searchQuery && (
+                  <motion.button
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    whileHover={{ rotate: 90, scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => {
+                      setSearchQuery("");
+                      setSearchResults([]);
+                      setShowResults(false);
+                    }}
+                    className="absolute inset-y-0 right-16 flex items-center pr-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                  >
+                    <X className="h-5 w-5" />
+                  </motion.button>
+                )}
               </div>
 
-              <input
-                type="text"
-                placeholder="Search events, hackathons, projects..."
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="block w-full pl-14 pr-12 py-4 text-lg text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-gray-200 dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/20 dark:focus:ring-indigo-400/20 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300 shadow-lg hover:shadow-xl"
-                onFocus={() => searchQuery && setShowResults(true)}
-                onBlur={() => setTimeout(() => setShowResults(false), 200)}
-              />
-
-              {searchQuery && (
-                <motion.button
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  exit={{ scale: 0 }}
-                  whileHover={{ rotate: 90, scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => {
-                    setSearchQuery("");
-                    setSearchResults([]);
-                    setShowResults(false);
-                  }}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors z-10"
-                >
-                  <X className="h-5 w-5" />
-                </motion.button>
-              )}
+              {/* Right Column: Search Icon Button */}
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handleSearch(searchQuery)}
+                className="flex items-center justify-center w-16 h-16 bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-400 dark:hover:bg-indigo-500 text-white rounded-r-2xl shadow-lg hover:shadow-2xl transition-all duration-300"
+              >
+                <Search className="h-6 w-6" />
+              </motion.button>
             </div>
 
             {/* Search Results Dropdown */}
@@ -268,7 +326,7 @@ const Hero = () => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 max-h-96 overflow-y-auto z-50"
+                  className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl pb-12 border border-gray-200 dark:border-gray-700 max-h-96 overflow-y-auto z-50"
                 >
                   <div className="p-4">
                     <div className="text-sm text-gray-500 dark:text-gray-400 mb-3 font-medium">
@@ -281,13 +339,15 @@ const Hero = () => {
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: index * 0.05 }}
-                          onClick={() => handleResultClick(result.item, result.item.type)}
+                          onClick={() =>
+                            handleResultClick(result.item, result.item.type)
+                          }
                           className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors group"
                         >
                           <div className="flex-shrink-0 p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-200 dark:group-hover:bg-indigo-800/50 transition-colors">
                             {getResultIcon(result.item.type)}
                           </div>
-                          <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-0 relative">
                             <div className="flex items-center gap-2 mb-1">
                               <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                                 {result.item.title}
@@ -296,8 +356,8 @@ const Hero = () => {
                                 {result.item.searchType}
                               </span>
                             </div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
-                              {result.item.description?.substring(0, 100)}...
+                            <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 absolute left-0">
+                              {result.item.description?.substring(0, 80)}...
                             </p>
                           </div>
                           <ExternalLink className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors" />
@@ -309,7 +369,7 @@ const Hero = () => {
                         <button
                           onClick={() => {
                             setShowResults(false);
-                            navigate('/events');
+                            navigate("/events");
                           }}
                           className="w-full text-center text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition-colors"
                         >
@@ -403,7 +463,9 @@ const Hero = () => {
                   {stat.value}
                 </p>
                 {/* Stat label text */}
-                <p className="text-gray-700 dark:text-gray-300 text-sm">{stat.label}</p>
+                <p className="text-gray-700 dark:text-gray-300 text-sm">
+                  {stat.label}
+                </p>
               </motion.div>
             ))}
           </motion.div>

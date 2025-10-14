@@ -858,7 +858,7 @@ main {
 }
 
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -867,7 +867,6 @@ main {
 
 ::-webkit-scrollbar-thumb {
   background-color: rgb(212, 203, 252);
-  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {

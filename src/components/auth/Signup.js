@@ -1,8 +1,35 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import GoogleSignInButton from "../GoogleSignInButton";
+import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
+
+const assessStrength = (password) => {
+  if (!password) {
+    return { criteriaMet: 0 };
+  }
+
+  let criteriaMet = 0;
+
+  if (password.length >= 8) {
+      criteriaMet++;
+  }
+  if (/[A-Z]/.test(password)) {
+    criteriaMet++;
+  }
+  if (/[a-z]/.test(password)) {
+    criteriaMet++;
+  }
+  if (/\d/.test(password)) {
+    criteriaMet++;
+  }
+  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    criteriaMet++;
+  }
+  
+  return { criteriaMet };
+};
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -20,12 +47,9 @@ const Signup = () => {
   const [emailError, setEmailError] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState({
-    score: 0,
-    feedback: "",
-  });
-
+  const [showPassword, setShowPassword] = useState(false); 
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordMatchMessage, setPasswordMatchMessage] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,46 +69,28 @@ const Signup = () => {
 
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const checkPasswordStrength = (password) => {
-    let score = 0;
-    let feedback = [];
-
-    if (password.length >= 8) score += 1;
-    else feedback.push("at least 8 characters");
-
-    if (/[a-z]/.test(password)) score += 1;
-    else feedback.push("one lowercase letter");
-
-    if (/[A-Z]/.test(password)) score += 1;
-    else feedback.push("one uppercase letter");
-
-    if (/[0-9]/.test(password)) score += 1;
-    else feedback.push("one number");
-
-    if (/[@$!%*?&]/.test(password)) score += 1;
-    else feedback.push("one special character");
-
-    return {
-      score,
-      feedback:
-        feedback.length > 0
-          ? `Needs: ${feedback.join(", ")}`
-          : "Strong password!",
-    };
-  };
-
   const handleChange = (e) => {
     const newData = { ...formData, [e.target.name]: e.target.value };
     setFormData(newData);
 
-    if (e.target.name === "password") {
-      setPasswordStrength(checkPasswordStrength(e.target.value));
-    }
-
-    if (e.target.name === "confirm_password") {
-      setError(
-        e.target.value !== formData.password ? "Passwords do not match" : ""
-      );
+    if (e.target.name === "confirm_password" || e.target.name === "password") {
+        const password = e.target.name === "password" ? e.target.value : newData.password;
+        const confirmPassword = e.target.name === "confirm_password" ? e.target.value : newData.confirm_password;
+        
+        if (password && confirmPassword) {
+            if (password === confirmPassword) {
+                setError("");
+                setPasswordMatchMessage("Passwords match!");
+            } else {
+                setError("Passwords do not match");
+                setPasswordMatchMessage("");
+            }
+        } else {
+             setPasswordMatchMessage("");
+             if (e.target.name === "confirm_password" && e.target.value) {
+                setError("Passwords do not match");
+             }
+        }
     }
 
     if (e.target.name === "email") {
@@ -115,6 +121,7 @@ const Signup = () => {
   };
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
+  const toggleConfirmPasswordVisibility = () => setShowConfirmPassword(!showConfirmPassword);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -128,7 +135,13 @@ const Signup = () => {
       setError("Passwords do not match");
       return;
     }
-
+    
+    const { criteriaMet } = assessStrength(formData.password);
+    if (criteriaMet < 5) {
+      setError("Password doesn't meet the security criteria (must meet all 5 requirements).");
+      return;
+    }
+    
     setLoading(true);
     setError("");
 
@@ -173,7 +186,6 @@ const Signup = () => {
             <GoogleSignInButton className="w-full" />
           </div>
 
-          {/* Header */}
           <div className="text-center space-y-2">
             <motion.div
               whileHover={{ scale: 1.05 }}
@@ -202,9 +214,7 @@ const Signup = () => {
             </p>
           </div>
 
-          {/* Signup Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Name Fields */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm text-gray-700 dark:text-gray-300">
@@ -215,14 +225,13 @@ const Signup = () => {
                   value={formData.firstName}
                   onChange={handleChange}
                   placeholder="First name"
-                  className="w-full px-3 py-2 rounded-md border dark:bg-gray-700/50"
+                 className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                   required
                 />
                 {firstNameError && (
                   <p className="text-red-500 text-xs">{firstNameError}</p>
                 )}
               </div>
-
               <div>
                 <label className="block text-sm text-gray-700 dark:text-gray-300">
                   Last name <sup className="text-red-500">*</sup>
@@ -232,7 +241,7 @@ const Signup = () => {
                   value={formData.lastName}
                   onChange={handleChange}
                   placeholder="Last name"
-                  className="w-full px-3 py-2 rounded-md border dark:bg-gray-700/50"
+                 className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                   required
                 />
                 {lastNameError && (
@@ -241,32 +250,19 @@ const Signup = () => {
               </div>
             </div>
 
-            {/* Email */}
             <div>
               <label className="block text-sm text-gray-700 dark:text-gray-300">
                 Email address <sup className="text-red-500">*</sup>
               </label>
               <div className="relative">
-                <svg
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 12a4 4 0 10-8 0 4 4 0 008 0z"
-                  />
-                </svg>
+                
                 <input
                   name="email"
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="Enter your email address"
-                  className="w-full pl-10 pr-3 py-2 rounded-md border dark:bg-gray-700/50"
+                  placeholder="@ Enter your email address"
+                 className="w-full pl-3 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                   required
                 />
               </div>
@@ -275,7 +271,6 @@ const Signup = () => {
               )}
             </div>
 
-            {/* Password */}
             <div>
               <label className="block text-sm text-gray-700 dark:text-gray-300">
                 Password <sup className="text-red-500">*</sup>
@@ -300,7 +295,7 @@ const Signup = () => {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Enter your password"
-                  className="w-full pl-10 pr-10 py-2 rounded-md border dark:bg-gray-700/50"
+                 className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                   required
                 />
                 <button
@@ -345,9 +340,11 @@ const Signup = () => {
                   )}
                 </button>
               </div>
+              {formData.password && (
+                <PasswordStrengthIndicator password={formData.password} />
+              )}
             </div>
 
-            {/* Confirm Password */}
             <div>
               <label className="block text-sm text-gray-700 dark:text-gray-300">
                 Confirm Password <sup className="text-red-500">*</sup>
@@ -368,17 +365,67 @@ const Signup = () => {
                 </svg>
                 <input
                   name="confirm_password"
-                  type={showPassword ? "text" : "password"}
+                  type={showConfirmPassword ? "text" : "password"} 
                   value={formData.confirm_password}
                   onChange={handleChange}
                   placeholder="Confirm your password"
-                  className="w-full pl-10 pr-10 py-2 rounded-md border dark:bg-gray-700/50"
+                 className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={toggleConfirmPasswordVisibility}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                >
+                  {showConfirmPassword ? (
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10a9.958 9.958 0 012.09-6.019M21.364 21.364l-18.728-18.728"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                      />
+                    </svg>
+                  )}
+                </button>
               </div>
+              {passwordMatchMessage && (
+                <motion.p 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    transition={{ duration: 0.3 }}
+                    className="text-xs mt-1 text-green-600 dark:text-green-400"
+                >
+                    {passwordMatchMessage}
+                </motion.p>
+              )}
             </div>
 
-            {/* Error / Success */}
             {error && (
               <div className="text-sm text-red-500 bg-red-50 dark:bg-red-900/40 p-2 rounded-md">
                 {error}
@@ -390,7 +437,6 @@ const Signup = () => {
               </div>
             )}
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
@@ -400,7 +446,6 @@ const Signup = () => {
             </button>
           </form>
 
-          {/* Footer */}
           <p className="text-xs text-center text-gray-500 dark:text-gray-500 mt-4 leading-relaxed">
             By clicking on sign up, you agree to our{" "}
             <Link

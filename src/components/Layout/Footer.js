@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { FaLinkedin, FaDiscord, FaTelegram, FaInstagram } from "react-icons/fa";
 import { SiX } from "react-icons/si";
 import {
   FaInfoCircle,
+  FaInstagram,
+  FaDiscord,
+  FaTelegram,
   FaGithub,
   FaShieldAlt,
   FaFileContract,
@@ -20,6 +22,7 @@ import {
   FaFolder,
   FaTrophy,
   FaComments,
+  FaLinkedin,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
@@ -160,6 +163,7 @@ const Footer = () => {
         />
       ),
     },
+
     {
       name: "LinkedIn",
       href: "https://www.linkedin.com/in/sandeepvashishtha/",
@@ -170,29 +174,32 @@ const Footer = () => {
         />
       ),
     },
+
     {
       name: "Discord",
-      href: "https://discord.com/",
+      href: "https://www.discord.com/",
       icon: (
         <FaDiscord
-          className="size-10 p-2 rounded-full text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-blue-900 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white hover:scale-110 hover:-translate-y-1"
+          className="size-10 p-2 rounded-full text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-blue-900 hover:text-white dark:hover:bg-blue-900 dark:hover:text-white hover:scale-110 hover:-translate-y-1"
           size={20}
         />
       ),
     },
+
     {
       name: "Telegram",
-      href: "https://telegram.com/",
+      href: "https://www.telegram.com/",
       icon: (
         <FaTelegram
-          className="size-10 p-2 rounded-full text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-blue-700 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white hover:scale-110 hover:-translate-y-1"
+          className="size-10 p-2 rounded-full text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white hover:scale-110 hover:-translate-y-1"
           size={20}
         />
       ),
     },
+
     {
       name: "Instagram",
-      href: "https://instagram.com/",
+      href: "https://www.instagram.com/",
       icon: (
         <FaInstagram
           className="size-10 p-2 rounded-full text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-pink-600 hover:text-white dark:hover:bg-pink-600 dark:hover:text-white hover:scale-110 hover:-translate-y-1"
@@ -200,6 +207,7 @@ const Footer = () => {
         />
       ),
     },
+
     
   ];
 
