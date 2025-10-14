@@ -8,9 +8,20 @@ import {
   ChartBarIcon,
   UserGroupIcon,
   StarIcon,
-  ClipboardDocumentListIcon, // for Guidelines
-  RocketLaunchIcon, // for CTA
+  ClipboardDocumentListIcon,
+  RocketLaunchIcon, 
+  BuildingOffice2Icon,
+  EnvelopeIcon,
+  MapPinIcon,
+  TrophyIcon,
+  LinkIcon,
+  CalendarDaysIcon,
+  DocumentTextIcon,
+  ComputerDesktopIcon
 } from "@heroicons/react/24/solid";
+
+
+
 
 const HostHackathon = () => {
   const [errors, setErrors] = useState({});
@@ -158,6 +169,59 @@ const HostHackathon = () => {
 
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+  
+  const formFields = [
+    {
+      label: "Hackathon Name",
+      name: "hackathonName",
+      type: "text",
+      placeholder: "Enter hackathon name",
+      icon: ComputerDesktopIcon,
+    },
+    {
+      label: "Organization/Organizer Name",
+      name: "organizerName",
+      type: "text",
+      placeholder: "Enter your name or organization",
+      icon: BuildingOffice2Icon,
+    },
+    {
+      label: "Email",
+      name: "email",
+      type: "email",
+      placeholder: "your@email.com",
+      icon: EnvelopeIcon,
+    },
+    {
+      label: "Location (Online / City)",
+      name: "location",
+      type: "text",
+      placeholder: "e.g., Online or New York City",
+      icon: MapPinIcon,
+    },
+    {
+      label: "Participant Limit",
+      name: "participantLimit",
+      type: "number",
+      placeholder: "Maximum number of participants",
+      icon: UserGroupIcon,
+    },
+    {
+      label: "Prize Details",
+      name: "prizeDetails",
+      type: "text",
+      placeholder: "Mention prizes if any",
+      icon: TrophyIcon,
+    },
+    {
+      label: "Website / Registration Link",
+      name: "website",
+      type: "url",
+      placeholder: "https://example.com",
+      icon: LinkIcon,
+    },
+  ];
+
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-indigo-100 to-white dark:from-gray-900 dark:to-black flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
@@ -259,50 +323,7 @@ const HostHackathon = () => {
         data-aos-delay="400"
       >
         <form className="space-y-6" onSubmit={handleSubmit} noValidate>
-          {[
-            {
-              label: "Hackathon Name",
-              name: "hackathonName",
-              type: "text",
-              placeholder: "Enter hackathon name",
-            },
-            {
-              label: "Organization/Organizer Name",
-              name: "organizerName",
-              type: "text",
-              placeholder: "Enter your name or organization",
-            },
-            {
-              label: "Email",
-              name: "email",
-              type: "email",
-              placeholder: "your@email.com",
-            },
-            {
-              label: "Location (Online / City)",
-              name: "location",
-              type: "text",
-              placeholder: "e.g., Online or New York City",
-            },
-            {
-              label: "Participant Limit",
-              name: "participantLimit",
-              type: "number",
-              placeholder: "Maximum number of participants",
-            },
-            {
-              label: "Prize Details",
-              name: "prizeDetails",
-              type: "text",
-              placeholder: "Mention prizes if any",
-            },
-            {
-              label: "Website / Registration Link",
-              name: "website",
-              type: "url",
-              placeholder: "https://example.com",
-            },
-          ].map((field, index) => (
+          {formFields.map((field, index) => (
             <motion.div
               key={field.name}
               initial={{ opacity: 0, x: -20 }}
@@ -312,10 +333,11 @@ const HostHackathon = () => {
               data-aos="fade-right"
               data-aos-delay={index * 50 + 500}
             >
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <field.icon className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
                 {field.label}{" "}
                 {requiredFields.includes(field.name) && (
-                  <span className="text-red-500">*</span>
+                  <span className="text-red-500 ml-1">*</span>
                 )}
               </label>
               <input
@@ -343,9 +365,10 @@ const HostHackathon = () => {
           >
             {["startDate", "endDate"].map((name) => (
               <div key={name}>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <CalendarDaysIcon className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
                   {name === "startDate" ? "Start Date" : "End Date"}{" "}
-                  <span className="text-red-500">*</span>
+                  <span className="text-red-500 ml-1">*</span>
                 </label>
                 <input
                   ref={inputRefs[name]}
@@ -355,12 +378,12 @@ const HostHackathon = () => {
                   onChange={handleChange}
                   min={today}
                   className="w-full text-gray-700 dark:text-gray-300 
-          bg-white dark:bg-gray-700 
-          rounded-lg p-3 
-          border border-gray-300 dark:border-gray-600
-          focus:outline-none 
-          focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400
-          transition duration-150 ease-in-out"
+        bg-white dark:bg-gray-700 
+        rounded-lg p-3 
+        border border-gray-300 dark:border-gray-600
+        focus:outline-none 
+        focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400
+        transition duration-150 ease-in-out"
                 />
                 {errors[name] && (
                   <p className="text-red-500 text-xs mt-1">{errors[name]}</p>
@@ -378,8 +401,9 @@ const HostHackathon = () => {
             data-aos="fade-up"
             data-aos-delay="1000"
           >
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Description <span className="text-red-500">*</span>
+            <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <DocumentTextIcon className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
+              Description <span className="text-red-500 ml-1">*</span>
             </label>
             <textarea
               name="description"
