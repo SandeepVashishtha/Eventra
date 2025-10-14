@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
+import ConfirmationModal from "../common/ConfirmationModal"; // ADD THIS IMPORT
 
 import ThemeToggleButton from "../common/ThemeToggleButton";
 
@@ -29,6 +30,7 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [showLogoutModal, setShowLogoutModal] = useState(false); // ADD THIS LINE
 
   const drawerRef = useRef(null);
   const closeBtnRef = useRef(null);
@@ -235,17 +237,27 @@ const Navbar = () => {
     },
   ];
 
-  const handleLogout = () => {
-    logout();
+  // REPLACE THE EXISTING handleLogout FUNCTION WITH THESE 3 FUNCTIONS:
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
     setShowProfileDropdown(false);
+  };
+
+  const handleConfirmLogout = () => {
+    setShowLogoutModal(false);
+    logout();
     navigate("/");
+  };
+
+  const handleCancelLogout = () => {
+    setShowLogoutModal(false);
   };
 
   return (
     <>
       <div
         className={`fixed inset-0 bg-black/60 z-30 transition-opacity duration-300 ${
-          isMobileMenuOpen || showProfileDropdown || openDropdown
+          isMobileMenuOpen || showProfileDropdown || openDropdown || showLogoutModal
             ? "opacity-100"
             : "opacity-0 pointer-events-none"
         }`}
@@ -461,10 +473,10 @@ const Navbar = () => {
                           </Link>
                         </div>
 
-                        {/* Logout */}
+                        {/* Logout - CHANGE ONLY THIS BUTTON */}
                         <div className="p-2 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
                           <button
-                            onClick={handleLogout}
+                            onClick={handleLogoutClick}
                             className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm 
                      text-red-600 dark:text-red-400 
                      hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
@@ -687,8 +699,9 @@ const Navbar = () => {
                 <UserCog className="w-5 h-5" />
                 Edit Profile
               </Link>
+              {/* CHANGE ONLY THIS BUTTON */}
               <button
-                onClick={handleLogout}
+                onClick={handleLogoutClick}
                 className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/20 hover:text-red-700 dark:hover:text-red-300 transition-colors font-medium"
               >
                 <LogOut className="w-5 h-5" />
@@ -716,6 +729,15 @@ const Navbar = () => {
           )}
         </div>
       </div>
+
+      {/* ADD THIS MODAL AT THE VERY BOTTOM */}
+      <ConfirmationModal
+        isOpen={showLogoutModal}
+        onClose={handleCancelLogout}
+        onConfirm={handleConfirmLogout}
+        title="Logout Confirmation"
+        message="Are you sure you want to log out?"
+      />
 
       <div style={{ height: navHeight }} />
     </>
