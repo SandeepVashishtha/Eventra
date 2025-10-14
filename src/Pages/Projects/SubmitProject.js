@@ -10,6 +10,20 @@ import {
   CheckCircleIcon,
   ArrowUpTrayIcon,
   ClipboardDocumentCheckIcon,
+  // Icons for form fields
+  UserGroupIcon,
+  EnvelopeIcon,
+  LinkIcon,
+  RectangleGroupIcon,
+  CpuChipIcon,
+  BookmarkIcon,
+  UsersIcon,
+  ClockIcon,
+  UserPlusIcon,
+  PhotoIcon,
+  ArchiveBoxIcon,
+  DocumentTextIcon,
+  PencilSquareIcon,
 } from "@heroicons/react/24/solid";
 
 const SubmitProject = () => {
@@ -26,6 +40,8 @@ const SubmitProject = () => {
     projectImage: "",
     submissionCategory: "",
     teamMembersCount: "",
+    projectDuration: "", // Added to state
+    targetAudience: "", // Added to state
   });
   const [errors, setErrors] = useState({});
 
@@ -39,6 +55,12 @@ const SubmitProject = () => {
     projectImage: useRef(null),
     projectType: useRef(null),
     techStack: useRef(null),
+    // Added refs for new fields to be complete
+    submissionCategory: useRef(null),
+    teamMembersCount: useRef(null),
+    projectDuration: useRef(null),
+    targetAudience: useRef(null),
+    additionalNotes: useRef(null),
   };
 
   const requiredFields = [
@@ -112,9 +134,15 @@ const SubmitProject = () => {
       setErrors(validationErrors);
       toast.error("Please fix the errors before submitting!");
 
-      const firstErrorField =
-        requiredFields.find((field) => validationErrors[field]) ||
-        Object.keys(validationErrors)[0];
+      const fieldsInOrder = [
+        ...formFields.map(field => field.name), 
+        "description", 
+        "additionalNotes"
+      ];
+
+      const firstErrorField = fieldsInOrder.find(
+        (field) => validationErrors[field]
+      );
 
       if (inputRefs[firstErrorField]?.current) {
         inputRefs[firstErrorField].current.scrollIntoView({
@@ -141,13 +169,110 @@ const SubmitProject = () => {
       projectImage: "",
       submissionCategory: "",
       teamMembersCount: "",
+      projectDuration: "",
+      targetAudience: "",
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+  
+  // Define form fields with icons
+  const formFields = [
+      {
+        label: "Project Name",
+        name: "projectName",
+        type: "text",
+        placeholder: "Enter project name",
+        icon: LightBulbIcon,
+      },
+      {
+        label: "Team Name",
+        name: "teamName",
+        type: "text",
+        placeholder: "Enter team name",
+        icon: UserGroupIcon,
+      },
+      {
+        label: "Email",
+        name: "email",
+        type: "email",
+        placeholder: "your@email.com",
+        icon: EnvelopeIcon,
+      },
+      {
+        label: "GitHub Link",
+        name: "githubLink",
+        type: "url",
+        placeholder: "https://github.com/username/project",
+        icon: CodeBracketIcon,
+      },
+      {
+        label: "Live Demo Link",
+        name: "liveDemoLink",
+        type: "url",
+        placeholder: "https://project-demo.com",
+        icon: LinkIcon,
+      },
+      {
+        label: "Project Type",
+        name: "projectType",
+        type: "text",
+        placeholder: "e.g., Web, Mobile, AI",
+        icon: RectangleGroupIcon,
+      },
+      {
+        label: "Tech Stack",
+        name: "techStack",
+        type: "text",
+        placeholder: "e.g., React, Node.js, Python",
+        icon: CpuChipIcon,
+      },
+      {
+        label: "Project Category",
+        name: "projectCategory",
+        type: "text",
+        placeholder: "e.g., Social Impact, Education, Gaming",
+        icon: BookmarkIcon,
+      },
+      {
+        label: "Team Members Count",
+        name: "teamMembersCount",
+        type: "number",
+        placeholder: "Number of team members",
+        icon: UserPlusIcon,
+      },
+      {
+        label: "Project Duration",
+        name: "projectDuration",
+        type: "text",
+        placeholder: "Estimated duration or timeline",
+        icon: ClockIcon,
+      },
+      {
+        label: "Target Audience",
+        name: "targetAudience",
+        type: "text",
+        placeholder: "Who will benefit from this project?",
+        icon: UsersIcon,
+      },
+      {
+        label: "Project Logo / Image Link",
+        name: "projectImage",
+        type: "url",
+        placeholder: "Image URL for your project",
+        icon: PhotoIcon,
+      },
+      {
+        label: "Submission Category",
+        name: "submissionCategory",
+        type: "text",
+        placeholder: "Hackathon / Open Submission / Other",
+        icon: ArchiveBoxIcon,
+      },
+    ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100 dark:from-gray-900 dark:to-black flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
-       <motion.div
+      <motion.div
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7 }}
@@ -235,86 +360,7 @@ const SubmitProject = () => {
         data-aos-delay="400"
       >
         <form className="space-y-6" onSubmit={handleSubmit} noValidate>
-          {[
-            {
-              label: "Project Name",
-              name: "projectName",
-              type: "text",
-              placeholder: "Enter project name",
-            },
-            {
-              label: "Team Name",
-              name: "teamName",
-              type: "text",
-              placeholder: "Enter team name",
-            },
-            {
-              label: "Email",
-              name: "email",
-              type: "email",
-              placeholder: "your@email.com",
-            },
-            {
-              label: "GitHub Link",
-              name: "githubLink",
-              type: "url",
-              placeholder: "https://github.com/username/project",
-            },
-            {
-              label: "Live Demo Link",
-              name: "liveDemoLink",
-              type: "url",
-              placeholder: "https://project-demo.com",
-            },
-            {
-              label: "Project Type",
-              name: "projectType",
-              type: "text",
-              placeholder: "e.g., Web, Mobile, AI",
-            },
-            {
-              label: "Tech Stack",
-              name: "techStack",
-              type: "text",
-              placeholder: "e.g., React, Node.js, Python",
-            },
-            {
-              label: "Project Category",
-              name: "projectCategory",
-              type: "text",
-              placeholder: "e.g., Social Impact, Education, Gaming",
-            },
-            {
-              label: "Team Members Count",
-              name: "teamMembersCount",
-              type: "number",
-              placeholder: "Number of team members",
-            },
-            {
-              label: "Project Duration",
-              name: "projectDuration",
-              type: "text",
-              placeholder: "Estimated duration or timeline",
-            },
-            {
-              label: "Target Audience",
-              name: "targetAudience",
-              type: "text",
-              placeholder: "Who will benefit from this project?",
-            },
-            {
-              label: "Project Logo / Image Link",
-              name: "projectImage",
-              type: "url",
-              placeholder: "Image URL for your project",
-            },
-            {
-              label: "Submission Category",
-              name: "submissionCategory",
-              type: "text",
-              placeholder: "Hackathon / Open Submission / Other",
-            },
-          ].map((field, index) => (
+          {formFields.map((field, index) => (
             <motion.div
               key={field.name}
               initial={{ opacity: 0, x: -20 }}
@@ -322,10 +368,11 @@ const SubmitProject = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.05 }}
             >
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <field.icon className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
                 {field.label}
                 {requiredFields.includes(field.name) && (
-                  <span className="text-red-500">*</span>
+                  <span className="text-red-500 ml-1">*</span>
                 )}
               </label>
               <input
@@ -350,8 +397,9 @@ const SubmitProject = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Project Description <span className="text-red-500">*</span>
+            <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <DocumentTextIcon className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
+              Project Description <span className="text-red-500 ml-1">*</span>
             </label>
             <textarea
               name="description"
@@ -372,7 +420,8 @@ const SubmitProject = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <PencilSquareIcon className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
               Additional Notes
             </label>
             <textarea
