@@ -123,19 +123,19 @@ const EventsPage = () => {
       {/* Main content wrapper */}
       <div
         ref={cardSectionRef}
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12"
       >
         {/* Filters + Sort + Toggle View Section */}
         <motion.div
-          className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+          className="mb-8 sm:mb-10 flex flex-col gap-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           // AOS Implementation
           data-aos="fade-up"
           data-aos-duration="800"
         >
-          <div className="flex flex-wrap gap-3 items-center">
-            {/* Filter Buttons */}
+          {/* Filter Buttons */}
+          <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center sm:justify-start">
             {[
               { key: "all", label: "All" },
               { key: "upcoming", label: "Upcoming" },
@@ -146,7 +146,7 @@ const EventsPage = () => {
               <button
                 key={filter.key}
                 onClick={() => setFilterType(filter.key)}
-                className={`px-4 py-2 text-sm rounded-full transition ${
+                className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-full transition ${
                   filterType === filter.key
                     ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white"
                     : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-700"
@@ -158,13 +158,16 @@ const EventsPage = () => {
                 {filter.label}
               </button>
             ))}
+          </div>
 
+          {/* Sort Dropdown and View Toggle */}
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
             {/* Sort Dropdown */}
-            <div className="ml-4">
+            <div className="w-full sm:w-auto">
               <label htmlFor="sort-events" className="sr-only">Sort events</label>
               <select
                 id="sort-events"
-                className="p-2 text-sm rounded-3xl border border-gray-200 
+                className="w-full sm:w-auto p-2 text-xs sm:text-sm rounded-3xl border border-gray-200 
                 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 
                 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={sortType}
@@ -177,38 +180,38 @@ const EventsPage = () => {
                 <option value="upcoming">Upcoming Soonest</option>
               </select>
             </div>
-          </div>
 
-          {/* Toggle View Buttons (Grid / List) */}
-          <div 
-            className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm"
-            data-aos="zoom-in"
-            data-aos-delay="400"
-          >
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
-                viewMode === "grid"
-                  ? "bg-gradient-to-r from-indigo-400 to-purple-400 text-white shadow-md"
-                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-              }`}
-              aria-label="Grid view"
-              aria-pressed={viewMode === "grid"}
+            {/* Toggle View Buttons (Grid / List) */}
+            <div 
+              className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm"
+              data-aos="zoom-in"
+              data-aos-delay="400"
             >
-              <Grid size={16} />
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
-                viewMode === "list"
-                  ? "bg-gradient-to-r from-indigo-400 to-purple-400 text-white shadow-md"
-                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-              }`}
-              aria-label="List view"
-              aria-pressed={viewMode === "list"}
-            >
-              <List size={16} />
-            </button>
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
+                  viewMode === "grid"
+                    ? "bg-gradient-to-r from-indigo-400 to-purple-400 text-white shadow-md"
+                    : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                }`}
+                aria-label="Grid view"
+                aria-pressed={viewMode === "grid"}
+              >
+                <Grid size={16} />
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
+                  viewMode === "list"
+                    ? "bg-gradient-to-r from-indigo-400 to-purple-400 text-white shadow-md"
+                    : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                }`}
+                aria-label="List view"
+                aria-pressed={viewMode === "list"}
+              >
+                <List size={16} />
+              </button>
+            </div>
           </div>
         </motion.div>
 
