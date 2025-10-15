@@ -148,7 +148,7 @@ const HackathonHub = () => {
 
   return (
     // UPDATED: Main page background
-    <div className="bg-gradient-to-l from-indigo-200 to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 py-6 overflow-x-hidden">
+    <div className="overflow-x-hidden bg-gradient-to-l from-indigo-200 to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 py-6">
       {/* Floating Action Button */}
       <motion.div
         className="fixed right-6 z-50"

@@ -171,7 +171,7 @@ const ContributorGuide = () => {
 
   return (
     // UPDATED: Main page background
-    <div className="bg-gray-50 dark:bg-black min-h-screen px-4 sm:px-6 lg:px-12 py-12 max-w-6xl mx-auto space-y-16">
+    <div className="bg-gray-50 dark:bg-black min-h-screen px-4 sm:px-6 lg:px-8 py-10 w-full max-w-[95%] md:max-w-6xl mx-auto space-y-12 overflow-x-hidden">
       {/* Page Heading */}
       <div className="text-center mb-12">
         {/* UPDATED: Text colors */}

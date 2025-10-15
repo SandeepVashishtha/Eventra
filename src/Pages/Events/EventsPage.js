@@ -110,7 +110,7 @@ const EventsPage = () => {
   // -----------------------------
   return (
     // UPDATED: Main page background
-    <div className="flex flex-col min-h-screen bg-gradient-to-l from-indigo-200 to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100">
+    <div className="flex flex-col min-h-screen bg-gradient-to-l from-indigo-200 to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 overflow-x-hidden">
       {/* Hero section will be updated in the next step */}
       <EventHero
         searchQuery={searchQuery}
