@@ -12,10 +12,10 @@ import {
   FaEnvelope,
   FaBookOpen,
   FaPlus,
-  FaClipboardList,
+  // FaClipboardList,  //can be reactivated later
   FaUsers,
   FaBook,
-  FaServer,
+  // FaServer,   //can be reactivated later
   FaHome,
   FaCalendarAlt,
   FaRocket,
@@ -108,11 +108,14 @@ const Footer = () => {
         href: "/create-event",
         icon: <FaPlus size={14} />,
       },
-      {
-        name: "Event Templates",
-        href: "#templates",
-        icon: <FaClipboardList size={14} />,
-      },
+
+      //Can be reactivated later
+      // {
+      //   name: "Event Templates",
+      //   href: "#templates",
+      //   icon: <FaClipboardList size={14} />,
+      // },
+
       {
         name: "Community Events",
         href: "/communityEvent",
@@ -148,7 +151,9 @@ const Footer = () => {
       { name: "Contact Us", href: "/contact", icon: <FaEnvelope size={14} /> },
       { name: "Feedback", href: "/feedback", icon: <FaComments size={14} /> },
       { name: "API Docs", href: "/apiDocs", icon: <FaBookOpen size={14} /> },
-      { name: "Status", href: "#status", icon: <FaServer size={14} /> },
+
+      //Can be reactivated later
+      // { name: "Status", href: "#status", icon: <FaServer size={14} /> },
     ],
   };
 
