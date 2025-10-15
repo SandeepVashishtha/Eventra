@@ -293,11 +293,9 @@ const WhatsHappening = () => {
                   .map((event) => (
                     <div
                       key={event.id}
-                      className={`flex flex-col rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 bg-white dark:bg-black/60 transform hover:scale-105 min-h-[360px] ${
-                        event.featured
-                          ? "ring-2 ring-indigo-500 dark:ring-indigo-400"
-                          : "border border-gray-100 dark:border-gray-700"
-                      }`}
+
+                      className="flex flex-col rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 bg-white dark:bg-black/60 transform hover:scale-105 min-h-[360px] ring-2 ring-indigo-500 dark:ring-indigo-400"
+
                     >
                       <div className="p-4 sm:p-6 flex-1 flex flex-col">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
