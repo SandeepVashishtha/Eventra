@@ -62,6 +62,12 @@ body {
 
   /* Body font size */
   font-size: var(--font-body);
+
+  /* This sets the background for the entire page */
+  background-color: #0d1117; /* A nice dark color similar to GitHub's dark mode */
+
+  /* Optional, but good practice for dark mode */
+  color: #e6edf3; /* Sets a default light text color */
 }
 
 /* Headings */
