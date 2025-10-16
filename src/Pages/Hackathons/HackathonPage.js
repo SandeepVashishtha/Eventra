@@ -42,6 +42,7 @@ const HackathonHub = () => {
   });
   const [showFilters, setShowFilters] = useState(false);
   const cardsSectionRef = useRef(null);
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
   // Simulate API call
   useEffect(() => {
@@ -63,8 +64,26 @@ const HackathonHub = () => {
     };
     window.addEventListener("scroll", handleScroll);
     handleScroll(); 
-    return () => window.removeEventListener("scroll", handleScroll);
+    // Listen for chatbot state changes
+    const handleChatbotState = () => {
+      setIsChatbotOpen(document.querySelector('[data-chatbot-open]') !== null);
+    };
+    
+    // Check initially and set up observer
+    handleChatbotState();
+    const observer = new MutationObserver(handleChatbotState);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      observer.disconnect();
+    };
   }, []);
+
+    const positionClass = `
+    ${isScrollVisible ? "bottom-40" : "bottom-24"} 
+    ${isChatbotOpen ? "left-6" : "right-6"}
+  `;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -146,15 +165,15 @@ const HackathonHub = () => {
     });
   }, []);
 
+  
+
   return (
     // UPDATED: Main page background
     <div className="overflow-x-hidden bg-gradient-to-l from-indigo-200 to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 py-6">
       {/* Floating Action Button */}
       <motion.div
-        className="fixed right-6 z-50"
-        animate={{
-          bottom: isScrollVisible ? 92 : 24, 
-        }}
+        className={`fixed z-50  ${positionClass}`}
+
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}

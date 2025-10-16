@@ -258,7 +258,7 @@ const Chatbot = () => {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={toggleChat}
-            className="fixed bottom-8 right-5 z-[9999] w-16 h-16 bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-500 dark:to-purple-500 text-white rounded-full shadow-2xl flex items-center justify-center hover:shadow-indigo-500/50 transition-all duration-300"
+            className="fixed bottom-6 right-5 z-[9999] w-16 h-16 bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-500 dark:to-purple-500 text-white rounded-full shadow-2xl flex items-center justify-center hover:shadow-indigo-500/50 transition-all duration-300"
           >
             <motion.div
               className="absolute inset-0 rounded-full border-2 border-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-padding"
