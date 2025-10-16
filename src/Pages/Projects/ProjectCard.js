@@ -52,8 +52,8 @@ const ProjectCard = ({ project }) => {
 
   return (
     <motion.div
-      // UPDATED: Card background and border
-      className="bg-gradient-to-l from-white to-white dark:from-indigo-950 dark:to-black rounded-xl shadow-md overflow-hidden border border-indigo-300 dark:border-gray-700 max-w-sm mx-auto hover:shadow-lg transition-all duration-300"
+      // UPDATED: Card background, border, and flex layout for consistent height and button alignment
+      className="bg-gradient-to-l from-white to-white dark:from-indigo-950 dark:to-black rounded-xl shadow-md overflow-hidden border border-indigo-300 dark:border-gray-700 max-w-sm mx-auto hover:shadow-lg transition-all duration-300 flex flex-col h-full"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4, scale: 1.02 }}
@@ -99,66 +99,75 @@ const ProjectCard = ({ project }) => {
         />
       </div>
 
-      {/* Description */}
-      {/* UPDATED: Description text and border */}
-      <p className="px-5 py-4 text-gray-600 dark:text-gray-400 text-sm border-b border-gray-300 dark:border-gray-700">
-        {project.description}
-      </p>
+      {/* Card Content Container - allows buttons to be pushed to bottom */}
+      <div className="flex flex-col flex-1">
+        {/* Description - Fixed height container for consistent alignment */}
+        {/* UPDATED: Fixed height description with better spacing for alignment */}
+        <div className="px-5 pt-4 pb-6 border-b border-gray-300 dark:border-gray-700 h-24 flex items-start">
+          <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed overflow-hidden" style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical'
+          }}>
+            {project.description}
+          </p>
+        </div>
 
-      {/* Category & Difficulty */}
-      {/* UPDATED: Section border and category tag styles */}
-      <div className="px-5 py-2 flex flex-wrap gap-2 border-b border-gray-300 dark:border-gray-700">
-        <span className="px-2.5 py-1 text-xs font-medium bg-indigo-50 text-indigo-700 rounded-full border border-indigo-300 dark:bg-indigo-900/40 dark:text-indigo-300 dark:border-indigo-700">
-          {project.category}
-        </span>
-        <span
-          className={`px-2.5 py-1 text-xs font-medium border rounded-full ${getDifficultyColor(
-            project.difficulty
-          )}`}
-        >
-          {project.difficulty}
-        </span>
-      </div>
-
-      {/* Admin + Stats */}
-      {/* UPDATED: Section border, author styles, and stat tag styles */}
-      <div className="px-5 py-4 flex justify-between items-center border-b border-gray-300 dark:border-gray-700">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-900 flex items-center justify-center text-sm font-medium text-indigo-600 dark:text-indigo-400 border-2 border-indigo-500">
-            {project.author.charAt(0)}
-          </div>
-          <span className="text-sm text-gray-700 dark:text-gray-300">
-            {project.author}
+        {/* Category & Difficulty - Fixed height for alignment */}
+        {/* UPDATED: Fixed height section for consistent positioning */}
+        <div className="px-5 py-3 flex flex-wrap gap-2 border-b border-gray-300 dark:border-gray-700 h-12 items-center">
+          <span className="px-2.5 py-1 text-xs font-medium bg-indigo-50 text-indigo-700 rounded-full border border-indigo-300 dark:bg-indigo-900/40 dark:text-indigo-300 dark:border-indigo-700">
+            {project.category}
+          </span>
+          <span
+            className={`px-2.5 py-1 text-xs font-medium border rounded-full ${getDifficultyColor(
+              project.difficulty
+            )}`}
+          >
+            {project.difficulty}
           </span>
         </div>
-        <div className="flex gap-2 text-xs">
-          <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/40 px-2 py-1 rounded-md text-yellow-700 dark:text-yellow-300">
-            <FiStar /> {project.stars}
+
+        {/* Admin + Stats - Fixed height for alignment */}
+        {/* UPDATED: Fixed height for consistent author and stats positioning */}
+        <div className="px-5 py-4 flex justify-between items-center border-b border-gray-300 dark:border-gray-700 h-16">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-900 flex items-center justify-center text-sm font-medium text-indigo-600 dark:text-indigo-400 border-2 border-indigo-500">
+              {project.author.charAt(0)}
+            </div>
+            <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
+              {project.author}
+            </span>
           </div>
-          <div className="flex items-center gap-1 bg-green-50 dark:bg-green-900/40 px-2 py-1 rounded-md text-green-700 dark:text-green-300">
-            <FiGithub /> {project.forks}
+          <div className="flex gap-1 text-xs">
+            <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/40 px-1.5 py-1 rounded-md text-yellow-700 dark:text-yellow-300">
+              <FiStar /> {project.stars}
+            </div>
+            <div className="flex items-center gap-1 bg-green-50 dark:bg-green-900/40 px-1.5 py-1 rounded-md text-green-700 dark:text-green-300">
+              <FiGithub /> {project.forks}
+            </div>
+            <div className="flex items-center gap-1 bg-red-50 dark:bg-red-900/40 px-1.5 py-1 rounded-md text-red-700 dark:text-red-300">
+              <FiAlertCircle /> {project.openIssues}
+            </div>
+            <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/40 px-1.5 py-1 rounded-md text-blue-700 dark:text-blue-300">
+              <FiGitPullRequest /> {project.pullRequests}
+            </div>
           </div>
-          <div className="flex items-center gap-1 bg-red-50 dark:bg-red-900/40 px-2 py-1 rounded-md text-red-700 dark:text-red-300">
-            <FiAlertCircle /> {project.openIssues}
-          </div>
-          <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/40 px-2 py-1 rounded-md text-blue-700 dark:text-blue-300">
-            <FiGitPullRequest /> {project.pullRequests}
-          </div>
+        </div>
+
+        {/* Tech Stack - This section will expand to fill remaining space */}
+        {/* UPDATED: Flexible section that grows to push buttons down while maintaining alignment */}
+        <div className="px-5 py-4 flex flex-wrap gap-2 border-b border-gray-300 dark:border-gray-700 flex-1 items-start content-start min-h-16">
+          {project.techStack.map((tech, index) => (
+            <span key={index} className={techTagStyle}>
+              {tech}
+            </span>
+          ))}
         </div>
       </div>
 
-      {/* Tech Stack */}
-      {/* UPDATED: Section border */}
-      <div className="px-5 py-4 flex flex-wrap gap-2 border-b border-gray-300 dark:border-gray-700">
-        {project.techStack.map((tech, index) => (
-          <span key={index} className={techTagStyle}>
-            {tech}
-          </span>
-        ))}
-      </div>
-
-      {/* Buttons */}
-      <div className="px-5 py-4 flex gap-3">
+      {/* Buttons - Always aligned at the bottom of all cards */}
+      <div className="px-5 py-4 flex gap-3 mt-auto">
         <a
           href={project.githubUrl}
           target="_blank"

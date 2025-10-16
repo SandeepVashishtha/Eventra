@@ -322,7 +322,7 @@ const ProjectGallery = () => {
           ) : filteredAndSortedProjects.length > 0 ? (
             // Render actual projects
             <motion.div
-              className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+              className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr"
               initial="hidden"
               animate="show"
               variants={{
