@@ -35,7 +35,7 @@ export default function ScrollToTopButton() {
   // Position based on chatbot state
   const positionClass = isChatbotOpen 
     ? "bottom-24 left-6"  // When chatbot is open - bottom left
-    : "bottom-28 right-6"; // When chatbot is closed - bottom right
+    : "bottom-24 right-6"; // When chatbot is closed - bottom right
 
   return (
     <AnimatePresence>
