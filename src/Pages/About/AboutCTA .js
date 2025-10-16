@@ -62,7 +62,12 @@ const AboutCTA = () => {
   ];
 
   return (
-    <section className="relative py-16 px-12 m-8 rounded-3xl bg-gradient-to-r from-black via-purple-950 to-pink-950 text-center overflow-hidden shadow-2xl">
+    <section 
+      className="relative py-16 px-12 m-8 rounded-3xl bg-gradient-to-r from-black via-purple-950 to-pink-950 text-center overflow-hidden shadow-2xl"
+      // AOS Implementation
+      data-aos="zoom-in-up"
+      data-aos-duration="1000"
+    >
       {/* Animated Bubbles */}
       {bubbles.map((bubble, idx) => (
         <motion.div
@@ -111,6 +116,8 @@ const AboutCTA = () => {
         <Link
           to="/signup"
           className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-medium text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+          data-aos="zoom-in"
+          data-aos-delay="200"
         >
           <Rocket size={20} /> Get Started Free
         </Link>
@@ -118,6 +125,8 @@ const AboutCTA = () => {
         <Link
           to="/documentation"
           className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-medium border border-indigo-400/50 text-indigo-200 hover:bg-indigo-500/10 hover:border-indigo-300 transition-all duration-300"
+          data-aos="zoom-in"
+          data-aos-delay="400"
         >
           <BookOpen size={20} /> View Documentation
         </Link>
@@ -125,6 +134,8 @@ const AboutCTA = () => {
         <Link
           to="/contact"
           className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-medium border border-indigo-400/50 text-indigo-200 hover:bg-indigo-500/10 hover:border-indigo-300 transition-all duration-300"
+          data-aos="zoom-in"
+          data-aos-delay="600"
         >
           <Mail size={20} /> Contact Us
         </Link>

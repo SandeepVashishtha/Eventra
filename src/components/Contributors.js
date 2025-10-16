@@ -52,6 +52,7 @@ const cacheContributors = (data) => {
 const Contributors = () => {
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch GitHub profile details
   const fetchGitHubProfile = useCallback(async (username) => {
@@ -135,6 +136,16 @@ const Contributors = () => {
     fetchContributors();
   }, [fetchContributors]);
 
+  // Filter contributors based on search term
+  const filteredContributors = contributors.filter((c) =>
+    c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.login?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.role?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.company?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+
   // UPDATED: Loading text color
   if (loading)
     return <p className="text-center py-20 text-gray-600 dark:text-gray-400">Loading contributors...</p>;
@@ -143,6 +154,18 @@ const Contributors = () => {
     // UPDATED: Section background
     <section className="py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
       <div className="max-w-7xl mx-auto px-6">
+
+      {/* Added The Search Bar */}
+        <div className="flex justify-center mb-8">
+          <input
+            type="text"
+            placeholder="Search contributors by name, username, role, location, or company..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="px-4 py-2 rounded-lg w-full max-w-2xl border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+          />
+        </div>
+
         <motion.h2
           // UPDATED: Title text
           className="text-5xl font-extrabold text-center mb-16 text-gray-800 dark:text-gray-100 tracking-tight"
@@ -159,8 +182,13 @@ const Contributors = () => {
           </span>
         </motion.h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12">
-          {contributors.map((c, i) => (
+        {filteredContributors.length === 0 ? (
+          <p className="text-center text-gray-600 dark:text-gray-400 text-lg">
+            No contributors found matching "{searchTerm}"
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12">
+            {filteredContributors.map((c, i) => (
             <motion.div
               key={c.id}
               // UPDATED: Card background and border
@@ -278,7 +306,8 @@ const Contributors = () => {
               </div>
             </motion.div>
           ))}
-        </div>
+          </div>
+        )}
       </div>
     </section>
   );

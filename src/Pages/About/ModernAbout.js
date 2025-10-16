@@ -68,7 +68,13 @@ export default function ModernAbout() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl text-center px-4 sm:px-6 lg:px-8 z-10">
+      <div 
+        className="max-w-4xl text-center px-4 sm:px-6 lg:px-8 z-10"
+        // AOS Implementation on main content container
+        data-aos="fade-up"
+        data-aos-duration="1000"
+        data-aos-once="true"
+      >
         <motion.h1
           variants={item}
           initial="hidden"
@@ -76,6 +82,8 @@ export default function ModernAbout() {
           viewport={{ once: true }}
           // UPDATED: Text colors
           className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 dark:text-gray-100 mb-6"
+          data-aos="zoom-in"
+          data-aos-delay="100"
         >
           About <span className="text-indigo-600 dark:text-indigo-400">Us</span>
         </motion.h1>
@@ -87,6 +95,8 @@ export default function ModernAbout() {
           viewport={{ once: true }}
           // UPDATED: Text color
           className="text-base sm:text-lg text-gray-600 dark:text-gray-400 mb-16"
+          data-aos="fade-up"
+          data-aos-delay="200"
         >
           Eventra is a comprehensive open-source platform that empowers
           communities, colleges, and organizations worldwide to create, manage,
@@ -106,6 +116,8 @@ export default function ModernAbout() {
             variants={cardItem}
             // UPDATED: Card background and shadow
             className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-lg shadow-blue-100 dark:shadow-indigo-900/50 p-6 hover:scale-105 transition-transform duration-500"
+            data-aos="zoom-in"
+            data-aos-delay="300"
           >
             {/* UPDATED: Card text */}
             <h3 className="text-indigo-600 dark:text-indigo-400 text-2xl font-bold mb-2">100+</h3>
@@ -116,6 +128,8 @@ export default function ModernAbout() {
             variants={cardItem}
             // UPDATED: Card background and shadow
             className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-lg shadow-blue-100 dark:shadow-indigo-900/50 p-6 hover:scale-105 transition-transform duration-500"
+            data-aos="zoom-in"
+            data-aos-delay="400"
           >
             {/* UPDATED: Card text */}
             <h3 className="text-indigo-600 dark:text-indigo-400 text-2xl font-bold mb-2">500+</h3>
@@ -126,6 +140,8 @@ export default function ModernAbout() {
             variants={cardItem}
             // UPDATED: Card background and shadow
             className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-lg shadow-blue-100 dark:shadow-indigo-900/50 p-6 hover:scale-105 transition-transform duration-500"
+            data-aos="zoom-in"
+            data-aos-delay="500"
           >
             {/* UPDATED: Card text */}
             <h3 className="text-indigo-600 dark:text-indigo-400 text-2xl font-bold mb-2">Global</h3>

@@ -34,6 +34,7 @@ const HackathonHub = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isScrollVisible, setIsScrollVisible] = useState(false);
   const [filters, setFilters] = useState({
     difficulty: "",
     prize: "",
@@ -55,6 +56,15 @@ const HackathonHub = () => {
   const scrollToCards = () => {
     cardsSectionRef.current?.scrollIntoView({ behavior: "smooth" }); // scroll function
   };
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrollVisible(window.scrollY > 50); 
+    };
+    window.addEventListener("scroll", handleScroll);
+    handleScroll(); 
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -138,10 +148,14 @@ const HackathonHub = () => {
 
   return (
     // UPDATED: Main page background
-    <div className="bg-gradient-to-l from-indigo-200 to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 py-6 ">
+    <div className="overflow-x-hidden bg-gradient-to-l from-indigo-200 to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 py-6">
       {/* Floating Action Button */}
       <motion.div
-        className="fixed bottom-6 right-6 z-50"
+        className="fixed right-6 z-50"
+        animate={{
+          bottom: isScrollVisible ? 92 : 24, 
+        }}
+        transition={{ type: "spring", stiffness: 300, damping: 25 }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
@@ -197,8 +211,12 @@ const HackathonHub = () => {
 
       {/* Featured Hackathons */}
       {!isLoading && featuredHackathons.length > 0 && (
-        // UPDATED: Section background and border
-        <div className="bg-white dark:bg-black py-8 border-b border-gray-200 dark:border-gray-800">
+        // AOS Implementation
+        <div
+          className="bg-white dark:bg-black py-8 border-b border-gray-200 dark:border-gray-800"
+          data-aos="fade-up"
+          data-aos-duration="1000"
+        >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center mb-6">
               {/* UPDATED: Text colors */}
@@ -218,6 +236,9 @@ const HackathonHub = () => {
                   key={index}
                   hackathon={hackathon}
                   isFeatured={hackathon.featured}
+                  // AOS Implementation on individual cards
+                  data-aos="zoom-in"
+                  data-aos-delay={index * 150}
                 />
               ))}
             </div>
@@ -228,7 +249,7 @@ const HackathonHub = () => {
       {/* Hackathons Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Search and Filters */}
-        <div className="mb-8">
+        <div className="mb-8" data-aos="fade-up" data-aos-delay="200">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 mt-0">
             {/* UPDATED: Text colors */}
             <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-0">
@@ -268,79 +289,84 @@ const HackathonHub = () => {
           </div>
 
           {/* Filters Panel */}
-          {showFilters && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              // UPDATED: Panel background and border
-              className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 mb-6 overflow-hidden shadow-[0_4px_12px_rgba(59,130,246,0.1)]"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  {/* UPDATED: Label and Select styles */}
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Difficulty
-                  </label>
-                  <select
-                    value={filters.difficulty}
-                    onChange={(e) =>
-                      setFilters({ ...filters, difficulty: e.target.value })
-                    }
-                    className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 py-3 px-4 pr-10 text-base font-medium text-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:outline-none transition-all duration-200"
-                  >
-                    <option value="">All Levels</option>
-                    {difficulties.map((level) => (
-                      <option key={level} value={level}>
-                        {level}
-                      </option>
-                    ))}
-                  </select>
+          <AnimatePresence>
+            {showFilters && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                // UPDATED: Panel background and border
+                className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 mb-6 overflow-hidden shadow-[0_4px_12px_rgba(59,130,246,0.1)]"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    {/* UPDATED: Label and Select styles */}
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Difficulty
+                    </label>
+                    <select
+                      value={filters.difficulty}
+                      onChange={(e) =>
+                        setFilters({ ...filters, difficulty: e.target.value })
+                      }
+                      className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 py-3 px-4 pr-10 text-base font-medium text-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:outline-none transition-all duration-200"
+                    >
+                      <option value="">All Levels</option>
+                      {difficulties.map((level) => (
+                        <option key={level} value={level}>
+                          {level}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Prize Pool
+                    </label>
+                    <select
+                      value={filters.prize}
+                      onChange={(e) =>
+                        setFilters({ ...filters, prize: e.target.value })
+                      }
+                      className="w-full rounded-xl border border-gray-300 bg-white py-3 px-4 pr-10 text-base font-medium text-gray-700 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all duration-200"
+                    >
+                      <option value="">Any Prize</option>
+                      <option value="$">Under $1,000</option>
+                      <option value="1,000">$1,000 - $5,000</option>
+                      <option value="5,000">$5,000+</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Location
+                    </label>
+                    <select
+                      value={filters.location}
+                      onChange={(e) =>
+                        setFilters({ ...filters, location: e.target.value })
+                      }
+                      className="w-full rounded-xl border border-gray-300 bg-white py-3 px-4 pr-10 text-base font-medium text-gray-700 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all duration-200"
+                    >
+                      <option value="">All Locations</option>
+                      {locations.map((location) => (
+                        <option key={location} value={location}>
+                          {location}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Prize Pool
-                  </label>
-                  <select
-                    value={filters.prize}
-                    onChange={(e) =>
-                      setFilters({ ...filters, prize: e.target.value })
-                    }
-                    className="w-full rounded-xl border border-gray-300 bg-white py-3 px-4 pr-10 text-base font-medium text-gray-700 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all duration-200"
-                  >
-                    <option value="">Any Prize</option>
-                    <option value="$">Under $1,000</option>
-                    <option value="1,000">$1,000 - $5,000</option>
-                    <option value="5,000">$5,000+</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Location
-                  </label>
-                  <select
-                    value={filters.location}
-                    onChange={(e) =>
-                      setFilters({ ...filters, location: e.target.value })
-                    }
-                    className="w-full rounded-xl border border-gray-300 bg-white py-3 px-4 pr-10 text-base font-medium text-gray-700 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all duration-200"
-                  >
-                    <option value="">All Locations</option>
-                    {locations.map((location) => (
-                      <option key={location} value={location}>
-                        {location}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
         {/* Tabs */}
         <motion.div
           className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0"
           variants={item}
+          data-aos="fade-up"
+          data-aos-delay="300"
         >
           <div className="flex flex-wrap gap-3">
             {[
@@ -382,8 +408,14 @@ const HackathonHub = () => {
               animate="show"
               exit={{ opacity: 0 }}
             >
-              {filteredHackathons.map((hackathon) => (
-                <HackathonCard key={hackathon.id} hackathon={hackathon} />
+              {filteredHackathons.map((hackathon, index) => (
+                <HackathonCard
+                  key={hackathon.id}
+                  hackathon={hackathon}
+                  // AOS Implementation on individual cards
+                  data-aos="flip-up"
+                  data-aos-delay={index * 100}
+                />
               ))}
             </motion.div>
           ) : (

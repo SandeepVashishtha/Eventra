@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { FaLinkedin, FaDiscord, FaTelegram, FaInstagram } from "react-icons/fa";
 import { SiX } from "react-icons/si";
 import {
   FaInfoCircle,
+  FaInstagram,
+  FaDiscord,
+  FaTelegram,
   FaGithub,
   FaShieldAlt,
   FaFileContract,
@@ -10,16 +12,17 @@ import {
   FaEnvelope,
   FaBookOpen,
   FaPlus,
-  FaClipboardList,
+  // FaClipboardList,  //can be reactivated later
   FaUsers,
   FaBook,
-  FaServer,
+  // FaServer,   //can be reactivated later
   FaHome,
   FaCalendarAlt,
   FaRocket,
   FaFolder,
   FaTrophy,
   FaComments,
+  FaLinkedin,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
@@ -105,11 +108,14 @@ const Footer = () => {
         href: "/create-event",
         icon: <FaPlus size={14} />,
       },
-      {
-        name: "Event Templates",
-        href: "#templates",
-        icon: <FaClipboardList size={14} />,
-      },
+
+      //Can be reactivated later
+      // {
+      //   name: "Event Templates",
+      //   href: "#templates",
+      //   icon: <FaClipboardList size={14} />,
+      // },
+
       {
         name: "Community Events",
         href: "/communityEvent",
@@ -145,7 +151,9 @@ const Footer = () => {
       { name: "Contact Us", href: "/contact", icon: <FaEnvelope size={14} /> },
       { name: "Feedback", href: "/feedback", icon: <FaComments size={14} /> },
       { name: "API Docs", href: "/apiDocs", icon: <FaBookOpen size={14} /> },
-      { name: "Status", href: "#status", icon: <FaServer size={14} /> },
+
+      //Can be reactivated later
+      // { name: "Status", href: "#status", icon: <FaServer size={14} /> },
     ],
   };
 
@@ -160,6 +168,7 @@ const Footer = () => {
         />
       ),
     },
+
     {
       name: "LinkedIn",
       href: "https://www.linkedin.com/in/sandeepvashishtha/",
@@ -170,29 +179,32 @@ const Footer = () => {
         />
       ),
     },
+
     {
       name: "Discord",
-      href: "https://discord.com/",
+      href: "https://www.discord.com/",
       icon: (
         <FaDiscord
-          className="size-10 p-2 rounded-full text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-blue-900 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white hover:scale-110 hover:-translate-y-1"
+          className="size-10 p-2 rounded-full text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-blue-900 hover:text-white dark:hover:bg-blue-900 dark:hover:text-white hover:scale-110 hover:-translate-y-1"
           size={20}
         />
       ),
     },
+
     {
       name: "Telegram",
-      href: "https://telegram.com/",
+      href: "https://www.telegram.com/",
       icon: (
         <FaTelegram
-          className="size-10 p-2 rounded-full text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-blue-700 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white hover:scale-110 hover:-translate-y-1"
+          className="size-10 p-2 rounded-full text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white hover:scale-110 hover:-translate-y-1"
           size={20}
         />
       ),
     },
+
     {
       name: "Instagram",
-      href: "https://instagram.com/",
+      href: "https://www.instagram.com/",
       icon: (
         <FaInstagram
           className="size-10 p-2 rounded-full text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-pink-600 hover:text-white dark:hover:bg-pink-600 dark:hover:text-white hover:scale-110 hover:-translate-y-1"
@@ -200,16 +212,29 @@ const Footer = () => {
         />
       ),
     },
+
     
   ];
 
   return (
     <>
       {/* UPDATED: Added dark mode background and border colors */}
-      <footer className="bg-indigo-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
+      <footer 
+        className="bg-indigo-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
+        // AOS Implementation
+        data-aos="fade-up"
+        data-aos-duration="1000"
+        data-aos-offset="100" // Start animation a bit earlier
+        // End AOS Implementation
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-4">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
-            <div className="space-y-4 md:col-span-2">
+            <div 
+              className="space-y-4 md:col-span-2"
+              // AOS Implementation - Logo/Newsletter Column
+              data-aos="fade-up"
+              data-aos-delay="0"
+            >
               {/* UPDATED: Added dark mode text color */}
               <h2 className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
                 Eventra
@@ -280,7 +305,7 @@ const Footer = () => {
             </div>
 
             {Object.entries(footerLinks).map(([key, links]) => (
-              <div key={key} className="space-y-3">
+              <div key={key} className="space-y-3 ml-12">
                 {/* UPDATED: Added dark mode text color */}
                 <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
                   {key.replace("_", " ")}
@@ -290,7 +315,7 @@ const Footer = () => {
                     <li key={link.name}>
                       <Link
                         to={link.href}
-                        className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-2 transition-all duration-300 hover:translate-x-1 group"
+                        className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-4 transition-all duration-300 hover:translate-x-1 group"
                       >
                         {link.icon && (
                           <span className="text-indigo-500 dark:text-indigo-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-300 group-hover:scale-110 transition-all duration-300">

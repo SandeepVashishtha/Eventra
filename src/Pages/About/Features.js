@@ -76,6 +76,10 @@ export default function Features() {
       id="features"
       // UPDATED: Section background
       className="relative py-24 bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-black dark:to-gray-900"
+      // AOS Implementation
+      data-aos="fade-up"
+      data-aos-duration="1000"
+      data-aos-offset="200"
     >
       {/* UPDATED: Decorative blobs for dark mode */}
       <div className="absolute top-0 left-0 w-72 h-72 bg-indigo-200 dark:bg-indigo-900/40 rounded-full mix-blend-multiply dark:mix-blend-normal filter blur-3xl opacity-30 animate-pulse"></div>
@@ -117,6 +121,9 @@ export default function Features() {
               key={index}
               variants={item}
               whileHover={{ y: -6, scale: 1.03 }}
+              // AOS Implementation
+              data-aos="flip-up"
+              data-aos-delay={index * 100}
               // UPDATED: Card background and border
               className="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300"
             >

@@ -171,7 +171,7 @@ const ContributorGuide = () => {
 
   return (
     // UPDATED: Main page background
-    <div className="bg-gray-50 dark:bg-black min-h-screen px-4 sm:px-6 lg:px-12 py-12 max-w-6xl mx-auto space-y-16">
+    <div className="bg-gray-50 dark:bg-black min-h-screen px-4 sm:px-6 lg:px-8 py-10 w-full max-w-[95%] md:max-w-6xl mx-auto space-y-12 overflow-x-hidden">
       {/* Page Heading */}
       <div className="text-center mb-12">
         {/* UPDATED: Text colors */}
@@ -187,7 +187,7 @@ const ContributorGuide = () => {
 
       {/* Step-by-Step Contribution Section */}
       {/* UPDATED: Section card background */}
-      <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-md">
+      <div className="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-md">
         {/* UPDATED: Title text */}
         <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8 mt-8 text-center">
           Step-by-Step Contribution Journey
@@ -200,7 +200,7 @@ const ContributorGuide = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="border-l-4 border-indigo-500 dark:border-indigo-400 p-4 bg-gray-200 dark:bg-gray-700 rounded shadow-sm"
+              className="border-l-4 border-indigo-500 dark:border-indigo-400 p-4 bg-gray-200 dark:bg-gray-800 rounded shadow-sm"
             >
               <div className="flex items-center mb-2">
                 <FiInfo className="text-indigo-500 dark:text-indigo-400 mr-2" />
@@ -220,7 +220,7 @@ const ContributorGuide = () => {
       </div>
 
       {/* Important Files Section */}
-      <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-md">
+      <div className="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-md">
         <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center flex items-center justify-center gap-3">
           <FiFile className="text-indigo-500 dark:text-indigo-400" size={32} />
           Important Files in This Project
@@ -228,7 +228,7 @@ const ContributorGuide = () => {
         <div className="overflow-x-auto">
           {/* UPDATED: Table styles */}
           <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
-            <thead className="bg-indigo-50 dark:bg-gray-700/50">
+            <thead className="bg-indigo-50 dark:bg-gray-800/50">
               <tr>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
                   File
@@ -324,7 +324,7 @@ const ContributorGuide = () => {
 
       {/* Issue & PR Workflow Section */}
       {/* UPDATED: Section card background */}
-      <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-md mt-10">
+      <div className="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-md mt-10">
         {/* UPDATED: Title text and icon color */}
         <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-10 text-center flex items-center justify-center gap-3">
           <FiGitBranch
@@ -434,10 +434,8 @@ Closes #<issue_number>`,
                 </p>
                 {item.code && (
                   // UPDATED: Code block styles
-                  <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 font-mono text-sm text-gray-800 dark:text-gray-200 overflow-x-auto">
-                    <pre>
-                      {item.code}
-                    </pre>
+                  <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 font-mono text-sm text-gray-800 dark:text-gray-200 overflow-x-auto">
+                    <pre>{item.code}</pre>
                   </div>
                 )}
               </div>
@@ -491,7 +489,7 @@ Closes #<issue_number>`,
 
       {/* Git Commands Section */}
       {/* UPDATED: Section card background */}
-      <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-md">
+      <div className="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-md">
         {/* UPDATED: Title text */}
         <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">
           Essential Git Commands
@@ -501,7 +499,7 @@ Closes #<issue_number>`,
             <div
               key={c.id}
               // UPDATED: Command item background and border
-              className="flex justify-between items-center bg-gray-100 dark:bg-gray-700/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700"
+              className="flex justify-between items-center bg-gray-100 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700"
             >
               <div>
                 {/* UPDATED: Text colors */}

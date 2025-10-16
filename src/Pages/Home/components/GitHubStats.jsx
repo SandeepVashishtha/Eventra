@@ -204,31 +204,42 @@ export default function GitHubStats() {
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          // UPDATED: Title text color
-          className="text-4xl font-extrabold text-center text-gray-900 dark:text-gray-100 mb-10"
+          className="text-4xl font-extrabold text-center bg-gradient-to-r from-indigo-600 via-purple-500 to-pink-500 text-transparent bg-clip-text mb-10"
+          data-aos="fade-zoom-in"
+          data-aos-once="true"
         >
           Project Statistics
         </motion.h2>
+
 
         <motion.div
           initial="hidden"
           animate="show"
           className="flex flex-wrap justify-center gap-6"
+          // AOS Implementation (Card Grid)
+          data-aos="fade-up"
+          data-aos-duration="1000"
+          data-aos-delay="200"
         >
-          {statCards.map(({ label, value, icon, link }) => (
+          {statCards.map(({ label, value, icon, link }, index) => (
             <motion.a
               key={label}
               href={link}
               target="_blank"
               rel="noopener noreferrer"
-              whileHover={{ scale: 1.08 }}
+              whileHover={{ scale: 1.1, rotate: 1 }}
               whileTap={{ scale: 0.95 }}
+
               // UPDATED: Card background and border
-              className="group flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-2xl px-8 py-6 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 relative overflow-hidden w-52"
+              className="group flex flex-col items-center justify-center bg-white/70 dark:bg-white/10 backdrop-blur-lg rounded-2xl px-8 py-6 shadow-xl hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-white/20 relative overflow-hidden w-52"
+
+              // Staggered AOS delay for individual cards
+              data-aos="zoom-in" 
+              data-aos-delay={index * 50} 
             >
               {/* Glow effect */}
               {/* UPDATED: Glow effect for dark mode */}
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-100 via-transparent to-indigo-100 dark:from-indigo-900/50 dark:via-transparent dark:to-indigo-900/50 opacity-0 group-hover:opacity-100 transition duration-500 blur-2xl"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-100 via-transparent to-indigo-200 dark:from-indigo-700/30 dark:via-transparent dark:to-purple-800/30 opacity-0 group-hover:opacity-100 transition duration-700 blur-3xl rounded-2xl"></div>
 
               <div className="z-10 flex flex-col items-center space-y-3">
                 {/* UPDATED: Icon wrapper background */}

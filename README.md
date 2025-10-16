@@ -123,6 +123,38 @@ Follow these steps to set up and run the frontend application on your local mach
     ```
     The application will be available at `http://localhost:3000`.
 
+## Google OAuth Setup
+
+Follow these steps to enable Google Sign-In for the project:
+
+1. **Create Google Client ID**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/).
+   - Create a new project (or use existing one).
+   - Navigate to **APIs & Services > Credentials**.
+   - Click **Create Credentials > OAuth 2.0 Client IDs**.
+   - Select **Web application**.
+   - Add your frontend URL in **Authorized JavaScript origins** (e.g., http://localhost:3000).
+   - Add redirect URI if using redirect flow (optional).
+   - Copy the **Client ID**.
+
+2. **Add Client ID to Environment**
+   - Open `.env` or create `.env` in `frontend/`.
+   - Add the following line:
+     ```env
+     REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id_here
+     ```
+
+3. **Run the App**
+   - Install dependencies: `npm install`  
+   - Start frontend: `npm start`
+   - Go to Signup/Login page and you should see **Sign in with Google** button.
+   - Test signing in with your Google account.
+
+4. **Notes**
+   - Ensure your Google account allows OAuth for the given project.
+   - For production, add your deployed domain in **Authorized JavaScript origins**.
+
+
 ## 🏗️ Project Structure
 ```
 The frontend codebase is organized to be scalable and maintainable.

@@ -86,9 +86,18 @@ const Toast = ({ message, type = "success", onClose }) => {
   );
 };
 
+
 // Star Rating Component
 const StarRating = ({ rating, onRatingChange, error }) => {
   const [hoveredRating, setHoveredRating] = useState(0);
+
+  const handleStarClick = (star) => {
+    if (rating === star) {
+      onRatingChange(0);
+    } else {
+      onRatingChange(star);
+    }
+  };
 
   return (
     <div className="relative mt-6">
@@ -106,12 +115,14 @@ const StarRating = ({ rating, onRatingChange, error }) => {
           <motion.button
             key={star}
             type="button"
-            onClick={() => onRatingChange(star)}
+            onClick={() => handleStarClick(star)}
             onMouseEnter={() => setHoveredRating(star)}
             onMouseLeave={() => setHoveredRating(0)}
             className="focus:outline-none"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
+            aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
+            title={`Click to rate ${star} star${star > 1 ? 's' : ''} (click again to deselect)`}
           >
             <FiStar
               className={`w-8 h-8 transition-colors duration-200 ${
@@ -149,7 +160,6 @@ const StarRating = ({ rating, onRatingChange, error }) => {
   );
 };
 
-// Floating Label Input Component
 const FloatingInput = ({
   id,
   label,
@@ -159,30 +169,15 @@ const FloatingInput = ({
   required = true,
   error,
   icon: Icon,
-  placeholder,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const hasValue = value && value.length > 0;
 
   return (
     <div className="relative mt-6">
-      <motion.label
-        htmlFor={id}
-        className={`absolute transition-all duration-300 ${ Icon ? "left-14" : "left-4"} ${
-          isFocused || value
-            ? "top-0 text-xs text-indigo-600 dark:text-indigo-400 font-medium"
-            : "top-4 text-sm text-gray-500 dark:text-gray-400"
-        } ${error ? "text-red-500 dark:text-red-400" : ""}`}
-        initial={false}
-        animate={{
-          y: isFocused || value ? -20 : 0,
-          scale: isFocused || value ? 0.85 : 1,
-        }}
-      >
-        {label} {required && "*"}
-      </motion.label>
       <div className="relative">
         {Icon && (
-          <Icon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
+          <Icon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5 z-10" />
         )}
         <input
           id={id}
@@ -192,25 +187,48 @@ const FloatingInput = ({
           onChange={onChange}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          placeholder={placeholder}
-          className={`w-full p-4 border rounded-lg focus:ring-2 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
-          Icon ? "pl-14" : ""
+          className={`w-full px-4 pt-6 pb-2 border-2 rounded-xl focus:ring-4 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-all duration-300 ${
+            Icon ? "pl-14" : ""
           } ${
             error
-              ? "border-red-500 focus:ring-red-200 dark:focus:ring-red-900/50"
-              : "border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-200 dark:focus:ring-indigo-900/50"
+              ? "border-red-500 focus:border-red-500 focus:ring-red-100 dark:focus:ring-red-900/30"
+              : isFocused
+              ? "border-indigo-500 dark:border-indigo-400 focus:ring-indigo-100 dark:focus:ring-indigo-900/30"
+              : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
           }`}
         />
-      </div>
-      {error && (
-        <motion.p
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-red-500 dark:text-red-400 text-xs mt-1 ml-1"
+        <label
+          htmlFor={id}
+          className={`absolute ${Icon ? "left-14" : "left-4"} pointer-events-none transition-all duration-200 ease-out ${
+            isFocused || hasValue
+              ? "top-2 text-xs font-medium"
+              : "top-1/2 -translate-y-1/2 text-sm"
+          } ${
+            error
+              ? "text-red-500 dark:text-red-400"
+              : isFocused
+              ? "text-indigo-600 dark:text-indigo-400"
+              : "text-gray-500 dark:text-gray-400"
+          }`}
         >
-          {error}
-        </motion.p>
-      )}
+          {label} {required && <span className="text-red-500">*</span>}
+        </label>
+      </div>
+      <AnimatePresence>
+        {error && (
+          <motion.p
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="text-red-500 dark:text-red-400 text-xs mt-2 ml-1 flex items-center gap-1"
+          >
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            {error}
+          </motion.p>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -225,32 +243,15 @@ const FloatingSelect = ({
   required = true,
   error,
   icon: Icon,
-  placeholder,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const hasValue = value && value.length > 0;
 
   return (
     <div className="relative mt-6">
-      <motion.label
-        htmlFor={id}
-        className={`absolute transition-all duration-300 ${
-          Icon ? "left-14" : "left-4"
-        } ${
-          isFocused || value
-            ? "top-0 text-xs text-indigo-600 dark:text-indigo-400 font-medium"
-            : "top-4 text-sm text-gray-500 dark:text-gray-400"
-        } ${error ? "text-red-500 dark:text-red-400" : ""}`}
-        initial={false}
-        animate={{
-          y: isFocused || value ? -20 : 0,
-          scale: isFocused || value ? 0.85 : 1,
-        }}
-      >
-        {label} {required && "*"}
-      </motion.label>
       <div className="relative">
         {Icon && (
-          <Icon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
+          <Icon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5 z-10" />
         )}
         <select
           id={id}
@@ -259,33 +260,56 @@ const FloatingSelect = ({
           onChange={onChange}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          className={`w-full p-4 border rounded-lg focus:ring-2 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 appearance-none ${
-          Icon ? "pl-14" : ""
+          className={`w-full px-4 pt-6 pb-2 border-2 rounded-xl focus:ring-4 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 appearance-none transition-all duration-300 ${
+            Icon ? "pl-14 pr-12" : "pr-12"
           } ${
             error
-              ? "border-red-500 focus:ring-red-200 dark:focus:ring-red-900/50"
-              : "border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-200 dark:focus:ring-indigo-900/50"
+              ? "border-red-500 focus:border-red-500 focus:ring-red-100 dark:focus:ring-red-900/30"
+              : isFocused
+              ? "border-indigo-500 dark:border-indigo-400 focus:ring-indigo-100 dark:focus:ring-indigo-900/30"
+              : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
           }`}
         >
-          <option value="" disabled>{placeholder}</option>
+          <option value="" disabled></option>
           {options.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
           ))}
         </select>
-        {/* ✅ ADD THIS ICON FOR THE DROPDOWN ARROW */}
+        <label
+          htmlFor={id}
+          className={`absolute ${Icon ? "left-14" : "left-4"} pointer-events-none transition-all duration-200 ease-out ${
+            isFocused || hasValue
+              ? "top-2 text-xs font-medium"
+              : "top-1/2 -translate-y-1/2 text-sm"
+          } ${
+            error
+              ? "text-red-500 dark:text-red-400"
+              : isFocused
+              ? "text-indigo-600 dark:text-indigo-400"
+              : "text-gray-500 dark:text-gray-400"
+          }`}
+        >
+          {label} {required && <span>*</span>}
+        </label>
         <FiChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500 pointer-events-none" />
       </div>
-      {error && (
-        <motion.p
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-red-500 dark:text-red-400 text-xs mt-1 ml-1"
-        >
-          {error}
-        </motion.p>
-      )}
+      <AnimatePresence>
+        {error && (
+          <motion.p
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="text-red-500 dark:text-red-400 text-xs mt-2 ml-1 flex items-center gap-1"
+          >
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            {error}
+          </motion.p>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -443,7 +467,11 @@ const FeedbackPage = () => {
 
   return (
     // UPDATED: Main page background
-    <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden" onClick={(e) => {
+    if (e.target === e.currentTarget) {
+      navigate("/"); // Closes the form when clicking outside
+    }
+  }}>
       <div className="max-w-4xl w-full mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -546,64 +574,54 @@ const FeedbackPage = () => {
                   placeholder="Select a feedback type"
                 />
 
-                {/* UPDATED: Textarea and its floating label */}
+                {/* Textarea with floating label */}
                 <div className="relative mt-6">
-                  <FiMessageSquare className="absolute left-3 top-4 text-gray-400 text-xl" />
-                  <motion.label
-                    htmlFor="message"
-                    className={`absolute left-14 transition-all duration-300 ${
-                      formData.message
-                        ? "top-3 text-xs text-indigo-600 dark:text-indigo-400 font-medium"
-                        : "top-4 text-sm text-gray-500 dark:text-gray-400"
-                    } ${errors.message ? "text-red-500 dark:text-red-400" : ""}`}
-                    initial={false}
-                    animate={{
-                      y: formData.message ? -20 : 0,
-                      scale: formData.message ? 0.85 : 1,
-                    }}
-                  >
-                    
-                     Your Message *
-                  </motion.label>
-                  <textarea
-                    id="message"
-                    name="message"
-                    rows="4"
-                    value={formData.message}
-                    onChange={handleChange}
-                    onFocus={(e) => {
-                      if (!formData.message) {
-                        e.target.parentElement
-                          .querySelector("label")
-                          .classList.add("top-0", "text-xs", "text-indigo-600");
-                      }
-                    }}
-                    onBlur={(e) => {
-                      if (!formData.message) {
-                        e.target.parentElement
-                          .querySelector("label")
-                          .classList.remove(
-                            "top-0",
-                            "text-xs",
-                            "text-indigo-600"
-                          );
-                      }
-                    }}
-                    className={`w-full pt-5 pb-2 px-4 border rounded-lg focus:ring-2 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
-                      errors.message
-                        ? "border-red-500 focus:ring-red-200"
-                        : "border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-200 dark:focus:ring-indigo-900/50"
-                    }`}
-                  ></textarea>
-                  {errors.message && (
-                    <motion.p
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-red-500 dark:text-red-400 text-xs mt-1 ml-1"
+                  <div className="relative">
+                    <FiMessageSquare className="absolute left-4 top-4 text-gray-400 dark:text-gray-500 w-5 h-5 z-10" />
+                    <textarea
+                      id="message"
+                      name="message"
+                      rows="4"
+                      value={formData.message}
+                      onChange={handleChange}
+                      className={`w-full px-4 pl-14 pt-6 pb-2 border-2 rounded-xl focus:ring-4 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-all duration-300 resize-none ${
+                        errors.message
+                          ? "border-red-500 focus:border-red-500 focus:ring-red-100 dark:focus:ring-red-900/30"
+                          : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-100 dark:focus:ring-indigo-900/30"
+                      }`}
+                    ></textarea>
+                    <label
+                      htmlFor="message"
+                      className={`absolute left-14 pointer-events-none transition-all duration-200 ease-out ${
+                        formData.message
+                          ? "top-2 text-xs font-medium"
+                          : "top-4 text-sm"
+                      } ${
+                        errors.message
+                          ? "text-red-500 dark:text-red-400"
+                          : formData.message
+                          ? "text-indigo-600 dark:text-indigo-400"
+                          : "text-gray-500 dark:text-gray-400"
+                      }`}
                     >
-                      {errors.message}
-                    </motion.p>
-                  )}
+                      Your Message <span>*</span>
+                    </label>
+                  </div>
+                  <AnimatePresence>
+                    {errors.message && (
+                      <motion.p
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="text-red-500 dark:text-red-400 text-xs mt-2 ml-1 flex items-center gap-1"
+                      >
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                        {errors.message}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 <StarRating

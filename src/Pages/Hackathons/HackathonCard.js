@@ -7,22 +7,38 @@ import {
   TrophyIcon,
   BuildingLibraryIcon,
   DocumentTextIcon,
+  ShareIcon,
 } from "@heroicons/react/24/outline";
+import { addHackathonToGoogleCalendar } from "../../utils/calendarUtils";
+import ShareMenu from "../../components/common/ShareMenu";
+import { generateEventSharingData } from "../../utils/shareUtils";
 
-const HackathonCard = ({ hackathon, isFeatured = false }) => {
+const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
   const stats = {
     participants: hackathon.status === "live" ? hackathon.participants : 0,
     teams: hackathon.status === "live" ? hackathon.teams : 0,
     submissions: hackathon.status === "live" ? hackathon.submissions : 0,
   };
 
+  // Generate sharing data for this hackathon
+  const hackathonSharingData = generateEventSharingData({
+    ...hackathon,
+    title: hackathon.title,
+    description: hackathon.description,
+    date: hackathon.startDate,
+    id: hackathon.id,
+  });
+
   return (
     <motion.div
+      // AOS Implementation
+      data-aos="zoom-in"
       // UPDATED: Card background, border, and featured ring
-      className={`bg-gradient-to-br from-white to-white dark:from-gray-800 dark:to-black rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-indigo-300 dark:border-gray-700 overflow-hidden relative ${
+      className={`bg-gradient-to-br from-white to-white dark:from-gray-800 dark:to-black rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-indigo-300 dark:border-gray-700 relative card-with-floating-elements ${
         isFeatured ? "ring-2 ring-indigo-500 dark:ring-indigo-400" : ""
       }`}
       whileHover={{ y: -4 }}
+      {...props} // Spread props to include data-aos attributes from parent
     >
       {/* Featured Ribbon */}
       {isFeatured && (
@@ -30,6 +46,35 @@ const HackathonCard = ({ hackathon, isFeatured = false }) => {
           Featured
         </div>
       )}
+
+      {/* Share button in top-right corner */}
+      <div className="absolute -top-4 -right-4 z-[200]">
+        <ShareMenu
+          shareData={hackathonSharingData}
+          position="bottom-right"
+          menuClassName="!z-[999] shadow-2xl"
+          buttonClassName=""
+        >
+          <motion.div
+            className="
+  bg-white dark:bg-gray-800 
+  rounded-full p-3 
+  shadow-lg cursor-pointer hover:shadow-xl 
+  border border-gray-200 dark:border-gray-600 
+  group/share
+"
+            whileHover={{ scale: 1.1 }}
+            transition={{ type: "spring", stiffness: 400, damping: 10 }}
+          >
+            <ShareIcon className="w-4 h-4 text-gray-400" />
+
+            {/* Tooltip */}
+            <div className="absolute invisible group-hover/share:visible opacity-0 group-hover/share:opacity-100 transition-opacity duration-300 -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10">
+              Share Hackathon
+            </div>
+          </motion.div>
+        </ShareMenu>
+      </div>
 
       <div className="p-6 flex flex-col gap-5 min-h-[500px]">
         {/* Header: Status, Difficulty, Prize */}
@@ -222,14 +267,33 @@ const HackathonCard = ({ hackathon, isFeatured = false }) => {
               </button>
             </div>
           ) : hackathon.status === "upcoming" ? (
-            <div className="grid grid-cols-2 gap-3">
-              <button className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-colors">
-                Register
-              </button>
-              {/* UPDATED: Secondary button colors */}
-              <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-                Set Reminder
-              </button>
+            <div className="grid grid-cols-1 gap-3">
+              {/* Action buttons row */}
+              <div className="flex gap-3">
+                <button className="flex-1 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-colors">
+                  Register
+                </button>
+
+                {/* Google Calendar integration */}
+                <a
+                  href={addHackathonToGoogleCalendar(hackathon)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block group/calendar relative"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Add to Google Calendar"
+                >
+                  <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-2">
+                    <CalendarIcon className="w-4 h-4 text-indigo-500" />
+                    <span className="hidden sm:inline">Set Reminder</span>
+                  </button>
+
+                  {/* Tooltip */}
+                  <div className="absolute invisible group-hover/calendar:visible opacity-0 group-hover/calendar:opacity-100 transition-opacity duration-300 -top-8 left-1/2 transform -translate-x-1/2 bg-indigo-600 text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10">
+                    Add to Google Calendar
+                  </div>
+                </a>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
