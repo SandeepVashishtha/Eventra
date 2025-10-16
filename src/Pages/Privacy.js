@@ -48,10 +48,7 @@ export const Privacy = () => {
 
   useEffect(() => {
     controls.start("show");
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, [controls]);
 
   const policySections = [
@@ -95,37 +92,35 @@ export const Privacy = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-12 px-4 sm:px-6 lg:px-8">
-      {/* Header Section */}
-      <motion.div
-        variants={container}
-        initial="hidden"
-        animate={controls}
-        className="max-w-4xl mx-auto text-center mb-16"
-      >
-        <motion.h1
-          variants={item}
-          className="text-4xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-5xl mb-4"
-        >
-          Privacy Policy
-        </motion.h1>
-        <motion.p
-          variants={item}
-          className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto"
-        >
-          Your privacy is important to us. Learn how we protect your data and
-          your rights.
-        </motion.p>
-      </motion.div>
-
-      {/* Intro Section */}
-      <motion.div
-        variants={container}
-        initial="hidden"
-        animate={controls}
-        className="max-w-4xl mx-auto mb-16"
-      >
+      <div className="max-w-7xl mx-auto space-y-16">
+        {" "}
+        {/* Increased horizontal width */}
+        {/* Header Section */}
         <motion.div
-          variants={item}
+          variants={container}
+          initial="hidden"
+          animate={controls}
+          className="text-center"
+        >
+          <motion.h1
+            variants={item}
+            className="text-4xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-5xl mb-4"
+          >
+            Privacy Policy
+          </motion.h1>
+          <motion.p
+            variants={item}
+            className="text-xl text-gray-600 dark:text-gray-400"
+          >
+            Your privacy is important to us. Learn how we protect your data and
+            your rights.
+          </motion.p>
+        </motion.div>
+        {/* Intro Section */}
+        <motion.div
+          variants={container}
+          initial="hidden"
+          animate={controls}
           className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl border border-gray-200 dark:border-gray-700 p-8 shadow-md"
         >
           <p className="text-lg text-gray-800 dark:text-gray-200">
@@ -143,10 +138,7 @@ export const Privacy = () => {
             platform and services.
           </p>
         </motion.div>
-      </motion.div>
-
-      {/* Policy Sections */}
-      <div className="max-w-6xl mx-auto">
+        {/* Policy Sections */}
         <motion.div
           variants={container}
           initial="hidden"
@@ -157,12 +149,11 @@ export const Privacy = () => {
             <motion.div
               key={index}
               variants={item}
-              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl border border-gray-200 dark:border-gray-700 shadow-md relative overflow-hidden group hover:border-blue-400 dark:hover:border-blue-500 transition-colors duration-300"
+              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl border border-gray-200 dark:border-gray-700 shadow-md overflow-hidden group hover:border-blue-400 dark:hover:border-blue-500 transition-colors duration-300"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-indigo-50 via-purple-50 dark:from-indigo-900/40 dark:via-purple-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
               <div className="relative z-10">
-                {/* Toggle Button Header */}
                 <button
                   onClick={() => toggleSection(index)}
                   className="w-full flex items-center justify-between p-8 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 rounded-t-2xl"
@@ -184,7 +175,6 @@ export const Privacy = () => {
                   </div>
                 </button>
 
-                {/* Collapsible Content */}
                 <motion.div
                   initial={false}
                   animate={{
@@ -207,18 +197,12 @@ export const Privacy = () => {
             </motion.div>
           ))}
         </motion.div>
-      </div>
-
-      {/* Additional Info Section */}
-      <motion.div
-        variants={container}
-        initial="hidden"
-        animate={controls}
-        className="max-w-4xl mx-auto mt-16"
-      >
+        {/* Additional Info Section */}
         <motion.div
-          variants={item}
-          className="bg-indigo-50 dark:bg-gray-800 rounded-2xl border border-indigo-100 dark:border-gray-700 p-8"
+          variants={container}
+          initial="hidden"
+          animate={controls}
+          className="bg-indigo-50 dark:bg-gray-800 rounded-2xl border border-indigo-100 dark:border-gray-700 p-8 shadow-md"
         >
           <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             Policy Updates
@@ -237,18 +221,12 @@ export const Privacy = () => {
             })}
           </p>
         </motion.div>
-      </motion.div>
-
-      {/* Contact Section */}
-      <motion.div
-        variants={container}
-        initial="hidden"
-        animate={controls}
-        className="max-w-4xl mx-auto mt-16"
-      >
+        {/* Contact Section */}
         <motion.div
-          variants={item}
-          className="bg-gray-900 rounded-2xl p-8 text-center relative overflow-hidden"
+          variants={container}
+          initial="hidden"
+          animate={controls}
+          className="bg-gray-900 rounded-2xl p-8 text-center relative overflow-hidden shadow-md"
         >
           <div className="absolute inset-0">
             <div className="absolute -top-32 -left-32 w-96 h-96 bg-indigo-600/30 rounded-full blur-3xl"></div>
@@ -271,7 +249,7 @@ export const Privacy = () => {
             </Link>
           </div>
         </motion.div>
-      </motion.div>
+      </div>
     </div>
   );
 };
