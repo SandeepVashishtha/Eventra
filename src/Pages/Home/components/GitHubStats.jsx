@@ -211,7 +211,6 @@ export default function GitHubStats() {
           Project Statistics
         </motion.h2>
 
-
         <motion.div
           initial="hidden"
           animate="show"
@@ -229,13 +228,11 @@ export default function GitHubStats() {
               rel="noopener noreferrer"
               whileHover={{ scale: 1.1, rotate: 1 }}
               whileTap={{ scale: 0.95 }}
-
               // UPDATED: Card background and border
               className="group flex flex-col items-center justify-center bg-white/70 dark:bg-white/10 backdrop-blur-lg rounded-2xl px-8 py-6 shadow-xl hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-white/20 relative overflow-hidden w-52"
-
               // Staggered AOS delay for individual cards
-              data-aos="zoom-in" 
-              data-aos-delay={index * 50} 
+              data-aos="zoom-in"
+              data-aos-delay={index * 50}
             >
               {/* Glow effect */}
               {/* UPDATED: Glow effect for dark mode */}
