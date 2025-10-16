@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import GoogleSignInButton from "../GoogleSignInButton";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
+import {User, AtSign} from 'lucide-react'
 
 const assessStrength = (password) => {
   if (!password) {
@@ -220,57 +221,68 @@ const Signup = () => {
                 <label className="block text-sm text-gray-700 dark:text-gray-300">
                   First name <sup className="text-red-500">*</sup>
                 </label>
-                <input
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  placeholder="First name"
-                 className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
-                  required
-                />
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    placeholder="First name"
+                    className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                    required
+                  />
+                </div>
                 {firstNameError && (
                   <p className="text-red-500 text-xs">{firstNameError}</p>
                 )}
               </div>
               <div>
-                <label className="block text-sm text-gray-700 dark:text-gray-300">
-                  Last name <sup className="text-red-500">*</sup>
-                </label>
-                <input
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  placeholder="Last name"
-                 className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
-                  required
-                />
-                {lastNameError && (
-                  <p className="text-red-500 text-xs">{lastNameError}</p>
-                )}
+                  <label className="block text-sm text-gray-700 dark:text-gray-300">
+                    Last name <sup className="text-red-500">*</sup>
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      placeholder="Last name"
+                      className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                      required
+                    />
+                  </div>
+                  {lastNameError && (
+                    <p className="text-red-500 text-xs">{lastNameError}</p>
+                  )}
               </div>
-            </div>
+          </div>
 
             <div>
               <label className="block text-sm text-gray-700 dark:text-gray-300">
                 Email address <sup className="text-red-500">*</sup>
               </label>
+
               <div className="relative">
-                
+                {/* @ Icon */}
+                <AtSign
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-300 w-5 h-5 pointer-events-none"
+                />
+
                 <input
                   name="email"
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="@ Enter your email address"
-                 className="w-full pl-3 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                  placeholder="Enter your email address"
+                  className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                   required
                 />
               </div>
+
               {emailError && (
                 <p className="text-red-500 text-xs mt-1">{emailError}</p>
               )}
             </div>
-
             <div>
               <label className="block text-sm text-gray-700 dark:text-gray-300">
                 Password <sup className="text-red-500">*</sup>
