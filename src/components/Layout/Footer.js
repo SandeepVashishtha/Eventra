@@ -305,12 +305,17 @@ const Footer = () => {
             </div>
 
             {Object.entries(footerLinks).map(([key, links]) => (
-              <div key={key} className="space-y-3 ml-12">
+              <div 
+                key={key} 
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-6 border border-gray-100 dark:border-gray-700"
+                data-aos="fade-up"
+                data-aos-delay={key === "quick_links" ? "100" : key === "community" ? "200" : "300"}
+                  
                 {/* UPDATED: Added dark mode text color */}
-                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-4">
                   {key.replace("_", " ")}
                 </h4>
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {links.map((link) => (
                     <li key={link.name}>
                       <Link
