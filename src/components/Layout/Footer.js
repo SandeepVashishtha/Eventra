@@ -310,7 +310,7 @@ const Footer = () => {
                 className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-6 border border-gray-100 dark:border-gray-700"
                 data-aos="fade-up"
                 data-aos-delay={key === "quick_links" ? "100" : key === "community" ? "200" : "300"}
-                  
+              >
                 {/* UPDATED: Added dark mode text color */}
                 <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-4">
                   {key.replace("_", " ")}
