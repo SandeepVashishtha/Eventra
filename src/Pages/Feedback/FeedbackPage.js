@@ -1,18 +1,28 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiStar, FiMessageSquare, FiUser, FiMail, FiCheckCircle } from "react-icons/fi";
+import {
+  FiStar,
+  FiMessageSquare,
+  FiUser,
+  FiMail,
+  FiCheckCircle,
+} from "react-icons/fi";
 import { FaGithub, FaLinkedin, FaDiscord } from "react-icons/fa";
-import { FiChevronDown } from "react-icons/fi"; 
+import { FiChevronDown } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import "./FeedbackPage.css";
 
 //Social media links
 const socialLinks = [
-  { 
-    name: "X", 
-    icon: <span className="w-5 h-5 flex items-center justify-center font-bold">X</span>, 
-    // icon: <FaTwitter className="w-5 h-5" />, 
-    href: "https://twitter.com" 
+  {
+    name: "X",
+    icon: (
+      <span className="w-5 h-5 flex items-center justify-center font-bold">
+        X
+      </span>
+    ),
+    // icon: <FaTwitter className="w-5 h-5" />,
+    href: "https://twitter.com",
   },
   {
     name: "GitHub",
@@ -86,7 +96,6 @@ const Toast = ({ message, type = "success", onClose }) => {
   );
 };
 
-
 // Star Rating Component
 const StarRating = ({ rating, onRatingChange, error }) => {
   const [hoveredRating, setHoveredRating] = useState(0);
@@ -103,7 +112,9 @@ const StarRating = ({ rating, onRatingChange, error }) => {
     <div className="relative mt-6">
       <motion.label
         className={`block text-sm font-medium mb-3 ${
-          error ? "text-red-500 dark:text-red-400" : "text-gray-700 dark:text-gray-300"
+          error
+            ? "text-red-500 dark:text-red-400"
+            : "text-gray-700 dark:text-gray-300"
         }`}
         initial={false}
         animate={{ opacity: 1 }}
@@ -121,8 +132,10 @@ const StarRating = ({ rating, onRatingChange, error }) => {
             className="focus:outline-none"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
-            title={`Click to rate ${star} star${star > 1 ? 's' : ''} (click again to deselect)`}
+            aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
+            title={`Click to rate ${star} star${
+              star > 1 ? "s" : ""
+            } (click again to deselect)`}
           >
             <FiStar
               className={`w-8 h-8 transition-colors duration-200 ${
@@ -199,7 +212,9 @@ const FloatingInput = ({
         />
         <label
           htmlFor={id}
-          className={`absolute ${Icon ? "left-14" : "left-4"} pointer-events-none transition-all duration-200 ease-out ${
+          className={`absolute ${
+            Icon ? "left-14" : "left-4"
+          } pointer-events-none transition-all duration-200 ease-out ${
             isFocused || hasValue
               ? "top-2 text-xs font-medium"
               : "top-1/2 -translate-y-1/2 text-sm"
@@ -223,7 +238,11 @@ const FloatingInput = ({
             className="text-red-500 dark:text-red-400 text-xs mt-2 ml-1 flex items-center gap-1"
           >
             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                clipRule="evenodd"
+              />
             </svg>
             {error}
           </motion.p>
@@ -279,7 +298,9 @@ const FloatingSelect = ({
         </select>
         <label
           htmlFor={id}
-          className={`absolute ${Icon ? "left-14" : "left-4"} pointer-events-none transition-all duration-200 ease-out ${
+          className={`absolute ${
+            Icon ? "left-14" : "left-4"
+          } pointer-events-none transition-all duration-200 ease-out ${
             isFocused || hasValue
               ? "top-2 text-xs font-medium"
               : "top-1/2 -translate-y-1/2 text-sm"
@@ -304,7 +325,11 @@ const FloatingSelect = ({
             className="text-red-500 dark:text-red-400 text-xs mt-2 ml-1 flex items-center gap-1"
           >
             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                clipRule="evenodd"
+              />
             </svg>
             {error}
           </motion.p>
@@ -354,10 +379,13 @@ const FeedbackPage = () => {
     }
 
     // Email is optional, but if provided, it should be valid
-    if (formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    if (
+      formData.email.trim() &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+    ) {
       newErrors.email = "Please enter a valid email";
     }
-    
+
     // feedbackType and rating are optional; only message is required
     if (!formData.message.trim()) {
       newErrors.message = "Message is required";
@@ -420,7 +448,9 @@ const FeedbackPage = () => {
 
       // Save locally in localStorage
       try {
-        const existing = JSON.parse(localStorage.getItem("eventra_feedback") || "[]");
+        const existing = JSON.parse(
+          localStorage.getItem("eventra_feedback") || "[]"
+        );
         const payload = {
           name: formData.name?.trim() || null,
           email: formData.email?.trim() || null,
@@ -452,7 +482,8 @@ const FeedbackPage = () => {
       navigate("/");
     } catch (error) {
       setToast({
-        message: "There was an error submitting your feedback. Please try again.",
+        message:
+          "There was an error submitting your feedback. Please try again.",
         type: "error",
       });
     } finally {
@@ -467,11 +498,14 @@ const FeedbackPage = () => {
 
   return (
     // UPDATED: Main page background
-    <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden" onClick={(e) => {
-    if (e.target === e.currentTarget) {
-      navigate("/"); // Closes the form when clicking outside
-    }
-  }}>
+    <div
+      className="min-h-screen bg-white dark:bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          navigate("/"); // Closes the form when clicking outside
+        }
+      }}
+    >
       <div className="max-w-4xl w-full mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -481,44 +515,69 @@ const FeedbackPage = () => {
           className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
         >
           <div className="md:flex">
-            <div className="md:w-2/5 bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-10 flex flex-col justify-between">
+            <div
+              className="md:w-3/5 lg:w-2/5 bg-gradient-to-br from-indigo-700 to-purple-600 text-white p-12 flex flex-col justify-between rounded-3xl shadow-xl backdrop-blur-lg"
+              data-aos="fade-right"
+              data-aos-duration="1000"
+              data-aos-anchor=".Feedback"
+            >
               <div>
-                <h2 className="text-3xl font-bold mb-4">Share Your Feedback</h2>
-                <p className="mb-6 opacity-90">
-                  Your feedback helps us improve Eventra and create better experiences for our community. We value your input!
+                <h2 className="text-4xl font-extrabold mb-6 tracking-wide">
+                  Share Your Feedback
+                </h2>
+                <p className="mb-8 text-lg opacity-90 leading-relaxed">
+                  Your feedback helps us improve Eventra and create better
+                  experiences for our community. We value your input!
                 </p>
 
-                <div className="space-y-4 mt-16">
-                  <div className="flex items-center">
-                    <div className="bg-white bg-opacity-20 p-2 rounded-full mr-4">
-                      <FiMessageSquare className="w-6 h-6" />
+                <div className="space-y-6">
+                  {/* Quick Response */}
+                  <div
+                    className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out"
+                    data-aos="zoom-in"
+                    data-aos-delay="200"
+                  >
+                    <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
+                      <FiMessageSquare className="w-7 h-7 text-white" />
                     </div>
-                    <div>
-                      <p className="font-medium">Quick Response</p>
+                    <div className="overflow-hidden max-w-full">
+                      <p className="font-semibold text-white">Quick Response</p>
                       <p className="text-sm opacity-80">
                         We review all feedback within 24 hours
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center">
-                    <div className="bg-white bg-opacity-20 p-2 rounded-full mr-4">
-                      <FiStar className="w-6 h-6" />
+                  {/* Anonymous Option */}
+                  <div
+                    className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out"
+                    data-aos="zoom-in"
+                    data-aos-delay="300"
+                  >
+                    <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
+                      <FiStar className="w-7 h-7 text-white" />
                     </div>
-                    <div>
-                      <p className="font-medium">Anonymous Option</p>
+                    <div className="overflow-hidden max-w-full">
+                      <p className="font-semibold text-white">
+                        Anonymous Option
+                      </p>
                       <p className="text-sm opacity-80">
                         Share feedback anonymously if preferred
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center">
-                    <div className="bg-white bg-opacity-20 p-2 rounded-full mr-4">
-                      <FiCheckCircle className="w-6 h-6" />
+                  {/* Action Taken */}
+                  <div
+                    className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out"
+                    data-aos="zoom-in"
+                    data-aos-delay="400"
+                  >
+                    <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
+                      <FiCheckCircle className="w-7 h-7 text-white" />
                     </div>
-                    <div>
-                      <p className="font-medium">Action Taken</p>
+                    <div className="overflow-hidden max-w-full">
+                      <p className="font-semibold text-white">Action Taken</p>
                       <p className="text-sm opacity-80">
                         We implement improvements based on feedback
                       </p>
@@ -526,7 +585,7 @@ const FeedbackPage = () => {
                   </div>
                 </div>
               </div>
-              </div>
+            </div>
 
             <div className="md:w-3/5 p-10">
               <div className="text-center mb-8">
@@ -615,8 +674,16 @@ const FeedbackPage = () => {
                         exit={{ opacity: 0, height: 0 }}
                         className="text-red-500 dark:text-red-400 text-xs mt-2 ml-1 flex items-center gap-1"
                       >
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        <svg
+                          className="w-3 h-3"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                         {errors.message}
                       </motion.p>
