@@ -322,7 +322,7 @@ const scrolledClasses = "bg-white/80 backdrop-blur-lg border-b border-gray-200/8
           </Link>
 
           {/* Centered nav links */}
-          <div className="hidden lg:flex absolute left-1/2 transform -translate-x-1/2 space-x-8 z-10">
+          <div className="hidden xl:flex absolute left-1/2 transform -translate-x-1/2 space-x-6 z-10">
             {navItems.map((item) => {
               const isActive = item.href
                 ? location.pathname === item.href
@@ -397,7 +397,7 @@ const scrolledClasses = "bg-white/80 backdrop-blur-lg border-b border-gray-200/8
           </div>
 
           {/* Right Group: Auth Controls and Mobile Toggle */}
-          <div className="hidden lg:flex items-center ml-auto z-20">
+          <div className="hidden xl:flex items-center ml-auto z-20">
             <ThemeToggleButton />
             <div className="flex items-center space-x-2 ml-2">
               {isAuthenticated() ? (
@@ -527,7 +527,7 @@ const scrolledClasses = "bg-white/80 backdrop-blur-lg border-b border-gray-200/8
               )}
             </div>
           </div>
-          <div className="lg:hidden ml-auto">
+          <div className="xl:hidden ml-auto">
             <button
               ref={toggleBtnRef}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
