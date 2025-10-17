@@ -6,8 +6,6 @@ import {
   FiChevronDown,
   FiChevronUp,
   FiInfo,
-} from "react-icons/fi";
-import {
   FiFile,
   FiLock,
   FiCode,
@@ -16,14 +14,15 @@ import {
   FiCheckCircle,
   FiServer,
   FiClipboard,
+  FiGitBranch,
+  FiGithub,
+  FiArrowRightCircle,
 } from "react-icons/fi";
-import { FiGitBranch } from "react-icons/fi";
-import { FiGithub, FiArrowRightCircle } from "react-icons/fi";
 import {
   HelpCircle,
   GitBranch,
   GitPullRequest,
-  FileText,
+  FileText as LucideFileText, 
   Users,
 } from "lucide-react";
 
@@ -73,7 +72,7 @@ const ContributorGuide = () => {
         "A pull request is a way to propose your changes and request that they be reviewed and merged into the main project.",
     },
     {
-      icon: <FileText className="w-5 h-5 text-purple-500" />,
+      icon: <LucideFileText className="w-5 h-5 text-purple-500" />,
       question: "How should I name branches?",
       answer:
         "Use descriptive names like 'feature/login' or 'fix/header-bug' to indicate the purpose of the branch clearly.",
@@ -97,7 +96,7 @@ const ContributorGuide = () => {
         "Not at all! Beginners are welcome — open-source is a great way to learn and grow your skills.",
     },
     {
-      icon: <FileText className="w-5 h-5 text-indigo-500" />,
+      icon: <LucideFileText className="w-5 h-5 text-indigo-500" />,
       question: "How do I report a bug?",
       answer:
         "You can report bugs by creating a new issue in the repository. Be sure to include steps to reproduce the problem and screenshots if possible.",
@@ -170,12 +169,10 @@ const ContributorGuide = () => {
   };
 
   return (
-    // UPDATED: Main page background
-    <div className="bg-gray-50 dark:bg-black min-h-screen px-4 sm:px-6 lg:px-8 py-10 w-full max-w-[95%] md:max-w-6xl mx-auto space-y-12 overflow-x-hidden">
+    <div className="bg-gray-50 dark:bg-black min-h-screen px-4 sm:px-6 lg:px-12 py-12 max-w-6xl mx-auto space-y-16">
       {/* Page Heading */}
       <div className="text-center mb-12">
-        {/* UPDATED: Text colors */}
-        <h1 className="text-5xl font-bold text-indigo-900 dark:text-gray-100 mb-4">
+        <h1 className="text-4xl md:text-5xl font-bold text-indigo-900 dark:text-gray-100 mb-4">
           Welcome to Eventra Contributions!
         </h1>
         <p className="text-gray-700 dark:text-gray-300 text-base max-w-3xl mx-auto">
@@ -186,10 +183,8 @@ const ContributorGuide = () => {
       </div>
 
       {/* Step-by-Step Contribution Section */}
-      {/* UPDATED: Section card background */}
-      <div className="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-md">
-        {/* UPDATED: Title text */}
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8 mt-8 text-center">
+      <div className="bg-white dark:bg-gray-900 p-6 md:p-8 rounded-xl shadow-md">
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8 mt-8 text-center">
           Step-by-Step Contribution Journey
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -203,7 +198,7 @@ const ContributorGuide = () => {
               className="border-l-4 border-indigo-500 dark:border-indigo-400 p-4 bg-gray-200 dark:bg-gray-800 rounded shadow-sm"
             >
               <div className="flex items-center mb-2">
-                <FiInfo className="text-indigo-500 dark:text-indigo-400 mr-2" />
+                <FiInfo className="text-indigo-500 dark:text-indigo-400 mr-2 flex-shrink-0" />
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                   {type.title}
                 </h3>
@@ -220,100 +215,98 @@ const ContributorGuide = () => {
       </div>
 
       {/* Important Files Section */}
-      <div className="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-md">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center flex items-center justify-center gap-3">
+      <div className="bg-white dark:bg-gray-900 p-6 md:p-8 rounded-xl shadow-md">
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center flex items-center justify-center gap-3">
           <FiFile className="text-indigo-500 dark:text-indigo-400" size={32} />
           Important Files in This Project
         </h2>
         <div className="overflow-x-auto">
-          {/* UPDATED: Table styles */}
           <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
             <thead className="bg-indigo-50 dark:bg-gray-800/50">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
+                <th className="px-4 sm:px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
                   File
                 </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
+                <th className="px-4 sm:px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Purpose
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-300 dark:divide-gray-600">
-              {/* Table rows will have updated text and hover colors */}
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-6 py-4 flex items-center gap-2 font-mono text-indigo-500 dark:text-indigo-400">
+                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-indigo-500 dark:text-indigo-400">
                   <FiLock /> .env
                 </td>
-                <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
+                <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
                   Stores environment variables like API keys. Do not commit this
                   file.
                 </td>
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
+                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
                   <FiLock /> .env.example
                 </td>
-                <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
+                <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
                   Example environment file. Use it as a template to create your
                   own .env file.
                 </td>
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
+                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
                   <FiCode /> .gitignore
                 </td>
-                <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
+                <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
                   Lists files/folders to ignore in Git commits, like
                   node_modules or .env.
                 </td>
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
+                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
                   <FiFileText /> LICENSE
                 </td>
-                <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
+                <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
                   Contains the license details for the project.
                 </td>
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
+                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
                   <FiClipboard /> README.md
                 </td>
-                <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
+                <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
                   Main documentation for the project. Explains setup, usage, and
                   contribution guide.
                 </td>
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
+                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
                   <FiPackage /> package.json
                 </td>
-                <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
+                <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
                   Contains project metadata, scripts, and dependencies.
                 </td>
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
+                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
                   <FiCheckCircle /> package-lock.json
                 </td>
-                <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
+                <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
                   Locks dependency versions for consistent installs across
                   environments.
                 </td>
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
+                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
                   <FiServer /> vercel.json
                 </td>
-                <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
+                <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
                   Configuration file for deployment on Vercel.
                 </td>
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
+                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
                   <FiFileText /> CODE_OF_CONDUCT.md
                 </td>
-                <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
+                <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
                   Outlines expected behavior and guidelines for contributors.
                 </td>
               </tr>
@@ -323,18 +316,14 @@ const ContributorGuide = () => {
       </div>
 
       {/* Issue & PR Workflow Section */}
-      {/* UPDATED: Section card background */}
-      <div className="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-md mt-10">
-        {/* UPDATED: Title text and icon color */}
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-10 text-center flex items-center justify-center gap-3">
+      <div className="bg-white dark:bg-gray-900 p-6 md:p-8 rounded-xl shadow-md mt-10">
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-10 text-center flex items-center justify-center gap-3">
           <FiGitBranch
             className="text-indigo-500 dark:text-indigo-400"
             size={32}
           />
           Issue & PR Workflow
         </h2>
-
-        {/* Numbered Steps */}
         <div className="space-y-8">
           {[
             {
@@ -344,11 +333,14 @@ const ContributorGuide = () => {
               description: (
                 <>
                   Browse issues labeled{" "}
-                  <span className="font-mono text-indigo-500">
+                  <span className="font-mono text-indigo-500 bg-indigo-100 dark:bg-indigo-900/50 px-1 rounded">
                     good-first-issue
                   </span>{" "}
-                  or <span className="font-mono text-indigo-500">bug</span>.
-                  Choose one you can work on.
+                  or{" "}
+                  <span className="font-mono text-indigo-500 bg-indigo-100 dark:bg-indigo-900/50 px-1 rounded">
+                    bug
+                  </span>
+                  . Choose one you can work on.
                 </>
               ),
             },
@@ -359,11 +351,11 @@ const ContributorGuide = () => {
               description: (
                 <>
                   Use descriptive branch names like{" "}
-                  <span className="font-mono text-indigo-500">
+                  <span className="font-mono text-indigo-500 bg-indigo-100 dark:bg-indigo-900/50 px-1 rounded">
                     feature/add-login
                   </span>{" "}
                   or{" "}
-                  <span className="font-mono text-indigo-500">
+                  <span className="font-mono text-indigo-500 bg-indigo-100 dark:bg-indigo-900/50 px-1 rounded">
                     fix/navbar-bug
                   </span>
                   .
@@ -378,7 +370,7 @@ const ContributorGuide = () => {
                 <>
                   Make your code changes locally. Commit with clear messages
                   like{" "}
-                  <span className="font-mono text-indigo-500">
+                  <span className="font-mono text-indigo-500 bg-indigo-100 dark:bg-indigo-900/50 px-1 rounded">
                     Add login form component
                   </span>
                   .
@@ -396,19 +388,19 @@ const ContributorGuide = () => {
                 </>
               ),
               code: `### Description
-Explain what your PR does.
+              Explain what your PR does.
 
-### Type of Change
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Documentation update
+              ### Type of Change
+              - [ ] Bug fix
+              - [ ] New feature
+              - [ ] Documentation update
 
-### Checklist
-- [ ] I have tested my changes
-- [ ] I have updated documentation if needed
+              ### Checklist
+              - [ ] I have tested my changes
+              - [ ] I have updated documentation if needed
 
-### Related Issue
-Closes #<issue_number>`,
+              ### Related Issue
+              Closes #<issue_number>`,
             },
           ].map((item, idx) => (
             <motion.div
@@ -425,7 +417,6 @@ Closes #<issue_number>`,
                 </div>
               </div>
               <div className="flex-1">
-                {/* UPDATED: Text colors */}
                 <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-2">
                   {item.icon} {item.title}
                 </h3>
@@ -433,9 +424,8 @@ Closes #<issue_number>`,
                   {item.description}
                 </p>
                 {item.code && (
-                  // UPDATED: Code block styles
-                  <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 font-mono text-sm text-gray-800 dark:text-gray-200 overflow-x-auto">
-                    <pre>{item.code}</pre>
+                  <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 font-mono text-sm text-gray-800 dark:text-gray-200">
+                    <pre className="whitespace-pre-wrap break-all">{item.code}</pre>
                   </div>
                 )}
               </div>
@@ -443,44 +433,58 @@ Closes #<issue_number>`,
           ))}
         </div>
 
-        {/* Optional visual flowchart */}
-        <div className="mt-10 flex justify-center items-center gap-6 overflow-x-auto">
+        <div className="mt-10 flex flex-col md:flex-row justify-center items-center gap-4 md:gap-6">
           <div className="flex flex-col items-center gap-2">
             <FiFileText
               className="text-indigo-500 dark:text-indigo-400"
               size={36}
             />
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center">
               Pick Issue
             </span>
           </div>
-          <div className="text-indigo-300 dark:text-gray-600 text-2xl">→</div>
+
+          <FiChevronDown className="text-indigo-300 dark:text-gray-600 text-2xl md:hidden" />
+          <div className="text-indigo-300 dark:text-gray-600 text-2xl hidden md:block">
+            →
+          </div>
+
           <div className="flex flex-col items-center gap-2">
             <FiGitBranch
               className="text-indigo-500 dark:text-indigo-400"
               size={36}
             />
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center">
               Create Branch
             </span>
           </div>
-          <div className="text-indigo-300 dark:text-gray-600 text-2xl">→</div>
+
+          <FiChevronDown className="text-indigo-300 dark:text-gray-600 text-2xl md:hidden" />
+          <div className="text-indigo-300 dark:text-gray-600 text-2xl hidden md:block">
+            →
+          </div>
+
           <div className="flex flex-col items-center gap-2">
             <FiCheckCircle
               className="text-indigo-500 dark:text-indigo-400"
               size={36}
             />
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center">
               Commit Changes
             </span>
           </div>
-          <div className="text-indigo-300 dark:text-gray-600 text-2xl">→</div>
+
+          <FiChevronDown className="text-indigo-300 dark:text-gray-600 text-2xl md:hidden" />
+          <div className="text-indigo-300 dark:text-gray-600 text-2xl hidden md:block">
+            →
+          </div>
+
           <div className="flex flex-col items-center gap-2">
             <FiArrowRightCircle
               className="text-indigo-500 dark:text-indigo-400"
               size={36}
             />
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center">
               Open PR
             </span>
           </div>
@@ -488,32 +492,27 @@ Closes #<issue_number>`,
       </div>
 
       {/* Git Commands Section */}
-      {/* UPDATED: Section card background */}
-      <div className="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-md">
-        {/* UPDATED: Title text */}
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+      <div className="bg-white dark:bg-gray-900 p-6 md:p-8 rounded-xl shadow-md">
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">
           Essential Git Commands
         </h2>
         <div className="space-y-4">
           {commands.map((c) => (
             <div
               key={c.id}
-              // UPDATED: Command item background and border
-              className="flex justify-between items-center bg-gray-100 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700"
+              className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-gray-100 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700"
             >
-              <div>
-                {/* UPDATED: Text colors */}
+              <div className="flex-grow">
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100">
                   {c.title}
                 </h3>
-                <pre className="bg-gray-200 dark:bg-gray-900/50 p-2 rounded mt-1 overflow-x-auto text-sm text-blue-600 dark:text-blue-400">
+                <pre className="inline-block bg-gray-200 dark:bg-gray-900/50 p-2 rounded mt-1 text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap break-all">
                   {c.cmd}
                 </pre>
               </div>
               <button
                 onClick={() => copyCommand(c.cmd, c.id)}
-                // UPDATED: Copy button styles
-                className="flex items-center gap-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 px-3 py-1 rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition"
+                className="flex items-center justify-center sm:justify-start gap-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 px-3 py-1.5 rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition self-start sm:self-center flex-shrink-0"
               >
                 {copied === c.id ? <FiCheck /> : <FiCopy />}
                 <span>{copied === c.id ? "Copied" : "Copy"}</span>
@@ -524,34 +523,30 @@ Closes #<issue_number>`,
       </div>
 
       {/* FAQ Section */}
-      <section className="bg-indigo-50 dark:bg-gray-900 p-8 rounded-2xl shadow-lg">
-        {/* Section Title */}
+      <section className="bg-indigo-50 dark:bg-gray-900 p-6 md:p-8 rounded-2xl shadow-lg">
         <motion.h2
           initial={{ opacity: 0, y: -20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="relative text-4xl font-extrabold tracking-tight 
-             text-transparent bg-clip-text 
-             bg-gradient-to-r from-blue-700 via-purple-700 to-cyan-400 
-             dark:from-blue-400 dark:via-purple-400 dark:to-cyan-400 
-             mb-10 text-center"
+          className="relative text-3xl md:text-4xl font-extrabold tracking-tight 
+           text-transparent bg-clip-text 
+           bg-gradient-to-r from-blue-700 via-purple-700 to-cyan-400 
+           dark:from-blue-400 dark:via-purple-400 dark:to-cyan-400 
+           mb-10 text-center"
         >
           Frequently Asked Questions
-          {/* Animated underline */}
           <motion.span
             initial={{ width: 0 }}
             animate={{ width: "60%" }}
             transition={{ duration: 0.8, delay: 0.3 }}
             className="absolute left-1/2 -translate-x-1/2 -bottom-2 h-1 rounded-full 
-               bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"
+             bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"
           />
         </motion.h2>
 
-        {/* FAQ List */}
         <div className="divide-y divide-gray-400 dark:divide-gray-700">
           {faqs.map((faq, index) => {
             const isOpen = expandedFAQ === index;
-
             return (
               <div key={index} className="py-3">
                 <button
@@ -589,14 +584,11 @@ Closes #<issue_number>`,
       </section>
 
       {/* Call to Action */}
-
       <div className="relative overflow-hidden rounded-xl p-10 shadow-xl text-center text-white bg-gradient-to-r from-black via-indigo-600 via-purple-600 to-pink-900">
-        {/* Decorative Icons */}
-        <FiArrowRightCircle className="absolute top-5 left-5 text-white/20 text-6xl rotate-12" />
-        <FiArrowRightCircle className="absolute bottom-5 right-5 text-white/20 text-6xl -rotate-12" />
+        <FiGithub className="absolute top-5 left-5 text-white/10 text-6xl rotate-12" />
+        <FiGithub className="absolute bottom-5 right-5 text-white/10 text-6xl -rotate-12" />
 
-        {/* Content */}
-        <h2 className="text-3xl font-bold mb-3 flex items-center justify-center gap-2">
+        <h2 className="text-2xl md:text-3xl font-bold mb-3 flex items-center justify-center gap-2">
           <FiArrowRightCircle /> Ready to Contribute?
         </h2>
         <p className="mb-6 text-white/90 text-lg">
