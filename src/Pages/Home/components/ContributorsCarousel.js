@@ -354,9 +354,7 @@ const Contributors = () => {
                       </span>
                     </div>
                     <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                      <span className="text-indigo-600 dark:text-indigo-400 font-bold">
-                        櫨
-                      </span>
+                      <FaCodeBranch className="text-indigo-600 dark:text-indigo-400 mb-1" />
                       <span className="font-semibold">{c.contributions}</span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">
                         Contribs

@@ -48,7 +48,8 @@ const GSSoCContribution = () => {
               Explore Issues
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Begin with <span className="font-medium">beginner-friendly tasks</span> to
+              Begin with{" "}
+              <span className="font-medium">beginner-friendly tasks</span> to
               get familiar with the project.
             </p>
           </motion.div>
