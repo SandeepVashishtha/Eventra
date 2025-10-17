@@ -102,6 +102,11 @@ const scrolledClasses = "bg-white/80 backdrop-blur-lg border-b border-gray-200/8
   };
 
   useEffect(() => {
+    const event = new CustomEvent("mobileMenuToggle", { detail: isMobileMenuOpen });
+    window.dispatchEvent(event);
+  }, [isMobileMenuOpen]);
+
+  useEffect(() => {
     if (isMobileMenuOpen) {
       const prevTop = window.scrollY || window.pageYOffset || 0;
       document.body.style.position = "fixed";
