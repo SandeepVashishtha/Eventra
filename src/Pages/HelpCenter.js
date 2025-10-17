@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
+import React, { useState, useEffect } from "react";
+import { motion, useAnimation } from "framer-motion";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 import {
   Search,
@@ -153,9 +153,18 @@ const faqs = [
 
 const HelpCenter = () => {
   const [expandedFAQ, setExpandedFAQ] = useState(null);
+  const controls = useAnimation();
+
   const toggleFAQ = (id) => {
     setExpandedFAQ(expandedFAQ === id ? null : id);
   };
+  useEffect(() => {
+    controls.start("show");
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }, [controls]);
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       {/* Hero Section */}
