@@ -22,7 +22,7 @@ import {
   HelpCircle,
   GitBranch,
   GitPullRequest,
-  FileText as LucideFileText, // Renamed to avoid conflict
+  FileText as LucideFileText, 
   Users,
 } from "lucide-react";
 
@@ -388,19 +388,19 @@ const ContributorGuide = () => {
                 </>
               ),
               code: `### Description
-Explain what your PR does.
+              Explain what your PR does.
 
-### Type of Change
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Documentation update
+              ### Type of Change
+              - [ ] Bug fix
+              - [ ] New feature
+              - [ ] Documentation update
 
-### Checklist
-- [ ] I have tested my changes
-- [ ] I have updated documentation if needed
+              ### Checklist
+              - [ ] I have tested my changes
+              - [ ] I have updated documentation if needed
 
-### Related Issue
-Closes #<issue_number>`,
+              ### Related Issue
+              Closes #<issue_number>`,
             },
           ].map((item, idx) => (
             <motion.div
@@ -506,7 +506,6 @@ Closes #<issue_number>`,
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100">
                   {c.title}
                 </h3>
-                {/* UPDATED: Added 'inline-block' to shrink background to text size */}
                 <pre className="inline-block bg-gray-200 dark:bg-gray-900/50 p-2 rounded mt-1 text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap break-all">
                   {c.cmd}
                 </pre>
