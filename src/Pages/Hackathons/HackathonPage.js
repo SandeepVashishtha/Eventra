@@ -5,9 +5,10 @@ import mockHackathons from "./hackathonMockData.json";
 import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
 import FeedbackButton from "../../components/FeedbackButton";
-import { FiCode, FiRotateCw, FiCompass } from "react-icons/fi";
+import { FiCode, FiRotateCw, FiCompass, FiChevronDown } from "react-icons/fi";
 import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
+import { createPortal } from "react-dom";
 
 // UPDATED: Skeleton Loader for dark mode
 const SkeletonCard = () => (
@@ -165,7 +166,118 @@ const HackathonHub = () => {
     });
   }, []);
 
-  
+  const CustomDropdown = ({
+  label,
+  value,
+  options,
+  onChange,
+  placeholder = "Select",
+}) => {
+  const [open, setOpen] = useState(false);
+  const [menuCoords, setMenuCoords] = useState({ top: 0, left: 0, width: 0 });
+
+  const buttonRef = useRef(null);
+  const dropdownRef = useRef(null);
+
+  const toggleOpen = () => {
+    if (!open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setMenuCoords({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+    setOpen((prev) => !prev);
+  };
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target) &&
+        !buttonRef.current.contains(event.target)
+      ) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Display text for selected value or placeholder
+  const displayText = value || placeholder;
+
+  return (
+    <div className="relative">
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        {label}
+      </label>
+
+      {/* Dropdown button */}
+      <div
+        ref={buttonRef}
+        className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"
+        onClick={toggleOpen}
+      >
+        <span
+          className={`text-gray-700 dark:text-gray-200 ${!value ? "text-gray-400" : ""}`}
+        >
+          {displayText}
+        </span>
+
+        <FiChevronDown className="text-gray-400 dark:text-gray-500" />
+      </div>
+
+      {/* Dropdown menu */}
+
+      {open &&
+        createPortal(
+          <ul
+            ref={dropdownRef}
+            className="z-[10000] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg"
+            style={{
+              position: "absolute",
+              top: menuCoords.top,
+              left: menuCoords.left,
+              width: menuCoords.width,
+            }}
+          >
+            {/* Placeholder to clear */}
+            <li
+              onClick={() => {
+                onChange("");
+                setOpen(false);
+              }}
+              className="px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+            >
+              {placeholder}
+            </li>
+
+            {/* Map options */}
+            {options.map((opt) => (
+              <li
+                key={opt}
+                className={`px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 ${
+                  opt === value
+                    ? "font-semibold bg-indigo-100 dark:bg-indigo-900"
+                    : ""
+                }`}
+                onClick={() => {
+                  onChange(opt);
+                  setOpen(false);
+                }}
+              >
+                {opt}
+              </li>
+            ))}
+          </ul>,
+          document.body,
+        )}
+    </div>
+  );
+};
 
   return (
     // UPDATED: Main page background
@@ -319,62 +431,29 @@ const HackathonHub = () => {
                 className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 mb-6 overflow-hidden shadow-[0_4px_12px_rgba(59,130,246,0.1)]"
               >
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    {/* UPDATED: Label and Select styles */}
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Difficulty
-                    </label>
-                    <select
-                      value={filters.difficulty}
-                      onChange={(e) =>
-                        setFilters({ ...filters, difficulty: e.target.value })
-                      }
-                      className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 py-3 px-4 pr-10 text-base font-medium text-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:outline-none transition-all duration-200"
-                    >
-                      <option value="">All Levels</option>
-                      {difficulties.map((level) => (
-                        <option key={level} value={level}>
-                          {level}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Prize Pool
-                    </label>
-                    <select
-                      value={filters.prize}
-                      onChange={(e) =>
-                        setFilters({ ...filters, prize: e.target.value })
-                      }
-                      className="w-full rounded-xl border border-gray-300 bg-white py-3 px-4 pr-10 text-base font-medium text-gray-700 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all duration-200"
-                    >
-                      <option value="">Any Prize</option>
-                      <option value="$">Under $1,000</option>
-                      <option value="1,000">$1,000 - $5,000</option>
-                      <option value="5,000">$5,000+</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Location
-                    </label>
-                    <select
-                      value={filters.location}
-                      onChange={(e) =>
-                        setFilters({ ...filters, location: e.target.value })
-                      }
-                      className="w-full rounded-xl border border-gray-300 bg-white py-3 px-4 pr-10 text-base font-medium text-gray-700 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all duration-200"
-                    >
-                      <option value="">All Locations</option>
-                      {locations.map((location) => (
-                        <option key={location} value={location}>
-                          {location}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <CustomDropdown
+                    label="Difficulty"
+                    value={filters.difficulty}
+                    options={difficulties}
+                    onChange={(val) => setFilters({ ...filters, difficulty: val })}
+                    placeholder="All Levels"
+                  />
+
+                  <CustomDropdown
+                    label="Prize Pool"
+                    value={filters.prize}
+                    options={["Under $1,000", "$1,000 - $5,000", "$5,000+"]}
+                    onChange={(val) => setFilters({ ...filters, prize: val })}
+                    placeholder="Any Prize"
+                  />
+
+                  <CustomDropdown
+                    label="Location"
+                    value={filters.location}
+                    options={locations}
+                    onChange={(val) => setFilters({ ...filters, location: val })}
+                    placeholder="All Locations"
+                  />
                 </div>
               </motion.div>
             )}

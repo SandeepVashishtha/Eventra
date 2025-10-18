@@ -10,6 +10,7 @@ import {
 import { Menu, Transition } from "@headlessui/react";
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
+import StyledDropdown from "../../components/StyledDropdown";
 
 // Repository constant — update if the leaderboard should point to another repo
 const GITHUB_REPO = "SandeepVashishtha/Eventra";
@@ -255,7 +256,7 @@ export default function LeaderBoard() {
         </div>
 
         {/* Search + Modern Dropdown */}
-        <div className="flex justify-center items-center mb-6 space-x-4">
+        <div className="flex justify-center items-end mb-6 space-x-4">
           <input
             type="text"
             value={search}
@@ -267,44 +268,18 @@ export default function LeaderBoard() {
             placeholder="Search contributors..."
             className="w-full max-w-xs px-4 py-2 border border-gray-300 dark:border-gray-800 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           />
-          <Menu as="div" className="relative inline-block text-left">
-            {/* UPDATED: Sort dropdown button */}
-            <Menu.Button className="inline-flex justify-center w-48 px-4 py-2 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400">
-              Sort by: {sortOptions.find((opt) => opt.value === sortBy)?.label}
-              <FaChevronDown className="ml-2 h-4 w-4" />
-            </Menu.Button>
-
-            <Transition
-              as={Fragment}
-              enter="transition ease-out duration-100"
-              enterFrom="transform opacity-0 scale-95"
-              enterTo="transform opacity-100 scale-100"
-              leave="transition ease-in duration-75"
-              leaveFrom="transform opacity-100 scale-100"
-              leaveTo="transform opacity-0 scale-95"
-            >
-              {/* UPDATED: Dropdown menu */}
-              <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700 rounded-md shadow-lg focus:outline-none z-50">
-                {sortOptions.map((option) => (
-                  <Menu.Item key={option.value}>
-                    {({ active }) => (
-                      <button
-                        onClick={() => setSortBy(option.value)}
-                        // Active state is fine, just need to update inactive text
-                        className={`${
-                          active
-                            ? "bg-indigo-500 text-white"
-                            : "text-gray-700 dark:text-gray-300"
-                        } group flex w-full items-center px-4 py-2 text-sm`}
-                      >
-                        {option.label}
-                      </button>
-                    )}
-                  </Menu.Item>
-                ))}
-              </Menu.Items>
-            </Transition>
-          </Menu>
+          <StyledDropdown
+            label="Sort by"
+            value={sortOptions.find((opt) => opt.value === sortBy)?.label || "Select Sort"}
+            options={sortOptions.map((opt) => opt.label)}
+            onChange={(value) => {
+              const selectedOption = sortOptions.find(
+                (opt) => opt.label === value
+              );
+              if (selectedOption) setSortBy(selectedOption.value);
+            }}
+            placeholder="Sort by"
+          />
         </div>
 
         {/* stats */}
