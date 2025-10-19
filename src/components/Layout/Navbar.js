@@ -27,24 +27,6 @@ import {
 import { RocketLaunchIcon } from "@heroicons/react/20/solid";
 
 const Navbar = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, []);
-
-const topClasses = "bg-gradient-to-r from-purple-100 via-white to-indigo-100 border-b border-indigo-100 dark:bg-gradient-to-r dark:from-gray-900 dark:via-indigo-950 dark:to-gray-900 dark:border-indigo-950";
-
-const scrolledClasses = "bg-white/80 backdrop-blur-lg border-b border-gray-200/80 dark:bg-gray-900/80 dark:border-slate-800";
- 
-
-
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -100,6 +82,11 @@ const scrolledClasses = "bg-white/80 backdrop-blur-lg border-b border-gray-200/8
       /* ignore */
     }
   };
+
+  useEffect(() => {
+    const event = new CustomEvent("mobileMenuToggle", { detail: isMobileMenuOpen });
+    window.dispatchEvent(event);
+  }, [isMobileMenuOpen]);
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -289,11 +276,9 @@ const scrolledClasses = "bg-white/80 backdrop-blur-lg border-b border-gray-200/8
         data-aos-once="true"
         data-aos-duration="1000"
         // End AOS Implementation
-
-        className={`fixed top-0 left-0 w-full z-40 shadow-lg transition-all duration-300 ease-in-out ${
-    isScrolled ? scrolledClasses : topClasses
-  }`}
-
+        className="fixed top-0 left-0 w-full z-40 shadow-lg 
+             bg-gradient-to-r from-purple-100/80 via-white to-indigo-100 backdrop-blur-lg border-b border-indigo-100
+             dark:bg-gradient-to-r dark:from-gray-900 dark:via-indigo-950 dark:to-gray-900 dark:border-indigo-950"
       >
         <div className="w-full flex items-center h-20 px-6 md:px-12 relative">
           {/* Logo on the left */}
@@ -322,7 +307,7 @@ const scrolledClasses = "bg-white/80 backdrop-blur-lg border-b border-gray-200/8
           </Link>
 
           {/* Centered nav links */}
-          <div className="hidden xl:flex absolute left-1/2 transform -translate-x-1/2 space-x-6 z-10">
+          <div className="hidden lg:flex absolute left-[48%] transform -translate-x-1/2 space-x-5 z-10">
             {navItems.map((item) => {
               const isActive = item.href
                 ? location.pathname === item.href
@@ -337,7 +322,7 @@ const scrolledClasses = "bg-white/80 backdrop-blur-lg border-b border-gray-200/8
                           openDropdown === item.name ? null : item.name
                         );
                       }}
-                      className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${
+                      className={`flex items-center gap-1 text-base font-medium transition-colors ${
                         isActive || openDropdown === item.name
                           ? "text-indigo-600 dark:text-white"
                           : "text-gray-600 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-white"
@@ -362,7 +347,7 @@ const scrolledClasses = "bg-white/80 backdrop-blur-lg border-b border-gray-200/8
                             key={sub.name}
                             to={sub.href}
                             onClick={() => setOpenDropdown(null)}
-                            className={`group flex items-center gap-3 w-full px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                            className={`group flex items-center gap-3 w-full px-3 py-2 text-base font-medium rounded-md transition-colors ${
                               location.pathname === sub.href
                                 ? "bg-black/5 dark:bg-white/10 text-indigo-600 dark:text-white"
                                 : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
@@ -384,7 +369,7 @@ const scrolledClasses = "bg-white/80 backdrop-blur-lg border-b border-gray-200/8
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`text-sm font-medium transition-colors ${
+                  className={`text-base font-medium transition-colors ${
                     isActive
                       ? "text-indigo-600 dark:text-white"
                       : "text-gray-600 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-white"
@@ -397,7 +382,7 @@ const scrolledClasses = "bg-white/80 backdrop-blur-lg border-b border-gray-200/8
           </div>
 
           {/* Right Group: Auth Controls and Mobile Toggle */}
-          <div className="hidden xl:flex items-center ml-auto z-20">
+          <div className="hidden lg:flex items-center ml-auto z-20">
             <ThemeToggleButton />
             <div className="flex items-center space-x-2 ml-2">
               {isAuthenticated() ? (
@@ -513,7 +498,7 @@ const scrolledClasses = "bg-white/80 backdrop-blur-lg border-b border-gray-200/8
                 <div className="flex items-center space-x-1">
                   <Link
                     to="/login"
-                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-white transition-colors"
+                    className="px-4 py-2 text-base font-medium text-gray-600 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-white transition-colors"
                   >
                     Sign In
                   </Link>
@@ -527,7 +512,7 @@ const scrolledClasses = "bg-white/80 backdrop-blur-lg border-b border-gray-200/8
               )}
             </div>
           </div>
-          <div className="xl:hidden ml-auto">
+          <div className="lg:hidden ml-auto">
             <button
               ref={toggleBtnRef}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -611,7 +596,7 @@ const scrolledClasses = "bg-white/80 backdrop-blur-lg border-b border-gray-200/8
                         openDropdown === item.name ? null : item.name
                       )
                     }
-                    className={`flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors text-left font-medium ${
+                    className={`flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors text-left text-lg font-medium ${
                       isActive
                         ? "bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/20 text-indigo-600 dark:text-white"
                         : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
@@ -635,7 +620,7 @@ const scrolledClasses = "bg-white/80 backdrop-blur-lg border-b border-gray-200/8
                             key={sub.name}
                             to={sub.href}
                             onClick={closeAllMenus}
-                            className={`flex items-center gap-3 px-4 py-2 rounded-md font-medium ${
+                            className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium ${
                               isSubActive
                                 ? "bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/20 text-indigo-600 dark:text-white"
                                 : "text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-white"
@@ -656,7 +641,7 @@ const scrolledClasses = "bg-white/80 backdrop-blur-lg border-b border-gray-200/8
                 key={item.name}
                 to={item.href}
                 onClick={closeAllMenus}
-                className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors font-medium ${
+                className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors text-lg font-medium ${
                   isActive
                     ? "bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/20 text-indigo-600 dark:text-white"
                     : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
@@ -698,7 +683,7 @@ const scrolledClasses = "bg-white/80 backdrop-blur-lg border-b border-gray-200/8
               <Link
                 to="/dashboard"
                 onClick={closeAllMenus}
-                className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors font-medium ${
+                className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors text-lg font-medium ${
                   location.pathname === "/dashboard"
                     ? "bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/20 text-indigo-600 dark:text-white"
                     : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
@@ -710,7 +695,7 @@ const scrolledClasses = "bg-white/80 backdrop-blur-lg border-b border-gray-200/8
               <Link
                 to="/profile"
                 onClick={closeAllMenus}
-                className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors font-medium ${
+                className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors text-lg font-medium ${
                   location.pathname === "/profile"
                     ? "bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/20 text-indigo-600 dark:text-white"
                     : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"

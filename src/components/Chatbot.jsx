@@ -212,6 +212,14 @@ const Chatbot = () => {
   { label: "Get Help", query: "I need help with something", route: "/contact" },
 ];
 
+const [hideChatbot, setHideChatbot] = useState(false);
+
+  useEffect(() => {
+    const handleToggle = (e) => setHideChatbot(e.detail);
+    window.addEventListener("mobileMenuToggle", handleToggle);
+    return () => window.removeEventListener("mobileMenuToggle", handleToggle);
+  }, []);
+
   const QuickActionsMenu = ({ quickActions, onActionClick }) => (
   <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 border border-gray-200 dark:border-gray-700">
     <div className="flex items-center justify-between mb-2">
@@ -250,7 +258,7 @@ const Chatbot = () => {
     <>
       {/* Floating Chat Button */}
       <AnimatePresence>
-        {!isOpen && (
+        {!isOpen && !hideChatbot && (
           <motion.button
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -292,7 +300,7 @@ const Chatbot = () => {
 
       {/* Chat Window */}
       <AnimatePresence>
-        {(isOpen || isAnimating) && (
+        {(isOpen || isAnimating) && !hideChatbot && (
           <motion.div
             data-chatbot-open={isOpen}
             initial={{ opacity: 0, y: 100, scale: 0.9 }}
