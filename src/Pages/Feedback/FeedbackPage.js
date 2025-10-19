@@ -11,6 +11,9 @@ import { FaGithub, FaLinkedin, FaDiscord } from "react-icons/fa";
 import { FiChevronDown } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import "./FeedbackPage.css";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 
 //Social media links
 const socialLinks = [
@@ -21,7 +24,6 @@ const socialLinks = [
         X
       </span>
     ),
-    // icon: <FaTwitter className="w-5 h-5" />,
     href: "https://twitter.com",
   },
   {
@@ -40,61 +42,6 @@ const socialLinks = [
     href: "https://discord.gg/",
   },
 ];
-
-// Toast Component
-const Toast = ({ message, type = "success", onClose }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 50, scale: 0.3 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
-      className={`fixed bottom-4 right-4 max-w-sm w-full shadow-lg rounded-lg pointer-events-auto overflow-hidden ${
-        type === "success" ? "bg-green-500" : "bg-red-500"
-      }`}
-    >
-      <div className="p-4">
-        <div className="flex items-start">
-          <div className="flex-shrink-0">
-            {type === "success" ? (
-              <FiCheckCircle className="h-6 w-6 text-white" />
-            ) : (
-              <svg
-                className="h-6 w-6 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            )}
-          </div>
-          <div className="ml-3 w-0 flex-1 pt-0.5">
-            <p className="text-sm font-medium text-white">{message}</p>
-          </div>
-          <div className="ml-4 flex-shrink-0 flex">
-            <button
-              onClick={onClose}
-              className="bg-transparent inline-flex text-white hover:text-gray-200 focus:outline-none"
-            >
-              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path
-                  fillRule="evenodd"
-                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
 
 // Star Rating Component
 const StarRating = ({ rating, onRatingChange, error }) => {
@@ -119,7 +66,7 @@ const StarRating = ({ rating, onRatingChange, error }) => {
         initial={false}
         animate={{ opacity: 1 }}
       >
-        Overall Rating *
+        Overall Rating <span className="text-red-500">*</span>
       </motion.label>
       <div className="flex items-center space-x-1">
         {[1, 2, 3, 4, 5].map((star) => (
@@ -252,8 +199,8 @@ const FloatingInput = ({
   );
 };
 
-// Floating Label Select Component
-const FloatingSelect = ({
+// Custom Floating Label Select Component
+const CustomFloatingSelect = ({
   id,
   label,
   value,
@@ -263,58 +210,99 @@ const FloatingSelect = ({
   error,
   icon: Icon,
 }) => {
-  const [isFocused, setIsFocused] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
   const hasValue = value && value.length > 0;
+  const selectedLabel = options.find((opt) => opt.value === value)?.label;
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dropdownRef]);
+
+  const handleSelect = (optionValue) => {
+    onChange(id, optionValue);
+    setIsOpen(false);
+  };
 
   return (
-    <div className="relative mt-6">
+    <div className="relative mt-6" ref={dropdownRef}>
       <div className="relative">
         {Icon && (
+          // FIXED: Lowered icon z-index
           <Icon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5 z-10" />
         )}
-        <select
+        <button
+          type="button"
           id={id}
-          name={id}
-          value={value}
-          onChange={onChange}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          className={`w-full px-4 pt-6 pb-2 border-2 rounded-xl focus:ring-4 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 appearance-none transition-all duration-300 ${
+          onClick={() => setIsOpen(!isOpen)}
+          className={`w-full text-left px-4 pt-6 pb-2 border-2 rounded-xl focus:ring-4 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-all duration-300 ${
             Icon ? "pl-14 pr-12" : "pr-12"
           } ${
             error
               ? "border-red-500 focus:border-red-500 focus:ring-red-100 dark:focus:ring-red-900/30"
-              : isFocused
+              : isOpen
               ? "border-indigo-500 dark:border-indigo-400 focus:ring-indigo-100 dark:focus:ring-indigo-900/30"
               : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
           }`}
         >
-          <option value="" disabled></option>
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          {/* FIXED: Use non-breaking space to prevent collapse */}
+          {selectedLabel || "\u00A0"}
+        </button>
         <label
           htmlFor={id}
           className={`absolute ${
             Icon ? "left-14" : "left-4"
           } pointer-events-none transition-all duration-200 ease-out ${
-            isFocused || hasValue
+            isOpen || hasValue
               ? "top-2 text-xs font-medium"
               : "top-1/2 -translate-y-1/2 text-sm"
           } ${
             error
               ? "text-red-500 dark:text-red-400"
-              : isFocused
+              : isOpen
               ? "text-indigo-600 dark:text-indigo-400"
               : "text-gray-500 dark:text-gray-400"
           }`}
         >
-          {label} {required && <span>*</span>}
+          {label} {required && <span className="text-red-500">*</span>}
         </label>
-        <FiChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500 pointer-events-none" />
+        <FiChevronDown
+          className={`absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500 pointer-events-none transition-transform duration-300 ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        />
+        <AnimatePresence>
+          {isOpen && (
+            <motion.ul
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              // FIXED: Increased z-index to ensure dropdown is on top of the icon
+              className="absolute z-30 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-auto"
+            >
+              {options.map((option) => (
+                <li
+                  key={option.value}
+                  onClick={() => handleSelect(option.value)}
+                  className="px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100"
+                >
+                  {option.label}
+                </li>
+              ))}
+            </motion.ul>
+          )}
+        </AnimatePresence>
       </div>
       <AnimatePresence>
         {error && (
@@ -352,7 +340,6 @@ const FeedbackPage = () => {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [toast, setToast] = useState(null);
   const formRef = useRef(null);
 
   const feedbackTypes = [
@@ -365,7 +352,6 @@ const FeedbackPage = () => {
     { value: "other", label: "Other" },
   ];
 
-  // Scroll to top when component mounts
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -373,24 +359,30 @@ const FeedbackPage = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    // Name is optional, but if provided, it should not be empty
-    if (formData.name.trim() && formData.name.trim().length < 2) {
-      newErrors.name = "Name should be at least 2 characters";
+    if (!formData.name.trim()) {
+      newErrors.name = "Name is required";
+    } else if (formData.name.trim().length < 3) {
+      newErrors.name = "Name must be at least 3 characters";
     }
 
-    // Email is optional, but if provided, it should be valid
-    if (
-      formData.email.trim() &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
-    ) {
-      newErrors.email = "Please enter a valid email";
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
     }
 
-    // feedbackType and rating are optional; only message is required
+    if (!formData.feedbackType) {
+      newErrors.feedbackType = "Please select a feedback type";
+    }
+
     if (!formData.message.trim()) {
       newErrors.message = "Message is required";
     } else if (formData.message.trim().length < 10) {
-      newErrors.message = "Message should be at least 10 characters";
+      newErrors.message = "Message must be at least 10 characters";
+    }
+
+    if (formData.rating === 0) {
+      newErrors.rating = "Please provide a rating";
     }
 
     setErrors(newErrors);
@@ -399,32 +391,23 @@ const FeedbackPage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    // Clear error when user starts typing
+    setFormData((prev) => ({ ...prev, [name]: value, }));
     if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const handleSelectChange = (name, value) => {
+    setFormData((prev) => ({ ...prev, [name]: value, }));
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
   const handleRatingChange = (rating) => {
-    setFormData((prev) => ({
-      ...prev,
-      rating,
-    }));
-
-    // Clear rating error when user selects a rating
+    setFormData((prev) => ({ ...prev, rating, }));
     if (errors.rating) {
-      setErrors((prev) => ({
-        ...prev,
-        rating: "",
-      }));
+      setErrors((prev) => ({ ...prev, rating: "" }));
     }
   };
 
@@ -432,7 +415,6 @@ const FeedbackPage = () => {
     e.preventDefault();
 
     if (!validateForm()) {
-      // Shake animation for invalid form
       formRef.current.classList.add("animate-shake");
       setTimeout(() => {
         formRef.current.classList.remove("animate-shake");
@@ -442,35 +424,29 @@ const FeedbackPage = () => {
 
     setIsSubmitting(true);
 
-    // Simulate API call
     try {
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Save locally in localStorage
       try {
         const existing = JSON.parse(
           localStorage.getItem("eventra_feedback") || "[]"
         );
         const payload = {
-          name: formData.name?.trim() || null,
-          email: formData.email?.trim() || null,
+          name: formData.name?.trim(),
+          email: formData.email?.trim(),
           message: formData.message?.trim(),
-          feedbackType: formData.feedbackType || null,
-          rating: formData.rating || null,
+          feedbackType: formData.feedbackType,
+          rating: formData.rating,
           submittedAt: new Date().toISOString(),
         };
         existing.push(payload);
         localStorage.setItem("eventra_feedback", JSON.stringify(existing));
-      } catch {}
+      } catch (err) {
+        console.error("Failed to save feedback to localStorage", err);
+      }
 
-      // Show success toast (might not be visible due to redirect)
-      setToast({
-        message:
-          "Thank you for your feedback! We appreciate your input and will review it carefully.",
-        type: "success",
-      });
+      toast.success("Thank you for your feedback! We’ve received your submission and will review it shortly");
 
-      // Reset form and redirect to homepage
       setFormData({
         name: "",
         email: "",
@@ -478,31 +454,23 @@ const FeedbackPage = () => {
         message: "",
         rating: 0,
       });
+      setErrors({});
 
-      navigate("/");
-    } catch (error) {
-      setToast({
-        message:
-          "There was an error submitting your feedback. Please try again.",
-        type: "error",
-      });
-    } finally {
-      setIsSubmitting(false);
-
-      // Auto-close toast after 5 seconds
       setTimeout(() => {
-        setToast(null);
-      }, 5000);
+        navigate("/");
+      }, 3000);
+    } catch (error) {
+      toast.error("There was an error submitting your feedback. Please try again.");
+      setIsSubmitting(false);
     }
   };
 
   return (
-    // UPDATED: Main page background
     <div
       className="min-h-screen bg-white dark:bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
-          navigate("/"); // Closes the form when clicking outside
+          navigate("/");
         }
       }}
     >
@@ -511,7 +479,6 @@ const FeedbackPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          // UPDATED: Card background and border
           className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
         >
           <div className="md:flex">
@@ -529,54 +496,34 @@ const FeedbackPage = () => {
                   Your feedback helps us improve Eventra and create better
                   experiences for our community. We value your input!
                 </p>
-
                 <div className="space-y-6">
-                  {/* Quick Response */}
-                  <div
-                    className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out"
-                    data-aos="zoom-in"
-                    data-aos-delay="200"
-                  >
+                  <div className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out">
                     <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
                       <FiMessageSquare className="w-7 h-7 text-white" />
                     </div>
-                    <div className="overflow-hidden max-w-full">
+                    <div>
                       <p className="font-semibold text-white">Quick Response</p>
                       <p className="text-sm opacity-80">
                         We review all feedback within 24 hours
                       </p>
                     </div>
                   </div>
-
-                  {/* Anonymous Option */}
-                  <div
-                    className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out"
-                    data-aos="zoom-in"
-                    data-aos-delay="300"
-                  >
+                  <div className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out">
                     <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
                       <FiStar className="w-7 h-7 text-white" />
                     </div>
-                    <div className="overflow-hidden max-w-full">
-                      <p className="font-semibold text-white">
-                        Anonymous Option
-                      </p>
+                    <div>
+                      <p className="font-semibold text-white">Anonymous Option</p>
                       <p className="text-sm opacity-80">
                         Share feedback anonymously if preferred
                       </p>
                     </div>
                   </div>
-
-                  {/* Action Taken */}
-                  <div
-                    className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out"
-                    data-aos="zoom-in"
-                    data-aos-delay="400"
-                  >
+                  <div className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out">
                     <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
                       <FiCheckCircle className="w-7 h-7 text-white" />
                     </div>
-                    <div className="overflow-hidden max-w-full">
+                    <div>
                       <p className="font-semibold text-white">Action Taken</p>
                       <p className="text-sm opacity-80">
                         We implement improvements based on feedback
@@ -589,7 +536,6 @@ const FeedbackPage = () => {
 
             <div className="md:w-3/5 p-10">
               <div className="text-center mb-8">
-                {/* UPDATED: Text colors */}
                 <h2 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100">
                   We'd Love to Hear From You
                 </h2>
@@ -598,7 +544,7 @@ const FeedbackPage = () => {
                 </p>
               </div>
 
-              <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+              <form ref={formRef} onSubmit={handleSubmit} noValidate>
                 <FloatingInput
                   id="name"
                   label="Your Name"
@@ -606,10 +552,8 @@ const FeedbackPage = () => {
                   onChange={handleChange}
                   error={errors.name}
                   icon={FiUser}
-                  required={false}
-                  placeholder="Enter your name"
+                  required={true}
                 />
-
                 <FloatingInput
                   id="email"
                   label="Email Address"
@@ -618,28 +562,25 @@ const FeedbackPage = () => {
                   onChange={handleChange}
                   error={errors.email}
                   icon={FiMail}
-                  required={false}
-                  placeholder="your@email.com"
+                  required={true}
                 />
-
-                <FloatingSelect
+                <CustomFloatingSelect
                   id="feedbackType"
                   label="Feedback Type"
                   value={formData.feedbackType}
-                  onChange={handleChange}
+                  onChange={handleSelectChange}
                   options={feedbackTypes}
                   error={errors.feedbackType}
                   icon={FiMessageSquare}
-                  placeholder="Select a feedback type"
+                  required={true}
                 />
-
-                {/* Textarea with floating label */}
                 <div className="relative mt-6">
                   <div className="relative">
                     <FiMessageSquare className="absolute left-4 top-4 text-gray-400 dark:text-gray-500 w-5 h-5 z-10" />
                     <textarea
                       id="message"
                       name="message"
+                      // REVERTED: Set rows back to original value
                       rows="4"
                       value={formData.message}
                       onChange={handleChange}
@@ -663,7 +604,7 @@ const FeedbackPage = () => {
                           : "text-gray-500 dark:text-gray-400"
                       }`}
                     >
-                      Your Message <span>*</span>
+                      Your Message <span className="text-red-500">*</span>
                     </label>
                   </div>
                   <AnimatePresence>
@@ -697,7 +638,7 @@ const FeedbackPage = () => {
                   error={errors.rating}
                 />
 
-                <div>
+                <div className="mt-6">
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
@@ -705,7 +646,7 @@ const FeedbackPage = () => {
                     disabled={isSubmitting}
                     className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-75 transition-all duration-300"
                   >
-                    {isSubmitting ? (
+                    {isSubmitting && (
                       <svg
                         className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
                         xmlns="http://www.w3.org/2000/svg"
@@ -726,7 +667,7 @@ const FeedbackPage = () => {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                    ) : null}
+                    )}
                     {isSubmitting ? "Submitting..." : "Submit Feedback"}
                   </motion.button>
                 </div>
@@ -736,37 +677,13 @@ const FeedbackPage = () => {
         </motion.div>
       </div>
 
-      <AnimatePresence>
-        {toast && (
-          <Toast
-            message={toast.message}
-            type={toast.type}
-            onClose={() => setToast(null)}
-          />
-        )}
-      </AnimatePresence>
 
       <style jsx>{`
         @keyframes shake {
-          0%,
-          100% {
-            transform: translateX(0);
-          }
-          10%,
-          30%,
-          50%,
-          70%,
-          90% {
-            transform: translateX(-5px);
-          }
-          20%,
-          40%,
-          60%,
-          80% {
-            transform: translateX(5px);
-          }
+          0%, 100% { transform: translateX(0); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+          20%, 40%, 60%, 80% { transform: translateX(5px); }
         }
-
         .animate-shake {
           animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
         }
