@@ -496,34 +496,54 @@ const FeedbackPage = () => {
                   Your feedback helps us improve Eventra and create better
                   experiences for our community. We value your input!
                 </p>
+
                 <div className="space-y-6">
-                  <div className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out">
+                  {/* Quick Response */}
+                  <div
+                    className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out"
+                    data-aos="zoom-in"
+                    data-aos-delay="200"
+                  >
                     <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
                       <FiMessageSquare className="w-7 h-7 text-white" />
                     </div>
-                    <div>
+                    <div className="overflow-hidden max-w-full">
                       <p className="font-semibold text-white">Quick Response</p>
                       <p className="text-sm opacity-80">
                         We review all feedback within 24 hours
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out">
+
+                  {/* Anonymous Option */}
+                  <div
+                    className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out"
+                    data-aos="zoom-in"
+                    data-aos-delay="300"
+                  >
                     <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
                       <FiStar className="w-7 h-7 text-white" />
                     </div>
-                    <div>
-                      <p className="font-semibold text-white">Anonymous Option</p>
+                    <div className="overflow-hidden max-w-full">
+                      <p className="font-semibold text-white">
+                        Anonymous Option
+                      </p>
                       <p className="text-sm opacity-80">
                         Share feedback anonymously if preferred
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out">
+
+                  {/* Action Taken */}
+                  <div
+                    className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out"
+                    data-aos="zoom-in"
+                    data-aos-delay="400"
+                  >
                     <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
                       <FiCheckCircle className="w-7 h-7 text-white" />
                     </div>
-                    <div>
+                    <div className="overflow-hidden max-w-full">
                       <p className="font-semibold text-white">Action Taken</p>
                       <p className="text-sm opacity-80">
                         We implement improvements based on feedback
