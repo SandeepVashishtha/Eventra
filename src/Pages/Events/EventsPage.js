@@ -8,6 +8,7 @@ import { Grid, List } from "lucide-react"; // icons for toggle view
 import FeedbackButton from "../../components/FeedbackButton"; // Feedback button component
 import EventCTA from "./EventCTA";
 import Fuse from "fuse.js";
+import StyledDropdown from "../../components/StyledDropdown";
 // -----------------------------
 // Main Events Page Component
 // -----------------------------
@@ -23,7 +24,7 @@ const EventsPage = () => {
   // State for storing the filtered + searched list of events
   const [filteredEvents, setFilteredEvents] = useState([]);
   // Sort type state
-  const [sortType, setSortType] = useState("newest");
+  const [sortType, setSortType] = useState("Newest");
   const cardSectionRef = useRef();
   // -----------------------------
   // Load events from mock JSON when component mounts
@@ -71,7 +72,7 @@ const EventsPage = () => {
   const handleSortChange = (type) => {
     setSortType(type);
     let sorted = [...filteredEvents];
-    if (type === "newest") {
+    if (type === "Newest") {
       sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
     } else if (type === "upcoming") {
       sorted.sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -165,20 +166,13 @@ const EventsPage = () => {
             {/* Sort Dropdown */}
             <div className="w-full sm:w-auto">
               <label htmlFor="sort-events" className="sr-only">Sort events</label>
-              <select
-                id="sort-events"
-                className="w-full sm:w-auto p-2 text-xs sm:text-sm rounded-3xl border border-gray-200 
-                dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 
-                focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                value={sortType}
-                onChange={e => handleSortChange(e.target.value)}
-                aria-label="Sort events"
-                data-aos="zoom-in"
-                data-aos-delay="300"
-              >
-                <option value="newest">Newest</option>
-                <option value="upcoming">Upcoming Soonest</option>
-              </select>
+                <StyledDropdown
+                  label=""
+                  value={sortType === "" ? "" : sortType}
+                  onChange={handleSortChange}
+                  options={["Newest", "Upcoming"]}
+                  placeholder="Sort by Date"
+                />
             </div>
 
             {/* Toggle View Buttons (Grid / List) */}
