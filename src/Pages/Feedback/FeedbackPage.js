@@ -239,7 +239,6 @@ const CustomFloatingSelect = ({
     <div className="relative mt-6" ref={dropdownRef}>
       <div className="relative">
         {Icon && (
-          // FIXED: Lowered icon z-index
           <Icon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5 z-10" />
         )}
         <button
@@ -256,7 +255,6 @@ const CustomFloatingSelect = ({
               : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
           }`}
         >
-          {/* FIXED: Use non-breaking space to prevent collapse */}
           {selectedLabel || "\u00A0"}
         </button>
         <label
@@ -288,7 +286,6 @@ const CustomFloatingSelect = ({
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              // FIXED: Increased z-index to ensure dropdown is on top of the icon
               className="absolute z-30 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-auto"
             >
               {options.map((option) => (
@@ -600,7 +597,6 @@ const FeedbackPage = () => {
                     <textarea
                       id="message"
                       name="message"
-                      // REVERTED: Set rows back to original value
                       rows="4"
                       value={formData.message}
                       onChange={handleChange}
