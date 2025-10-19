@@ -5,7 +5,7 @@ import mockHackathons from "./hackathonMockData.json";
 import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
 import FeedbackButton from "../../components/FeedbackButton";
-import { FiCode, FiRotateCw, FiCompass, FiChevronDown } from "react-icons/fi";
+import { FiCode, FiRotateCw, FiCompass, FiChevronDown, FiX } from "react-icons/fi";
 import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
@@ -30,6 +30,24 @@ const SkeletonCard = () => (
   </div>
 );
 
+// NEW: Tag component for selected tags in search bar
+const Tag = ({ tag, onRemove }) => (
+  <motion.div
+    initial={{ scale: 0.8, opacity: 0 }}
+    animate={{ scale: 1, opacity: 1 }}
+    exit={{ scale: 0.8, opacity: 0 }}
+    className="flex items-center gap-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-3 py-1 rounded-full text-sm font-medium"
+  >
+    <span>{tag}</span>
+    <button
+      onClick={() => onRemove(tag)}
+      className="hover:bg-indigo-200 dark:hover:bg-indigo-800 rounded-full p-0.5 transition-colors"
+    >
+      <FiX className="w-3 h-3" />
+    </button>
+  </motion.div>
+);
+
 const HackathonHub = () => {
   const [hackathons, setHackathons] = useState([]);
   const [activeTab, setActiveTab] = useState("all");
@@ -42,8 +60,14 @@ const HackathonHub = () => {
     location: "",
   });
   const [showFilters, setShowFilters] = useState(false);
-  const cardsSectionRef = useRef(null);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  
+  // NEW: State for selected tags
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [availableTags, setAvailableTags] = useState([]);
+
+  const cardsSectionRef = useRef(null);
+  const searchInputRef = useRef(null);
 
   // Simulate API call
   useEffect(() => {
@@ -54,9 +78,33 @@ const HackathonHub = () => {
 
     return () => clearTimeout(timer);
   }, []);
+// UPDATED: Extract available tags from hackathons - ADDED BLOCKCHAIN TAGS
+useEffect(() => {
+  if (hackathons.length > 0) {
+    const allTags = new Set();
+    hackathons.forEach(hackathon => {
+      if (hackathon.techStack && Array.isArray(hackathon.techStack)) {
+        hackathon.techStack.forEach(tag => {
+          // Replace "Any" with "Blockchain"
+          if (tag === "Any") {
+            allTags.add("Blockchain");
+          } else {
+            allTags.add(tag);
+          }
+        });
+      }
+    });
+    // ADD ONLY THESE 3 BLOCKCHAIN TAGS
+    allTags.add("Blockchain");
+    allTags.add("Solidity"); 
+    allTags.add("Ethereum");
+    
+    setAvailableTags(Array.from(allTags));
+  }
+}, [hackathons]);
 
   const scrollToCards = () => {
-    cardsSectionRef.current?.scrollIntoView({ behavior: "smooth" }); // scroll function
+    cardsSectionRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -64,13 +112,12 @@ const HackathonHub = () => {
       setIsScrollVisible(window.scrollY > 50); 
     };
     window.addEventListener("scroll", handleScroll);
-    handleScroll(); 
-    // Listen for chatbot state changes
+    handleScroll();
+    
     const handleChatbotState = () => {
       setIsChatbotOpen(document.querySelector('[data-chatbot-open]') !== null);
     };
     
-    // Check initially and set up observer
     handleChatbotState();
     const observer = new MutationObserver(handleChatbotState);
     observer.observe(document.body, { childList: true, subtree: true });
@@ -81,7 +128,7 @@ const HackathonHub = () => {
     };
   }, []);
 
-    const positionClass = `
+  const positionClass = `
     ${isScrollVisible ? "bottom-40" : "bottom-24"} 
     ${isChatbotOpen ? "left-6" : "right-6"}
   `;
@@ -109,15 +156,41 @@ const HackathonHub = () => {
     },
   };
 
+  // NEW: Handle tag selection
+  const handleTagSelect = (tag) => {
+    if (!selectedTags.includes(tag)) {
+      setSelectedTags([...selectedTags, tag]);
+    }
+    setSearchQuery("");
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  };
+
+  // NEW: Handle tag removal
+  const handleTagRemove = (tagToRemove) => {
+    setSelectedTags(selectedTags.filter(tag => tag !== tagToRemove));
+  };
+
+  // NEW: Handle backspace in search input
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Backspace' && searchQuery === '' && selectedTags.length > 0) {
+      // Remove the last tag when backspace is pressed on empty input
+      const lastTag = selectedTags[selectedTags.length - 1];
+      handleTagRemove(lastTag);
+    }
+  };
+
   const fuse = new Fuse(hackathons, {
     keys: ["title", "description", "location", "techStack"],
-    threshold: 0.4, // adjust sensitivity (0 = exact, 1 = loose)
+    threshold: 0.4,
   });
 
   const searchedHackathons = searchQuery
     ? fuse.search(searchQuery).map((result) => result.item)
     : hackathons;
 
+  // UPDATED: Filter hackathons based on selected tags
   const filteredHackathons = searchedHackathons
     .filter((hackathon) => {
       if (activeTab === "all") return true;
@@ -138,6 +211,13 @@ const HackathonHub = () => {
           .includes(filters.location.toLowerCase())
       )
         return false;
+      
+      // NEW: Filter by selected tags
+      if (selectedTags.length > 0) {
+        const hackathonTags = hackathon.techStack || [];
+        return selectedTags.some(tag => hackathonTags.includes(tag));
+      }
+      
       return true;
     });
 
@@ -145,7 +225,7 @@ const HackathonHub = () => {
     .filter((h) => h.featured)
     .slice(0, 3);
 
-  // Reset filters
+  // UPDATED: Reset filters and tags
   const resetFilters = () => {
     setFilters({
       difficulty: "",
@@ -153,6 +233,7 @@ const HackathonHub = () => {
       location: "",
     });
     setSearchQuery("");
+    setSelectedTags([]);
   };
 
   // Get unique values for filters
@@ -191,7 +272,6 @@ const HackathonHub = () => {
     setOpen((prev) => !prev);
   };
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -206,7 +286,6 @@ const HackathonHub = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Display text for selected value or placeholder
   const displayText = value || placeholder;
 
   return (
@@ -215,7 +294,6 @@ const HackathonHub = () => {
         {label}
       </label>
 
-      {/* Dropdown button */}
       <div
         ref={buttonRef}
         className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"
@@ -230,8 +308,6 @@ const HackathonHub = () => {
         <FiChevronDown className="text-gray-400 dark:text-gray-500" />
       </div>
 
-      {/* Dropdown menu */}
-
       {open &&
         createPortal(
           <ul
@@ -244,7 +320,6 @@ const HackathonHub = () => {
               width: menuCoords.width,
             }}
           >
-            {/* Placeholder to clear */}
             <li
               onClick={() => {
                 onChange("");
@@ -255,7 +330,6 @@ const HackathonHub = () => {
               {placeholder}
             </li>
 
-            {/* Map options */}
             {options.map((opt) => (
               <li
                 key={opt}
@@ -280,12 +354,10 @@ const HackathonHub = () => {
 };
 
   return (
-    // UPDATED: Main page background
     <div className="overflow-x-hidden bg-gradient-to-l from-indigo-200 to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 py-6">
       {/* Floating Action Button */}
       <motion.div
         className={`fixed z-50  ${positionClass}`}
-
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
@@ -310,16 +382,26 @@ const HackathonHub = () => {
           </svg>
         </Link>
       </motion.div>
-      {/* Hero Section */}
+      
+      {/* FIXED: Hero Section with filteredCount prop */}
       <HackathonHero
         hackathons={hackathons}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        scrollToCards={scrollToCards} // pass scroll function
+        scrollToCards={scrollToCards}
+        // ADD THIS LINE - THE FIX:
+        filteredCount={filteredHackathons.length}
+        // NEW: Pass tag-related props
+        selectedTags={selectedTags}
+        onTagRemove={handleTagRemove}
+        onSearchKeyDown={handleSearchKeyDown}
+        searchInputRef={searchInputRef}
+        availableTags={availableTags}
+        onTagSelect={handleTagSelect}
       />
 
       <motion.div
-        ref={cardsSectionRef} // attach ref
+        ref={cardsSectionRef}
         key={activeTab}
         className="grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
         variants={{
@@ -342,7 +424,6 @@ const HackathonHub = () => {
 
       {/* Featured Hackathons */}
       {!isLoading && featuredHackathons.length > 0 && (
-        // AOS Implementation
         <div
           className="bg-white dark:bg-black py-8 border-b border-gray-200 dark:border-gray-800"
           data-aos="fade-up"
@@ -350,7 +431,6 @@ const HackathonHub = () => {
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center mb-6">
-              {/* UPDATED: Text colors */}
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 Featured Hackathons
               </h2>
@@ -367,7 +447,6 @@ const HackathonHub = () => {
                   key={index}
                   hackathon={hackathon}
                   isFeatured={hackathon.featured}
-                  // AOS Implementation on individual cards
                   data-aos="zoom-in"
                   data-aos-delay={index * 150}
                 />
@@ -382,14 +461,12 @@ const HackathonHub = () => {
         {/* Search and Filters */}
         <div className="mb-8" data-aos="fade-up" data-aos-delay="200">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 mt-0">
-            {/* UPDATED: Text colors */}
             <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-0">
               All Hackathons
             </h2>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                // UPDATED: Button styles
                 className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 <svg
@@ -407,10 +484,9 @@ const HackathonHub = () => {
                 </svg>
                 {showFilters ? "Hide Filters" : "Show Filters"}
               </button>
-              {(filters.difficulty || filters.prize || filters.location) && (
+              {(filters.difficulty || filters.prize || filters.location || selectedTags.length > 0) && (
                 <button
                   onClick={resetFilters}
-                  // UPDATED: Link color
                   className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium"
                 >
                   Clear all filters
@@ -418,6 +494,22 @@ const HackathonHub = () => {
               )}
             </div>
           </div>
+
+          {/* UPDATED: Tags display */}
+          {selectedTags.length > 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-4 flex flex-wrap gap-2"
+            >
+              <span className="text-sm text-gray-600 dark:text-gray-400 mr-2">Selected tags:</span>
+              <AnimatePresence>
+                {selectedTags.map((tag) => (
+                  <Tag key={tag} tag={tag} onRemove={handleTagRemove} />
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          )}
 
           {/* Filters Panel */}
           <AnimatePresence>
@@ -427,7 +519,6 @@ const HackathonHub = () => {
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.3 }}
-                // UPDATED: Panel background and border
                 className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 mb-6 overflow-hidden shadow-[0_4px_12px_rgba(59,130,246,0.1)]"
               >
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -455,10 +546,35 @@ const HackathonHub = () => {
                     placeholder="All Locations"
                   />
                 </div>
+
+                {/* NEW: Available tags for selection - NOW INCLUDES BLOCKCHAIN */}
+                {availableTags.length > 0 && (
+                  <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                      Filter by Technology
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {availableTags.map((tag) => (
+                        <button
+                          key={tag}
+                          onClick={() => handleTagSelect(tag)}
+                          className={`px-3 py-1.5 text-sm rounded-full transition-all ${
+                            selectedTags.includes(tag)
+                              ? 'bg-indigo-600 text-white'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
         </div>
+
         {/* Tabs */}
         <motion.div
           className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0"
@@ -476,7 +592,6 @@ const HackathonHub = () => {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                // UPDATED: Inactive tab styles
                 className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-300 transform ${
                   activeTab === tab.key
                     ? "bg-gradient-to-r from-indigo-700 via-indigo-500 to-blue-600 text-white shadow-lg scale-105"
@@ -510,7 +625,6 @@ const HackathonHub = () => {
                 <HackathonCard
                   key={hackathon.id}
                   hackathon={hackathon}
-                  // AOS Implementation on individual cards
                   data-aos="flip-up"
                   data-aos-delay={index * 100}
                 />
@@ -518,16 +632,11 @@ const HackathonHub = () => {
             </motion.div>
           ) : (
             <motion.div
-              // Main container for "No Hackathons Found" card
-              // UPDATED: "No Hackathons Found" card styles
               className="relative overflow-hidden rounded-3xl p-10 text-center shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)] border border-gray-100 dark:border-gray-800 bg-gradient-to-br from-white via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-indigo-900/20 dark:to-purple-900/20"
-              initial={{ opacity: 0, y: 30, scale: 0.95 }} // Initial animation state
-              animate={{ opacity: 1, y: 0, scale: 1 }} // Animate to visible
-              transition={{ duration: 0.6, ease: "easeOut" }} // Animation timing
+              initial={{ opacity: 0, y: 30, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
             >
-              {/* ------------------------------ */}
-              {/* Smooth glowing background behind the card */}
-              {/* ------------------------------ */}
               <motion.div
                 className="absolute inset-0 -z-10 bg-gradient-to-tr from-indigo-200 via-purple-200 to-pink-200 dark:from-indigo-900/50 dark:via-purple-900/50 dark:to-pink-900/50 blur-3xl"
                 animate={{
@@ -542,12 +651,8 @@ const HackathonHub = () => {
                 }}
               />
 
-              {/* ------------------------------ */}
-              {/* Floating animated bubbles */}
-              {/* ------------------------------ */}
               <div className="absolute inset-0 z-0 overflow-hidden">
                 {[...Array(6)].map((_, i) => {
-                  // Predefined positions for bubbles to spread evenly
                   const positions = [
                     { left: "10%", top: "20%" },
                     { left: "70%", top: "15%" },
@@ -556,7 +661,6 @@ const HackathonHub = () => {
                     { left: "50%", top: "40%" },
                     { left: "20%", top: "50%" },
                   ];
-                  // Randomize size between 30-70px for visual variation
                   const size = 30 + Math.random() * 40;
 
                   return (
@@ -568,35 +672,29 @@ const HackathonHub = () => {
                         height: size,
                         left: positions[i].left,
                         top: positions[i].top,
-                        opacity: 0.3, // Slight transparency
+                        opacity: 0.3,
                       }}
                       animate={{
-                        y: [0, -30, 0], // Vertical floating animation
-                        x: [0, 10, -10, 0], // Horizontal swaying
-                        scale: [1, 1.2, 1], // Pulsing effect
+                        y: [0, -30, 0],
+                        x: [0, 10, -10, 0],
+                        scale: [1, 1.2, 1],
                       }}
                       transition={{
-                        duration: 6 + i, // Different speed for each bubble
+                        duration: 6 + i,
                         repeat: Infinity,
                         ease: "easeInOut",
-                        delay: i * 0.5, // Staggered start for variety
+                        delay: i * 0.5,
                       }}
                     />
                   );
                 })}
               </div>
 
-              {/* ------------------------------ */}
-              {/* Card content container */}
-              {/* ------------------------------ */}
               <div className="mx-auto max-w-md relative z-10">
-                {/* ------------------------------ */}
-                {/* Floating code icon at the top */}
-                {/* ------------------------------ */}
                 <motion.div
-                  animate={{ y: [0, -8, 0] }} // Gentle up/down motion
+                  animate={{ y: [0, -8, 0] }}
                   transition={{
-                    duration: 3, // Animation duration
+                    duration: 3,
                     repeat: Infinity,
                     ease: "easeInOut",
                   }}
@@ -605,49 +703,31 @@ const HackathonHub = () => {
                   <FiCode className="h-10 w-10 text-indigo-600 dark:text-indigo-400" />
                 </motion.div>
 
-                {/* ------------------------------ */}
-                {/* Main title of the card */}
-                {/* ------------------------------ */}
                 <h3 className="mt-6 text-2xl font-bold text-gray-900 dark:text-gray-100">
                   No Hackathons Found
                 </h3>
 
-                {/* ------------------------------ */}
-                {/* Subtitle with dynamic message based on filters */}
-                {/* ------------------------------ */}
                 <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                  {searchQuery ||
-                  filters.difficulty ||
-                  filters.prize ||
-                  filters.location
+                  {searchQuery || filters.difficulty || filters.prize || filters.location || selectedTags.length > 0
                     ? "No hackathons match your current filters. Try adjusting your search or filters."
                     : "Check back later for exciting new hackathons!"}
                 </p>
 
-                {/* ------------------------------ */}
-                {/* Buttons container */}
-                {/* ------------------------------ */}
                 <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                  {/* ------------------------------ */}
-                  {/* Reset Filters Button */}
-                  {/* ------------------------------ */}
                   <motion.button
-                    whileHover={{ scale: 1.05 }} // Grow slightly on hover
-                    whileTap={{ scale: 0.95 }} // Shrink slightly on tap
-                    onClick={resetFilters} // Function to reset search/filter
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={resetFilters}
                     className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg transition-all"
                   >
                     <FiRotateCw className="w-4 h-4" />
                     Reset Filters
                   </motion.button>
 
-                  {/* ------------------------------ */}
-                  {/* Explore Hackathons Button */}
-                  {/* ------------------------------ */}
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => {}} // Placeholder function for navigation
+                    onClick={() => {}}
                     className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-600 shadow-md transition-all"
                   >
                     Explore Hackathons
