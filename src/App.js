@@ -21,6 +21,7 @@ import FeedbackPage from "./Pages/Feedback/FeedbackPage"; // Import FeedbackPage
 import LeaderBoard from "./Pages/Leaderboard/Leaderboard";
 import ContributorGuide from "./Pages/Leaderboard/ContributorGuide";
 
+
 import NotFound from "./components/NotFound";
 import DocumentationPage from "./Pages/About/DocumentationPage";
 import SubmitProject from "./Pages/Projects/SubmitProject";
@@ -45,6 +46,7 @@ import { Privacy } from "./Pages/Privacy";
 import ApiDocs from "./Pages/ApiDocs";
 import HelpCenter from "./Pages/HelpCenter";
 import FAQPage from "./Pages/FAQ/FAQPage";
+import EventRegistration from "./Pages/Events/EventRegistration";
 
 import { ThemeProvider } from "./context/ThemeContext";
 
@@ -60,6 +62,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/events" element={<EventsPage />} />
+                <Route path="/events/:eventId/register" element={<EventRegistration />} />
                 <Route path="/hackathons" element={<HackathonPage />} />
                 <Route path="/projects" element={<ProjectsPage />} />
                 <Route path="/contributors" element={<Contributors />} />
