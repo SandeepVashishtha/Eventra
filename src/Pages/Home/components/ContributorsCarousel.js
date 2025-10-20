@@ -276,7 +276,6 @@ const Contributors = () => {
               {visibleContributors.map((c, i) => (
                 <motion.div
                   key={c.id}
-                  // UPDATED: Card background gradient and border
                   className="relative bg-gradient-to-br from-white/90 to-indigo-50/80 dark:from-gray-700/80 dark:to-gray-800/70 backdrop-blur-xl p-4 pt-10 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 flex flex-col items-center text-center mb-6 transition-all duration-300 ease-out flex-shrink-0"
                   style={{
                     flex: `0 0 calc((100% - ${
@@ -291,7 +290,6 @@ const Contributors = () => {
                     y: -4,
                     boxShadow: "0px 6px 18px rgba(99,102,241,0.25)",
                   }}
-                  // AOS Implementation on individual cards
                   data-aos="zoom-in-up"
                   data-aos-delay={i * 100}
                 >
