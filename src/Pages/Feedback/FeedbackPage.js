@@ -1,19 +1,30 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  FiStar,
-  FiMessageSquare,
-  FiUser,
-  FiMail,
+  FiBarChart,
+  FiCalendar,
+  FiCheck,
   FiCheckCircle,
+  FiChevronDown,
+  FiMail,
+  FiMessageSquare,
+  FiMonitor,
+  FiMoreHorizontal,
+  FiPlus,
+  FiStar,
+  FiUser,
 } from "react-icons/fi";
-import { FaGithub, FaLinkedin, FaDiscord } from "react-icons/fa";
-import { FiChevronDown } from "react-icons/fi";
+import {
+  FaBug,
+  FaGithub,
+  FaLinkedin,
+  FaDiscord,
+  FaRegComment,
+} from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import "./FeedbackPage.css";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
 
 //Social media links
 const socialLinks = [
@@ -153,8 +164,8 @@ const FloatingInput = ({
             error
               ? "border-red-500 focus:border-red-500 focus:ring-red-100 dark:focus:ring-red-900/30"
               : isFocused
-              ? "border-indigo-500 dark:border-indigo-400 focus:ring-indigo-100 dark:focus:ring-indigo-900/30"
-              : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
+                ? "border-indigo-500 dark:border-indigo-400 focus:ring-indigo-100 dark:focus:ring-indigo-900/30"
+                : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
           }`}
         />
         <label
@@ -169,8 +180,8 @@ const FloatingInput = ({
             error
               ? "text-red-500 dark:text-red-400"
               : isFocused
-              ? "text-indigo-600 dark:text-indigo-400"
-              : "text-gray-500 dark:text-gray-400"
+                ? "text-indigo-600 dark:text-indigo-400"
+                : "text-gray-500 dark:text-gray-400"
           }`}
         >
           {label} {required && <span className="text-red-500">*</span>}
@@ -213,14 +224,13 @@ const CustomFloatingSelect = ({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
   const hasValue = value && value.length > 0;
-  const selectedLabel = options.find((opt) => opt.value === value)?.label;
+  const selectedOption = options.find((opt) => opt.value === value);
+  const selectedLabel = selectedOption ? selectedOption.label : "";
+  const selectedIcon = selectedOption ? selectedOption.icon : FiMessageSquare; // Default icon
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false);
       }
     };
@@ -231,37 +241,50 @@ const CustomFloatingSelect = ({
   }, [dropdownRef]);
 
   const handleSelect = (optionValue) => {
-    onChange(id, optionValue);
+    const selectedOption = options.find((opt) => opt.value === optionValue);
+    onChange(id, {
+      value: optionValue,
+      label: selectedOption.label,
+      icon: selectedOption.icon,
+    });
     setIsOpen(false);
   };
 
   return (
     <div className="relative mt-6" ref={dropdownRef}>
       <div className="relative">
-        {Icon && (
-          <Icon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5 z-10" />
+        {/* Render the selected icon */}
+        {selectedIcon && (
+          <selectedIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5 z-10" />
         )}
+
         <button
           type="button"
           id={id}
           onClick={() => setIsOpen(!isOpen)}
           className={`w-full text-left px-4 pt-6 pb-2 border-2 rounded-xl focus:ring-4 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-all duration-300 ${
-            Icon ? "pl-14 pr-12" : "pr-12"
-          } ${
+            selectedIcon ? "pl-12" : "pl-4"
+          } pr-12 ${
             error
               ? "border-red-500 focus:border-red-500 focus:ring-red-100 dark:focus:ring-red-900/30"
               : isOpen
-              ? "border-indigo-500 dark:border-indigo-400 focus:ring-indigo-100 dark:focus:ring-indigo-900/30"
-              : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
+                ? "border-indigo-500 dark:border-indigo-400 focus:ring-indigo-100 dark:focus:ring-indigo-900/30"
+                : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
           }`}
         >
+          {/* Render the selected icon */}
+          {selectedIcon &&
+            React.createElement(selectedIcon, {
+              className:
+                "absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5 z-10",
+            })}
+          {/* Display the selected label */}
           {selectedLabel || "\u00A0"}
         </button>
+
         <label
           htmlFor={id}
-          className={`absolute ${
-            Icon ? "left-14" : "left-4"
-          } pointer-events-none transition-all duration-200 ease-out ${
+          className={`absolute left-14 pointer-events-none transition-all duration-200 ease-out ${
             isOpen || hasValue
               ? "top-2 text-xs font-medium"
               : "top-1/2 -translate-y-1/2 text-sm"
@@ -269,38 +292,58 @@ const CustomFloatingSelect = ({
             error
               ? "text-red-500 dark:text-red-400"
               : isOpen
-              ? "text-indigo-600 dark:text-indigo-400"
-              : "text-gray-500 dark:text-gray-400"
+                ? "text-indigo-600 dark:text-indigo-400"
+                : "text-gray-500 dark:text-gray-400"
           }`}
         >
           {label} {required && <span className="text-red-500">*</span>}
         </label>
+
+        {/* Dropdown arrow */}
         <FiChevronDown
           className={`absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500 pointer-events-none transition-transform duration-300 ${
             isOpen ? "rotate-180" : ""
           }`}
         />
+
+        {/* Dropdown List */}
         <AnimatePresence>
           {isOpen && (
             <motion.ul
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="absolute z-30 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-auto"
+              className="absolute z-30 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-auto
+                 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400
+                 outline outline-2 outline-offset-2 outline-indigo-500 dark:outline-indigo-400"
             >
               {options.map((option) => (
                 <li
                   key={option.value}
                   onClick={() => handleSelect(option.value)}
-                  className="px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  className={`px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 flex items-center
+                     ${
+                       value === option.value
+                         ? "bg-indigo-100 dark:bg-indigo-500"
+                         : ""
+                     }`}
                 >
+                  {option.icon && (
+                    <option.icon className="w-5 h-5 mr-3 text-gray-500 dark:text-gray-400" />
+                  )}
                   {option.label}
+                  {/* Checkmark Icon */}
+                  {value === option.value && (
+                    <FiCheck className="ml-auto w-5 h-5 text-indigo-500 dark:text-indigo-200" />
+                  )}
                 </li>
               ))}
             </motion.ul>
           )}
         </AnimatePresence>
       </div>
+
+      {/* Error Message */}
       <AnimatePresence>
         {error && (
           <motion.p
@@ -340,13 +383,13 @@ const FeedbackPage = () => {
   const formRef = useRef(null);
 
   const feedbackTypes = [
-    { value: "general", label: "General Feedback" },
-    { value: "bug", label: "Bug Report" },
-    { value: "feature", label: "Feature Request" },
-    { value: "ui", label: "UI/UX Feedback" },
-    { value: "performance", label: "Performance Issue" },
-    { value: "event", label: "Event Feedback" },
-    { value: "other", label: "Other" },
+    { value: "general", label: "General Feedback", icon: FaRegComment },
+    { value: "bug", label: "Bug Report", icon: FaBug },
+    { value: "feature", label: "Feature Request", icon: FiPlus },
+    { value: "ui", label: "UI/UX Feedback", icon: FiMonitor },
+    { value: "performance", label: "Performance Issue", icon: FiBarChart },
+    { value: "event", label: "Event Feedback", icon: FiCalendar },
+    { value: "other", label: "Other", icon: FiMoreHorizontal },
   ];
 
   useEffect(() => {
@@ -388,21 +431,26 @@ const FeedbackPage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value, }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
-  const handleSelectChange = (name, value) => {
-    setFormData((prev) => ({ ...prev, [name]: value, }));
+  const handleSelectChange = (name, { value, label, icon }) => {
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+      [`${name}Label`]: label,
+      [`${name}Icon`]: icon,
+    }));
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
   const handleRatingChange = (rating) => {
-    setFormData((prev) => ({ ...prev, rating, }));
+    setFormData((prev) => ({ ...prev, rating }));
     if (errors.rating) {
       setErrors((prev) => ({ ...prev, rating: "" }));
     }
@@ -426,7 +474,7 @@ const FeedbackPage = () => {
 
       try {
         const existing = JSON.parse(
-          localStorage.getItem("eventra_feedback") || "[]"
+          localStorage.getItem("eventra_feedback") || "[]",
         );
         const payload = {
           name: formData.name?.trim(),
@@ -442,7 +490,9 @@ const FeedbackPage = () => {
         console.error("Failed to save feedback to localStorage", err);
       }
 
-      toast.success("Thank you for your feedback! We’ve received your submission and will review it shortly");
+      toast.success(
+        "Thank you for your feedback! We’ve received your submission and will review it shortly",
+      );
 
       setFormData({
         name: "",
@@ -457,7 +507,9 @@ const FeedbackPage = () => {
         navigate("/");
       }, 3000);
     } catch (error) {
-      toast.error("There was an error submitting your feedback. Please try again.");
+      toast.error(
+        "There was an error submitting your feedback. Please try again.",
+      );
       setIsSubmitting(false);
     }
   };
@@ -616,8 +668,8 @@ const FeedbackPage = () => {
                         errors.message
                           ? "text-red-500 dark:text-red-400"
                           : formData.message
-                          ? "text-indigo-600 dark:text-indigo-400"
-                          : "text-gray-500 dark:text-gray-400"
+                            ? "text-indigo-600 dark:text-indigo-400"
+                            : "text-gray-500 dark:text-gray-400"
                       }`}
                     >
                       Your Message <span className="text-red-500">*</span>
@@ -693,12 +745,25 @@ const FeedbackPage = () => {
         </motion.div>
       </div>
 
-
       <style jsx>{`
         @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-          20%, 40%, 60%, 80% { transform: translateX(5px); }
+          0%,
+          100% {
+            transform: translateX(0);
+          }
+          10%,
+          30%,
+          50%,
+          70%,
+          90% {
+            transform: translateX(-5px);
+          }
+          20%,
+          40%,
+          60%,
+          80% {
+            transform: translateX(5px);
+          }
         }
         .animate-shake {
           animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
