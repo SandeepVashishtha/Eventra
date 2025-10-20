@@ -165,18 +165,20 @@ const EventsPage = () => {
           <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
             {/* Sort Dropdown */}
             <div className="w-full sm:w-auto">
-              <label htmlFor="sort-events" className="sr-only">Sort events</label>
-                <StyledDropdown
-                  label=""
-                  value={sortType === "" ? "" : sortType}
-                  onChange={handleSortChange}
-                  options={["Newest", "Upcoming"]}
-                  placeholder="Sort by Date"
-                />
+              <label htmlFor="sort-events" className="sr-only">
+                Sort events
+              </label>
+              <StyledDropdown
+                label=""
+                value={sortType === "" ? "" : sortType}
+                onChange={handleSortChange}
+                options={["Newest", "Upcoming"]}
+                placeholder="Sort by Date"
+              />
             </div>
 
             {/* Toggle View Buttons (Grid / List) */}
-            <div 
+            <div
               className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm"
               data-aos="zoom-in"
               data-aos-delay="400"
@@ -216,7 +218,7 @@ const EventsPage = () => {
               key={filterType + viewMode} // re-trigger animation when filter/view changes
               className={`grid gap-8 ${
                 viewMode === "grid"
-                  ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" // grid view
+                  ? "grid-cols-1 sm:grid-cols-1 lg:grid-cols-3" // grid view
                   : "grid-cols-1 max-w-4xl mx-auto" // list view
               }`}
               variants={containerVariants}
