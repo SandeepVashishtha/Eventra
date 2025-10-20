@@ -320,22 +320,21 @@ const Contributors = () => {
                     {/* UPDATED: Contribution Badges */}
                     {currentIndex + i === 0 && (
                       <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300">
-                        ･Top Contributor
+                        🥇･ Top Contributor
                       </span>
                     )}
                     {currentIndex + i === 1 && (
                       <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300">
-                        ･Silver Contributor
+                        🥈･ Silver Contributor
                       </span>
                     )}
                     {currentIndex + i === 2 && (
                       <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300">
-                        ･Bronze Contributor
+                        🥉･ Bronze Contributor
                       </span>
                     )}
                   </div>
 
-                  {/* Stats Section (Glass style) */}
                   {/* UPDATED: Stat text colors */}
                   <div className="grid grid-cols-3 gap-3 text-sm text-gray-700 dark:text-gray-300 my-3 w-full">
                     {/* UPDATED: Stat box background and icon colors */}
