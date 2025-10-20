@@ -18,7 +18,7 @@ const ThemeToggleButton = () => {
   }, [darkMode]);
 
   return (
-    <div
+    <button
       className="flex items-center cursor-pointer select-none"
       onClick={() => setDarkMode((prev) => !prev)}
     >
@@ -37,7 +37,7 @@ const ThemeToggleButton = () => {
           )}
         </div>
       </div>
-    </div>
+    </button>
   );
 };
 
