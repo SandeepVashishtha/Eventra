@@ -1,28 +1,44 @@
 import React, { useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, Rocket, Users, Award, Code2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+
+// Tag component for selected tags in search bar
+const Tag = ({ tag, onRemove }) => (
+  <motion.div
+    initial={{ scale: 0.8, opacity: 0 }}
+    animate={{ scale: 1, opacity: 1 }}
+    exit={{ scale: 0.8, opacity: 0 }}
+    className="flex items-center gap-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-3 py-1 rounded-full text-sm font-medium"
+  >
+    <span>{tag}</span>
+    <button
+      onClick={() => onRemove(tag)}
+      className="hover:bg-indigo-200 dark:hover:bg-indigo-800 rounded-full p-0.5 transition-colors"
+    >
+      <X className="w-3 h-3" />
+    </button>
+  </motion.div>
+);
 
 export default function HackathonHero({
   hackathons = [],
   searchQuery,
   setSearchQuery,
   scrollToCards,
+  // NEW: Add filteredCount prop
+  filteredCount = 0,
+  // Tag-related props
+  selectedTags = [],
+  onTagRemove,
+  onSearchKeyDown,
+  searchInputRef,
+  availableTags = [],
+  onTagSelect
 }) {
   const navigate = useNavigate();
   const { user } = useAuth();
-
-  // Filtered Hackathons
-  const filteredHackathons = hackathons.filter(
-    (h) =>
-      h.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      h.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      h.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      h.techStack.some((tech) =>
-        tech.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-  );
 
   // Floating shapes/bubbles
   const shapes = useMemo(
@@ -90,7 +106,7 @@ export default function HackathonHero({
           and win amazing prizes 🚀"
         </motion.p>
 
-        {/* ======================= SEARCH BOX ======================= */}
+        {/* ======================= SEARCH BOX WITH TAGS ======================= */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -102,19 +118,37 @@ export default function HackathonHero({
               <Search className="h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-indigo-500 dark:group-focus-within:text-indigo-400 transition-colors" />
             </div>
 
-            <input
-              type="text"
-              placeholder="Search hackathons by name, location, or tags..."
-              className="block w-full pl-12 pr-12 py-4 text-base text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300 shadow-lg hover:shadow-xl"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            {/* Search bar with tags inside */}
+            <div className="flex flex-wrap items-center gap-2 w-full pl-12 pr-12 py-4 text-base text-gray-900 dark:text-gray-100 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl focus-within:ring-2 focus-within:ring-indigo-500 dark:focus-within:ring-indigo-400 focus-within:border-indigo-500 dark:focus-within:border-indigo-400 transition-all duration-300 shadow-lg hover:shadow-xl">
+              
+              {/* Selected tags displayed in search bar */}
+              <AnimatePresence>
+                {selectedTags.map((tag) => (
+                  <Tag key={tag} tag={tag} onRemove={onTagRemove} />
+                ))}
+              </AnimatePresence>
+              
+              {/* Search input */}
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder={selectedTags.length === 0 ? "Search hackathons by name, location, or tags..." : ""}
+                className="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-gray-100 min-w-[120px] placeholder-gray-400 dark:placeholder-gray-500"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={onSearchKeyDown}
+              />
+            </div>
 
-            {searchQuery && (
+            {(searchQuery || selectedTags.length > 0) && (
               <motion.button
                 whileHover={{ rotate: 90, scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                onClick={() => setSearchQuery("")}
+                onClick={() => {
+                  setSearchQuery("");
+                  // Clear all selected tags
+                  selectedTags.forEach(tag => onTagRemove(tag));
+                }}
                 className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors z-10"
               >
                 <X className="h-5 w-5" />
@@ -124,24 +158,28 @@ export default function HackathonHero({
 
           {/* ======================= TAG FILTERS ======================= */}
           <div className="mt-4 flex items-center justify-between flex-wrap gap-3 px-2">
-            <div className="flex gap-2 flex-wrap">
-              {["AI", "Blockchain", "Remote", "Web", "MERN", "CyberSecurity", "ML"].map(
-                (tag, idx) => (
-                  <motion.span
-                    key={idx}
-                    whileHover={{ scale: 1.1 }}
-                    onClick={() => setSearchQuery(tag)}
-                    className="px-3 py-1 text-xs font-medium text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/50 rounded-full cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900 transition"
-                  >
-                    {tag}
-                  </motion.span>
-                )
-              )}
+            <div className="flex gap-2 flex-wrap justify-center">
+           {/* Quick tag suggestions from available tags */}
+{availableTags.slice(0, 10).map((tag, idx) => (  // CHANGED from 8 to 10
+  <motion.span
+    key={idx}
+    whileHover={{ scale: 1.1 }}
+    onClick={() => onTagSelect(tag)}
+    className={`px-3 py-1 text-xs font-medium rounded-full cursor-pointer transition ${
+      selectedTags.includes(tag)
+        ? 'bg-indigo-600 text-white shadow-md'
+        : 'text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900'
+    }`}
+  >
+    {tag}
+  </motion.span>
+))}
             </div>
 
+            {/* UPDATED: Use filteredCount prop instead of local calculation */}
             <span className="text-sm text-indigo-600 dark:text-indigo-400 font-semibold">
-              {filteredHackathons.length}{" "}
-              {filteredHackathons.length === 1 ? "hackathon" : "hackathons"} found
+              {filteredCount}{" "}
+              {filteredCount === 1 ? "hackathon" : "hackathons"} found
             </span>
           </div>
         </motion.div>
