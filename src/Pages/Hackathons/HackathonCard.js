@@ -31,14 +31,23 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
 
   return (
     <motion.div
-      // AOS Implementation
-      data-aos="zoom-in"
-      // UPDATED: Card background, border, and featured ring
+      initial={{ opacity: 0, y: 50, rotateX: 15, scale: 0.95 }}
+      whileInView={{
+        opacity: 1,
+        y: 0,
+        rotateX: 0,
+        scale: 1,
+      }}
+      transition={{
+        duration: 0.6,
+        ease: "easeOut",
+      }}
+      viewport={{ once: true, amount: 0.3 }} // triggers when 30% visible
+      whileHover={{ y: -4, scale: 1.02 }} // keeps your hover lift effect
       className={`bg-gradient-to-br from-white to-white dark:from-gray-800 dark:to-black rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-indigo-300 dark:border-gray-700 relative card-with-floating-elements ${
         isFeatured ? "ring-2 ring-indigo-500 dark:ring-indigo-400" : ""
       }`}
-      whileHover={{ y: -4 }}
-      {...props} // Spread props to include data-aos attributes from parent
+      {...props}
     >
       {/* Featured Ribbon */}
       {isFeatured && (
