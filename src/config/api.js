@@ -24,7 +24,8 @@ export const API_ENDPOINTS = {
   CREATE: `${API_BASE_PATH}/events`,
   JOIN: (eventId) => `${API_BASE_PATH}/events/${eventId}/join`,
   LEAVE: (eventId) => `${API_BASE_PATH}/events/${eventId}/leave`,
-  DETAILS: (eventId) => `${API_BASE_PATH}/events/${eventId}`
+  DETAILS: (eventId) => `${API_BASE_PATH}/events/${eventId}`,
+  REGISTER: (eventId) => `${API_BASE_PATH}/events/${eventId}/register`
   },
   PROJECTS: {
   LIST: `${API_BASE_PATH}/projects/public`,
