@@ -3,6 +3,8 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import ConfirmationModal from "../common/ConfirmationModal"; // ADD THIS IMPORT
+import { toast } from "react-toastify";
+
 
 import ThemeToggleButton from "../common/ThemeToggleButton";
 
@@ -251,6 +253,12 @@ const Navbar = () => {
   const handleConfirmLogout = () => {
     setShowLogoutModal(false);
     logout();
+
+    toast.success("You have been logged out successfully.", {
+      className: "custom-toast",
+      autoClose: 3000,
+    });
+
     navigate("/");
   };
 
