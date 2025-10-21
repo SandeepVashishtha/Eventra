@@ -482,7 +482,7 @@ const Navbar = () => {
                   </Link>
                   <Link
                     to="/signup"
-                    className="px-5 py-2 text-sm font-semibold text-white transition-all bg-indigo-600 hover:bg-indigo-700 dark:bg-white/10 dark:border dark:border-white/20 rounded-lg dark:hover:bg-white/20"
+                    className="px-5 py-2 text-sm font-semibold text-white transition-all duration-300 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 dark:from-[#6B46FF] dark:to-[#8B5CF6] dark:border dark:border-white/10 dark:shadow-[0_6px_18px_rgba(107,70,255,0.16)] dark:hover:shadow-[0_10px_26px_rgba(90,61,224,0.20)] focus:outline-none focus:ring-4 focus:ring-indigo-500/30 dark:focus:ring-[#6B46FF]/20"
                   >
                     Get Started
                   </Link>
@@ -703,7 +703,7 @@ const Navbar = () => {
               <Link
                 to="/signup"
                 onClick={closeAllMenus}
-                className="flex items-center justify-center gap-2 w-full py-2.5 text-white transition-all bg-indigo-600 hover:bg-indigo-700 dark:bg-white/10 dark:border dark:border-white/20 rounded-lg dark:hover:bg-white/20"
+                className="flex items-center justify-center gap-2 w-full py-2.5 text-sm font-semibold text-white transition-all duration-300 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-lg shadow-md hover:shadow-lg dark:from-[#6B46FF] dark:to-[#8B5CF6] dark:border dark:border-white/10 dark:shadow-[0_6px_18px_rgba(107,70,255,0.16)] dark:hover:shadow-[0_10px_26px_rgba(90,61,224,0.20)] focus:outline-none focus:ring-4 focus:ring-indigo-500/30 dark:focus:ring-[#6B46FF]/20"
               >
                 Get Started
               </Link>
