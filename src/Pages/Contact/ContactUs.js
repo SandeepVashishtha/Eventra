@@ -16,7 +16,7 @@ const Toast = ({ message, type = "success", onClose }) => {
       initial={{ opacity: 0, y: 50, scale: 0.3 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
-      className={`fixed bottom-4 right-4 max-w-sm w-full shadow-lg rounded-lg pointer-events-auto overflow-hidden ${
+      className={`fixed top-24 right-4 max-w-sm w-full shadow-lg rounded-lg pointer-events-auto overflow-hidden ${
         type === "success" ? "bg-green-500" : "bg-red-500"
       }`}
     >
