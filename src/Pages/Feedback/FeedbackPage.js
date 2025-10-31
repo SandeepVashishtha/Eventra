@@ -393,6 +393,7 @@ const FeedbackPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
   const [isFocused, setIsFocused] = useState(false);
+  const [submittedFeedback, setSubmittedFeedback] = useState([]);
   const formRef = useRef(null);
 
   const feedbackTypes = [
@@ -657,11 +658,11 @@ const FeedbackPage = () => {
                   placeholder="your@email.com"
                 />
 
-                <FloatingSelect
+                <CustomFloatingSelect
                   id="feedbackType"
                   label="Feedback Type"
                   value={formData.feedbackType}
-                  onChange={handleChange}
+                  onChange={handleSelectChange}
                   options={feedbackTypes}
                   error={errors.feedbackType}
                   icon={FiMessageSquare}
@@ -711,7 +712,6 @@ const FeedbackPage = () => {
                   )}
                 </div>
 
-                <form ref={formRef} onSubmit={handleSubmit} noValidate>
                   <FloatingInput
                       id="name"
                       label="Your Name"
@@ -838,7 +838,6 @@ const FeedbackPage = () => {
                     </motion.button>
                   </div>
                 </form>
-              </div>
             </div>
           </motion.div>
         </div>
