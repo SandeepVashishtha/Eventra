@@ -19,10 +19,12 @@ export default function MissionVision() {
         {/* Mission */}
         <motion.div
           variants={item}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
+          // Removed initial/whileInView for AOS control
           whileHover="hover"
+          // AOS Implementation
+          data-aos="fade-right"
+          data-aos-duration="1000"
+          data-aos-offset="200"
           // UPDATED: Card background and border
           className="group relative rounded-3xl bg-white dark:bg-gray-800 shadow-xl p-12 flex flex-col md:flex-row items-start gap-8 hover:shadow-2xl transition duration-500 border border-transparent dark:border-gray-700"
         >
@@ -58,10 +60,12 @@ export default function MissionVision() {
         {/* Vision */}
         <motion.div
           variants={item}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
+          // Removed initial/whileInView for AOS control
           whileHover="hover"
+          // AOS Implementation
+          data-aos="fade-left"
+          data-aos-duration="1000"
+          data-aos-offset="200"
           className="group relative rounded-3xl bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 text-white shadow-xl p-12 flex flex-col md:flex-row items-start gap-8 hover:shadow-2xl transition duration-500"
         >
           {/* Icon Badge */}

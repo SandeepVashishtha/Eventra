@@ -101,6 +101,9 @@ export default function DocumentationPage() {
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
+          // AOS Implementation (Header)
+          data-aos="fade-down"
+          data-aos-once="true"
           // UPDATED: Header text colors
           className="text-5xl font-extrabold text-indigo-900 dark:text-indigo-300 mb-4"
         >
@@ -123,44 +126,47 @@ export default function DocumentationPage() {
         whileInView="visible"
         viewport={{ once: true }}
         variants={sectionVariants}
+        // AOS Implementation
+        data-aos="fade-up"
+        data-aos-delay="0"
       >
         {/* UPDATED: Title icon and text colors */}
         <div className="flex items-center mb-6 text-indigo-800 dark:text-indigo-400">
-  <FiBookOpen className="mr-3 text-3xl" />
-  <h2 className="text-3xl font-bold">Features</h2>
-</div>
-<div className="grid md:grid-cols-2 gap-6 text-indigo-900 dark:text-gray-300">
-  <div className="space-y-2">
-    <h3 className="font-semibold text-xl">Core Features</h3>
-    <ul className="list-disc list-inside space-y-1">
-      <li>Create and manage hackathons</li>
-      <li>Register participants and teams</li>
-      <li>Project submission and tracking</li>
-      <li>Event schedule and agenda management</li>
-      <li>Real-time updates and notifications</li>
-      <li>Judging and scoring system</li>
-      <li>Winner announcement and certificates</li>
-      <li>Discussion forums for participants</li>
-      <li>Resource sharing (guides, datasets, APIs)</li>
-      <li>Customizable hackathon branding</li>
-    </ul>
-  </div>
-  <div className="space-y-2">
-    <h3 className="font-semibold text-xl">Platform Features</h3>
-    <ul className="list-disc list-inside space-y-1">
-      <li>User authentication and profiles</li>
-      <li>Dark mode and theme support</li>
-      <li>Responsive and mobile-friendly design</li>
-      <li>Search and filter events/projects</li>
-      <li>Integration with calendar apps</li>
-      <li>Notifications for upcoming deadlines</li>
-      <li>Team collaboration tools</li>
-      <li>Analytics dashboard for organizers</li>
-      <li>Social media sharing and promotion</li>
-      <li>Cloud storage for project files</li>
-    </ul>
-  </div>
-</div>
+          <FiBookOpen className="mr-3 text-3xl" />
+          <h2 className="text-3xl font-bold">Features</h2>
+        </div>
+        <div className="grid md:grid-cols-2 gap-6 text-indigo-900 dark:text-gray-300">
+          <div className="space-y-2">
+            <h3 className="font-semibold text-xl">Core Features</h3>
+            <ul className="list-disc list-inside space-y-1">
+              <li>Create and manage hackathons</li>
+              <li>Register participants and teams</li>
+              <li>Project submission and tracking</li>
+              <li>Event schedule and agenda management</li>
+              <li>Real-time updates and notifications</li>
+              <li>Judging and scoring system</li>
+              <li>Winner announcement and certificates</li>
+              <li>Discussion forums for participants</li>
+              <li>Resource sharing (guides, datasets, APIs)</li>
+              <li>Customizable hackathon branding</li>
+            </ul>
+          </div>
+          <div className="space-y-2">
+            <h3 className="font-semibold text-xl">Platform Features</h3>
+            <ul className="list-disc list-inside space-y-1">
+              <li>User authentication and profiles</li>
+              <li>Dark mode and theme support</li>
+              <li>Responsive and mobile-friendly design</li>
+              <li>Search and filter events/projects</li>
+              <li>Integration with calendar apps</li>
+              <li>Notifications for upcoming deadlines</li>
+              <li>Team collaboration tools</li>
+              <li>Analytics dashboard for organizers</li>
+              <li>Social media sharing and promotion</li>
+              <li>Cloud storage for project files</li>
+            </ul>
+          </div>
+        </div>
 
       </motion.section>
 
@@ -172,6 +178,9 @@ export default function DocumentationPage() {
         whileInView="visible"
         viewport={{ once: true }}
         variants={sectionVariants}
+        // AOS Implementation
+        data-aos="fade-up"
+        data-aos-delay="100"
       >
         {/* UPDATED: Title icon and text colors */}
         <div className="flex items-center mb-6 text-indigo-800 dark:text-indigo-400">
@@ -209,6 +218,9 @@ export default function DocumentationPage() {
         whileInView="visible"
         viewport={{ once: true }}
         variants={sectionVariants}
+        // AOS Implementation
+        data-aos="fade-up"
+        data-aos-delay="200"
       >
         {/* UPDATED: Title icon and text colors */}
         <div className="flex items-center mb-6 text-indigo-800 dark:text-indigo-400">
@@ -317,6 +329,9 @@ export default function DocumentationPage() {
         whileInView="visible"
         viewport={{ once: true }}
         variants={sectionVariants}
+        // AOS Implementation
+        data-aos="fade-up"
+        data-aos-delay="300"
       >
         {/* UPDATED: Title icon and text colors */}
         <div className="flex items-center mb-6 text-indigo-800 dark:text-indigo-400">
@@ -341,6 +356,9 @@ npm start`}
         whileInView="visible"
         viewport={{ once: true }}
         variants={sectionVariants}
+        // AOS Implementation
+        data-aos="fade-up"
+        data-aos-delay="400"
       >
         <div className="flex items-center mb-6 text-indigo-800 dark:text-indigo-400">
           <FiGitBranch className="mr-3 text-3xl" />
@@ -359,6 +377,9 @@ npm start`}
         whileInView="visible"
         viewport={{ once: true }}
         variants={sectionVariants}
+        // AOS Implementation
+        data-aos="fade-up"
+        data-aos-delay="500"
       >
         <div className="flex items-center mb-6 text-indigo-800 dark:text-indigo-400">
           <FiCode className="mr-3 text-3xl" />
@@ -376,6 +397,9 @@ npm start`}
         whileInView="visible"
         viewport={{ once: true }}
         variants={sectionVariants}
+        // AOS Implementation
+        data-aos="fade-up"
+        data-aos-delay="600"
       >
         <div className="flex items-center mb-6 text-indigo-800 dark:text-indigo-400">
           <FiUsers className="mr-3 text-3xl" />
@@ -398,7 +422,14 @@ npm start`}
           <li>Push branch and open a Pull Request</li>
         </ol>
       </motion.section>
-      <section className="max-w-5xl mx-auto p-6 bg-gray-50 dark:bg-gray-900 rounded-2xl shadow-lg">
+
+      {/* FAQ Section */}
+      <section 
+        className="max-w-5xl mx-auto p-6 bg-gray-50 dark:bg-gray-900 rounded-2xl shadow-lg"
+        // AOS Implementation
+        data-aos="fade-up"
+        data-aos-delay="700"
+      >
         <h2 className="text-3xl font-bold mb-10 text-center text-gray-900 dark:text-white">
           Frequently Asked Questions
         </h2>
@@ -408,6 +439,8 @@ npm start`}
               key={index}
               className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 cursor-pointer hover:shadow-lg transition-shadow duration-200"
               onClick={() => toggleFAQ(index)}
+              data-aos="zoom-in-up"
+              data-aos-delay={750 + index * 50}
             >
               <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-6">
@@ -441,7 +474,11 @@ npm start`}
       </section>
 
       {/* UPDATED: Footer text, border, and link colors */}
-      <footer className="text-center text-indigo-700 dark:text-indigo-400 mt-24 border-t border-indigo-200 dark:border-gray-700 pt-8 pb-6">
+      <footer 
+        className="text-center text-indigo-700 dark:text-indigo-400 mt-24 border-t border-indigo-200 dark:border-gray-700 pt-8 pb-6"
+        data-aos="fade-up"
+        data-aos-offset="50"
+      >
         <p className="text-indigo-800 dark:text-indigo-300 text-lg font-medium">
           Built with <span className="text-red-500">❤️</span> by the Eventra
           Team.

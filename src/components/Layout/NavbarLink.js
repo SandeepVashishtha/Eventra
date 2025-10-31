@@ -13,7 +13,7 @@ const NavbarLink = ({ navItems }) => {
             key={item.name}
             to={item.href}
             // UPDATED: Text and hover colors
-            className={`relative px-3 py-2 text-base font-medium transition-all duration-300 rounded-lg group
+            className={`relative px-4 py-2.5 text-lg font-medium transition-all duration-300 rounded-lg group
               ${isActive ? "text-indigo-600 dark:text-indigo-400" : "text-gray-700 dark:text-gray-300"} 
               hover:text-indigo-600 dark:hover:text-indigo-400`}
           >
@@ -41,4 +41,3 @@ const NavbarLink = ({ navItems }) => {
 };
 
 export default NavbarLink;
-
