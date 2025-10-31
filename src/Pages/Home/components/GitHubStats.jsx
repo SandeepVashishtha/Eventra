@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Star,
@@ -204,8 +204,8 @@ export default function GitHubStats() {
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          // UPDATED: Title text color
-          className="text-4xl font-extrabold text-center text-gray-900 dark:text-gray-100 mb-10"
+          // UPDATED: Title text color with responsive sizing
+          className="text-3xl sm:text-4xl font-extrabold text-center text-gray-900 dark:text-gray-100 mb-8 sm:mb-10 px-4"
         >
           Project Statistics
         </motion.h2>
@@ -213,7 +213,7 @@ export default function GitHubStats() {
         <motion.div
           initial="hidden"
           animate="show"
-          className="flex flex-wrap justify-center gap-6"
+          className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 max-w-6xl mx-auto"
         >
           {statCards.map(({ label, value, icon, link }) => (
             <motion.a
@@ -223,23 +223,23 @@ export default function GitHubStats() {
               rel="noopener noreferrer"
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.95 }}
-              // UPDATED: Card background and border
-              className="group flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-2xl px-8 py-6 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 relative overflow-hidden w-52"
+              // UPDATED: Card background, border, and responsive sizing
+              className="group flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-2xl px-3 py-4 sm:px-6 sm:py-6 md:px-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 relative overflow-hidden"
             >
               {/* Glow effect */}
               {/* UPDATED: Glow effect for dark mode */}
               <div className="absolute inset-0 bg-gradient-to-r from-indigo-100 via-transparent to-indigo-100 dark:from-indigo-900/50 dark:via-transparent dark:to-indigo-900/50 opacity-0 group-hover:opacity-100 transition duration-500 blur-2xl"></div>
 
-              <div className="z-10 flex flex-col items-center space-y-3">
-                {/* UPDATED: Icon wrapper background */}
-                <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-full shadow-inner">
+              <div className="z-10 flex flex-col items-center space-y-2 sm:space-y-3">
+                {/* UPDATED: Icon wrapper background with responsive sizing */}
+                <div className="p-2 sm:p-3 md:p-4 bg-gray-50 dark:bg-gray-700 rounded-full shadow-inner [&>svg]:w-7 [&>svg]:h-7 sm:[&>svg]:w-9 sm:[&>svg]:h-9 md:[&>svg]:w-10 md:[&>svg]:h-10">
                   {icon}
                 </div>
-                {/* UPDATED: Text colors */}
-                <p className="text-xl font-bold text-gray-900 dark:text-gray-100 text-center break-words">
+                {/* UPDATED: Text colors with responsive sizing */}
+                <p className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 text-center break-words px-1">
                   {value}
                 </p>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 text-center">
+                <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 text-center px-1">
                   {label}
                 </p>
               </div>
