@@ -498,7 +498,7 @@ const FeedbackPage = () => {
                   </div>
                 </div>
               </div>
-              </div>
+            </div>
 
             <div className="md:w-3/5 p-10">
               <div className="text-center mb-8">
