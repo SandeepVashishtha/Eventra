@@ -138,7 +138,7 @@ Follow these steps to enable Google Sign-In for the project:
    - Copy the **Client ID**.
 
 2. **Add Client ID to Environment**
-   - Open `.env` or create `.env` in `frontend/`.
+   - Open `.env` or create `.env` in the root of the project.
    - Add the following line:
      ```env
      REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id_here
