@@ -304,6 +304,7 @@ const FeedbackPage = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
+  const [isFocused, setIsFocused] = useState(false);
   const formRef = useRef(null);
 
   const feedbackTypes = [
@@ -546,24 +547,23 @@ const FeedbackPage = () => {
                   placeholder="Select a feedback type"
                 />
 
-                {/* UPDATED: Textarea and its floating label */}
+                {/* Textarea with floating label animation */}
                 <div className="relative mt-6">
-                  <FiMessageSquare className="absolute left-3 top-4 text-gray-400 text-xl" />
+                  <FiMessageSquare className="absolute left-4 top-4 text-gray-400 dark:text-gray-500 w-5 h-5 z-10" />
                   <motion.label
                     htmlFor="message"
                     className={`absolute left-14 transition-all duration-300 ${
-                      formData.message
-                        ? "top-3 text-xs text-indigo-600 dark:text-indigo-400 font-medium"
+                      isFocused || formData.message
+                        ? "top-0 text-xs text-indigo-600 dark:text-indigo-400 font-medium"
                         : "top-4 text-sm text-gray-500 dark:text-gray-400"
                     } ${errors.message ? "text-red-500 dark:text-red-400" : ""}`}
                     initial={false}
                     animate={{
-                      y: formData.message ? -20 : 0,
-                      scale: formData.message ? 0.85 : 1,
+                      y: isFocused || formData.message ? -20 : 0,
+                      scale: isFocused || formData.message ? 0.85 : 1,
                     }}
                   >
-                    
-                     Your Message *
+                    Your Message *
                   </motion.label>
                   <textarea
                     id="message"
@@ -571,27 +571,11 @@ const FeedbackPage = () => {
                     rows="4"
                     value={formData.message}
                     onChange={handleChange}
-                    onFocus={(e) => {
-                      if (!formData.message) {
-                        e.target.parentElement
-                          .querySelector("label")
-                          .classList.add("top-0", "text-xs", "text-indigo-600");
-                      }
-                    }}
-                    onBlur={(e) => {
-                      if (!formData.message) {
-                        e.target.parentElement
-                          .querySelector("label")
-                          .classList.remove(
-                            "top-0",
-                            "text-xs",
-                            "text-indigo-600"
-                          );
-                      }
-                    }}
-                    className={`w-full pt-5 pb-2 px-4 border rounded-lg focus:ring-2 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    className={`w-full p-4 pl-14 border rounded-lg focus:ring-2 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
                       errors.message
-                        ? "border-red-500 focus:ring-red-200"
+                        ? "border-red-500 focus:ring-red-200 dark:focus:ring-red-900/50"
                         : "border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-200 dark:focus:ring-indigo-900/50"
                     }`}
                   ></textarea>
