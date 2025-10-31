@@ -1,11 +1,13 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
+import ToastProvider from "./components/Toastprovider";
 
 // --------------- LAYOUT
 import Navbar from "./components/Layout/Navbar";
 import Footer from "./components/Layout/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
+import Chatbot from "./components/Chatbot";
 
 // --------------- PAGES
 import Contributors from "./components/Contributors";
@@ -18,6 +20,7 @@ import ContactUs from "./Pages/Contact/ContactUs"; // Import ContactUs page
 import FeedbackPage from "./Pages/Feedback/FeedbackPage"; // Import FeedbackPage
 import LeaderBoard from "./Pages/Leaderboard/Leaderboard";
 import ContributorGuide from "./Pages/Leaderboard/ContributorGuide";
+
 
 import NotFound from "./components/NotFound";
 import DocumentationPage from "./Pages/About/DocumentationPage";
@@ -43,26 +46,32 @@ import { Privacy } from "./Pages/Privacy";
 import ApiDocs from "./Pages/ApiDocs";
 import HelpCenter from "./Pages/HelpCenter";
 import FAQPage from "./Pages/FAQ/FAQPage";
+import EventRegistration from "./Pages/Events/EventRegistration";
 
-import { ThemeProvider } from './context/ThemeContext';
+import { ThemeProvider } from "./context/ThemeContext";
+
 function App() {
   return (
     <ThemeProvider>
+      <ToastProvider /> {/* MOVED HERE - Outside Router but inside ThemeProvider */}
       <AuthProvider>
         <Router>
           <div className="App">
             <Navbar />
-
             <main className="min-h-screen bg-white dark:bg-black">
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/events" element={<EventsPage />} />
+                <Route path="/events/:eventId/register" element={<EventRegistration />} />
                 <Route path="/hackathons" element={<HackathonPage />} />
                 <Route path="/projects" element={<ProjectsPage />} />
                 <Route path="/contributors" element={<Contributors />} />
                 <Route path="/communityEvent" element={<CommunityEvent />} />
                 <Route path="/leaderBoard" element={<LeaderBoard />} />
-                <Route path="/contributorguide" element={<ContributorGuide />} />
+                <Route
+                  path="/contributorguide"
+                  element={<ContributorGuide />}
+                />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/faq" element={<FAQPage />} />
                 <Route path="/terms" element={<Terms />} />
@@ -127,11 +136,9 @@ function App() {
                 <Route path="/*" element={<NotFound />} />
               </Routes>
             </main>
-
-
-
-            <ScrollToTop/>
-
+            
+            <ScrollToTop />
+            <Chatbot />
 
             {/* Global floating Feedback button */}
             <FeedbackButton />

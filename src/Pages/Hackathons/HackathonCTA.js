@@ -18,7 +18,12 @@ const HackathonCTA = () => {
   ];
 
   return (
-    <section className="relative py-16 px-8 m-8 rounded-3xl bg-gradient-to-r from-gray-900 via-indigo-900 to-purple-900 text-center shadow-xl overflow-hidden">
+    <section 
+      className="relative py-16 px-8 m-8 rounded-3xl bg-gradient-to-r from-gray-900 via-indigo-900 to-purple-900 text-center shadow-xl overflow-hidden"
+      // AOS Implementation
+      data-aos="zoom-in"
+      data-aos-duration="1000"
+    >
       {/* Floating Bubbles */}
       {bubbles.map((bubble, idx) => (
         <motion.div
@@ -67,6 +72,8 @@ const HackathonCTA = () => {
           className="inline-flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold px-8 py-4 rounded-full shadow-lg transition-transform duration-300"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
+          data-aos="zoom-in"
+          data-aos-delay="200"
         >
           Explore Hackathons <ArrowRight size={20} />
         </motion.a>
@@ -74,9 +81,11 @@ const HackathonCTA = () => {
         <motion.button
           onClick={() => setShowModal(true)}
           // UPDATED: The secondary button needs a subtle dark mode style
-          className="inline-flex items-center justify-center gap-2 bg-white text-indigo-700 dark:bg-gray-200 dark:text-indigo-800 font-semibold px-8 py-4 rounded-full shadow-lg hover:scale-105 transition-transform duration-300"
+          className="inline-flex items-center justify-center gap-2 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:dark:bg-gray-700 hover:dark:text-white font-semibold px-8 py-4 rounded-full shadow-lg hover:scale-105 transition-transform duration-300"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
+          data-aos="zoom-in"
+          data-aos-delay="400"
         >
           <UserPlus size={20} /> Register
         </motion.button>

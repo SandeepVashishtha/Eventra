@@ -1,0 +1,194 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Share2, Copy, Mail, Check } from 'lucide-react';
+import { FiTwitter, FiFacebook, FiLinkedin, FiMessageCircle } from 'react-icons/fi';
+import { FaWhatsapp } from 'react-icons/fa';
+import { generateSharingUrl, copyToClipboard } from '../../../utils/shareUtils';
+import './ShareMenu.css';
+
+/**
+ * ShareMenu Component
+ * @param {Object} props - Component props
+ * @param {Object} props.shareData - Data to be shared (title, description, url)
+ * @param {React.ReactNode} props.children - Trigger element
+ * @param {string} props.position - Position of the menu (top, bottom, left, right)
+ * @param {string} props.menuClassName - Additional classNames for the menu
+ * @param {string} props.buttonClassName - Additional classNames for the button
+ * @param {string} props.className - Additional classNames for the container
+ */
+const ShareMenu = ({
+  shareData,
+  children,
+  position = 'bottom',
+  menuClassName = '',
+  buttonClassName = '',
+  className = '',
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const menuRef = useRef(null);
+
+  const toggleMenu = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const handleCopyLink = () => {
+    const url = generateSharingUrl(shareData, 'copy');
+    copyToClipboard(url);
+    setCopied(true);
+    
+    // Reset copied status after 2 seconds
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  };
+
+  const handleShare = (platform) => {
+    const url = generateSharingUrl(shareData, platform);
+    
+    if (platform === 'copy') {
+      copyToClipboard(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      return;
+    }
+    
+    // Open URL in a new window
+    window.open(url, '_blank', 'noopener,noreferrer');
+    setIsOpen(false);
+  };
+  
+  // Handle click outside to close menu
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen, menuRef]);
+  
+  // Determine the position class for the menu
+  const positionClasses = {
+    top: 'bottom-full mb-2',
+    bottom: 'top-full mt-2',
+    left: 'right-full mr-2',
+    right: 'left-full ml-2',
+    center: 'top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2',
+    above: '-top-2 left-1/2 transform -translate-x-1/2 -translate-y-full'
+  };
+
+  return (
+    <div className={`relative inline-block ${className}`} ref={menuRef}>
+      {/* Share Button */}
+      <div className="cursor-pointer" onClick={toggleMenu}>
+        {children || (
+          <button 
+            className={`p-2.5 rounded-full shadow-sm hover:shadow-md active:shadow-inner flex items-center justify-center bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 transition-all ${buttonClassName}`}
+            aria-label="Share"
+          >
+            <Share2 className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+      
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className={`absolute z-50 ${positionClasses[position]} shadow-xl rounded-xl bg-black/90 backdrop-blur-md ${menuClassName}`}
+          >
+            <div className="grid grid-cols-2 gap-2 px-2 py-3 w-[280px]">
+              {/* Copy Link Button */}
+              <button
+                onClick={handleCopyLink}
+                className="flex flex-col items-center justify-center p-3 rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                <div className="bg-gray-800 p-3 rounded-full mb-2">
+                  {copied ? (
+                    <Check className="w-5 h-5 text-white" />
+                  ) : (
+                    <Copy className="w-5 h-5 text-white" />
+                  )}
+                </div>
+                <span className="text-sm text-white">
+                  {copied ? 'Copied!' : 'Copy link'}
+                </span>
+              </button>
+              
+              {/* Facebook */}
+              <button
+                onClick={() => handleShare('facebook')}
+                className="flex flex-col items-center justify-center p-3 rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                <div className="bg-gray-800 p-3 rounded-full mb-2">
+                  <FiFacebook size={20} className="text-white" />
+                </div>
+                <span className="text-sm text-white">Facebook</span>
+              </button>
+              
+              {/* Messenger */}
+              <button
+                onClick={() => handleShare('messenger')}
+                className="flex flex-col items-center justify-center p-3 rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                <div className="bg-gray-800 p-3 rounded-full mb-2">
+                  <FiMessageCircle size={20} className="text-white" />
+                </div>
+                <span className="text-sm text-white">Messenger</span>
+              </button>
+              
+              {/* WhatsApp */}
+              <button
+                onClick={() => handleShare('whatsapp')}
+                className="flex flex-col items-center justify-center p-3 rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                <div className="bg-gray-800 p-3 rounded-full mb-2">
+                  <FaWhatsapp size={20} className="text-white" />
+                </div>
+                <span className="text-sm text-white">WhatsApp</span>
+              </button>
+              
+              {/* Email */}
+              <button
+                onClick={() => handleShare('email')}
+                className="flex flex-col items-center justify-center p-3 rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                <div className="bg-gray-800 p-3 rounded-full mb-2">
+                  <Mail size={20} className="text-white" />
+                </div>
+                <span className="text-sm text-white">Email</span>
+              </button>
+              
+              {/* Twitter/X */}
+              <button
+                onClick={() => handleShare('twitter')}
+                className="flex flex-col items-center justify-center p-3 rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                <div className="bg-gray-800 p-3 rounded-full mb-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                    <path d="M4 4l11.733 16h4.267l-11.733 -16z"></path>
+                    <path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"></path>
+                  </svg>
+                </div>
+                <span className="text-sm text-white">X</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+export default ShareMenu;

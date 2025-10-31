@@ -215,20 +215,20 @@ export default function GitHubStats() {
           animate="show"
           className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 max-w-6xl mx-auto"
         >
-          {statCards.map(({ label, value, icon, link }) => (
+          {statCards.map(({ label, value, icon, link }, index) => (
             <motion.a
               key={label}
               href={link}
               target="_blank"
               rel="noopener noreferrer"
-              whileHover={{ scale: 1.08 }}
+              whileHover={{ scale: 1.1, rotate: 1 }}
               whileTap={{ scale: 0.95 }}
               // UPDATED: Card background, border, and responsive sizing
               className="group flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-2xl px-3 py-4 sm:px-6 sm:py-6 md:px-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 relative overflow-hidden"
             >
               {/* Glow effect */}
               {/* UPDATED: Glow effect for dark mode */}
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-100 via-transparent to-indigo-100 dark:from-indigo-900/50 dark:via-transparent dark:to-indigo-900/50 opacity-0 group-hover:opacity-100 transition duration-500 blur-2xl"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-100 via-transparent to-indigo-200 dark:from-indigo-700/30 dark:via-transparent dark:to-purple-800/30 opacity-0 group-hover:opacity-100 transition duration-700 blur-3xl rounded-2xl"></div>
 
               <div className="z-10 flex flex-col items-center space-y-2 sm:space-y-3">
                 {/* UPDATED: Icon wrapper background with responsive sizing */}

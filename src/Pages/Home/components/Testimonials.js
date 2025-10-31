@@ -9,6 +9,7 @@ const testimonials = [
     author: "Sarah Chen",
     role: "Event Coordinator",
     company: "MIT Tech Society",
+    rating: 5,
     image:
       "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=faces",
   },
@@ -18,6 +19,7 @@ const testimonials = [
     author: "Marcus Johnson",
     role: "Community Manager",
     company: "DevHub",
+    rating: 5,
     image:
       "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=faces",
   },
@@ -27,8 +29,39 @@ const testimonials = [
     author: "Priya Sharma",
     role: "Operations Lead",
     company: "TechMeetup Bangalore",
+    rating: 5,
     image:
       "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=200&fit=crop&crop=faces",
+  },
+  {
+    quote:
+      "The analytics dashboard gives us incredible insights into attendee behavior. We've improved our event planning by 40% using data-driven decisions.",
+    author: "James Rodriguez",
+    role: "Event Organizer",
+    company: "Global Tech Events",
+    rating: 5,
+    image:
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&crop=faces",
+  },
+  {
+    quote:
+      "Eventra's team collaboration features are outstanding. Our entire organizing committee stays in sync, making event management a breeze.",
+    author: "Emily Watson",
+    role: "Conference Director",
+    company: "Innovation Summit",
+    rating: 4,
+    image:
+      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop&crop=faces",
+  },
+  {
+    quote:
+      "Best event management platform I've used! The attendee experience is smooth, and the backend tools are powerful yet easy to use.",
+    author: "David Kim",
+    role: "Attendee & Developer",
+    company: "Tech Enthusiast",
+    rating: 5,
+    image:
+      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=faces",
   },
 ];
 
@@ -143,10 +176,18 @@ shadow-lg
                 </div>
               </div>
 
+              {/* Rating stars */}
               <div className="absolute bottom-4 right-4 flex gap-1">
-                <FaStar className="text-yellow-300 animate-pulse" />
-                <FaStar className="text-yellow-400 animate-pulse delay-150" />
-                <FaStar className="text-yellow-500 animate-pulse delay-300" />
+                {[...Array(5)].map((_, i) => (
+                  <FaStar
+                    key={i}
+                    className={`${
+                      i < testimonial.rating
+                        ? 'text-yellow-400'
+                        : 'text-gray-300 dark:text-gray-600'
+                    } text-sm`}
+                  />
+                ))}
               </div>
             </div>
           ))}

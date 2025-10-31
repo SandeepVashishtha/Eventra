@@ -111,7 +111,7 @@ const login = async (email, password) => {
     const userData = {
       ...(rawUser || {}),
       roles: (rawUser?.roles) || [],
-      permissions: (rawUser?.permissions) || ["HOST_HACKATHON"],
+      permissions: (rawUser?.permissions) || ["HOST_HACKATHON","CREATE_EVENT"],
       email: rawUser?.email || email, // best-effort fill
     };
 
@@ -125,6 +125,49 @@ const login = async (email, password) => {
 
   throw new Error(`Login failed: ${lastError || 'unexpected response'}`);
 };
+
+  // NEW: Google Sign-In function
+  const signInWithGoogle = async (googleToken) => {
+    try {
+      setLoading(true);
+
+      const res = await fetch(API_ENDPOINTS.AUTH.GOOGLE_LOGIN, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: googleToken }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.message || 'Google login failed');
+      }
+
+      const data = await res.json();
+      const token = data?.token;
+      const rawUser = data?.user;
+
+      if (!token) throw new Error('Token missing from response');
+
+      const userData = {
+        ...(rawUser || {}),
+        roles: rawUser?.roles || [],
+        permissions: rawUser?.permissions || ["HOST_HACKATHON"],
+        email: rawUser?.email,
+      };
+
+      setUser(userData);
+      setToken(token);
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(userData));
+
+      return true;
+    } catch (error) {
+      console.error('Google login error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
   const logout = () => {
@@ -168,6 +211,7 @@ const value = {
   loading,
   login,
   logout,
+  signInWithGoogle, // ✅ expose new Google login function
   setUser,   // ✅ expose setUser
   isAuthenticated,
   hasRole,
