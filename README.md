@@ -13,16 +13,27 @@ Eventra is a comprehensive, open-source platform designed to empower organizers 
 
 ## Table of Contents
 
-- [Live Demo](#-live-demo)
-- [Project Insights](#-project-insights)
-- [Features](#-features)
-- [Tech Stack](#-tech-stack)
-- [Getting Started](#-getting-started)
-- [Project Structure](#-project-structure)
-- [Deployment](#-deployment)
-- [Contributing](#-contributing)
-- [License](#-license)
-- [Contributors](#-contributors)
+- [Eventra 🎉](#eventra-)
+  - [Table of Contents](#table-of-contents)
+  - [Live Demo](#live-demo)
+  - [🌐 Live Demo](#-live-demo)
+  - [Project Insights](#project-insights)
+  - [Features](#features)
+    - [Core Functionality](#core-functionality)
+    - [Platform Features](#platform-features)
+  - [Tech Stack](#tech-stack)
+  - [Getting Started](#getting-started)
+    - [Prerequisites](#prerequisites)
+    - [Installation \& Setup](#installation--setup)
+  - [Google OAuth Setup](#google-oauth-setup)
+  - [🏗️ Project Structure](#️-project-structure)
+  - [☁️ Deployment](#️-deployment)
+  - [🤝 Contributing](#-contributing)
+    - [Development Workflow](#development-workflow)
+    - [Issue Assignment Policy](#issue-assignment-policy)
+  - [📄 License](#-license)
+  - [👥 Contributors](#-contributors)
+    - [Maintainers](#maintainers)
 
 ## Live Demo
 
@@ -138,7 +149,7 @@ Follow these steps to enable Google Sign-In for the project:
    - Copy the **Client ID**.
 
 2. **Add Client ID to Environment**
-   - Open `.env` or create `.env` in `frontend/`.
+   - Open `.env` or create `.env` in the root of the project.
    - Add the following line:
      ```env
      REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id_here
