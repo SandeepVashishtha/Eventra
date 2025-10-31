@@ -16,7 +16,7 @@ const Toast = ({ message, type = "success", onClose }) => {
       initial={{ opacity: 0, y: 50, scale: 0.3 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
-      className={`fixed bottom-4 right-4 max-w-sm w-full shadow-lg rounded-lg pointer-events-auto overflow-hidden ${
+      className={`fixed top-24 right-4 max-w-sm w-full shadow-lg rounded-lg pointer-events-auto overflow-hidden ${
         type === "success" ? "bg-green-500" : "bg-red-500"
       }`}
     >
@@ -257,23 +257,39 @@ const ContactUs = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
+          // AOS Implementation on main card
+          data-aos="fade-up"
+          data-aos-duration="1000"
+          data-aos-once="true"
           // UPDATED: Card background and border
           className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
         >
           <div className="md:flex">
-            <div className="md:w-2/5 bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-10 flex flex-col justify-between">
+            <div
+              className="md:w-3/5 lg:w-2/5 bg-gradient-to-br from-indigo-700 to-purple-600 text-white p-12 flex flex-col justify-between rounded-3xl shadow-xl backdrop-blur-lg"
+              data-aos="fade-right"
+              data-aos-duration="1000"
+              data-aos-anchor=".ContactUs"
+            >
               <div>
-                <h2 className="text-3xl font-bold mb-4">Get in Touch</h2>
-                <p className="mb-6 opacity-90">
-                  Have questions about our events platform? We're here to help
-                  and would love to hear from you.
+                <h2 className="text-4xl font-extrabold mb-6 tracking-wide">
+                  Get in Touch
+                </h2>
+                <p className="mb-8 text-lg opacity-90 leading-relaxed">
+                  Questions about our events platform? We're here to help. Reach
+                  out and we'll respond promptly.
                 </p>
 
-                <div className="space-y-4 mt-10">
-                  <div className="flex items-center">
-                    <div className="bg-white bg-opacity-20 p-2 rounded-full mr-4">
+                <div className="space-y-6">
+                  {/* Email */}
+                  <div
+                    className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out"
+                    data-aos="zoom-in"
+                    data-aos-delay="200"
+                  >
+                    <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
                       <svg
-                        className="w-6 h-6"
+                        className="w-7 h-7 text-white"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -287,43 +303,60 @@ const ContactUs = () => {
                         ></path>
                       </svg>
                     </div>
-                    <div>
-                      <p className="font-medium">Email Us</p>
-                      <p className="text-sm opacity-80">
+                    <div className="overflow-hidden break-words max-w-full">
+                      <p className="font-semibold text-white">Email Us</p>
+                      <p className="text-sm opacity-80 break-words max-w-full">
                         sandeepvashishtha@outlook.in
                       </p>
                     </div>
                   </div>
-                </div>
-                <div className="space-y-4 mt-10"></div>
-                <div className="flex items-center">
-                  <div className="bg-white bg-opacity-20 p-2 rounded-full mr-4">
-                    <FiMessageSquare className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Quick Response</p>
-                    <p className="text-sm opacity-80">
-                      We aim to reply to all inquiries within 24 hours.
-                    </p>
-                  </div>
-                </div>
 
-                <div className="space-y-4 mt-10"></div>
-                <div className="flex items-center">
-                  <div className="bg-white bg-opacity-20 p-2 rounded-full mr-4">
-                    <FiStar className="w-6 h-6" />
+                  {/* Quick Response */}
+                  <div
+                    className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out"
+                    data-aos="zoom-in"
+                    data-aos-delay="300"
+                  >
+                    <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
+                      <FiMessageSquare className="w-7 h-7 text-white" />
+                    </div>
+                    <div className="overflow-hidden max-w-full">
+                      <p className="font-semibold text-white">Quick Response</p>
+                      <p className="text-sm opacity-80">
+                        We aim to reply to all inquiries within 24 hours.
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">Multiple Channels</p>
-                    <p className="text-sm opacity-80">
-                      Reach us via email, phone, or the contact form.
-                    </p>
+
+                  {/* Multiple Channels */}
+                  <div
+                    className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out"
+                    data-aos="zoom-in"
+                    data-aos-delay="400"
+                  >
+                    <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
+                      <FiStar className="w-7 h-7 text-white" />
+                    </div>
+                    <div className="overflow-hidden max-w-full">
+                      <p className="font-semibold text-white">
+                        Multiple Channels
+                      </p>
+                      <p className="text-sm opacity-80">
+                        Reach us via email, phone, or the contact form.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="md:w-3/5 p-10">
+            <div
+              className="md:w-3/5 p-10"
+              // AOS Implementation for form
+              data-aos="fade-left"
+              data-aos-duration="1000"
+              data-aos-anchor=".ContactUs"
+            >
               <div className="text-center mb-8">
                 <h2 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100">
                   Send us a Message

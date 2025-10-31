@@ -4,28 +4,19 @@ import { motion } from "framer-motion";
 import { FiMessageSquare } from "react-icons/fi";
 
 const FeedbackButton = () => {
-  const [isScrollTopVisible, setIsScrollTopVisible] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => setIsScrollTopVisible(window.scrollY > 50);
-    handleScroll(); // initial check
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   return (
     <motion.div
       layout 
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className={`fixed left-[1.625rem] z-[10] translate-y-1/2 ${
-        isScrollTopVisible ? "bottom-24" : "bottom-6"
-      }`}
+      className={"fixed left-[1.625rem] z-[10] translate-y-1/2 bottom-6"
+      }
       initial={{ opacity: 0, scale: 0 }}
       animate={{ opacity: 1, scale: 1 }}
     >
       <Link
         to="/feedback"
-        className="relative flex items-center justify-center p-3.5 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-full shadow-lg hover:from-purple-600 hover:to-pink-700 transition-all duration-300 border-2 border-white group"
+        className="relative flex items-center justify-center p-3.5 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-full shadow-lg hover:from-purple-600 hover:to-pink-700 transition-all duration-300  group"
         // title="Share Feedback"
         aria-label="Share Feedback"
       >

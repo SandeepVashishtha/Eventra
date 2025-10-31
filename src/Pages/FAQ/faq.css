@@ -1,0 +1,13 @@
+.question-icon {
+    animation: rotateY360 2s linear infinite;
+    /* transform-style: preserve-3d; */
+}
+
+@keyframes rotateY360 {
+    from {
+        transform: rotateY(0deg);
+    }
+    to {
+        transform: rotateY(360deg);
+    }
+}

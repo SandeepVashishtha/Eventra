@@ -1,0 +1,136 @@
+.confirmation-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(2px);
+}
+
+.confirmation-modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 0;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: modal-appear 0.2s ease-out;
+}
+
+@keyframes modal-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.confirmation-modal-header {
+  padding: 20px 24px 0;
+  border-bottom: none;
+}
+
+.confirmation-modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  text-align: center;
+}
+
+.confirmation-modal-body {
+  padding: 20px 24px;
+}
+
+.confirmation-modal-body p {
+  margin: 0;
+  text-align: center;
+  color: #6b7280;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.confirmation-modal-actions {
+  display: flex;
+  gap: 12px;
+  padding: 0 24px 24px;
+  justify-content: center;
+}
+
+.confirmation-modal-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 100px;
+}
+
+.confirmation-modal-btn-cancel {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.confirmation-modal-btn-cancel:hover {
+  background-color: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+.confirmation-modal-btn-confirm {
+  background-color: #ef4444;
+  color: white;
+}
+
+.confirmation-modal-btn-confirm:hover {
+  background-color: #dc2626;
+  transform: translateY(-1px);
+}
+
+/* Dark mode support */
+.dark .confirmation-modal-content {
+  background: #1f2937;
+  color: white;
+}
+
+.dark .confirmation-modal-header h3 {
+  color: white;
+}
+
+.dark .confirmation-modal-body p {
+  color: #d1d5db;
+}
+
+.dark .confirmation-modal-btn-cancel {
+  background-color: #374151;
+  color: #d1d5db;
+}
+
+.dark .confirmation-modal-btn-cancel:hover {
+  background-color: #4b5563;
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+  .confirmation-modal-content {
+    width: 95%;
+    margin: 20px;
+  }
+  
+  .confirmation-modal-actions {
+    flex-direction: column-reverse;
+  }
+  
+  .confirmation-modal-btn {
+    width: 100%;
+  }
+}

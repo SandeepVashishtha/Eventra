@@ -2,6 +2,9 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
+import ConfirmationModal from "../common/ConfirmationModal"; // ADD THIS IMPORT
+import { toast } from "react-toastify";
+
 
 import ThemeToggleButton from "../common/ThemeToggleButton";
 
@@ -29,6 +32,7 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [showLogoutModal, setShowLogoutModal] = useState(false); // ADD THIS LINE
 
   const drawerRef = useRef(null);
   const closeBtnRef = useRef(null);
@@ -80,6 +84,11 @@ const Navbar = () => {
       /* ignore */
     }
   };
+
+  useEffect(() => {
+    const event = new CustomEvent("mobileMenuToggle", { detail: isMobileMenuOpen });
+    window.dispatchEvent(event);
+  }, [isMobileMenuOpen]);
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -235,17 +244,33 @@ const Navbar = () => {
     },
   ];
 
-  const handleLogout = () => {
-    logout();
+  // REPLACE THE EXISTING handleLogout FUNCTION WITH THESE 3 FUNCTIONS:
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
     setShowProfileDropdown(false);
+  };
+
+  const handleConfirmLogout = () => {
+    setShowLogoutModal(false);
+    logout();
+
+    toast.success("You have been logged out successfully.", {
+      className: "custom-toast",
+      autoClose: 3000,
+    });
+
     navigate("/");
+  };
+
+  const handleCancelLogout = () => {
+    setShowLogoutModal(false);
   };
 
   return (
     <>
       <div
         className={`fixed inset-0 bg-black/60 z-30 transition-opacity duration-300 ${
-          isMobileMenuOpen || showProfileDropdown || openDropdown
+          isMobileMenuOpen || showProfileDropdown || openDropdown || showLogoutModal
             ? "opacity-100"
             : "opacity-0 pointer-events-none"
         }`}
@@ -254,6 +279,11 @@ const Navbar = () => {
 
       <nav
         ref={navRef}
+        // AOS Implementation
+        data-aos="fade-down"
+        data-aos-once="true"
+        data-aos-duration="1000"
+        // End AOS Implementation
         className="fixed top-0 left-0 w-full z-40 shadow-lg 
              bg-gradient-to-r from-purple-100/80 via-white to-indigo-100 backdrop-blur-lg border-b border-indigo-100
              dark:bg-gradient-to-r dark:from-gray-900 dark:via-indigo-950 dark:to-gray-900 dark:border-indigo-950"
@@ -285,7 +315,7 @@ const Navbar = () => {
           </Link>
 
           {/* Centered nav links */}
-          <div className="hidden lg:flex absolute left-1/2 transform -translate-x-1/2 space-x-8 z-10">
+          <div className="hidden lg:flex absolute left-[48%] transform -translate-x-1/2 space-x-5 z-10">
             {navItems.map((item) => {
               const isActive = item.href
                 ? location.pathname === item.href
@@ -300,7 +330,7 @@ const Navbar = () => {
                           openDropdown === item.name ? null : item.name
                         );
                       }}
-                      className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${
+                      className={`flex items-center gap-1 text-base font-medium transition-colors ${
                         isActive || openDropdown === item.name
                           ? "text-indigo-600 dark:text-white"
                           : "text-gray-600 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-white"
@@ -325,7 +355,7 @@ const Navbar = () => {
                             key={sub.name}
                             to={sub.href}
                             onClick={() => setOpenDropdown(null)}
-                            className={`group flex items-center gap-3 w-full px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                            className={`group flex items-center gap-3 w-full px-3 py-2 text-base font-medium rounded-md transition-colors ${
                               location.pathname === sub.href
                                 ? "bg-black/5 dark:bg-white/10 text-indigo-600 dark:text-white"
                                 : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
@@ -347,7 +377,7 @@ const Navbar = () => {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`text-sm font-medium transition-colors ${
+                  className={`text-base font-medium transition-colors ${
                     isActive
                       ? "text-indigo-600 dark:text-white"
                       : "text-gray-600 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-white"
@@ -456,10 +486,10 @@ const Navbar = () => {
                           </Link>
                         </div>
 
-                        {/* Logout */}
+                        {/* Logout - CHANGE ONLY THIS BUTTON */}
                         <div className="p-2 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
                           <button
-                            onClick={handleLogout}
+                            onClick={handleLogoutClick}
                             className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm 
                      text-red-600 dark:text-red-400 
                      hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
@@ -476,13 +506,13 @@ const Navbar = () => {
                 <div className="flex items-center space-x-1">
                   <Link
                     to="/login"
-                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-white transition-colors"
+                    className="px-4 py-2 text-base font-medium text-gray-600 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-white transition-colors"
                   >
                     Sign In
                   </Link>
                   <Link
                     to="/signup"
-                    className="px-5 py-2 text-sm font-semibold text-white transition-all bg-indigo-600 hover:bg-indigo-700 dark:bg-white/10 dark:border dark:border-white/20 rounded-lg dark:hover:bg-white/20"
+                    className="px-5 py-2 text-sm font-semibold text-white transition-all duration-300 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 dark:from-[#6B46FF] dark:to-[#8B5CF6] dark:border dark:border-white/10 dark:shadow-[0_6px_18px_rgba(107,70,255,0.16)] dark:hover:shadow-[0_10px_26px_rgba(90,61,224,0.20)] focus:outline-none focus:ring-4 focus:ring-indigo-500/30 dark:focus:ring-[#6B46FF]/20"
                   >
                     Get Started
                   </Link>
@@ -574,7 +604,7 @@ const Navbar = () => {
                         openDropdown === item.name ? null : item.name
                       )
                     }
-                    className={`flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors text-left font-medium ${
+                    className={`flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors text-left text-lg font-medium ${
                       isActive
                         ? "bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/20 text-indigo-600 dark:text-white"
                         : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
@@ -598,7 +628,7 @@ const Navbar = () => {
                             key={sub.name}
                             to={sub.href}
                             onClick={closeAllMenus}
-                            className={`flex items-center gap-3 px-4 py-2 rounded-md font-medium ${
+                            className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium ${
                               isSubActive
                                 ? "bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/20 text-indigo-600 dark:text-white"
                                 : "text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-white"
@@ -619,7 +649,7 @@ const Navbar = () => {
                 key={item.name}
                 to={item.href}
                 onClick={closeAllMenus}
-                className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors font-medium ${
+                className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors text-lg font-medium ${
                   isActive
                     ? "bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/20 text-indigo-600 dark:text-white"
                     : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
@@ -661,7 +691,7 @@ const Navbar = () => {
               <Link
                 to="/dashboard"
                 onClick={closeAllMenus}
-                className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors font-medium ${
+                className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors text-lg font-medium ${
                   location.pathname === "/dashboard"
                     ? "bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/20 text-indigo-600 dark:text-white"
                     : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
@@ -673,7 +703,7 @@ const Navbar = () => {
               <Link
                 to="/profile"
                 onClick={closeAllMenus}
-                className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors font-medium ${
+                className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors text-lg font-medium ${
                   location.pathname === "/profile"
                     ? "bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/20 text-indigo-600 dark:text-white"
                     : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
@@ -682,8 +712,9 @@ const Navbar = () => {
                 <UserCog className="w-5 h-5" />
                 Edit Profile
               </Link>
+              {/* CHANGE ONLY THIS BUTTON */}
               <button
-                onClick={handleLogout}
+                onClick={handleLogoutClick}
                 className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/20 hover:text-red-700 dark:hover:text-red-300 transition-colors font-medium"
               >
                 <LogOut className="w-5 h-5" />
@@ -695,7 +726,7 @@ const Navbar = () => {
               <Link
                 to="/login"
                 onClick={closeAllMenus}
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg font-medium text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 border border-transparent hover:border-black/10 dark:hover:border-white/20 transition-colors"
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 dark:from-[#6B46FF] dark:to-[#8B5CF6] dark:hover:from-[#5A3DE0] dark:hover:to-[#7B4CF0] shadow-lg hover:shadow-xl dark:shadow-indigo-500/30 dark:hover:shadow-indigo-500/40 transform hover:-translate-y-0.5 transition-all duration-300 border border-transparent dark:border-white/10"
               >
                 <LogIn className="w-5 h-5" />
                 Sign In
@@ -703,14 +734,24 @@ const Navbar = () => {
               <Link
                 to="/signup"
                 onClick={closeAllMenus}
-                className="flex items-center justify-center gap-2 w-full py-2.5 text-white transition-all bg-indigo-600 hover:bg-indigo-700 dark:bg-white/10 dark:border dark:border-white/20 rounded-lg dark:hover:bg-white/20"
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-indigo-600 dark:text-white bg-white dark:bg-white/10 hover:bg-indigo-50 dark:hover:bg-white/15 border-2 border-indigo-200 dark:border-white/20 hover:border-indigo-300 dark:hover:border-white/30 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
               >
+                <RocketLaunchIcon className="w-5 h-5" />
                 Get Started
               </Link>
             </div>
           )}
         </div>
       </div>
+
+      {/* ADD THIS MODAL AT THE VERY BOTTOM */}
+      <ConfirmationModal
+        isOpen={showLogoutModal}
+        onClose={handleCancelLogout}
+        onConfirm={handleConfirmLogout}
+        title="Logout Confirmation"
+        message="Are you sure you want to log out?"
+      />
 
       <div style={{ height: navHeight }} />
     </>

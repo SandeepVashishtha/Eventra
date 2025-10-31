@@ -9,7 +9,12 @@ const ProjectCTA = () => {
     const { user, token } = useAuth();
   
   return (
-    <section className="relative py-16 px-8 m-8 rounded-3xl bg-gradient-to-tr from-cyan-800 via-blue-900 to-indigo-900 text-white shadow-xl overflow-hidden">
+    <section 
+      className="relative py-16 px-8 m-8 rounded-3xl bg-gradient-to-tr from-cyan-800 via-blue-900 to-indigo-900 text-white shadow-xl overflow-hidden"
+      // AOS Implementation
+      data-aos="zoom-in-up"
+      data-aos-duration="1000"
+    >
       {/* Diagonal Shimmer */}
       <motion.div
         className="absolute inset-0 pointer-events-none"
@@ -53,6 +58,8 @@ const ProjectCTA = () => {
             className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-800 to-blue-600 font-semibold px-8 py-4 rounded-full shadow-lg hover:scale-105 hover:shadow-blue-400/50 transition-transform duration-300"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            data-aos="zoom-in"
+            data-aos-delay="200"
           >
             <FolderOpen size={20} /> Explore Projects
           </motion.a>
@@ -61,6 +68,8 @@ const ProjectCTA = () => {
              to={user ? "/submit-project" : "/login"}
             // UPDATED: The secondary button needs a subtle dark mode style
             className="inline-flex items-center justify-center gap-2 bg-white text-blue-700 dark:bg-gray-800 dark:text-blue-300 dark:hover:bg-gray-700 font-semibold px-8 py-4 rounded-full shadow-lg transition-transform duration-300"
+            data-aos="zoom-in"
+            data-aos-delay="400"
           >
             <UploadCloud size={20} /> Submit Project
           </Link>
@@ -71,6 +80,8 @@ const ProjectCTA = () => {
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-400 to-blue-600 text-white font-semibold px-8 py-4 rounded-full shadow-lg hover:shadow-blue-400/50 transition-all duration-300"
+              data-aos="zoom-in"
+              data-aos-delay="600"
             >
               <Bug size={20} /> Browse Issues
             </Link>
@@ -80,12 +91,5 @@ const ProjectCTA = () => {
     </section>
   );
 };
-
-
-
-
-
-
-
 
 export default ProjectCTA;

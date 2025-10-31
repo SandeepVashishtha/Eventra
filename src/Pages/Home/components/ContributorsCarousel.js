@@ -222,6 +222,10 @@ const Contributors = () => {
       ref={sectionRef}
       // UPDATED: Section background
       className="py-20 bg-gradient-to-b from-indigo-50 via-indigo-100 to-white dark:from-gray-900 dark:via-indigo-900/20 dark:to-black "
+      // AOS Implementation
+      data-aos="slide-up"
+      data-aos-duration="1000"
+      data-aos-offset="200"
     >
       <div className="max-w-7xl mx-auto px-6">
         <motion.h2
@@ -230,8 +234,11 @@ const Contributors = () => {
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
+          // AOS Implementation (Title)
+          data-aos="fade-zoom-in"
+          data-aos-once="true"
         >
-          🌟 Our Amazing {/* UPDATED: Gradient text for dark mode */}
+          Our Amazing {/* UPDATED: Gradient text for dark mode */}
           <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 dark:from-indigo-400 dark:via-purple-500 dark:to-pink-500 bg-clip-text text-transparent animate-pulse">
             Contributors
           </span>
@@ -269,7 +276,6 @@ const Contributors = () => {
               {visibleContributors.map((c, i) => (
                 <motion.div
                   key={c.id}
-                  // UPDATED: Card background gradient and border
                   className="relative bg-gradient-to-br from-white/90 to-indigo-50/80 dark:from-gray-700/80 dark:to-gray-800/70 backdrop-blur-xl p-4 pt-10 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 flex flex-col items-center text-center mb-6 transition-all duration-300 ease-out flex-shrink-0"
                   style={{
                     flex: `0 0 calc((100% - ${
@@ -284,6 +290,8 @@ const Contributors = () => {
                     y: -4,
                     boxShadow: "0px 6px 18px rgba(99,102,241,0.25)",
                   }}
+                  data-aos="zoom-in-up"
+                  data-aos-delay={i * 100}
                 >
                   {/* Avatar */}
                   <div className="absolute top-3 mt-3 left-1/2 -translate-x-1/2">
@@ -310,22 +318,21 @@ const Contributors = () => {
                     {/* UPDATED: Contribution Badges */}
                     {currentIndex + i === 0 && (
                       <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300">
-                        🥇 Top Contributor
+                        🥇･ Top Contributor
                       </span>
                     )}
                     {currentIndex + i === 1 && (
                       <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300">
-                        🥈 Silver Contributor
+                        🥈･ Silver Contributor
                       </span>
                     )}
                     {currentIndex + i === 2 && (
                       <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300">
-                        🥉 Bronze Contributor
+                        🥉･ Bronze Contributor
                       </span>
                     )}
                   </div>
 
-                  {/* Stats Section (Glass style) */}
                   {/* UPDATED: Stat text colors */}
                   <div className="grid grid-cols-3 gap-3 text-sm text-gray-700 dark:text-gray-300 my-3 w-full">
                     {/* UPDATED: Stat box background and icon colors */}
@@ -344,9 +351,7 @@ const Contributors = () => {
                       </span>
                     </div>
                     <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                      <span className="text-indigo-600 dark:text-indigo-400 font-bold">
-                        🔥
-                      </span>
+                      <FaCodeBranch className="text-indigo-600 dark:text-indigo-400 mb-1" />
                       <span className="font-semibold">{c.contributions}</span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">
                         Contribs
