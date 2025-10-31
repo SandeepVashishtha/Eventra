@@ -43,7 +43,13 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
 
   return (
     // UPDATED: Main background gradient
-    <div className="relative min-h-screen py-24 overflow-hidden bg-gradient-to-l from-indigo-200 to-white dark:from-indigo-950 dark:to-black">
+    <div 
+      className="relative min-h-screen py-24 overflow-hidden bg-gradient-to-l from-indigo-200 to-white dark:from-indigo-950 dark:to-black"
+      // AOS Implementation
+      data-aos="fade-down"
+      data-aos-once="true"
+      data-aos-duration="1000"
+    >
       {/* Floating Shapes */}
       {floatingShapes.map((shape, idx) => (
         <motion.div
@@ -145,6 +151,8 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
             whileTap={{ scale: 0.95 }}
             whileHover="hover"
             initial="rest"
+            data-aos="zoom-in"
+            data-aos-delay="400"
           >
             <motion.span
               variants={{
@@ -163,6 +171,8 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
           className="bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 px-6 py-3 rounded-2xl font-semibold flex items-center gap-2 shadow-md hover:shadow-xl hover:bg-indigo-50 dark:hover:bg-gray-700 transition-all duration-300"
           whileTap={{ scale: 0.95}}
           onClick={scrollToCard}
+          data-aos="zoom-in"
+          data-aos-delay="600"
           >
             Explore Projects
             <motion.span
@@ -192,6 +202,9 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
                 stiffness: 120,
               }}
               whileHover={{ scale: 1.05 }}
+              // AOS Implementation on individual stats
+              data-aos="zoom-in"
+              data-aos-delay={700 + idx * 150}
               // UPDATED: Stat card background
               className="bg-gradient-to-r from-indigo-50 to-white dark:from-gray-800 dark:to-gray-700 shadow-md hover:shadow-xl rounded-3xl p-6 flex flex-col items-center justify-center transition-all duration-300"
             >

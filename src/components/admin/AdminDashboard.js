@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS, apiUtils } from '../../config/api';
+import ConfirmationModal from '../common/ConfirmationModal'; // ADD THIS IMPORT
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -20,10 +21,21 @@ const AdminDashboard = () => {
     location: '',
     maxParticipants: ''
   });
+  const [showLogoutModal, setShowLogoutModal] = useState(false); // ADD THIS LINE
 
-  const handleLogout = () => {
+  // REPLACE THE EXISTING handleLogout FUNCTION WITH THESE 3 FUNCTIONS:
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
+  };
+
+  const handleConfirmLogout = () => {
+    setShowLogoutModal(false);
     logout();
     navigate('/');
+  };
+
+  const handleCancelLogout = () => {
+    setShowLogoutModal(false);
   };
 
   useEffect(() => {
@@ -69,7 +81,8 @@ const AdminDashboard = () => {
       <div className="dashboard-header">
         <h1>Admin Dashboard</h1>
         <p>Welcome back, {user?.firstName} {user?.lastName}</p>
-        <button className="logout-button" onClick={handleLogout}>
+        {/* CHANGE ONLY THIS BUTTON */}
+        <button className="logout-button" onClick={handleLogoutClick}>
           Logout
         </button>
       </div>
@@ -183,6 +196,15 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* ADD THIS MODAL AT THE BOTTOM */}
+      <ConfirmationModal
+        isOpen={showLogoutModal}
+        onClose={handleCancelLogout}
+        onConfirm={handleConfirmLogout}
+        title="Logout Confirmation"
+        message="Are you sure you want to log out?"
+      />
     </div>
   );
 };

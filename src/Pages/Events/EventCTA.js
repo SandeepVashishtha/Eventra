@@ -6,7 +6,12 @@ const EventCTA = () => {
   const [showModal, setShowModal] = useState(false);
 
   return (
-    <section className="relative py-16 px-8 m-8 rounded-3xl bg-gradient-to-tr from-indigo-900 via-purple-800 to-pink-700 text-white shadow-xl overflow-hidden">
+    <section 
+      className="relative py-16 px-8 m-8 rounded-3xl bg-gradient-to-tr from-indigo-900 via-purple-800 to-pink-700 text-white shadow-xl overflow-hidden"
+      // AOS Implementation
+      data-aos="zoom-in-up"
+      data-aos-duration="1000"
+    >
       {/* Snake-like glowing line */}
       <svg
         className="absolute inset-0 w-full h-full"
@@ -56,6 +61,8 @@ const EventCTA = () => {
             className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-pink-500 to-purple-600 font-semibold px-8 py-4 rounded-full shadow-lg hover:scale-105 hover:shadow-pink-400/50 transition-transform duration-300"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            data-aos="zoom-in"
+            data-aos-delay="200"
           >
             Explore Events <CalendarDays size={20} />
           </motion.a>
@@ -63,9 +70,11 @@ const EventCTA = () => {
           {/* UPDATED: The secondary button needs dark mode styles for when the main page is dark. */}
           <motion.button
             onClick={() => setShowModal(true)}
-            className="inline-flex items-center justify-center gap-2 bg-white text-purple-700 dark:bg-gray-200 dark:text-purple-800 font-semibold px-8 py-4 rounded-full shadow-lg hover:scale-105 transition-transform duration-300"
+            className="relative inline-flex items-center px-8 py-4 rounded-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-semibold shadow hover:shadow-lg hover:bg-gray-100 hover:text-gray-900 hover:dark:bg-gray-700 hover:dark:text-white hover:scale-105 transition-all duration-300"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            data-aos="zoom-in"
+            data-aos-delay="400"
           >
             <Users size={20} /> Participate
           </motion.button>
