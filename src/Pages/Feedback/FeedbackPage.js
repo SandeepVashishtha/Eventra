@@ -620,6 +620,18 @@ const FeedbackPage = () => {
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div className="md:w-3/5 p-10">
+              <div className="text-center mb-8">
+                {/* UPDATED: Text colors */}
+                <h2 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100">
+                  We'd Love to Hear From You
+                </h2>
+                <p className="mt-2 text-gray-600 dark:text-gray-400">
+                  Help us make Eventra better for everyone
+                </p>
+              </div>
 
               <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
                 <FloatingInput
