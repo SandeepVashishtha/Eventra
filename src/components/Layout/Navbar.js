@@ -695,7 +695,7 @@ const Navbar = () => {
               <Link
                 to="/login"
                 onClick={closeAllMenus}
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg font-medium text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 border border-transparent hover:border-black/10 dark:hover:border-white/20 transition-colors"
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 dark:from-[#6B46FF] dark:to-[#8B5CF6] dark:hover:from-[#5A3DE0] dark:hover:to-[#7B4CF0] shadow-lg hover:shadow-xl dark:shadow-indigo-500/30 dark:hover:shadow-indigo-500/40 transform hover:-translate-y-0.5 transition-all duration-300 border border-transparent dark:border-white/10"
               >
                 <LogIn className="w-5 h-5" />
                 Sign In
@@ -703,8 +703,9 @@ const Navbar = () => {
               <Link
                 to="/signup"
                 onClick={closeAllMenus}
-                className="flex items-center justify-center gap-2 w-full py-2.5 text-white transition-all bg-indigo-600 hover:bg-indigo-700 dark:bg-white/10 dark:border dark:border-white/20 rounded-lg dark:hover:bg-white/20"
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-indigo-600 dark:text-white bg-white dark:bg-white/10 hover:bg-indigo-50 dark:hover:bg-white/15 border-2 border-indigo-200 dark:border-white/20 hover:border-indigo-300 dark:hover:border-white/30 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
               >
+                <RocketLaunchIcon className="w-5 h-5" />
                 Get Started
               </Link>
             </div>
