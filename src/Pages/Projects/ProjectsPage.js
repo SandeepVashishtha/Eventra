@@ -158,7 +158,7 @@ const ProjectGallery = () => {
 
   return (
     // UPDATED: Main page background
-    <div className="flex flex-col min-h-screen bg-gradient-to-l from-indigo-200 to-white dark:from-indigo-950 dark:to-black">
+    <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-indigo-950 dark:to-black">
       {/* Hero Section with CTA */}
       <ProjectHero setShowSubmissionModal={setShowSubmissionModal} scrollToCard={scrollToCard} />
       {/* Main Container */}
@@ -167,7 +167,7 @@ const ProjectGallery = () => {
         <motion.div
           // UPDATED: Panel background and border
           className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8"
-          style={{ boxShadow: "0 10px 25px rgba(59, 130, 246, 0.1)" }}
+          style={{ boxShadow: "0 10px 25px rgba(59, 130, 246, 0.08)" }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -189,7 +189,7 @@ const ProjectGallery = () => {
                 type="text"
                 placeholder="Search projects by name, tech stack, or category..."
                 // UPDATED: Input styles
-                className="block w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-800 shadow-sm transition-all duration-300"
+                className="block w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-black/20 dark:focus:ring-white/20 focus:border-black/20 dark:focus:border-white/20 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-800 shadow-sm transition-all duration-300"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -208,7 +208,7 @@ const ProjectGallery = () => {
                 >
                   <div
                     // UPDATED: Dropdown button styles
-                    className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 hover:ring-2 hover:ring-indigo-500 transition-all"
+                    className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 hover:ring-2 hover:ring-black/20 transition-all"
                     onClick={() => setCategoryOpen((prev) => !prev)}
                   >
                     <span className="text-gray-700 dark:text-gray-200">
@@ -230,7 +230,7 @@ const ProjectGallery = () => {
                               setCategoryOpen(false); // Close dropdown on selection
                             }}
                             // UPDATED: Dropdown item styles
-                            className="px-4 py-2 hover:bg-indigo-50 dark:hover:bg-gray-700 cursor-pointer text-gray-700 dark:text-gray-300"
+                            className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-gray-700 dark:text-gray-300"
                           >
                             {cat === "all" ? "All Categories" : cat}
                           </li>
@@ -252,7 +252,7 @@ const ProjectGallery = () => {
                 >
                   <div
                     // UPDATED: Dropdown button styles
-                    className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-700 hover:ring-2 hover:ring-indigo-500 transition-all"
+                    className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-700 hover:ring-2 hover:ring-black/20 transition-all"
                     onClick={() => setSortOpen((prev) => !prev)}
                   >
                     <span className="text-gray-700 dark:text-gray-300">
@@ -279,7 +279,7 @@ const ProjectGallery = () => {
                               setSortOpen(false); // Close dropdown on selection
                             }}
                             // UPDATED: Dropdown item styles
-                            className="px-4 py-2 hover:bg-indigo-50 dark:hover:bg-gray-700 cursor-pointer text-gray-700 dark:text-gray-300"
+                            className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-gray-700 dark:text-gray-300"
                           >
                             {label}
                           </li>
@@ -406,7 +406,7 @@ const ProjectGallery = () => {
                   return (
                     <motion.div
                       key={i}
-                      className="absolute rounded-full bg-indigo-300 dark:bg-indigo-500/40"
+                      className="absolute rounded-full bg-sky-200 dark:bg-sky-500/40"
                       style={{
                         width: size,
                         height: size,
@@ -439,9 +439,9 @@ const ProjectGallery = () => {
                     repeat: Infinity,
                     ease: "easeInOut",
                   }}
-                  className="flex justify-center items-center w-20 h-20 rounded-full bg-white dark:bg-gray-700 shadow-lg mx-auto border border-indigo-100 dark:border-gray-600"
+                  className="flex justify-center items-center w-20 h-20 rounded-full bg-white dark:bg-gray-700 shadow-lg mx-auto border border-sky-100 dark:border-gray-600"
                 >
-                  <FiSearch className="h-10 w-10 text-indigo-600 dark:text-indigo-400" />
+                  <FiSearch className="h-10 w-10 text-black dark:text-white" />
                 </motion.div>
 
                 {/* UPDATED: Text colors */}

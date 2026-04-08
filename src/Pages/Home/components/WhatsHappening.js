@@ -161,7 +161,7 @@ const WhatsHappening = () => {
     // UPDATED: Section background
     <section
       ref={ref}
-      className="py-12 sm:py-16 bg-gradient-to-t from-indigo-50 via-indigo-100 to-white dark:from-gray-900 dark:via-indigo-900/20 dark:to-black "
+      className="py-12 sm:py-16 bg-gradient-to-t from-sky-50 via-pink-50 to-amber-50 dark:from-gray-900 dark:via-gray-800 dark:to-black"
       // AOS Implementation
       data-aos="fade-up"
       data-aos-duration="1000"
@@ -294,7 +294,7 @@ const WhatsHappening = () => {
                     <div
                       key={event.id}
 
-                      className="flex flex-col rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 bg-white dark:bg-black/60 transform hover:scale-105 min-h-[360px] ring-2 ring-indigo-500 dark:ring-indigo-400"
+                      className="flex flex-col rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 bg-white dark:bg-black/60 transform hover:scale-105 min-h-[360px] ring-2 ring-sky-200 dark:ring-sky-700/60"
 
                     >
                       <div className="p-4 sm:p-6 flex-1 flex flex-col">
@@ -321,7 +321,7 @@ const WhatsHappening = () => {
 
                         {/* Additional info for hackathons */}
                         {event.prize && (
-                          <div className="flex items-center text-xs sm:text-sm text-purple-600 dark:text-purple-400 mb-2">
+                          <div className="flex items-center text-xs sm:text-sm text-rose-500 dark:text-rose-300 mb-2">
                             <svg
                               className="w-4 h-4 mr-1.5"
                               fill="currentColor"
@@ -372,8 +372,8 @@ const WhatsHappening = () => {
                           href={event.link}
                           className={`w-full inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 border border-transparent rounded-md shadow-sm text-xs sm:text-sm font-medium transition-colors ${
                             event.featured
-                              ? "bg-indigo-600 text-white hover:bg-indigo-700"
-                              : "text-indigo-600 dark:text-indigo-400 bg-white dark:bg-gray-700 border-indigo-100 dark:border-gray-600 hover:bg-indigo-50 dark:hover:bg-gray-600"
+                              ? "bg-black text-white hover:bg-sky-100 hover:text-black"
+                              : "bg-black text-white hover:bg-emerald-100 hover:text-black"
                           }`}
                           target={
                             event.link.startsWith("http") ? "_blank" : "_self"
@@ -426,15 +426,15 @@ const WhatsHappening = () => {
                 <div
                   className={`w-3 h-2.5 sm:w-8 sm:h-2.5 rounded-full transition-colors duration-300 ${
                     activeDotIndex === index
-                      ? "bg-indigo-600 dark:bg-indigo-400"
-                      : "bg-gray-300 dark:bg-gray-600 group-hover:bg-gray-400 dark:group-hover:bg-gray-500"
+                      ? "bg-gradient-to-r from-sky-300 via-emerald-300 to-rose-300 dark:from-sky-500 dark:via-emerald-500 dark:to-rose-500"
+                      : "bg-gray-300 dark:bg-gray-600 group-hover:bg-sky-200 dark:group-hover:bg-sky-500"
                   }`}
                 />
                 {/* Auto-play progress indicator for current slide group */}
                 {activeDotIndex === index && isAutoPlaying && (
-                  <div className="absolute inset-0 rounded-full border-2 border-indigo-600 dark:border-indigo-400">
+                  <div className="absolute inset-0 rounded-full border-2 border-sky-300 dark:border-sky-400">
                     <div
-                      className="w-full h-full rounded-full bg-indigo-600/20 dark:bg-indigo-400/20"
+                      className="w-full h-full rounded-full bg-sky-200/20 dark:bg-sky-400/20"
                       style={{
                         animation: "progress 2.5s linear infinite",
                       }}
@@ -458,77 +458,6 @@ const WhatsHappening = () => {
           }
         `}</style>
 
-        {/* Info Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.7, ease: "easeOut" }}
-          data-aos="fade-up"
-          data-aos-delay="200"
-          data-aos-once="true"
-          className="
-  relative overflow-hidden mt-12 sm:mt-16 p-[1px] rounded-2xl shadow-lg 
-  bg-gradient-to-r from-indigo-500 via-indigo-400 to-indigo-600 
-            dark:from-gray-700/80 dark:via-gray-600/30 dark:to-gray-500/70
-"
-        >
-          {/* Glass panel */}
-          <div className="relative bg-white/80 dark:bg-gray-900/70 backdrop-blur-xl rounded-2xl p-8 sm:p-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div className="md:flex-1 md:pr-10">
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-black dark:text-white">
-                🚀 Eventra × GirlScript Summer of Code 2025
-              </h3>
-              <p className="mt-3 text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
-                We’re thrilled to mentor contributors and collaborate with
-                developers worldwide through{" "}
-                <span className="font-semibold text-indigo-500">
-                  GSSOC 2025
-                </span>
-                . Let’s innovate and build the future of event management —
-                together!
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-center gap-3">
-              {/* Primary CTA */}
-              <a
-                href="https://gssoc.girlscript.tech/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group inline-flex items-center justify-center px-5 sm:px-7 py-2.5 sm:py-3 rounded-xl text-sm sm:text-base font-semibold text-white bg-black hover:bg-zinc-800 transition-all duration-300 shadow-md"
-              >
-                Apply to GSSOC
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 8l4 4m0 0l-4 4m4-4H3"
-                  />
-                </svg>
-              </a>
-
-              {/* Secondary CTA */}
-              <a
-                href="https://github.com/sandeepvashishtha/Eventra/issues"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center px-5 sm:px-7 py-2.5 sm:py-3 border border-gray-300 dark:border-gray-700 rounded-xl text-sm sm:text-base font-medium text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 shadow-sm"
-              >
-                View Issues
-              </a>
-            </div>
-          </div>
-
-          {/* Subtle gradient glow animation */}
-          <div className="absolute inset-0 bg-black/10 opacity-20 blur-3xl animate-pulse -z-10" />
-        </motion.div>
       </div>
     </section>
   );

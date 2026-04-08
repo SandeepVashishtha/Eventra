@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
 import { CalendarDays, Users } from "lucide-react";
 
 const EventCTA = () => {
@@ -17,67 +16,47 @@ const EventCTA = () => {
         className="absolute inset-0 w-full h-full"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <motion.path
+        <path
           d="M0,100 Q150,200 300,100 T600,100 T900,150 T1200,120"
           fill="transparent"
           stroke="rgba(255,255,255,0.2)"
           strokeWidth="3"
           strokeLinecap="round"
-          animate={{ pathLength: [0, 1, 0] }}
-          transition={{
-            repeat: Infinity,
-            duration: 8,
-            ease: "easeInOut",
-          }}
         />
       </svg>
 
       <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
         {/* Text */}
         <div className="md:w-1/2 text-center md:text-left">
-          <motion.h2
+          <h2
             className="text-4xl md:text-5xl font-bold mb-4"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
           >
             Stay Updated with Our Events
-          </motion.h2>
-          <motion.p
+          </h2>
+          <p
             className="text-lg md:text-xl mb-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8 }}
           >
             Explore upcoming events, workshops, and webinars. Join the community
             and never miss out on learning opportunities.
-          </motion.p>
+          </p>
         </div>
 
         {/* Buttons */}
         <div className="flex flex-col md:flex-row gap-4">
-          <motion.a
+          <a
             href="/events"
             className="inline-flex items-center justify-center gap-2 bg-white text-black font-semibold px-8 py-4 rounded-full shadow-lg hover:scale-105 hover:bg-gray-100 transition-transform duration-300"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            data-aos="zoom-in"
-            data-aos-delay="200"
           >
             Explore Events <CalendarDays size={20} />
-          </motion.a>
+          </a>
 
           {/* UPDATED: The secondary button needs dark mode styles for when the main page is dark. */}
-          <motion.button
+          <button
             onClick={() => setShowModal(true)}
             className="relative inline-flex items-center px-8 py-4 rounded-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-semibold shadow hover:shadow-lg hover:bg-gray-100 hover:text-gray-900 hover:dark:bg-gray-700 hover:dark:text-white hover:scale-105 transition-all duration-300"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            data-aos="zoom-in"
-            data-aos-delay="400"
           >
             <Users size={20} /> Participate
-          </motion.button>
+          </button>
         </div>
       </div>
 

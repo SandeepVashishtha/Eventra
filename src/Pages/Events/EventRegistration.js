@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import {
   Calendar,
   MapPin,
@@ -178,11 +177,7 @@ const EventRegistration = () => {
   if (registered) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 px-4">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="text-center"
-        >
+        <div className="text-center">
           <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-4" />
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             Registration Successful!
@@ -197,7 +192,7 @@ const EventRegistration = () => {
             <ArrowLeft className="w-4 h-4" />
             Back to Events
           </Link>
-        </motion.div>
+        </div>
       </div>
     );
   }

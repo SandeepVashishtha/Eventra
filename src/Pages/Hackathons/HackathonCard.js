@@ -44,14 +44,14 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
       }}
       viewport={{ once: true, amount: 0.3 }} // triggers when 30% visible
       whileHover={{ y: -4, scale: 1.02 }} // keeps your hover lift effect
-      className={`bg-gradient-to-br from-white to-white dark:from-gray-800 dark:to-black rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-indigo-300 dark:border-gray-700 relative card-with-floating-elements ${
-        isFeatured ? "ring-2 ring-indigo-500 dark:ring-indigo-400" : ""
+      className={`bg-gradient-to-br from-white to-white dark:from-gray-800 dark:to-black rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-blue-200 dark:border-gray-700 relative card-with-floating-elements ${
+        isFeatured ? "ring-2 ring-blue-300 dark:ring-blue-400" : ""
       }`}
       {...props}
     >
       {/* Featured Ribbon */}
       {isFeatured && (
-        <div className="absolute top-0 right-0 bg-indigo-600 text-white text-xs font-semibold px-3 py-1 rounded-bl-lg">
+        <div className="absolute top-0 right-0 bg-black text-white text-xs font-semibold px-3 py-1 rounded-bl-lg">
           Featured
         </div>
       )}
@@ -103,7 +103,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
                 hackathon.status.slice(1)}
             </span>
             {/* UPDATED: Difficulty tag colors */}
-            <span className="px-2.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-300 text-xs font-medium">
+            <span className="px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 text-xs font-medium">
               {hackathon.difficulty}
             </span>
           </div>
@@ -144,7 +144,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
         {/* UPDATED: Text color */}
         <div className="flex flex-col gap-3 text-gray-600 dark:text-gray-400 text-sm">
           <div className="flex items-center gap-2">
-            <CalendarIcon className="w-4 h-4 text-red-500" />
+            <CalendarIcon className="w-4 h-4 text-sky-500" />
             {new Date(hackathon.startDate).toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
@@ -185,7 +185,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
               <span
                 key={index}
                 // UPDATED: Tech tag colors
-                className="px-3 py-1 border border-indigo-300 dark:border-indigo-700 bg-indigo-100 dark:bg-indigo-900/60 text-gray-800 dark:text-gray-200 text-xs font-medium rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                className="px-3 py-1 border border-blue-200 dark:border-blue-700 bg-blue-100 dark:bg-blue-900/60 text-gray-800 dark:text-gray-200 text-xs font-medium rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
                 {tech}
               </span>
@@ -200,7 +200,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
         {/* UPDATED: Text colors */}
         <div className="text-gray-600 dark:text-gray-400 text-sm">
           <h4 className="font-medium mb-1 flex items-center gap-1.5">
-            <DocumentTextIcon className="w-4 h-4 text-indigo-500" />
+            <DocumentTextIcon className="w-4 h-4 text-blue-500" />
             Rules
           </h4>
           <ul className="list-disc list-inside text-xs line-clamp-3">
@@ -293,7 +293,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
                   title="Add to Google Calendar"
                 >
                   <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-2">
-                    <CalendarIcon className="w-4 h-4 text-indigo-500" />
+                    <CalendarIcon className="w-4 h-4 text-sky-500" />
                     <span className="hidden sm:inline">Set Reminder</span>
                   </button>
 

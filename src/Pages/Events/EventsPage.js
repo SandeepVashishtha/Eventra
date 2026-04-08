@@ -1,6 +1,5 @@
 // Importing necessary React hooks and libraries
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion"; // for animations
 import mockEvents from "./eventsMockData.json"; // mock data file
 import EventHero from "./EventHero"; // Hero section with search
 import EventCard from "./EventCard"; // Card for displaying event details
@@ -86,22 +85,6 @@ const EventsPage = () => {
     // eslint-disable-next-line
   }, [filterType, searchQuery]);
 
-  // -----------------------------
-  // Animation Variants
-  // -----------------------------
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: { staggerChildren: 0.15 }, // stagger animation for children
-    },
-  };
-
-  const item = {
-    hidden: { y: 20, opacity: 0 }, // slide up effect
-    show: { y: 0, opacity: 1, transition: { duration: 0.5 } },
-  };
-
   const scrollToCard = () => {
     cardSectionRef.current?.scrollIntoView({ behaviour: "smooth" });
   };
@@ -111,7 +94,7 @@ const EventsPage = () => {
   // -----------------------------
   return (
     // UPDATED: Main page background
-    <div className="flex flex-col min-h-screen bg-gradient-to-l from-indigo-200 to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 overflow-x-hidden">
       {/* Hero section will be updated in the next step */}
       <EventHero
         searchQuery={searchQuery}
@@ -127,13 +110,8 @@ const EventsPage = () => {
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12"
       >
         {/* Filters + Sort + Toggle View Section */}
-        <motion.div
+        <div
           className="mb-8 sm:mb-10 flex flex-col gap-4"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          // AOS Implementation
-          data-aos="fade-up"
-          data-aos-duration="800"
         >
           {/* Filter Buttons */}
           <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center sm:justify-start">
@@ -153,8 +131,6 @@ const EventsPage = () => {
                     : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-700"
                 }`}
                 aria-pressed={filterType === filter.key}
-                data-aos="zoom-in"
-                data-aos-delay={index * 50}
               >
                 {filter.label}
               </button>
@@ -180,8 +156,6 @@ const EventsPage = () => {
             {/* Toggle View Buttons (Grid / List) */}
             <div
               className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm"
-              data-aos="zoom-in"
-              data-aos-delay="400"
             >
               <button
                 onClick={() => setViewMode("grid")}
@@ -209,42 +183,26 @@ const EventsPage = () => {
               </button>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Event Cards Section */}
-        <AnimatePresence mode="wait">
-          {filteredEvents.length > 0 ? (
-            <motion.div
-              key={filterType + viewMode} // re-trigger animation when filter/view changes
-              className={`grid gap-8 ${
-                viewMode === "grid"
-                  ? "grid-cols-1 sm:grid-cols-1 lg:grid-cols-3" // grid view
-                  : "grid-cols-1 max-w-4xl mx-auto" // list view
-              }`}
-              variants={containerVariants}
-              initial="hidden"
-              animate="show"
-              exit={{ opacity: 0 }}
-              data-aos="fade-up"
-              data-aos-delay="500"
-            >
-              {filteredEvents.map((event) => (
-                <EventCard key={event.id} event={event} />
-              ))}
-            </motion.div>
-          ) : (
-            <motion.div
-              // UPDATED: "No Events Found" message styles
-              className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]"
-              initial={{ opacity: 0, y: 30, scale: 0.95 }} // Initial animation state
-              animate={{ opacity: 1, y: 0, scale: 1 }} // Animate to visible
-              transition={{ duration: 0.6, ease: "easeOut" }} // Animation timing
-              data-aos="zoom-in"
-            >
-              {/* NOTE: You'll need to update the text colors inside this block as well */}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {filteredEvents.length > 0 ? (
+          <div
+            key={filterType + viewMode}
+            className={`grid gap-8 ${
+              viewMode === "grid"
+                ? "grid-cols-1 sm:grid-cols-1 lg:grid-cols-3"
+                : "grid-cols-1 max-w-4xl mx-auto"
+            }`}
+          >
+            {filteredEvents.map((event) => (
+              <EventCard key={event.id} event={event} />
+            ))}
+          </div>
+        ) : (
+          <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
+          </div>
+        )}
       </div>
 
       {/* These components will be updated in the next steps */}

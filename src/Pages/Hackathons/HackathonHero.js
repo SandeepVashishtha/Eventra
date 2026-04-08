@@ -10,12 +10,12 @@ const Tag = ({ tag, onRemove }) => (
     initial={{ scale: 0.8, opacity: 0 }}
     animate={{ scale: 1, opacity: 1 }}
     exit={{ scale: 0.8, opacity: 0 }}
-    className="flex items-center gap-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-3 py-1 rounded-full text-sm font-medium"
+    className="flex items-center gap-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm font-medium"
   >
     <span>{tag}</span>
     <button
       onClick={() => onRemove(tag)}
-      className="hover:bg-indigo-200 dark:hover:bg-indigo-800 rounded-full p-0.5 transition-colors"
+      className="hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full p-0.5 transition-colors"
     >
       <X className="w-3 h-3" />
     </button>
@@ -43,15 +43,18 @@ export default function HackathonHero({
   // Floating shapes/bubbles
   const shapes = useMemo(
     () => [
-      { size: 60, pos: { top: "10%", left: "5%" }, color: "from-indigo-400 to-blue-400" },
-      { size: 60, pos: { top: "12%", left: "45%" }, color: "from-indigo-300 to-blue-200" },
-      { size: 60, pos: { top: "2%", left: "10%" }, color: "from-gray-500 to-gray-400" },
-      { size: 50, pos: { top: "4%", right: "20%" }, color: "from-indigo-300 to-blue-200" },
-      { size: 70, pos: { top: "1%", right: "5%" }, color: "from-gray-400 to-gray-300" },
-      { size: 80, pos: { top: "10%", right: "10%" }, color: "from-gray-500 to-gray-400" },
-      { size: 100, pos: { bottom: "20%", left: "25%" }, color: "from-blue-300 to-indigo-300" },
-      { size: 70, pos: { bottom: "15%", right: "15%" }, color: "from-gray-400 to-gray-300" },
-      { size: 50, pos: { top: "50%", left: "2%" }, color: "from-indigo-300 to-blue-200" },
+      { size: 48, pos: { top: "16%", left: "5%" }, color: "from-sky-200 to-blue-200" },
+      { size: 56, pos: { top: "20%", left: "42%" }, color: "from-blue-200 to-sky-100" },
+      { size: 32, pos: { top: "14%", left: "12%" }, color: "from-yellow-200 to-yellow-100" },
+      { size: 42, pos: { top: "18%", right: "22%" }, color: "from-green-200 to-green-100" },
+      { size: 66, pos: { top: "12%", right: "5%" }, color: "from-pink-200 to-pink-100" },
+      { size: 74, pos: { top: "24%", right: "12%" }, color: "from-yellow-200 to-orange-100" },
+      { size: 92, pos: { top: "52%", left: "22%" }, color: "from-blue-200 to-sky-100" },
+      { size: 64, pos: { top: "58%", right: "15%" }, color: "from-green-200 to-blue-100" },
+      { size: 38, pos: { top: "46%", left: "2%" }, color: "from-pink-200 to-yellow-100" },
+      { size: 28, pos: { top: "36%", left: "26%" }, color: "from-sky-100 to-green-100" },
+      { size: 24, pos: { top: "64%", left: "58%" }, color: "from-yellow-100 to-pink-100" },
+      { size: 30, pos: { top: "70%", left: "48%" }, color: "from-blue-100 to-yellow-100" },
     ],
     []
   );
@@ -67,13 +70,13 @@ export default function HackathonHero({
   );
 
   return (
-    <div className="bg-gradient-to-l from-indigo-200 to-white dark:from-gray-900 dark:to-black relative overflow-hidden">
+    <div className="bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black relative overflow-hidden">
       {/* ======================= FLOATING SHAPES ======================= */}
       {shapes.map((shape, i) => (
         <motion.div
           key={i}
           animate={floatShape(i)}
-          className={`hidden sm:block absolute rounded-full bg-gradient-to-tr ${shape.color} opacity-30 dark:opacity-15`}
+          className={`hidden sm:block absolute rounded-full bg-gradient-to-tr ${shape.color} opacity-55 dark:opacity-22`}
           style={{
             width: `${shape.size}px`,
             height: `${shape.size}px`,
@@ -88,13 +91,10 @@ export default function HackathonHero({
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
-          className="text-4xl sm:text-6xl font-extrabold leading-tight"
+          className="text-4xl sm:text-6xl font-extrabold leading-tight text-black"
           style={{ fontFamily: '"Anton", sans-serif' }}
         >
-          Discover{" "}
-          <span className="text-black dark:text-white animate-gradient">
-            Amazing Hackathons
-          </span>
+          Discover Amazing Hackathons
         </motion.h1>
 
         <motion.p
@@ -116,11 +116,11 @@ export default function HackathonHero({
         >
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center z-10 pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-indigo-500 dark:group-focus-within:text-indigo-400 transition-colors" />
+              <Search className="h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-black dark:group-focus-within:text-white transition-colors" />
             </div>
 
             {/* Search bar with tags inside */}
-            <div className="flex flex-wrap items-center gap-2 w-full pl-12 pr-12 py-4 text-base text-gray-900 dark:text-gray-100 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl focus-within:ring-2 focus-within:ring-indigo-500 dark:focus-within:ring-indigo-400 focus-within:border-indigo-500 dark:focus-within:border-indigo-400 transition-all duration-300 shadow-lg hover:shadow-xl">
+            <div className="flex flex-wrap items-center gap-2 w-full pl-12 pr-12 py-4 text-base text-gray-900 dark:text-gray-100 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl focus-within:ring-2 focus-within:ring-black/20 dark:focus-within:ring-white/20 focus-within:border-black/20 dark:focus-within:border-white/20 transition-all duration-300 shadow-lg hover:shadow-xl">
               
               {/* Selected tags displayed in search bar */}
               <AnimatePresence>
@@ -168,8 +168,8 @@ export default function HackathonHero({
     onClick={() => onTagSelect(tag)}
     className={`px-3 py-1 text-xs font-medium rounded-full cursor-pointer transition ${
       selectedTags.includes(tag)
-        ? 'bg-indigo-600 text-white shadow-md'
-        : 'text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900'
+        ? 'bg-black text-white shadow-md'
+        : 'text-black dark:text-white bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
     }`}
   >
     {tag}
@@ -178,7 +178,7 @@ export default function HackathonHero({
             </div>
 
             {/* UPDATED: Use filteredCount prop instead of local calculation */}
-            <span className="text-sm text-indigo-600 dark:text-indigo-400 font-semibold">
+            <span className="text-sm text-black dark:text-white font-semibold">
               {filteredCount}{" "}
               {filteredCount === 1 ? "hackathon" : "hackathons"} found
             </span>
@@ -195,7 +195,7 @@ export default function HackathonHero({
           <motion.button
             whileHover={{ scale: 1.07 }}
             whileTap={{ scale: 0.95 }}
-            className="relative px-7 py-3.5 rounded-xl font-semibold text-black shadow-lg overflow-hidden group bg-purple-200 hover:bg-purple-300 transition-all duration-300"
+            className="relative px-7 py-3.5 rounded-xl font-semibold text-black shadow-lg overflow-hidden group bg-blue-100 hover:bg-blue-200 transition-all duration-300"
             onClick={scrollToCards}
           >
             <span className="relative flex items-center">
@@ -211,7 +211,7 @@ export default function HackathonHero({
               if (!user) navigate("/login");
               else navigate("/host-hackathon");
             }}
-            className="relative px-7 py-3.5 rounded-xl font-medium text-black shadow-md hover:shadow-lg bg-orange-200 hover:bg-orange-300 transition-all duration-300"
+            className="relative px-7 py-3.5 rounded-xl font-medium text-black shadow-md hover:shadow-lg bg-green-100 hover:bg-green-200 transition-all duration-300"
           >
             <span className="relative flex items-center">
               <Users className="inline-block w-5 h-5 mr-2" />
@@ -241,14 +241,14 @@ export default function HackathonHero({
             viewport={{ once: true }}
             transition={{ delay: 0.2 + idx * 0.15, duration: 0.6 }}
             whileHover={{ scale: 1.05 }}
-            className="relative bg-gradient-to-br from-indigo-50 to-white dark:from-gray-800 dark:to-gray-800 rounded-3xl shadow-lg p-6 flex flex-col items-center text-center hover:shadow-2xl transition-all duration-300"
+            className="relative bg-gradient-to-br from-sky-50 via-white to-white dark:from-gray-800 dark:to-gray-800 rounded-3xl shadow-lg p-6 flex flex-col items-center text-center hover:shadow-2xl transition-all duration-300"
           >
             <motion.div
               whileHover={{ rotate: 360, scale: 1.2 }}
               transition={{ type: "spring", stiffness: 200, damping: 10 }}
-              className="mb-4 flex items-center justify-center h-14 w-14 rounded-full bg-gradient-to-tr from-indigo-800 to-indigo-300 shadow-md"
+              className="mb-4 flex items-center justify-center h-14 w-14 rounded-full bg-gradient-to-tr from-blue-200 to-sky-100 shadow-md"
             >
-              <stat.icon className="h-7 w-7 text-white" />
+              <stat.icon className="h-7 w-7 text-black" />
             </motion.div>
 
             <p className="text-3xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight">
@@ -258,7 +258,7 @@ export default function HackathonHero({
               {stat.label}
             </p>
 
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-indigo-500/10 to-indigo-600/10 dark:from-indigo-500/20 dark:to-indigo-600/20 blur-2xl opacity-40 -z-10" />
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-sky-300/10 to-blue-300/10 dark:from-sky-500/20 dark:to-blue-500/20 blur-2xl opacity-40 -z-10" />
           </motion.div>
         ))}
       </div>

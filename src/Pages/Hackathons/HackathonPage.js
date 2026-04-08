@@ -354,7 +354,7 @@ useEffect(() => {
 };
 
   return (
-    <div className="overflow-x-hidden bg-gradient-to-l from-indigo-200 to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 py-6">
+    <div className="overflow-x-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 py-6">
       {/* Floating Action Button */}
       <motion.div
         className={`fixed z-50  ${positionClass}`}
@@ -364,7 +364,7 @@ useEffect(() => {
       >
         <Link
           to="/host-hackathon"
-          className="flex items-center justify-center w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition-colors border-2 border-white"
+          className="flex items-center justify-center w-14 h-14 bg-black text-white rounded-full shadow-lg hover:bg-zinc-800 transition-colors border-2 border-white"
           title="Host a Hackathon"
         >
           <svg
@@ -436,7 +436,7 @@ useEffect(() => {
               </h2>
               <Link
                 to="/hackathons?filter=featured"
-                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-sm font-medium"
+                className="text-black dark:text-white hover:text-gray-700 dark:hover:text-gray-200 text-sm font-medium"
               >
                 View all featured
               </Link>
@@ -487,7 +487,7 @@ useEffect(() => {
               {(filters.difficulty || filters.prize || filters.location || selectedTags.length > 0) && (
                 <button
                   onClick={resetFilters}
-                  className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium"
+                  className="text-sm text-black dark:text-white hover:text-gray-700 dark:hover:text-gray-200 font-medium"
                 >
                   Clear all filters
                 </button>

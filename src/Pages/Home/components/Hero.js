@@ -1,7 +1,6 @@
 import { motion, useAnimation, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import ThemeToggleButton from "../../../components/common/ThemeToggleButton";
 import Fuse from "fuse.js";
 import { Search, X, Calendar, Trophy, Code, ExternalLink } from "lucide-react";
 
@@ -130,49 +129,64 @@ const Hero = () => {
 
   const shapes = [
     {
-      size: 60,
-      pos: { top: "5%", left: "10%" },
+      size: 48,
+      pos: { top: "8%", left: "8%" },
       color: "bg-blue-200",
     },
     {
-      size: 80,
-      pos: { top: "15%", right: "15%" },
+      size: 56,
+      pos: { top: "14%", left: "22%" },
       color: "bg-yellow-200",
     },
     {
-      size: 40,
-      pos: { top: "30%", right: "30%" },
+      size: 30,
+      pos: { top: "24%", left: "46%" },
       color: "bg-green-200",
     },
     {
-      size: 80,
-      pos: { top: "70%", right: "15%" },
+      size: 58,
+      pos: { top: "30%", left: "72%" },
       color: "bg-blue-100",
     },
     {
-      size: 60,
-      pos: { top: "15%", right: "70%" },
+      size: 44,
+      pos: { top: "54%", left: "12%" },
       color: "bg-yellow-100",
     },
     {
-      size: 30,
-      pos: { top: "40%", right: "40%" },
+      size: 24,
+      pos: { top: "42%", left: "34%" },
       color: "bg-green-100",
     },
     {
-      size: 100,
-      pos: { bottom: "5%", left: "20%" },
+      size: 72,
+      pos: { top: "68%", left: "26%" },
       color: "bg-pink-100",
     },
     {
-      size: 70,
-      pos: { bottom: "10%", right: "10%" },
+      size: 54,
+      pos: { top: "72%", left: "66%" },
       color: "bg-green-200",
     },
     {
-      size: 50,
-      pos: { top: "50%", left: "2%" },
+      size: 36,
+      pos: { top: "48%", left: "80%" },
       color: "bg-yellow-100",
+    },
+    {
+      size: 28,
+      pos: { top: "18%", left: "52%" },
+      color: "bg-sky-100",
+    },
+    {
+      size: 32,
+      pos: { top: "58%", left: "52%" },
+      color: "bg-pink-100",
+    },
+    {
+      size: 26,
+      pos: { top: "80%", left: "48%" },
+      color: "bg-emerald-100",
     },
   ];
 
@@ -201,7 +215,7 @@ const Hero = () => {
         <motion.div
           key={i}
           animate={floatShape(i)}
-          className={`absolute rounded-full ${shape.color} opacity-45`}
+          className={`absolute rounded-full ${shape.color} opacity-27`}
           style={{
             width: `${shape.size}px`,
             height: `${shape.size}px`,

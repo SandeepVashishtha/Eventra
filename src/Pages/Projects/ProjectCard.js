@@ -37,7 +37,7 @@ const getDifficultyColor = (difficulty) => {
     case "beginner":
       return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700";
     case "intermediate":
-      return "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/40 dark:text-purple-300 dark:border-purple-700";
+      return "bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-900/40 dark:text-pink-300 dark:border-pink-700";
     case "advanced":
       return "bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-900/40 dark:text-pink-300 dark:border-pink-700";
     default:
@@ -47,7 +47,7 @@ const getDifficultyColor = (difficulty) => {
 
 // UPDATED: Added dark mode classes for the tech tag style
 const techTagStyle =
-  "px-2 py-1 text-xs font-medium rounded-full bg-indigo-100 text-indigo-900 border border-indigo-300 dark:bg-indigo-900/60 dark:text-indigo-300 dark:border-indigo-700";
+  "px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-900 border border-blue-300 dark:bg-blue-900/60 dark:text-blue-300 dark:border-blue-700";
 
 const ProjectCard = ({ project, index }) => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -63,18 +63,18 @@ const ProjectCard = ({ project, index }) => {
   return (
     <motion.div
       // UPDATED: Card background, border, and flex layout for consistent height and button alignment
-      className="bg-gradient-to-l from-white to-white dark:from-indigo-950 dark:to-black rounded-xl shadow-md overflow-hidden border border-indigo-300 dark:border-gray-700 max-w-sm mx-auto hover:shadow-lg transition-all duration-300 flex flex-col h-full"
+      className="bg-gradient-to-l from-white to-white dark:from-indigo-950 dark:to-black rounded-xl shadow-md overflow-hidden border border-blue-200 dark:border-gray-700 max-w-sm mx-auto hover:shadow-lg transition-all duration-300 flex flex-col h-full"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4, scale: 1.02 }}
     >
       {/* Header */}
       {/* UPDATED: Header gradient, border, icon, and title text */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-300 dark:border-gray-700 bbg-gradient-to-l from-indigo-200 to-white dark:from-indigo-950 dark:to-black">
-        <div className="border-2 border-indigo-500 p-2 rounded-full flex items-center justify-center">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-300 dark:border-gray-700 bg-gradient-to-l from-sky-50 to-white dark:from-indigo-950 dark:to-black">
+        <div className="border-2 border-blue-300 p-2 rounded-full flex items-center justify-center">
           <RandomIcon
             size={24}
-            className="text-indigo-600 dark:text-indigo-400"
+            className="text-black dark:text-white"
           />
         </div>
         <h3 className="text-center text-lg font-semibold text-gray-900 dark:text-gray-100 flex-1 mx-3 line-clamp-1">
@@ -126,7 +126,7 @@ const ProjectCard = ({ project, index }) => {
         {/* Category & Difficulty - Fixed height for alignment */}
         {/* UPDATED: Fixed height section for consistent positioning */}
         <div className="px-5 py-3 flex flex-wrap gap-2 border-b border-gray-300 dark:border-gray-700 h-12 items-center">
-          <span className="px-2.5 py-1 text-xs font-medium bg-indigo-50 text-indigo-700 rounded-full border border-indigo-300 dark:bg-indigo-900/40 dark:text-indigo-300 dark:border-indigo-700">
+          <span className="px-2.5 py-1 text-xs font-medium bg-sky-50 text-sky-700 rounded-full border border-sky-200 dark:bg-sky-900/40 dark:text-sky-300 dark:border-sky-700">
             {project.category}
           </span>
           <span
@@ -142,7 +142,7 @@ const ProjectCard = ({ project, index }) => {
         {/* UPDATED: Fixed height for consistent author and stats positioning */}
         <div className="px-5 py-4 flex justify-between items-center border-b border-gray-300 dark:border-gray-700 h-16">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-900 flex items-center justify-center text-sm font-medium text-indigo-600 dark:text-indigo-400 border-2 border-indigo-500">
+            <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-900 flex items-center justify-center text-sm font-medium text-black dark:text-white border-2 border-blue-300">
               {project.author.charAt(0)}
             </div>
             <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
@@ -193,7 +193,7 @@ const ProjectCard = ({ project, index }) => {
             href={project.liveDemo}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border-2 border-indigo-500 text-indigo-600 dark:text-indigo-400 font-semibold rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40 hover:text-indigo-800 dark:hover:text-indigo-300 hover:scale-105 transition-all duration-300"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border-2 border-blue-300 text-blue-700 dark:text-blue-300 font-semibold rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 hover:text-blue-800 dark:hover:text-blue-200 hover:scale-105 transition-all duration-300"
           >
             {/* The icon will now inherit the text color, which changes on hover. */}
             <FiExternalLink /> Live Demo
