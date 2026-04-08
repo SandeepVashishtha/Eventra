@@ -551,7 +551,7 @@ const FeedbackPage = () => {
   };
 
   return (
-      <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      <div className="pastel-grid-bg min-h-screen bg-white dark:bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         <AnimatePresence>
           {toast && (
               <Toast

@@ -85,11 +85,12 @@ const endpoints = [
 
 const ApiDocs = () => {
   return (
-    <div className="min-h-screen bg-white dark:bg-[#121212] text-gray-900 dark:text-gray-100 px-6 py-16">
+    <div className="pastel-grid-bg min-h-screen bg-white dark:bg-[#121212] text-gray-900 dark:text-gray-100 px-6 py-16">
       {/* Hero Section */}
       <section className="text-center mb-16">
         <motion.h1
           className="text-4xl md:text-5xl font-bold mb-4"
+          style={{ fontFamily: '"Anton", sans-serif' }}
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -100,7 +101,7 @@ const ApiDocs = () => {
           Use our RESTful APIs to interact with{" "}
           <span className="text-blue-500 dark:text-blue-400">Hackathons</span>,{" "}
           <span className="text-green-500 dark:text-green-400">Projects</span>,{" "}
-          <span className="text-purple-500 dark:text-purple-400">
+          <span className="text-black dark:text-white">
             Contributors
           </span>
           , and{" "}

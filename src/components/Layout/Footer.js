@@ -18,7 +18,7 @@ import {
   // FaServer,   //can be reactivated later
   FaHome,
   FaCalendarAlt,
-  FaRocket,
+  FaStar,
   FaFolder,
   FaTrophy,
   FaComments,
@@ -96,7 +96,7 @@ const Footer = () => {
     quick_links: [
       { name: "Home", href: "/", icon: <FaHome size={14} /> },
       { name: "Events", href: "/events", icon: <FaCalendarAlt size={14} /> },
-      { name: "Hackathons", href: "/hackathons", icon: <FaRocket size={14} /> },
+      { name: "Hackathons", href: "/hackathons", icon: <FaStar size={14} /> },
       { name: "Projects", href: "/projects", icon: <FaFolder size={14} /> },
       { name: "About", href: "/about", icon: <FaInfoCircle size={14} /> },
       { name: "Privacy", href: "/privacy", icon: <FaShieldAlt size={14} /> },

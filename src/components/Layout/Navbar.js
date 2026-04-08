@@ -10,7 +10,7 @@ import { UserCog } from "lucide-react";
 import {
   Home,
   Calendar,
-  Rocket,
+  Sparkles,
   FolderKanban,
   Users,
   Trophy,
@@ -24,7 +24,6 @@ import {
   HelpCircle,
   ChevronDown,
 } from "lucide-react";
-import { RocketLaunchIcon } from "@heroicons/react/20/solid";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -200,7 +199,7 @@ const Navbar = () => {
     {
       name: "Hackathons",
       href: "/hackathons",
-      icon: <Rocket className="w-5 h-5" />,
+      icon: <Sparkles className="w-5 h-5" />,
     },
     {
       name: "Projects",
@@ -229,7 +228,7 @@ const Navbar = () => {
         {
           name: "Community Events",
           href: "/communityEvent",
-          icon: <RocketLaunchIcon className="w-5 h-5" />,
+          icon: <Users className="w-5 h-5" />,
         },
       ],
     },
@@ -716,7 +715,7 @@ const Navbar = () => {
                 onClick={closeAllMenus}
                 className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-semibold text-black dark:text-white bg-white dark:bg-black/50 hover:bg-gray-100 dark:hover:bg-white/10 border-2 border-black/15 dark:border-white/20 hover:border-black/25 dark:hover:border-white/30 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
               >
-                <RocketLaunchIcon className="w-5 h-5" />
+                <Sparkles className="w-5 h-5" />
                 Get Started
               </Link>
             </div>

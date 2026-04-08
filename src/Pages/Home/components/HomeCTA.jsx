@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Rocket, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 
 export default function CTASection() {
   return (
@@ -94,14 +94,14 @@ export default function CTASection() {
 
             {/* --------------------------
                 Host Your Event Button
-                Uses Rocket icon
+              Uses Sparkles icon
             -------------------------- */}
             <a
               href="about"
               className="inline-flex items-center gap-2 bg-yellow-100 text-black px-8 py-3 rounded-full font-semibold shadow-lg border border-yellow-200 hover:bg-yellow-200 hover:scale-105 transition-all duration-300 ease-out"
             >
               Know us better
-              <Rocket className="w-5 h-5" />
+              <Sparkles className="w-5 h-5" />
             </a>
           </motion.div>
 

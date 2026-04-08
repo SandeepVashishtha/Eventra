@@ -27,7 +27,7 @@ const cardItem = {
 export default function ModernAbout() {
   return (
     // UPDATED: Main section background
-    <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900 overflow-hidden py-32">
+    <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900 overflow-hidden py-24">
       {/* Animated Background Blobs */}
       {/* UPDATED: Blob colors for dark mode */}
       <motion.div
@@ -60,8 +60,8 @@ export default function ModernAbout() {
 
       {/* Soft Grid Pattern */}
       <div className="absolute inset-0">
-        {/* UPDATED: Grid line colors for dark mode */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.05)_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px]" />
+        {/* Pastel colorful grid lines */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(147,197,253,0.45)_1px,transparent_1px),linear-gradient(to_bottom,rgba(244,114,182,0.35)_1px,transparent_1px)] bg-[size:40px_40px]" />
 
         {/* UPDATED: Fade overlay for dark mode */}
         <div className="absolute inset-0 bg-gradient-to-b from-white/0 via-white/30 to-white dark:from-transparent dark:to-gray-900" />
@@ -69,7 +69,7 @@ export default function ModernAbout() {
 
       {/* Main Content */}
       <div 
-        className="max-w-4xl text-center px-4 sm:px-6 lg:px-8 z-10"
+        className="max-w-4xl text-center px-4 sm:px-6 lg:px-8 z-10 -mt-8 md:-mt-12"
         // AOS Implementation on main content container
         data-aos="fade-up"
         data-aos-duration="1000"
@@ -81,11 +81,12 @@ export default function ModernAbout() {
           whileInView="visible"
           viewport={{ once: true }}
           // UPDATED: Text colors
-          className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 dark:text-gray-100 mb-6"
+          className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-black mb-6"
+          style={{ fontFamily: '"Anton", sans-serif' }}
           data-aos="zoom-in"
           data-aos-delay="100"
         >
-          About <span className="text-indigo-600 dark:text-indigo-400">Us</span>
+          About <span className="text-black">Us</span>
         </motion.h1>
 
         <motion.p
@@ -94,7 +95,7 @@ export default function ModernAbout() {
           whileInView="visible"
           viewport={{ once: true }}
           // UPDATED: Text color
-          className="text-base sm:text-lg text-gray-600 dark:text-gray-400 mb-16"
+          className="text-base sm:text-lg text-black mb-16"
           data-aos="fade-up"
           data-aos-delay="200"
         >
@@ -120,8 +121,8 @@ export default function ModernAbout() {
             data-aos-delay="300"
           >
             {/* UPDATED: Card text */}
-            <h3 className="text-indigo-600 dark:text-indigo-400 text-2xl font-bold mb-2">100+</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Events Managed</p>
+            <h3 className="text-black text-2xl font-bold mb-2">100+</h3>
+            <p className="text-black text-sm">Events Managed</p>
           </motion.div>
 
           <motion.div
@@ -132,8 +133,8 @@ export default function ModernAbout() {
             data-aos-delay="400"
           >
             {/* UPDATED: Card text */}
-            <h3 className="text-indigo-600 dark:text-indigo-400 text-2xl font-bold mb-2">500+</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Active Users</p>
+            <h3 className="text-black text-2xl font-bold mb-2">500+</h3>
+            <p className="text-black text-sm">Active Users</p>
           </motion.div>
 
           <motion.div
@@ -144,8 +145,8 @@ export default function ModernAbout() {
             data-aos-delay="500"
           >
             {/* UPDATED: Card text */}
-            <h3 className="text-indigo-600 dark:text-indigo-400 text-2xl font-bold mb-2">Global</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Community Reach</p>
+            <h3 className="text-black text-2xl font-bold mb-2">Global</h3>
+            <p className="text-black text-sm">Community Reach</p>
           </motion.div>
         </motion.div>
       </div>

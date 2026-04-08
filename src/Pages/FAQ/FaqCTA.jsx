@@ -3,63 +3,8 @@ import { HelpCircle, LifeBuoy, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function FAQCTA() {
-  // Variants for breathing animation
-  const breathe = {
-    animate: {
-      scale: [1, 1.15, 1],
-      opacity: [0.3, 0.6, 0.3],
-      transition: { duration: 6, repeat: Infinity, ease: "easeInOut" },
-    },
-  };
-
-  // Small background blobs config
-  const blobs = Array.from({ length: 8 }, (_, i) => ({
-    color: [
-      "from-black/10 via-gray-200/20 to-white/10",
-      "from-teal-400/30 via-cyan-400/20 to-blue-500/10",
-      "from-gray-200/25 via-gray-300/15 to-black/10",
-    ][i % 3],
-    top: `${Math.random() * 80}%`,
-    left: `${Math.random() * 90}%`,
-    size: Math.random() * 32 + 16, // 16-48px
-    blur: Math.random() * 40 + 20, // 20-60px
-  }));
-
   return (
     <section className="relative bg-gradient-to-tr from-[#0C0C1F] via-[#1A1F36] to-[#0B1E2E] py-16 px-8 sm:px-12 lg:px-20 overflow-hidden m-8 rounded-3xl">
-      {/* Main blobs */}
-      <motion.div
-        className="absolute top-10 left-[-40px] w-36 h-36 rounded-full blur-3xl bg-gradient-to-tr from-gray-300 via-gray-200/50 to-black/20"
-        animate={{ scale: [1, 1.1, 1], rotate: [0, 360] }}
-        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        className="absolute bottom-20 right-[-40px] w-44 h-44 rounded-full blur-3xl bg-gradient-to-br from-teal-400/70 via-cyan-400/60 to-blue-500/10"
-        animate={{ scale: [1, 1.08, 1], rotate: [0, -360] }}
-        transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        className="absolute top-1/2 left-1/3 w-28 h-28 rounded-full blur-xl bg-gradient-to-tr from-gray-200/50 via-gray-300/20 to-black/10"
-        animate={{ scale: [0.9, 1.05, 0.9] }}
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-      />
-
-      {/* Small breathing blobs */}
-      {blobs.map((blob, i) => (
-        <motion.div
-          key={i}
-          className={`absolute rounded-full blur-[${blob.blur}px] bg-gradient-to-tr ${blob.color}`}
-          style={{
-            width: `${blob.size}px`,
-            height: `${blob.size}px`,
-            top: blob.top,
-            left: blob.left,
-          }}
-          variants={breathe}
-          animate="animate"
-        />
-      ))}
-
       <div className="relative max-w-6xl mx-auto text-center m-4">
         {/* Tag */}
         <motion.div

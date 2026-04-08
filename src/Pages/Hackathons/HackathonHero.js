@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, Rocket, Users, Award, Code2 } from "lucide-react";
+import { Search, X, Sparkles, Users, Award, Code2, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
@@ -43,12 +43,12 @@ export default function HackathonHero({
   // Floating shapes/bubbles
   const shapes = useMemo(
     () => [
-      { size: 48, pos: { top: "16%", left: "5%" }, color: "from-sky-200 to-blue-200" },
-      { size: 56, pos: { top: "20%", left: "42%" }, color: "from-blue-200 to-sky-100" },
-      { size: 32, pos: { top: "14%", left: "12%" }, color: "from-yellow-200 to-yellow-100" },
-      { size: 42, pos: { top: "18%", right: "22%" }, color: "from-green-200 to-green-100" },
-      { size: 66, pos: { top: "12%", right: "5%" }, color: "from-pink-200 to-pink-100" },
-      { size: 74, pos: { top: "24%", right: "12%" }, color: "from-yellow-200 to-orange-100" },
+      { size: 34, pos: { top: "14%", left: "4%" }, color: "from-sky-200 to-blue-200" },
+      { size: 36, pos: { top: "11%", right: "5%" }, color: "from-blue-200 to-sky-100" },
+      { size: 24, pos: { top: "24%", left: "6%" }, color: "from-yellow-200 to-yellow-100" },
+      { size: 24, pos: { top: "28%", right: "7%" }, color: "from-green-200 to-green-100" },
+      { size: 46, pos: { top: "12%", right: "18%" }, color: "from-pink-200 to-pink-100" },
+      { size: 52, pos: { top: "20%", left: "18%" }, color: "from-yellow-200 to-orange-100" },
       { size: 92, pos: { top: "52%", left: "22%" }, color: "from-blue-200 to-sky-100" },
       { size: 64, pos: { top: "58%", right: "15%" }, color: "from-green-200 to-blue-100" },
       { size: 38, pos: { top: "46%", left: "2%" }, color: "from-pink-200 to-yellow-100" },
@@ -64,7 +64,7 @@ export default function HackathonHero({
       y: [0, -20 - i * 5, 0],
       x: [0, 20 + i * 5, 0],
       rotate: [0, 15, -15, 0],
-      transition: { duration: 6 + i, repeat: Infinity, ease: "easeInOut" },
+      transition: { duration: 4.6 + i * 0.75, repeat: Infinity, ease: "easeInOut" },
     }),
     []
   );
@@ -76,7 +76,7 @@ export default function HackathonHero({
         <motion.div
           key={i}
           animate={floatShape(i)}
-          className={`hidden sm:block absolute rounded-full bg-gradient-to-tr ${shape.color} opacity-55 dark:opacity-22`}
+          className={`absolute rounded-full bg-gradient-to-tr ${shape.color} opacity-14 sm:opacity-30 dark:opacity-10 dark:sm:opacity-18`}
           style={{
             width: `${shape.size}px`,
             height: `${shape.size}px`,
@@ -103,8 +103,8 @@ export default function HackathonHero({
           transition={{ delay: 0.2, duration: 0.7 }}
           className="mt-4 text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto"
         >
-          "Find and join the most exciting hackathons, compete with the best,
-          and win amazing prizes 🚀"
+          Find and join the most exciting hackathons, compete with the best,
+          and win amazing prizes.
         </motion.p>
 
         {/* ======================= SEARCH BOX WITH TAGS ======================= */}
@@ -199,7 +199,7 @@ export default function HackathonHero({
             onClick={scrollToCards}
           >
             <span className="relative flex items-center">
-              <Rocket className="inline-block w-5 h-5 mr-2" />
+              <Sparkles className="inline-block w-5 h-5 mr-2" />
               Explore Hackathons
             </span>
           </motion.button>
@@ -229,7 +229,7 @@ export default function HackathonHero({
         data-aos-delay="200"
       >
         {[
-          { label: "Hackathons Hosted", value: "120+", icon: Rocket },
+          { label: "Hackathons Hosted", value: "120+", icon: Calendar },
           { label: "Participants", value: "50k+", icon: Users },
           { label: "Projects Built", value: "8k+", icon: Code2 },
           { label: "Prizes Awarded", value: "$1M+", icon: Award },

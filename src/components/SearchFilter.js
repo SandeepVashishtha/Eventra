@@ -49,7 +49,7 @@ const SearchFilter = () => {
       location: "Online",
       date: "2025-08-20",
       price: "free",
-      image: "🚀",
+      image: "✨",
       attendees: 200,
       rating: 4.6,
       description: "Pitch your startup idea to top investors"

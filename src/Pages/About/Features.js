@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
-  FaRocket,
+  FaStar,
   FaQrcode,
   FaChartLine,
   FaUsers,
@@ -27,7 +27,7 @@ const item = {
 // UPDATED: Icon classNames now include dark mode variants
 const features = [
   {
-    icon: <FaRocket className="text-indigo-500 dark:text-indigo-400 text-2xl" />,
+    icon: <FaStar className="text-indigo-500 dark:text-indigo-400 text-2xl" />,
     title: "Smart Event Creation",
     stat: "90% faster setup",
     description: "Launch events in minutes with intelligent templates, automatic capacity management, and integrated ticketing. Full support for workshops, conferences, meetups, and specialized events.",

@@ -137,7 +137,7 @@ const Chatbot = () => {
     }
 
     if (lowerMessage.includes("thank") || lowerMessage.includes("thanks")) {
-      return "You're very welcome! If you have any other questions about Eventra, events, or hackathons, feel free to ask. I'm here to help! 🚀";
+      return "You're very welcome! If you have any other questions about Eventra, events, or hackathons, feel free to ask. I'm here to help! ✨";
     }
 
     if (lowerMessage.includes("how to") || lowerMessage.includes("navigate") || lowerMessage.includes("use")) {
@@ -202,7 +202,7 @@ const Chatbot = () => {
     { name: "AI Workshop", emoji: "🤖", attendees: "2.5K" },
     { name: "Web3 Summit", emoji: "⛓️", attendees: "1.8K" },
     { name: "React Meetup", emoji: "⚛️", attendees: "3.2K" },
-    { name: "DevOps Day", emoji: "🚀", attendees: "1.5K" }
+    { name: "DevOps Day", emoji: "✨", attendees: "1.5K" }
   ];
 
   const quickActions = [

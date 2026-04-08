@@ -9,7 +9,6 @@ import {
   UserGroupIcon,
   StarIcon,
   ClipboardDocumentListIcon,
-  RocketLaunchIcon, 
   BuildingOffice2Icon,
   EnvelopeIcon,
   MapPinIcon,
@@ -478,7 +477,7 @@ const HostHackathon = () => {
         data-aos-delay="1600"
       >
         <div className="flex items-center justify-center gap-2 mb-4">
-          <RocketLaunchIcon className="w-8 h-8 text-indigo-400" />
+          <TrophyIcon className="w-8 h-8 text-indigo-400" />
           <h2 className="text-3xl font-bold text-white">
             Ready to Inspire the Next Big Innovation?
           </h2>

@@ -306,7 +306,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
-              <button className="px-4 py-2 bg-gradient-to-r from-indigo-700 to-indigo-400 text-white text-sm font-medium rounded-lg hover:from-indigo-400 hover:to-indigo-700 transition-colors">
+              <button className="px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-zinc-800 transition-colors">
                 View Results
               </button>
               {/* UPDATED: Secondary button colors */}

@@ -4,7 +4,6 @@ import { toast } from "react-toastify";
 import {
   ArrowRightIcon,
   LightBulbIcon,
-  RocketLaunchIcon,
   FolderOpenIcon,
   CodeBracketIcon,
   CheckCircleIcon,
@@ -488,7 +487,7 @@ const SubmitProject = () => {
         data-aos-delay="1900"
       >
         <div className="flex items-center justify-center gap-2 mb-4">
-          <RocketLaunchIcon className="w-8 h-8 text-white" />
+          <LightBulbIcon className="w-8 h-8 text-white" />
           <h2 className="text-3xl font-bold text-white">
             Ready to Launch Your Next Idea?
           </h2>

@@ -172,3 +172,12 @@ input::-ms-reveal,
 input::-ms-clear,
 input::-webkit-clear-button,
 input::-webkit-password-toggle { display: none !important; }
+
+/* Shared pastel grid background used across static pages */
+.pastel-grid-bg {
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(to right, rgba(147, 197, 253, 0.42) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(244, 114, 182, 0.32) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
