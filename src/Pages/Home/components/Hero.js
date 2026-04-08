@@ -1,4 +1,4 @@
-import { motion, useAnimation, AnimatePresence } from "framer-motion";
+import { motion, useAnimation, AnimatePresence, MotionConfig } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Fuse from "fuse.js";
@@ -209,13 +209,13 @@ const Hero = () => {
   ];
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-white xl:py-28 py-24">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-white py-20 sm:py-24 xl:py-28">
       {/* Floating pastel shapes */}
       {shapes.map((shape, i) => (
         <motion.div
           key={i}
           animate={floatShape(i)}
-          className={`absolute rounded-full ${shape.color} opacity-27`}
+          className={`absolute rounded-full ${shape.color} opacity-12`}
           style={{
             width: `${shape.size}px`,
             height: `${shape.size}px`,
@@ -236,47 +236,49 @@ const Hero = () => {
           data-aos-once="true"
           data-aos-duration="1000"
         >
-          {/* Headline */}
-          <motion.h1
-            className="text-5xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight text-black"
-            style={{ fontFamily: '"Anton", sans-serif' }}
-          >
-            <motion.span
-              className="block text-black mb-2 md:mb-0"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+          <MotionConfig reducedMotion="never">
+            {/* Headline */}
+            <motion.h1
+              className="mx-auto max-w-[92vw] text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 sm:mb-6 leading-[0.95] sm:leading-tight text-black break-words px-2 sm:px-0"
+              style={{ fontFamily: '"Anton", sans-serif' }}
             >
-              Discover & Join
-            </motion.span>
+              <motion.span
+                className="block text-black mb-2 md:mb-0"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                Discover & Join
+              </motion.span>
 
-            <div className="relative mt-3 h-20 sm:h-24 md:h-28 lg:h-32 overflow-hidden flex justify-center items-center">
-              <AnimatePresence mode="wait">
-                <motion.span
-                  key={index}
-                  className="block mt-2 text-black mb-4 pb-2"
-                  initial={{ opacity: 0, y: 40 }}
-                  animate={{
-                    opacity: 1,
-                    y: 0,
-                    transition: { duration: 0.8, ease: "easeOut" },
-                  }}
-                  exit={{
-                    opacity: 0,
-                    y: -40,
-                    transition: { duration: 0.5, ease: "easeIn" },
-                  }}
-                >
-                  {phrases[index]}
-                </motion.span>
-              </AnimatePresence>
-            </div>
-          </motion.h1>
+              <div className="relative mx-auto mt-2 sm:mt-3 h-14 sm:h-24 md:h-28 lg:h-32 overflow-hidden flex justify-center items-center max-w-full">
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={index}
+                    className="block mt-2 text-black mb-4 pb-2 whitespace-normal text-center px-1"
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                      transition: { duration: 0.8, ease: "easeOut" },
+                    }}
+                    exit={{
+                      opacity: 0,
+                      y: -40,
+                      transition: { duration: 0.5, ease: "easeIn" },
+                    }}
+                  >
+                    {phrases[index]}
+                  </motion.span>
+                </AnimatePresence>
+              </div>
+            </motion.h1>
+          </MotionConfig>
 
           {/* Subtext */}
           <motion.p
             variants={fadeUp}
-            className="text-base sm:text-lg text-black max-w-3xl mx-auto mt-2 mb-8"
+            className="text-sm sm:text-base md:text-lg text-black max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
           >
             "Connect with developers, learn new skills, and grow your network at
             the best tech events, hackathons, and workshops in your area."
@@ -285,12 +287,12 @@ const Hero = () => {
           {/* Global Search Bar */}
           <motion.div
             variants={fadeUp}
-            className="w-full max-w-2xl mx-auto mb-12 relative"
+            className="w-full max-w-2xl mx-auto mb-10 sm:mb-12 relative"
           >
             {/* Search Input with Embedded Icons */}
             <div className="relative flex items-center w-full">
               {/* Search Icon */}
-              <Search className="absolute left-5 h-5 w-5 z-10 text-gray-400 dark:text-gray-500" />
+              <Search className="absolute left-4 sm:left-5 h-4 w-4 sm:h-5 sm:w-5 z-10 text-gray-400 dark:text-gray-500" />
 
               {/* Input Field */}
               <input
@@ -298,7 +300,7 @@ const Hero = () => {
                 placeholder="Search events, hackathons, projects..."
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="w-full py-4 pl-14 pr-14 text-lg text-gray-900 dark:text-gray-100 
+                className="w-full py-3.5 sm:py-4 pl-12 sm:pl-14 pr-12 sm:pr-14 text-base sm:text-lg text-gray-900 dark:text-gray-100 
                  placeholder-gray-500 dark:placeholder-gray-400 
                  bg-white backdrop-blur-xl
                  border-2 border-gray-200 dark:border-gray-700 
@@ -323,7 +325,7 @@ const Hero = () => {
                     setSearchResults([]);
                     setShowResults(false);
                   }}
-                   className="absolute inset-y-0 right-5 flex items-center 
+                   className="absolute inset-y-0 right-4 sm:right-5 flex items-center 
                      text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   <X className="h-5 w-5" />
@@ -417,13 +419,13 @@ const Hero = () => {
           {/* Buttons */}
           <motion.div
             variants={container}
-            className="flex flex-col sm:flex-row justify-center gap-6 mb-16"
+            className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6 mb-12 sm:mb-16"
           >
             {/* Primary Button - Explore Events */}
             <motion.div variants={fadeUp}>
               <Link
                 to="/events"
-                className="relative inline-flex items-center px-8 py-4 rounded-full bg-blue-100 text-black font-bold shadow-md overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-200"
+                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-50/70 text-black font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-100"
               >
                 <span className="relative z-10 flex items-center">
                   Explore Events
@@ -446,7 +448,7 @@ const Hero = () => {
             <motion.div variants={fadeUp}>
               <Link
                 to="/hackathons"
-                className="relative inline-flex items-center px-8 py-4 rounded-full border border-yellow-200 bg-yellow-100 text-black font-semibold shadow-md hover:shadow-lg hover:bg-yellow-200 hover:scale-105 transition-all duration-300"
+                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full border border-yellow-100 bg-yellow-50/70 text-black font-semibold shadow-sm hover:shadow-md hover:bg-yellow-100 hover:scale-105 transition-all duration-300"
               >
                 Join Hackathons
               </Link>
@@ -456,7 +458,7 @@ const Hero = () => {
             <motion.div variants={fadeUp}>
               <Link
                 to="/about"
-                className="relative inline-flex items-center px-8 py-4 rounded-full bg-pink-100 text-black font-semibold shadow-md transform transition-all duration-300 hover:scale-105 hover:bg-pink-200"
+                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-pink-50/70 text-black font-semibold shadow-sm transform transition-all duration-300 hover:scale-105 hover:bg-pink-100"
               >
                 Learn More
                 <svg
@@ -477,7 +479,7 @@ const Hero = () => {
           {/* Animated Stats Cards */}
           <motion.div
             variants={fadeUp}
-            className="grid grid-cols-1 sm:grid-cols-3 gap-6"
+            className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
           >
             {stats.map((stat, i) => (
               <motion.div
@@ -485,7 +487,7 @@ const Hero = () => {
                 variants={fadeUp}
                 whileHover={{ scale: 1.05 }}
                 transition={{ type: "spring", stiffness: 300 }}
-                className="bg-white/80 backdrop-blur-md rounded-2xl p-6 text-center shadow-lg border border-gray-100"
+                className="bg-white/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-lg border border-gray-100"
               >
                 <p className="text-3xl font-bold mb-2 text-black">
                   {stat.value}

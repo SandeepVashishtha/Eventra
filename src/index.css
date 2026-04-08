@@ -47,7 +47,7 @@ body.dark {
 
 /* Global styles */
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
 }
 
 body {
@@ -64,12 +64,17 @@ body {
 
   /* Body font size */
   font-size: var(--font-body);
+  background-color: #ffffff;
+  color: #1a1a1a;
+  transition: none;
+}
 
-  /* This sets the background for the entire page */
-  background-color: #0d1117; /* A nice dark color similar to GitHub's dark mode */
-
-  /* Optional, but good practice for dark mode */
-  color: #e6edf3; /* Sets a default light text color */
+*,
+*::before,
+*::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
 }
 
 /* Headings */
@@ -147,10 +152,6 @@ code {
   color: #667eea;
   transform: translateY(-2px);
 }
-
-/* Fade animation */
-.fade-in { opacity: 0; transform: translateY(30px); animation: fadeIn 0.8s ease forwards; }
-@keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
