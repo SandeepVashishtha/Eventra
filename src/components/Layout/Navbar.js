@@ -6,8 +6,6 @@ import ConfirmationModal from "../common/ConfirmationModal"; // ADD THIS IMPORT
 import { toast } from "react-toastify";
 
 
-import ThemeToggleButton from "../common/ThemeToggleButton";
-
 import { UserCog } from "lucide-react";
 import {
   Home,
@@ -375,7 +373,6 @@ const Navbar = () => {
 
           {/* Right Group: Auth Controls and Mobile Toggle */}
           <div className="hidden lg:flex items-center ml-auto z-20">
-            <ThemeToggleButton />
             <div className="flex items-center space-x-2 ml-2">
               {isAuthenticated() ? (
                 <div className="relative profile-container">
@@ -551,7 +548,6 @@ const Navbar = () => {
           </h2>
 
           <div className="flex items-center gap-3">
-            <ThemeToggleButton />
             <button
               ref={closeBtnRef}
               onClick={closeAllMenus}

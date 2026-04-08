@@ -10,7 +10,7 @@ const ProjectCTA = () => {
   
   return (
     <section 
-      className="relative py-16 px-8 m-8 rounded-3xl bg-gradient-to-tr from-cyan-800 via-blue-900 to-indigo-900 text-white shadow-xl overflow-hidden"
+      className="relative py-16 px-8 m-8 rounded-3xl bg-gradient-to-tr from-sky-100 via-white to-blue-100 text-black shadow-xl overflow-hidden"
       // AOS Implementation
       data-aos="zoom-in-up"
       data-aos-duration="1000"
@@ -55,7 +55,7 @@ const ProjectCTA = () => {
         <div className="flex flex-col md:flex-row justify-center gap-4">
           <motion.a
             href="/projects"
-            className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-800 to-blue-600 font-semibold px-8 py-4 rounded-full shadow-lg hover:scale-105 hover:shadow-blue-400/50 transition-transform duration-300"
+            className="inline-flex items-center justify-center gap-2 bg-white font-semibold text-black px-8 py-4 rounded-full shadow-lg hover:scale-105 hover:bg-gray-100 transition-transform duration-300"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             data-aos="zoom-in"
@@ -67,7 +67,7 @@ const ProjectCTA = () => {
           <Link
              to={user ? "/submit-project" : "/login"}
             // UPDATED: The secondary button needs a subtle dark mode style
-            className="inline-flex items-center justify-center gap-2 bg-white text-blue-700 dark:bg-gray-800 dark:text-blue-300 dark:hover:bg-gray-700 font-semibold px-8 py-4 rounded-full shadow-lg transition-transform duration-300"
+            className="inline-flex items-center justify-center gap-2 bg-blue-100 text-black dark:bg-gray-800 dark:text-blue-300 dark:hover:bg-gray-700 font-semibold px-8 py-4 rounded-full shadow-lg transition-transform duration-300"
             data-aos="zoom-in"
             data-aos-delay="400"
           >
@@ -79,7 +79,7 @@ const ProjectCTA = () => {
               to="https://github.com/SandeepVashishtha/Eventra/issues"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-400 to-blue-600 text-white font-semibold px-8 py-4 rounded-full shadow-lg hover:shadow-blue-400/50 transition-all duration-300"
+              className="inline-flex items-center justify-center gap-2 bg-yellow-100 text-black font-semibold px-8 py-4 rounded-full shadow-lg hover:bg-yellow-200 transition-all duration-300"
               data-aos="zoom-in"
               data-aos-delay="600"
             >

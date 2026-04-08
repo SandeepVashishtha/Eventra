@@ -224,7 +224,7 @@ const HostHackathon = () => {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-indigo-100 to-white dark:from-gray-900 dark:to-black flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
+    <div className="min-h-screen bg-gradient-to-r from-sky-50 via-white to-white dark:from-gray-900 dark:to-black flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
       {/* Heading Section */}
       <motion.div
         initial={{ opacity: 0, y: -30 }}
@@ -235,7 +235,7 @@ const HostHackathon = () => {
         data-aos-once="true"
       >
         {/* UPDATED: Text colors */}
-        <h1 className="text-4xl sm:text-5xl font-extrabold text-indigo-800 dark:text-indigo-300 mb-4">
+        <h1 className="text-4xl sm:text-5xl font-extrabold text-black dark:text-white mb-4">
           Host Your Hackathon
         </h1>
         <p className="text-xs sm:text-base text-gray-600 dark:text-gray-400">

@@ -15,13 +15,18 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 const floatingShapes = [
-  { size: 40, x: 50, y: 200, color: "#6366f1", delay: 0 },
-  { size: 60, x: 300, y: 500, color: "#4338ca", delay: 1 },
-  { size: 30, x: 700, y: 350, color: "#4f46e5", delay: 0.5 },
-  { size: 50, x: 1100, y: 600, color: "#8b5cf6", delay: 1.5 },
-  { size: 50, x: 1100, y: 1000, color: "#8b5cf6", delay: 1.5 },
-  // New top-right circle
-  { size: 80, x: 1000, y: 100, color: "#a78bfa", delay: 0.8 },
+  { size: 34, x: 50, y: 200, color: "#dbeafe", delay: 0 },
+  { size: 48, x: 300, y: 500, color: "#bfdbfe", delay: 1 },
+  { size: 24, x: 700, y: 350, color: "#dcfce7", delay: 0.5 },
+  { size: 38, x: 1100, y: 600, color: "#fde68a", delay: 1.5 },
+  { size: 40, x: 1100, y: 1000, color: "#fecdd3", delay: 1.5 },
+  { size: 64, x: 1000, y: 100, color: "#fed7aa", delay: 0.8 },
+  { size: 28, x: 150, y: 80, color: "#c7d2fe", delay: 0.2 },
+  { size: 30, x: 520, y: 160, color: "#bbf7d0", delay: 0.7 },
+  { size: 22, x: 880, y: 260, color: "#fde68a", delay: 1.1 },
+  { size: 26, x: 220, y: 760, color: "#fbcfe8", delay: 0.4 },
+  { size: 24, x: 620, y: 860, color: "#bae6fd", delay: 1.2 },
+  { size: 20, x: 980, y: 720, color: "#fed7aa", delay: 1.4 },
 ];
 
 const iconList = [
@@ -44,7 +49,7 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
   return (
     // UPDATED: Main background gradient
     <div 
-      className="relative min-h-screen py-24 overflow-hidden bg-gradient-to-l from-indigo-200 to-white dark:from-indigo-950 dark:to-black"
+      className="relative min-h-screen py-24 overflow-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-indigo-950 dark:to-black"
       // AOS Implementation
       data-aos="fade-down"
       data-aos-once="true"
@@ -57,7 +62,7 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
           initial={{ y: 800, x: shape.x, opacity: 0 }}
           animate={{
             y: [shape.y, shape.y - 30, shape.y],
-            opacity: [0, 1, 0.5],
+            opacity: [0.35, 0.7, 0.45],
             rotate: [0, 15, -15, 0],
             scale: [0.8, 1.1, 0.9, 1],
           }}
@@ -120,10 +125,7 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
           className="text-4xl sm:text-6xl font-extrabold mb-6 mt-6 text-black leading-tight"
           style={{ fontFamily: '"Anton", sans-serif' }}
         >
-          Discover{" "}
-          <span className="text-gray-900 dark:text-gray-100">
-            Amazing Projects
-          </span>
+          Discover Amazing Projects
         </motion.h1>
 
         <motion.p
@@ -148,7 +150,7 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
                 navigate("/submit-project");
               }
             }}
-            className="bg-pink-200 text-black px-7 py-3 rounded-2xl font-semibold flex items-center gap-3 shadow-md hover:bg-pink-300 hover:shadow-lg transition-all duration-300"
+            className="bg-pink-100 text-black px-7 py-3 rounded-2xl font-semibold flex items-center gap-3 shadow-md hover:bg-pink-200 hover:shadow-lg transition-all duration-300"
             whileTap={{ scale: 0.95 }}
             whileHover={{ scale: 1.05 }}
             initial="rest"
@@ -169,7 +171,7 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
           </motion.button>
           {/* Explore Projects Button */}
           <motion.button
-          className="bg-yellow-200 text-black px-6 py-3 rounded-2xl font-semibold flex items-center gap-2 shadow-md hover:bg-yellow-300 hover:shadow-lg transition-all duration-300"
+          className="bg-yellow-100 text-black px-6 py-3 rounded-2xl font-semibold flex items-center gap-2 shadow-md hover:bg-yellow-200 hover:shadow-lg transition-all duration-300"
           whileTap={{ scale: 0.95}}
           whileHover={{ scale: 1.05 }}
           onClick={scrollToCard}
@@ -208,7 +210,7 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
               data-aos="zoom-in"
               data-aos-delay={700 + idx * 150}
               // UPDATED: Stat card background
-              className="bg-white dark:bg-gray-800 shadow-md hover:shadow-xl rounded-3xl p-6 flex flex-col items-center justify-center transition-all duration-300"
+              className="bg-gradient-to-br from-sky-50 via-white to-white dark:bg-gray-800 shadow-md hover:shadow-xl rounded-3xl p-6 flex flex-col items-center justify-center transition-all duration-300"
             >
               {/* UPDATED: Text colors */}
               <span className="text-3xl font-extrabold text-black dark:text-white">

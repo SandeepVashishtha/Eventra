@@ -7,14 +7,14 @@ const HackathonCTA = () => {
 
   // Bubbles data
   const bubbles = [
-    { size: 10, top: "10%", left: "15%", color: "bg-purple-300/30" },
-    { size: 10, top: "30%", left: "80%", color: "bg-indigo-200/30" },
+    { size: 10, top: "10%", left: "15%", color: "bg-pink-200/30" },
+    { size: 10, top: "30%", left: "80%", color: "bg-blue-200/30" },
     { size: 10, top: "60%", left: "25%", color: "bg-white/20" },
-    { size: 10, top: "75%", left: "70%", color: "bg-purple-200/25" },
-    { size: 10, top: "50%", left: "50%", color: "bg-indigo-300/20" },
-    { size: 10, top: "50%", left: "10%", color: "bg-indigo-300/20" },
-    { size: 10, top: "30%", left: "50%", color: "bg-indigo-300/20" },
-    { size: 10, top: "60%", left: "80%", color: "bg-indigo-300/20" },
+    { size: 10, top: "75%", left: "70%", color: "bg-yellow-200/25" },
+    { size: 10, top: "50%", left: "50%", color: "bg-green-200/20" },
+    { size: 10, top: "50%", left: "10%", color: "bg-blue-200/20" },
+    { size: 10, top: "30%", left: "50%", color: "bg-pink-200/20" },
+    { size: 10, top: "60%", left: "80%", color: "bg-yellow-200/20" },
   ];
 
   return (
@@ -48,7 +48,7 @@ const HackathonCTA = () => {
       ))}
 
       <motion.h2
-        className="text-4xl md:text-5xl font-bold text-purple-300 mb-4 relative z-10"
+        className="text-4xl md:text-5xl font-bold text-white mb-4 relative z-10"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
@@ -69,7 +69,7 @@ const HackathonCTA = () => {
       <div className="flex flex-col md:flex-row justify-center gap-4 relative z-10">
         <motion.a
           href="/hackathons"
-          className="inline-flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold px-8 py-4 rounded-full shadow-lg transition-transform duration-300"
+          className="inline-flex items-center justify-center gap-2 bg-blue-100 hover:bg-blue-200 text-black font-semibold px-8 py-4 rounded-full shadow-lg transition-transform duration-300"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           data-aos="zoom-in"
@@ -103,7 +103,7 @@ const HackathonCTA = () => {
             </p>
             {/* The close button works well in both themes. */}
             <button
-              className="mt-6 px-6 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition"
+              className="mt-6 px-6 py-2 rounded-lg bg-blue-100 text-black hover:bg-blue-200 transition"
               onClick={() => setShowModal(false)}
             >
               Close
