@@ -284,34 +284,18 @@ const Navbar = () => {
         data-aos-once="true"
         data-aos-duration="1000"
         // End AOS Implementation
-        className="fixed top-0 left-0 w-full z-40 shadow-lg 
-             bg-gradient-to-r from-purple-100/80 via-white to-indigo-100 backdrop-blur-lg border-b border-indigo-100
-             dark:bg-gradient-to-r dark:from-gray-900 dark:via-indigo-950 dark:to-gray-900 dark:border-indigo-950"
+           className="fixed top-0 left-0 w-full z-40 shadow-sm
+             bg-white border-b border-black/10"
       >
         <div className="w-full flex items-center h-20 px-6 md:px-12 relative">
           {/* Logo on the left */}
           <Link to="/" className="flex-shrink-0 z-20">
             <h2
-              className="text-2xl font-bold text-transparent bg-clip-text relative overflow-hidden"
-              style={{
-                backgroundImage:
-                  "linear-gradient(135deg, #4f46e5, #8b8dffff, #4f46e5)",
-                backgroundSize: "200% 200%",
-                animation: "shimmer 2.5s linear infinite",
-                fontFamily: "Dancing Script",
-                fontSize: "40px",
-              }}
+              className="text-3xl font-semibold tracking-tight text-black dark:text-white"
+              style={{ fontFamily: '"Anton", sans-serif' }}
             >
               Eventra
             </h2>
-            <style>
-              {`
-        @keyframes shimmer {
-          0% { background-position: -200% -200%; }
-          100% { background-position: 200% 200%; }
-        }
-      `}
-            </style>
           </Link>
 
           {/* Centered nav links */}
@@ -332,8 +316,8 @@ const Navbar = () => {
                       }}
                       className={`flex items-center gap-1 text-base font-medium transition-colors ${
                         isActive || openDropdown === item.name
-                          ? "text-indigo-600 dark:text-white"
-                          : "text-gray-600 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-white"
+                          ? "text-black dark:text-white"
+                          : "text-black/70 hover:text-black dark:text-white/70 dark:hover:text-white"
                       }`}
                     >
                       {item.name}
@@ -348,7 +332,7 @@ const Navbar = () => {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
-                        className="absolute left-1/2 -translate-x-1/2 mt-4 w-56 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-xl rounded-lg z-50 border border-gray-200 dark:border-gray-700 p-2"
+                        className="absolute left-1/2 -translate-x-1/2 mt-4 w-56 bg-white/90 dark:bg-black/80 backdrop-blur-md shadow-xl rounded-lg z-50 border border-black/10 dark:border-white/20 p-2"
                       >
                         {item.subItems.map((sub) => (
                           <Link
@@ -357,7 +341,7 @@ const Navbar = () => {
                             onClick={() => setOpenDropdown(null)}
                             className={`group flex items-center gap-3 w-full px-3 py-2 text-base font-medium rounded-md transition-colors ${
                               location.pathname === sub.href
-                                ? "bg-black/5 dark:bg-white/10 text-indigo-600 dark:text-white"
+                                ? "bg-black/10 dark:bg-white/15 text-black dark:text-white"
                                 : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
                             }`}
                           >
@@ -379,8 +363,8 @@ const Navbar = () => {
                   to={item.href}
                   className={`text-base font-medium transition-colors ${
                     isActive
-                      ? "text-indigo-600 dark:text-white"
-                      : "text-gray-600 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-white"
+                      ? "text-black dark:text-white"
+                      : "text-black/70 hover:text-black dark:text-white/70 dark:hover:text-white"
                   }`}
                 >
                   {item.name}
@@ -397,7 +381,7 @@ const Navbar = () => {
                 <div className="relative profile-container">
                   <button
                     onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                    className="flex items-center gap-2 text-sm font-medium text-white/90 hover:text-white transition-colors"
+                    className="flex items-center gap-2 text-sm font-medium text-black/90 dark:text-white/90 hover:text-black dark:hover:text-white transition-colors"
                   >
                     {user?.profilePicture ? (
                       <img
@@ -464,7 +448,7 @@ const Navbar = () => {
                             onClick={() => setShowProfileDropdown(false)}
                             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                               location.pathname === "/dashboard"
-                                ? "bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
+                                ? "bg-black/5 dark:bg-white/10 text-black dark:text-white"
                                 : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                             }`}
                           >
@@ -477,7 +461,7 @@ const Navbar = () => {
                             onClick={() => setShowProfileDropdown(false)}
                             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                               location.pathname === "/profile"
-                                ? "bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
+                                ? "bg-black/5 dark:bg-white/10 text-black dark:text-white"
                                 : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                             }`}
                           >
@@ -490,9 +474,9 @@ const Navbar = () => {
                         <div className="p-2 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
                           <button
                             onClick={handleLogoutClick}
-                            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm 
-                     text-red-600 dark:text-red-400 
-                     hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm
+                     text-gray-700 dark:text-gray-300
+                     hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                           >
                             <LogOut className="w-4 h-4" />
                             Logout
@@ -506,13 +490,13 @@ const Navbar = () => {
                 <div className="flex items-center space-x-1">
                   <Link
                     to="/login"
-                    className="px-4 py-2 text-base font-medium text-gray-600 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-white transition-colors"
+                    className="px-4 py-2 text-base font-medium text-black/75 hover:text-black dark:text-white/75 dark:hover:text-white transition-colors"
                   >
                     Sign In
                   </Link>
                   <Link
                     to="/signup"
-                    className="px-5 py-2 text-sm font-semibold text-white transition-all duration-300 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 dark:from-[#6B46FF] dark:to-[#8B5CF6] dark:border dark:border-white/10 dark:shadow-[0_6px_18px_rgba(107,70,255,0.16)] dark:hover:shadow-[0_10px_26px_rgba(90,61,224,0.20)] focus:outline-none focus:ring-4 focus:ring-indigo-500/30 dark:focus:ring-[#6B46FF]/20"
+                    className="px-5 py-2 text-sm font-semibold text-white transition-all duration-300 bg-black hover:bg-zinc-800 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 dark:bg-white dark:text-black dark:hover:bg-zinc-200 focus:outline-none focus:ring-4 focus:ring-black/20 dark:focus:ring-white/20"
                   >
                     Get Started
                   </Link>
@@ -526,7 +510,7 @@ const Navbar = () => {
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-expanded={isMobileMenuOpen}
               aria-label="Open navigation"
-              className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10"
+              className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10"
             >
               <svg
                 className="h-6 w-6"
@@ -560,8 +544,8 @@ const Navbar = () => {
       >
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/20">
           <h2
-            className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600"
-            style={{ fontFamily: "Dancing Script" }}
+            className="text-2xl font-bold text-black dark:text-white"
+            style={{ fontFamily: '"Anton", sans-serif' }}
           >
             Eventra
           </h2>
@@ -606,7 +590,7 @@ const Navbar = () => {
                     }
                     className={`flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors text-left text-lg font-medium ${
                       isActive
-                        ? "bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/20 text-indigo-600 dark:text-white"
+                        ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
                         : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
                     }`}
                   >
@@ -630,8 +614,8 @@ const Navbar = () => {
                             onClick={closeAllMenus}
                             className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium ${
                               isSubActive
-                                ? "bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/20 text-indigo-600 dark:text-white"
-                                : "text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-white"
+                                ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
+                                : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white"
                             }`}
                           >
                             {sub.icon}
@@ -651,7 +635,7 @@ const Navbar = () => {
                 onClick={closeAllMenus}
                 className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors text-lg font-medium ${
                   isActive
-                    ? "bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/20 text-indigo-600 dark:text-white"
+                    ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
                     : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
                 }`}
               >
@@ -693,7 +677,7 @@ const Navbar = () => {
                 onClick={closeAllMenus}
                 className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors text-lg font-medium ${
                   location.pathname === "/dashboard"
-                    ? "bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/20 text-indigo-600 dark:text-white"
+                    ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
                     : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
                 }`}
               >
@@ -705,7 +689,7 @@ const Navbar = () => {
                 onClick={closeAllMenus}
                 className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors text-lg font-medium ${
                   location.pathname === "/profile"
-                    ? "bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/20 text-indigo-600 dark:text-white"
+                    ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
                     : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
                 }`}
               >
@@ -715,7 +699,7 @@ const Navbar = () => {
               {/* CHANGE ONLY THIS BUTTON */}
               <button
                 onClick={handleLogoutClick}
-                className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/20 hover:text-red-700 dark:hover:text-red-300 transition-colors font-medium"
+                className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors font-medium"
               >
                 <LogOut className="w-5 h-5" />
                 Logout
@@ -726,7 +710,7 @@ const Navbar = () => {
               <Link
                 to="/login"
                 onClick={closeAllMenus}
-                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 dark:from-[#6B46FF] dark:to-[#8B5CF6] dark:hover:from-[#5A3DE0] dark:hover:to-[#7B4CF0] shadow-lg hover:shadow-xl dark:shadow-indigo-500/30 dark:hover:shadow-indigo-500/40 transform hover:-translate-y-0.5 transition-all duration-300 border border-transparent dark:border-white/10"
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-white bg-black hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 border border-transparent"
               >
                 <LogIn className="w-5 h-5" />
                 Sign In
@@ -734,7 +718,7 @@ const Navbar = () => {
               <Link
                 to="/signup"
                 onClick={closeAllMenus}
-                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-indigo-600 dark:text-white bg-white dark:bg-white/10 hover:bg-indigo-50 dark:hover:bg-white/15 border-2 border-indigo-200 dark:border-white/20 hover:border-indigo-300 dark:hover:border-white/30 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-black dark:text-white bg-white dark:bg-black/50 hover:bg-gray-100 dark:hover:bg-white/10 border-2 border-black/15 dark:border-white/20 hover:border-black/25 dark:hover:border-white/30 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
               >
                 <RocketLaunchIcon className="w-5 h-5" />
                 Get Started

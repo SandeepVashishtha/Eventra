@@ -227,7 +227,7 @@ const HelpCenter = () => {
               title: "Discord",
               link: "#discord",
               icon: <FaDiscord className="w-8 h-8" />,
-              color: "from-indigo-500 to-purple-500",
+              color: "from-gray-700 to-black",
             },
             {
               title: "GitHub Discussions",
@@ -245,7 +245,7 @@ const HelpCenter = () => {
               title: "Telegram",
               link: "https://t.me/eventra",
               icon: <FaTelegram className="w-8 h-8" />,
-              color: "from-purple-500 to-pink-500",
+              color: "from-gray-700 to-black",
             },
             {
               title: "YouTube",
@@ -336,7 +336,7 @@ const HelpCenter = () => {
                 "Step-by-step guide to creating and managing events on the platform with ease.",
               icon: <CalendarClock className="w-8 h-8" />,
               link: "/create-event",
-              gradient: "from-purple-500 via-purple-600 to-pink-600 ",
+              gradient: "from-gray-700 via-gray-800 to-black",
               difficulty: "Beginner",
               time: "12 min",
               step: "03",
@@ -473,7 +473,7 @@ const HelpCenter = () => {
               description:
                 "Adhere to contribution guidelines for GSOC and other open-source tasks.",
               highlight: "guidelines",
-              color: "from-purple-500 to-pink-500",
+              color: "from-gray-700 to-black",
               link: "/contributorguide",
             },
             {
@@ -499,7 +499,7 @@ const HelpCenter = () => {
               description:
                 "Reach out to our support team if you encounter any issues, errors, or have questions.",
               highlight: "support",
-              color: "from-indigo-500 to-purple-500",
+              color: "from-gray-700 to-black",
               link: "/contact",
             },
           ].map((guideline, idx) => (
@@ -544,7 +544,7 @@ const HelpCenter = () => {
 
               <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <span
-                  className={`text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r ${guideline.color}`}
+                  className="text-xs font-bold text-black"
                 >
                   {String(idx + 1).padStart(2, "0")}
                 </span>
@@ -633,7 +633,7 @@ const HelpCenter = () => {
       </section>
 
       {/* Modern CTA Section */}
-      <section className="relative py-16 px-8 m-8 rounded-3xl bg-gradient-to-tr from-black via-purple-800 via-indigo-900 to-pink-900 text-white shadow-xl overflow-hidden">
+      <section className="relative py-16 px-8 m-8 rounded-3xl bg-black text-white shadow-xl overflow-hidden">
         <motion.div
           className="absolute inset-0 pointer-events-none overflow-hidden"
           style={{
@@ -675,7 +675,7 @@ const HelpCenter = () => {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 to="/contact"
-                className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-500 font-semibold px-8 py-4 rounded-full shadow-lg hover:shadow-indigo-400/50 transition-transform duration-300"
+                className="inline-flex items-center justify-center gap-2 bg-white text-black font-semibold px-8 py-4 rounded-full shadow-lg hover:bg-gray-100 transition-transform duration-300"
               >
                 <Mail size={20} /> Contact Us
               </Link>
@@ -684,7 +684,7 @@ const HelpCenter = () => {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 to="/feedback"
-                className="inline-flex items-center justify-center gap-2 bg-white text-indigo-700 dark:bg-gray-200 dark:text-indigo-800 font-semibold px-8 py-4 rounded-full shadow-lg hover:scale-105 transition-transform duration-300"
+                className="inline-flex items-center justify-center gap-2 bg-white text-black dark:bg-gray-200 dark:text-black font-semibold px-8 py-4 rounded-full shadow-lg hover:scale-105 transition-transform duration-300"
               >
                 <MessageCircle size={20} /> Give Feedback
               </Link>

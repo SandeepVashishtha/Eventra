@@ -190,12 +190,12 @@ const performSave = () => {
     .slice(0, 7);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-black dark:to-gray-900 py-10 px-4">
+    <div className="min-h-screen bg-white dark:bg-gray-900 py-10 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 dark:from-indigo-400 dark:via-purple-400 dark:to-indigo-400 bg-clip-text text-transparent">
+            <span className="text-black dark:text-white">
               Edit Profile
             </span>
           </h1>

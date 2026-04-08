@@ -132,47 +132,47 @@ const Hero = () => {
     {
       size: 60,
       pos: { top: "5%", left: "10%" },
-      color: "from-indigo-400 to-blue-400",
+      color: "bg-blue-200",
     },
     {
       size: 80,
       pos: { top: "15%", right: "15%" },
-      color: "from-purple-400 to-pink-400",
+      color: "bg-yellow-200",
     },
     {
       size: 40,
       pos: { top: "30%", right: "30%" },
-      color: "from-purple-400 to-pink-400",
+      color: "bg-green-200",
     },
     {
       size: 80,
       pos: { top: "70%", right: "15%" },
-      color: "from-purple-400 to-pink-400",
+      color: "bg-blue-100",
     },
     {
       size: 60,
       pos: { top: "15%", right: "70%" },
-      color: "from-purple-400 to-pink-400",
+      color: "bg-yellow-100",
     },
     {
       size: 30,
       pos: { top: "40%", right: "40%" },
-      color: "from-purple-400 to-pink-400",
+      color: "bg-green-100",
     },
     {
       size: 100,
       pos: { bottom: "5%", left: "20%" },
-      color: "from-blue-300 to-indigo-300",
+      color: "bg-pink-100",
     },
     {
       size: 70,
       pos: { bottom: "10%", right: "10%" },
-      color: "from-pink-300 to-purple-300",
+      color: "bg-green-200",
     },
     {
       size: 50,
       pos: { top: "50%", left: "2%" },
-      color: "from-indigo-300 to-blue-200",
+      color: "bg-yellow-100",
     },
   ];
 
@@ -180,29 +180,28 @@ const Hero = () => {
     {
       value: "1500+",
       label: "Developers Joined",
-      color: "text-indigo-500 dark:text-indigo-400",
+      color: "text-black",
     },
     {
       value: "75",
       label: "Events Organized",
-      color: "text-pink-500 dark:text-pink-400",
+      color: "text-black",
     },
     {
       value: "30+",
       label: "Partners & Sponsors",
-      color: "text-purple-500 dark:text-purple-400",
+      color: "text-black",
     },
   ];
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-black dark:to-gray-900 xl:py-28 py-24">
-      {/* Floating Gradient Shapes */}
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-white xl:py-28 py-24">
+      {/* Floating pastel shapes */}
       {shapes.map((shape, i) => (
         <motion.div
           key={i}
           animate={floatShape(i)}
-          // Reduced shape opacity in dark mode for a subtler effect
-          className={`absolute rounded-full bg-gradient-to-tr ${shape.color} opacity-30 dark:opacity-10`}
+          className={`absolute rounded-full ${shape.color} opacity-45`}
           style={{
             width: `${shape.size}px`,
             height: `${shape.size}px`,
@@ -224,10 +223,12 @@ const Hero = () => {
           data-aos-duration="1000"
         >
           {/* Headline */}
-          <motion.h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-snug">
+          <motion.h1
+            className="text-5xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight text-black"
+            style={{ fontFamily: '"Anton", sans-serif' }}
+          >
             <motion.span
-              // Main headline text color
-              className="block text-gray-900 dark:text-gray-100 mb-2 md:mb-0"
+              className="block text-black mb-2 md:mb-0"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
@@ -235,12 +236,11 @@ const Hero = () => {
               Discover & Join
             </motion.span>
 
-            <div className="relative mt-3 h-16 sm:h-20 md:h-24 lg:h-28 overflow-hidden flex justify-center items-center">
+            <div className="relative mt-3 h-20 sm:h-24 md:h-28 lg:h-32 overflow-hidden flex justify-center items-center">
               <AnimatePresence mode="wait">
                 <motion.span
                   key={index}
-                  // Animated text gradient for dark mode
-                  className="text-2xl mt-2 sm:text-3xl md:text-4xl lg:text-5xl bg-clip-text text-transparent bg-gradient-to-r from-indigo-800 via-blue-500 to-purple-700 dark:from-indigo-400 dark:via-blue-400 dark:to-purple-500 mb-4 pb-2"
+                  className="block mt-2 text-black mb-4 pb-2"
                   initial={{ opacity: 0, y: 40 }}
                   animate={{
                     opacity: 1,
@@ -262,8 +262,7 @@ const Hero = () => {
           {/* Subtext */}
           <motion.p
             variants={fadeUp}
-            // Subtext color
-            className="text-base sm:text-lg text-gray-700 dark:text-gray-300 max-w-3xl mx-auto mt-2 mb-8"
+            className="text-base sm:text-lg text-black max-w-3xl mx-auto mt-2 mb-8"
           >
             "Connect with developers, learn new skills, and grow your network at
             the best tech events, hackathons, and workshops in your area."
@@ -287,7 +286,7 @@ const Hero = () => {
                 onChange={(e) => handleSearch(e.target.value)}
                 className="w-full py-4 pl-14 pr-14 text-lg text-gray-900 dark:text-gray-100 
                  placeholder-gray-500 dark:placeholder-gray-400 
-                 bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl
+                 bg-white backdrop-blur-xl
                  border-2 border-gray-200 dark:border-gray-700 
                  rounded-full focus:outline-none 
                  focus:ring-4 focus:ring-indigo-500/30 dark:focus:ring-indigo-400/20 
@@ -310,9 +309,8 @@ const Hero = () => {
                     setSearchResults([]);
                     setShowResults(false);
                   }}
-                  className="absolute inset-y-0 right-5 flex items-center 
-                   text-gray-400 dark:text-gray-500 
-                   hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                   className="absolute inset-y-0 right-5 flex items-center 
+                     text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   <X className="h-5 w-5" />
                 </motion.button>
@@ -328,14 +326,14 @@ const Hero = () => {
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
                   className="absolute top-full left-0 right-0 mt-3 
-                   bg-white dark:bg-gray-800 rounded-3xl 
-                   shadow-2xl border border-gray-200 dark:border-gray-700 
+                   bg-white rounded-3xl 
+                   shadow-2xl border border-gray-200 
                    max-h-96 overflow-y-auto z-50"
                 >
                   <div className="p-4">
                     {searchResults.length > 0 ? (
                       <>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 mb-3 font-medium">
+                        <div className="text-sm text-gray-500 mb-3 font-medium">
                           Search Results ({searchResults.length})
                         </div>
                         <div className="space-y-2">
@@ -349,35 +347,33 @@ const Hero = () => {
                                 handleResultClick(result.item, result.item.type)
                               }
                               className="flex items-center gap-3 p-3 rounded-2xl 
-                               hover:bg-gray-50 dark:hover:bg-gray-700/50 
+                               hover:bg-gray-50 
                                cursor-pointer transition-colors group"
                             >
                               <div
-                                className="flex-shrink-0 p-2 bg-indigo-100 dark:bg-indigo-900/50 
-                                    rounded-xl text-indigo-600 dark:text-indigo-400 
-                                    group-hover:bg-indigo-200 dark:group-hover:bg-indigo-800/50 transition-colors"
+                                className="flex-shrink-0 p-2 bg-blue-100 rounded-xl text-blue-600 
+                                    group-hover:bg-blue-200 transition-colors"
                               >
                                 {getResultIcon(result.item.type)}
                               </div>
                               <div className="flex-1 min-w-0 relative">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                                  <h4 className="text-sm font-semibold text-gray-900 truncate">
                                     {result.item.title}
                                   </h4>
                                   <span
                                     className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium 
-                                         bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                                         bg-gray-100 text-gray-600"
                                   >
                                     {result.item.searchType}
                                   </span>
                                 </div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 absolute left-0">
+                                <p className="text-xs text-gray-500 line-clamp-2 absolute left-0">
                                   {result.item.description?.substring(0, 80)}...
                                 </p>
                               </div>
                               <ExternalLink
-                                className="w-4 h-4 text-gray-400 dark:text-gray-500 
-                                             group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors"
+                                className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors"
                               />
                             </motion.div>
                           ))}
@@ -389,10 +385,10 @@ const Hero = () => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
                         transition={{ duration: 0.25, ease: "easeOut" }}
-                        className="text-center text-gray-500 dark:text-gray-400 py-10 text-base"
+                        className="text-center text-gray-500 py-10 text-base"
                       >
                         No results match “
-                        <span className="font-medium text-gray-700 dark:text-gray-200">
+                        <span className="font-medium text-gray-700">
                           {searchQuery}
                         </span>
                         ”
@@ -413,12 +409,12 @@ const Hero = () => {
             <motion.div variants={fadeUp}>
               <Link
                 to="/events"
-                className="relative inline-flex items-center px-8 py-4 rounded-full bg-gradient-to-r from-indigo-600 to-blue-500 text-white font-bold shadow-lg overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+                className="relative inline-flex items-center px-8 py-4 rounded-full bg-blue-100 text-black font-bold shadow-md overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-200"
               >
                 <span className="relative z-10 flex items-center">
                   Explore Events
                   <svg
-                    className="ml-3 w-5 h-5 text-white transition-transform duration-300 group-hover:translate-x-2"
+                    className="ml-3 w-5 h-5 text-black transition-transform duration-300 group-hover:translate-x-2"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -429,8 +425,6 @@ const Hero = () => {
                     />
                   </svg>
                 </span>
-                {/* Glow effect */}
-                <span className="absolute inset-0 bg-white/10 rounded-full opacity-0 group-hover:opacity-30 transition-opacity"></span>
               </Link>
             </motion.div>
 
@@ -438,7 +432,7 @@ const Hero = () => {
             <motion.div variants={fadeUp}>
               <Link
                 to="/hackathons"
-                className="relative inline-flex items-center px-8 py-4 rounded-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-semibold shadow hover:shadow-lg hover:bg-gray-100 hover:text-gray-900 hover:dark:bg-gray-700 hover:dark:text-white hover:scale-105 transition-all duration-300"
+                className="relative inline-flex items-center px-8 py-4 rounded-full border border-yellow-200 bg-yellow-100 text-black font-semibold shadow-md hover:shadow-lg hover:bg-yellow-200 hover:scale-105 transition-all duration-300"
               >
                 Join Hackathons
               </Link>
@@ -448,11 +442,11 @@ const Hero = () => {
             <motion.div variants={fadeUp}>
               <Link
                 to="/about"
-                className="relative inline-flex items-center px-8 py-4 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+                className="relative inline-flex items-center px-8 py-4 rounded-full bg-pink-100 text-black font-semibold shadow-md transform transition-all duration-300 hover:scale-105 hover:bg-pink-200"
               >
                 Learn More
                 <svg
-                  className="ml-3 w-5 h-5 text-white transition-transform duration-300 group-hover:translate-x-2"
+                  className="ml-3 w-5 h-5 text-black transition-transform duration-300 group-hover:translate-x-2"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -477,14 +471,12 @@ const Hero = () => {
                 variants={fadeUp}
                 whileHover={{ scale: 1.05 }}
                 transition={{ type: "spring", stiffness: 300 }}
-                // Stat card background for dark "glassmorphism" effect
-                className="bg-white/30 dark:bg-gray-700/30 backdrop-blur-md rounded-2xl p-6 text-center shadow-lg"
+                className="bg-white/80 backdrop-blur-md rounded-2xl p-6 text-center shadow-lg border border-gray-100"
               >
-                <p className={`text-3xl font-bold mb-2 ${stat.color}`}>
+                <p className="text-3xl font-bold mb-2 text-black">
                   {stat.value}
                 </p>
-                {/* Stat label text */}
-                <p className="text-gray-700 dark:text-gray-300 text-sm">
+                <p className="text-black text-sm">
                   {stat.label}
                 </p>
               </motion.div>

@@ -249,7 +249,7 @@ const HostHackathon = () => {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.7 }}
-        className="w-full max-w-4xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 border border-indigo-200 dark:border-gray-700 shadow-lg rounded-2xl p-6 mb-10"
+        className="w-full max-w-4xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-2xl p-6 mb-10"
         data-aos="fade-up"
         data-aos-delay="200"
       >
@@ -422,7 +422,7 @@ const HostHackathon = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold p-3 rounded-xl shadow-lg hover:from-indigo-600 hover:to-purple-600 transition-all duration-300"
+            className="w-full flex items-center justify-center gap-2 bg-black text-white font-semibold p-3 rounded-xl shadow-lg hover:bg-zinc-800 transition-all duration-300"
           >
             Submit Hackathon <ArrowRightIcon className="w-5 h-5" />
           </button>
@@ -473,7 +473,7 @@ const HostHackathon = () => {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.7 }}
-        className="w-full max-w-4xl mt-10 text-center bg-gradient-to-r from-gray-900 via-indigo-900 to-purple-900 border border-indigo-800 rounded-2xl p-10 shadow-2xl"
+        className="w-full max-w-4xl mt-10 text-center bg-black border border-black rounded-2xl p-10 shadow-2xl"
         data-aos="fade-up"
         data-aos-delay="1600"
       >
@@ -493,7 +493,7 @@ const HostHackathon = () => {
             href="#"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="inline-block bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-8 py-3 rounded-xl shadow-lg hover:from-indigo-600 hover:to-purple-600 transition-all duration-300"
+            className="inline-block bg-white text-black px-8 py-3 rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300"
           >
             Explore Hosting Options
           </motion.a>
@@ -502,7 +502,7 @@ const HostHackathon = () => {
             href="/hackathons"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="inline-block bg-gradient-to-r from-cyan-500 to-indigo-600 text-white px-8 py-3 rounded-xl shadow-lg hover:from-cyan-600 hover:to-indigo-700 transition-all duration-300"
+            className="inline-block bg-white text-black px-8 py-3 rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300"
           >
             Explore Hackathons
           </motion.a>

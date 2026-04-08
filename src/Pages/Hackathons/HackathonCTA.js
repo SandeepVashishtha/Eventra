@@ -19,7 +19,7 @@ const HackathonCTA = () => {
 
   return (
     <section 
-      className="relative py-16 px-8 m-8 rounded-3xl bg-gradient-to-r from-gray-900 via-indigo-900 to-purple-900 text-center shadow-xl overflow-hidden"
+      className="relative py-16 px-8 m-8 rounded-3xl bg-black text-center shadow-xl overflow-hidden"
       // AOS Implementation
       data-aos="zoom-in"
       data-aos-duration="1000"

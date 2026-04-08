@@ -182,7 +182,7 @@ const ProjectCard = ({ project, index }) => {
           href={project.githubUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-500 text-white font-semibold rounded-lg shadow-sm hover:shadow-lg hover:scale-105 transition-all duration-300"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-black text-white font-semibold rounded-lg shadow-sm hover:bg-zinc-800 hover:shadow-lg hover:scale-105 transition-all duration-300"
         >
           <FiGithub className="text-white" /> GitHub
         </a>

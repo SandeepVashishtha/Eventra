@@ -513,7 +513,7 @@ const EventCreation = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7 }}
-            className="w-full max-w-4xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 border border-indigo-200 dark:border-gray-700 shadow-lg rounded-2xl p-6 mb-10"
+            className="w-full max-w-4xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-2xl p-6 mb-10"
           >
             <div className="flex items-center gap-2 mb-3">
               <ClipboardDocumentListIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
@@ -632,13 +632,11 @@ const EventCreation = () => {
                       className="
         cursor-pointer
         inline-flex items-center justify-center gap-2
-        bg-gradient-to-r from-indigo-500 to-purple-500
-        dark:from-indigo-600 dark:to-purple-700
+        bg-black
         text-white font-medium
         px-4 py-2 rounded-2xl
         shadow-md hover:shadow-lg
-        hover:from-indigo-600 hover:to-purple-600
-        dark:hover:from-indigo-500 dark:hover:to-purple-500
+        hover:bg-zinc-800
         transition-all duration-300
         focus:ring-2 focus:ring-offset-2 focus:ring-indigo-400
         transform hover:scale-[1.03] active:scale-[0.97] text-sm
@@ -1295,7 +1293,7 @@ const EventCreation = () => {
                   <button
                     type="button"
                     onClick={addTicketTier}
-                    className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-4 py-2 rounded-3xl text-sm font-medium shadow-md hover:from-indigo-600 hover:to-purple-600 dark:from-indigo-600 dark:to-purple-700 dark:hover:from-indigo-500 dark:hover:to-purple-500 transition-all duration-300 transform hover:scale-[1.03] active:scale-[0.97]"
+                    className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-3xl text-sm font-medium shadow-md hover:bg-zinc-800 transition-all duration-300 transform hover:scale-[1.03] active:scale-[0.97]"
                   >
                     <Plus className="w-4 h-4" />
                     Add Tier
@@ -1415,11 +1413,9 @@ const EventCreation = () => {
         px-4 py-2
         rounded-3xl font-semibold
         text-white
-        bg-gradient-to-r from-indigo-500 to-purple-500
-        dark:from-indigo-600 dark:to-purple-700
+        bg-black
         shadow-md hover:shadow-lg
-        hover:from-indigo-600 hover:to-purple-600
-        dark:hover:from-indigo-500 dark:hover:to-purple-500
+        hover:bg-zinc-800
         transform hover:scale-[1.03] active:scale-[0.97]
         transition-all duration-300
         focus:ring-2 focus:ring-offset-2 focus:ring-indigo-400 text-sm
@@ -1454,7 +1450,7 @@ const EventCreation = () => {
                 onClick={handleSubmit}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold p-4 rounded-xl shadow-lg hover:from-indigo-600 hover:to-purple-600 transition-all duration-300"
+                className="w-full flex items-center justify-center gap-2 bg-black text-white font-semibold p-4 rounded-xl shadow-lg hover:bg-zinc-800 transition-all duration-300"
               >
                 Preview Event <ArrowRightIcon className="w-5 h-5" />
               </motion.button>
@@ -1687,7 +1683,7 @@ const EventCreation = () => {
               disabled={loading}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:from-indigo-600 hover:to-purple-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 bg-black text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:bg-zinc-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>

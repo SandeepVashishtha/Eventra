@@ -66,7 +66,7 @@ export default function MissionVision() {
           data-aos="fade-left"
           data-aos-duration="1000"
           data-aos-offset="200"
-          className="group relative rounded-3xl bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 text-white shadow-xl p-12 flex flex-col md:flex-row items-start gap-8 hover:shadow-2xl transition duration-500"
+          className="group relative rounded-3xl bg-black text-white shadow-xl p-12 flex flex-col md:flex-row items-start gap-8 hover:shadow-2xl transition duration-500"
         >
           {/* Icon Badge */}
           <motion.div

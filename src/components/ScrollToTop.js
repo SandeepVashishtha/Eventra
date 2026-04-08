@@ -50,15 +50,14 @@ export default function ScrollToTopButton() {
             fixed ${positionClass}
             w-14 h-14
             rounded-full
-            border-2 border-white/30 dark:border-white/20
-            bg-gradient-to-r from-purple-500 via-indigo-600 to-indigo-400
-            backdrop-blur-xl
-            text-white
-            shadow-2xl
+            border border-black/15 dark:border-white/20
+            bg-white dark:bg-black
+            text-black dark:text-white
+            shadow-lg
             flex items-center justify-center
             text-4xl
             hover:scale-110
-            hover:border-white/50
+            hover:border-black/30 dark:hover:border-white/40
             transition-all
             z-[9998]
           `}

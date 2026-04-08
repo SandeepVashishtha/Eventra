@@ -151,7 +151,7 @@ export const Privacy = () => {
               variants={item}
               className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl border border-gray-200 dark:border-gray-700 shadow-md overflow-hidden group hover:border-blue-400 dark:hover:border-blue-500 transition-colors duration-300"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-50 via-purple-50 dark:from-indigo-900/40 dark:via-purple-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-gray-100 via-gray-50 dark:from-gray-900/40 dark:via-gray-800/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
               <div className="relative z-10">
                 <button

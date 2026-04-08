@@ -44,7 +44,7 @@ const EventCard = ({ event }) => {
       data-aos="zoom-in"
       data-aos-duration="1000"
       // Removed Framer Motion initial/animate/transition to prevent conflicts with parent container animation
-      className="group relative bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/20 dark:from-gray-900 dark:via-indigo-950/40 dark:to-purple-950/20 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl   
+      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl   
       backdrop-blur-sm transition-all duration-500 flex flex-col card-with-floating-elements z-10 hover:z-50"
       whileHover={{
         y: -8,
@@ -55,7 +55,7 @@ const EventCard = ({ event }) => {
       whileTap={{ scale: 0.98 }}
     >
       {/* Animated gradient border overlay */}
-      <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-90 transition-opacity duration-500 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-pink-500/20 -z-10"></div>
+      <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-90 transition-opacity duration-500 bg-black/10 -z-10"></div>
 
       {/* Action buttons container positioned at the top-right of the entire card */}
       <div className="absolute top-20 right-4 z-[200] flex space-x-2">
@@ -106,7 +106,7 @@ const EventCard = ({ event }) => {
 
       {/* Floating particles effect */}
       <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
-        <div className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full opacity-20 group-hover:animate-pulse"></div>
+        <div className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-br from-gray-500 to-gray-700 rounded-full opacity-20 group-hover:animate-pulse"></div>
         <div className="absolute top-1/2 -left-2 w-4 h-4 bg-gradient-to-br from-pink-400 to-red-500 rounded-full opacity-20 group-hover:animate-bounce"></div>
         <div className="absolute bottom-4 right-1/4 w-6 h-6 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full opacity-20 group-hover:animate-ping"></div>
       </div>
@@ -114,7 +114,7 @@ const EventCard = ({ event }) => {
       {/* --- Enhanced Header --- */}
       <div className="flex items-center px-8 py-6 gap-4 bg-gradient-to-r from-white/80 to-indigo-50/60 dark:from-gray-900/80 dark:to-indigo-950/60 border-b border-gray-200/60 dark:border-gray-700/50 backdrop-blur-sm">
         <motion.div
-          className="p-3 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-gray-800 dark:to-indigo-900 rounded-2xl shadow-inner"
+          className="p-3 bg-gradient-to-br from-gray-100 to-white dark:from-gray-800 dark:to-gray-700 rounded-2xl shadow-inner"
           whileHover={{
             scale: 1.1,
             rotate: 10,
@@ -130,7 +130,7 @@ const EventCard = ({ event }) => {
         <div className="ml-auto">
           {event.status === "upcoming" && (
             <motion.span
-              className="text-xs px-4 py-2 bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/60 dark:to-purple-900/60 text-indigo-700 dark:text-indigo-300 rounded-full font-medium shadow-sm border border-indigo-200/50 dark:border-indigo-700/50"
+              className="text-xs px-4 py-2 bg-gradient-to-r from-gray-100 to-white dark:from-gray-700 dark:to-gray-800 text-gray-700 dark:text-gray-300 rounded-full font-medium shadow-sm border border-gray-200/50 dark:border-gray-700/50"
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
             >
@@ -212,7 +212,7 @@ const EventCard = ({ event }) => {
       <div className="px-8 py-6 flex gap-4 bg-gradient-to-r from-gray-50/30 to-white/60 dark:from-gray-800/30 dark:to-gray-900/60">
         <Link to={`/events/${event.id}/register`} className="group/btn flex-1">
           <motion.div
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white px-6 py-3 text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-black text-white px-6 py-3 text-sm font-bold shadow-lg hover:bg-zinc-800 hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden"
             whileHover={{ scale: 1.02, y: -1 }}
             whileTap={{ scale: 0.98 }}
           >

@@ -75,7 +75,7 @@ const Login = () => {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4, delay: 0.1 }}
-        className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 dark:from-blue-900/10 dark:via-purple-900/10 dark:to-pink-900/10"
+        className="absolute inset-0 bg-gradient-to-br from-gray-400/5 via-gray-500/5 to-gray-700/5 dark:from-gray-900/10 dark:via-gray-800/10 dark:to-gray-700/10"
         aria-hidden
       />
 

@@ -149,7 +149,7 @@ const EventsPage = () => {
                 onClick={() => setFilterType(filter.key)}
                 className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-full transition ${
                   filterType === filter.key
-                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white"
+                    ? "bg-black text-white"
                     : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-700"
                 }`}
                 aria-pressed={filterType === filter.key}
@@ -187,7 +187,7 @@ const EventsPage = () => {
                 onClick={() => setViewMode("grid")}
                 className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
                   viewMode === "grid"
-                    ? "bg-gradient-to-r from-indigo-400 to-purple-400 text-white shadow-md"
+                    ? "bg-black text-white shadow-md"
                     : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                 }`}
                 aria-label="Grid view"
@@ -199,7 +199,7 @@ const EventsPage = () => {
                 onClick={() => setViewMode("list")}
                 className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
                   viewMode === "list"
-                    ? "bg-gradient-to-r from-indigo-400 to-purple-400 text-white shadow-md"
+                    ? "bg-black text-white shadow-md"
                     : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                 }`}
                 aria-label="List view"
@@ -235,7 +235,7 @@ const EventsPage = () => {
           ) : (
             <motion.div
               // UPDATED: "No Events Found" message styles
-              className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-gradient-to-br from-white via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-indigo-900/20 dark:to-purple-900/20 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]"
+              className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]"
               initial={{ opacity: 0, y: 30, scale: 0.95 }} // Initial animation state
               animate={{ opacity: 1, y: 0, scale: 1 }} // Animate to visible
               transition={{ duration: 0.6, ease: "easeOut" }} // Animation timing

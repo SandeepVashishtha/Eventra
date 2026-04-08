@@ -163,7 +163,7 @@ const Footer = () => {
       href: "https://github.com/sandeepvashishtha/Eventra",
       icon: (
         <FaGithub
-          className="size-10 p-2 rounded-full text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-gray-900 hover:scale-110 hover:-translate-y-1"
+          className="size-10 p-2 rounded-full text-black bg-white shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 hover:scale-110 hover:-translate-y-1"
           size={20}
         />
       ),
@@ -174,7 +174,7 @@ const Footer = () => {
       href: "https://www.linkedin.com/in/sandeepvashishtha/",
       icon: (
         <FaLinkedin
-          className="size-10 p-2 rounded-full text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white hover:scale-110 hover:-translate-y-1"
+          className="size-10 p-2 rounded-full text-black bg-white shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 hover:scale-110 hover:-translate-y-1"
           size={20}
         />
       ),
@@ -185,7 +185,7 @@ const Footer = () => {
       href: "https://www.discord.com/",
       icon: (
         <FaDiscord
-          className="size-10 p-2 rounded-full text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-blue-900 hover:text-white dark:hover:bg-blue-900 dark:hover:text-white hover:scale-110 hover:-translate-y-1"
+          className="size-10 p-2 rounded-full text-black bg-white shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 hover:scale-110 hover:-translate-y-1"
           size={20}
         />
       ),
@@ -196,7 +196,7 @@ const Footer = () => {
       href: "https://www.telegram.com/",
       icon: (
         <FaTelegram
-          className="size-10 p-2 rounded-full text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white hover:scale-110 hover:-translate-y-1"
+          className="size-10 p-2 rounded-full text-black bg-white shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 hover:scale-110 hover:-translate-y-1"
           size={20}
         />
       ),
@@ -207,7 +207,7 @@ const Footer = () => {
       href: "https://www.instagram.com/",
       icon: (
         <FaInstagram
-          className="size-10 p-2 rounded-full text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-pink-600 hover:text-white dark:hover:bg-pink-600 dark:hover:text-white hover:scale-110 hover:-translate-y-1"
+          className="size-10 p-2 rounded-full text-black bg-white shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 hover:scale-110 hover:-translate-y-1"
           size={20}
         />
       ),
@@ -236,7 +236,10 @@ const Footer = () => {
               data-aos-delay="0"
             >
               {/* UPDATED: Added dark mode text color */}
-              <h2 className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+              <h2
+                className="text-3xl font-bold text-black"
+                style={{ fontFamily: "Anton, sans-serif" }}
+              >
                 Eventra
               </h2>
               {/* UPDATED: Added dark mode text color */}
@@ -272,7 +275,7 @@ const Footer = () => {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? "Subscribing..." : "Subscribe"}
                   </button>
@@ -322,10 +325,10 @@ const Footer = () => {
                     <li key={link.name}>
                       <Link
                         to={link.href}
-                        className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-4 transition-all duration-300 hover:translate-x-1 group"
+                        className="text-sm text-gray-600 hover:text-black flex items-center gap-4 transition-all duration-300 hover:translate-x-1 group"
                       >
                         {link.icon && (
-                          <span className="text-indigo-500 dark:text-indigo-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-300 group-hover:scale-110 transition-all duration-300">
+                          <span className="text-black group-hover:text-black group-hover:scale-110 transition-all duration-300">
                             {link.icon}
                           </span>
                         )}

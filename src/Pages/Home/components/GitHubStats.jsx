@@ -159,7 +159,7 @@ export default function GitHubStats() {
     {
       label: "Contributors",
       value: stats.contributors,
-      icon: <Users className="text-indigo-500" size={40} />,
+      icon: <Users className="text-black" size={40} />,
       link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/graphs/contributors`,
     },
     {
@@ -177,7 +177,7 @@ export default function GitHubStats() {
     {
       label: "Last Update",
       value: stats.lastCommit,
-      icon: <Clock className="text-purple-500" size={40} />,
+      icon: <Clock className="text-black" size={40} />,
       link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/commits`,
     },
     {
@@ -198,7 +198,7 @@ export default function GitHubStats() {
 
   return (
     // UPDATED: Section background
-    <section className="py-16 bg-gradient-to-t from-indigo-50 via-indigo-100 to-white dark:from-gray-900 dark:via-indigo-900/20 dark:to-black ">
+    <section className="py-16 bg-white dark:bg-black ">
       <div className="max-w-7xl mx-auto px-6">
         <motion.h2
           initial={{ opacity: 0, y: -30 }}
@@ -228,7 +228,7 @@ export default function GitHubStats() {
             >
               {/* Glow effect */}
               {/* UPDATED: Glow effect for dark mode */}
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-100 via-transparent to-indigo-200 dark:from-indigo-700/30 dark:via-transparent dark:to-purple-800/30 opacity-0 group-hover:opacity-100 transition duration-700 blur-3xl rounded-2xl"></div>
+              <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition duration-700 blur-3xl rounded-2xl"></div>
 
               <div className="z-10 flex flex-col items-center space-y-2 sm:space-y-3">
                 {/* UPDATED: Icon wrapper background with responsive sizing */}

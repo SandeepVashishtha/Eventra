@@ -117,7 +117,8 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
           // UPDATED: Title text color and gradient
-          className="text-4xl sm:text-6xl font-extrabold mb-6 mt-6 bg-gradient-to-r from-indigo-600 dark:from-indigo-400 to-purple-600 dark:to-purple-400 text-transparent bg-clip-text leading-tight"
+          className="text-4xl sm:text-6xl font-extrabold mb-6 mt-6 text-black leading-tight"
+          style={{ fontFamily: '"Anton", sans-serif' }}
         >
           Discover{" "}
           <span className="text-gray-900 dark:text-gray-100">
@@ -147,9 +148,9 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
                 navigate("/submit-project");
               }
             }}
-            className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white px-7 py-3 rounded-2xl font-semibold flex items-center gap-3 shadow-2xl hover:shadow-3xl transition-all duration-300"
+            className="bg-pink-200 text-black px-7 py-3 rounded-2xl font-semibold flex items-center gap-3 shadow-md hover:bg-pink-300 hover:shadow-lg transition-all duration-300"
             whileTap={{ scale: 0.95 }}
-            whileHover="hover"
+            whileHover={{ scale: 1.05 }}
             initial="rest"
             data-aos="zoom-in"
             data-aos-delay="400"
@@ -168,8 +169,9 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
           </motion.button>
           {/* Explore Projects Button */}
           <motion.button
-          className="bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 px-6 py-3 rounded-2xl font-semibold flex items-center gap-2 shadow-md hover:shadow-xl hover:bg-indigo-50 dark:hover:bg-gray-700 transition-all duration-300"
+          className="bg-yellow-200 text-black px-6 py-3 rounded-2xl font-semibold flex items-center gap-2 shadow-md hover:bg-yellow-300 hover:shadow-lg transition-all duration-300"
           whileTap={{ scale: 0.95}}
+          whileHover={{ scale: 1.05 }}
           onClick={scrollToCard}
           data-aos="zoom-in"
           data-aos-delay="600"
@@ -206,10 +208,10 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
               data-aos="zoom-in"
               data-aos-delay={700 + idx * 150}
               // UPDATED: Stat card background
-              className="bg-gradient-to-r from-indigo-50 to-white dark:from-gray-800 dark:to-gray-700 shadow-md hover:shadow-xl rounded-3xl p-6 flex flex-col items-center justify-center transition-all duration-300"
+              className="bg-white dark:bg-gray-800 shadow-md hover:shadow-xl rounded-3xl p-6 flex flex-col items-center justify-center transition-all duration-300"
             >
               {/* UPDATED: Text colors */}
-              <span className="text-3xl font-extrabold text-indigo-600 dark:text-indigo-400">
+              <span className="text-3xl font-extrabold text-black dark:text-white">
                 {stat.number}
               </span>
               <span className="text-gray-700 dark:text-gray-300 mt-1 text-sm sm:text-base">

@@ -21,7 +21,7 @@ const GSSoCContribution = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
         // UPDATED: Section background and border
-        className="p-10 rounded-3xl shadow-lg bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 border border-gray-200 dark:border-gray-700"
+        className="p-10 rounded-3xl shadow-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
       >
         {/* Header */}
         {/* UPDATED: Text colors */}
@@ -128,7 +128,7 @@ const GSSoCContribution = () => {
         {/* Card 6 */}
         <div
           // UPDATED: Card background, border, and text
-          className="p-8 rounded-2xl bg-gradient-to-r from-purple-50 to-pink-50 dark:from-gray-700 dark:to-gray-800 shadow-md border dark:border-gray-700 hover:border-purple-400 dark:hover:border-purple-500 transition-colors duration-300"
+          className="p-8 rounded-2xl bg-white dark:bg-gray-800 shadow-md border dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-colors duration-300"
         >
           <div className="flex items-center gap-3 mb-4">
             <CheckCircle className="w-8 h-8 text-purple-600 dark:text-purple-400" />
@@ -150,8 +150,8 @@ const GSSoCContribution = () => {
         <motion.button
           whileHover={{ scale: 1.05 }}
           className="px-8 py-3 rounded-full font-semibold text-white 
-                     bg-gradient-to-r from-indigo-600 to-purple-600 
-                     shadow-lg hover:from-indigo-700 hover:to-purple-700 
+                     bg-black
+                     shadow-lg hover:bg-zinc-800
                      transition-all duration-300"
           onClick={() => navigate("/contributorguide")}
         >

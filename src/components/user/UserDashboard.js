@@ -164,7 +164,7 @@ const UserDashboard = () => {
 
   return (
     // UPDATED: Main page background
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-black dark:to-gray-900">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
         <motion.div
@@ -180,7 +180,7 @@ const UserDashboard = () => {
             >
               {/* UPDATED: Text color and gradient */}
               <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 dark:from-indigo-400 dark:via-purple-400 dark:to-indigo-400 bg-clip-text text-transparent animate-gradient">
+                <span className="text-black dark:text-white animate-gradient">
                   {displayText}
                   <span className="animate-pulse">|</span>
                 </span>
@@ -226,9 +226,9 @@ const UserDashboard = () => {
               {/* Projects */}
               <Link
                 to="/projects"
-                className="flex flex-col items-center justify-center bg-gradient-to-br from-purple-100 to-white border border-gray-300 dark:border-gray-700 dark:from-gray-800 dark:to-gray-700 rounded-xl shadow-sm p-4 cursor-pointer transition hover:shadow-lg hover:-translate-y-1 hover:border-purple-400 hover:shadow-purple-200/70 dark:hover:border-purple-500 hover:shadow-purple-200/70 dark:hover:shadow-purple-900/50"
+                className="flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-white border border-gray-300 dark:border-gray-700 dark:from-gray-800 dark:to-gray-700 rounded-xl shadow-sm p-4 cursor-pointer transition hover:shadow-lg hover:-translate-y-1 hover:border-gray-400 hover:shadow-gray-200/70 dark:hover:border-gray-500 dark:hover:shadow-gray-900/50"
               >
-                <FolderOpen className="h-6 w-6 text-purple-500 mb-2" />
+                <FolderOpen className="h-6 w-6 text-gray-700 dark:text-gray-300 mb-2" />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Projects
                 </span>
@@ -267,7 +267,7 @@ const UserDashboard = () => {
           <motion.div variants={itemVariants}>
             {/* IMPROVEMENT: Converted inline style to theme-aware Tailwind classes */}
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
-              <Activity size={24} className="text-purple-500" />
+              <Activity size={24} className="text-black dark:text-white" />
               Overview
             </h2>
 
@@ -301,8 +301,8 @@ const UserDashboard = () => {
               </div>
 
               {/* Projects */}
-              <div className="relative bg-gradient-to-br from-purple-100 to-white dark:from-gray-800 dark:to-gray-700  border border-gray-300 dark:border dark:border-gray-700 rounded-xl shadow-sm p-6 transition duration-200 hover:shadow-lg hover:-translate-y-1 hover:border-purple-400 dark:hover:border-purple-500 hover:shadow-purple-200/70 dark:hover:shadow-purple-900/50">
-                <FolderOpen className="absolute top-4 right-4 h-5 w-5 text-purple-500" />
+              <div className="relative bg-gradient-to-br from-gray-100 to-white dark:from-gray-800 dark:to-gray-700 border border-gray-300 dark:border dark:border-gray-700 rounded-xl shadow-sm p-6 transition duration-200 hover:shadow-lg hover:-translate-y-1 hover:border-gray-400 dark:hover:border-gray-500 hover:shadow-gray-200/70 dark:hover:shadow-gray-900/50">
+                <FolderOpen className="absolute top-4 right-4 h-5 w-5 text-gray-700 dark:text-gray-300" />
                 <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium">Projects</h3>
                 <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-2">
                   {userStats.projectsSubmitted + userStats.projectsContributed}
@@ -442,7 +442,7 @@ const UserDashboard = () => {
             className="overflow-x-auto mt-12 w-full px-6 py-6 scroll-mt-24"
           >
             <h2 className="text-3xl font-bold text-center mb-6">
-              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
+              <span className="text-black dark:text-white">
                 My Registrations
               </span>
             </h2>

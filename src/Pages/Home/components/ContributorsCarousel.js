@@ -239,7 +239,7 @@ const Contributors = () => {
           data-aos-once="true"
         >
           Our Amazing {/* UPDATED: Gradient text for dark mode */}
-          <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 dark:from-indigo-400 dark:via-purple-500 dark:to-pink-500 bg-clip-text text-transparent animate-pulse">
+          <span className="text-black animate-pulse">
             Contributors
           </span>
         </motion.h2>
@@ -249,21 +249,21 @@ const Contributors = () => {
           <button
             onClick={prevSlide}
             // UPDATED: Arrow button styles
-            className="absolute left-0 top-[35%] -translate-y-1/2 -translate-x-4 z-10 bg-white/90 dark:bg-gray-800/70 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-700 hover:scale-110 transition-all duration-300 border border-gray-200 dark:border-gray-700"
+            className="absolute left-0 top-[35%] -translate-y-1/2 -translate-x-4 z-10 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 hover:scale-110 transition-all duration-300 border border-gray-200"
             disabled={currentIndex === 0}
           >
             {/* UPDATED: Arrow icon color */}
-            <FaChevronLeft className="text-indigo-600 dark:text-indigo-400 text-xl" />
+            <FaChevronLeft className="text-black text-xl" />
           </button>
 
           <button
             onClick={nextSlide}
             // UPDATED: Arrow button styles
-            className="absolute right-0 top-[35%] -translate-y-1/2 translate-x-4 z-10 bg-white/90 dark:bg-gray-800/70 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-700 hover:scale-110 transition-all duration-300 border border-gray-200 dark:border-gray-700"
+            className="absolute right-0 top-[35%] -translate-y-1/2 translate-x-4 z-10 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 hover:scale-110 transition-all duration-300 border border-gray-200"
             disabled={currentIndex + itemsPerView >= contributors.length}
           >
             {/* UPDATED: Arrow icon color */}
-            <FaChevronRight className="text-indigo-600 dark:text-indigo-400 text-xl" />
+            <FaChevronRight className="text-black text-xl" />
           </button>
 
           {/* Carousel Content */}
@@ -276,7 +276,7 @@ const Contributors = () => {
               {visibleContributors.map((c, i) => (
                 <motion.div
                   key={c.id}
-                  className="relative bg-gradient-to-br from-white/90 to-indigo-50/80 dark:from-gray-700/80 dark:to-gray-800/70 backdrop-blur-xl p-4 pt-10 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 flex flex-col items-center text-center mb-6 transition-all duration-300 ease-out flex-shrink-0"
+                  className="relative bg-white/95 backdrop-blur-xl p-4 pt-10 rounded-xl shadow-md border border-gray-200 flex flex-col items-center text-center mb-6 transition-all duration-300 ease-out flex-shrink-0"
                   style={{
                     flex: `0 0 calc((100% - ${
                       itemsPerView - 1
@@ -299,61 +299,61 @@ const Contributors = () => {
                       <img
                         src={c.avatar_url}
                         alt={c.login}
-                        className="w-[65px] h-[65px] rounded-full border-4 border-indigo-500 shadow-md relative z-10"
+                        className="w-[65px] h-[65px] rounded-full border-4 border-black shadow-md relative z-10"
                       />
-                      <div className="absolute inset-0 rounded-full animate-pulse bg-indigo-400/20 blur-sm -z-10"></div>
+                      <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 blur-sm -z-10"></div>
                     </div>
                   </div>
                   {/* Name + Role + Badge */}
                   <div className="mt-16">
                     {/* UPDATED: Name and role text */}
-                    <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
+                    <h3 className="text-lg font-bold text-black">
                       {c.name ? c.name : c.login || "Unknown Contributor"}
                     </h3>
-                    <p className="text-indigo-600 dark:text-indigo-400 text-sm font-medium mb-3 flex items-center justify-center gap-1">
+                    <p className="text-black text-sm font-medium mb-3 flex items-center justify-center gap-1">
                       <FaMedal className="text-yellow-500 animate-bounce" />{" "}
                       {c.role}
                     </p>
 
                     {/* UPDATED: Contribution Badges */}
                     {currentIndex + i === 0 && (
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300">
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-black">
                         🥇･ Top Contributor
                       </span>
                     )}
                     {currentIndex + i === 1 && (
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300">
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 text-black">
                         🥈･ Silver Contributor
                       </span>
                     )}
                     {currentIndex + i === 2 && (
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300">
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-black">
                         🥉･ Bronze Contributor
                       </span>
                     )}
                   </div>
 
                   {/* UPDATED: Stat text colors */}
-                  <div className="grid grid-cols-3 gap-3 text-sm text-gray-700 dark:text-gray-300 my-3 w-full">
+                  <div className="grid grid-cols-3 gap-3 text-sm text-black my-3 w-full">
                     {/* UPDATED: Stat box background and icon colors */}
-                    <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                      <FaCodeBranch className="text-indigo-600 dark:text-indigo-400 mb-1" />
+                    <div className="flex flex-col items-center bg-white/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
+                      <FaCodeBranch className="text-black mb-1" />
                       <span className="font-semibold">{c.public_repos}</span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                      <span className="text-xs text-black">
                         Repos
                       </span>
                     </div>
-                    <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                      <FaUserFriends className="text-indigo-600 dark:text-indigo-400 mb-1" />
+                    <div className="flex flex-col items-center bg-white/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
+                      <FaUserFriends className="text-black mb-1" />
                       <span className="font-semibold">{c.followers}</span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                      <span className="text-xs text-black">
                         Followers
                       </span>
                     </div>
-                    <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                      <FaCodeBranch className="text-indigo-600 dark:text-indigo-400 mb-1" />
+                    <div className="flex flex-col items-center bg-white/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
+                      <FaCodeBranch className="text-black mb-1" />
                       <span className="font-semibold">{c.contributions}</span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                      <span className="text-xs text-black">
                         Contribs
                       </span>
                     </div>
@@ -361,15 +361,13 @@ const Contributors = () => {
 
                   {/* Contribution Progress Bar */}
                   {/* UPDATED: Progress bar background */}
-                  <div className="w-full bg-gray-200 dark:bg-gray-600 h-2 rounded-full overflow-hidden mb-4">
-                    <div
-                      className="h-2 bg-gradient-to-r from-indigo-500 to-purple-500" /* ... */
-                    ></div>
+                  <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-4">
+                    <div className="h-2 bg-black" />
                   </div>
 
                   {/* Extra Info */}
                   {/* UPDATED: Text color */}
-                  <div className="flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400 mb-4">
+                  <div className="flex flex-col gap-1 text-xs text-black mb-4">
                     {c.company && (
                       <span className="flex items-center gap-1 justify-center">
                         <FaBuilding /> {c.company}
@@ -388,14 +386,10 @@ const Contributors = () => {
                       href={c.html_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="group inline-flex items-center justify-center gap-2 
-                        bg-gradient-to-r from-indigo-600 to-purple-600 text-white 
-                        px-4 py-2 rounded-full text-sm font-semibold shadow 
-                        hover:from-indigo-700 hover:to-purple-700 hover:scale-105
-                        transition-all duration-300 ease-out transform  relative overflow-hidden"
+                      className="group inline-flex items-center justify-center gap-2 bg-black text-white px-4 py-2 rounded-full text-sm font-semibold shadow hover:bg-zinc-800 hover:scale-105 transition-all duration-300 ease-out transform relative overflow-hidden"
                     >
                       {/* GitHub Icon with animation */}
-                      <FaGithub className="text-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:text-blue-200" />
+                      <FaGithub className="text-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:text-gray-200" />
 
                       <span>Profile</span>
 
@@ -416,8 +410,8 @@ const Contributors = () => {
                 // UPDATED: Dot colors
                 className={`w-3 h-3 rounded-full transition-all duration-300 ${
                   index === currentSlide
-                    ? "bg-indigo-600 dark:bg-indigo-400 scale-125"
-                    : "bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
+                    ? "bg-black scale-125"
+                    : "bg-gray-300 hover:bg-gray-400"
                 }`}
               />
             ))}
@@ -427,10 +421,7 @@ const Contributors = () => {
             <Link
               to="/contributors"
               onClick={() => window.scrollTo(0, 0)}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 
-                       text-white px-8 py-3 rounded-full font-semibold shadow-lg
-                       hover:from-indigo-700 hover:to-purple-700 hover:scale-105
-                       transition-all duration-300 ease-out"
+              className="inline-flex items-center gap-2 bg-black text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-zinc-800 hover:scale-105 transition-all duration-300 ease-out"
             >
               <span>View All Contributors</span>
               <FaExternalLinkAlt className="text-sm" />
@@ -438,10 +429,7 @@ const Contributors = () => {
             <Link
               to="/ContributorGuide"
               onClick={() => window.scrollTo(0, 0)}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600
-             text-white px-8 py-3 rounded-full font-semibold shadow-lg
-             hover:from-indigo-700 hover:to-purple-700 hover:scale-105
-             transition-all duration-300 ease-out ml-10"
+              className="inline-flex items-center gap-2 bg-white text-black px-8 py-3 rounded-full font-semibold shadow-lg border border-black/15 hover:bg-gray-100 hover:scale-105 transition-all duration-300 ease-out ml-10"
             >
               <span>Guide</span>
               <FaExternalLinkAlt className="text-sm" />

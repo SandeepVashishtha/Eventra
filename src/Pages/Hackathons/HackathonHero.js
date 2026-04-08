@@ -45,12 +45,12 @@ export default function HackathonHero({
     () => [
       { size: 60, pos: { top: "10%", left: "5%" }, color: "from-indigo-400 to-blue-400" },
       { size: 60, pos: { top: "12%", left: "45%" }, color: "from-indigo-300 to-blue-200" },
-      { size: 60, pos: { top: "2%", left: "10%" }, color: "from-purple-400 to-pink-400" },
+      { size: 60, pos: { top: "2%", left: "10%" }, color: "from-gray-500 to-gray-400" },
       { size: 50, pos: { top: "4%", right: "20%" }, color: "from-indigo-300 to-blue-200" },
-      { size: 70, pos: { top: "1%", right: "5%" }, color: "from-pink-300 to-purple-300" },
-      { size: 80, pos: { top: "10%", right: "10%" }, color: "from-purple-400 to-pink-400" },
+      { size: 70, pos: { top: "1%", right: "5%" }, color: "from-gray-400 to-gray-300" },
+      { size: 80, pos: { top: "10%", right: "10%" }, color: "from-gray-500 to-gray-400" },
       { size: 100, pos: { bottom: "20%", left: "25%" }, color: "from-blue-300 to-indigo-300" },
-      { size: 70, pos: { bottom: "15%", right: "15%" }, color: "from-pink-300 to-purple-300" },
+      { size: 70, pos: { bottom: "15%", right: "15%" }, color: "from-gray-400 to-gray-300" },
       { size: 50, pos: { top: "50%", left: "2%" }, color: "from-indigo-300 to-blue-200" },
     ],
     []
@@ -89,9 +89,10 @@ export default function HackathonHero({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
           className="text-4xl sm:text-6xl font-extrabold leading-tight"
+          style={{ fontFamily: '"Anton", sans-serif' }}
         >
           Discover{" "}
-          <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent animate-gradient">
+          <span className="text-black dark:text-white animate-gradient">
             Amazing Hackathons
           </span>
         </motion.h1>
@@ -194,11 +195,9 @@ export default function HackathonHero({
           <motion.button
             whileHover={{ scale: 1.07 }}
             whileTap={{ scale: 0.95 }}
-            className="relative px-7 py-3.5 rounded-xl font-semibold text-white shadow-lg overflow-hidden group"
+            className="relative px-7 py-3.5 rounded-xl font-semibold text-black shadow-lg overflow-hidden group bg-purple-200 hover:bg-purple-300 transition-all duration-300"
             onClick={scrollToCards}
           >
-            <span className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-800 group-hover:from-indigo-500 group-hover:to-indigo-600 transition-all duration-500" />
-            <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700 ease-in-out" />
             <span className="relative flex items-center">
               <Rocket className="inline-block w-5 h-5 mr-2" />
               Explore Hackathons
@@ -212,10 +211,10 @@ export default function HackathonHero({
               if (!user) navigate("/login");
               else navigate("/host-hackathon");
             }}
-            className="relative px-7 py-3.5 rounded-xl font-medium text-gray-800 dark:text-gray-100 shadow-md backdrop-blur-md border border-gray-300 dark:border-gray-600 hover:border-indigo-400 transition-all duration-300 bg-white/70 dark:bg-gray-800"
+            className="relative px-7 py-3.5 rounded-xl font-medium text-black shadow-md hover:shadow-lg bg-orange-200 hover:bg-orange-300 transition-all duration-300"
           >
             <span className="relative flex items-center">
-              <Users className="inline-block w-5 h-5 mr-2 text-indigo-600" />
+              <Users className="inline-block w-5 h-5 mr-2" />
               Host a Hackathon
             </span>
           </motion.button>

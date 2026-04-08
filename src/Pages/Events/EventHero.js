@@ -61,9 +61,10 @@ export default function EventHero({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
           className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight px-4 sm:px-0"
+          style={{ fontFamily: '"Anton", sans-serif' }}
         >
           Discover{" "}
-          <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent animate-gradient">
+          <span className="text-black dark:text-white animate-gradient">
             Amazing Events
           </span>
         </motion.h1>
@@ -153,11 +154,9 @@ export default function EventHero({
           <motion.button
             whileHover={{ scale: 1.07 }}
             whileTap={{ scale: 0.95 }}
-            className="relative px-5 sm:px-7 py-2.5 sm:py-3.5 rounded-xl text-sm sm:text-base font-semibold text-white shadow-lg overflow-hidden group"
+            className="relative px-5 sm:px-7 py-2.5 sm:py-3.5 rounded-xl text-sm sm:text-base font-semibold text-black shadow-lg overflow-hidden group bg-blue-200 hover:bg-blue-300 transition-all duration-300"
             onClick={scrollToCard}
           >
-            <span className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-800 group-hover:from-indigo-500 group-hover:to-indigo-600 transition-all duration-500" />
-            <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700 ease-in-out" />
             <span className="relative flex items-center">
               <Rocket className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               Explore Events
@@ -168,10 +167,10 @@ export default function EventHero({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => navigate("/create-event")}
-            className="relative px-5 sm:px-7 py-2.5 sm:py-3.5 rounded-xl text-sm sm:text-base font-medium text-gray-800 dark:text-gray-200 shadow-md backdrop-blur-md border border-gray-300 dark:border-gray-600 hover:border-indigo-400 transition-all duration-300 bg-white/70 dark:bg-gray-800/70"
+            className="relative px-5 sm:px-7 py-2.5 sm:py-3.5 rounded-xl text-sm sm:text-base font-medium text-black shadow-md hover:shadow-lg bg-green-200 hover:bg-green-300 transition-all duration-300"
           >
             <span className="relative flex items-center">
-              <Users className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-2 text-indigo-600 dark:text-indigo-400" />
+              <Users className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               Host an Event
             </span>
           </motion.button>

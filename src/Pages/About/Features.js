@@ -75,7 +75,7 @@ export default function Features() {
     <section
       id="features"
       // UPDATED: Section background
-      className="relative py-24 bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-black dark:to-gray-900"
+      className="relative py-24 bg-white dark:bg-gray-900"
       // AOS Implementation
       data-aos="fade-up"
       data-aos-duration="1000"
@@ -129,7 +129,7 @@ export default function Features() {
             >
               {/* Top Banner */}
               {/* UPDATED: Banner gradient, icon wrapper, and stat tag */}
-              <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-50 dark:from-gray-700/50 to-purple-50 dark:to-gray-800/50">
+              <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-gray-100 dark:from-gray-700/50 to-white dark:to-gray-800/50">
                 <div className="w-12 h-12 flex items-center justify-center rounded-lg bg-white dark:bg-gray-700 shadow-md">
                   {feature.icon}
                 </div>
