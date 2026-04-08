@@ -51,7 +51,7 @@ export default function DocumentationPage() {
       question: "What platforms does Eventra support?",
       answer:
         "Eventra is accessible on Web and Mobile platforms, ensuring you can check events anytime, anywhere.",
-      icon: <FiSmartphone className="w-6 h-6 text-purple-500" />,
+      icon: <FiSmartphone className="w-6 h-6 text-black" />,
     },
     {
       question: "How can I suggest an event or report an issue?",
@@ -63,7 +63,7 @@ export default function DocumentationPage() {
       question: "Can I create my own events on Eventra?",
       answer:
         "Yes! Eventra allows registered users to create and manage their own events, hackathons, or project showcases directly from the platform.",
-      icon: <FiPlusCircle className="w-6 h-6 text-indigo-500" />,
+      icon: <FiPlusCircle className="w-6 h-6 text-black" />,
     },
     {
       question: "How do I stay updated about upcoming events?",
@@ -87,7 +87,7 @@ export default function DocumentationPage() {
 
   // UPDATED: Code block styles for dark mode
   const codeBlockClass =
-    "bg-indigo-50 dark:bg-gray-900 p-6 rounded-xl overflow-x-auto shadow text-indigo-900 dark:text-indigo-300 text-lg font-mono";
+    "bg-gray-100 p-6 rounded-xl overflow-x-auto shadow text-black text-lg font-mono";
   const [openIndex, setOpenIndex] = useState(null);
 
   const toggleFAQ = (index) => {
@@ -95,7 +95,7 @@ export default function DocumentationPage() {
   };
   return (
     // UPDATED: Main page background and text color
-    <div className="min-h-screen bg-gray-100 dark:bg-black text-gray-900 dark:text-gray-300 px-6 py-12 space-y-12">
+    <div className="pastel-grid-bg min-h-screen bg-gray-100 text-black px-6 py-12 space-y-12">
       {/* Header */}
       <header className="text-center max-w-4xl mx-auto">
         <motion.h1
@@ -105,14 +105,15 @@ export default function DocumentationPage() {
           data-aos="fade-down"
           data-aos-once="true"
           // UPDATED: Header text colors
-          className="text-5xl font-extrabold text-indigo-900 dark:text-indigo-300 mb-4"
+          className="text-5xl font-extrabold text-black mb-4"
+          style={{ fontFamily: '"Anton", sans-serif' }}
         >
           Eventra Documentation
         </motion.h1>
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-indigo-700 dark:text-indigo-400 text-xl"
+          className="text-black text-xl"
         >
           Modern Event Management Platform for Builders & Communities
         </motion.p>
@@ -121,7 +122,7 @@ export default function DocumentationPage() {
       {/* Features Section */}
       <motion.section
         // UPDATED: Card background
-        className="max-w-5xl mx-auto bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-md"
+        className="relative max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-md overflow-hidden"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
@@ -130,12 +131,13 @@ export default function DocumentationPage() {
         data-aos="fade-up"
         data-aos-delay="0"
       >
+        <div className="relative z-10">
         {/* UPDATED: Title icon and text colors */}
-        <div className="flex items-center mb-6 text-indigo-800 dark:text-indigo-400">
+        <div className="flex items-center mb-6 text-black">
           <FiBookOpen className="mr-3 text-3xl" />
           <h2 className="text-3xl font-bold">Features</h2>
         </div>
-        <div className="grid md:grid-cols-2 gap-6 text-indigo-900 dark:text-gray-300">
+        <div className="grid md:grid-cols-2 gap-6 text-black">
           <div className="space-y-2">
             <h3 className="font-semibold text-xl">Core Features</h3>
             <ul className="list-disc list-inside space-y-1">
@@ -167,13 +169,14 @@ export default function DocumentationPage() {
             </ul>
           </div>
         </div>
+        </div>
 
       </motion.section>
 
       {/* Tech Stack Section */}
       <motion.section
         // UPDATED: Card background
-        className="max-w-5xl mx-auto bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-md"
+        className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-md"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
@@ -183,11 +186,11 @@ export default function DocumentationPage() {
         data-aos-delay="100"
       >
         {/* UPDATED: Title icon and text colors */}
-        <div className="flex items-center mb-6 text-indigo-800 dark:text-indigo-400">
+        <div className="flex items-center mb-6 text-black">
           <FiCpu className="mr-3 text-3xl" />
           <h2 className="text-3xl font-bold">Tech Stack</h2>
         </div>
-        <div className="grid md:grid-cols-2 gap-6 text-indigo-900 dark:text-gray-300 text-lg">
+        <div className="grid md:grid-cols-2 gap-6 text-black text-lg">
           <div>
             <h3 className="text-2xl font-semibold mb-3">Backend</h3>
             <ul className="list-disc list-inside space-y-1">
@@ -213,7 +216,7 @@ export default function DocumentationPage() {
       {/* Architecture Section */}
       <motion.section
         // UPDATED: Card background
-        className="max-w-5xl mx-auto bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-md"
+        className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-md"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
@@ -223,7 +226,7 @@ export default function DocumentationPage() {
         data-aos-delay="200"
       >
         {/* UPDATED: Title icon and text colors */}
-        <div className="flex items-center mb-6 text-indigo-800 dark:text-indigo-400">
+        <div className="flex items-center mb-6 text-black">
           <FiLayers className="mr-3 text-3xl" />
           <h2 className="text-3xl font-bold">Architecture</h2>
         </div>
@@ -324,7 +327,7 @@ export default function DocumentationPage() {
       {/* Quick Start Section */}
       <motion.section
         // UPDATED: Card background
-        className="max-w-5xl mx-auto bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-md"
+        className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-md"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
@@ -334,11 +337,11 @@ export default function DocumentationPage() {
         data-aos-delay="300"
       >
         {/* UPDATED: Title icon and text colors */}
-        <div className="flex items-center mb-6 text-indigo-800 dark:text-indigo-400">
+        <div className="flex items-center mb-6 text-black">
           <FiPlay className="mr-3 text-3xl" />
           <h2 className="text-3xl font-bold">Quick Start</h2>
         </div>
-        <p className="text-indigo-900 dark:text-gray-300 text-lg mb-3">
+        <p className="text-black text-lg mb-3">
           <strong>Prerequisites:</strong> Node.js 16+, npm/yarn, Git
         </p>
         <pre className={codeBlockClass}>
@@ -351,7 +354,7 @@ npm start`}
 
       {/* Deployment Section */}
       <motion.section
-        className="max-w-5xl mx-auto bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-md"
+        className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-md"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
@@ -360,11 +363,11 @@ npm start`}
         data-aos="fade-up"
         data-aos-delay="400"
       >
-        <div className="flex items-center mb-6 text-indigo-800 dark:text-indigo-400">
+        <div className="flex items-center mb-6 text-black">
           <FiGitBranch className="mr-3 text-3xl" />
           <h2 className="text-3xl font-bold">Deployment</h2>
         </div>
-        <ul className="list-disc list-inside text-indigo-900 dark:text-gray-300 text-lg space-y-1">
+        <ul className="list-disc list-inside text-black text-lg space-y-1">
           <li>Frontend: Hosted on Vercel</li>
           <li>Backend: Spring Boot deployment on Azure or preferred host</li>
         </ul>
@@ -372,7 +375,7 @@ npm start`}
 
       {/* License Section */}
       <motion.section
-        className="max-w-5xl mx-auto bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-md"
+        className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-md"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
@@ -381,18 +384,18 @@ npm start`}
         data-aos="fade-up"
         data-aos-delay="500"
       >
-        <div className="flex items-center mb-6 text-indigo-800 dark:text-indigo-400">
+        <div className="flex items-center mb-6 text-black">
           <FiCode className="mr-3 text-3xl" />
           <h2 className="text-3xl font-bold">License</h2>
         </div>
-        <p className="text-indigo-900 dark:text-gray-300 text-lg">
+        <p className="text-black text-lg">
           Apache License 2.0 - see the LICENSE file for details.
         </p>
       </motion.section>
 
       {/* Contributing Section */}
       <motion.section
-        className="max-w-5xl mx-auto bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-md"
+        className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-md"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
@@ -401,21 +404,21 @@ npm start`}
         data-aos="fade-up"
         data-aos-delay="600"
       >
-        <div className="flex items-center mb-6 text-indigo-800 dark:text-indigo-400">
+        <div className="flex items-center mb-6 text-black">
           <FiUsers className="mr-3 text-3xl" />
           <h2 className="text-3xl font-bold">Contributing</h2>
         </div>
-        <ol className="list-decimal list-inside space-y-2 text-indigo-900 dark:text-gray-300 text-lg">
+        <ol className="list-decimal list-inside space-y-2 text-black text-lg">
           <li>Fork the repository</li>
           <li>
             Create a feature branch:{" "}
-            <code className="bg-indigo-100 dark:bg-gray-700 px-2 py-1 rounded">
+            <code className="bg-gray-100 px-2 py-1 rounded">
               git checkout -b feature/your-feature
             </code>
           </li>
           <li>
             Commit changes:{" "}
-            <code className="bg-indigo-100 dark:bg-gray-700 px-2 py-1 rounded">
+            <code className="bg-gray-100 px-2 py-1 rounded">
               git commit -m "Add feature"
             </code>
           </li>
@@ -425,19 +428,19 @@ npm start`}
 
       {/* FAQ Section */}
       <section 
-        className="max-w-5xl mx-auto p-6 bg-gray-50 dark:bg-gray-900 rounded-2xl shadow-lg"
+        className="max-w-5xl mx-auto p-6 bg-gray-50 rounded-2xl shadow-lg"
         // AOS Implementation
         data-aos="fade-up"
         data-aos-delay="700"
       >
-        <h2 className="text-3xl font-bold mb-10 text-center text-gray-900 dark:text-white">
+        <h2 className="text-3xl font-bold mb-10 text-center text-black">
           Frequently Asked Questions
         </h2>
         <div className="space-y-6">
           {faqs.map((faq, index) => (
             <div
               key={index}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 cursor-pointer hover:shadow-lg transition-shadow duration-200"
+              className="bg-white rounded-xl shadow p-4 cursor-pointer hover:shadow-lg transition-shadow duration-200"
               onClick={() => toggleFAQ(index)}
               data-aos="zoom-in-up"
               data-aos-delay={750 + index * 50}
@@ -445,14 +448,14 @@ npm start`}
               <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-6">
                   {faq.icon}
-                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                  <h3 className="text-lg font-semibold text-black">
                     {faq.question}
                   </h3>
                 </div>
                 {openIndex === index ? (
-                  <ChevronUp className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                  <ChevronUp className="w-5 h-5 text-black" />
                 ) : (
-                  <ChevronDown className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                  <ChevronDown className="w-5 h-5 text-black" />
                 )}
               </div>
               <AnimatePresence>
@@ -462,7 +465,7 @@ npm start`}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="mt-2 text-gray-700 dark:text-gray-300 whitespace-pre-line"
+                    className="mt-2 text-black whitespace-pre-line"
                   >
                     {faq.answer}
                   </motion.div>
@@ -475,19 +478,19 @@ npm start`}
 
       {/* UPDATED: Footer text, border, and link colors */}
       <footer 
-        className="text-center text-indigo-700 dark:text-indigo-400 mt-24 border-t border-indigo-200 dark:border-gray-700 pt-8 pb-6"
+        className="text-center text-black mt-24 border-t border-gray-300 pt-8 pb-6"
         data-aos="fade-up"
         data-aos-offset="50"
       >
-        <p className="text-indigo-800 dark:text-indigo-300 text-lg font-medium">
+        <p className="text-black text-lg font-medium">
           Built with <span className="text-red-500">❤️</span> by the Eventra
           Team.
         </p>
-        <p className="mt-2 text-indigo-700 dark:text-indigo-400 text-base">
+        <p className="mt-2 text-black text-base">
           Visit{" "}
           <a
             href="https://eventra-psi.vercel.app/"
-            className="text-indigo-900 dark:text-indigo-200 font-semibold underline hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+            className="text-black font-semibold underline hover:text-zinc-700 transition-colors"
           >
             Live Demo
           </a>

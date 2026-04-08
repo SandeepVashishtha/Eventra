@@ -10,7 +10,7 @@ import {
   Shield,
   MessageCircle,
   BookOpen,
-  Rocket,
+  Sparkles,
   Globe,
 } from "lucide-react";
 import FAQCTA from "./FaqCTA";
@@ -23,7 +23,7 @@ const FAQPage = () => {
     {
       id: 1,
       category: "Getting Started",
-      icon: <Rocket className="w-5 h-5" />,
+      icon: <Sparkles className="w-5 h-5" />,
       question: "How do I register for a hackathon or event?",
       answer:
         "Registering for events on Eventra is simple! Browse available events on our Events or Hackathons pages, click on the event you're interested in, and click the 'Register' or 'Join Event' button. You'll need to create an account if you don't have one. Follow the registration prompts, provide any required information, and you're all set! You'll receive a confirmation email with event details and check-in instructions.",
@@ -136,71 +136,10 @@ const FAQPage = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [controls]);
 
-  // Floating shapes data
-  const shapes = [
-    {
-      size: 40,
-      pos: { top: "5%", left: "10%" },
-      color: "from-indigo-400 to-blue-400",
-    },
-    {
-      size: 50,
-      pos: { top: "3%", right: "10%" },
-      color: "from-indigo-400 to-blue-400",
-    },
-
-    {
-      size: 50,
-      pos: { bottom: "10%", right: "10%" },
-      color: "from-gray-400 to-gray-300",
-    },
-    {
-      size: 50,
-      pos: { top: "50%", left: "2%" },
-      color: "from-indigo-300 to-blue-200",
-    },
-    {
-      size: 40,
-      pos: { top: "40%", right: "15%" },
-      color: "from-gray-400 to-gray-300",
-    },
-    {
-      size: 30,
-      pos: { top: "30%", left: "3%" },
-      color: "from-blue-200 to-indigo-400",
-    },
-  ];
-
   return (
-    <div className="relative flex flex-col min-h-screen bg-white dark:bg-gray-900 overflow-hidden">
-      {/* Floating Background Layer */}
+    <div className="pastel-grid-bg relative flex flex-col min-h-screen bg-white dark:bg-gray-900 overflow-hidden">
       {/* HERO */}
       <section className="py-20 relative overflow-hidden">
-        {/* Floating Background Layer (only inside Hero) */}
-        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-          {shapes.map((shape, i) => (
-            <motion.div
-              key={i}
-              animate={{
-                y: [0, -20 - i * 5, 0],
-                x: [0, 20 + i * 5, 0],
-                rotate: [0, 15, -15, 0],
-              }}
-              transition={{
-                duration: 6 + i,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              className={`absolute rounded-full bg-gradient-to-tr ${shape.color} opacity-30 dark:opacity-10`}
-              style={{
-                width: `${shape.size}px`,
-                height: `${shape.size}px`,
-                ...shape.pos,
-              }}
-            />
-          ))}
-        </div>
-
         {/* HERO Content */}
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <motion.div variants={container} initial="hidden" animate={controls}>

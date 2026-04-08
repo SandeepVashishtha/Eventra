@@ -1,4 +1,5 @@
-import { Search, X, Rocket, Users, Award, Code2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { Search, X, Sparkles, Users, Award, Code2, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function EventHero({
@@ -31,16 +32,26 @@ export default function EventHero({
     <div className="relative bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 py-16 sm:py-20 md:py-24 overflow-hidden">
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         {floatingCircles.map((circle, idx) => (
-          <div
+          <motion.div
             key={idx}
             className="absolute rounded-full"
+            animate={{
+              y: [0, -14 - idx * 1.8, 0],
+              x: [0, 10 + idx * 1.3, 0],
+              rotate: [0, 8, -8, 0],
+            }}
+            transition={{
+              duration: 4.8 + idx * 0.35,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
             style={{
               width: circle.size,
               height: circle.size,
               top: circle.y,
               left: circle.x,
               backgroundColor: circle.color,
-              opacity: 0.28,
+              opacity: 0.2,
             }}
           />
         ))}
@@ -55,8 +66,8 @@ export default function EventHero({
         </h1>
 
         <p className="mt-4 text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto px-4 sm:px-0">
-          "Discover exciting events, compete with talented participants, learn
-          new skills, and <span className="font-semibold text-black dark:text-white">win amazing rewards</span>."
+          Discover exciting events, compete with talented participants, learn
+          new skills, and <span className="font-semibold text-black dark:text-white">win amazing rewards</span>.
         </p>
 
         <div className="w-full max-w-3xl mx-auto mt-8 sm:mt-12 px-4 sm:px-0">
@@ -107,7 +118,7 @@ export default function EventHero({
             onClick={scrollToCard}
           >
             <span className="relative flex items-center">
-              <Rocket className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+              <Sparkles className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               Explore Events
             </span>
           </button>
@@ -129,7 +140,7 @@ export default function EventHero({
           {
             label: "Events Hosted",
             value: "120+",
-            icon: Rocket,
+            icon: Calendar,
             cardBg: "from-blue-50 to-white",
             iconBg: "from-blue-200 to-blue-100",
             iconColor: "text-blue-700",

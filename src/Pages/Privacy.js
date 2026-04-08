@@ -91,7 +91,7 @@ export const Privacy = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-12 px-4 sm:px-6 lg:px-8">
+    <div className="pastel-grid-bg min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-16">
         {" "}
         {/* Increased horizontal width */}
@@ -228,11 +228,6 @@ export const Privacy = () => {
           animate={controls}
           className="bg-gray-900 rounded-2xl p-8 text-center relative overflow-hidden shadow-md"
         >
-          <div className="absolute inset-0">
-            <div className="absolute -top-32 -left-32 w-96 h-96 bg-indigo-600/30 rounded-full blur-3xl"></div>
-            <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-purple-600/30 rounded-full blur-3xl"></div>
-          </div>
-
           <div className="relative z-10">
             <h3 className="text-2xl font-bold text-white mb-4">
               Have Questions?

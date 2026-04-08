@@ -124,19 +124,19 @@ const Hero = () => {
     y: [0, -20 - i * 5, 0],
     x: [0, 20 + i * 5, 0],
     rotate: [0, 15, -15, 0],
-    transition: { duration: 6 + i, repeat: Infinity, ease: "easeInOut" },
+    transition: { duration: 4.4 + i * 0.7, repeat: Infinity, ease: "easeInOut" },
   });
 
   const shapes = [
     {
       size: 48,
       pos: { top: "8%", left: "8%" },
-      color: "bg-blue-200",
+      color: "bg-blue-100",
     },
     {
       size: 56,
       pos: { top: "14%", left: "22%" },
-      color: "bg-yellow-200",
+      color: "bg-yellow-100",
     },
     {
       size: 30,
@@ -215,7 +215,7 @@ const Hero = () => {
         <motion.div
           key={i}
           animate={floatShape(i)}
-          className={`absolute rounded-full ${shape.color} opacity-12`}
+          className={`absolute rounded-full ${shape.color} ${i < 2 ? "opacity-[0.06]" : "opacity-12"}`}
           style={{
             width: `${shape.size}px`,
             height: `${shape.size}px`,
@@ -280,8 +280,8 @@ const Hero = () => {
             variants={fadeUp}
             className="text-sm sm:text-base md:text-lg text-black max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
           >
-            "Connect with developers, learn new skills, and grow your network at
-            the best tech events, hackathons, and workshops in your area."
+            Connect with developers, learn new skills, and grow your network at
+            the best tech events, hackathons, and workshops in your area.
           </motion.p>
 
           {/* Global Search Bar */}
@@ -425,7 +425,7 @@ const Hero = () => {
             <motion.div variants={fadeUp}>
               <Link
                 to="/events"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-50/70 text-black font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-100"
+                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-100 text-black font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-200"
               >
                 <span className="relative z-10 flex items-center">
                   Explore Events
@@ -448,7 +448,7 @@ const Hero = () => {
             <motion.div variants={fadeUp}>
               <Link
                 to="/hackathons"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full border border-yellow-100 bg-yellow-50/70 text-black font-semibold shadow-sm hover:shadow-md hover:bg-yellow-100 hover:scale-105 transition-all duration-300"
+                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full border border-yellow-200 bg-yellow-100 text-black font-semibold shadow-sm hover:shadow-md hover:bg-yellow-200 hover:scale-105 transition-all duration-300"
               >
                 Join Hackathons
               </Link>
@@ -458,7 +458,7 @@ const Hero = () => {
             <motion.div variants={fadeUp}>
               <Link
                 to="/about"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-pink-50/70 text-black font-semibold shadow-sm transform transition-all duration-300 hover:scale-105 hover:bg-pink-100"
+                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-pink-100 text-black font-semibold shadow-sm transform transition-all duration-300 hover:scale-105 hover:bg-pink-200"
               >
                 Learn More
                 <svg

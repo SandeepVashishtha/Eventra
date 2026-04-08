@@ -66,7 +66,7 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
             rotate: [0, 15, -15, 0],
             scale: [0.8, 1.1, 0.9, 1],
           }}
-          transition={{ duration: 8, delay: shape.delay, repeat: Infinity }}
+          transition={{ duration: 5.8, delay: shape.delay, repeat: Infinity }}
           className="absolute rounded-full"
           style={{
             width: shape.size,
@@ -135,8 +135,8 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
           // UPDATED: Subtitle text color
           className="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-12"
         >
-          "Explore, contribute to, and showcase innovative open-source creations
-          from developers worldwide."
+          Explore, contribute to, and showcase innovative open-source creations
+          from developers worldwide.
         </motion.p>
 
         {/* Buttons */}
