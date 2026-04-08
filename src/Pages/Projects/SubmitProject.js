@@ -293,7 +293,7 @@ const SubmitProject = () => {
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="w-full max-w-4xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 border border-indigo-200 dark:border-gray-700 shadow-lg rounded-2xl p-6 mb-10"
+        className="w-full max-w-4xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-2xl p-6 mb-10"
         data-aos="fade-up"
         data-aos-delay="200"
       >
@@ -437,7 +437,7 @@ const SubmitProject = () => {
             type="submit"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="w-full flex items-center justify-center gap-2 text-white font-semibold p-3 rounded-xl shadow-lg transition-all duration-300 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600"
+            className="w-full flex items-center justify-center gap-2 text-white font-semibold p-3 rounded-xl shadow-lg transition-all duration-300 bg-black hover:bg-zinc-800"
           >
             Submit Project <ArrowRightIcon className="w-5 h-5" />
           </motion.button>
@@ -468,8 +468,8 @@ const SubmitProject = () => {
             data-aos="zoom-in"
             data-aos-delay={1500 + index * 100}
           >
-            <stat.icon className="w-10 h-10 text-indigo-600 dark:text-indigo-400 mb-3" />
-            <h3 className="text-3xl font-bold text-indigo-700 dark:text-indigo-400">
+            <stat.icon className="w-10 h-10 text-black mb-3" />
+            <h3 className="text-3xl font-bold text-black">
               {stat.number}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
@@ -483,7 +483,7 @@ const SubmitProject = () => {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="w-full max-w-5xl mt-10 text-center bg-gradient-to-r from-black via-indigo-900 to-purple-900 border border-indigo-700 rounded-2xl p-10 shadow-2xl"
+        className="w-full max-w-5xl mt-10 text-center bg-black border border-black rounded-2xl p-10 shadow-2xl"
         data-aos="fade-up"
         data-aos-delay="1900"
       >
@@ -502,7 +502,7 @@ const SubmitProject = () => {
             href="#"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-8 py-3 rounded-xl shadow-lg hover:from-indigo-600 hover:to-purple-600 transition-all duration-300"
+            className="inline-flex items-center justify-center gap-2 bg-white text-black px-8 py-3 rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300"
           >
             <ArrowUpTrayIcon className="w-5 h-5" /> Submit Another Project
           </motion.a>
@@ -510,7 +510,7 @@ const SubmitProject = () => {
             href="/projects"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 to-indigo-600 text-white px-8 py-3 rounded-xl shadow-lg hover:from-cyan-600 hover:to-indigo-700 transition-all duration-300"
+            className="inline-flex items-center justify-center gap-2 bg-white text-black px-8 py-3 rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300"
           >
             <ClipboardDocumentCheckIcon className="w-5 h-5" />
             Explore Projects

@@ -122,7 +122,7 @@ const CommunityEvent = () => {
               whileHover={{ scale: 1.03 }}
               transition={{ type: "spring", stiffness: 200, damping: 15 }}
               // UPDATED: Card background and border
-              className="p-6 rounded-2xl bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 shadow-md border border-indigo-100 dark:border-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-colors"
+              className="p-6 rounded-2xl bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
             >
               {/* Event Header */}
               <div className="flex items-center gap-3 mb-4">
@@ -147,7 +147,7 @@ const CommunityEvent = () => {
               {/* Learn More Button is fine for both themes */}
               <motion.button
                 whileHover={{ scale: 1.05 }}
-                className="mt-6 px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg shadow-md hover:from-indigo-600 hover:to-purple-600 transition-all"
+                className="mt-6 px-4 py-2 text-sm font-semibold text-white bg-black rounded-lg shadow-md hover:bg-zinc-800 transition-all"
               >
                 Learn More →
               </motion.button>

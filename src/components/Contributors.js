@@ -162,7 +162,7 @@ const Contributors = () => {
             placeholder="Search contributors by name, username, role, location, or company..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="px-4 py-2 rounded-lg w-full max-w-2xl border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+            className="px-4 py-2 rounded-lg w-full max-w-2xl border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-black text-gray-900 dark:text-white bg-white dark:bg-gray-800"
           />
         </div>
 
@@ -176,7 +176,7 @@ const Contributors = () => {
           🌟 Our Amazing{" "}
           {/* UPDATED: Gradient text for dark mode */}
           <span
-            className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 dark:from-indigo-400 dark:via-purple-500 dark:to-pink-500 bg-clip-text text-transparent animate-pulse"
+            className="text-black dark:text-white animate-pulse"
           >
             Contributors
           </span>
@@ -192,7 +192,7 @@ const Contributors = () => {
             <motion.div
               key={c.id}
               // UPDATED: Card background and border
-              className="relative bg-gradient-to-br from-white/90 to-indigo-50/80 dark:from-gray-700/80 dark:to-gray-800/70 backdrop-blur-xl p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 flex flex-col items-center text-center transition-all duration-300 ease-out"
+              className="relative bg-white/95 dark:bg-gray-800/90 backdrop-blur-xl p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 flex flex-col items-center text-center transition-all duration-300 ease-out"
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
@@ -208,9 +208,9 @@ const Contributors = () => {
                   <img
                     src={c.avatar_url}
                     alt={c.login}
-                    className="w-20 h-20 rounded-full border-4 border-indigo-500 shadow-xl"
+                    className="w-20 h-20 rounded-full border-4 border-black shadow-xl"
                   />
-                  <div className="absolute inset-0 rounded-full animate-pulse bg-indigo-400/20 blur-md"></div>
+                  <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 blur-md"></div>
                 </div>
               </div>
 
@@ -218,7 +218,7 @@ const Contributors = () => {
               <div className="mt-16">
                 {/* UPDATED: Name and role text */}
                 <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">{c.name}</h3>
-                <p className="text-indigo-600 dark:text-indigo-400 text-sm font-medium mb-3 flex items-center justify-center gap-1">
+                <p className="text-black dark:text-white text-sm font-medium mb-3 flex items-center justify-center gap-1">
                   <FaMedal className="text-yellow-500 animate-bounce" /> {c.role}
                 </p>
                 {/* UPDATED: Contribution Badges */}
@@ -242,17 +242,17 @@ const Contributors = () => {
               {/* Stats Section (Glass style) */}
               <div className="grid grid-cols-3 gap-3 text-sm text-gray-700 dark:text-gray-300 my-5 w-full">
                 <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                  <FaCodeBranch className="text-indigo-600 dark:text-indigo-400 mb-1" />
+                  <FaCodeBranch className="text-black dark:text-white mb-1" />
                   <span className="font-semibold">{c.public_repos}</span>
                   <span className="text-xs text-gray-500 dark:text-gray-400">Repos</span>
                 </div>
                 <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                  <FaUserFriends className="text-indigo-600 dark:text-indigo-400 mb-1" />
+                  <FaUserFriends className="text-black dark:text-white mb-1" />
                   <span className="font-semibold">{c.followers}</span>
                   <span className="text-xs text-gray-500 dark:text-gray-400">Followers</span>
                 </div>
                 <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                  <span className="text-indigo-600 dark:text-indigo-400 font-bold">🔥</span>
+                  <span className="text-black dark:text-white font-bold">🔥</span>
                   <span className="font-semibold">{c.contributions}</span>
                   <span className="text-xs text-gray-500 dark:text-gray-400">Contribs</span>
                 </div>
@@ -261,7 +261,7 @@ const Contributors = () => {
               {/* Contribution Progress Bar */}
               <div className="w-full bg-gray-200 dark:bg-gray-600 h-2 rounded-full overflow-hidden mb-4">
                 <div
-                  className="h-2 bg-gradient-to-r from-indigo-500 to-purple-500"
+                  className="h-2 bg-black"
                   style={{
                     width: `${
                       (c.contributions / contributors[0].contributions) * 100
@@ -291,9 +291,9 @@ const Contributors = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group inline-flex items-center justify-center gap-2 
-                    bg-gradient-to-r from-indigo-600 to-purple-600 text-white 
+                    bg-black text-white 
                     px-5 py-2.5 rounded-full text-sm font-semibold shadow 
-                    hover:from-indigo-700 hover:to-purple-700 
+                    hover:bg-zinc-800 
                     transition-all duration-300 ease-out transform hover:scale-105 relative overflow-hidden"
                 >
                   {/* GitHub Icon with animation */}

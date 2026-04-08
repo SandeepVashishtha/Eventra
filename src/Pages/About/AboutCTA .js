@@ -63,7 +63,7 @@ const AboutCTA = () => {
 
   return (
     <section 
-      className="relative py-16 px-12 m-8 rounded-3xl bg-gradient-to-r from-black via-purple-950 to-pink-950 text-center overflow-hidden shadow-2xl"
+      className="relative py-16 px-12 m-8 rounded-3xl bg-black text-center overflow-hidden shadow-2xl"
       // AOS Implementation
       data-aos="zoom-in-up"
       data-aos-duration="1000"
@@ -115,7 +115,7 @@ const AboutCTA = () => {
       <div className="flex flex-col md:flex-row justify-center gap-6 relative z-10">
         <Link
           to="/signup"
-          className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-medium text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+          className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-medium text-white bg-black shadow-lg hover:shadow-xl hover:scale-105 hover:bg-zinc-800 transition-all duration-300"
           data-aos="zoom-in"
           data-aos-delay="200"
         >

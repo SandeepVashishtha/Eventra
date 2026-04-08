@@ -152,7 +152,7 @@ const FAQPage = () => {
     {
       size: 50,
       pos: { bottom: "10%", right: "10%" },
-      color: "from-pink-300 to-purple-300",
+      color: "from-gray-400 to-gray-300",
     },
     {
       size: 50,
@@ -162,7 +162,7 @@ const FAQPage = () => {
     {
       size: 40,
       pos: { top: "40%", right: "15%" },
-      color: "from-purple-300 to-indigo-300",
+      color: "from-gray-400 to-gray-300",
     },
     {
       size: 30,
@@ -172,7 +172,7 @@ const FAQPage = () => {
   ];
 
   return (
-    <div className="relative flex flex-col min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-black dark:to-gray-900 overflow-hidden">
+    <div className="relative flex flex-col min-h-screen bg-white dark:bg-gray-900 overflow-hidden">
       {/* Floating Background Layer */}
       {/* HERO */}
       <section className="py-20 relative overflow-hidden">
@@ -205,16 +205,16 @@ const FAQPage = () => {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <motion.div variants={container} initial="hidden" animate={controls}>
             <motion.div variants={item}>
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-indigo-600 rounded-full mb-6 question-icon">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-black rounded-full mb-6 question-icon">
                 <HelpCircle className="w-10 h-10 text-white" />
               </div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-black mb-6">
                 Frequently Asked{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600">
+                <span className="text-black">
                   Questions
                 </span>
               </h1>
-              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
+              <p className="text-xl text-black max-w-3xl mx-auto leading-relaxed">
                 Everything you need to know about using Eventra, from getting
                 started to hosting your own events. Can't find what you're
                 looking for? Reach out to our community!

@@ -7,7 +7,7 @@ const EventCTA = () => {
 
   return (
     <section 
-      className="relative py-16 px-8 m-8 rounded-3xl bg-gradient-to-tr from-indigo-900 via-purple-800 to-pink-700 text-white shadow-xl overflow-hidden"
+      className="relative py-16 px-8 m-8 rounded-3xl bg-black text-white shadow-xl overflow-hidden"
       // AOS Implementation
       data-aos="zoom-in-up"
       data-aos-duration="1000"
@@ -58,7 +58,7 @@ const EventCTA = () => {
         <div className="flex flex-col md:flex-row gap-4">
           <motion.a
             href="/events"
-            className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-pink-500 to-purple-600 font-semibold px-8 py-4 rounded-full shadow-lg hover:scale-105 hover:shadow-pink-400/50 transition-transform duration-300"
+            className="inline-flex items-center justify-center gap-2 bg-white text-black font-semibold px-8 py-4 rounded-full shadow-lg hover:scale-105 hover:bg-gray-100 transition-transform duration-300"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             data-aos="zoom-in"
@@ -93,7 +93,7 @@ const EventCTA = () => {
             </p>
             {/* The close button works well in both themes. */}
             <button
-              className="mt-6 px-6 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition"
+              className="mt-6 px-6 py-2 rounded-lg bg-black text-white hover:bg-zinc-800 transition"
               onClick={() => setShowModal(false)}
             >
               Close

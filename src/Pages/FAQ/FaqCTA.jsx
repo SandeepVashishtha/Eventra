@@ -15,9 +15,9 @@ export default function FAQCTA() {
   // Small background blobs config
   const blobs = Array.from({ length: 8 }, (_, i) => ({
     color: [
-      "from-purple-400/30 via-pink-400/20 to-indigo-500/10",
+      "from-black/10 via-gray-200/20 to-white/10",
       "from-teal-400/30 via-cyan-400/20 to-blue-500/10",
-      "from-pink-400/25 via-purple-400/15 to-indigo-400/10",
+      "from-gray-200/25 via-gray-300/15 to-black/10",
     ][i % 3],
     top: `${Math.random() * 80}%`,
     left: `${Math.random() * 90}%`,
@@ -29,7 +29,7 @@ export default function FAQCTA() {
     <section className="relative bg-gradient-to-tr from-[#0C0C1F] via-[#1A1F36] to-[#0B1E2E] py-16 px-8 sm:px-12 lg:px-20 overflow-hidden m-8 rounded-3xl">
       {/* Main blobs */}
       <motion.div
-        className="absolute top-10 left-[-40px] w-36 h-36 rounded-full blur-3xl bg-gradient-to-tr from-purple-500 via-pink-500/50 to-indigo-500/20"
+        className="absolute top-10 left-[-40px] w-36 h-36 rounded-full blur-3xl bg-gradient-to-tr from-gray-300 via-gray-200/50 to-black/20"
         animate={{ scale: [1, 1.1, 1], rotate: [0, 360] }}
         transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
       />
@@ -39,7 +39,7 @@ export default function FAQCTA() {
         transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
-        className="absolute top-1/2 left-1/3 w-28 h-28 rounded-full blur-xl bg-gradient-to-tr from-pink-400/50 via-purple-400/20 to-indigo-500/10"
+        className="absolute top-1/2 left-1/3 w-28 h-28 rounded-full blur-xl bg-gradient-to-tr from-gray-200/50 via-gray-300/20 to-black/10"
         animate={{ scale: [0.9, 1.05, 0.9] }}
         transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
       />
@@ -94,7 +94,7 @@ export default function FAQCTA() {
           {/* Card 1 */}
           <motion.div
             whileHover={{ scale: 1.05 }}
-            className="group bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col items-center gap-4 shadow-md hover:shadow-lg hover:bg-gradient-to-br from-purple-600/20 via-pink-500/20 to-indigo-500/10 transition-all duration-300"
+            className="group bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col items-center gap-4 shadow-md hover:shadow-lg hover:bg-black/10 transition-all duration-300"
           >
             <LifeBuoy className="w-10 h-10 text-purple-400" />
             <h3 className="text-white font-semibold text-lg text-center">
@@ -129,7 +129,7 @@ export default function FAQCTA() {
           {/* Card 3 */}
           <motion.div
             whileHover={{ scale: 1.05 }}
-            className="group bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col items-center gap-4 shadow-md hover:shadow-lg hover:bg-gradient-to-br from-pink-400/20 via-purple-400/20 to-indigo-500/10 transition-all duration-300"
+            className="group bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col items-center gap-4 shadow-md hover:shadow-lg hover:bg-black/10 transition-all duration-300"
           >
             <HelpCircle className="w-10 h-10 text-pink-400" />
             <h3 className="text-white font-semibold text-lg text-center">

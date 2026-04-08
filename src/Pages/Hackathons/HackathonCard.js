@@ -107,7 +107,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
               {hackathon.difficulty}
             </span>
           </div>
-          <span className="text-white text-sm font-semibold px-3 py-1 rounded-full bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-500 animate-gradient">
+          <span className="text-white text-sm font-semibold px-3 py-1 rounded-full bg-black animate-gradient">
             {hackathon.prize}
           </span>
         </div>
@@ -133,7 +133,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
         {/* Organizer */}
         {/* UPDATED: Text color */}
         <div className="flex items-center text-gray-600 dark:text-gray-400 text-sm gap-1.5">
-          <BuildingLibraryIcon className="w-4 h-4 text-purple-500" />
+          <BuildingLibraryIcon className="w-4 h-4 text-gray-700 dark:text-gray-300" />
           <span>{hackathon.organizer}</span>
         </div>
 
@@ -267,7 +267,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
         <div className="pt-3">
           {hackathon.status === "live" ? (
             <div className="grid grid-cols-2 gap-3">
-              <button className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-colors">
+              <button className="px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-zinc-800 transition-colors">
                 Join Now
               </button>
               {/* UPDATED: Secondary button colors */}
@@ -279,7 +279,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
             <div className="grid grid-cols-1 gap-3">
               {/* Action buttons row */}
               <div className="flex gap-3">
-                <button className="flex-1 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-colors">
+                <button className="flex-1 px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-zinc-800 transition-colors">
                   Register
                 </button>
 

@@ -266,33 +266,10 @@ const [hideChatbot, setHideChatbot] = useState(false);
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={toggleChat}
-            className="fixed bottom-6 right-5 z-[9999] w-16 h-16 bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-500 dark:to-purple-500 text-white rounded-full shadow-2xl flex items-center justify-center hover:shadow-indigo-500/50 transition-all duration-300"
+            className="fixed bottom-6 right-5 z-[9999] w-16 h-16 bg-white text-black border border-black/15 rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-all duration-300"
           >
-            <motion.div
-              className="absolute inset-0 rounded-full border-2 border-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-padding"
-              animate={{
-                rotate: [0, 360],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: "linear"
-              }}
-              style={{
-                padding: '2px',
-                mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                maskComposite: 'exclude',
-                WebkitMaskComposite: 'xor',
-              }}
-            />
-            
             <div className="relative w-12 h-12">
-              <img 
-                src="/logo_transparent.png" 
-                alt="Chatbot"
-                className="w-full h-full object-contain"
-              />
+              <MessageCircle className="w-12 h-12" strokeWidth={1.8} />
             </div>
           </motion.button>
         )}
@@ -315,7 +292,7 @@ const [hideChatbot, setHideChatbot] = useState(false);
 }}
           >
             {/* Header */}
-            <div className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 text-white overflow-hidden flex-shrink-0">
+            <div className="relative bg-black text-white overflow-hidden flex-shrink-0">
               <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-16 translate-x-16"></div>
               <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12"></div>
@@ -371,16 +348,16 @@ const [hideChatbot, setHideChatbot] = useState(false);
             {/* Video/Welcome Section */}
             {showVideoSection && (
               <div
-                className="flex flex-col p-3 sm:p-4 overflow-y-auto bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800"
+                className="flex flex-col p-3 sm:p-4 overflow-y-auto bg-white dark:bg-gray-900"
                 style={{
                   flex: '1 1 auto',
                   minHeight: '0',
                 }}
               >
                 {/* Animated Background Elements */}
-                <div className="absolute top-10 right-10 w-20 h-20 bg-gradient-to-br from-indigo-300 to-purple-300 rounded-full opacity-20 blur-2xl animate-pulse"></div>
-                <div className="absolute bottom-20 left-10 w-16 h-16 bg-gradient-to-br from-pink-300 to-rose-300 rounded-full opacity-20 blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-                <div className="absolute top-1/2 left-1/4 w-12 h-12 bg-gradient-to-br from-blue-300 to-indigo-300 rounded-full opacity-15 blur-xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+                <div className="absolute top-10 right-10 w-20 h-20 bg-black/10 rounded-full opacity-20 blur-2xl animate-pulse"></div>
+                <div className="absolute bottom-20 left-10 w-16 h-16 bg-black/10 rounded-full opacity-20 blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+                <div className="absolute top-1/2 left-1/4 w-12 h-12 bg-black/10 rounded-full opacity-15 blur-xl animate-pulse" style={{ animationDelay: '2s' }}></div>
 
                 {/* Video Container */}
                 <motion.div
@@ -472,15 +449,15 @@ const [hideChatbot, setHideChatbot] = useState(false);
   className="flex justify-center items-center mb-3 mt-4 w-full"
 >
   <div className="flex gap-1.5 justify-center items-center flex-nowrap px-2">
-    <div className="flex items-center space-x-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full px-2 py-1.5 shadow-lg text-[10px] xs:text-xs font-medium whitespace-nowrap flex-shrink-0">
+    <div className="flex items-center space-x-1.5 bg-black text-white rounded-full px-2 py-1.5 shadow-lg text-[10px] xs:text-xs font-medium whitespace-nowrap flex-shrink-0">
       <Calendar className="w-2.5 h-2.5 xs:w-3 xs:h-3 animate-bounce" style={{ animationDuration: '2s' }} />
       <span>75+ Events</span>
     </div>
-    <div className="flex items-center space-x-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full px-2 py-1.5 shadow-lg text-[10px] xs:text-xs font-medium whitespace-nowrap flex-shrink-0">
+    <div className="flex items-center space-x-1.5 bg-gray-800 text-white rounded-full px-2 py-1.5 shadow-lg text-[10px] xs:text-xs font-medium whitespace-nowrap flex-shrink-0">
       <Trophy className="w-2.5 h-2.5 xs:w-3 xs:h-3 animate-pulse" />
       <span>Live Hackathons</span>
     </div>
-    <div className="flex items-center space-x-1.5 bg-gradient-to-r from-pink-600 to-rose-600 text-white rounded-full px-2 py-1.5 shadow-lg text-[10px] xs:text-xs font-medium whitespace-nowrap flex-shrink-0">
+    <div className="flex items-center space-x-1.5 bg-gray-700 text-white rounded-full px-2 py-1.5 shadow-lg text-[10px] xs:text-xs font-medium whitespace-nowrap flex-shrink-0">
       <Clock className="w-2.5 h-2.5 xs:w-3 xs:h-3 animate-spin" style={{ animationDuration: '3s' }} />
       <span>24/7 Support</span>
     </div>
@@ -495,29 +472,29 @@ const [hideChatbot, setHideChatbot] = useState(false);
   className="grid grid-cols-3 gap-2 mb-3"
 >
   <div 
-    className="rounded-xl p-2 text-center border shadow-md hover:shadow-xl transform hover:-translate-y-1 transition-all bg-white/90 dark:bg-gray-700/90 border-indigo-200 dark:border-gray-600 cursor-pointer group"
+    className="rounded-xl p-2 text-center border shadow-md hover:shadow-xl transform hover:-translate-y-1 transition-all bg-white/90 dark:bg-gray-700/90 border-gray-200 dark:border-gray-600 cursor-pointer group"
     onClick={() => navigate('/events')}
   >
     <div className="text-2xl mb-0.5 animate-bounce group-hover:animate-none" style={{ animationDuration: '2s' }}>
-      <Calendar className="w-5 h-5 sm:w-6 sm:h-6 mx-auto text-indigo-600 dark:text-indigo-400" />
+      <Calendar className="w-5 h-5 sm:w-6 sm:h-6 mx-auto text-black" />
     </div>
     <div className="text-xs font-semibold text-gray-700 dark:text-gray-200">Events</div>
   </div>
   <div 
-    className="rounded-xl p-2 text-center border shadow-md hover:shadow-xl transform hover:-translate-y-1 transition-all bg-white/90 dark:bg-gray-700/90 border-indigo-200 dark:border-gray-600 cursor-pointer group"
+    className="rounded-xl p-2 text-center border shadow-md hover:shadow-xl transform hover:-translate-y-1 transition-all bg-white/90 dark:bg-gray-700/90 border-gray-200 dark:border-gray-600 cursor-pointer group"
     onClick={() => navigate('/hackathons')}
   >
     <div className="text-2xl mb-0.5 animate-bounce group-hover:animate-none" style={{ animationDuration: '2s' }}>
-      <Trophy className="w-5 h-5 sm:w-6 sm:h-6 mx-auto text-purple-600 dark:text-purple-400" />
+      <Trophy className="w-5 h-5 sm:w-6 sm:h-6 mx-auto text-black" />
     </div>
     <div className="text-xs font-semibold text-gray-700 dark:text-gray-200">Hackathons</div>
   </div>
   <div 
-    className="rounded-xl p-2 text-center border shadow-md hover:shadow-xl transform hover:-translate-y-1 transition-all bg-white/90 dark:bg-gray-700/90 border-indigo-200 dark:border-gray-600 cursor-pointer group"
+    className="rounded-xl p-2 text-center border shadow-md hover:shadow-xl transform hover:-translate-y-1 transition-all bg-white/90 dark:bg-gray-700/90 border-gray-200 dark:border-gray-600 cursor-pointer group"
     onClick={() => navigate('/projects')}
   >
     <div className="text-2xl mb-0.5 animate-bounce group-hover:animate-none" style={{ animationDuration: '2s' }}>
-      <Code className="w-5 h-5 sm:w-6 sm:h-6 mx-auto text-pink-600 dark:text-pink-400" />
+      <Code className="w-5 h-5 sm:w-6 sm:h-6 mx-auto text-black" />
     </div>
     <div className="text-xs font-semibold text-gray-700 dark:text-gray-200">Projects</div>
   </div>
@@ -525,7 +502,7 @@ const [hideChatbot, setHideChatbot] = useState(false);
 
                 {/* Info Text */}
                 <div className="text-center mb-3 px-2">
-                  <p className="text-xs font-semibold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400">
+                  <p className="text-xs font-semibold text-black">
                     ✨ Get personalized event recommendations instantly! ✨
                   </p>
                 </div>
@@ -539,7 +516,7 @@ const [hideChatbot, setHideChatbot] = useState(false);
                 >
                   <button
                     onClick={handleStartChat}
-                    className="relative w-full py-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white rounded-xl font-semibold shadow-xl hover:shadow-2xl transform hover:scale-105 active:scale-95 transition-all duration-300 overflow-hidden group text-sm"
+                    className="relative w-full py-3 bg-black text-white rounded-xl font-semibold shadow-xl hover:bg-zinc-800 transform hover:scale-105 active:scale-95 transition-all duration-300 overflow-hidden group text-sm"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                     <span className="relative flex items-center justify-center space-x-2">
@@ -580,7 +557,7 @@ const [hideChatbot, setHideChatbot] = useState(false);
                     >
                       <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg ${
                         message.isUser
-                          ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white"
+                          ? "bg-black text-white"
                           : "bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 text-gray-600 dark:text-gray-300 border-2 border-white dark:border-gray-600"
                       }`}>
                         {message.isUser ? (
@@ -595,7 +572,7 @@ const [hideChatbot, setHideChatbot] = useState(false);
                       }`}>
                         <div className={`p-3 sm:p-4 rounded-2xl text-sm leading-relaxed transition-all duration-300 hover:shadow-lg hover:scale-[1.02] ${
                           message.isUser
-                            ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-br-md shadow-lg"
+                            ? "bg-black text-white rounded-br-md shadow-lg"
                             : "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-bl-md shadow-md border border-indigo-100 dark:border-gray-700"
                         }`}>
                           <div className="whitespace-pre-wrap break-words">{message.text}</div>
@@ -613,17 +590,17 @@ const [hideChatbot, setHideChatbot] = useState(false);
                       animate={{ opacity: 1, y: 0 }}
                       className="flex items-start space-x-3"
                     >
-                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shadow-lg bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 text-gray-600 dark:text-gray-300 border-2 border-white dark:border-gray-600">
+                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shadow-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-2 border-white dark:border-gray-600">
                         <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
                       </div>
                       <div className="p-3 sm:p-4 rounded-2xl rounded-bl-md shadow-md border bg-white dark:bg-gray-800 border-indigo-100 dark:border-gray-700">
                         <div className="flex items-center space-x-3">
                           <div className="flex space-x-1">
-                            <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"></div>
-                            <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                            <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                            <div className="w-2 h-2 bg-black rounded-full animate-bounce"></div>
+                            <div className="w-2 h-2 bg-black rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                            <div className="w-2 h-2 bg-black rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                           </div>
-                          <span className="text-sm text-gray-600 dark:text-gray-300">Finding the best info...</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-300">Finding the best info...</span>
                         </div>
                       </div>
                     </motion.div>
@@ -667,7 +644,7 @@ const [hideChatbot, setHideChatbot] = useState(false);
         setShowQuickActions(false);
       }, 100);
     }}
-    className="px-3 py-2.5 text-xs font-medium bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:border-indigo-300 dark:hover:border-indigo-600 hover:text-indigo-700 dark:hover:text-indigo-300 transition-all duration-200 text-left break-words min-h-[44px] flex items-center"
+    className="px-3 py-2.5 text-xs font-medium bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:border-black hover:text-black transition-all duration-200 text-left break-words min-h-[44px] flex items-center"
   >
     {action.label}
   </motion.button>
@@ -688,7 +665,7 @@ const [hideChatbot, setHideChatbot] = useState(false);
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         onClick={() => setIsQuickActionsExpanded(!isQuickActionsExpanded)}
-        className="w-10 h-10 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all flex-shrink-0"
+        className="w-10 h-10 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all flex-shrink-0"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -702,7 +679,7 @@ const [hideChatbot, setHideChatbot] = useState(false);
       onChange={(e) => setInputValue(e.target.value)}
       onKeyPress={handleKeyPress}
       placeholder="Ask about events, hackathons..."
-      className="flex-1 px-3 sm:px-4 py-2 sm:py-3 text-sm bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all resize-none overflow-hidden"
+      className="flex-1 px-3 sm:px-4 py-2 sm:py-3 text-sm bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white transition-all resize-none overflow-hidden"
       style={{
         minHeight: '44px',
         maxHeight: '80px',
@@ -719,7 +696,7 @@ const [hideChatbot, setHideChatbot] = useState(false);
       whileTap={{ scale: 0.95 }}
       onClick={handleSendMessage}
       disabled={!inputValue.trim() || isTyping}
-      className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-500 dark:to-purple-500 text-white rounded-2xl flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transition-all flex-shrink-0"
+      className="w-10 h-10 sm:w-12 sm:h-12 bg-black text-white rounded-2xl flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transition-all flex-shrink-0"
     >
       <Send className="w-4 h-4 sm:w-5 sm:h-5" />
     </motion.button>

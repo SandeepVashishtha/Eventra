@@ -469,13 +469,13 @@ const WhatsHappening = () => {
           className="
   relative overflow-hidden mt-12 sm:mt-16 p-[1px] rounded-2xl shadow-lg 
   bg-gradient-to-r from-indigo-500 via-indigo-400 to-indigo-600 
-  dark:from-indigo-600/80 dark:via-purple-500/30 dark:to-pink-500/70
+            dark:from-gray-700/80 dark:via-gray-600/30 dark:to-gray-500/70
 "
         >
           {/* Glass panel */}
           <div className="relative bg-white/80 dark:bg-gray-900/70 backdrop-blur-xl rounded-2xl p-8 sm:p-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div className="md:flex-1 md:pr-10">
-              <h3 className="text-2xl sm:text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-500">
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-black dark:text-white">
                 🚀 Eventra × GirlScript Summer of Code 2025
               </h3>
               <p className="mt-3 text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
@@ -495,7 +495,7 @@ const WhatsHappening = () => {
                 href="https://gssoc.girlscript.tech/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group inline-flex items-center justify-center px-5 sm:px-7 py-2.5 sm:py-3 rounded-xl text-sm sm:text-base font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-md hover:shadow-indigo-400/40"
+                className="group inline-flex items-center justify-center px-5 sm:px-7 py-2.5 sm:py-3 rounded-xl text-sm sm:text-base font-semibold text-white bg-black hover:bg-zinc-800 transition-all duration-300 shadow-md"
               >
                 Apply to GSSOC
                 <svg
@@ -527,7 +527,7 @@ const WhatsHappening = () => {
           </div>
 
           {/* Subtle gradient glow animation */}
-          <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-20 blur-3xl animate-pulse -z-10" />
+          <div className="absolute inset-0 bg-black/10 opacity-20 blur-3xl animate-pulse -z-10" />
         </motion.div>
       </div>
     </section>

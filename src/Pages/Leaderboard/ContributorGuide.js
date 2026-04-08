@@ -528,19 +528,14 @@ const ContributorGuide = () => {
           initial={{ opacity: 0, y: -20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="relative text-3xl md:text-4xl font-extrabold tracking-tight 
-           text-transparent bg-clip-text 
-           bg-gradient-to-r from-blue-700 via-purple-700 to-cyan-400 
-           dark:from-blue-400 dark:via-purple-400 dark:to-cyan-400 
-           mb-10 text-center"
+          className="relative text-3xl md:text-4xl font-extrabold tracking-tight text-black dark:text-white mb-10 text-center"
         >
           Frequently Asked Questions
           <motion.span
             initial={{ width: 0 }}
             animate={{ width: "60%" }}
             transition={{ duration: 0.8, delay: 0.3 }}
-            className="absolute left-1/2 -translate-x-1/2 -bottom-2 h-1 rounded-full 
-             bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"
+            className="absolute left-1/2 -translate-x-1/2 -bottom-2 h-1 rounded-full bg-black"
           />
         </motion.h2>
 
@@ -584,7 +579,7 @@ const ContributorGuide = () => {
       </section>
 
       {/* Call to Action */}
-      <div className="relative overflow-hidden rounded-xl p-10 shadow-xl text-center text-white bg-gradient-to-r from-black via-indigo-600 via-purple-600 to-pink-900">
+      <div className="relative overflow-hidden rounded-xl p-10 shadow-xl text-center text-white bg-black">
         <FiGithub className="absolute top-5 left-5 text-white/10 text-6xl rotate-12" />
         <FiGithub className="absolute bottom-5 right-5 text-white/10 text-6xl -rotate-12" />
 
@@ -600,7 +595,7 @@ const ContributorGuide = () => {
           rel="noreferrer"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-indigo-300 to-purple-600 text-white font-semibold px-8 py-3 rounded-full shadow-lg hover:from-indigo-600 hover:to-purple-600 transition-all duration-300"
+          className="inline-flex items-center justify-center gap-3 bg-white text-black font-semibold px-8 py-3 rounded-full shadow-lg hover:bg-gray-100 transition-all duration-300"
         >
           <FiGithub className="text-lg" /> Go to GitHub
         </motion.a>

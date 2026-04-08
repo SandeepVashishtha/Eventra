@@ -570,7 +570,7 @@ const FeedbackPage = () => {
               className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
           >
             <div className="md:flex">
-              <div className="md:w-3/5 lg:w-2/5 bg-gradient-to-br from-indigo-700 to-purple-600 text-white p-12 flex flex-col justify-between rounded-3xl shadow-xl backdrop-blur-lg">
+              <div className="md:w-3/5 lg:w-2/5 bg-black text-white p-12 flex flex-col justify-between rounded-3xl shadow-xl backdrop-blur-lg">
                 <div>
                   <h2 className="text-4xl font-extrabold mb-6 tracking-wide">
                     Share Your Feedback
@@ -810,7 +810,7 @@ const FeedbackPage = () => {
                         whileTap={{ scale: 0.98 }}
                         type="submit"
                         disabled={isSubmitting}
-                        className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-75 transition-all duration-300"
+                      className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
                     >
                       {isSubmitting && (
                           <svg
