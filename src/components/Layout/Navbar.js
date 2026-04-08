@@ -510,7 +510,7 @@ const Navbar = () => {
               className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10"
             >
               <svg
-                className="h-6 w-6"
+                className="h-5 w-5 sm:h-6 sm:w-6"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -533,15 +533,15 @@ const Navbar = () => {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className={`fixed top-0 right-0 h-screen overflow-y-auto w-80 shadow-2xl z-50 flex flex-col transform transition-transform duration-300 ease-in-out 
+        className={`fixed top-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-sm shadow-2xl z-50 flex flex-col transform transition-transform duration-300 ease-in-out 
         bg-white backdrop-blur-lg dark:bg-gray-900/95
         ${isMobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}
         role="dialog"
         aria-modal={isMobileMenuOpen}
       >
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/20">
+        <div className="flex items-center justify-between p-3.5 sm:p-4 border-b border-gray-200 dark:border-white/20">
           <h2
-            className="text-2xl font-bold text-black dark:text-white"
+            className="text-xl sm:text-2xl font-bold text-black dark:text-white"
             style={{ fontFamily: '"Anton", sans-serif' }}
           >
             Eventra
@@ -570,7 +570,7 @@ const Navbar = () => {
           </div>
         </div>
 
-        <div className="flex-grow p-4 space-y-2 overflow-y-auto">
+        <div className="flex-grow p-3.5 sm:p-4 space-y-2 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = item.href
               ? location.pathname === item.href
@@ -584,7 +584,7 @@ const Navbar = () => {
                         openDropdown === item.name ? null : item.name
                       )
                     }
-                    className={`flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors text-left text-lg font-medium ${
+                    className={`flex items-center justify-between w-full px-4 py-2.5 rounded-lg transition-colors text-left text-base font-medium ${
                       isActive
                         ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
                         : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
@@ -594,13 +594,13 @@ const Navbar = () => {
                       {item.icon} {item.name}
                     </span>
                     <ChevronDown
-                      className={`w-5 h-5 transition-transform ${
+                      className={`w-4 h-4 transition-transform ${
                         openDropdown === item.name ? "rotate-180" : ""
                       }`}
                     />
                   </button>
                   {openDropdown === item.name && (
-                    <div className="mt-2 ml-4 pl-4 border-l-2 border-gray-200 dark:border-white/20 space-y-1">
+                    <div className="mt-2 ml-3 pl-3 border-l-2 border-gray-200 dark:border-white/20 space-y-1">
                       {item.subItems.map((sub) => {
                         const isSubActive = location.pathname === sub.href;
                         return (
@@ -629,7 +629,7 @@ const Navbar = () => {
                 key={item.name}
                 to={item.href}
                 onClick={closeAllMenus}
-                className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors text-lg font-medium ${
+                className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium ${
                   isActive
                     ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
                     : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
@@ -671,7 +671,7 @@ const Navbar = () => {
               <Link
                 to="/dashboard"
                 onClick={closeAllMenus}
-                className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors text-lg font-medium ${
+                className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium ${
                   location.pathname === "/dashboard"
                     ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
                     : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
@@ -695,7 +695,7 @@ const Navbar = () => {
               {/* CHANGE ONLY THIS BUTTON */}
               <button
                 onClick={handleLogoutClick}
-                className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors font-medium"
+                className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors font-medium"
               >
                 <LogOut className="w-5 h-5" />
                 Logout
@@ -706,7 +706,7 @@ const Navbar = () => {
               <Link
                 to="/login"
                 onClick={closeAllMenus}
-                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-white bg-black hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 border border-transparent"
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-semibold text-white bg-black hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 border border-transparent"
               >
                 <LogIn className="w-5 h-5" />
                 Sign In
@@ -714,7 +714,7 @@ const Navbar = () => {
               <Link
                 to="/signup"
                 onClick={closeAllMenus}
-                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-black dark:text-white bg-white dark:bg-black/50 hover:bg-gray-100 dark:hover:bg-white/10 border-2 border-black/15 dark:border-white/20 hover:border-black/25 dark:hover:border-white/30 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-semibold text-black dark:text-white bg-white dark:bg-black/50 hover:bg-gray-100 dark:hover:bg-white/10 border-2 border-black/15 dark:border-white/20 hover:border-black/25 dark:hover:border-white/30 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
               >
                 <RocketLaunchIcon className="w-5 h-5" />
                 Get Started

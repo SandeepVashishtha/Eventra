@@ -220,24 +220,24 @@ const Footer = () => {
     <>
       {/* UPDATED: Added dark mode background and border colors */}
       <footer 
-        className="bg-indigo-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
+        className="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
         // AOS Implementation
         data-aos="fade-up"
         data-aos-duration="1000"
         data-aos-offset="100" // Start animation a bit earlier
         // End AOS Implementation
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-4">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             <div 
-              className="space-y-4 md:col-span-2"
+              className="space-y-4 lg:col-span-2"
               // AOS Implementation - Logo/Newsletter Column
               data-aos="fade-up"
               data-aos-delay="0"
             >
               {/* UPDATED: Added dark mode text color */}
               <h2
-                className="text-3xl font-bold text-black"
+                className="text-2xl sm:text-3xl font-bold text-black"
                 style={{ fontFamily: "Anton, sans-serif" }}
               >
                 Eventra
@@ -259,7 +259,7 @@ const Footer = () => {
                 </p>
                 <form
                   onSubmit={handleSubmit}
-                  className="flex flex-col sm:flex-row gap-2"
+                  className="flex flex-col sm:flex-row gap-3"
                 >
                   <div className="relative flex-grow">
                     <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -268,14 +268,14 @@ const Footer = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Enter your email"
-                      className="pl-10 pr-4 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full"
+                      className="pl-10 pr-4 py-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full"
                       disabled={isSubmitting}
                     />
                   </div>
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto px-4 py-2.5 bg-black text-white rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? "Subscribing..." : "Subscribe"}
                   </button>
@@ -290,7 +290,7 @@ const Footer = () => {
                 <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-3">
                   Follow Us
                 </h4>
-                <div className="flex space-x-3">
+                <div className="flex flex-wrap gap-3">
                   {socialLinks.map((link) => (
                     <a
                       key={link.name}
@@ -312,7 +312,7 @@ const Footer = () => {
             {Object.entries(footerLinks).map(([key, links]) => (
               <div 
                 key={key} 
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-6 border border-gray-100 dark:border-gray-700"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-5 sm:p-6 border border-gray-100 dark:border-gray-700"
                 data-aos="fade-up"
                 data-aos-delay={key === "quick_links" ? "100" : key === "community" ? "200" : "300"}
               >
@@ -345,7 +345,7 @@ const Footer = () => {
 
           {/* Copyright - Below the line, centered */}
           {/* UPDATED: Added dark mode border color */}
-          <div className="border-t border-gray-300 dark:border-gray-700 mt-8 pt-4 pb-2 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="border-t border-gray-300 dark:border-gray-700 mt-8 pt-4 pb-2 flex flex-col sm:flex-row justify-between items-center gap-3 text-center sm:text-left">
             {/* UPDATED: Added dark mode text color */}
             <p className="text-sm text-gray-500 dark:text-gray-400">
               © {currentYear} Eventra. All rights reserved. Created with ❤️ by Sandeep Vashishtha, Rhythm and the amazing open-source community.
