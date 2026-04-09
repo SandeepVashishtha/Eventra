@@ -128,66 +128,15 @@ const Hero = () => {
   });
 
   const shapes = [
-    {
-      size: 48,
-      pos: { top: "8%", left: "8%" },
-      color: "bg-blue-100",
-    },
-    {
-      size: 56,
-      pos: { top: "14%", left: "22%" },
-      color: "bg-yellow-100",
-    },
-    {
-      size: 30,
-      pos: { top: "24%", left: "46%" },
-      color: "bg-green-200",
-    },
-    {
-      size: 58,
-      pos: { top: "30%", left: "72%" },
-      color: "bg-blue-100",
-    },
-    {
-      size: 44,
-      pos: { top: "54%", left: "12%" },
-      color: "bg-yellow-100",
-    },
-    {
-      size: 24,
-      pos: { top: "42%", left: "34%" },
-      color: "bg-green-100",
-    },
-    {
-      size: 72,
-      pos: { top: "68%", left: "26%" },
-      color: "bg-pink-100",
-    },
-    {
-      size: 54,
-      pos: { top: "72%", left: "66%" },
-      color: "bg-green-200",
-    },
-    {
-      size: 36,
-      pos: { top: "48%", left: "80%" },
-      color: "bg-yellow-100",
-    },
-    {
-      size: 28,
-      pos: { top: "18%", left: "52%" },
-      color: "bg-sky-100",
-    },
-    {
-      size: 32,
-      pos: { top: "58%", left: "52%" },
-      color: "bg-pink-100",
-    },
-    {
-      size: 26,
-      pos: { top: "80%", left: "48%" },
-      color: "bg-emerald-100",
-    },
+    { size: 42, pos: { top: "10%", left: "5%" }, color: "#dbeafe" },
+    { size: 54, pos: { top: "14%", left: "20%" }, color: "#fde68a" },
+    { size: 30, pos: { top: "24%", left: "42%" }, color: "#dcfce7" },
+    { size: 50, pos: { top: "30%", left: "70%" }, color: "#bae6fd" },
+    { size: 40, pos: { top: "52%", left: "10%" }, color: "#fbcfe8" },
+    { size: 26, pos: { top: "42%", left: "32%" }, color: "#c7d2fe" },
+    { size: 68, pos: { top: "68%", left: "24%" }, color: "#fecdd3" },
+    { size: 50, pos: { top: "72%", left: "64%" }, color: "#bbf7d0" },
+    { size: 34, pos: { top: "48%", left: "80%" }, color: "#fde68a" },
   ];
 
   const stats = [
@@ -209,17 +158,19 @@ const Hero = () => {
   ];
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-white py-20 sm:py-24 xl:py-28">
+    <section className="relative overflow-hidden bg-gradient-to-l from-sky-50 via-white to-white py-16 sm:py-20 md:py-24">
       {/* Floating pastel shapes */}
       {shapes.map((shape, i) => (
         <motion.div
           key={i}
           animate={floatShape(i)}
-          className={`absolute rounded-full ${shape.color} ${i < 2 ? "opacity-[0.06]" : "opacity-12"}`}
+          className="absolute rounded-full"
           style={{
             width: `${shape.size}px`,
             height: `${shape.size}px`,
             ...shape.pos,
+            backgroundColor: shape.color,
+            opacity: 0.2,
           }}
         />
       ))}

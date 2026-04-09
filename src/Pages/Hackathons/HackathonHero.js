@@ -43,18 +43,14 @@ export default function HackathonHero({
   // Floating shapes/bubbles
   const shapes = useMemo(
     () => [
-      { size: 34, pos: { top: "14%", left: "4%" }, color: "from-sky-200 to-blue-200" },
-      { size: 36, pos: { top: "11%", right: "5%" }, color: "from-blue-200 to-sky-100" },
-      { size: 24, pos: { top: "24%", left: "6%" }, color: "from-yellow-200 to-yellow-100" },
-      { size: 24, pos: { top: "28%", right: "7%" }, color: "from-green-200 to-green-100" },
-      { size: 46, pos: { top: "12%", right: "18%" }, color: "from-pink-200 to-pink-100" },
-      { size: 52, pos: { top: "20%", left: "18%" }, color: "from-yellow-200 to-orange-100" },
-      { size: 92, pos: { top: "52%", left: "22%" }, color: "from-blue-200 to-sky-100" },
-      { size: 64, pos: { top: "58%", right: "15%" }, color: "from-green-200 to-blue-100" },
-      { size: 38, pos: { top: "46%", left: "2%" }, color: "from-pink-200 to-yellow-100" },
-      { size: 28, pos: { top: "36%", left: "26%" }, color: "from-sky-100 to-green-100" },
-      { size: 24, pos: { top: "64%", left: "58%" }, color: "from-yellow-100 to-pink-100" },
-      { size: 30, pos: { top: "70%", left: "48%" }, color: "from-blue-100 to-yellow-100" },
+      { size: 42, pos: { top: "12%", left: "5%" }, color: "#dbeafe" },
+      { size: 50, pos: { top: "10%", right: "8%" }, color: "#bfdbfe" },
+      { size: 30, pos: { top: "24%", left: "8%" }, color: "#dcfce7" },
+      { size: 36, pos: { top: "30%", right: "12%" }, color: "#fde68a" },
+      { size: 46, pos: { top: "14%", right: "24%" }, color: "#fbcfe8" },
+      { size: 52, pos: { top: "22%", left: "22%" }, color: "#fed7aa" },
+      { size: 38, pos: { top: "48%", left: "6%" }, color: "#c7d2fe" },
+      { size: 44, pos: { top: "56%", right: "10%" }, color: "#bae6fd" },
     ],
     []
   );
@@ -70,23 +66,25 @@ export default function HackathonHero({
   );
 
   return (
-    <div className="bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black relative overflow-hidden">
+    <div className="bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black relative overflow-hidden py-16 sm:py-20 md:py-24">
       {/* ======================= FLOATING SHAPES ======================= */}
       {shapes.map((shape, i) => (
         <motion.div
           key={i}
           animate={floatShape(i)}
-          className={`absolute rounded-full bg-gradient-to-tr ${shape.color} opacity-14 sm:opacity-30 dark:opacity-10 dark:sm:opacity-18`}
+          className="absolute rounded-full"
           style={{
             width: `${shape.size}px`,
             height: `${shape.size}px`,
             ...shape.pos,
+            backgroundColor: shape.color,
+            opacity: 0.2,
           }}
         />
       ))}
 
       {/* ======================= HERO SECTION ======================= */}
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 md:px-8 text-center mt-8 sm:mt-12">
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 md:px-8 text-center">
         <motion.h1
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
