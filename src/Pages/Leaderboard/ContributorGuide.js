@@ -60,61 +60,61 @@ const ContributorGuide = () => {
 
   const faqs = [
     {
-      icon: <GitBranch className="w-5 h-5 text-blue-500" />,
+      icon: <GitBranch className="w-5 h-5 text-sky-300" />,
       question: "What is a fork?",
       answer:
         "A fork is your personal copy of the repository where you can safely make changes without affecting the original project.",
     },
     {
-      icon: <GitPullRequest className="w-5 h-5 text-green-500" />,
+      icon: <GitPullRequest className="w-5 h-5 text-emerald-300" />,
       question: "What is a pull request?",
       answer:
         "A pull request is a way to propose your changes and request that they be reviewed and merged into the main project.",
     },
     {
-      icon: <LucideFileText className="w-5 h-5 text-purple-500" />,
+      icon: <LucideFileText className="w-5 h-5 text-violet-300" />,
       question: "How should I name branches?",
       answer:
         "Use descriptive names like 'feature/login' or 'fix/header-bug' to indicate the purpose of the branch clearly.",
     },
     {
-      icon: <Users className="w-5 h-5 text-pink-500" />,
+      icon: <Users className="w-5 h-5 text-rose-300" />,
       question: "Can I contribute without coding?",
       answer:
         "Yes! Contributions can include improving documentation, design, accessibility, testing, or community support.",
     },
     {
-      icon: <HelpCircle className="w-5 h-5 text-yellow-500" />,
+      icon: <HelpCircle className="w-5 h-5 text-amber-300" />,
       question: "Where can I ask for help?",
       answer:
         "You can open a discussion in the repository, raise an issue, or join our community chat to get assistance.",
     },
     {
-      icon: <HelpCircle className="w-5 h-5 text-orange-500" />,
+      icon: <HelpCircle className="w-5 h-5 text-orange-300" />,
       question: "Do I need prior open-source experience?",
       answer:
         "Not at all! Beginners are welcome — open-source is a great way to learn and grow your skills.",
     },
     {
-      icon: <LucideFileText className="w-5 h-5 text-indigo-500" />,
+      icon: <LucideFileText className="w-5 h-5 text-sky-300" />,
       question: "How do I report a bug?",
       answer:
         "You can report bugs by creating a new issue in the repository. Be sure to include steps to reproduce the problem and screenshots if possible.",
     },
     {
-      icon: <Users className="w-5 h-5 text-red-500" />,
+      icon: <Users className="w-5 h-5 text-red-300" />,
       question: "How do I find beginner-friendly issues?",
       answer:
         "Look for labels like 'good first issue' or 'beginner-friendly' in the issues tab of the repository.",
     },
     {
-      icon: <GitBranch className="w-5 h-5 text-teal-500" />,
+      icon: <GitBranch className="w-5 h-5 text-teal-300" />,
       question: "Should I work on an issue without assignment?",
       answer:
         "It's best to comment on the issue and ask to be assigned before starting. This avoids duplicate efforts.",
     },
     {
-      icon: <GitPullRequest className="w-5 h-5 text-cyan-500" />,
+      icon: <GitPullRequest className="w-5 h-5 text-cyan-300" />,
       question: "What happens after I open a pull request?",
       answer:
         "Your pull request will be reviewed by maintainers or contributors. They may suggest changes before it gets merged into the main branch.",
@@ -169,10 +169,13 @@ const ContributorGuide = () => {
   };
 
   return (
-    <div className="pastel-grid-bg bg-gray-50 dark:bg-black min-h-screen px-4 sm:px-6 lg:px-12 py-12 max-w-6xl mx-auto space-y-16">
+    <div className="pastel-grid-bg bg-gray-50 dark:bg-black min-h-screen px-4 sm:px-6 lg:px-12 py-12 max-w-6xl mx-auto space-y-16 overflow-x-hidden">
       {/* Page Heading */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl md:text-5xl font-bold text-indigo-900 dark:text-gray-100 mb-4">
+        <h1
+          className="text-4xl md:text-5xl font-bold text-black dark:text-white mb-4"
+          style={{ fontFamily: '"Anton", sans-serif' }}
+        >
           Welcome to Eventra Contributions!
         </h1>
         <p className="text-gray-700 dark:text-gray-300 text-base max-w-3xl mx-auto">
@@ -195,10 +198,10 @@ const ContributorGuide = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="border-l-4 border-indigo-500 dark:border-indigo-400 p-4 bg-gray-200 dark:bg-gray-800 rounded shadow-sm"
+              className="border-l-4 border-sky-200 dark:border-sky-300 p-4 bg-gray-200 dark:bg-gray-800 rounded shadow-sm"
             >
               <div className="flex items-center mb-2">
-                <FiInfo className="text-indigo-500 dark:text-indigo-400 mr-2 flex-shrink-0" />
+                <FiInfo className="text-sky-300 dark:text-sky-200 mr-2 flex-shrink-0" />
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                   {type.title}
                 </h3>
@@ -217,7 +220,7 @@ const ContributorGuide = () => {
       {/* Important Files Section */}
       <div className="bg-white dark:bg-gray-900 p-6 md:p-8 rounded-xl shadow-md">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center flex items-center justify-center gap-3">
-          <FiFile className="text-indigo-500 dark:text-indigo-400" size={32} />
+          <FiFile className="text-emerald-300 dark:text-emerald-200" size={32} />
           Important Files in This Project
         </h2>
         <div className="overflow-x-auto">
@@ -234,7 +237,7 @@ const ContributorGuide = () => {
             </thead>
             <tbody className="divide-y divide-gray-300 dark:divide-gray-600">
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-indigo-500 dark:text-indigo-400">
+                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
                   <FiLock /> .env
                 </td>
                 <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
@@ -243,7 +246,7 @@ const ContributorGuide = () => {
                 </td>
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
+                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
                   <FiLock /> .env.example
                 </td>
                 <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
@@ -252,7 +255,7 @@ const ContributorGuide = () => {
                 </td>
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
+                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
                   <FiCode /> .gitignore
                 </td>
                 <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
@@ -261,7 +264,7 @@ const ContributorGuide = () => {
                 </td>
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
+                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
                   <FiFileText /> LICENSE
                 </td>
                 <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
@@ -269,7 +272,7 @@ const ContributorGuide = () => {
                 </td>
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
+                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
                   <FiClipboard /> README.md
                 </td>
                 <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
@@ -278,7 +281,7 @@ const ContributorGuide = () => {
                 </td>
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
+                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
                   <FiPackage /> package.json
                 </td>
                 <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
@@ -286,7 +289,7 @@ const ContributorGuide = () => {
                 </td>
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
+                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
                   <FiCheckCircle /> package-lock.json
                 </td>
                 <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
@@ -295,7 +298,7 @@ const ContributorGuide = () => {
                 </td>
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
+                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
                   <FiServer /> vercel.json
                 </td>
                 <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
@@ -303,7 +306,7 @@ const ContributorGuide = () => {
                 </td>
               </tr>
               <tr className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-indigo-500">
+                <td className="px-4 sm:px-6 py-4 flex items-center gap-2 font-mono text-black dark:text-white">
                   <FiFileText /> CODE_OF_CONDUCT.md
                 </td>
                 <td className="px-4 sm:px-6 py-4 text-gray-700 dark:text-gray-300">
@@ -319,7 +322,7 @@ const ContributorGuide = () => {
       <div className="bg-white dark:bg-gray-900 p-6 md:p-8 rounded-xl shadow-md mt-10">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-10 text-center flex items-center justify-center gap-3">
           <FiGitBranch
-            className="text-indigo-500 dark:text-indigo-400"
+            className="text-violet-300 dark:text-violet-200"
             size={32}
           />
           Issue & PR Workflow
@@ -333,11 +336,11 @@ const ContributorGuide = () => {
               description: (
                 <>
                   Browse issues labeled{" "}
-                  <span className="font-mono text-indigo-500 bg-indigo-100 dark:bg-indigo-900/50 px-1 rounded">
+                  <span className="font-mono text-black dark:text-white bg-sky-100 dark:bg-sky-900/50 px-1 rounded break-all">
                     good-first-issue
                   </span>{" "}
                   or{" "}
-                  <span className="font-mono text-indigo-500 bg-indigo-100 dark:bg-indigo-900/50 px-1 rounded">
+                  <span className="font-mono text-black dark:text-white bg-amber-100 dark:bg-amber-900/50 px-1 rounded break-all">
                     bug
                   </span>
                   . Choose one you can work on.
@@ -351,11 +354,11 @@ const ContributorGuide = () => {
               description: (
                 <>
                   Use descriptive branch names like{" "}
-                  <span className="font-mono text-indigo-500 bg-indigo-100 dark:bg-indigo-900/50 px-1 rounded">
+                  <span className="font-mono text-black dark:text-white bg-sky-100 dark:bg-sky-900/50 px-1 rounded break-all">
                     feature/add-login
                   </span>{" "}
                   or{" "}
-                  <span className="font-mono text-indigo-500 bg-indigo-100 dark:bg-indigo-900/50 px-1 rounded">
+                  <span className="font-mono text-black dark:text-white bg-amber-100 dark:bg-amber-900/50 px-1 rounded break-all">
                     fix/navbar-bug
                   </span>
                   .
@@ -370,7 +373,7 @@ const ContributorGuide = () => {
                 <>
                   Make your code changes locally. Commit with clear messages
                   like{" "}
-                  <span className="font-mono text-indigo-500 bg-indigo-100 dark:bg-indigo-900/50 px-1 rounded">
+                  <span className="font-mono text-black dark:text-white bg-sky-100 dark:bg-sky-900/50 px-1 rounded break-all">
                     Add login form component
                   </span>
                   .
@@ -409,18 +412,18 @@ const ContributorGuide = () => {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ delay: idx * 0.1 }}
-              className="flex flex-col md:flex-row items-start gap-4 p-6 border-b border-gray-200 dark:border-gray-700 last:border-b-0 rounded-lg hover:bg-indigo-50 dark:hover:bg-gray-700/50 transition-colors"
+              className="flex flex-col md:flex-row items-start gap-4 p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 last:border-b-0 rounded-lg hover:bg-sky-50 dark:hover:bg-gray-700/50 transition-colors"
             >
               <div className="flex-shrink-0">
-                <div className="w-12 h-12 flex items-center justify-center rounded-full bg-indigo-500 text-white font-bold text-lg">
+                <div className="w-12 h-12 flex items-center justify-center rounded-full bg-sky-200 dark:bg-sky-300 text-black font-bold text-lg">
                   {item.step}
                 </div>
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-2">
+                <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-2 break-words">
                   {item.icon} {item.title}
                 </h3>
-                <p className="text-gray-700 dark:text-gray-300 mb-2">
+                <p className="text-gray-700 dark:text-gray-300 mb-2 break-words">
                   {item.description}
                 </p>
                 {item.code && (
@@ -436,7 +439,7 @@ const ContributorGuide = () => {
         <div className="mt-10 flex flex-col md:flex-row justify-center items-center gap-4 md:gap-6">
           <div className="flex flex-col items-center gap-2">
             <FiFileText
-              className="text-indigo-500 dark:text-indigo-400"
+              className="text-sky-300 dark:text-sky-200"
               size={36}
             />
             <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center">
@@ -444,14 +447,14 @@ const ContributorGuide = () => {
             </span>
           </div>
 
-          <FiChevronDown className="text-indigo-300 dark:text-gray-600 text-2xl md:hidden" />
-          <div className="text-indigo-300 dark:text-gray-600 text-2xl hidden md:block">
+          <FiChevronDown className="text-slate-300 dark:text-gray-600 text-2xl md:hidden" />
+          <div className="text-slate-300 dark:text-gray-600 text-2xl hidden md:block">
             →
           </div>
 
           <div className="flex flex-col items-center gap-2">
             <FiGitBranch
-              className="text-indigo-500 dark:text-indigo-400"
+              className="text-emerald-300 dark:text-emerald-200"
               size={36}
             />
             <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center">
@@ -459,14 +462,14 @@ const ContributorGuide = () => {
             </span>
           </div>
 
-          <FiChevronDown className="text-indigo-300 dark:text-gray-600 text-2xl md:hidden" />
-          <div className="text-indigo-300 dark:text-gray-600 text-2xl hidden md:block">
+          <FiChevronDown className="text-slate-300 dark:text-gray-600 text-2xl md:hidden" />
+          <div className="text-slate-300 dark:text-gray-600 text-2xl hidden md:block">
             →
           </div>
 
           <div className="flex flex-col items-center gap-2">
             <FiCheckCircle
-              className="text-indigo-500 dark:text-indigo-400"
+              className="text-amber-300 dark:text-amber-200"
               size={36}
             />
             <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center">
@@ -474,14 +477,14 @@ const ContributorGuide = () => {
             </span>
           </div>
 
-          <FiChevronDown className="text-indigo-300 dark:text-gray-600 text-2xl md:hidden" />
-          <div className="text-indigo-300 dark:text-gray-600 text-2xl hidden md:block">
+          <FiChevronDown className="text-slate-300 dark:text-gray-600 text-2xl md:hidden" />
+          <div className="text-slate-300 dark:text-gray-600 text-2xl hidden md:block">
             →
           </div>
 
           <div className="flex flex-col items-center gap-2">
             <FiArrowRightCircle
-              className="text-indigo-500 dark:text-indigo-400"
+              className="text-rose-300 dark:text-rose-200"
               size={36}
             />
             <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center">
@@ -506,13 +509,13 @@ const ContributorGuide = () => {
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100">
                   {c.title}
                 </h3>
-                <pre className="inline-block bg-gray-200 dark:bg-gray-900/50 p-2 rounded mt-1 text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap break-all">
+                <pre className="inline-block bg-gray-200 dark:bg-gray-900/50 p-2 rounded mt-1 text-sm text-black dark:text-white whitespace-pre-wrap break-all">
                   {c.cmd}
                 </pre>
               </div>
               <button
                 onClick={() => copyCommand(c.cmd, c.id)}
-                className="flex items-center justify-center sm:justify-start gap-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 px-3 py-1.5 rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition self-start sm:self-center flex-shrink-0"
+                className="flex items-center justify-center sm:justify-start gap-2 bg-sky-100 dark:bg-sky-900/40 text-black dark:text-white px-3 py-1.5 rounded hover:bg-amber-100 dark:hover:bg-amber-900/40 transition self-start sm:self-center flex-shrink-0"
               >
                 {copied === c.id ? <FiCheck /> : <FiCopy />}
                 <span>{copied === c.id ? "Copied" : "Copy"}</span>
@@ -550,7 +553,7 @@ const ContributorGuide = () => {
                 >
                   <div className="flex items-center gap-3">
                     {faq.icon}
-                    <span className="text-lg font-medium text-gray-900 dark:text-gray-100 group-hover:text-blue-500 transition">
+                    <span className="text-lg font-medium text-gray-900 dark:text-gray-100 group-hover:text-black transition">
                       {faq.question}
                     </span>
                   </div>
@@ -595,7 +598,7 @@ const ContributorGuide = () => {
           rel="noreferrer"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="inline-flex items-center justify-center gap-3 bg-white text-black font-semibold px-8 py-3 rounded-full shadow-lg hover:bg-gray-100 transition-all duration-300"
+          className="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-sky-100 to-amber-100 text-black font-semibold px-8 py-3 rounded-full shadow-lg hover:from-sky-200 hover:to-amber-200 transition-all duration-300"
         >
           <FiGithub className="text-lg" /> Go to GitHub
         </motion.a>

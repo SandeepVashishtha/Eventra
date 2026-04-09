@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, useAnimation } from "framer-motion";
-import "./faq.css";
 import {
-  HelpCircle,
   ChevronDown,
   Users,
   Calendar,
@@ -139,15 +137,15 @@ const FAQPage = () => {
   return (
     <div className="pastel-grid-bg relative flex flex-col min-h-screen bg-white dark:bg-gray-900 overflow-hidden">
       {/* HERO */}
-      <section className="py-20 relative overflow-hidden">
+      <section className="py-10 sm:py-12 relative overflow-hidden">
         {/* HERO Content */}
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <motion.div variants={container} initial="hidden" animate={controls}>
             <motion.div variants={item}>
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-black rounded-full mb-6 question-icon">
-                <HelpCircle className="w-10 h-10 text-white" />
-              </div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-black mb-6">
+              <h1
+                className="text-4xl md:text-5xl lg:text-6xl font-bold text-black mb-4"
+                style={{ fontFamily: '"Anton", sans-serif' }}
+              >
                 Frequently Asked{" "}
                 <span className="text-black">
                   Questions
@@ -179,12 +177,12 @@ const FAQPage = () => {
               >
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl flex items-center justify-center">
-                    <span className="text-indigo-600 dark:text-indigo-400">
+                    <span className="text-black dark:text-white">
                       {faq.icon}
                     </span>
                   </div>
                   <div>
-                    <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">
+                    <span className="text-xs font-medium text-black dark:text-white uppercase tracking-wide">
                       {faq.category}
                     </span>
                     <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mt-1">

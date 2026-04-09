@@ -18,8 +18,8 @@
   --border-color: #e1e5e9;
   --card-bg-color: #ffffff;
   --scrollbar-track-color: #f1f1f1;
-  --scrollbar-thumb-color: #c1c1c1;
-  --scrollbar-thumb-hover-color: #a8a8a8;
+  --scrollbar-thumb-color: #000000;
+  --scrollbar-thumb-hover-color: #262626;
   --btn-secondary-text: #4a4a4a;
 
   /* Font sizes */
@@ -40,8 +40,8 @@ body.dark {
   --border-color: #333333;
   --card-bg-color: #1e1e1e;
   --scrollbar-track-color: #2c2c2c;
-  --scrollbar-thumb-color: #555555;
-  --scrollbar-thumb-hover-color: #777777;
+  --scrollbar-thumb-color: #000000;
+  --scrollbar-thumb-hover-color: #262626;
   --btn-secondary-text: #e0e0e0;
 }
 
@@ -177,7 +177,9 @@ input::-webkit-password-toggle { display: none !important; }
 .pastel-grid-bg {
   background-color: #ffffff;
   background-image:
-    linear-gradient(to right, rgba(147, 197, 253, 0.42) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(244, 114, 182, 0.32) 1px, transparent 1px);
-  background-size: 40px 40px;
+    linear-gradient(to right, rgba(147, 197, 253, 0.32) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(250, 204, 21, 0.32) 1px, transparent 1px),
+    linear-gradient(45deg, rgba(59, 130, 246, 0.10) 1px, transparent 1px),
+    linear-gradient(-45deg, rgba(250, 204, 21, 0.10) 1px, transparent 1px);
+  background-size: 40px 40px, 40px 40px, 80px 80px, 80px 80px;
 }

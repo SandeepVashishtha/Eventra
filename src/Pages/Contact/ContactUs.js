@@ -98,7 +98,7 @@ const FloatingInput = ({
         htmlFor={id}
         className={`absolute transition-all duration-300 ${
           isFocused || value
-            ? "top-0 text-xs text-indigo-600 dark:text-indigo-400 font-medium"
+            ? "top-0 text-xs text-black dark:text-white font-medium"
             : "top-4 text-sm text-gray-500 dark:text-gray-400"
         } ${error ? "text-red-500 dark:text-red-400" : ""}`}
         initial={false}
@@ -272,7 +272,10 @@ const ContactUs = () => {
               data-aos-anchor=".ContactUs"
             >
               <div>
-                <h2 className="text-4xl font-extrabold mb-6 tracking-wide">
+                <h2
+                  className="text-4xl font-extrabold mb-6 tracking-wide"
+                  style={{ fontFamily: '"Anton", sans-serif' }}
+                >
                   Get in Touch
                 </h2>
                 <p className="mb-8 text-lg opacity-90 leading-relaxed">
@@ -358,7 +361,10 @@ const ContactUs = () => {
               data-aos-anchor=".ContactUs"
             >
               <div className="text-center mb-8">
-                <h2 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100">
+                <h2
+                  className="text-3xl font-extrabold text-gray-900 dark:text-gray-100"
+                  style={{ fontFamily: '"Anton", sans-serif' }}
+                >
                   Send us a Message
                 </h2>
                 <p className="mt-2 text-gray-600 dark:text-gray-400">
@@ -401,7 +407,7 @@ const ContactUs = () => {
                     htmlFor="message"
                     className={`absolute left-10 transition-all duration-300 ${
                       isFocused || formData.message
-                        ? "top-0 text-xs text-indigo-600 dark:text-indigo-400 font-medium"
+                        ? "top-0 text-xs text-black dark:text-white font-medium"
                         : "top-4 text-sm text-gray-500 dark:text-gray-400"
                     } ${
                       errors.message ? "text-red-500 dark:text-red-400" : ""

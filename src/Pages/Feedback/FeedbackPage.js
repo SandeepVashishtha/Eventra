@@ -199,7 +199,7 @@ const FloatingInput = ({
                   error
                       ? "text-red-500 dark:text-red-400"
                       : isFocused
-                          ? "text-indigo-600 dark:text-indigo-400"
+                          ? "text-black dark:text-white"
                           : "text-gray-500 dark:text-gray-400"
               }`}
           >
@@ -308,7 +308,7 @@ const CustomFloatingSelect = ({
                   error
                       ? "text-red-500 dark:text-red-400"
                       : isOpen
-                          ? "text-indigo-600 dark:text-indigo-400"
+                          ? "text-black dark:text-white"
                           : "text-gray-500 dark:text-gray-400"
               }`}
           >
@@ -347,7 +347,7 @@ const CustomFloatingSelect = ({
                         )}
                         {option.label}
                         {value === option.value && (
-                            <FiCheck className="ml-auto w-5 h-5 text-indigo-500 dark:text-indigo-200" />
+                            <FiCheck className="ml-auto w-5 h-5 text-sky-300 dark:text-sky-200" />
                         )}
                       </li>
                   ))}
@@ -572,7 +572,10 @@ const FeedbackPage = () => {
             <div className="md:flex">
               <div className="md:w-3/5 lg:w-2/5 bg-black text-white p-12 flex flex-col justify-between rounded-3xl shadow-xl backdrop-blur-lg">
                 <div>
-                  <h2 className="text-4xl font-extrabold mb-6 tracking-wide">
+                  <h2
+                    className="text-4xl font-extrabold mb-6 tracking-wide"
+                    style={{ fontFamily: '"Anton", sans-serif' }}
+                  >
                     Share Your Feedback
                   </h2>
                   <p className="mb-8 text-lg opacity-90 leading-relaxed">
@@ -626,7 +629,10 @@ const FeedbackPage = () => {
             <div className="md:w-3/5 p-10">
               <div className="text-center mb-8">
                 {/* UPDATED: Text colors */}
-                <h2 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100">
+                <h2
+                  className="text-3xl font-extrabold text-gray-900 dark:text-gray-100"
+                  style={{ fontFamily: '"Anton", sans-serif' }}
+                >
                   We'd Love to Hear From You
                 </h2>
                 <p className="mt-2 text-gray-600 dark:text-gray-400">
@@ -676,7 +682,7 @@ const FeedbackPage = () => {
                     htmlFor="message"
                     className={`absolute left-14 transition-all duration-300 ${
                       isFocused || formData.message
-                        ? "top-0 text-xs text-indigo-600 dark:text-indigo-400 font-medium"
+                        ? "top-0 text-xs text-black dark:text-white font-medium"
                         : "top-4 text-sm text-gray-500 dark:text-gray-400"
                     } ${errors.message ? "text-red-500 dark:text-red-400" : ""}`}
                     initial={false}
@@ -766,7 +772,7 @@ const FeedbackPage = () => {
                               errors.message
                                   ? "text-red-500 dark:text-red-400"
                                   : formData.message
-                                      ? "text-indigo-600 dark:text-indigo-400"
+                                      ? "text-black dark:text-white"
                                       : "text-gray-500 dark:text-gray-400"
                           }`}
                       >

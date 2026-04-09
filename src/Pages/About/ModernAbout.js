@@ -27,7 +27,7 @@ const cardItem = {
 export default function ModernAbout() {
   return (
     // UPDATED: Main section background
-    <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900 overflow-hidden py-24">
+    <section className="relative min-h-[82vh] flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900 overflow-hidden py-16">
       {/* Animated Background Blobs */}
       {/* UPDATED: Blob colors for dark mode */}
       <motion.div
@@ -56,12 +56,12 @@ export default function ModernAbout() {
 
       {/* Subtle Gradient Overlay */}
       {/* UPDATED: Overlay gradient for dark mode */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-indigo-50 via-transparent to-pink-50 dark:from-indigo-900/30 dark:via-transparent dark:to-pink-900/30 opacity-60 animate-pulse" />
+      <div className="absolute inset-0 bg-gradient-to-tr from-blue-50 via-transparent to-yellow-50 dark:from-blue-900/20 dark:via-transparent dark:to-yellow-900/20 opacity-40 animate-pulse" />
 
       {/* Soft Grid Pattern */}
       <div className="absolute inset-0">
         {/* Pastel colorful grid lines */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(147,197,253,0.45)_1px,transparent_1px),linear-gradient(to_bottom,rgba(244,114,182,0.35)_1px,transparent_1px)] bg-[size:40px_40px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(147,197,253,0.22)_1px,transparent_1px),linear-gradient(to_bottom,rgba(250,204,21,0.2)_1px,transparent_1px),linear-gradient(45deg,rgba(59,130,246,0.1)_1px,transparent_1px),linear-gradient(-45deg,rgba(250,204,21,0.08)_1px,transparent_1px)] bg-[size:40px_40px,40px_40px,80px_80px,80px_80px]" />
 
         {/* UPDATED: Fade overlay for dark mode */}
         <div className="absolute inset-0 bg-gradient-to-b from-white/0 via-white/30 to-white dark:from-transparent dark:to-gray-900" />

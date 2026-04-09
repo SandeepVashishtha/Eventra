@@ -15,7 +15,7 @@ export const Terms = () => {
           <div className="inline-block p-3 rounded-lg bg-indigo-50 dark:bg-gray-800 mb-4">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-10 w-10 text-indigo-600 dark:text-indigo-400"
+              className="h-10 w-10 text-sky-300 dark:text-sky-200"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -28,7 +28,10 @@ export const Terms = () => {
               />
             </svg>
           </div>
-          <h1 className="text-4xl font-bold text-gray-800 dark:text-gray-100 mb-3">
+          <h1
+            className="text-4xl font-bold text-gray-800 dark:text-gray-100 mb-3"
+            style={{ fontFamily: '"Anton", sans-serif' }}
+          >
             Terms of Service
           </h1>
           <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto text-lg">
@@ -46,7 +49,7 @@ export const Terms = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-10 border border-gray-100 dark:border-gray-700">
           <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-lg">
             Welcome to{" "}
-            <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+            <span className="font-semibold text-black dark:text-white">
               Eventra
             </span>
             . By accessing or using our platform, you agree to be bound by the
@@ -66,7 +69,7 @@ export const Terms = () => {
               <a
                 key={num}
                 href={`#section-${num}`}
-                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-sm flex items-center"
+                className="text-black dark:text-white hover:text-zinc-700 dark:hover:text-zinc-300 text-sm flex items-center"
               >
                 <span className="mr-2">{num}.</span>
                 {num === 1 && "Acceptance of Terms"}
@@ -89,7 +92,7 @@ export const Terms = () => {
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                <span className="text-indigo-600 dark:text-indigo-400 font-bold mr-2">
+                <span className="text-black dark:text-white font-bold mr-2">
                   1.
                 </span>
                 Acceptance of Terms
@@ -136,7 +139,7 @@ export const Terms = () => {
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                <span className="text-indigo-600 dark:text-indigo-400 font-bold mr-2">
+                <span className="text-black dark:text-white font-bold mr-2">
                   2.
                 </span>
                 User Responsibilities
@@ -204,7 +207,7 @@ export const Terms = () => {
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                <span className="text-indigo-600 dark:text-indigo-400 font-bold mr-2">
+                <span className="text-black dark:text-white font-bold mr-2">
                   3.
                 </span>
                 Intellectual Property
@@ -254,7 +257,7 @@ export const Terms = () => {
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                <span className="text-indigo-600 dark:text-indigo-400 font-bold mr-2">
+                <span className="text-black dark:text-white font-bold mr-2">
                   4.
                 </span>
                 Limitation of Liability
@@ -321,7 +324,7 @@ export const Terms = () => {
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                <span className="text-indigo-600 dark:text-indigo-400 font-bold mr-2">
+                <span className="text-black dark:text-white font-bold mr-2">
                   5.
                 </span>
                 Changes to Terms
@@ -370,7 +373,7 @@ export const Terms = () => {
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                <span className="text-indigo-600 dark:text-indigo-400 font-bold mr-2">
+                <span className="text-black dark:text-white font-bold mr-2">
                   6.
                 </span>
                 Contact Information
@@ -407,7 +410,7 @@ export const Terms = () => {
                     Through our contact form on the{" "}
                     <a
                       href="/contact"
-                      className="text-indigo-600 dark:text-indigo-400 underline hover:text-indigo-800 dark:hover:text-indigo-300"
+                      className="text-black dark:text-white underline hover:text-zinc-700 dark:hover:text-zinc-300"
                     >
                       Contact Page
                     </a>
