@@ -7,14 +7,10 @@ const HackathonCTA = () => {
 
   // Bubbles data
   const bubbles = [
-    { size: 10, top: "10%", left: "15%", color: "bg-pink-200/30" },
-    { size: 10, top: "30%", left: "80%", color: "bg-blue-200/30" },
-    { size: 10, top: "60%", left: "25%", color: "bg-white/20" },
-    { size: 10, top: "75%", left: "70%", color: "bg-yellow-200/25" },
-    { size: 10, top: "50%", left: "50%", color: "bg-green-200/20" },
-    { size: 10, top: "50%", left: "10%", color: "bg-blue-200/20" },
-    { size: 10, top: "30%", left: "50%", color: "bg-pink-200/20" },
-    { size: 10, top: "60%", left: "80%", color: "bg-yellow-200/20" },
+    { size: 10, top: "10%", left: "15%", color: "bg-pink-200/20" },
+    { size: 10, top: "30%", left: "80%", color: "bg-blue-200/20" },
+    { size: 10, top: "60%", left: "25%", color: "bg-white/12" },
+    { size: 10, top: "75%", left: "70%", color: "bg-yellow-200/16" },
   ];
 
   return (
