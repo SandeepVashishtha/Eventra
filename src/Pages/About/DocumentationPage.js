@@ -483,7 +483,7 @@ npm start`}
         data-aos-offset="50"
       >
         <p className="text-black text-lg font-medium">
-          Built with <span className="text-red-500">❤️</span> by the Eventra
+          Built with <span className="text-black">❤️</span> by the Eventra
           Team.
         </p>
         <p className="mt-2 text-black text-base">

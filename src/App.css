@@ -858,17 +858,18 @@ main {
 }
 
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: linear-gradient(to top,  rgb(1, 1, 85), rgb(112, 60, 119),  rgb(1, 1, 85));
+  background: #ffffff;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: rgb(212, 203, 252);
+  background-color: #000000;
+  border-radius: 6px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(to top, rgb(65, 40, 67) , rgb(236, 232, 236), rgb(50, 26, 52))
+  background-color: #262626;
 }

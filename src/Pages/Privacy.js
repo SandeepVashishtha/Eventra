@@ -53,37 +53,37 @@ export const Privacy = () => {
 
   const policySections = [
     {
-      icon: <FaDatabase className="text-indigo-600 text-3xl" />,
+      icon: <FaDatabase className="text-sky-300 text-3xl" />,
       title: "Information We Collect",
       content:
         "We may collect personal details such as your name, email address, organization details, event information, payment details, and any other information you provide through our platform. As part of our event management services, we may also collect attendee information, ticketing data, and event analytics on behalf of event organizers.",
     },
     {
-      icon: <FaUserShield className="text-indigo-600 text-3xl" />,
+      icon: <FaUserShield className="text-emerald-300 text-3xl" />,
       title: "How We Use Your Information",
       content:
         "The data we collect is used to provide and manage our event management services, process event registrations and ticket purchases, enable event check-ins with QR code technology, generate analytics and reports for event organizers, improve your experience on the platform, provide support and respond to your queries, and send important updates or notifications about events.",
     },
     {
-      icon: <FaLock className="text-indigo-600 text-3xl" />,
+      icon: <FaLock className="text-amber-300 text-3xl" />,
       title: "Data Protection",
       content:
         "We implement enterprise-grade security measures to protect your data, including end-to-end encryption and SOC 2 compliant practices. However, no digital platform can guarantee 100% security. As an open-source platform, our codebase is transparent and available for security review by the community.",
     },
     {
-      icon: <FaShieldAlt className="text-indigo-600 text-3xl" />,
+      icon: <FaShieldAlt className="text-rose-300 text-3xl" />,
       title: "Third-Party Sharing",
       content:
         "We do not share your personal information with third parties without your explicit consent, except as required to provide our services (e.g., payment processors) or as required by law. Event organizers may have access to attendee information for their events, but we require them to comply with applicable privacy laws.",
     },
     {
-      icon: <FaGlobe className="text-indigo-600 text-3xl" />,
+      icon: <FaGlobe className="text-teal-300 text-3xl" />,
       title: "International Data Transfers",
       content:
         "As a global platform serving users in 195+ countries, your information may be processed outside of your country of residence. We ensure appropriate safeguards are in place to protect your data in accordance with this privacy policy.",
     },
     {
-      icon: <FaEnvelope className="text-indigo-600 text-3xl" />,
+      icon: <FaEnvelope className="text-violet-300 text-3xl" />,
       title: "Your Rights & Consent",
       content:
         "You have the right to access, correct, or delete your personal information. You can also object to processing of your personal data, ask us to restrict processing, or request portability of your personal data. By using our website and services, you consent to our Privacy Policy.",
@@ -105,6 +105,7 @@ export const Privacy = () => {
           <motion.h1
             variants={item}
             className="text-4xl font-extrabold text-gray-900 dark:text-gray-100 sm:text-5xl mb-4"
+            style={{ fontFamily: '"Anton", sans-serif' }}
           >
             Privacy Policy
           </motion.h1>
@@ -125,7 +126,7 @@ export const Privacy = () => {
         >
           <p className="text-lg text-gray-800 dark:text-gray-200">
             At{" "}
-            <span className="font-bold text-indigo-600 dark:text-indigo-400">
+            <span className="font-bold text-black dark:text-white">
               Eventra
             </span>
             , we are committed to protecting your personal information and your
@@ -159,7 +160,7 @@ export const Privacy = () => {
                   className="w-full flex items-center justify-between p-8 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 rounded-t-2xl"
                 >
                   <div className="flex items-center">
-                    <div className="flex items-center justify-center w-12 h-12 bg-indigo-100 dark:bg-gray-700 rounded-xl text-indigo-600 dark:text-indigo-400 text-2xl mr-4">
+                    <div className="flex items-center justify-center w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-xl text-black dark:text-white text-2xl mr-4">
                       {section.icon}
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
@@ -168,9 +169,9 @@ export const Privacy = () => {
                   </div>
                   <div className="flex-shrink-0 ml-4">
                     {openSections[index] ? (
-                      <FaChevronUp className="text-indigo-600 dark:text-indigo-400 text-lg" />
+                      <FaChevronUp className="text-black dark:text-white text-lg" />
                     ) : (
-                      <FaChevronDown className="text-indigo-600 dark:text-indigo-400 text-lg" />
+                      <FaChevronDown className="text-black dark:text-white text-lg" />
                     )}
                   </div>
                 </button>
@@ -202,7 +203,7 @@ export const Privacy = () => {
           variants={container}
           initial="hidden"
           animate={controls}
-          className="bg-indigo-50 dark:bg-gray-800 rounded-2xl border border-indigo-100 dark:border-gray-700 p-8 shadow-md"
+          className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 shadow-md"
         >
           <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             Policy Updates
@@ -226,19 +227,19 @@ export const Privacy = () => {
           variants={container}
           initial="hidden"
           animate={controls}
-          className="bg-gray-900 rounded-2xl p-8 text-center relative overflow-hidden shadow-md"
+          className="bg-white rounded-2xl p-8 text-center relative overflow-hidden shadow-md border border-gray-200"
         >
           <div className="relative z-10">
-            <h3 className="text-2xl font-bold text-white mb-4">
+            <h3 className="text-2xl font-bold text-black mb-4">
               Have Questions?
             </h3>
-            <p className="text-indigo-200 mb-6">
+            <p className="text-black mb-6">
               If you have any questions or concerns about this policy, we're
               here to help.
             </p>
             <Link
               to="/contact"
-              className="inline-flex items-center px-6 py-3 rounded-xl font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors duration-300"
+              className="inline-flex items-center px-6 py-3 rounded-xl font-medium text-white bg-black hover:bg-zinc-800 transition-colors duration-300"
             >
               Contact Us
             </Link>

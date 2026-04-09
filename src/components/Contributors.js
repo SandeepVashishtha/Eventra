@@ -169,6 +169,7 @@ const Contributors = () => {
         <motion.h2
           // UPDATED: Title text
           className="text-5xl font-extrabold text-center mb-16 text-gray-800 dark:text-gray-100 tracking-tight"
+          style={{ fontFamily: '"Anton", sans-serif' }}
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
@@ -219,21 +220,21 @@ const Contributors = () => {
                 {/* UPDATED: Name and role text */}
                 <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">{c.name}</h3>
                 <p className="text-black dark:text-white text-sm font-medium mb-3 flex items-center justify-center gap-1">
-                  <FaMedal className="text-yellow-500 animate-bounce" /> {c.role}
+                  <FaMedal className="text-amber-300 animate-bounce" /> {c.role}
                 </p>
                 {/* UPDATED: Contribution Badges */}
                 {i === 0 && (
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300">
+                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/50 text-black dark:text-white">
                     🥇 Top Contributor
                   </span>
                 )}
                 {i === 1 && (
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300">
+                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 dark:bg-gray-600 text-black dark:text-white">
                     🥈 Silver Contributor
                   </span>
                 )}
                 {i === 2 && (
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300">
+                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 dark:bg-orange-900/50 text-black dark:text-white">
                     🥉 Bronze Contributor
                   </span>
                 )}
