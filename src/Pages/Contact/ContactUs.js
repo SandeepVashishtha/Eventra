@@ -161,31 +161,43 @@ const ContactUs = () => {
   }, []);
 
   const validateForm = () => {
-    const newErrors = {};
+  const newErrors = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = "Name is required";
-    }
+  // Name validation
+  if (!formData.name.trim()) {
+    newErrors.name = "Name is required";
+  } else if (formData.name.trim().length < 2) {
+    newErrors.name = "Name must be at least 2 characters";
+  } else if (!/^[A-Za-z\s]+$/.test(formData.name)) {
+    newErrors.name = "Name should contain only letters";
+  }
 
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email";
-    }
+  // Email validation (unchanged)
+  if (!formData.email.trim()) {
+    newErrors.email = "Email is required";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    newErrors.email = "Please enter a valid email";
+  }
 
-    if (!formData.subject.trim()) {
-      newErrors.subject = "Subject is required";
-    }
+  // Subject validation
+  if (!formData.subject.trim()) {
+    newErrors.subject = "Subject is required";
+  } else if (formData.subject.trim().length < 5) {
+    newErrors.subject = "Subject must be at least 5 characters";
+  } else if (!/[a-zA-Z]{2,}/.test(formData.subject)) {
+    newErrors.subject = "Please enter a meaningful subject";
+  }
 
-    if (!formData.message.trim()) {
-      newErrors.message = "Message is required";
-    } else if (formData.message.trim().length < 10) {
-      newErrors.message = "Message should be at least 10 characters";
-    }
+  // Message validation
+  if (!formData.message.trim()) {
+    newErrors.message = "Message is required";
+  } else if (formData.message.trim().length < 10) {
+    newErrors.message = "Message must be at least 10 characters";
+  }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
 
   const handleChange = (e) => {
     const { name, value } = e.target;
