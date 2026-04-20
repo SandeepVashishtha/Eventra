@@ -8,6 +8,7 @@ import { Search, X, Calendar, Trophy, Code, ExternalLink } from "lucide-react";
 import eventsData from "../../Events/eventsMockData.json";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
+import RespawningText from "../../../jhalak/RespawningText";
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -199,7 +200,7 @@ const Hero = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                Discover & Join
+                <RespawningText texts={["Discover & Join", "Innovate & Create", "Learn & Grow"]} />
               </motion.span>
 
               <div className="relative mx-auto mt-2 sm:mt-3 h-14 sm:h-24 md:h-28 lg:h-32 overflow-hidden flex justify-center items-center max-w-full">
