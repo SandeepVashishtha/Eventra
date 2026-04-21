@@ -8,6 +8,7 @@ import Footer from "./components/Layout/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
 import Chatbot from "./components/Chatbot";
+import FluidCursor from "./jhalak/FluidCursor";
 
 // --------------- PAGES
 import Contributors from "./components/Contributors";
@@ -144,6 +145,7 @@ function App() {
             <FeedbackButton />
 
             <Footer />
+            <FluidCursor />
           </div>
         </Router>
       </AuthProvider>
