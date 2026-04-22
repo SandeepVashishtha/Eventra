@@ -29,145 +29,65 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-;
-
-const login = async (email, password) => {
-  const url = API_ENDPOINTS.AUTH.LOGIN;
-
-  // helpers
-  const parseJsonSafe = async (res) => {
-    try { return await res.json(); } catch { return null; }
+  const persistSession = (sessionToken, sessionUser) => {
+    setToken(sessionToken);
+    setUser(sessionUser);
+    localStorage.setItem('token', sessionToken);
+    localStorage.setItem('user', JSON.stringify(sessionUser));
   };
 
-  const extractTokenAndUser = (res, data) => {
-    // token in body
-    let token = data?.token ?? data?.accessToken ?? null;
+  const extractSession = (res, data, fallbackEmail) => {
+    let sessionToken = data?.token ?? data?.accessToken ?? null;
 
-    // or token in header: Authorization: Bearer <jwt>
-    if (!token) {
+    if (!sessionToken) {
       const authHeader = res.headers.get('Authorization') || res.headers.get('authorization');
       if (authHeader && authHeader.startsWith('Bearer ')) {
-        token = authHeader.substring(7);
+        sessionToken = authHeader.substring(7);
       }
     }
 
-    // user in body (common patterns)
-    const rawUser = data?.user ?? data?.data ?? null;
-
-    return { token, rawUser };
-  };
-
-  // Try 1: form-encoded with email/password
-  const attempts = [
-    {
-      desc: 'form-email',
-      init: {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ email, password }).toString(),
-      },
-    },
-    // Try 2: form-encoded with username/password
-    {
-      desc: 'form-username',
-      init: {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ username: email, password }).toString(),
-      },
-    },
-    // Try 3: JSON (if backend actually expects JSON)
-    {
-      desc: 'json',
-      init: {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      },
-    },
-  ];
-
-  let lastError = '';
-
-  for (const attempt of attempts) {
-    const res = await fetch(url, attempt.init);
-    const data = await parseJsonSafe(res);
-
-    if (!res.ok) {
-      // keep the most helpful error text around
-      const reason =
-        (data && (data.message || data.error || JSON.stringify(data))) ||
-        `${res.status} ${res.statusText}`;
-      lastError = `[${attempt.desc}] ${reason}`;
-      continue; // try next shape
-    }
-
-    const { token, rawUser } = extractTokenAndUser(res, data || {});
-    if (!token) {
-      lastError = `[${attempt.desc}] missing token in body or Authorization header`;
-      continue;
-    }
-
-    const userData = {
+    const rawUser = data?.user ?? data?.data ?? data ?? null;
+    const sessionUser = {
       ...(rawUser || {}),
-      roles: (rawUser?.roles) || [],
-      permissions: (rawUser?.permissions) || ["HOST_HACKATHON","CREATE_EVENT"],
-      email: rawUser?.email || email, // best-effort fill
+      firstName: rawUser?.firstName ?? '',
+      lastName: rawUser?.lastName ?? '',
+      email: rawUser?.email ?? fallbackEmail ?? '',
+      username: rawUser?.username ?? fallbackEmail ?? '',
+      role: rawUser?.role ?? rawUser?.roles?.[0] ?? '',
+      roles: rawUser?.roles ?? (rawUser?.role ? [rawUser.role] : []),
+      permissions: rawUser?.permissions ?? [],
     };
 
-    // success
-    setUser(userData);
-    setToken(token);
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userData));
+    return { sessionToken, sessionUser };
+  };
+
+  const setAuthSession = (sessionToken, sessionUser) => {
+    persistSession(sessionToken, sessionUser);
     return true;
+  };
+
+const login = async (usernameOrEmail, password) => {
+  const res = await apiUtils.post(API_ENDPOINTS.AUTH.LOGIN, {
+    usernameOrEmail,
+    password,
+  });
+
+  const data = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    throw new Error(data?.message || data?.error || 'Invalid credentials');
   }
 
-  throw new Error(`Login failed: ${lastError || 'unexpected response'}`);
+  const { sessionToken, sessionUser } = extractSession(res, data || {}, usernameOrEmail);
+
+  if (!sessionToken) {
+    throw new Error('Login failed: token missing from response');
+  }
+
+  persistSession(sessionToken, sessionUser);
+  return true;
 };
 
-  // NEW: Google Sign-In function
-  const signInWithGoogle = async (googleToken) => {
-    try {
-      setLoading(true);
-
-      const res = await fetch(API_ENDPOINTS.AUTH.GOOGLE_LOGIN, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: googleToken }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.message || 'Google login failed');
-      }
-
-      const data = await res.json();
-      const token = data?.token;
-      const rawUser = data?.user;
-
-      if (!token) throw new Error('Token missing from response');
-
-      const userData = {
-        ...(rawUser || {}),
-        roles: rawUser?.roles || [],
-        permissions: rawUser?.permissions || ["HOST_HACKATHON"],
-        email: rawUser?.email,
-      };
-
-      setUser(userData);
-      setToken(token);
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(userData));
-
-      return true;
-    } catch (error) {
-      console.error('Google login error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
 
 
   const logout = () => {
@@ -211,8 +131,8 @@ const value = {
   loading,
   login,
   logout,
-  signInWithGoogle, // ✅ expose new Google login function
-  setUser,   // ✅ expose setUser
+  setAuthSession,
+  setUser,
   isAuthenticated,
   hasRole,
   hasPermission,

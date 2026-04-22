@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { useAuth } from "../../context/AuthContext";
 import GoogleSignInButton from "../GoogleSignInButton";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
 import {User, AtSign} from 'lucide-react'
@@ -38,8 +39,7 @@ const Signup = () => {
     lastName: "",
     email: "",
     password: "",
-    confirm_password: "",
-    role: "USER",
+    confirmPassword: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -52,21 +52,10 @@ const Signup = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordMatchMessage, setPasswordMatchMessage] = useState("");
   const navigate = useNavigate();
+  const { setAuthSession } = useAuth();
 
-  useEffect(() => {
-    const testConnection = async () => {
-      try {
-        const response = await fetch(
-          API_ENDPOINTS.AUTH.REGISTER.replace("/signup", "/health"),
-          { method: "GET", headers: { "Content-Type": "application/json" } }
-        );
-        console.log("Backend connection test:", response.status);
-      } catch (error) {
-        console.error("Backend test failed:", error);
-      }
-    };
-    testConnection();
-  }, []);
+
+
 
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -74,9 +63,9 @@ const Signup = () => {
     const newData = { ...formData, [e.target.name]: e.target.value };
     setFormData(newData);
 
-    if (e.target.name === "confirm_password" || e.target.name === "password") {
+    if (e.target.name === "confirmPassword" || e.target.name === "password") {
         const password = e.target.name === "password" ? e.target.value : newData.password;
-        const confirmPassword = e.target.name === "confirm_password" ? e.target.value : newData.confirm_password;
+      const confirmPassword = e.target.name === "confirmPassword" ? e.target.value : newData.confirmPassword;
         
         if (password && confirmPassword) {
             if (password === confirmPassword) {
@@ -88,7 +77,7 @@ const Signup = () => {
             }
         } else {
              setPasswordMatchMessage("");
-             if (e.target.name === "confirm_password" && e.target.value) {
+         if (e.target.name === "confirmPassword" && e.target.value) {
                 setError("Passwords do not match");
              }
         }
@@ -101,20 +90,20 @@ const Signup = () => {
     if (e.target.name === "firstName") {
       if (!e.target.value.trim())
         setFirstNameError("First name is required");
-      else if (e.target.value.length < 3)
-        setFirstNameError("At least 3 characters");
-      else if (e.target.value.length > 20)
-        setFirstNameError("Less than 20 characters");
+      else if (e.target.value.length < 2)
+        setFirstNameError("At least 2 characters");
+      else if (e.target.value.length > 50)
+        setFirstNameError("Less than 50 characters");
       else setFirstNameError("");
     }
 
     if (e.target.name === "lastName") {
       if (!e.target.value.trim())
         setLastNameError("Last name is required");
-      else if (e.target.value.length < 3)
-        setLastNameError("At least 3 characters");
-      else if (e.target.value.length > 20)
-        setLastNameError("Less than 20 characters");
+      else if (e.target.value.length < 2)
+        setLastNameError("At least 2 characters");
+      else if (e.target.value.length > 50)
+        setLastNameError("Less than 50 characters");
       else setLastNameError("");
     }
 
@@ -132,7 +121,7 @@ const Signup = () => {
       return;
     }
 
-    if (formData.password !== formData.confirm_password) {
+    if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
       return;
     }
@@ -148,21 +137,52 @@ const Signup = () => {
 
     try {
       const response = await apiUtils.post(API_ENDPOINTS.AUTH.REGISTER, {
-        ...formData,
-        role: formData.role || "USER",
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
       });
 
+      const responseText = await response.text();
+      let data = null;
+      try {
+        data = responseText ? JSON.parse(responseText) : null;
+      } catch {
+        data = null;
+      }
+
       if (!response.ok) {
-        const errorData = await response.json();
-        if (errorData.message) setError(errorData.message);
-        else setError(`Registration failed (${response.status})`);
+        const backendMessage = data?.message || data?.error || '';
+        if (backendMessage) {
+          setError(`${backendMessage} (${response.status})`);
+        } else {
+          setError(`Registration failed (${response.status})`);
+        }
         return;
       }
 
-      setSuccess("Account created successfully!");
-      setTimeout(() => navigate("/login"), 2000);
+      const sessionToken = data?.token;
+      const sessionUser = {
+        id: data?.id,
+        firstName: data?.firstName ?? formData.firstName.trim(),
+        lastName: data?.lastName ?? formData.lastName.trim(),
+        email: data?.email ?? formData.email.trim(),
+        username: data?.username ?? formData.email.trim(),
+        role: data?.role ?? "USER",
+        roles: data?.role ? [data.role] : ["USER"],
+        permissions: data?.permissions ?? [],
+      };
+
+      if (!sessionToken) {
+        throw new Error("Token missing from signup response");
+      }
+
+      setAuthSession(sessionToken, sessionUser);
+      setSuccess("Account created successfully! Redirecting to dashboard...");
+      setTimeout(() => navigate("/dashboard", { replace: true }), 1200);
     } catch (err) {
-      setError("Network error. Please try again.");
+      setError(err.message || "Network error. Please try again.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -376,9 +396,9 @@ const Signup = () => {
                   />
                 </svg>
                 <input
-                  name="confirm_password"
+                  name="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"} 
-                  value={formData.confirm_password}
+                  value={formData.confirmPassword}
                   onChange={handleChange}
                   placeholder="Confirm your password"
                  className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"

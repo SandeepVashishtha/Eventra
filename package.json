@@ -46,7 +46,7 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "https://eventra-backend-dgcae3etebbag8ft.centralindia-01.azurewebsites.net",
+  "proxy": "https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net",
   "devDependencies": {
     "@tailwindcss/line-clamp": "^0.4.4",
     "autoprefixer": "^10.4.21",

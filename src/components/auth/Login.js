@@ -1,20 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import GoogleSignInButton from '../GoogleSignInButton';
 import { toast } from 'react-toastify';
 
 const Login = () => {
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState({});
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -24,8 +22,7 @@ const Login = () => {
 
   const validate = () => {
     const newErrors = {};
-    if (!formData.email) newErrors.email = "Email is required";
-    else if (!emailRegex.test(formData.email)) newErrors.email = "Enter a valid email";
+    if (!formData.usernameOrEmail) newErrors.usernameOrEmail = "Email or username is required";
 
     if (!formData.password) newErrors.password = "Password is required";
     else if (formData.password.length < 8)
@@ -44,7 +41,7 @@ const Login = () => {
     if (!validate()) return;
     setLoading(true);
     try {
-      const ok = await login(formData.email, formData.password);
+      const ok = await login(formData.usernameOrEmail, formData.password);
       if (ok) {
         // Show success toast
         toast.success('Login successful! Redirecting to dashboard...');
@@ -56,9 +53,9 @@ const Login = () => {
       }
     } catch (err) {
       console.error("Login error:", err);
-      setError({ general: "Invalid email or password" });
+      setError({ general: err.message || "Invalid email or password" });
       // Show error toast
-      toast.error(' Login failed. Please check your credentials.');
+      toast.error(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
@@ -129,27 +126,27 @@ const Login = () => {
             {/* Email */}
             <div className="space-y-2">
               <label
-                htmlFor="email"
+                htmlFor="usernameOrEmail"
                 className="block text-sm font-semibold text-gray-700 dark:text-gray-300"
               >
-                Email address <sup className='ml-1 text-sm text-red-500'>*</sup>
+                Email or username <sup className='ml-1 text-sm text-red-500'>*</sup>
               </label>
               <div className="relative group">
                 
                 <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
+                  id="usernameOrEmail"
+                  name="usernameOrEmail"
+                  type="text"
+                  value={formData.usernameOrEmail}
                   onChange={handleChange}
                   required
                   // disabled={loading}
-                  placeholder="@ Enter your email address"
+                  placeholder="Enter your email address or username"
                   className="w-full pl-3 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                 />
               </div>
-              {error.email && (
-                <p className="text-red-500 text-sm mt-1">{error.email}</p>
+              {error.usernameOrEmail && (
+                <p className="text-red-500 text-sm mt-1">{error.usernameOrEmail}</p>
               )}
             </div>
 

@@ -11,11 +11,9 @@ const RespawningText = ({ texts = ["Discover & Join"], typingSpeed = 150, deleti
       const fullText = texts[textIndex];
       
       if (!isDeleting) {
-        // Typing
         setCurrentText(fullText.substring(0, currentText.length + 1));
         
         if (currentText === fullText) {
-          // Pause before deleting
           setTimeout(() => setIsDeleting(true), pauseTime);
         }
       } else {
