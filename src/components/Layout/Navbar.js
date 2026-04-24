@@ -1,3 +1,4 @@
+import { useTheme } from '../../context/ThemeContext';
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -26,6 +27,7 @@ import {
 } from "lucide-react";
 
 const Navbar = () => {
+  const { isDarkMode, toggleTheme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -282,7 +284,7 @@ const Navbar = () => {
         data-aos-duration="1000"
         // End AOS Implementation
            className="fixed top-0 left-0 w-full z-40 shadow-sm
-             bg-white border-b border-black/10"
+             bg-white dark:bg-gray-900 border-b border-black/10 dark:border-white/10"
       >
         <div className="w-full flex items-center h-20 px-6 md:px-12 relative">
           {/* Logo on the left */}
@@ -373,6 +375,12 @@ const Navbar = () => {
           {/* Right Group: Auth Controls and Mobile Toggle */}
           <div className="hidden lg:flex items-center ml-auto z-20">
             <div className="flex items-center space-x-2 ml-2">
+              <button 
+                onClick={toggleTheme} 
+                className="p-2 mr-4 rounded-full border border-border bg-card-bg text-text transition-all hover:scale-110 flex items-center justify-center w-10 h-10 shadow-sm"
+              >
+                {isDarkMode ? '☀️' : '🌙'}
+              </button>
               {isAuthenticated() ? (
                 <div className="relative profile-container">
                   <button
@@ -547,6 +555,9 @@ const Navbar = () => {
           </h2>
 
           <div className="flex items-center gap-3">
+            <button onClick={toggleTheme} className="p-2 rounded-full text-text-light bg-gray-100 dark:bg-white/10 hover:bg-gray-200">
+              {isDarkMode ? '☀️' : '🌙'}
+            </button>
             <button
               ref={closeBtnRef}
               onClick={closeAllMenus}

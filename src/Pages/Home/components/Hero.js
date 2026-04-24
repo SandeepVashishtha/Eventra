@@ -159,7 +159,7 @@ const Hero = () => {
   ];
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-l from-sky-50 via-white to-white py-16 sm:py-20 md:py-24">
+    <section className="relative overflow-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 py-16 sm:py-20 md:py-24">
       {/* Floating pastel shapes */}
       {shapes.map((shape, i) => (
         <motion.div
@@ -191,11 +191,11 @@ const Hero = () => {
           <MotionConfig reducedMotion="never">
             {/* Headline */}
             <motion.h1
-              className="mx-auto max-w-[92vw] text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 sm:mb-6 leading-[0.95] sm:leading-tight text-black break-words px-2 sm:px-0"
+              className="mx-auto max-w-[92vw] text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 sm:mb-6 leading-[0.95] sm:leading-tight text-black dark:text-white break-words px-2 sm:px-0"
               style={{ fontFamily: '"Anton", sans-serif' }}
             >
               <motion.span
-                className="block text-black mb-2 md:mb-0"
+                className="block text-black dark:text-white mb-2 md:mb-0"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
@@ -207,7 +207,7 @@ const Hero = () => {
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={index}
-                    className="block mt-2 text-black mb-4 pb-2 whitespace-normal text-center px-1"
+                    className="block mt-2 text-black dark:text-white mb-4 pb-2 whitespace-normal text-center px-1"
                     initial={{ opacity: 0, y: 40 }}
                     animate={{
                       opacity: 1,
@@ -230,7 +230,7 @@ const Hero = () => {
           {/* Subtext */}
           <motion.p
             variants={fadeUp}
-            className="text-sm sm:text-base md:text-lg text-black max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
+            className="text-sm sm:text-base md:text-lg text-black dark:text-gray-300 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
           >
             Connect with developers, learn new skills, and grow your network at
             the best tech events, hackathons, and workshops in your area.
@@ -377,12 +377,12 @@ const Hero = () => {
             <motion.div variants={fadeUp}>
               <Link
                 to="/events"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-100 text-black font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-200"
+                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-100 dark:bg-blue-900 text-black dark:text-white font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-200 dark:hover:bg-blue-800"
               >
                 <span className="relative z-10 flex items-center">
                   Explore Events
                   <svg
-                    className="ml-3 w-5 h-5 text-black transition-transform duration-300 group-hover:translate-x-2"
+                    className="ml-3 w-5 h-5 text-black dark:text-white transition-transform duration-300 group-hover:translate-x-2"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -400,7 +400,7 @@ const Hero = () => {
             <motion.div variants={fadeUp}>
               <Link
                 to="/hackathons"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full border border-yellow-200 bg-yellow-100 text-black font-semibold shadow-sm hover:shadow-md hover:bg-yellow-200 hover:scale-105 transition-all duration-300"
+                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full border border-yellow-200 dark:border-yellow-700 bg-yellow-100 dark:bg-yellow-900 text-black dark:text-white font-semibold shadow-sm hover:shadow-md hover:bg-yellow-200 dark:hover:bg-yellow-800 hover:scale-105 transition-all duration-300"
               >
                 Join Hackathons
               </Link>
@@ -410,11 +410,11 @@ const Hero = () => {
             <motion.div variants={fadeUp}>
               <Link
                 to="/about"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-pink-100 text-black font-semibold shadow-sm transform transition-all duration-300 hover:scale-105 hover:bg-pink-200"
+                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-pink-100 dark:bg-pink-900 text-black dark:text-white font-semibold shadow-sm transform transition-all duration-300 hover:scale-105 hover:bg-pink-200 dark:hover:bg-pink-800"
               >
                 Learn More
                 <svg
-                  className="ml-3 w-5 h-5 text-black transition-transform duration-300 group-hover:translate-x-2"
+                  className="ml-3 w-5 h-5 text-black dark:text-white transition-transform duration-300 group-hover:translate-x-2"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -439,12 +439,12 @@ const Hero = () => {
                 variants={fadeUp}
                 whileHover={{ scale: 1.05 }}
                 transition={{ type: "spring", stiffness: 300 }}
-                className="bg-white/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-lg border border-gray-100"
+                className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-lg border border-gray-100 dark:border-gray-700"
               >
-                <p className="text-3xl font-bold mb-2 text-black">
+                <p className="text-3xl font-bold mb-2 text-black dark:text-white">
                   {stat.value}
                 </p>
-                <p className="text-black text-sm">
+                <p className="text-black dark:text-gray-300 text-sm">
                   {stat.label}
                 </p>
               </motion.div>

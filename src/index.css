@@ -64,9 +64,10 @@ body {
 
   /* Body font size */
   font-size: var(--font-body);
-  background-color: #ffffff;
-  color: #1a1a1a;
-  transition: none;
+}
+body.dark .pastel-grid-bg {
+  background-color: var(--bg-color);
+  opacity: 0.4;
 }
 
 *,
