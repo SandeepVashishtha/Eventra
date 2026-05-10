@@ -1,3 +1,4 @@
+import { useTheme } from '../../context/ThemeContext';
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -26,11 +27,12 @@ import {
   MousePointer
 } from "lucide-react";
 
-const Navbar = ({ cursorEnabled, toggleCursor }) => {
+  const Navbar = ({ cursorEnabled, toggleCursor }) => {
+  const { isDarkMode, toggleTheme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
-  const [showLogoutModal, setShowLogoutModal] = useState(false); // ADD THIS LINE
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const drawerRef = useRef(null);
   const closeBtnRef = useRef(null);
@@ -283,7 +285,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         data-aos-duration="1000"
         // End AOS Implementation
            className="fixed top-0 left-0 w-full z-40 shadow-sm
-             bg-white border-b border-black/10"
+             bg-white dark:bg-gray-900 border-b border-black/10 dark:border-white/10"
       >
         <div className="w-full flex items-center h-20 px-6 md:px-12 relative">
           {/* Logo on the left */}
@@ -567,6 +569,9 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           </h2>
 
           <div className="flex items-center gap-3">
+            <button onClick={toggleTheme} className="p-2 rounded-full text-text-light bg-gray-100 dark:bg-white/10 hover:bg-gray-200">
+              {isDarkMode ? '☀️' : '🌙'}
+            </button>
             <button
               ref={closeBtnRef}
               onClick={closeAllMenus}
