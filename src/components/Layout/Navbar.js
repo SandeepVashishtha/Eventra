@@ -24,14 +24,15 @@ import {
   Book,
   HelpCircle,
   ChevronDown,
+  MousePointer
 } from "lucide-react";
 
-const Navbar = () => {
+  const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const { isDarkMode, toggleTheme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
-  const [showLogoutModal, setShowLogoutModal] = useState(false); // ADD THIS LINE
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const drawerRef = useRef(null);
   const closeBtnRef = useRef(null);
@@ -374,13 +375,26 @@ const Navbar = () => {
 
           {/* Right Group: Auth Controls and Mobile Toggle */}
           <div className="hidden lg:flex items-center ml-auto z-20">
-            <div className="flex items-center space-x-2 ml-2">
-              <button 
-                onClick={toggleTheme} 
-                className="p-2 mr-4 rounded-full border border-border bg-card-bg text-text transition-all hover:scale-110 flex items-center justify-center w-10 h-10 shadow-sm"
-              >
-                {isDarkMode ? '☀️' : '🌙'}
-              </button>
+
+            {/* Cursor Toggle Button */}
+           <button
+  onClick={toggleCursor}
+  className="flex items-center gap-1 px-2 py-1 mr-3
+  text-s font-normal
+  bg-black text-white
+  rounded-md
+  hover:bg-zinc-800
+  transition-all"
+>
+  <MousePointer className="w-4 h-4" />
+
+  {cursorEnabled
+    ? "OFF"
+    : "ON"}
+</button>
+
+              <div className="flex items-center space-x-2 ml-2">
+
               {isAuthenticated() ? (
                 <div className="relative profile-container">
                   <button
@@ -731,6 +745,25 @@ const Navbar = () => {
               </Link>
             </div>
           )}
+          <hr className="my-3" />
+                <button
+                  onClick={toggleCursor}
+                  className="flex items-center gap-3
+                  w-full
+                  px-4 py-2.5
+                  rounded-lg
+                  bg-black
+                  text-white
+                  hover:bg-zinc-800
+                  transition-colors
+                  font-medium"
+                >
+                  <MousePointer className="w-5 h-5" />
+
+                  {cursorEnabled
+                    ? "Turn Cursor OFF"
+                    : "Turn Cursor ON"}
+                </button>
         </div>
       </div>
 
