@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { useState } from "react";
 import "./App.css";
 import ToastProvider from "./components/Toastprovider";
 
@@ -17,11 +18,10 @@ import AboutPage from "./Pages/About/AboutPage";
 import EventsPage from "./Pages/Events/EventsPage";
 import HackathonPage from "./Pages/Hackathons/HackathonPage";
 import ProjectsPage from "./Pages/Projects/ProjectsPage";
-import ContactUs from "./Pages/Contact/ContactUs"; // Import ContactUs page
-import FeedbackPage from "./Pages/Feedback/FeedbackPage"; // Import FeedbackPage
+import ContactUs from "./Pages/Contact/ContactUs";
+import FeedbackPage from "./Pages/Feedback/FeedbackPage";
 import LeaderBoard from "./Pages/Leaderboard/Leaderboard";
 import ContributorGuide from "./Pages/Leaderboard/ContributorGuide";
-
 
 import NotFound from "./components/NotFound";
 import DocumentationPage from "./Pages/About/DocumentationPage";
@@ -52,18 +52,44 @@ import EventRegistration from "./Pages/Events/EventRegistration";
 import { ThemeProvider } from "./context/ThemeContext";
 
 function App() {
+  // Cursor state with persistence
+  const [cursorEnabled, setCursorEnabled] = useState(
+    localStorage.getItem("cursor") !== "off"
+  );
+
+  // Toggle function
+  const toggleCursor = () => {
+    const newValue = !cursorEnabled;
+    setCursorEnabled(newValue);
+
+    localStorage.setItem(
+      "cursor",
+      newValue ? "on" : "off"
+    );
+  };
+
   return (
     <ThemeProvider>
-      <ToastProvider /> {/* MOVED HERE - Outside Router but inside ThemeProvider */}
+      <ToastProvider />
       <AuthProvider>
         <Router>
           <div className="App">
-            <Navbar />
+
+            {/* PASS PROPS TO NAVBAR */}
+            <Navbar
+              cursorEnabled={cursorEnabled}
+              toggleCursor={toggleCursor}
+            />
+
             <main className="min-h-screen bg-white dark:bg-black">
               <Routes>
+
                 <Route path="/" element={<HomePage />} />
                 <Route path="/events" element={<EventsPage />} />
-                <Route path="/events/:eventId/register" element={<EventRegistration />} />
+                <Route
+                  path="/events/:eventId/register"
+                  element={<EventRegistration />}
+                />
                 <Route path="/hackathons" element={<HackathonPage />} />
                 <Route path="/projects" element={<ProjectsPage />} />
                 <Route path="/contributors" element={<Contributors />} />
@@ -79,20 +105,22 @@ function App() {
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/apiDocs" element={<ApiDocs />} />
                 <Route path="/helpcenter" element={<HelpCenter />} />
-                <Route path="/contact" element={<ContactUs />} />{" "}
-                {/* Add ContactUs route */}
-                <Route path="/feedback" element={<FeedbackPage />} />{" "}
-                {/* Add FeedbackPage route */}
-                {/* Protected route for event creation */}
+                <Route path="/contact" element={<ContactUs />} />
+                <Route path="/feedback" element={<FeedbackPage />} />
+
+                {/* Protected Routes */}
+
                 <Route
                   path="/create-event"
                   element={
-                    <ProtectedRoute requiredPermissions={["CREATE_EVENT"]}>
+                    <ProtectedRoute
+                      requiredPermissions={["CREATE_EVENT"]}
+                    >
                       <EventCreation />
                     </ProtectedRoute>
                   }
                 />
-                {/* Dashboard routes */}
+
                 <Route
                   path="/admin"
                   element={
@@ -101,18 +129,28 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-                {/* Conatct page documentation page route */}
-                <Route path="/documentation" element={<DocumentationPage />} />
-                <Route path="/submit-project" element={<SubmitProject />} />
-                {/* Protected route for host hackathon */}
+
+                <Route
+                  path="/documentation"
+                  element={<DocumentationPage />}
+                />
+
+                <Route
+                  path="/submit-project"
+                  element={<SubmitProject />}
+                />
+
                 <Route
                   path="/host-hackathon"
                   element={
-                    <ProtectedRoute requiredPermissions={["HOST_HACKATHON"]}>
+                    <ProtectedRoute
+                      requiredPermissions={["HOST_HACKATHON"]}
+                    >
                       <HostHackathon />
                     </ProtectedRoute>
                   }
                 />
+
                 <Route
                   path="/dashboard"
                   element={
@@ -121,6 +159,7 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+
                 <Route
                   path="/profile"
                   element={
@@ -129,23 +168,35 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-                {/* Auth routes */}
+
+                {/* Auth Routes */}
+
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
-                <Route path="/unauthorized" element={<Unauthorized />} />
-                <Route path="/password-reset" element={<PasswordReset />} />
+                <Route
+                  path="/unauthorized"
+                  element={<Unauthorized />}
+                />
+                <Route
+                  path="/password-reset"
+                  element={<PasswordReset />}
+                />
+
                 <Route path="/*" element={<NotFound />} />
+
               </Routes>
             </main>
-            
+
             <ScrollToTop />
             <Chatbot />
 
-            {/* Global floating Feedback button */}
             <FeedbackButton />
 
             <Footer />
-            <FluidCursor />
+
+            {/* CONDITIONAL CURSOR */}
+            {cursorEnabled && <FluidCursor />}
+
           </div>
         </Router>
       </AuthProvider>
