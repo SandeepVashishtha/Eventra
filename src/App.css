@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400..700&display=swap');
+/* Fix: Removed 'Dancing Script' decorative font import — Issue #828 */
+/* Only Inter (from index.css) is used for professional, consistent typography */
 
 main {
   position: relative;
@@ -43,7 +44,8 @@ main {
 }
 
 .section-header h1 {
-  font-size: 3rem;
+  /* Fix: replaced hardcoded 3rem with CSS variable for consistency */
+  font-size: var(--font-h1);
   margin-bottom: 1rem;
   background: linear-gradient(45deg, #fff, #f0f0f0);
   -webkit-background-clip: text;
@@ -51,7 +53,8 @@ main {
 }
 
 .section-header p {
-  font-size: 1.2rem;
+  /* Fix: replaced hardcoded 1.2rem with CSS variable */
+  font-size: var(--font-h5);
   opacity: 0.9;
 }
 
@@ -80,6 +83,8 @@ main {
   cursor: pointer;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
+  /* Fix: standardized button font size */
+  font-size: var(--font-body);
 }
 
 .filter-controls button:hover,
@@ -148,7 +153,8 @@ main {
 .status-badge {
   padding: 0.25rem 0.75rem;
   border-radius: 15px;
-  font-size: 0.8rem;
+  /* Fix: replaced hardcoded 0.8rem with CSS variable reference */
+  font-size: var(--font-h6);
   font-weight: bold;
   text-transform: uppercase;
 }
@@ -175,7 +181,8 @@ main {
 }
 
 .event-header h3 {
-  font-size: 1.5rem;
+  /* Fix: replaced hardcoded 1.5rem with CSS variable */
+  font-size: var(--font-h3);
   margin: 0;
 }
 
@@ -183,7 +190,7 @@ main {
   background: rgba(255, 255, 255, 0.2);
   padding: 0.25rem 0.75rem;
   border-radius: 15px;
-  font-size: 0.8rem;
+  font-size: var(--font-h6);
   text-transform: capitalize;
 }
 
@@ -205,7 +212,7 @@ main {
 }
 
 .detail .icon {
-  font-size: 1rem;
+  font-size: var(--font-body);
 }
 
 .event-tags {
@@ -219,7 +226,7 @@ main {
   background: rgba(255, 255, 255, 0.2);
   padding: 0.25rem 0.75rem;
   border-radius: 15px;
-  font-size: 0.8rem;
+  font-size: var(--font-h6);
 }
 
 .event-actions {
@@ -241,45 +248,40 @@ main {
   text-decoration: none;
   display: inline-block;
   text-align: center;
+  /* Fix: standardized button font size */
+  font-size: var(--font-body);
 }
 
 .btn-primary {
   background: linear-gradient(45deg, #ff6b6b, #efb399);
   color: white;
-  /* box-shadow: 0 4px 15px rgba(255, 107, 107, 0.6); soft red shadow */
   transition: box-shadow 0.3s ease;
 }
 
 .btn-primary:hover {
-  box-shadow: 0 6px 25px rgba(255, 107, 107, 0.8); /* stronger shadow on hover */
+  box-shadow: 0 6px 25px rgba(255, 107, 107, 0.8);
 }
-
 
 .btn-secondary {
   background: linear-gradient(45deg, #47a1fb, #a7d7fc);
   color: white;
-   /* box-shadow: 0 10px 20px rgba(9, 132, 227, 0.4); */
 }
 
 .btn-secondary:hover {
   transform: translateY(-2px);
- 
 }
 
 .btn-outline {
   background: rgb(120, 120, 174);
   border: 2px solid rgba(255, 255, 255, 0.5);
   color: rgb(227, 227, 227);
-  /* box-shadow: 0 3px 8px rgba(122, 122, 175, 0.6); subtle purple shadow */
   transition: all 0.3s ease;
 }
 
 .btn-outline:hover {
   background: rgb(79, 79, 236);
   transform: translateY(-2px);
-  /* box-shadow: 0 6px 20px rgba(122, 122, 175, 0.8); stronger shadow on hover */
 }
-
 
 .no-events {
   text-align: center;
@@ -311,6 +313,8 @@ main {
   cursor: pointer;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
+  /* Fix: standardized font size */
+  font-size: var(--font-body);
 }
 
 .hackathon-tabs button:hover {
@@ -391,7 +395,8 @@ main {
 }
 
 .hackathon-title {
-  font-size: 1.8rem;
+  /* Fix: replaced hardcoded 1.8rem with CSS variable */
+  font-size: var(--font-h3);
   margin-bottom: 1rem;
 }
 
@@ -409,6 +414,8 @@ main {
   display: flex;
   justify-content: space-between;
   margin-bottom: 0.5rem;
+  /* Fix: standardized meta text size */
+  font-size: var(--font-body);
 }
 
 .meta-item .label {
@@ -418,7 +425,7 @@ main {
 .difficulty {
   padding: 0.25rem 0.75rem;
   border-radius: 15px;
-  font-size: 0.8rem;
+  font-size: var(--font-h6);
   font-weight: bold;
 }
 
@@ -453,13 +460,15 @@ main {
 
 .stat-number {
   display: block;
-  font-size: 1.5rem;
+  /* Fix: replaced hardcoded 1.5rem with CSS variable */
+  font-size: var(--font-h3);
   font-weight: bold;
   color: #4ade80;
 }
 
 .stat-label {
-  font-size: 0.8rem;
+  /* Fix: replaced hardcoded 0.8rem with CSS variable */
+  font-size: var(--font-h6);
   opacity: 0.8;
 }
 
@@ -472,7 +481,8 @@ main {
 }
 
 .time-value {
-  font-size: 1.2rem;
+  /* Fix: replaced hardcoded 1.2rem with CSS variable */
+  font-size: var(--font-h5);
   font-weight: bold;
   color: #fbbf24;
 }
@@ -498,6 +508,7 @@ main {
   display: block;
   margin-bottom: 0.5rem;
   opacity: 0.8;
+  font-size: var(--font-body);
 }
 
 .tech-tags {
@@ -510,7 +521,7 @@ main {
   background: rgba(255, 255, 255, 0.2);
   padding: 0.25rem 0.75rem;
   border-radius: 15px;
-  font-size: 0.8rem;
+  font-size: var(--font-h6);
 }
 
 .hackathon-rules {
@@ -528,6 +539,7 @@ main {
 
 .hackathon-rules li {
   margin-bottom: 0.25rem;
+  font-size: var(--font-body);
 }
 
 .hackathon-actions {
@@ -552,12 +564,14 @@ main {
 
 .cta-card h3 {
   margin-bottom: 1rem;
-  font-size: 1.8rem;
+  /* Fix: replaced hardcoded 1.8rem with CSS variable */
+  font-size: var(--font-h3);
 }
 
 .cta-card p {
   margin-bottom: 1.5rem;
   opacity: 0.9;
+  font-size: var(--font-body);
 }
 
 /* Project Gallery Styles */
@@ -582,6 +596,7 @@ main {
   align-items: center;
   gap: 0.5rem;
   color: white;
+  font-size: var(--font-body);
 }
 
 .filter-select,
@@ -592,6 +607,7 @@ main {
   color: white;
   border-radius: 15px;
   backdrop-filter: blur(10px);
+  font-size: var(--font-body);
 }
 
 .filter-select option,
@@ -649,7 +665,8 @@ main {
 }
 
 .project-header h3 {
-  font-size: 1.5rem;
+  /* Fix: replaced hardcoded 1.5rem with CSS variable */
+  font-size: var(--font-h3);
   margin: 0;
 }
 
@@ -662,12 +679,14 @@ main {
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  font-size: var(--font-body);
 }
 
 .project-description {
   margin-bottom: 1rem;
   opacity: 0.9;
   line-height: 1.6;
+  font-size: var(--font-body);
 }
 
 .project-meta {
@@ -678,6 +697,7 @@ main {
 .project-meta .category,
 .project-meta .difficulty {
   margin-bottom: 0.5rem;
+  font-size: var(--font-body);
 }
 
 .author-name {
@@ -689,13 +709,13 @@ main {
   background: rgba(255, 255, 255, 0.2);
   padding: 0.25rem 0.75rem;
   border-radius: 15px;
-  font-size: 0.8rem;
+  font-size: var(--font-h6);
 }
 
 .difficulty-badge {
   padding: 0.25rem 0.75rem;
   border-radius: 15px;
-  font-size: 0.8rem;
+  font-size: var(--font-h6);
   font-weight: bold;
 }
 
@@ -722,6 +742,7 @@ main {
   display: block;
   margin-bottom: 0.5rem;
   opacity: 0.8;
+  font-size: var(--font-body);
 }
 
 .contributor-list {
@@ -734,7 +755,7 @@ main {
   background: rgba(255, 255, 255, 0.2);
   padding: 0.25rem 0.75rem;
   border-radius: 15px;
-  font-size: 0.8rem;
+  font-size: var(--font-h6);
 }
 
 .contributor.main {
@@ -752,7 +773,8 @@ main {
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.25rem;
-  font-size: 0.9rem;
+  /* Fix: replaced hardcoded 0.9rem with CSS variable */
+  font-size: var(--font-body);
   opacity: 0.8;
 }
 
@@ -779,41 +801,39 @@ main {
   .projects-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .events-controls,
   .gallery-controls {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .filter-controls,
   .view-controls {
     justify-content: center;
   }
-  
+
   .podium-section {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .podium-place {
     order: unset !important;
   }
-  
-  .section-header h1 {
-    font-size: 2rem;
-  }
-  
+
+  /* Fix: Removed redundant hardcoded override — index.css CSS variables handle mobile sizes */
+
   .hackathon-card,
   .project-card,
   .contributor-card {
     padding: 1rem;
   }
-  
+
   .live-stats {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .achievement-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -826,50 +846,35 @@ main {
   .contributors-list {
     grid-template-columns: 1fr;
   }
-  
+
   .filter-controls,
   .view-controls,
   .hackathon-tabs {
     flex-direction: column;
     width: 100%;
   }
-  
+
   .filter-controls button,
   .view-controls button,
   .hackathon-tabs button {
     width: 100%;
   }
-  
+
   .live-stats {
     grid-template-columns: 1fr;
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .achievement-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .cta-actions {
     flex-direction: column;
   }
 }
 
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #ffffff;
-}
-
-::-webkit-scrollbar-thumb {
-  background-color: #000000;
-  border-radius: 6px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background-color: #262626;
-}
+/* Fix: Removed duplicate scrollbar styles — already defined in index.css */
