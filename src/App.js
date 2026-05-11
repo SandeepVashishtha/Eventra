@@ -40,6 +40,7 @@ import PasswordReset from "./components/auth/PasswordReset";
 // --------------- DASHBOARD PAGES
 import Dashboard from "./components/Dashboard";
 import AdminDashboard from "./components/admin/AdminDashboard";
+import EventAnalytics from "./Pages/Analytics/EventAnalytics";
 import EditProfile from "./components/user/EditProfile";
 import HomePage from "./Pages/Home/HomePage";
 import Terms from "./Pages/Terms";
@@ -156,6 +157,15 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/analytics"
+                  element={
+                    <ProtectedRoute requiredRoles={["ADMIN", "EVENT_MANAGER"]}>
+                      <EventAnalytics />
                     </ProtectedRoute>
                   }
                 />

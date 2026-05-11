@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS, apiUtils } from '../../config/api';
-import ConfirmationModal from '../common/ConfirmationModal'; // ADD THIS IMPORT
+import ConfirmationModal from '../common/ConfirmationModal';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -46,7 +46,7 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       // Fetch users and events data
       const usersResponse = await apiUtils.get(API_ENDPOINTS.ADMIN.USERS, token);
       const eventsResponse = await apiUtils.get(API_ENDPOINTS.ADMIN.EVENTS, token);
@@ -91,6 +91,7 @@ const AdminDashboard = () => {
         <button className={activeTab === 'overview' ? 'active' : ''} onClick={() => setActiveTab('overview')}>Overview</button>
         <button className={activeTab === 'events' ? 'active' : ''} onClick={() => setActiveTab('events')}>Events</button>
         <button className={activeTab === 'users' ? 'active' : ''} onClick={() => setActiveTab('users')}>Users</button>
+        <button className={activeTab === 'analytics' ? 'active' : ''} onClick={() => setActiveTab('analytics')}>📊 Analytics</button>
       </div>
 
       {error && <div className="error-message">{error}</div>}
@@ -120,7 +121,7 @@ const AdminDashboard = () => {
             <h2>Event Management</h2>
             <div className="action-buttons">
               {hasPermission('CREATE_EVENT') && (
-                <button className="action-btn create-event"  onClick={() => navigate("/create-event")}>
+                <button className="action-btn create-event" onClick={() => navigate("/create-event")}>
                   + New Event
                 </button>
               )}
@@ -197,7 +198,25 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* ADD THIS MODAL AT THE BOTTOM */}
+      {activeTab === 'analytics' && (
+        <div className="dashboard-content" style={{ textAlign: 'center', padding: '3rem 2rem' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📊</div>
+          <h2 style={{ marginBottom: '0.75rem' }}>Event Analytics Dashboard</h2>
+          <p style={{ color: '#6b7280', marginBottom: '2rem', maxWidth: 480, margin: '0 auto 2rem' }}>
+            Deep-dive into attendee trends, fill rates, event type breakdown, and AI-powered insights — all in one place.
+          </p>
+          <button
+            id="admin-open-analytics-btn"
+            className="action-btn view-analytics"
+            style={{ padding: '0.85rem 2rem', fontSize: '1rem', borderRadius: 8, cursor: 'pointer', border: 'none', color: '#fff' }}
+            onClick={() => navigate('/analytics')}
+          >
+            Open Analytics Dashboard →
+          </button>
+        </div>
+      )}
+
+      {/* Logout confirmation modal */}
       <ConfirmationModal
         isOpen={showLogoutModal}
         onClose={handleCancelLogout}
