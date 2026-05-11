@@ -46,7 +46,10 @@
   --fw-extrabold: 800;
 }
 
-body.dark {
+/* Fix #599: Changed from body.dark to .dark
+   ThemeToggleButton.js applies the dark class to document.documentElement (html),
+   not to body. Using body.dark meant these variables never activated in dark mode. */
+.dark {
   --bg-color: #121212;
   --text-color: #e0e0e0;
   --text-color-light: #a0a0a0;
@@ -79,7 +82,7 @@ body {
   font-weight: var(--fw-regular);
 }
 
-body.dark .pastel-grid-bg {
+.dark .pastel-grid-bg {
   background-color: var(--bg-color);
   opacity: 0.4;
 }
