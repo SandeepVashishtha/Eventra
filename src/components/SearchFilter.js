@@ -250,13 +250,41 @@ const SearchFilter = () => {
 
       {filteredEvents.length === 0 && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="no-results"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="no-results-container flex flex-col items-center justify-center py-20 px-6 text-center rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-900/30 my-10 shadow-sm backdrop-blur-sm"
         >
-          <div className="no-results-icon">😞</div>
-          <h3>No events found</h3>
-          <p>Try adjusting your search criteria</p>
+          <motion.div 
+            initial={{ y: 10 }}
+            animate={{ y: 0 }}
+            transition={{ repeat: Infinity, repeatType: "reverse", duration: 2 }}
+            className="no-results-icon text-7xl mb-6 filter grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all duration-300 transform hover:scale-110"
+          >
+            🔍
+          </motion.div>
+          <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-3 tracking-tight">No events found</h3>
+          <p className="text-lg text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-8 leading-relaxed">
+            We couldn't find any events matching {searchTerm ? <span className="font-semibold text-indigo-500 dark:text-indigo-400">"{searchTerm}"</span> : 'your selected filters'}. Try using different keywords or tweaking your category and location.
+          </p>
+          <button 
+            onClick={() => {
+              setSearchTerm('');
+              setSelectedCategory('all');
+              setSelectedLocation('all');
+              setDateFilter('all');
+              setPriceFilter('all');
+            }}
+            className="clear-filters-btn group relative inline-flex items-center justify-center px-8 py-3.5 text-base font-semibold text-white transition-all duration-300 bg-indigo-600 border border-transparent rounded-full hover:bg-indigo-700 hover:shadow-[0_0_20px_rgba(79,70,229,0.4)] hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 dark:focus:ring-offset-black overflow-hidden"
+          >
+            <span className="absolute inset-0 w-full h-full -mt-1 rounded-lg opacity-30 bg-gradient-to-b from-transparent via-transparent to-black"></span>
+            <span className="relative flex items-center gap-2">
+              <svg className="w-5 h-5 transition-transform group-hover:-rotate-180 duration-700 ease-in-out" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Clear All Filters
+            </span>
+          </button>
         </motion.div>
       )}
     </div>
