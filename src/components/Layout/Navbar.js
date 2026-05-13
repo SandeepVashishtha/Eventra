@@ -379,7 +379,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               {isDarkMode ? '☀️' : '🌙'}
             </button>
 
-            {/* Theme Toggle Button */}
+            {/* Cursor Toggle Button */}
             <button
               onClick={toggleCursor}
               className="flex items-center gap-1 px-2 py-1 mr-3
