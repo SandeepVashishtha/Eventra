@@ -48,6 +48,7 @@ import ApiDocs from "./Pages/ApiDocs";
 import HelpCenter from "./Pages/HelpCenter";
 import FAQPage from "./Pages/FAQ/FAQPage";
 import EventRegistration from "./Pages/Events/EventRegistration";
+import SettingsPage from "./Pages/Settings/SettingsPage";
 
 import { ThemeProvider } from "./context/ThemeContext";
 
@@ -107,6 +108,7 @@ function App() {
                 <Route path="/helpcenter" element={<HelpCenter />} />
                 <Route path="/contact" element={<ContactUs />} />
                 <Route path="/feedback" element={<FeedbackPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
 
                 {/* Protected Routes */}
 
