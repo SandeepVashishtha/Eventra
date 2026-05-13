@@ -7,24 +7,20 @@ const SkeletonBlock = ({ className = "" }) => (
 
 export const EventCardSkeleton = () => (
   <div className="group relative bg-white dark:bg-gray-900 rounded-3xl shadow-xl flex flex-col overflow-hidden">
-    {/* Header */}
     <div className="flex items-center px-8 py-6 gap-4 border-b border-gray-200/60 dark:border-gray-700/50">
       <SkeletonBlock className="w-12 h-12 rounded-2xl" />
       <SkeletonBlock className="h-6 flex-1" />
       <SkeletonBlock className="h-6 w-24 rounded-full" />
     </div>
 
-    {/* Image */}
     <SkeletonBlock className="h-64 w-full" />
 
-    {/* Description */}
     <div className="px-8 py-6 border-b border-gray-200/60 dark:border-gray-700/50">
       <SkeletonBlock className="h-4 w-full mb-2" />
       <SkeletonBlock className="h-4 w-5/6 mb-2" />
       <SkeletonBlock className="h-4 w-2/3" />
     </div>
 
-    {/* Info Grid */}
     <div className="px-8 py-6 grid grid-cols-2 gap-6">
       {[...Array(4)].map((_, i) => (
         <div key={i} className="flex items-center gap-3">
@@ -34,7 +30,6 @@ export const EventCardSkeleton = () => (
       ))}
     </div>
 
-    {/* CTA Buttons */}
     <div className="px-8 py-6 flex gap-4">
       <SkeletonBlock className="h-12 flex-1 rounded-2xl" />
       <SkeletonBlock className="h-12 flex-1 rounded-2xl" />
@@ -45,7 +40,6 @@ export const EventCardSkeleton = () => (
 export const HackathonCardSkeleton = () => (
   <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-blue-200 dark:border-gray-700 overflow-hidden">
     <div className="p-6 flex flex-col gap-5">
-      {/* Status, Difficulty, Prize */}
       <div className="flex justify-between items-center">
         <div className="flex gap-2">
           <SkeletonBlock className="h-6 w-20 rounded-full" />
@@ -56,7 +50,6 @@ export const HackathonCardSkeleton = () => (
 
       <SkeletonBlock className="h-px w-full" />
 
-      {/* Title & Description */}
       <div>
         <SkeletonBlock className="h-6 w-3/4 mb-2" />
         <SkeletonBlock className="h-4 w-full mb-1" />
@@ -65,7 +58,6 @@ export const HackathonCardSkeleton = () => (
 
       <SkeletonBlock className="h-px w-full" />
 
-      {/* Organizer */}
       <div className="flex items-center gap-2">
         <SkeletonBlock className="w-4 h-4 rounded" />
         <SkeletonBlock className="h-4 w-32" />
@@ -73,7 +65,6 @@ export const HackathonCardSkeleton = () => (
 
       <SkeletonBlock className="h-px w-full" />
 
-      {/* Date & Location */}
       <div className="flex flex-col gap-3">
         {[...Array(3)].map((_, i) => (
           <div key={i} className="flex items-center gap-2">
@@ -85,7 +76,6 @@ export const HackathonCardSkeleton = () => (
 
       <SkeletonBlock className="h-px w-full" />
 
-      {/* Tech Stack */}
       <div>
         <SkeletonBlock className="h-4 w-24 mb-2" />
         <div className="flex flex-wrap gap-2">
@@ -97,7 +87,6 @@ export const HackathonCardSkeleton = () => (
 
       <SkeletonBlock className="h-px w-full" />
 
-      {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         {[...Array(3)].map((_, i) => (
           <div key={i} className="text-center">
@@ -110,7 +99,6 @@ export const HackathonCardSkeleton = () => (
 
       <SkeletonBlock className="h-px w-full" />
 
-      {/* Winner */}
       <div className="flex items-center gap-2 p-3 rounded-lg">
         <SkeletonBlock className="w-5 h-5 rounded" />
         <SkeletonBlock className="h-4 w-20" />
@@ -119,7 +107,6 @@ export const HackathonCardSkeleton = () => (
 
       <SkeletonBlock className="h-px w-full" />
 
-      {/* Buttons */}
       <div className="grid grid-cols-2 gap-3">
         <SkeletonBlock className="h-10 rounded-lg" />
         <SkeletonBlock className="h-10 rounded-lg" />
@@ -130,30 +117,25 @@ export const HackathonCardSkeleton = () => (
 
 export const ProjectCardSkeleton = () => (
   <div className="bg-white dark:bg-indigo-950 rounded-xl shadow-md border border-blue-200 dark:border-gray-700 overflow-hidden flex flex-col">
-    {/* Header */}
     <div className="flex items-center justify-between px-5 py-4 border-b border-gray-300 dark:border-gray-700">
       <SkeletonBlock className="w-10 h-10 rounded-full" />
       <SkeletonBlock className="h-5 flex-1 mx-3" />
       <SkeletonBlock className="h-5 w-16 rounded-full" />
     </div>
 
-    {/* Image */}
     <SkeletonBlock className="w-full aspect-[16/9]" />
 
-    {/* Description */}
     <div className="px-5 pt-4 pb-6 border-b border-gray-300 dark:border-gray-700">
       <SkeletonBlock className="h-4 w-full mb-2" />
       <SkeletonBlock className="h-4 w-5/6 mb-2" />
       <SkeletonBlock className="h-4 w-3/4" />
     </div>
 
-    {/* Category & Difficulty */}
     <div className="px-5 py-3 flex gap-2 border-b border-gray-300 dark:border-gray-700">
       <SkeletonBlock className="h-6 w-20 rounded-full" />
       <SkeletonBlock className="h-6 w-24 rounded-full" />
     </div>
 
-    {/* Author + Stats */}
     <div className="px-5 py-4 flex justify-between items-center border-b border-gray-300 dark:border-gray-700">
       <div className="flex items-center gap-3">
         <SkeletonBlock className="w-8 h-8 rounded-full" />
@@ -166,14 +148,12 @@ export const ProjectCardSkeleton = () => (
       </div>
     </div>
 
-    {/* Tech Stack */}
     <div className="px-5 py-4 flex flex-wrap gap-2 border-b border-gray-300 dark:border-gray-700">
       {[...Array(4)].map((_, i) => (
         <SkeletonBlock key={i} className="h-6 w-16 rounded-full" />
       ))}
     </div>
 
-    {/* Buttons */}
     <div className="px-5 py-4 flex gap-3 mt-auto">
       <SkeletonBlock className="h-10 flex-1 rounded-lg" />
       <SkeletonBlock className="h-10 flex-1 rounded-lg" />

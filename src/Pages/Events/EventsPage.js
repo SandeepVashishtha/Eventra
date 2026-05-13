@@ -43,17 +43,10 @@ const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
   );
 };
 
-// -----------------------------
-// Main Events Page Component
-// -----------------------------
 const EventsPage = () => {
-  // tate to store all events (raw data from mock file)
   const [events, setEvents] = useState([]);
-  // State for filter type (all, upcoming, past, conference, workshop)
   const [filterType, setFilterType] = useState("all");
-  // State for switching between grid view and list view
   const [viewMode, setViewMode] = useState("grid");
-  // State for storing user’s search query (from search bar)
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [sortType, setSortType] = useState("Newest");
@@ -71,12 +64,9 @@ const EventsPage = () => {
   // Fuse.js setup
   const fuse = new Fuse(events, {
     keys: ["title", "description", "location", "tags", "type"],
-    threshold: 0.35, // adjust for fuzziness
+    threshold: 0.35,
   });
 
-  // -----------------------------
-  // Search handler function
-  // -----------------------------
   const handleSearch = (query = "") => {
     setSearchQuery(query);
 
@@ -85,7 +75,6 @@ const EventsPage = () => {
       results = fuse.search(query).map((res) => res.item);
     }
 
-    // Apply filterType after fuzzy results
     const final = results.filter((event) => {
       return (
         filterType === "all" ||
@@ -98,12 +87,10 @@ const EventsPage = () => {
     setFilteredEvents(final);
   };
 
-  // Recalculate when filterType or events change
   useEffect(() => {
     handleSearch(searchQuery);
   }, [events, filterType]);
 
-  // Sort handler
   const handleSortChange = (type) => {
     setSortType(type);
     let sorted = [...filteredEvents];
@@ -115,7 +102,6 @@ const EventsPage = () => {
     setFilteredEvents(sorted);
   };
 
-  // Ensure sorting is applied when filter/search changes
   useEffect(() => {
     handleSortChange(sortType);
     // eslint-disable-next-line
@@ -125,13 +111,8 @@ const EventsPage = () => {
     cardSectionRef.current?.scrollIntoView({ behaviour: "smooth" });
   };
 
-  // -----------------------------
-  // JSX Render
-  // -----------------------------
   return (
-    // UPDATED: Main page background
     <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 overflow-x-hidden">
-      {/* Hero section will be updated in the next step */}
       <EventHero
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -140,16 +121,13 @@ const EventsPage = () => {
         scrollToCard={scrollToCard}
       />
 
-      {/* Main content wrapper */}
       <div
         ref={cardSectionRef}
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12"
       >
-        {/* Filters + Sort + Toggle View Section */}
         <div
           className="mb-8 sm:mb-10 flex flex-col gap-4"
         >
-          {/* Filter Buttons */}
           <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center sm:justify-start">
             {[
               { key: "all", label: "All" },
@@ -189,7 +167,6 @@ const EventsPage = () => {
               />
             </div>
 
-            {/* Toggle View Buttons (Grid / List) */}
             <div
               className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm"
             >
@@ -223,8 +200,6 @@ const EventsPage = () => {
 
         {renderCardSection(isLoading, filteredEvents, viewMode, filterType)}
       </div>
-
-      {/* These components will be updated in the next steps */}
 
       <EventCTA />
 
