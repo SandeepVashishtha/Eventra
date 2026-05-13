@@ -27,7 +27,7 @@ import {
   MousePointer
 } from "lucide-react";
 
-  const Navbar = ({ cursorEnabled, toggleCursor }) => {
+const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const { isDarkMode, toggleTheme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -269,11 +269,10 @@ import {
   return (
     <>
       <div
-        className={`fixed inset-0 bg-black/60 z-30 transition-opacity duration-300 ${
-          isMobileMenuOpen || showProfileDropdown || openDropdown || showLogoutModal
-            ? "opacity-100"
-            : "opacity-0 pointer-events-none"
-        }`}
+        className={`fixed inset-0 bg-black/60 z-30 transition-opacity duration-300 ${isMobileMenuOpen || showProfileDropdown || openDropdown || showLogoutModal
+          ? "opacity-100"
+          : "opacity-0 pointer-events-none"
+          }`}
         onClick={closeAllMenus}
       />
 
@@ -284,7 +283,7 @@ import {
         data-aos-once="true"
         data-aos-duration="1000"
         // End AOS Implementation
-           className="fixed top-0 left-0 w-full z-40 shadow-sm
+        className="fixed top-0 left-0 w-full z-40 shadow-sm
              bg-white dark:bg-gray-900 border-b border-black/10 dark:border-white/10"
       >
         <div className="w-full flex items-center h-20 px-6 md:px-12 relative">
@@ -314,17 +313,15 @@ import {
                           openDropdown === item.name ? null : item.name
                         );
                       }}
-                      className={`flex items-center gap-1 text-base font-medium transition-colors ${
-                        isActive || openDropdown === item.name
-                          ? "text-black dark:text-white"
-                          : "text-black/70 hover:text-black dark:text-white/70 dark:hover:text-white"
-                      }`}
+                      className={`flex items-center gap-1 text-base font-medium transition-colors ${isActive || openDropdown === item.name
+                        ? "text-black dark:text-white"
+                        : "text-black/70 hover:text-black dark:text-white/70 dark:hover:text-white"
+                        }`}
                     >
                       {item.name}
                       <ChevronDown
-                        className={`w-4 h-4 transition-transform duration-200 ${
-                          openDropdown === item.name ? "rotate-180" : ""
-                        }`}
+                        className={`w-4 h-4 transition-transform duration-200 ${openDropdown === item.name ? "rotate-180" : ""
+                          }`}
                       />
                     </button>
                     {openDropdown === item.name && (
@@ -339,11 +336,10 @@ import {
                             key={sub.name}
                             to={sub.href}
                             onClick={() => setOpenDropdown(null)}
-                            className={`group flex items-center gap-3 w-full px-3 py-2 text-base font-medium rounded-md transition-colors ${
-                              location.pathname === sub.href
-                                ? "bg-black/10 dark:bg-white/15 text-black dark:text-white"
-                                : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
-                            }`}
+                            className={`group flex items-center gap-3 w-full px-3 py-2 text-base font-medium rounded-md transition-colors ${location.pathname === sub.href
+                              ? "bg-black/10 dark:bg-white/15 text-black dark:text-white"
+                              : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
+                              }`}
                           >
                             {React.cloneElement(sub.icon, {
                               className:
@@ -361,11 +357,10 @@ import {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`text-base font-medium transition-colors ${
-                    isActive
-                      ? "text-black dark:text-white"
-                      : "text-black/70 hover:text-black dark:text-white/70 dark:hover:text-white"
-                  }`}
+                  className={`text-base font-medium transition-colors ${isActive
+                    ? "text-black dark:text-white"
+                    : "text-black/70 hover:text-black dark:text-white/70 dark:hover:text-white"
+                    }`}
                 >
                   {item.name}
                 </Link>
@@ -376,24 +371,32 @@ import {
           {/* Right Group: Auth Controls and Mobile Toggle */}
           <div className="hidden lg:flex items-center ml-auto z-20">
 
-            {/* Cursor Toggle Button */}
-           <button
-  onClick={toggleCursor}
-  className="flex items-center gap-1 px-2 py-1 mr-3
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 mr-3 rounded-full text-text-light bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"
+            >
+              {isDarkMode ? '☀️' : '🌙'}
+            </button>
+
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleCursor}
+              className="flex items-center gap-1 px-2 py-1 mr-3
   text-s font-normal
   bg-black text-white
   rounded-md
   hover:bg-zinc-800
   transition-all"
->
-  <MousePointer className="w-4 h-4" />
+            >
+              <MousePointer className="w-4 h-4" />
 
-  {cursorEnabled
-    ? "OFF"
-    : "ON"}
-</button>
+              {cursorEnabled
+                ? "OFF"
+                : "ON"}
+            </button>
 
-              <div className="flex items-center space-x-2 ml-2">
+            <div className="flex items-center space-x-2 ml-2">
 
               {isAuthenticated() ? (
                 <div className="relative profile-container">
@@ -414,7 +417,7 @@ import {
                       <div className="w-8 h-8 rounded-full dark:bg-white/20 bg-gray-300 flex items-center justify-center">
                         <UserIcon className="w-4 h-4 text-gray-600  dark:text-white" />
                       </div>
-                    )}                   
+                    )}
                   </button>
 
                   <AnimatePresence>
@@ -464,11 +467,10 @@ import {
                           <Link
                             to="/dashboard"
                             onClick={() => setShowProfileDropdown(false)}
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                              location.pathname === "/dashboard"
-                                ? "bg-black/5 dark:bg-white/10 text-black dark:text-white"
-                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                            }`}
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/dashboard"
+                              ? "bg-black/5 dark:bg-white/10 text-black dark:text-white"
+                              : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                              }`}
                           >
                             <LayoutDashboard className="w-4 h-4" />
                             Dashboard
@@ -477,11 +479,10 @@ import {
                           <Link
                             to="/profile"
                             onClick={() => setShowProfileDropdown(false)}
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                              location.pathname === "/profile"
-                                ? "bg-black/5 dark:bg-white/10 text-black dark:text-white"
-                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                            }`}
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/profile"
+                              ? "bg-black/5 dark:bg-white/10 text-black dark:text-white"
+                              : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                              }`}
                           >
                             <UserCog className="w-4 h-4" />
                             Edit Profile
@@ -608,19 +609,17 @@ import {
                         openDropdown === item.name ? null : item.name
                       )
                     }
-                    className={`flex items-center justify-between w-full px-4 py-2.5 rounded-lg transition-colors text-left text-base font-medium ${
-                      isActive
-                        ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
-                        : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
-                    }`}
+                    className={`flex items-center justify-between w-full px-4 py-2.5 rounded-lg transition-colors text-left text-base font-medium ${isActive
+                      ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
+                      }`}
                   >
                     <span className="flex items-center gap-3">
                       {item.icon} {item.name}
                     </span>
                     <ChevronDown
-                      className={`w-4 h-4 transition-transform ${
-                        openDropdown === item.name ? "rotate-180" : ""
-                      }`}
+                      className={`w-4 h-4 transition-transform ${openDropdown === item.name ? "rotate-180" : ""
+                        }`}
                     />
                   </button>
                   {openDropdown === item.name && (
@@ -632,11 +631,10 @@ import {
                             key={sub.name}
                             to={sub.href}
                             onClick={closeAllMenus}
-                            className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium ${
-                              isSubActive
-                                ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
-                                : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white"
-                            }`}
+                            className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium ${isSubActive
+                              ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
+                              : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white"
+                              }`}
                           >
                             {sub.icon}
                             {sub.name}
@@ -653,11 +651,10 @@ import {
                 key={item.name}
                 to={item.href}
                 onClick={closeAllMenus}
-                className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium ${
-                  isActive
-                    ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
-                    : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
-                }`}
+                className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium ${isActive
+                  ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
+                  }`}
               >
                 {item.icon}
                 {item.name}
@@ -695,11 +692,10 @@ import {
               <Link
                 to="/dashboard"
                 onClick={closeAllMenus}
-                className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium ${
-                  location.pathname === "/dashboard"
-                    ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
-                    : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
-                }`}
+                className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium ${location.pathname === "/dashboard"
+                  ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
+                  }`}
               >
                 <LayoutDashboard className="w-5 h-5" />
                 Dashboard
@@ -707,11 +703,10 @@ import {
               <Link
                 to="/profile"
                 onClick={closeAllMenus}
-                className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors text-lg font-medium ${
-                  location.pathname === "/profile"
-                    ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
-                    : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
-                }`}
+                className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors text-lg font-medium ${location.pathname === "/profile"
+                  ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
+                  }`}
               >
                 <UserCog className="w-5 h-5" />
                 Edit Profile
@@ -746,9 +741,9 @@ import {
             </div>
           )}
           <hr className="my-3" />
-                <button
-                  onClick={toggleCursor}
-                  className="flex items-center gap-3
+          <button
+            onClick={toggleCursor}
+            className="flex items-center gap-3
                   w-full
                   px-4 py-2.5
                   rounded-lg
@@ -757,13 +752,13 @@ import {
                   hover:bg-zinc-800
                   transition-colors
                   font-medium"
-                >
-                  <MousePointer className="w-5 h-5" />
+          >
+            <MousePointer className="w-5 h-5" />
 
-                  {cursorEnabled
-                    ? "Turn Cursor OFF"
-                    : "Turn Cursor ON"}
-                </button>
+            {cursorEnabled
+              ? "Turn Cursor OFF"
+              : "Turn Cursor ON"}
+          </button>
         </div>
       </div>
 
