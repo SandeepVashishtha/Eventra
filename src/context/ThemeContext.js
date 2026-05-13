@@ -1,32 +1,57 @@
-import { createContext, useContext,useEffect,useState} from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
-export const ThemeContext = createContext();
+export const ThemeContext = createContext({
+  isDarkMode: false,
+  theme: "light",
+  toggleTheme: () => {},
+  setTheme: () => {},
+});
 
 export const ThemeProvider = ({ children }) => {
-
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    return localStorage.getItem('theme') === 'dark';
+    if (typeof window === "undefined") return false;
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme) return savedTheme === "dark";
+    return window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
   });
 
-  useEffect(() => {
-   const body = document.body; 
-    if (isDarkMode) {
-      body.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      body.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDarkMode]);
+  const theme = isDarkMode ? "dark" : "light";
 
-  const toggleTheme = () => {
-    setIsDarkMode(prev => !prev);
-  };
+  useEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
+
+    root.classList.toggle("dark", isDarkMode);
+    body.classList.toggle("dark", isDarkMode);
+    root.style.colorScheme = theme;
+    localStorage.setItem("theme", theme);
+  }, [isDarkMode, theme]);
+
+  const toggleTheme = useCallback(() => {
+    setIsDarkMode((prev) => !prev);
+  }, []);
+
+  const setTheme = useCallback((nextTheme) => {
+    setIsDarkMode(nextTheme === "dark");
+  }, []);
+
+  const value = useMemo(
+    () => ({ isDarkMode, theme, toggleTheme, setTheme }),
+    [isDarkMode, theme, toggleTheme, setTheme]
+  );
 
   return (
-    <ThemeContext.Provider value={{ theme: 'light', toggleTheme }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );
 };
+
 export const useTheme = () => useContext(ThemeContext);

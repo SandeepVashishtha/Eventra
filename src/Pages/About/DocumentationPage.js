@@ -95,7 +95,7 @@ export default function DocumentationPage() {
   };
   return (
     // UPDATED: Main page background and text color
-    <div className="pastel-grid-bg min-h-screen bg-gray-100 text-black px-6 py-12 space-y-12">
+    <div className="documentation-page pastel-grid-bg min-h-screen bg-gray-100 text-black px-6 py-12 space-y-12">
       {/* Header */}
       <header className="text-center max-w-4xl mx-auto">
         <motion.h1

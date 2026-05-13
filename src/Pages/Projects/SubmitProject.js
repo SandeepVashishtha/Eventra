@@ -463,15 +463,15 @@ const SubmitProject = () => {
           <motion.div
             key={index}
             whileHover={{ scale: 1.05 }}
-            className="bg-white dark:bg-gray-800 border border-indigo-300 dark:border-gray-700 rounded-2xl shadow-xl p-6 text-center flex flex-col items-center"
+            className="bg-white dark:bg-gradient-to-br dark:from-zinc-800 dark:via-zinc-900 dark:to-slate-950 border border-indigo-300 dark:border-white/10 rounded-2xl shadow-xl dark:shadow-black/40 p-6 text-center flex flex-col items-center"
             data-aos="zoom-in"
             data-aos-delay={1500 + index * 100}
           >
-            <stat.icon className="w-10 h-10 text-black mb-3" />
-            <h3 className="text-3xl font-bold text-black">
+            <stat.icon className="w-10 h-10 text-black dark:text-white mb-3" />
+            <h3 className="text-3xl font-bold text-black dark:text-white">
               {stat.number}
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
+            <p className="text-gray-600 dark:text-gray-200 mt-2">
               {stat.label}
             </p>
           </motion.div>

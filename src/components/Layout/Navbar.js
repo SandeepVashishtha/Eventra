@@ -1,9 +1,9 @@
-import { useTheme } from '../../context/ThemeContext';
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import ConfirmationModal from "../common/ConfirmationModal"; // ADD THIS IMPORT
+import ThemeToggleButton from "../common/ThemeToggleButton";
 import { toast } from "react-toastify";
 
 
@@ -28,7 +28,6 @@ import {
 } from "lucide-react";
 
   const Navbar = ({ cursorEnabled, toggleCursor }) => {
-  const { isDarkMode, toggleTheme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -285,7 +284,7 @@ import {
         data-aos-duration="1000"
         // End AOS Implementation
            className="fixed top-0 left-0 w-full z-40 shadow-sm
-             bg-white dark:bg-gray-900 border-b border-black/10 dark:border-white/10"
+             bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md border-b border-black/10 dark:border-white/15"
       >
         <div className="w-full flex items-center h-20 px-6 md:px-12 relative">
           {/* Logo on the left */}
@@ -332,7 +331,7 @@ import {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
-                        className="absolute left-1/2 -translate-x-1/2 mt-4 w-56 bg-white/90 dark:bg-black/80 backdrop-blur-md shadow-xl rounded-lg z-50 border border-black/10 dark:border-white/20 p-2"
+                        className="absolute left-1/2 -translate-x-1/2 mt-4 w-56 bg-white/90 dark:bg-zinc-900/95 backdrop-blur-md shadow-xl rounded-lg z-50 border border-black/10 dark:border-white/20 p-2"
                       >
                         {item.subItems.map((sub) => (
                           <Link
@@ -377,6 +376,7 @@ import {
           <div className="hidden lg:flex items-center ml-auto z-20">
 
             {/* Cursor Toggle Button */}
+            <ThemeToggleButton className="mr-3" />
            <button
   onClick={toggleCursor}
   className="flex items-center gap-1 px-2 py-1 mr-3
@@ -522,7 +522,8 @@ import {
               )}
             </div>
           </div>
-          <div className="lg:hidden ml-auto">
+          <div className="lg:hidden ml-auto flex items-center gap-2">
+            <ThemeToggleButton className="lg:hidden" />
             <button
               ref={toggleBtnRef}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -555,7 +556,7 @@ import {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         className={`fixed top-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-sm shadow-2xl z-50 flex flex-col transform transition-transform duration-300 ease-in-out 
-        bg-white backdrop-blur-lg dark:bg-gray-900/95
+        bg-white backdrop-blur-lg dark:bg-zinc-950/95
         ${isMobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}
         role="dialog"
         aria-modal={isMobileMenuOpen}
@@ -569,9 +570,7 @@ import {
           </h2>
 
           <div className="flex items-center gap-3">
-            <button onClick={toggleTheme} className="p-2 rounded-full text-text-light bg-gray-100 dark:bg-white/10 hover:bg-gray-200">
-              {isDarkMode ? '☀️' : '🌙'}
-            </button>
+            <ThemeToggleButton className="lg:hidden" />
             <button
               ref={closeBtnRef}
               onClick={closeAllMenus}

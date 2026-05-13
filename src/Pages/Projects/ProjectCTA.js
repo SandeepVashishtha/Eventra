@@ -10,7 +10,7 @@ const ProjectCTA = () => {
   
   return (
     <section 
-      className="relative py-16 px-8 m-8 rounded-3xl bg-gradient-to-tr from-sky-100 via-white to-blue-100 text-black shadow-xl overflow-hidden"
+      className="relative py-16 px-8 m-8 rounded-3xl bg-gradient-to-tr from-sky-100 via-white to-blue-100 text-black dark:text-white dark:from-zinc-950 dark:via-slate-900 dark:to-zinc-900 border border-sky-100 dark:border-white/10 shadow-xl dark:shadow-black/40 overflow-hidden"
       // AOS Implementation
       data-aos="zoom-in-up"
       data-aos-duration="1000"
@@ -33,7 +33,7 @@ const ProjectCTA = () => {
       {/* Centered Content */}
       <div className="relative z-10 text-center max-w-3xl mx-auto">
         <motion.h2
-          className="text-4xl md:text-5xl font-bold mb-4"
+          className="text-4xl md:text-5xl font-bold mb-4 text-black dark:text-white"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -42,7 +42,7 @@ const ProjectCTA = () => {
         </motion.h2>
 
         <motion.p
-          className="text-base md:text-lg mb-10 text-gray-200"
+          className="text-base md:text-lg mb-10 text-gray-700 dark:text-gray-300"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8 }}
@@ -55,7 +55,7 @@ const ProjectCTA = () => {
         <div className="flex flex-col md:flex-row justify-center gap-4">
           <motion.a
             href="/projects"
-            className="inline-flex items-center justify-center gap-2 bg-white font-semibold text-black px-8 py-4 rounded-full shadow-lg hover:scale-105 hover:bg-gray-100 transition-transform duration-300"
+            className="inline-flex items-center justify-center gap-2 bg-white font-semibold text-black px-8 py-4 rounded-full shadow-lg hover:scale-105 hover:bg-gray-100 transition-transform duration-300 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             data-aos="zoom-in"
@@ -67,7 +67,7 @@ const ProjectCTA = () => {
           <Link
              to={user ? "/submit-project" : "/login"}
             // UPDATED: The secondary button needs a subtle dark mode style
-            className="inline-flex items-center justify-center gap-2 bg-blue-100 text-black dark:bg-gray-800 dark:text-blue-300 dark:hover:bg-gray-700 font-semibold px-8 py-4 rounded-full shadow-lg transition-transform duration-300"
+            className="inline-flex items-center justify-center gap-2 bg-blue-100 text-black dark:bg-sky-500/20 dark:text-sky-100 dark:ring-1 dark:ring-sky-300/25 dark:hover:bg-sky-500/30 font-semibold px-8 py-4 rounded-full shadow-lg transition-transform duration-300"
             data-aos="zoom-in"
             data-aos-delay="400"
           >
@@ -79,7 +79,7 @@ const ProjectCTA = () => {
               to="https://github.com/SandeepVashishtha/Eventra/issues"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 bg-yellow-100 text-black font-semibold px-8 py-4 rounded-full shadow-lg hover:bg-yellow-200 transition-all duration-300"
+              className="inline-flex items-center justify-center gap-2 bg-yellow-100 text-black dark:bg-amber-300/20 dark:text-amber-100 dark:ring-1 dark:ring-amber-200/25 font-semibold px-8 py-4 rounded-full shadow-lg hover:bg-yellow-200 dark:hover:bg-amber-300/30 transition-all duration-300"
               data-aos="zoom-in"
               data-aos-delay="600"
             >

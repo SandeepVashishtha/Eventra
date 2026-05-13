@@ -34,15 +34,15 @@
 }
 
 body.dark {
-  --bg-color: #121212;
-  --text-color: #e0e0e0;
-  --text-color-light: #a0a0a0;
-  --border-color: #333333;
-  --card-bg-color: #1e1e1e;
-  --scrollbar-track-color: #2c2c2c;
-  --scrollbar-thumb-color: #000000;
-  --scrollbar-thumb-hover-color: #262626;
-  --btn-secondary-text: #e0e0e0;
+  --bg-color: #0f1115;
+  --text-color: #f4f7fb;
+  --text-color-light: #c8d0dc;
+  --border-color: #303744;
+  --card-bg-color: #181c24;
+  --scrollbar-track-color: #181c24;
+  --scrollbar-thumb-color: #667085;
+  --scrollbar-thumb-hover-color: #98a2b3;
+  --btn-secondary-text: #f4f7fb;
 }
 
 /* Global styles */
@@ -67,7 +67,26 @@ body {
 }
 body.dark .pastel-grid-bg {
   background-color: var(--bg-color);
-  opacity: 0.4;
+  background-image:
+    linear-gradient(to right, rgba(96, 165, 250, 0.18) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(250, 204, 21, 0.14) 1px, transparent 1px),
+    linear-gradient(45deg, rgba(99, 102, 241, 0.08) 1px, transparent 1px),
+    linear-gradient(-45deg, rgba(20, 184, 166, 0.08) 1px, transparent 1px);
+  opacity: 1;
+}
+
+body.dark .documentation-page .text-black {
+  color: var(--text-color) !important;
+}
+
+body.dark .documentation-page .bg-white,
+body.dark .documentation-page .bg-gray-50,
+body.dark .documentation-page .bg-gray-100 {
+  background-color: var(--card-bg-color) !important;
+}
+
+body.dark .documentation-page .border-gray-300 {
+  border-color: var(--border-color) !important;
 }
 
 *,

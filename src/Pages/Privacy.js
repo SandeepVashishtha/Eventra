@@ -227,13 +227,13 @@ export const Privacy = () => {
           variants={container}
           initial="hidden"
           animate={controls}
-          className="bg-white rounded-2xl p-8 text-center relative overflow-hidden shadow-md border border-gray-200"
+          className="bg-white dark:bg-gray-800 rounded-2xl p-8 text-center relative overflow-hidden shadow-md border border-gray-200 dark:border-gray-700"
         >
           <div className="relative z-10">
-            <h3 className="text-2xl font-bold text-black mb-4">
+            <h3 className="text-2xl font-bold text-black dark:text-white mb-4">
               Have Questions?
             </h3>
-            <p className="text-black mb-6">
+            <p className="text-gray-700 dark:text-gray-300 mb-6">
               If you have any questions or concerns about this policy, we're
               here to help.
             </p>

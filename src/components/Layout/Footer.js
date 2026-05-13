@@ -237,7 +237,7 @@ const Footer = () => {
             >
               {/* UPDATED: Added dark mode text color */}
               <h2
-                className="text-2xl sm:text-3xl font-bold text-black"
+                className="text-2xl sm:text-3xl font-bold text-black dark:text-white"
                 style={{ fontFamily: "Anton, sans-serif" }}
               >
                 Eventra
@@ -325,10 +325,10 @@ const Footer = () => {
                     <li key={link.name}>
                       <Link
                         to={link.href}
-                        className="text-sm text-gray-600 hover:text-black flex items-center gap-4 transition-all duration-300 hover:translate-x-1 group"
+                        className="text-sm text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white flex items-center gap-4 transition-all duration-300 hover:translate-x-1 group"
                       >
                         {link.icon && (
-                          <span className="text-black group-hover:text-black group-hover:scale-110 transition-all duration-300">
+                          <span className="text-black dark:text-gray-300 group-hover:text-black dark:group-hover:text-white group-hover:scale-110 transition-all duration-300">
                             {link.icon}
                           </span>
                         )}
