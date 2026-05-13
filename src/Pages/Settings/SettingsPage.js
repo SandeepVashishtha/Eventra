@@ -47,6 +47,107 @@ const ToggleSwitch = ({ checked, onChange }) => (
   </button>
 );
 
+const SectionCard = ({ icon: Icon, title, children }) => (
+  <div className="bg-white dark:bg-gray-800/80 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700/50">
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+        <Icon className="w-5 h-5 text-gray-400" />
+        {title}
+      </h2>
+    </div>
+    <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
+      {children}
+    </div>
+  </div>
+);
+
+const AppearanceSection = ({ darkMode, setDarkMode, cursorEnabled, setCursorEnabled }) => (
+  <SectionCard icon={Eye} title="Appearance">
+    <SettingRow
+      icon={darkMode ? Moon : Sun}
+      label="Dark Mode"
+      description="Toggle between light and dark theme"
+      action={
+        <ToggleSwitch
+          checked={darkMode}
+          onChange={() => setDarkMode(!darkMode)}
+        />
+      }
+    />
+    <SettingRow
+      icon={MousePointer2}
+      label="Custom Cursor"
+      description="Enable the custom cursor effect"
+      action={
+        <ToggleSwitch
+          checked={cursorEnabled}
+          onChange={() => setCursorEnabled(!cursorEnabled)}
+        />
+      }
+    />
+  </SectionCard>
+);
+
+const NotificationsSection = ({ emailNotifications, setEmailNotifications }) => (
+  <SectionCard icon={Bell} title="Notifications">
+    <SettingRow
+      icon={Bell}
+      label="Email Notifications"
+      description="Receive email updates about events and hackathons"
+      action={
+        <ToggleSwitch
+          checked={emailNotifications}
+          onChange={() => setEmailNotifications(!emailNotifications)}
+        />
+      }
+    />
+  </SectionCard>
+);
+
+const PrivacySection = ({ profileVisibility, setProfileVisibility, visibilityOptions }) => (
+  <SectionCard icon={Shield} title="Privacy">
+    <SettingRow
+      icon={Globe}
+      label="Profile Visibility"
+      description="Who can see your profile"
+      action={
+        <select
+          value={profileVisibility}
+          onChange={(e) => setProfileVisibility(e.target.value)}
+          className="text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+        >
+          {visibilityOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      }
+    />
+  </SectionCard>
+);
+
+const AccountSection = () => (
+  <SectionCard icon={User} title="Account">
+    <Link to="/edit-profile">
+      <SettingRow
+        icon={User}
+        label="Edit Profile"
+        description="Update your personal information"
+        action={<ChevronRight className="w-5 h-5 text-gray-400" />}
+      />
+    </Link>
+    <button className="w-full text-left">
+      <SettingRow
+        icon={LogOut}
+        label="Sign Out"
+        description="Log out of your account"
+        action={<ChevronRight className="w-5 h-5 text-gray-400" />}
+      />
+    </button>
+  </SectionCard>
+);
+
 const SettingsPage = () => {
   const [darkMode, setDarkMode] = useState(
     localStorage.getItem("theme") === "dark"
@@ -93,120 +194,22 @@ const SettingsPage = () => {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-white dark:bg-gray-800/80 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700/50">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                <Eye className="w-5 h-5 text-gray-400" />
-                Appearance
-              </h2>
-            </div>
-            <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
-              <SettingRow
-                icon={darkMode ? Moon : Sun}
-                label="Dark Mode"
-                description="Toggle between light and dark theme"
-                action={
-                  <ToggleSwitch
-                    checked={darkMode}
-                    onChange={() => setDarkMode(!darkMode)}
-                  />
-                }
-              />
-              <SettingRow
-                icon={MousePointer2}
-                label="Custom Cursor"
-                description="Enable the custom cursor effect"
-                action={
-                  <ToggleSwitch
-                    checked={cursorEnabled}
-                    onChange={() => setCursorEnabled(!cursorEnabled)}
-                  />
-                }
-              />
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800/80 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700/50">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                <Bell className="w-5 h-5 text-gray-400" />
-                Notifications
-              </h2>
-            </div>
-            <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
-              <SettingRow
-                icon={Bell}
-                label="Email Notifications"
-                description="Receive email updates about events and hackathons"
-                action={
-                  <ToggleSwitch
-                    checked={emailNotifications}
-                    onChange={() => setEmailNotifications(!emailNotifications)}
-                  />
-                }
-              />
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800/80 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700/50">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                <Shield className="w-5 h-5 text-gray-400" />
-                Privacy
-              </h2>
-            </div>
-            <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
-              <SettingRow
-                icon={Globe}
-                label="Profile Visibility"
-                description="Who can see your profile"
-                action={
-                  <select
-                    value={profileVisibility}
-                    onChange={(e) => setProfileVisibility(e.target.value)}
-                    className="text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
-                  >
-                    {visibilityOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                }
-              />
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800/80 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700/50">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                <User className="w-5 h-5 text-gray-400" />
-                Account
-              </h2>
-            </div>
-            <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
-              <Link to="/edit-profile">
-                <SettingRow
-                  icon={User}
-                  label="Edit Profile"
-                  description="Update your personal information"
-                  action={
-                    <ChevronRight className="w-5 h-5 text-gray-400" />
-                  }
-                />
-              </Link>
-              <button className="w-full text-left">
-                <SettingRow
-                  icon={LogOut}
-                  label="Sign Out"
-                  description="Log out of your account"
-                  action={
-                    <ChevronRight className="w-5 h-5 text-gray-400" />
-                  }
-                />
-              </button>
-            </div>
-          </div>
+          <AppearanceSection
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+            cursorEnabled={cursorEnabled}
+            setCursorEnabled={setCursorEnabled}
+          />
+          <NotificationsSection
+            emailNotifications={emailNotifications}
+            setEmailNotifications={setEmailNotifications}
+          />
+          <PrivacySection
+            profileVisibility={profileVisibility}
+            setProfileVisibility={setProfileVisibility}
+            visibilityOptions={visibilityOptions}
+          />
+          <AccountSection />
         </div>
 
         <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-8">
