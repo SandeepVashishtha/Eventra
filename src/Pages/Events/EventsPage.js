@@ -1,13 +1,13 @@
-// Importing necessary React hooks and libraries
 import { useState, useEffect, useRef } from "react";
-import mockEvents from "./eventsMockData.json"; // mock data file
-import EventHero from "./EventHero"; // Hero section with search
-import EventCard from "./EventCard"; // Card for displaying event details
-import { Grid, List } from "lucide-react"; // icons for toggle view
-import FeedbackButton from "../../components/FeedbackButton"; // Feedback button component
+import mockEvents from "./eventsMockData.json";
+import EventHero from "./EventHero";
+import EventCard from "./EventCard";
+import { Grid, List } from "lucide-react";
+import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
 import Fuse from "fuse.js";
 import StyledDropdown from "../../components/StyledDropdown";
+import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
 // -----------------------------
 // Main Events Page Component
 // -----------------------------
@@ -20,16 +20,17 @@ const EventsPage = () => {
   const [viewMode, setViewMode] = useState("grid");
   // State for storing user’s search query (from search bar)
   const [searchQuery, setSearchQuery] = useState("");
-  // State for storing the filtered + searched list of events
   const [filteredEvents, setFilteredEvents] = useState([]);
-  // Sort type state
   const [sortType, setSortType] = useState("Newest");
+  const [isLoading, setIsLoading] = useState(true);
   const cardSectionRef = useRef();
-  // -----------------------------
-  // Load events from mock JSON when component mounts
-  // -----------------------------
+
   useEffect(() => {
-    setEvents(mockEvents); // Setting mock data as events
+    const timer = setTimeout(() => {
+      setEvents(mockEvents);
+      setIsLoading(false);
+    }, 800);
+    return () => clearTimeout(timer);
   }, []);
 
   // Fuse.js setup
@@ -186,7 +187,13 @@ const EventsPage = () => {
         </div>
 
         {/* Event Cards Section */}
-        {filteredEvents.length > 0 ? (
+        {isLoading ? (
+          <div className="grid gap-8 grid-cols-1 sm:grid-cols-1 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <EventCardSkeleton key={`skeleton-${i}`} />
+            ))}
+          </div>
+        ) : filteredEvents.length > 0 ? (
           <div
             key={filterType + viewMode}
             className={`grid gap-8 ${

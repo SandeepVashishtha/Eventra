@@ -9,37 +9,8 @@ import FeedbackButton from "../../components/FeedbackButton"; // Feedback floati
 import { useNavigate } from "react-router-dom"; // Navigation hook from React Router
 import { Link } from "react-router-dom"; // Link component for routing
 import ProjectCTA from "./ProjectCTA";
-// Import mock data directly (assuming it's named mockProjectsData.json in the same folder as ProjectsPage.js)
 import mockProjects from "./mockProjectsData.json"; 
-
-// Skeleton loader for project cards while data is loading
-const SkeletonCard = () => (
-  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden animate-pulse">
-    <div className="h-40 bg-gray-100 dark:bg-gray-700"></div>
-    <div className="p-6">
-      <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded w-3/4 mb-4"></div>
-      <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-full mb-2"></div>
-      <div className="h-4 w-5/6 bg-gray-100 dark:bg-gray-600 rounded w-5/6 mb-4"></div>
-      <div className="flex flex-wrap gap-2 mb-4">
-        <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-16"></div>
-        <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-24"></div>
-      </div>
-      <div className="flex items-center justify-between mb-4">
-        <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700"></div>
-        <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-1/3"></div>
-      </div>
-      <div className="flex flex-wrap gap-2 mb-4">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-16"></div>
-        ))}
-      </div>
-      <div className="flex items-center justify-between mt-4">
-        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg w-1/3"></div>
-        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg w-1/3"></div>
-      </div>
-    </div>
-  </div>
-);
+import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
 
 // Main ProjectGallery component
 const ProjectGallery = () => {
@@ -315,7 +286,7 @@ const ProjectGallery = () => {
             // Show skeleton loaders while fetching
             <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <SkeletonCard key={`skeleton-${i}`} />
+                <ProjectCardSkeleton key={`skeleton-${i}`} />
               ))}
             </div>
           ) : error ? (

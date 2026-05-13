@@ -9,26 +9,7 @@ import { FiCode, FiRotateCw, FiCompass, FiChevronDown, FiX } from "react-icons/f
 import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
-
-// UPDATED: Skeleton Loader for dark mode
-const SkeletonCard = () => (
-  <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md animate-pulse">
-    <div className="p-6">
-      <div className="flex justify-between items-start mb-4">
-        <div className="h-6 w-24 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-        <div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-      </div>
-      <div className="h-6 w-3/4 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
-      <div className="h-4 w-full bg-gray-100 dark:bg-gray-600 rounded mb-2"></div>
-      <div className="h-4 w-5/6 bg-gray-100 dark:bg-gray-600 rounded mb-4"></div>
-      <div className="space-y-3 mb-4">
-        <div className="h-4 w-3/4 bg-gray-100 dark:bg-gray-600 rounded"></div>
-        <div className="h-4 w-1/2 bg-gray-100 dark:bg-gray-600 rounded"></div>
-      </div>
-      <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
-    </div>
-  </div>
-);
+import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 
 // NEW: Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
@@ -609,7 +590,7 @@ useEffect(() => {
           {isLoading ? (
             <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <SkeletonCard key={`skeleton-${i}`} />
+                <HackathonCardSkeleton key={`skeleton-${i}`} />
               ))}
             </div>
           ) : filteredHackathons.length > 0 ? (
