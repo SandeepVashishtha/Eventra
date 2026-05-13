@@ -960,16 +960,16 @@ const FluidCursor = () => {
 
     const handleMouseDown = (e) => {
       let pointer = pointers[0];
-      let posX = scaleByPixelRatio(e.clientX);
-      let posY = scaleByPixelRatio(e.clientY);
+      let posX = e.clientX * (canvas.width / canvas.clientWidth);
+      let posY = e.clientY * (canvas.height / canvas.clientHeight);
       updatePointerDownData(pointer, -1, posX, posY);
       clickSplat(pointer);
     };
 
     const handleMouseMove = (e) => {
       let pointer = pointers[0];
-      let posX = scaleByPixelRatio(e.clientX);
-      let posY = scaleByPixelRatio(e.clientY);
+      let posX = e.clientX * (canvas.width / canvas.clientWidth);
+      let posY = e.clientY * (canvas.height / canvas.clientHeight);
       let color = pointer.color;
       updatePointerMoveData(pointer, posX, posY, color);
     };
