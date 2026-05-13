@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom"; // Navigation hook from React Ro
 import { Link } from "react-router-dom"; // Link component for routing
 import ProjectCTA from "./ProjectCTA";
 // Import mock data directly (assuming it's named mockProjectsData.json in the same folder as ProjectsPage.js)
-import mockProjects from "./mockProjectsData.json"; 
+import mockProjects from "./mockProjectsData.json";
 
 // Skeleton loader for project cards while data is loading
 const SkeletonCard = () => (
@@ -54,7 +54,7 @@ const ProjectGallery = () => {
   const [showSubmissionModal, setShowSubmissionModal] = useState(false); // Show/hide submission modal
   const [categoryOpen, setCategoryOpen] = useState(false); // Category dropdown state
   const [sortOpen, setSortOpen] = useState(false); // Sort dropdown state
-  const cardSectionRef=useRef() // Refer to card section
+  const cardSectionRef = useRef() // Refer to card section
 
   // Labels for sorting options
   const sortByLabels = {
@@ -94,18 +94,18 @@ const ProjectGallery = () => {
         // --- MOCK DATA FALLBACK/REPLACEMENT ---
         // Load mock data and simulate network delay
         setTimeout(() => {
-            const projectsData = mockProjects;
-            setProjects(projectsData);
-            
-            // Extract unique categories from mock data
-            const uniqueCategories = [...new Set(projectsData.map(p => p.category))];
-            setCategories(["all", ...uniqueCategories]);
-            setIsLoading(false);
+          const projectsData = mockProjects;
+          setProjects(projectsData);
+
+          // Extract unique categories from mock data
+          const uniqueCategories = [...new Set(projectsData.map(p => p.category))];
+          setCategories(["all", ...uniqueCategories]);
+          setIsLoading(false);
         }, 500);
 
       } catch (error) {
         console.error("Error fetching projects:", error);
-        setError("Failed to load projects. Please try again later."); 
+        setError("Failed to load projects. Please try again later.");
         setIsLoading(false);
       }
     };
@@ -152,9 +152,9 @@ const ProjectGallery = () => {
       }
     });
 
-    const scrollToCard = () =>{
-      cardSectionRef.current?.scrollIntoView({behaviour:'smooth'})
-    }
+  const scrollToCard = () => {
+    cardSectionRef.current?.scrollIntoView({ behaviour: 'smooth' })
+  }
 
   return (
     // UPDATED: Main page background
@@ -206,16 +206,17 @@ const ProjectGallery = () => {
                   data-aos="zoom-in"
                   data-aos-delay="200"
                 >
-                  <div
-                    // UPDATED: Dropdown button styles
+                  <button
+                    type="button"
                     className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 hover:ring-2 hover:ring-black/20 transition-all"
                     onClick={() => setCategoryOpen((prev) => !prev)}
+                    aria-expanded={categoryOpen}
                   >
                     <span className="text-gray-700 dark:text-gray-200">
                       {filterCategory === "all" ? "All Categories" : filterCategory}
                     </span>
                     <FiX className="ml-2 text-gray-400 dark:text-gray-500" />
-                  </div>
+                  </button>
                   <AnimatePresence>
                     {categoryOpen && (
                       <motion.ul
@@ -250,16 +251,17 @@ const ProjectGallery = () => {
                   data-aos="zoom-in"
                   data-aos-delay="300"
                 >
-                  <div
-                    // UPDATED: Dropdown button styles
+                  <button
+                    type="button"
                     className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-700 hover:ring-2 hover:ring-black/20 transition-all"
                     onClick={() => setSortOpen((prev) => !prev)}
+                    aria-expanded={sortOpen}
                   >
                     <span className="text-gray-700 dark:text-gray-300">
                       {sortByLabels[sortBy]}
                     </span>
                     <FiX className="ml-2 text-gray-400 dark:text-gray-500" />
-                  </div>
+                  </button>
 
                   {/* Sort Dropdown Menu */}
                   <AnimatePresence>

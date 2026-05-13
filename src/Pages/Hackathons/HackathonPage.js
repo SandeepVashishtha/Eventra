@@ -61,7 +61,7 @@ const HackathonHub = () => {
   });
   const [showFilters, setShowFilters] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
-  
+
   // NEW: State for selected tags
   const [selectedTags, setSelectedTags] = useState([]);
   const [availableTags, setAvailableTags] = useState([]);
@@ -78,30 +78,30 @@ const HackathonHub = () => {
 
     return () => clearTimeout(timer);
   }, []);
-// UPDATED: Extract available tags from hackathons - ADDED BLOCKCHAIN TAGS
-useEffect(() => {
-  if (hackathons.length > 0) {
-    const allTags = new Set();
-    hackathons.forEach(hackathon => {
-      if (hackathon.techStack && Array.isArray(hackathon.techStack)) {
-        hackathon.techStack.forEach(tag => {
-          // Replace "Any" with "Blockchain"
-          if (tag === "Any") {
-            allTags.add("Blockchain");
-          } else {
-            allTags.add(tag);
-          }
-        });
-      }
-    });
-    // ADD ONLY THESE 3 BLOCKCHAIN TAGS
-    allTags.add("Blockchain");
-    allTags.add("Solidity"); 
-    allTags.add("Ethereum");
-    
-    setAvailableTags(Array.from(allTags));
-  }
-}, [hackathons]);
+  // UPDATED: Extract available tags from hackathons - ADDED BLOCKCHAIN TAGS
+  useEffect(() => {
+    if (hackathons.length > 0) {
+      const allTags = new Set();
+      hackathons.forEach(hackathon => {
+        if (hackathon.techStack && Array.isArray(hackathon.techStack)) {
+          hackathon.techStack.forEach(tag => {
+            // Replace "Any" with "Blockchain"
+            if (tag === "Any") {
+              allTags.add("Blockchain");
+            } else {
+              allTags.add(tag);
+            }
+          });
+        }
+      });
+      // ADD ONLY THESE 3 BLOCKCHAIN TAGS
+      allTags.add("Blockchain");
+      allTags.add("Solidity");
+      allTags.add("Ethereum");
+
+      setAvailableTags(Array.from(allTags));
+    }
+  }, [hackathons]);
 
   const scrollToCards = () => {
     cardsSectionRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -109,15 +109,15 @@ useEffect(() => {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrollVisible(window.scrollY > 50); 
+      setIsScrollVisible(window.scrollY > 50);
     };
     window.addEventListener("scroll", handleScroll);
     handleScroll();
-    
+
     const handleChatbotState = () => {
       setIsChatbotOpen(document.querySelector('[data-chatbot-open]') !== null);
     };
-    
+
     handleChatbotState();
     const observer = new MutationObserver(handleChatbotState);
     observer.observe(document.body, { childList: true, subtree: true });
@@ -211,13 +211,13 @@ useEffect(() => {
           .includes(filters.location.toLowerCase())
       )
         return false;
-      
+
       // NEW: Filter by selected tags
       if (selectedTags.length > 0) {
         const hackathonTags = hackathon.techStack || [];
         return selectedTags.some(tag => hackathonTags.includes(tag));
       }
-      
+
       return true;
     });
 
@@ -248,110 +248,111 @@ useEffect(() => {
   }, []);
 
   const CustomDropdown = ({
-  label,
-  value,
-  options,
-  onChange,
-  placeholder = "Select",
-}) => {
-  const [open, setOpen] = useState(false);
-  const [menuCoords, setMenuCoords] = useState({ top: 0, left: 0, width: 0 });
+    label,
+    value,
+    options,
+    onChange,
+    placeholder = "Select",
+  }) => {
+    const [open, setOpen] = useState(false);
+    const [menuCoords, setMenuCoords] = useState({ top: 0, left: 0, width: 0 });
 
-  const buttonRef = useRef(null);
-  const dropdownRef = useRef(null);
+    const buttonRef = useRef(null);
+    const dropdownRef = useRef(null);
 
-  const toggleOpen = () => {
-    if (!open && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setMenuCoords({
-        top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX,
-        width: rect.width,
-      });
-    }
-    setOpen((prev) => !prev);
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target) &&
-        !buttonRef.current.contains(event.target)
-      ) {
-        setOpen(false);
+    const toggleOpen = () => {
+      if (!open && buttonRef.current) {
+        const rect = buttonRef.current.getBoundingClientRect();
+        setMenuCoords({
+          top: rect.bottom + window.scrollY,
+          left: rect.left + window.scrollX,
+          width: rect.width,
+        });
       }
+      setOpen((prev) => !prev);
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
-  const displayText = value || placeholder;
+    useEffect(() => {
+      const handleClickOutside = (event) => {
+        if (
+          dropdownRef.current &&
+          !dropdownRef.current.contains(event.target) &&
+          !buttonRef.current.contains(event.target)
+        ) {
+          setOpen(false);
+        }
+      };
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
-  return (
-    <div className="relative">
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-        {label}
-      </label>
+    const displayText = value || placeholder;
 
-      <div
-        ref={buttonRef}
-        className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"
-        onClick={toggleOpen}
-      >
-        <span
-          className={`text-gray-700 dark:text-gray-200 ${!value ? "text-gray-400" : ""}`}
+    return (
+      <div className="relative">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          {label}
+        </label>
+
+        <button
+          type="button"
+          ref={buttonRef}
+          className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"
+          onClick={toggleOpen}
+          aria-expanded={open}
         >
-          {displayText}
-        </span>
-
-        <FiChevronDown className="text-gray-400 dark:text-gray-500" />
-      </div>
-
-      {open &&
-        createPortal(
-          <ul
-            ref={dropdownRef}
-            className="z-[10000] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg"
-            style={{
-              position: "absolute",
-              top: menuCoords.top,
-              left: menuCoords.left,
-              width: menuCoords.width,
-            }}
+          <span
+            className={`text-gray-700 dark:text-gray-200 ${!value ? "text-gray-400" : ""}`}
           >
-            <li
-              onClick={() => {
-                onChange("");
-                setOpen(false);
-              }}
-              className="px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
-            >
-              {placeholder}
-            </li>
+            {displayText}
+          </span>
 
-            {options.map((opt) => (
+          <FiChevronDown className="text-gray-400 dark:text-gray-500" />
+        </button>
+
+        {open &&
+          createPortal(
+            <ul
+              ref={dropdownRef}
+              className="z-[10000] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg"
+              style={{
+                position: "absolute",
+                top: menuCoords.top,
+                left: menuCoords.left,
+                width: menuCoords.width,
+              }}
+            >
               <li
-                key={opt}
-                className={`px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 ${
-                  opt === value
-                    ? "font-semibold bg-indigo-100 dark:bg-indigo-900"
-                    : ""
-                }`}
                 onClick={() => {
-                  onChange(opt);
+                  onChange("");
                   setOpen(false);
                 }}
+                className="px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               >
-                {opt}
+                {placeholder}
               </li>
-            ))}
-          </ul>,
-          document.body,
-        )}
-    </div>
-  );
-};
+
+              {options.map((opt) => (
+                <li
+                  key={opt}
+                  className={`px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 ${opt === value
+                      ? "font-semibold bg-indigo-100 dark:bg-indigo-900"
+                      : ""
+                    }`}
+                  onClick={() => {
+                    onChange(opt);
+                    setOpen(false);
+                  }}
+                >
+                  {opt}
+                </li>
+              ))}
+            </ul>,
+            document.body,
+          )}
+      </div>
+    );
+  };
 
   return (
     <div className="overflow-x-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 py-6">
@@ -382,7 +383,7 @@ useEffect(() => {
           </svg>
         </Link>
       </motion.div>
-      
+
       {/* FIXED: Hero Section with filteredCount prop */}
       <HackathonHero
         hackathons={hackathons}
@@ -497,7 +498,7 @@ useEffect(() => {
 
           {/* UPDATED: Tags display */}
           {selectedTags.length > 0 && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               className="mb-4 flex flex-wrap gap-2"
@@ -558,11 +559,10 @@ useEffect(() => {
                         <button
                           key={tag}
                           onClick={() => handleTagSelect(tag)}
-                          className={`px-3 py-1.5 text-sm rounded-full transition-all ${
-                            selectedTags.includes(tag)
+                          className={`px-3 py-1.5 text-sm rounded-full transition-all ${selectedTags.includes(tag)
                               ? 'bg-black text-white'
                               : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                          }`}
+                            }`}
                         >
                           {tag}
                         </button>
@@ -592,11 +592,10 @@ useEffect(() => {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-300 transform ${
-                  activeTab === tab.key
+                className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-300 transform ${activeTab === tab.key
                     ? "bg-black text-white shadow-lg scale-105"
                     : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105"
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -727,7 +726,7 @@ useEffect(() => {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => {}}
+                    onClick={() => { }}
                     className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-black dark:text-white border border-black/15 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 shadow-md transition-all"
                   >
                     Explore Hackathons
