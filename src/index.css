@@ -70,13 +70,7 @@ body.dark .pastel-grid-bg {
   opacity: 0.4;
 }
 
-*,
-*::before,
-*::after {
-  animation: none !important;
-  transition: none !important;
-  scroll-behavior: auto !important;
-}
+
 
 /* Headings */
 h1 { font-size: var(--font-h1); }

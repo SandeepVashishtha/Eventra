@@ -184,22 +184,58 @@
   pointer-events: none;
 }
 
-.ud-search {
-  padding: 0.5rem 2.25rem 0.5rem 2.2rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  font-size: 0.85rem;
+.ud-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-radius: 12px;
   background: #f9fafb;
+  border: 1.5px solid #e5e7eb;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.ud-search-wrap:focus-within {
+  border-color: #6366f1;
+  background: #fff;
+  box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.2), 0 8px 10px -6px rgba(99, 102, 241, 0.1);
+  transform: translateY(-4px) scale(1.02);
+  width: 260px;
+}
+
+.dark .ud-search-wrap {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+.dark .ud-search-wrap:focus-within {
+  background: #111827;
+  border-color: #818cf8;
+}
+
+.ud-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  color: #9ca3af;
+  pointer-events: none;
+  transition: color 0.3s ease;
+}
+
+.ud-search-wrap:focus-within .ud-search-icon {
+  color: #6366f1;
+}
+
+.ud-search {
+  padding: 0.6rem 2.25rem 0.6rem 2.5rem;
+  border: none;
+  background: transparent;
+  font-size: 0.875rem;
   color: #111827;
-  width: 200px;
-  transition: all 0.2s;
+  width: 220px;
   outline: none;
 }
 
-.ud-search:focus {
-  border-color: #6366f1;
-  background: #fff;
-  box-shadow: 0 0 0 3px #6366f115;
+.dark .ud-search {
+  color: #f9fafb;
 }
 
 .dark .ud-search {
@@ -211,6 +247,7 @@
 .dark .ud-search:focus {
   border-color: #818cf8;
   background: #111827;
+  box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.15), 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .ud-search-clear {
