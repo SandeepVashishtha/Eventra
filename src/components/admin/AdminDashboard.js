@@ -99,15 +99,15 @@ const AdminDashboard = () => {
         <div className="dashboard-content">
           <div className="dashboard-stats">
             <div className="stat-card">
-              <h3>Total Users</h3>
+              <h2>Total Users</h2>
               <p className="stat-number">{users.length}</p>
             </div>
             <div className="stat-card">
-              <h3>Total Events</h3>
+              <h2>Total Events</h2>
               <p className="stat-number">{events.length}</p>
             </div>
             <div className="stat-card">
-              <h3>Active Sessions</h3>
+              <h2>Active Sessions</h2>
               <p className="stat-number">-</p>
             </div>
           </div>
@@ -117,7 +117,7 @@ const AdminDashboard = () => {
       {activeTab === 'events' && (
         <div className="dashboard-content">
           <div className="dashboard-actions">
-            <h2>Event Management</h2>
+            <h3>Event Management</h3>
             <div className="action-buttons">
               {hasPermission('CREATE_EVENT') && (
                 <button className="action-btn create-event"  onClick={() => navigate("/create-event")}>
