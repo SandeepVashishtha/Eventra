@@ -299,7 +299,7 @@ import {
           </Link>
 
           {/* Centered nav links */}
-          <div className="hidden lg:flex absolute left-[48%] transform -translate-x-1/2 space-x-5 z-10">
+          <div className="hidden lg:flex flex-1 justify-center space-x-3 z-10">
             {navItems.map((item) => {
               const isActive = item.href
                 ? location.pathname === item.href
@@ -379,15 +379,18 @@ import {
             {/* Cursor Toggle Button */}
            <button
   onClick={toggleCursor}
-  className="flex items-center gap-1 px-2 py-1 mr-3
-  text-s font-normal
+  title={cursorEnabled ? "Turn Cursor OFF" : "Turn Cursor ON"}
+  className="flex items-center gap-1 px-2 py-1 ml-4 mr-2
+  text-xs font-normal
   bg-black text-white
   rounded-md
   hover:bg-zinc-800
-  transition-all"
+  transition-all
+  relative z-50
+  shrink-0
+  whitespace-nowrap"
 >
   <MousePointer className="w-4 h-4" />
-
   {cursorEnabled
     ? "OFF"
     : "ON"}
