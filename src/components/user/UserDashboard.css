@@ -18,7 +18,7 @@
 /* ── Sidebar ── */
 .ud-sidebar {
   width: 220px;
-  min-height: 100vh;
+  height: 100vh;
   background: #fff;
   border-right: 1px solid #e5e7eb;
   display: flex;
@@ -27,6 +27,7 @@
   position: sticky;
   top: 0;
   flex-shrink: 0;
+  overflow-y: auto;
 }
 
 .dark .ud-sidebar {
