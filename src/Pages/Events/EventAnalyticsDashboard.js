@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
@@ -30,13 +30,65 @@ const feedbackData = [
 ];
 
 const COLORS = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'];
+const TABS = ['overview', 'registrations', 'demographics', 'feedback'];
 
 const totalRegistrations = eventsData.reduce((sum, e) => sum + e.attendees, 0);
 const totalCapacity = eventsData.reduce((sum, e) => sum + e.maxAttendees, 0);
 const fillRate = Math.round((totalRegistrations / totalCapacity) * 100);
 const avgRating = (feedbackData.reduce((s, f) => s + f.rating, 0) / feedbackData.length).toFixed(1);
 
-const OverviewTab = ({ topEvents }) => (
+const getTopEvents = () =>
+  [...eventsData].sort((a, b) => b.attendees - a.attendees).slice(0, 6)
+    .map(e => ({ name: e.title.length > 18 ? e.title.slice(0, 18) + '…' : e.title, attendees: e.attendees, capacity: e.maxAttendees }));
+
+const getTypeData = () => {
+  const map = {};
+  eventsData.forEach(e => { map[e.type] = (map[e.type] || 0) + e.attendees; });
+  return Object.entries(map).map(([name, value]) => ({ name, value }));
+};
+
+const getLocationData = () => {
+  const map = {};
+  eventsData.forEach(e => {
+    const loc = e.location === 'Online' ? 'Online' : e.location.split(',')[1]?.trim() || e.location;
+    map[loc] = (map[loc] || 0) + e.attendees;
+  });
+  return Object.entries(map).map(([name, value]) => ({ name, value }));
+};
+
+const topEvents = getTopEvents();
+const typeData = getTypeData();
+const locationData = getLocationData();
+
+const KPIHeader = () => (
+  <div className="ead-header">
+    <div className="ead-header-left">
+      <span className="ead-badge">Organizer View</span>
+      <h1 className="ead-title">Event Analytics</h1>
+      <p className="ead-subtitle">Data-driven insights for smarter decisions</p>
+    </div>
+    <div className="ead-header-right">
+      <div className="ead-kpi">
+        <span className="ead-kpi-val">{eventsData.length}</span>
+        <span className="ead-kpi-label">Total Events</span>
+      </div>
+      <div className="ead-kpi">
+        <span className="ead-kpi-val">{totalRegistrations.toLocaleString()}</span>
+        <span className="ead-kpi-label">Registrations</span>
+      </div>
+      <div className="ead-kpi">
+        <span className="ead-kpi-val">{fillRate}%</span>
+        <span className="ead-kpi-label">Fill Rate</span>
+      </div>
+      <div className="ead-kpi">
+        <span className="ead-kpi-val">⭐ {avgRating}</span>
+        <span className="ead-kpi-label">Avg Rating</span>
+      </div>
+    </div>
+  </div>
+);
+
+const OverviewTab = () => (
   <div className="ead-grid">
     <div className="ead-card ead-card--wide">
       <h2 className="ead-card-title">📈 Registrations Over Time</h2>
@@ -67,7 +119,7 @@ const OverviewTab = ({ topEvents }) => (
   </div>
 );
 
-const RegistrationsTab = ({ topEvents }) => (
+const RegistrationsTab = () => (
   <div className="ead-grid">
     <div className="ead-card ead-card--full">
       <h2 className="ead-card-title">📅 Monthly Registration Trends</h2>
@@ -99,7 +151,7 @@ const RegistrationsTab = ({ topEvents }) => (
   </div>
 );
 
-const DemographicsTab = ({ typeData, locationData }) => (
+const DemographicsTab = () => (
   <div className="ead-grid">
     <div className="ead-card">
       <h2 className="ead-card-title">🎯 Attendees by Event Type</h2>
@@ -170,60 +222,21 @@ const FeedbackTab = () => (
   </div>
 );
 
+const TAB_COMPONENTS = {
+  overview: <OverviewTab />,
+  registrations: <RegistrationsTab />,
+  demographics: <DemographicsTab />,
+  feedback: <FeedbackTab />,
+};
+
 const EventAnalyticsDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
-  const topEvents = useMemo(() =>
-    [...eventsData].sort((a, b) => b.attendees - a.attendees).slice(0, 6)
-      .map(e => ({ name: e.title.length > 18 ? e.title.slice(0, 18) + '…' : e.title, attendees: e.attendees, capacity: e.maxAttendees })),
-    []
-  );
-
-  const typeData = useMemo(() => {
-    const map = {};
-    eventsData.forEach(e => { map[e.type] = (map[e.type] || 0) + e.attendees; });
-    return Object.entries(map).map(([name, value]) => ({ name, value }));
-  }, []);
-
-  const locationData = useMemo(() => {
-    const map = {};
-    eventsData.forEach(e => {
-      const loc = e.location === 'Online' ? 'Online' : e.location.split(',')[1]?.trim() || e.location;
-      map[loc] = (map[loc] || 0) + e.attendees;
-    });
-    return Object.entries(map).map(([name, value]) => ({ name, value }));
-  }, []);
-
   return (
     <div className="ead-root">
-      <div className="ead-header">
-        <div className="ead-header-left">
-          <span className="ead-badge">Organizer View</span>
-          <h1 className="ead-title">Event Analytics</h1>
-          <p className="ead-subtitle">Data-driven insights for smarter decisions</p>
-        </div>
-        <div className="ead-header-right">
-          <div className="ead-kpi">
-            <span className="ead-kpi-val">{eventsData.length}</span>
-            <span className="ead-kpi-label">Total Events</span>
-          </div>
-          <div className="ead-kpi">
-            <span className="ead-kpi-val">{totalRegistrations.toLocaleString()}</span>
-            <span className="ead-kpi-label">Registrations</span>
-          </div>
-          <div className="ead-kpi">
-            <span className="ead-kpi-val">{fillRate}%</span>
-            <span className="ead-kpi-label">Fill Rate</span>
-          </div>
-          <div className="ead-kpi">
-            <span className="ead-kpi-val">⭐ {avgRating}</span>
-            <span className="ead-kpi-label">Avg Rating</span>
-          </div>
-        </div>
-      </div>
-
+      <KPIHeader />
       <div className="ead-tabs">
-        {['overview', 'registrations', 'demographics', 'feedback'].map(tab => (
+        {TABS.map(tab => (
           <button
             key={tab}
             className={`ead-tab ${activeTab === tab ? 'ead-tab--active' : ''}`}
@@ -233,11 +246,7 @@ const EventAnalyticsDashboard = () => {
           </button>
         ))}
       </div>
-
-      {activeTab === 'overview' && <OverviewTab topEvents={topEvents} />}
-      {activeTab === 'registrations' && <RegistrationsTab topEvents={topEvents} />}
-      {activeTab === 'demographics' && <DemographicsTab typeData={typeData} locationData={locationData} />}
-      {activeTab === 'feedback' && <FeedbackTab />}
+      {TAB_COMPONENTS[activeTab]}
     </div>
   );
 };
