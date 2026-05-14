@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
-import ConfirmationModal from "../common/ConfirmationModal"; // ADD THIS IMPORT
+import ConfirmationModal from "../common/ConfirmationModal";
 import { toast } from "react-toastify";
 
 
@@ -24,7 +24,9 @@ import {
   Book,
   HelpCircle,
   ChevronDown,
-  MousePointer
+  MousePointer,
+  Sun,
+  Moon
 } from "lucide-react";
 
   const Navbar = ({ cursorEnabled, toggleCursor }) => {
@@ -175,7 +177,6 @@ import {
     if (typeof start !== "number" || typeof end !== "number") return;
     const deltaX = end - start;
     if (deltaX > 50) {
-      // Swiped right to close
       closeAllMenus();
     }
     touchStartXRef.current = null;
@@ -244,7 +245,6 @@ import {
     },
   ];
 
-  // REPLACE THE EXISTING handleLogout FUNCTION WITH THESE 3 FUNCTIONS:
   const handleLogoutClick = () => {
     setShowLogoutModal(true);
     setShowProfileDropdown(false);
@@ -279,16 +279,14 @@ import {
 
       <nav
         ref={navRef}
-        // AOS Implementation
         data-aos="fade-down"
         data-aos-once="true"
         data-aos-duration="1000"
-        // End AOS Implementation
-           className="fixed top-0 left-0 w-full z-40 shadow-sm
-             bg-white dark:bg-gray-900 border-b border-black/10 dark:border-white/10"
+        className="fixed top-0 left-0 w-full z-40 shadow-sm
+          bg-white dark:bg-gray-900 border-b border-black/10 dark:border-white/10"
       >
         <div className="w-full flex items-center h-20 px-6 md:px-12 relative">
-          {/* Logo on the left */}
+          {/* Logo */}
           <Link to="/" className="flex-shrink-0 z-20">
             <h2
               className="text-3xl font-semibold tracking-tight text-black dark:text-white"
@@ -373,28 +371,18 @@ import {
             })}
           </div>
 
-          {/* Right Group: Auth Controls and Mobile Toggle */}
+          {/* Right Group */}
           <div className="hidden lg:flex items-center ml-auto z-20">
 
-            {/* Cursor Toggle Button */}
-           <button
-  onClick={toggleCursor}
-  className="flex items-center gap-1 px-2 py-1 mr-3
-  text-s font-normal
-  bg-black text-white
-  rounded-md
-  hover:bg-zinc-800
-  transition-all"
->
-  <MousePointer className="w-4 h-4" />
+            {/*  Theme Toggle Button */}
+             <button
+             onClick={toggleTheme}
+             className="text-xl text-gray-700 dark:text-white hover:opacity-70 transition-opacity"
+             >
+             {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+             </button>
 
-  {cursorEnabled
-    ? "OFF"
-    : "ON"}
-</button>
-
-              <div className="flex items-center space-x-2 ml-2">
-
+            <div className="flex items-center space-x-2 ml-2">
               {isAuthenticated() ? (
                 <div className="relative profile-container">
                   <button
@@ -412,9 +400,9 @@ import {
                       />
                     ) : (
                       <div className="w-8 h-8 rounded-full dark:bg-white/20 bg-gray-300 flex items-center justify-center">
-                        <UserIcon className="w-4 h-4 text-gray-600  dark:text-white" />
+                        <UserIcon className="w-4 h-4 text-gray-600 dark:text-white" />
                       </div>
-                    )}                   
+                    )}
                   </button>
 
                   <AnimatePresence>
@@ -425,11 +413,10 @@ import {
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         transition={{ duration: 0.15 }}
                         className="absolute right-0 top-full mt-2 w-64 
-                 bg-white dark:bg-gray-900 
-                 rounded-lg shadow-2xl overflow-hidden 
-                 border border-gray-200 dark:border-gray-800"
+                          bg-white dark:bg-gray-900 
+                          rounded-lg shadow-2xl overflow-hidden 
+                          border border-gray-200 dark:border-gray-800"
                       >
-                        {/* Profile header */}
                         <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
                           <div className="flex items-center gap-3">
                             {user?.profilePicture ? (
@@ -459,7 +446,6 @@ import {
                           </div>
                         </div>
 
-                        {/* Menu items */}
                         <div className="p-2 bg-white dark:bg-gray-900">
                           <Link
                             to="/dashboard"
@@ -488,13 +474,12 @@ import {
                           </Link>
                         </div>
 
-                        {/* Logout - CHANGE ONLY THIS BUTTON */}
                         <div className="p-2 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
                           <button
                             onClick={handleLogoutClick}
                             className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm
-                     text-gray-700 dark:text-gray-300
-                     hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                              text-gray-700 dark:text-gray-300
+                              hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                           >
                             <LogOut className="w-4 h-4" />
                             Logout
@@ -522,6 +507,7 @@ import {
               )}
             </div>
           </div>
+
           <div className="lg:hidden ml-auto">
             <button
               ref={toggleBtnRef}
@@ -569,8 +555,12 @@ import {
           </h2>
 
           <div className="flex items-center gap-3">
-            <button onClick={toggleTheme} className="p-2 rounded-full text-text-light bg-gray-100 dark:bg-white/10 hover:bg-gray-200">
-              {isDarkMode ? '☀️' : '🌙'}
+            {/* Mobile Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full text-gray-700 dark:text-yellow-400 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"
+            >
+              {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
             <button
               ref={closeBtnRef}
@@ -716,7 +706,6 @@ import {
                 <UserCog className="w-5 h-5" />
                 Edit Profile
               </Link>
-              {/* CHANGE ONLY THIS BUTTON */}
               <button
                 onClick={handleLogoutClick}
                 className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors font-medium"
@@ -746,28 +735,24 @@ import {
             </div>
           )}
           <hr className="my-3" />
-                <button
-                  onClick={toggleCursor}
-                  className="flex items-center gap-3
-                  w-full
-                  px-4 py-2.5
-                  rounded-lg
-                  bg-black
-                  text-white
-                  hover:bg-zinc-800
-                  transition-colors
-                  font-medium"
-                >
-                  <MousePointer className="w-5 h-5" />
-
-                  {cursorEnabled
-                    ? "Turn Cursor OFF"
-                    : "Turn Cursor ON"}
-                </button>
+          <button
+            onClick={toggleCursor}
+            className="flex items-center gap-3
+              w-full
+              px-4 py-2.5
+              rounded-lg
+              bg-black
+              text-white
+              hover:bg-zinc-800
+              transition-colors
+              font-medium"
+          >
+            <MousePointer className="w-5 h-5" />
+            {cursorEnabled ? "Turn Cursor OFF" : "Turn Cursor ON"}
+          </button>
         </div>
       </div>
 
-      {/* ADD THIS MODAL AT THE VERY BOTTOM */}
       <ConfirmationModal
         isOpen={showLogoutModal}
         onClose={handleCancelLogout}

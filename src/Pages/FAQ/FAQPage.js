@@ -100,8 +100,6 @@ const FAQPage = () => {
     },
   ];
 
-  const categories = [...new Set(faqData.map((faq) => faq.category))];
-
   const toggleFAQ = (id) => {
     setOpenFAQ(openFAQ === id ? null : id);
   };
@@ -143,15 +141,15 @@ const FAQPage = () => {
           <motion.div variants={container} initial="hidden" animate={controls}>
             <motion.div variants={item}>
               <h1
-                className="text-4xl md:text-5xl lg:text-6xl font-bold text-black mb-4"
+                className="text-4xl md:text-5xl lg:text-6xl font-bold text-black dark:text-white mb-4"
                 style={{ fontFamily: '"Anton", sans-serif' }}
               >
                 Frequently Asked{" "}
-                <span className="text-black">
+                <span className="text-black dark:text-white">
                   Questions
                 </span>
               </h1>
-              <p className="text-xl text-black max-w-3xl mx-auto leading-relaxed">
+              <p className="text-xl text-black dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
                 Everything you need to know about using Eventra, from getting
                 started to hosting your own events. Can't find what you're
                 looking for? Reach out to our community!

@@ -66,8 +66,14 @@ body {
   font-size: var(--font-body);
 }
 body.dark .pastel-grid-bg {
-  background-color: var(--bg-color);
-  opacity: 0.4;
+  background-color: #111827;
+  background-image:
+    linear-gradient(to right, rgba(147, 197, 253, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(250, 204, 21, 0.08) 1px, transparent 1px),
+    linear-gradient(45deg, rgba(59, 130, 246, 0.04) 1px, transparent 1px),
+    linear-gradient(-45deg, rgba(250, 204, 21, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px, 40px 40px, 80px 80px, 80px 80px;
+  opacity: 1;
 }
 
 *,
@@ -182,5 +188,26 @@ input::-webkit-password-toggle { display: none !important; }
     linear-gradient(to bottom, rgba(250, 204, 21, 0.32) 1px, transparent 1px),
     linear-gradient(45deg, rgba(59, 130, 246, 0.10) 1px, transparent 1px),
     linear-gradient(-45deg, rgba(250, 204, 21, 0.10) 1px, transparent 1px);
+  background-size: 40px 40px, 40px 40px, 80px 80px, 80px 80px;
+}
+
+html.dark body {
+  background-color: #111827;
+  background-image:
+    linear-gradient(to right, rgba(147, 197, 253, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(250, 204, 21, 0.08) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+html.dark .pastel-grid-bg {
+  min-width: 100vw;
+  margin-left: calc(-50vw + 50%);
+}
+html.dark .pastel-grid-bg {
+  background-color: #111827 !important;
+  background-image:
+    linear-gradient(to right, rgba(147, 197, 253, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(250, 204, 21, 0.06) 1px, transparent 1px),
+    linear-gradient(45deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+    linear-gradient(-45deg, rgba(250, 204, 21, 0.03) 1px, transparent 1px);
   background-size: 40px 40px, 40px 40px, 80px 80px, 80px 80px;
 }
