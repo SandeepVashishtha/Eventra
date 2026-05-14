@@ -23,6 +23,7 @@ const Hero = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   // Change phrase every 3 seconds
   useEffect(() => {
@@ -171,7 +172,8 @@ const Hero = () => {
             height: `${shape.size}px`,
             ...shape.pos,
             backgroundColor: shape.color,
-            opacity: 0.2,
+            opacity: 0.5, // Increased from 0.2 for better visibility
+            filter: "blur(2px)", // Added a slight blur for a premium look
           }}
         />
       ))}
@@ -239,12 +241,18 @@ const Hero = () => {
           {/* Global Search Bar */}
           <motion.div
             variants={fadeUp}
-            className="w-full max-w-2xl mx-auto mb-10 sm:mb-12 relative"
+            className="w-full max-w-2xl mx-auto mb-10 sm:mb-12"
           >
-            {/* Search Input with Embedded Icons */}
-            <div className="relative flex items-center w-full">
+            <motion.div 
+              animate={{
+                y: isFocused ? -8 : 0,
+                scale: isFocused ? 1.02 : 1,
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className="relative flex items-center w-full group"
+            >
               {/* Search Icon */}
-              <Search className="absolute left-4 sm:left-5 h-4 w-4 sm:h-5 sm:w-5 z-10 text-gray-400 dark:text-gray-500" />
+              <Search className={`absolute left-4 sm:left-5 h-4 w-4 sm:h-5 sm:w-5 z-10 transition-colors duration-300 ${isFocused ? 'text-indigo-500' : 'text-gray-400 dark:text-gray-500'}`} />
 
               {/* Input Field */}
               <input
@@ -254,14 +262,24 @@ const Hero = () => {
                 onChange={(e) => handleSearch(e.target.value)}
                 className="w-full py-3.5 sm:py-4 pl-12 sm:pl-14 pr-12 sm:pr-14 text-base sm:text-lg text-gray-900 dark:text-gray-100 
                  placeholder-gray-500 dark:placeholder-gray-400 
-                 bg-white backdrop-blur-xl
+                 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl
                  border-2 border-gray-200 dark:border-gray-700 
                  rounded-full focus:outline-none 
-                 focus:ring-4 focus:ring-indigo-500/30 dark:focus:ring-indigo-400/20 
-                 focus:border-indigo-500 dark:focus:border-indigo-400 
                  transition-all duration-300 shadow-md hover:shadow-lg"
-                onFocus={() => searchQuery && setShowResults(true)}
-                onBlur={() => setTimeout(() => setShowResults(false), 200)}
+                style={{
+                  borderColor: isFocused ? "#6366f1" : "",
+                  boxShadow: isFocused 
+                    ? "0 20px 25px -5px rgba(99, 102, 241, 0.3), 0 10px 10px -5px rgba(99, 102, 241, 0.2)" 
+                    : "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                }}
+                onFocus={() => {
+                  setIsFocused(true);
+                  if (searchQuery) setShowResults(true);
+                }}
+                onBlur={() => {
+                  setIsFocused(false);
+                  setTimeout(() => setShowResults(false), 200);
+                }}
               />
 
               {/* Clear Button */}
@@ -278,12 +296,12 @@ const Hero = () => {
                     setShowResults(false);
                   }}
                    className="absolute inset-y-0 right-4 sm:right-5 flex items-center 
-                     text-gray-400 hover:text-gray-600 transition-colors"
+                     text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
                   <X className="h-5 w-5" />
                 </motion.button>
               )}
-            </div>
+            </motion.div>
 
             {/* Search Results Dropdown */}
             <AnimatePresence>

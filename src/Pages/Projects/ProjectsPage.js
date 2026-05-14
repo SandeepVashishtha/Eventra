@@ -25,6 +25,7 @@ const ProjectGallery = () => {
   const [showSubmissionModal, setShowSubmissionModal] = useState(false); // Show/hide submission modal
   const [categoryOpen, setCategoryOpen] = useState(false); // Category dropdown state
   const [sortOpen, setSortOpen] = useState(false); // Sort dropdown state
+  const [isFocused, setIsFocused] = useState(false); // Search focus state
   const cardSectionRef=useRef() // Refer to card section
 
   // Labels for sorting options
@@ -148,23 +149,38 @@ const ProjectGallery = () => {
         >
           <div className="flex flex-col md:flex-row gap-4 md:items-center">
             {/* Search Input Box */}
-            <div className="relative flex-1">
-              <motion.div
-                whileHover={{ scale: 1.2, rotate: 10 }}
-                className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-              >
-                {/* UPDATED: Icon color */}
-                <FiSearch className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-              </motion.div>
-              <input
-                type="text"
-                placeholder="Search projects by name, tech stack, or category..."
-                // UPDATED: Input styles
-                className="block w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-black/20 dark:focus:ring-white/20 focus:border-black/20 dark:focus:border-white/20 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-800 shadow-sm transition-all duration-300"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+              <div className="relative flex-1 group">
+                <motion.div
+                  animate={{
+                    y: isFocused ? -8 : 0,
+                    scale: isFocused ? 1.02 : 1,
+                  }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  className="relative"
+                >
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                    {/* UPDATED: Icon color */}
+                    <FiSearch className="h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-indigo-500 transition-colors" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search projects by name, tech stack, or category..."
+                    // UPDATED: Input styles
+                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-800 shadow-sm transition-all duration-300"
+                    style={{
+                      boxShadow: isFocused 
+                        ? "0 20px 25px -5px rgba(99, 102, 241, 0.2), 0 10px 10px -5px rgba(99, 102, 241, 0.1)" 
+                        : "0 1px 2px rgba(0, 0, 0, 0.05)",
+                      borderColor: isFocused ? "#6366f1" : "",
+                      borderWidth: isFocused ? "2px" : "1px",
+                    }}
+                    value={searchQuery}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </motion.div>
+              </div>
 
             {/* Filters and Sort Controls */}
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4 w-full md:w-auto">
@@ -383,7 +399,8 @@ const ProjectGallery = () => {
                         height: size,
                         left: positions[i].left,
                         top: positions[i].top,
-                        opacity: 0.3,
+                        opacity: 0.6, // Increased from 0.3
+                        filter: "blur(2px)",
                       }}
                       animate={{
                         y: [0, -30, 0],
