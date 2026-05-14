@@ -302,9 +302,13 @@
 }
 
 .ad-stat-card:hover {
-  border-color: #c7d2fe;
-  box-shadow: 0 8px 24px rgba(99,102,241,0.08);
-  transform: translateY(-2px);
+  border-color: #6366f1;
+  box-shadow: 0 12px 30px rgba(99, 102, 241, 0.12);
+  transform: translateY(-4px) scale(1.01);
+}
+
+.ad-stat-card:hover .ad-stat-icon {
+  transform: scale(1.1) rotate(5deg);
 }
 
 .dark .ad-stat-card {
@@ -341,6 +345,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .ad-stat-label {
@@ -384,6 +389,13 @@
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+  transition: all 0.3s ease;
+}
+
+.ad-card:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+  border-color: #e2e8f0;
 }
 
 .dark .ad-card {
