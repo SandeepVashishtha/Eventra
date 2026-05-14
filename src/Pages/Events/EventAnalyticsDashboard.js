@@ -60,6 +60,42 @@ const topEvents = getTopEvents();
 const typeData = getTypeData();
 const locationData = getLocationData();
 
+const RegistrationLineChart = ({ height = 260, showLegend = false }) => (
+  <ResponsiveContainer width="100%" height={height}>
+    <LineChart data={registrationTrends}>
+      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+      <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+      <YAxis tick={{ fontSize: 12 }} />
+      <Tooltip />
+      {showLegend && <Legend />}
+      <Line type="monotone" dataKey="registrations" stroke="#6366f1" strokeWidth={3} dot={{ r: showLegend ? 6 : 5, fill: '#6366f1' }} activeDot={{ r: 7 }} name="Registrations" />
+    </LineChart>
+  </ResponsiveContainer>
+);
+
+const AttendanceBarChart = ({ height = 260, layout = 'horizontal', showLegend = true }) => (
+  <ResponsiveContainer width="100%" height={height}>
+    <BarChart data={topEvents} layout={layout}>
+      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+      {layout === 'vertical' ? (
+        <>
+          <XAxis type="number" tick={{ fontSize: 11 }} />
+          <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={110} />
+        </>
+      ) : (
+        <>
+          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+          <YAxis />
+        </>
+      )}
+      <Tooltip />
+      {showLegend && <Legend />}
+      <Bar dataKey="attendees" fill="#6366f1" radius={layout === 'vertical' ? [0, 6, 6, 0] : [6, 6, 0, 0]} name="Attendees" />
+      <Bar dataKey="capacity" fill="#c7d2fe" radius={layout === 'vertical' ? [0, 6, 6, 0] : [6, 6, 0, 0]} name="Capacity" />
+    </BarChart>
+  </ResponsiveContainer>
+);
+
 const KPIHeader = () => (
   <div className="ead-header">
     <div className="ead-header-left">
@@ -92,29 +128,11 @@ const OverviewTab = () => (
   <div className="ead-grid">
     <div className="ead-card ead-card--wide">
       <h2 className="ead-card-title">📈 Registrations Over Time</h2>
-      <ResponsiveContainer width="100%" height={260}>
-        <LineChart data={registrationTrends}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-          <YAxis tick={{ fontSize: 12 }} />
-          <Tooltip />
-          <Line type="monotone" dataKey="registrations" stroke="#6366f1" strokeWidth={3} dot={{ r: 5, fill: '#6366f1' }} activeDot={{ r: 7 }} />
-        </LineChart>
-      </ResponsiveContainer>
+      <RegistrationLineChart height={260} />
     </div>
     <div className="ead-card ead-card--wide">
       <h2 className="ead-card-title">🏆 Top Performing Events</h2>
-      <ResponsiveContainer width="100%" height={260}>
-        <BarChart data={topEvents} layout="vertical">
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis type="number" tick={{ fontSize: 11 }} />
-          <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={110} />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="attendees" fill="#6366f1" radius={[0, 6, 6, 0]} name="Attendees" />
-          <Bar dataKey="capacity" fill="#c7d2fe" radius={[0, 6, 6, 0]} name="Capacity" />
-        </BarChart>
-      </ResponsiveContainer>
+      <AttendanceBarChart height={260} layout="vertical" />
     </div>
   </div>
 );
@@ -123,30 +141,11 @@ const RegistrationsTab = () => (
   <div className="ead-grid">
     <div className="ead-card ead-card--full">
       <h2 className="ead-card-title">📅 Monthly Registration Trends</h2>
-      <ResponsiveContainer width="100%" height={320}>
-        <LineChart data={registrationTrends}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis dataKey="month" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="registrations" stroke="#6366f1" strokeWidth={3} dot={{ r: 6, fill: '#6366f1' }} name="Registrations" />
-        </LineChart>
-      </ResponsiveContainer>
+      <RegistrationLineChart height={320} showLegend />
     </div>
     <div className="ead-card ead-card--full">
       <h2 className="ead-card-title">📊 All Events — Attendance vs Capacity</h2>
-      <ResponsiveContainer width="100%" height={320}>
-        <BarChart data={topEvents}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="attendees" fill="#6366f1" name="Attendees" radius={[6, 6, 0, 0]} />
-          <Bar dataKey="capacity" fill="#c7d2fe" name="Capacity" radius={[6, 6, 0, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
+      <AttendanceBarChart height={320} />
     </div>
   </div>
 );
