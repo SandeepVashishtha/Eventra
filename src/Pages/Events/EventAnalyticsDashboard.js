@@ -6,7 +6,6 @@ import {
 import eventsData from './eventsMockData.json';
 import './EventAnalyticsDashboard.css';
 
-// ── Mock registration trend data (monthly) ────────────────────────────────────
 const registrationTrends = [
   { month: 'Oct', registrations: 75 },
   { month: 'Nov', registrations: 95 },
@@ -22,7 +21,6 @@ const registrationTrends = [
   { month: 'Sep', registrations: 240 },
 ];
 
-// ── Mock feedback/rating data ─────────────────────────────────────────────────
 const feedbackData = [
   { event: 'React Conf', rating: 4.8, responses: 210 },
   { event: 'AI Workshop', rating: 4.6, responses: 98 },
@@ -31,35 +29,162 @@ const feedbackData = [
   { event: 'UX Master', rating: 4.7, responses: 55 },
 ];
 
-// ── Colors ────────────────────────────────────────────────────────────────────
 const COLORS = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'];
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 const totalRegistrations = eventsData.reduce((sum, e) => sum + e.attendees, 0);
 const totalCapacity = eventsData.reduce((sum, e) => sum + e.maxAttendees, 0);
 const fillRate = Math.round((totalRegistrations / totalCapacity) * 100);
 const avgRating = (feedbackData.reduce((s, f) => s + f.rating, 0) / feedbackData.length).toFixed(1);
 
+const OverviewTab = ({ topEvents }) => (
+  <div className="ead-grid">
+    <div className="ead-card ead-card--wide">
+      <h2 className="ead-card-title">📈 Registrations Over Time</h2>
+      <ResponsiveContainer width="100%" height={260}>
+        <LineChart data={registrationTrends}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+          <YAxis tick={{ fontSize: 12 }} />
+          <Tooltip />
+          <Line type="monotone" dataKey="registrations" stroke="#6366f1" strokeWidth={3} dot={{ r: 5, fill: '#6366f1' }} activeDot={{ r: 7 }} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+    <div className="ead-card ead-card--wide">
+      <h2 className="ead-card-title">🏆 Top Performing Events</h2>
+      <ResponsiveContainer width="100%" height={260}>
+        <BarChart data={topEvents} layout="vertical">
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <XAxis type="number" tick={{ fontSize: 11 }} />
+          <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={110} />
+          <Tooltip />
+          <Legend />
+          <Bar dataKey="attendees" fill="#6366f1" radius={[0, 6, 6, 0]} name="Attendees" />
+          <Bar dataKey="capacity" fill="#c7d2fe" radius={[0, 6, 6, 0]} name="Capacity" />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  </div>
+);
+
+const RegistrationsTab = ({ topEvents }) => (
+  <div className="ead-grid">
+    <div className="ead-card ead-card--full">
+      <h2 className="ead-card-title">📅 Monthly Registration Trends</h2>
+      <ResponsiveContainer width="100%" height={320}>
+        <LineChart data={registrationTrends}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <XAxis dataKey="month" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Line type="monotone" dataKey="registrations" stroke="#6366f1" strokeWidth={3} dot={{ r: 6, fill: '#6366f1' }} name="Registrations" />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+    <div className="ead-card ead-card--full">
+      <h2 className="ead-card-title">📊 All Events — Attendance vs Capacity</h2>
+      <ResponsiveContainer width="100%" height={320}>
+        <BarChart data={topEvents}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Bar dataKey="attendees" fill="#6366f1" name="Attendees" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="capacity" fill="#c7d2fe" name="Capacity" radius={[6, 6, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  </div>
+);
+
+const DemographicsTab = ({ typeData, locationData }) => (
+  <div className="ead-grid">
+    <div className="ead-card">
+      <h2 className="ead-card-title">🎯 Attendees by Event Type</h2>
+      <ResponsiveContainer width="100%" height={280}>
+        <PieChart>
+          <Pie data={typeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+            {typeData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+          </Pie>
+          <Tooltip />
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
+    <div className="ead-card">
+      <h2 className="ead-card-title">📍 Attendees by Region</h2>
+      <ResponsiveContainer width="100%" height={280}>
+        <PieChart>
+          <Pie data={locationData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+            {locationData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+          </Pie>
+          <Tooltip />
+          <Legend />
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
+  </div>
+);
+
+const FeedbackTab = () => (
+  <div className="ead-grid">
+    <div className="ead-card ead-card--full">
+      <h2 className="ead-card-title">⭐ Average Ratings by Event</h2>
+      <ResponsiveContainer width="100%" height={280}>
+        <BarChart data={feedbackData}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <XAxis dataKey="event" tick={{ fontSize: 12 }} />
+          <YAxis domain={[0, 5]} tick={{ fontSize: 12 }} />
+          <Tooltip />
+          <Bar dataKey="rating" fill="#6366f1" radius={[6, 6, 0, 0]} name="Avg Rating" />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+    <div className="ead-card ead-card--full">
+      <h2 className="ead-card-title">💬 Feedback Summary</h2>
+      <div className="ead-feedback-list">
+        {feedbackData.map((f, i) => (
+          <div key={i} className="ead-feedback-row">
+            <span className="ead-feedback-event">{f.event}</span>
+            <div className="ead-feedback-bar-wrap">
+              <div className="ead-feedback-bar" style={{ width: `${(f.rating / 5) * 100}%` }} />
+            </div>
+            <span className="ead-feedback-rating">⭐ {f.rating}</span>
+            <span className="ead-feedback-responses">{f.responses} responses</span>
+          </div>
+        ))}
+      </div>
+      <div className="ead-sentiment">
+        <div className="ead-sentiment-item ead-sentiment--positive">
+          <span>😊 Positive</span><strong>78%</strong>
+        </div>
+        <div className="ead-sentiment-item ead-sentiment--neutral">
+          <span>😐 Neutral</span><strong>15%</strong>
+        </div>
+        <div className="ead-sentiment-item ead-sentiment--negative">
+          <span>😞 Negative</span><strong>7%</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 const EventAnalyticsDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Top performing events (by attendees)
   const topEvents = useMemo(() =>
     [...eventsData].sort((a, b) => b.attendees - a.attendees).slice(0, 6)
       .map(e => ({ name: e.title.length > 18 ? e.title.slice(0, 18) + '…' : e.title, attendees: e.attendees, capacity: e.maxAttendees })),
     []
   );
 
-  // Attendee demographics by event type
   const typeData = useMemo(() => {
     const map = {};
-    eventsData.forEach(e => {
-      map[e.type] = (map[e.type] || 0) + e.attendees;
-    });
+    eventsData.forEach(e => { map[e.type] = (map[e.type] || 0) + e.attendees; });
     return Object.entries(map).map(([name, value]) => ({ name, value }));
   }, []);
 
-  // Location distribution
   const locationData = useMemo(() => {
     const map = {};
     eventsData.forEach(e => {
@@ -71,7 +196,6 @@ const EventAnalyticsDashboard = () => {
 
   return (
     <div className="ead-root">
-      {/* ── Header ── */}
       <div className="ead-header">
         <div className="ead-header-left">
           <span className="ead-badge">Organizer View</span>
@@ -98,7 +222,6 @@ const EventAnalyticsDashboard = () => {
         </div>
       </div>
 
-      {/* ── Tabs ── */}
       <div className="ead-tabs">
         {['overview', 'registrations', 'demographics', 'feedback'].map(tab => (
           <button
@@ -111,149 +234,10 @@ const EventAnalyticsDashboard = () => {
         ))}
       </div>
 
-      {/* ── Overview Tab ── */}
-      {activeTab === 'overview' && (
-        <div className="ead-grid">
-          {/* Registrations Over Time */}
-          <div className="ead-card ead-card--wide">
-            <h2 className="ead-card-title">📈 Registrations Over Time</h2>
-            <ResponsiveContainer width="100%" height={260}>
-              <LineChart data={registrationTrends}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Line type="monotone" dataKey="registrations" stroke="#6366f1" strokeWidth={3} dot={{ r: 5, fill: '#6366f1' }} activeDot={{ r: 7 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Top Performing Events */}
-          <div className="ead-card ead-card--wide">
-            <h2 className="ead-card-title">🏆 Top Performing Events</h2>
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={topEvents} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis type="number" tick={{ fontSize: 11 }} />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={110} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="attendees" fill="#6366f1" radius={[0, 6, 6, 0]} name="Attendees" />
-                <Bar dataKey="capacity" fill="#c7d2fe" radius={[0, 6, 6, 0]} name="Capacity" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
-
-      {/* ── Registrations Tab ── */}
-      {activeTab === 'registrations' && (
-        <div className="ead-grid">
-          <div className="ead-card ead-card--full">
-            <h2 className="ead-card-title">📅 Monthly Registration Trends</h2>
-            <ResponsiveContainer width="100%" height={320}>
-              <LineChart data={registrationTrends}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="registrations" stroke="#6366f1" strokeWidth={3} dot={{ r: 6, fill: '#6366f1' }} name="Registrations" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="ead-card ead-card--full">
-            <h2 className="ead-card-title">📊 All Events — Attendance vs Capacity</h2>
-            <ResponsiveContainer width="100%" height={320}>
-              <BarChart data={topEvents}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="attendees" fill="#6366f1" name="Attendees" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="capacity" fill="#c7d2fe" name="Capacity" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
-
-      {/* ── Demographics Tab ── */}
-      {activeTab === 'demographics' && (
-        <div className="ead-grid">
-          <div className="ead-card">
-            <h2 className="ead-card-title">🎯 Attendees by Event Type</h2>
-            <ResponsiveContainer width="100%" height={280}>
-              <PieChart>
-                <Pie data={typeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                  {typeData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="ead-card">
-            <h2 className="ead-card-title">📍 Attendees by Region</h2>
-            <ResponsiveContainer width="100%" height={280}>
-              <PieChart>
-                <Pie data={locationData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                  {locationData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
-
-      {/* ── Feedback Tab ── */}
-      {activeTab === 'feedback' && (
-        <div className="ead-grid">
-          <div className="ead-card ead-card--full">
-            <h2 className="ead-card-title">⭐ Average Ratings by Event</h2>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={feedbackData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="event" tick={{ fontSize: 12 }} />
-                <YAxis domain={[0, 5]} tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Bar dataKey="rating" fill="#6366f1" radius={[6, 6, 0, 0]} name="Avg Rating" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="ead-card ead-card--full">
-            <h2 className="ead-card-title">💬 Feedback Summary</h2>
-            <div className="ead-feedback-list">
-              {feedbackData.map((f, i) => (
-                <div key={i} className="ead-feedback-row">
-                  <span className="ead-feedback-event">{f.event}</span>
-                  <div className="ead-feedback-bar-wrap">
-                    <div className="ead-feedback-bar" style={{ width: `${(f.rating / 5) * 100}%` }} />
-                  </div>
-                  <span className="ead-feedback-rating">⭐ {f.rating}</span>
-                  <span className="ead-feedback-responses">{f.responses} responses</span>
-                </div>
-              ))}
-            </div>
-            <div className="ead-sentiment">
-              <div className="ead-sentiment-item ead-sentiment--positive">
-                <span>😊 Positive</span><strong>78%</strong>
-              </div>
-              <div className="ead-sentiment-item ead-sentiment--neutral">
-                <span>😐 Neutral</span><strong>15%</strong>
-              </div>
-              <div className="ead-sentiment-item ead-sentiment--negative">
-                <span>😞 Negative</span><strong>7%</strong>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {activeTab === 'overview' && <OverviewTab topEvents={topEvents} />}
+      {activeTab === 'registrations' && <RegistrationsTab topEvents={topEvents} />}
+      {activeTab === 'demographics' && <DemographicsTab typeData={typeData} locationData={locationData} />}
+      {activeTab === 'feedback' && <FeedbackTab />}
     </div>
   );
 };
