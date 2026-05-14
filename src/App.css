@@ -325,15 +325,23 @@ main {
 
 .hackathon-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 2rem;
+}
+@media(max-width: 768px){
+  .hackathon-grid {
+    gap: 1rem;
+  }
+  .hackathon-card {
+    padding: 1rem;
+  }
 }
 
 .hackathon-card {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
   border-radius: 20px;
-  padding: 2rem;
+  padding: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
   color: white;
