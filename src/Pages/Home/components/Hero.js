@@ -9,6 +9,7 @@ import eventsData from "../../Events/eventsMockData.json";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
 import RespawningText from "../../../jhalak/RespawningText";
+import ModernSearchInput from "../../../components/common/ModernSearchInput";
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -239,152 +240,97 @@ const Hero = () => {
           </motion.p>
 
           {/* Global Search Bar */}
-          <motion.div
-            variants={fadeUp}
-            className="w-full max-w-2xl mx-auto mb-10 sm:mb-12"
-          >
-            <motion.div 
-              animate={{
-                y: isFocused ? -8 : 0,
-                scale: isFocused ? 1.02 : 1,
-              }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              className="relative flex items-center w-full group"
+          <div className="w-full max-w-2xl mx-auto mb-10 sm:mb-12">
+            <ModernSearchInput
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              placeholder="Search events, hackathons, projects..."
+              onFocus={() => searchQuery && setShowResults(true)}
+              onBlur={() => setTimeout(() => setShowResults(false), 200)}
             >
-              {/* Search Icon */}
-              <Search className={`absolute left-4 sm:left-5 h-4 w-4 sm:h-5 sm:w-5 z-10 transition-colors duration-300 ${isFocused ? 'text-indigo-500' : 'text-gray-400 dark:text-gray-500'}`} />
-
-              {/* Input Field */}
-              <input
-                type="text"
-                placeholder="Search events, hackathons, projects..."
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="w-full py-3.5 sm:py-4 pl-12 sm:pl-14 pr-12 sm:pr-14 text-base sm:text-lg text-gray-900 dark:text-gray-100 
-                 placeholder-gray-500 dark:placeholder-gray-400 
-                 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl
-                 border-2 border-gray-200 dark:border-gray-700 
-                 rounded-full focus:outline-none 
-                 transition-all duration-300 shadow-md hover:shadow-lg"
-                style={{
-                  borderColor: isFocused ? "#6366f1" : "",
-                  boxShadow: isFocused 
-                    ? "0 20px 25px -5px rgba(99, 102, 241, 0.3), 0 10px 10px -5px rgba(99, 102, 241, 0.2)" 
-                    : "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                }}
-                onFocus={() => {
-                  setIsFocused(true);
-                  if (searchQuery) setShowResults(true);
-                }}
-                onBlur={() => {
-                  setIsFocused(false);
-                  setTimeout(() => setShowResults(false), 200);
-                }}
-              />
-
-              {/* Clear Button */}
-              {searchQuery && (
-                <motion.button
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  exit={{ scale: 0 }}
-                  whileHover={{ rotate: 90, scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => {
-                    setSearchQuery("");
-                    setSearchResults([]);
-                    setShowResults(false);
-                  }}
-                   className="absolute inset-y-0 right-4 sm:right-5 flex items-center 
-                     text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                >
-                  <X className="h-5 w-5" />
-                </motion.button>
-              )}
-            </motion.div>
-
-            {/* Search Results Dropdown */}
-            <AnimatePresence>
-              {showResults && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute top-full left-0 right-0 mt-3 
-                   bg-white rounded-3xl 
-                   shadow-2xl border border-gray-200 
-                   max-h-96 overflow-y-auto z-50"
-                >
-                  <div className="p-4">
-                    {searchResults.length > 0 ? (
-                      <>
-                        <div className="text-sm text-gray-500 mb-3 font-medium">
-                          Search Results ({searchResults.length})
-                        </div>
-                        <div className="space-y-2">
-                          {searchResults.map((result, index) => (
-                            <motion.div
-                              key={`${result.item.type}-${result.item.id}`}
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: index * 0.05 }}
-                              onClick={() =>
-                                handleResultClick(result.item, result.item.type)
-                              }
-                              className="flex items-center gap-3 p-3 rounded-2xl 
-                               hover:bg-gray-50 
-                               cursor-pointer transition-colors group"
-                            >
-                              <div
-                                className="flex-shrink-0 p-2 bg-blue-100 rounded-xl text-blue-600 
-                                    group-hover:bg-blue-200 transition-colors"
+              {/* Search Results Dropdown */}
+              <AnimatePresence>
+                {showResults && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute top-full left-0 right-0 mt-3 
+                     bg-white rounded-3xl 
+                     shadow-2xl border border-gray-200 
+                     max-h-96 overflow-y-auto z-50"
+                  >
+                    <div className="p-4">
+                      {searchResults.length > 0 ? (
+                        <>
+                          <div className="text-sm text-gray-500 mb-3 font-medium">
+                            Search Results ({searchResults.length})
+                          </div>
+                          <div className="space-y-2">
+                            {searchResults.map((result, index) => (
+                              <motion.div
+                                key={`${result.item.type}-${result.item.id}`}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                                onClick={() =>
+                                  handleResultClick(result.item, result.item.type)
+                                }
+                                className="flex items-center gap-3 p-3 rounded-2xl 
+                                 hover:bg-gray-50 
+                                 cursor-pointer transition-colors group"
                               >
-                                {getResultIcon(result.item.type)}
-                              </div>
-                              <div className="flex-1 min-w-0 relative">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h4 className="text-sm font-semibold text-gray-900 truncate">
-                                    {result.item.title}
-                                  </h4>
-                                  <span
-                                    className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium 
-                                         bg-gray-100 text-gray-600"
-                                  >
-                                    {result.item.searchType}
-                                  </span>
+                                <div
+                                  className="flex-shrink-0 p-2 bg-blue-100 rounded-xl text-blue-600 
+                                      group-hover:bg-blue-200 transition-colors"
+                                >
+                                  {getResultIcon(result.item.type)}
                                 </div>
-                                <p className="text-xs text-gray-500 line-clamp-2 absolute left-0">
-                                  {result.item.description?.substring(0, 80)}...
-                                </p>
-                              </div>
-                              <ExternalLink
-                                className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors"
-                              />
-                            </motion.div>
-                          ))}
-                        </div>
-                      </>
-                    ) : (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        transition={{ duration: 0.25, ease: "easeOut" }}
-                        className="text-center text-gray-500 py-10 text-base"
-                      >
-                        No results match “
-                        <span className="font-medium text-gray-700">
-                          {searchQuery}
-                        </span>
-                        ”
-                      </motion.div>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
+                                <div className="flex-1 min-w-0 relative">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h4 className="text-sm font-semibold text-gray-900 truncate">
+                                      {result.item.title}
+                                    </h4>
+                                    <span
+                                      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium 
+                                           bg-gray-100 text-gray-600"
+                                    >
+                                      {result.item.searchType}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-gray-500 line-clamp-2 absolute left-0">
+                                    {result.item.description?.substring(0, 80)}...
+                                  </p>
+                                </div>
+                                <ExternalLink
+                                  className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors"
+                                />
+                              </motion.div>
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 10 }}
+                          transition={{ duration: 0.25, ease: "easeOut" }}
+                          className="text-center text-gray-500 py-10 text-base"
+                        >
+                          No results match “
+                          <span className="font-medium text-gray-700">
+                            {searchQuery}
+                          </span>
+                          ”
+                        </motion.div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </ModernSearchInput>
+          </div>
 
           {/* Buttons */}
           <motion.div

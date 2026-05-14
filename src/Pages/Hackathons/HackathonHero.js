@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, Sparkles, Users, Award, Code2, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import ModernSearchInput from "../../components/common/ModernSearchInput";
 
 // Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
@@ -39,7 +40,6 @@ export default function HackathonHero({
 }) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [isFocused, setIsFocused] = useState(false);
 
   // Floating shapes/bubbles
   const shapes = useMemo(
@@ -106,75 +106,26 @@ export default function HackathonHero({
           and win amazing prizes.
         </motion.p>
 
-        {/* ======================= SEARCH BOX WITH TAGS ======================= */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ 
-            opacity: 1, 
-            scale: isFocused ? 1.02 : 1,
-            y: isFocused ? -8 : 0
-          }}
-          transition={{ 
-            type: "spring", 
-            stiffness: 300, 
-            damping: 20,
-            delay: isFocused ? 0 : 0.4 // Only delay on initial mount
-          }}
-          className="w-full max-w-3xl mx-auto mt-12"
-        >
-          <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center z-10 pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-indigo-500 transition-colors" />
-            </div>
-
-            {/* Search bar with tags inside */}
-            <div 
-              className="flex flex-wrap items-center gap-2 w-full pl-12 pr-12 py-4 text-base text-gray-900 dark:text-gray-100 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl"
-              style={{
-                borderColor: isFocused ? "#6366f1" : "",
-                borderWidth: isFocused ? "2px" : "1px",
-                boxShadow: isFocused 
-                  ? "0 20px 25px -5px rgba(99, 102, 241, 0.3), 0 10px 10px -5px rgba(99, 102, 241, 0.2)" 
-                  : "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-              }}
-            >
-              
-              {/* Selected tags displayed in search bar */}
+        <div className="w-full max-w-3xl mx-auto mt-12">
+          <ModernSearchInput
+            searchInputRef={searchInputRef}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={onSearchKeyDown}
+            placeholder="Search hackathons by name, location, or tags..."
+            tags={
               <AnimatePresence>
                 {selectedTags.map((tag) => (
                   <Tag key={tag} tag={tag} onRemove={onTagRemove} />
                 ))}
               </AnimatePresence>
-              
-              {/* Search input */}
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder={selectedTags.length === 0 ? "Search hackathons by name, location, or tags..." : ""}
-                className="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-gray-100 min-w-[120px] placeholder-gray-400 dark:placeholder-gray-500"
-                value={searchQuery}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={onSearchKeyDown}
-              />
-            </div>
-
-            {(searchQuery || selectedTags.length > 0) && (
-              <motion.button
-                whileHover={{ rotate: 90, scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => {
-                  setSearchQuery("");
-                  // Clear all selected tags
-                  selectedTags.forEach(tag => onTagRemove(tag));
-                }}
-                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors z-10"
-              >
-                <X className="h-5 w-5" />
-              </motion.button>
-            )}
-          </div>
+            }
+            showClearButton={searchQuery || selectedTags.length > 0}
+            onClear={() => {
+              setSearchQuery("");
+              selectedTags.forEach(tag => onTagRemove(tag));
+            }}
+          />
 
           {/* ======================= TAG FILTERS ======================= */}
           <div className="mt-4 flex items-center justify-between flex-wrap gap-3 px-2">
@@ -202,7 +153,7 @@ export default function HackathonHero({
               {filteredCount === 1 ? "hackathon" : "hackathons"} found
             </span>
           </div>
-        </motion.div>
+        </div>
 
         {/* ======================= CTA BUTTONS ======================= */}
         <motion.div

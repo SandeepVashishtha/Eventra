@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Search, X, Sparkles, Users, Award, Code2, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import ModernSearchInput from "../../components/common/ModernSearchInput";
 
 export default function EventHero({
   searchQuery,
@@ -28,7 +29,6 @@ export default function EventHero({
   ];
 
   const navigate = useNavigate();
-  const [isFocused, setIsFocused] = useState(false);
 
   return (
     <div className="relative bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 py-16 sm:py-20 md:py-24 overflow-hidden">
@@ -74,44 +74,11 @@ export default function EventHero({
         </p>
 
         <div className="w-full max-w-3xl mx-auto mt-8 sm:mt-12 px-4 sm:px-0">
-          <motion.div
-            animate={{
-              y: isFocused ? -8 : 0,
-              scale: isFocused ? 1.02 : 1,
-            }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="relative group"
-          >
-            <div className="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center z-10 pointer-events-none">
-              <Search className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-indigo-500 transition-colors" />
-            </div>
-
-            <input
-              type="text"
-              placeholder="Search events by name, location, or tags..."
-              className="block w-full pl-10 sm:pl-12 pr-10 sm:pr-12 py-3 sm:py-4 text-sm sm:text-base text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl focus:outline-none transition-shadow duration-300"
-              style={{
-                boxShadow: isFocused 
-                  ? "0 20px 25px -5px rgba(99, 102, 241, 0.3), 0 10px 10px -5px rgba(99, 102, 241, 0.2)" 
-                  : "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-                borderColor: isFocused ? "#6366f1" : "",
-                borderWidth: isFocused ? "2px" : "1px",
-              }}
-              value={searchQuery}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              onChange={(e) => handleSearch(e.target.value)}
-            />
-
-            {searchQuery && (
-              <button
-                onClick={() => handleSearch("")}
-                className="absolute inset-y-0 right-0 pr-3 sm:pr-4 flex items-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors z-10"
-              >
-                <X className="h-4 w-4 sm:h-5 sm:w-5" />
-              </button>
-            )}
-          </motion.div>
+          <ModernSearchInput
+            value={searchQuery}
+            onChange={(e) => handleSearch(e.target.value)}
+            placeholder="Search events by name, location, or tags..."
+          />
 
           <div className="mt-4 flex items-center justify-between flex-wrap gap-2 sm:gap-3 px-2">
             <div className="flex gap-1.5 sm:gap-2 flex-wrap">
