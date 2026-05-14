@@ -278,7 +278,9 @@
 
 .ud-icon-btn:hover {
   background: #f3f4f6;
-  color: #111827;
+  color: #6366f1;
+  transform: scale(1.05);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 }
 
 .dark .ud-icon-btn {
@@ -444,9 +446,14 @@
 }
 
 .ud-stat-card:hover {
-  border-color: #c7d2fe;
-  box-shadow: 0 8px 24px rgba(99,102,241,0.08);
-  transform: translateY(-2px);
+  border-color: #6366f1;
+  box-shadow: 0 12px 30px rgba(99, 102, 241, 0.12);
+  transform: translateY(-4px) scale(1.01);
+}
+
+.ud-stat-card:hover .ud-stat-icon {
+  transform: scale(1.1) rotate(5deg);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .dark .ud-stat-card {
@@ -467,6 +474,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .ud-stat-info { flex: 1; }
@@ -520,8 +528,25 @@
 
 .ud-quick-card:hover {
   border-color: var(--qa-color, #6366f1);
-  box-shadow: 0 6px 20px color-mix(in srgb, var(--qa-color, #6366f1) 12%, transparent);
-  transform: translateY(-3px);
+  box-shadow: 0 12px 25px -5px color-mix(in srgb, var(--qa-color, #6366f1) 25%, transparent), 
+              0 8px 10px -6px color-mix(in srgb, var(--qa-color, #6366f1) 15%, transparent);
+  transform: translateY(-5px) scale(1.03);
+  z-index: 2;
+}
+
+.ud-quick-card:hover .ud-quick-icon {
+  transform: scale(1.15) translateY(-2px);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.ud-quick-card:hover .ud-quick-label {
+  color: var(--qa-color, #6366f1);
+}
+
+.ud-quick-card:hover .ud-quick-arrow {
+  transform: translateX(4px);
+  color: var(--qa-color, #6366f1);
+  opacity: 1;
 }
 
 .dark .ud-quick-card {
@@ -536,6 +561,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .ud-quick-label {
@@ -543,6 +569,7 @@
   font-weight: 600;
   color: #374151;
   text-align: center;
+  transition: color 0.25s ease;
 }
 
 .dark .ud-quick-label { color: #d1d5db; }
@@ -552,6 +579,8 @@
   top: 0.6rem;
   right: 0.6rem;
   color: #d1d5db;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  opacity: 0.4;
 }
 
 /* ── Three-column cards ── */
@@ -709,8 +738,10 @@
 }
 
 .ud-btn-primary:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
+  opacity: 1;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+  filter: brightness(1.1);
 }
 
 /* ── Items grid (cards for Events/Hackathons/Projects) ── */
