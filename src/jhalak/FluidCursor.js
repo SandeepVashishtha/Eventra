@@ -969,7 +969,7 @@ const FluidCursor = ({ enabled = true }) => {
       if (aspectRatio > 1) delta /= aspectRatio;
       return delta;
     }
-
+/*
     const handleMouseDown = (e) => {
       if (!isEnabledRef.current) return;
       let pointer = pointers[0];
@@ -985,6 +985,36 @@ const FluidCursor = ({ enabled = true }) => {
       let posX = e.clientX * (canvas.width / canvas.clientWidth);
       let posY = e.clientY * (canvas.height / canvas.clientHeight);
       let color = pointer.color;
+      updatePointerMoveData(pointer, posX, posY, color);
+    };
+*/
+    const handleMouseDown = (e) => {
+      const blockedElement = e.target.closest(
+        "button, a, input, textarea, select, nav, form, .card-with-floating-elements, [class*='card'], [class*='Card'], [class*='modal'], [class*='popup'], [class*='rounded'], [class*='shadow']"
+      );
+
+      if (blockedElement) return;
+
+      let pointer = pointers[0];
+      let posX = scaleByPixelRatio(e.clientX);
+      let posY = scaleByPixelRatio(e.clientY);
+
+      updatePointerDownData(pointer, -1, posX, posY);
+      clickSplat(pointer);
+    };
+
+    const handleMouseMove = (e) => {
+      const blockedElement = e.target.closest(
+        "button, a, input, textarea, select, nav, form, .card-with-floating-elements, [class*='card'], [class*='Card'], [class*='modal'], [class*='popup'], [class*='rounded'], [class*='shadow']"
+      );
+
+      if (blockedElement) return;
+
+      let pointer = pointers[0];
+      let posX = scaleByPixelRatio(e.clientX);
+      let posY = scaleByPixelRatio(e.clientY);
+      let color = pointer.color;
+
       updatePointerMoveData(pointer, posX, posY, color);
     };
 

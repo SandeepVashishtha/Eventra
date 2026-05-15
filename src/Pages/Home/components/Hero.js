@@ -240,7 +240,7 @@ const Hero = () => {
           </motion.p>
 
           {/* Global Search Bar */}
-          <div className="w-full max-w-2xl mx-auto mb-10 sm:mb-12">
+          <div className="w-full max-w-2xl mx-auto mb-10 sm:mb-12 min-h-[72px] relative ">
             <ModernSearchInput
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}

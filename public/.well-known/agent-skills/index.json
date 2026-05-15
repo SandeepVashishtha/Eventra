@@ -1,0 +1,23 @@
+{
+  "$schema": "https://agentskills.io/schema/v0.2.0/index.json",
+  "skills": [
+    {
+      "name": "Sitemap Discovery",
+      "type": "discovery",
+      "description": "Discover pages and content via sitemap.xml",
+      "url": "https://eventra.sandeepvashishtha.in/sitemap.xml"
+    },
+    {
+      "name": "API Discovery",
+      "type": "api",
+      "description": "Discover RESTful API endpoints via API Catalog",
+      "url": "https://eventra.sandeepvashishtha.in/.well-known/api-catalog"
+    },
+    {
+      "name": "Markdown Negotiation",
+      "type": "content",
+      "description": "Get markdown representations of pages for AI processing",
+      "url": "https://eventra.sandeepvashishtha.in/"
+    }
+  ]
+}

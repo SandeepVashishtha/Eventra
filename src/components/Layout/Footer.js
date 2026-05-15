@@ -313,10 +313,10 @@ const Footer = () => {
                     <li key={link.name}>
                       <Link
                         to={link.href}
-                        className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-3 transition-colors group"
+                        className="text-sm text-gray-600 hover:text-black flex items-center gap-4 transition-all duration-300 hover:translate-x-1 group"
                       >
                         {link.icon && (
-                          <span className="text-gray-400 group-hover:text-indigo-600 transition-colors">
+                          <span className="text-black group-hover:text-black group-hover:scale-110 transition-all duration-300">
                             {link.icon}
                           </span>
                         )}
@@ -365,3 +365,7 @@ const Footer = () => {
 };
 
 export default Footer;
+
+
+
+
