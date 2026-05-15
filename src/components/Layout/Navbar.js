@@ -283,6 +283,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const navRef = useRef(null);
 
   const { user, isAuthenticated, logout } = useAuth();
+  const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
 
