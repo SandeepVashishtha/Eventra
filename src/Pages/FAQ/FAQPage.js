@@ -173,8 +173,8 @@ const FAQPage = () => {
                 onClick={() => toggleFAQ(faq.id)}
                 className="w-full p-6 text-left flex items-center justify-between outline-none focus:outline-none focus:ring-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
               >
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900 rounded-xl flex items-center justify-center">
+                <div className="flex items-center space-x-3 sm:space-x-4 pr-2">
+                  <div className="w-12 h-12 flex-shrink-0 bg-indigo-100 dark:bg-indigo-900 rounded-xl flex items-center justify-center">
                     <span className="text-black dark:text-white">
                       {faq.icon}
                     </span>
