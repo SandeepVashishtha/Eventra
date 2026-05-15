@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import './components.css';
+import './styles/components.css';
 
 const SearchFilter = () => {
   const [searchTerm, setSearchTerm] = useState('');

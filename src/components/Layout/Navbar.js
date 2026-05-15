@@ -3,10 +3,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
-import ConfirmationModal from "../common/ConfirmationModal"; // ADD THIS IMPORT
+import ConfirmationModal from "../common/ConfirmationModal";
 import { toast } from "react-toastify";
-
-
 import { UserCog } from "lucide-react";
 import {
   Home,
@@ -24,15 +22,61 @@ import {
   Book,
   HelpCircle,
   ChevronDown,
-  MousePointer
+  MousePointer,
+  Sun,
+  Moon
 } from "lucide-react";
 
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const { isDarkMode, toggleTheme } = useTheme();
+  const { user, isAuthenticated } = useAuth();
+
+  return (
+    <div
+      id="mobile-drawer"
+      ref={drawerRef}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      className={`fixed top-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-sm shadow-2xl z-50 flex flex-col transform transition-transform duration-300 ease-in-out bg-white backdrop-blur-lg dark:bg-gray-900/95 ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+      role="dialog"
+      aria-modal={isOpen}
+    >
+      <MobileDrawerHeader closeBtnRef={closeBtnRef} closeAllMenus={closeAllMenus} />
+
+      <div className="flex-grow p-3.5 sm:p-4 space-y-2 overflow-y-auto">
+        <NavList 
+          location={location} 
+          openDropdown={openDropdown} 
+          onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)} 
+          onLinkClick={closeAllMenus} 
+          isMobile={true} 
+        />
+      </div>
+
+      <MobileDrawerFooter 
+        isAuthenticated={isAuthenticated} 
+        user={user} 
+        primaryLine={primaryLine} 
+        secondaryLine={secondaryLine} 
+        closeAllMenus={closeAllMenus} 
+        location={location} 
+        handleLogoutClick={handleLogoutClick} 
+        isDarkMode={isDarkMode} 
+        toggleTheme={toggleTheme} 
+        cursorEnabled={cursorEnabled} 
+        toggleCursor={toggleCursor} 
+      />
+    </div>
+  );
+};
+
+const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [navHeight, setNavHeight] = useState(0);
 
   const drawerRef = useRef(null);
   const closeBtnRef = useRef(null);
@@ -42,120 +86,48 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const navRef = useRef(null);
 
   const { user, isAuthenticated, logout } = useAuth();
+  const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const primaryLine =
-    (user?.fullName && user.fullName.trim()) ||
-    [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() ||
-    (user?.username && user.username.trim()) ||
-    (user?.email && user.email.trim()) ||
-    "User";
-  const secondaryCandidate =
-    (user?.email && user.email.trim()) ||
-    (user?.username && user.username.trim()) ||
-    "";
-  const secondaryLine =
-    secondaryCandidate && secondaryCandidate !== primaryLine
-      ? secondaryCandidate
-      : null;
+  const { primary: primaryLine, secondary: secondaryLine } = getUserDisplayNames(user);
 
   const closeAllMenus = () => {
     setShowProfileDropdown(false);
     setIsMobileMenuOpen(false);
     setOpenDropdown(null);
-    try {
-      const stored = document.body.style.top;
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.left = "";
-      document.body.style.right = "";
-      document.body.style.width = "";
-      if (stored) {
-        const scrollY = parseInt(stored || "0", 10) * -1 || 0;
-        window.scrollTo(0, scrollY);
-      }
-    } catch (e) {
-      /* ignore */
-    }
-    try {
-      toggleBtnRef.current?.focus();
-    } catch (e) {
-      /* ignore */
-    }
+    clearBodyScrollStyles();
+    try { toggleBtnRef.current?.focus(); } catch (e) { /* ignore */ }
   };
 
   useEffect(() => {
-    const event = new CustomEvent("mobileMenuToggle", { detail: isMobileMenuOpen });
-    window.dispatchEvent(event);
+    window.dispatchEvent(new CustomEvent("mobileMenuToggle", { detail: isMobileMenuOpen }));
   }, [isMobileMenuOpen]);
 
   useEffect(() => {
     if (isMobileMenuOpen) {
-      const prevTop = window.scrollY || window.pageYOffset || 0;
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${prevTop}px`;
-      document.body.style.left = "0";
-      document.body.style.right = "0";
-      document.body.style.width = "100%";
+      setBodyScrollStyles(window.scrollY || 0);
       setTimeout(() => closeBtnRef.current?.focus(), 50);
     } else {
-      const stored = document.body.style.top;
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.left = "";
-      document.body.style.right = "";
-      document.body.style.width = "";
-      if (stored) {
-        const scrollY = parseInt(stored || "0", 10) * -1 || 0;
-        window.scrollTo(0, scrollY);
-      }
+      clearBodyScrollStyles();
     }
-    return () => {
-      try {
-        const stored = document.body.style.top;
-        document.body.style.position = "";
-        document.body.style.top = "";
-        document.body.style.left = "";
-        document.body.style.right = "";
-        document.body.style.width = "";
-        if (stored) {
-          const scrollY = parseInt(stored || "0", 10) * -1 || 0;
-          window.scrollTo(0, scrollY);
-        }
-      } catch (e) {
-        /* ignore */
-      }
-    };
+    return clearBodyScrollStyles;
   }, [isMobileMenuOpen]);
 
-  useEffect(() => {
-    closeAllMenus();
-  }, [location.pathname]);
+  useEffect(() => { closeAllMenus(); }, [location.pathname]);
 
   useEffect(() => {
     if (!isMobileMenuOpen || !drawerRef.current) return;
     const drawer = drawerRef.current;
     const handleKeyDown = (e) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        closeAllMenus();
-        return;
-      }
+      if (e.key === "Escape") { e.preventDefault(); closeAllMenus(); return; }
       if (e.key === "Tab") {
-        const focusable = drawer.querySelectorAll(
-          'a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
+        const focusable = drawer.querySelectorAll('a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
         if (!focusable.length) return;
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
       }
     };
     document.addEventListener("keydown", handleKeyDown);
@@ -182,19 +154,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
     touchCurrentXRef.current = null;
   };
 
-  const [navHeight, setNavHeight] = useState(0);
-  useEffect(() => {
-    if (navRef.current) {
-      setNavHeight(navRef.current.offsetHeight);
-    }
-    const handleResize = () => {
-      if (navRef.current) {
-        setNavHeight(navRef.current.offsetHeight);
-      }
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   const navItems = [
     { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
@@ -253,26 +212,19 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const handleConfirmLogout = () => {
     setShowLogoutModal(false);
     logout();
-
-    toast.success("You have been logged out successfully.", {
-      className: "custom-toast",
-      autoClose: 3000,
-    });
-
+    toast.success("You have been logged out successfully.", { className: "custom-toast", autoClose: 3000 });
     navigate("/");
   };
-
-  const handleCancelLogout = () => {
-    setShowLogoutModal(false);
-  };
+  const handleCancelLogout = () => setShowLogoutModal(false);
 
   return (
     <>
       <div
-        className={`fixed inset-0 bg-black/60 z-30 transition-opacity duration-300 ${isMobileMenuOpen || showProfileDropdown || openDropdown || showLogoutModal
-          ? "opacity-100"
-          : "opacity-0 pointer-events-none"
-          }`}
+        className={`fixed inset-0 bg-black/60 z-30 transition-opacity duration-300 ${
+          isMobileMenuOpen || showProfileDropdown || openDropdown || showLogoutModal
+            ? "opacity-100"
+            : "opacity-0 pointer-events-none"
+        }`}
         onClick={closeAllMenus}
       />
 
@@ -289,10 +241,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         <div className="w-full flex items-center h-20 px-6 md:px-12 relative">
           {/* Logo on the left */}
           <Link to="/" className="flex-shrink-0 z-20">
-            <h2
-              className="text-3xl font-semibold tracking-tight text-black dark:text-white"
-              style={{ fontFamily: '"Anton", sans-serif' }}
-            >
+            <h2 className="text-3xl font-semibold tracking-tight text-black dark:text-white" style={{ fontFamily: '"Anton", sans-serif' }}>
               Eventra
             </h2>
           </Link>
@@ -397,7 +346,17 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             </button>
 
             <div className="flex items-center space-x-2 ml-2">
+          
+          {/* Theme Toggle Button */}
+          <button
+           onClick={toggleTheme}
+           className="text-xl text-gray-700 dark:text-white hover:opacity-70 transition-opacity mr-2"
+            >
+           {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+</button>
 
+
+            <div className="flex items-center space-x-2 ml-2">
               {isAuthenticated() ? (
                 <div className="relative profile-container">
                   <button
@@ -506,43 +465,15 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                   </AnimatePresence>
                 </div>
               ) : (
-                <div className="flex items-center space-x-1">
-                  <Link
-                    to="/login"
-                    className="px-4 py-2 text-base font-medium text-black/75 hover:text-black dark:text-white/75 dark:hover:text-white transition-colors"
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    to="/signup"
-                    className="px-5 py-2 text-sm font-semibold text-white transition-all duration-300 bg-black hover:bg-zinc-800 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 dark:bg-white dark:text-black dark:hover:bg-zinc-200 focus:outline-none focus:ring-4 focus:ring-black/20 dark:focus:ring-white/20"
-                  >
-                    Get Started
-                  </Link>
-                </div>
+                <AuthButtons isMobile={false} />
               )}
             </div>
           </div>
+
           <div className="lg:hidden ml-auto">
-            <button
-              ref={toggleBtnRef}
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-expanded={isMobileMenuOpen}
-              aria-label="Open navigation"
-              className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10"
-            >
-              <svg
-                className="h-5 w-5 sm:h-6 sm:w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
+            <button ref={toggleBtnRef} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} aria-expanded={isMobileMenuOpen} aria-label="Open navigation" className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10">
+              <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
           </div>
