@@ -1,0 +1,92 @@
+.empty-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4rem 2rem;
+  background: var(--card-bg-color, #ffffff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 24px;
+  max-width: 600px;
+  margin: 2rem auto;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+}
+
+.empty-state-icon-wrapper {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.empty-state-icon-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #6366f115, #8b5cf615);
+  border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+  animation: blob-morph 8s infinite alternate ease-in-out;
+}
+
+@keyframes blob-morph {
+  0% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
+  100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+}
+
+.empty-state-icon {
+  position: relative;
+  color: #6366f1;
+  filter: drop-shadow(0 4px 6px rgba(99, 102, 241, 0.2));
+}
+
+.empty-state-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-color, #1f2937);
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.025em;
+}
+
+.empty-state-description {
+  font-size: 1rem;
+  color: var(--text-color-light, #6b7280);
+  max-width: 400px;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.empty-state-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+}
+
+.empty-state-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.4);
+  filter: brightness(1.1);
+}
+
+.empty-state-cta:active {
+  transform: translateY(0);
+}
+
+/* Dark mode support if variables are available */
+@media (prefers-color-scheme: dark) {
+  .empty-state-container {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+  }
+}

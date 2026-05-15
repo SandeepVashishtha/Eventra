@@ -8,6 +8,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import "./UserDashboard.css";
+import EmptyState from "../common/EmptyState";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -383,26 +384,37 @@ export default function UserDashboard() {
                 <Link to="/events" className="ud-btn-primary"><Plus size={15} /> Explore Events</Link>
               </div>
               <div className="ud-items-grid">
-                {MOCK_DATA.filter(d => d.type === "Event").map((ev, i) => (
-                  <motion.div key={ev.id} custom={i} variants={fadeUp} initial="hidden" animate="visible" className="ud-item-card">
-                    <div className="ud-item-top">
-                      <span className="ud-item-type" style={{ background: "#6366f118", color: "#6366f1" }}>
-                        <Calendar size={13} /> Event
-                      </span>
-                      <span className={`ud-badge ${STATUS_COLORS[ev.status] || "ud-badge-gray"}`}>{ev.status}</span>
-                    </div>
-                    <h3 className="ud-item-title">{ev.title}</h3>
-                    <div className="ud-item-meta">
-                      <span><Calendar size={13} /> {ev.date}</span>
-                      <span><MapPin size={13} /> {ev.location}</span>
-                    </div>
-                    <div className="ud-item-footer">
-                      <span className={`ud-badge ${STATUS_COLORS[ev.participationType] || "ud-badge-gray"}`}>
-                        {ev.participationType}
-                      </span>
-                    </div>
-                  </motion.div>
-                ))}
+                {MOCK_DATA.filter(d => d.type === "Event").length === 0 ? (
+                  <EmptyState
+                    icon={Calendar}
+                    title="No Events Found"
+                    description="You haven't registered for or hosted any events yet."
+                    ctaText="Explore Events"
+                    ctaTo="/events"
+                    className="ud-full-empty"
+                  />
+                ) : (
+                  MOCK_DATA.filter(d => d.type === "Event").map((ev, i) => (
+                    <motion.div key={ev.id} custom={i} variants={fadeUp} initial="hidden" animate="visible" className="ud-item-card">
+                      <div className="ud-item-top">
+                        <span className="ud-item-type" style={{ background: "#6366f118", color: "#6366f1" }}>
+                          <Calendar size={13} /> Event
+                        </span>
+                        <span className={`ud-badge ${STATUS_COLORS[ev.status] || "ud-badge-gray"}`}>{ev.status}</span>
+                      </div>
+                      <h3 className="ud-item-title">{ev.title}</h3>
+                      <div className="ud-item-meta">
+                        <span><Calendar size={13} /> {ev.date}</span>
+                        <span><MapPin size={13} /> {ev.location}</span>
+                      </div>
+                      <div className="ud-item-footer">
+                        <span className={`ud-badge ${STATUS_COLORS[ev.participationType] || "ud-badge-gray"}`}>
+                          {ev.participationType}
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))
+                )}
               </div>
             </motion.div>
           )}
@@ -415,26 +427,37 @@ export default function UserDashboard() {
                 <Link to="/hackathons" className="ud-btn-primary"><Plus size={15} /> Explore Hackathons</Link>
               </div>
               <div className="ud-items-grid">
-                {MOCK_DATA.filter(d => d.type === "Hackathon").map((h, i) => (
-                  <motion.div key={h.id} custom={i} variants={fadeUp} initial="hidden" animate="visible" className="ud-item-card">
-                    <div className="ud-item-top">
-                      <span className="ud-item-type" style={{ background: "#ec489918", color: "#ec4899" }}>
-                        <Trophy size={13} /> Hackathon
-                      </span>
-                      <span className={`ud-badge ${STATUS_COLORS[h.status] || "ud-badge-gray"}`}>{h.status}</span>
-                    </div>
-                    <h3 className="ud-item-title">{h.title}</h3>
-                    <div className="ud-item-meta">
-                      <span><Calendar size={13} /> {h.date}</span>
-                      <span><MapPin size={13} /> {h.location}</span>
-                    </div>
-                    <div className="ud-item-footer">
-                      <span className={`ud-badge ${STATUS_COLORS[h.participationType] || "ud-badge-gray"}`}>
-                        {h.participationType}
-                      </span>
-                    </div>
-                  </motion.div>
-                ))}
+                {MOCK_DATA.filter(d => d.type === "Hackathon").length === 0 ? (
+                  <EmptyState
+                    icon={Trophy}
+                    title="No Hackathons Found"
+                    description="Ready to build something amazing? Join your first hackathon today!"
+                    ctaText="Find Hackathons"
+                    ctaTo="/hackathons"
+                    className="ud-full-empty"
+                  />
+                ) : (
+                  MOCK_DATA.filter(d => d.type === "Hackathon").map((h, i) => (
+                    <motion.div key={h.id} custom={i} variants={fadeUp} initial="hidden" animate="visible" className="ud-item-card">
+                      <div className="ud-item-top">
+                        <span className="ud-item-type" style={{ background: "#ec489918", color: "#ec4899" }}>
+                          <Trophy size={13} /> Hackathon
+                        </span>
+                        <span className={`ud-badge ${STATUS_COLORS[h.status] || "ud-badge-gray"}`}>{h.status}</span>
+                      </div>
+                      <h3 className="ud-item-title">{h.title}</h3>
+                      <div className="ud-item-meta">
+                        <span><Calendar size={13} /> {h.date}</span>
+                        <span><MapPin size={13} /> {h.location}</span>
+                      </div>
+                      <div className="ud-item-footer">
+                        <span className={`ud-badge ${STATUS_COLORS[h.participationType] || "ud-badge-gray"}`}>
+                          {h.participationType}
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))
+                )}
               </div>
             </motion.div>
           )}
@@ -447,25 +470,36 @@ export default function UserDashboard() {
                 <Link to="/submit-project" className="ud-btn-primary"><Plus size={15} /> Submit Project</Link>
               </div>
               <div className="ud-items-grid">
-                {MOCK_DATA.filter(d => d.type === "Project").map((p, i) => (
-                  <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" animate="visible" className="ud-item-card">
-                    <div className="ud-item-top">
-                      <span className="ud-item-type" style={{ background: "#8b5cf618", color: "#8b5cf6" }}>
-                        <FolderOpen size={13} /> Project
-                      </span>
-                      <span className={`ud-badge ${STATUS_COLORS[p.projectStatus] || "ud-badge-gray"}`}>{p.projectStatus}</span>
-                    </div>
-                    <h3 className="ud-item-title">{p.title}</h3>
-                    <div className="ud-item-meta">
-                      <span>Updated: {p.lastUpdate}</span>
-                    </div>
-                    <div className="ud-item-footer">
-                      <span className={`ud-badge ${STATUS_COLORS[p.participationType] || "ud-badge-gray"}`}>
-                        {p.participationType}
-                      </span>
-                    </div>
-                  </motion.div>
-                ))}
+                {MOCK_DATA.filter(d => d.type === "Project").length === 0 ? (
+                  <EmptyState
+                    icon={FolderOpen}
+                    title="No Projects Found"
+                    description="Showcase your skills by submitting your latest project to our community."
+                    ctaText="Submit Project"
+                    ctaTo="/submit-project"
+                    className="ud-full-empty"
+                  />
+                ) : (
+                  MOCK_DATA.filter(d => d.type === "Project").map((p, i) => (
+                    <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" animate="visible" className="ud-item-card">
+                      <div className="ud-item-top">
+                        <span className="ud-item-type" style={{ background: "#8b5cf618", color: "#8b5cf6" }}>
+                          <FolderOpen size={13} /> Project
+                        </span>
+                        <span className={`ud-badge ${STATUS_COLORS[p.projectStatus] || "ud-badge-gray"}`}>{p.projectStatus}</span>
+                      </div>
+                      <h3 className="ud-item-title">{p.title}</h3>
+                      <div className="ud-item-meta">
+                        <span>Updated: {p.lastUpdate}</span>
+                      </div>
+                      <div className="ud-item-footer">
+                        <span className={`ud-badge ${STATUS_COLORS[p.participationType] || "ud-badge-gray"}`}>
+                          {p.participationType}
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))
+                )}
               </div>
             </motion.div>
           )}
@@ -486,46 +520,56 @@ export default function UserDashboard() {
               </div>
 
               <div className="ud-table-wrap">
-                <table className="ud-table">
-                  <thead>
-                    <tr>
-                      <th>Type</th>
-                      <th>Title</th>
-                      <th>Date</th>
-                      <th>Location / Info</th>
-                      <th>Status</th>
-                      <th>Participation</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredData.length === 0
-                      ? <tr><td colSpan={6} className="ud-table-empty">No records match your filters.</td></tr>
-                      : filteredData.map(item => (
-                        <tr key={item.id}>
-                          <td>
-                            <span className="ud-table-type">
-                              {TYPE_ICON[item.type]}
-                              {item.type}
-                            </span>
-                          </td>
-                          <td className="ud-table-title">{item.title}</td>
-                          <td>{item.date || "—"}</td>
-                          <td>{item.location || item.lastUpdate || "—"}</td>
-                          <td>
-                            <span className={`ud-badge ${STATUS_COLORS[item.projectStatus] || STATUS_COLORS[item.status] || "ud-badge-gray"}`}>
-                              {item.projectStatus !== "-" ? item.projectStatus : item.status}
-                            </span>
-                          </td>
-                          <td>
-                            <span className={`ud-badge ${STATUS_COLORS[item.participationType] || "ud-badge-gray"}`}>
-                              {item.participationType}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    }
-                  </tbody>
-                </table>
+                {MOCK_DATA.length === 0 ? (
+                  <EmptyState
+                    icon={Users}
+                    title="No Registrations Yet"
+                    description="You haven't registered for any events, hackathons, or projects. Explore our upcoming opportunities to get started!"
+                    ctaText="Browse Events"
+                    ctaTo="/events"
+                  />
+                ) : (
+                  <table className="ud-table">
+                    <thead>
+                      <tr>
+                        <th>Type</th>
+                        <th>Title</th>
+                        <th>Date</th>
+                        <th>Location / Info</th>
+                        <th>Status</th>
+                        <th>Participation</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredData.length === 0
+                        ? <tr><td colSpan={6} className="ud-table-empty">No records match your filters.</td></tr>
+                        : filteredData.map(item => (
+                          <tr key={item.id}>
+                            <td>
+                              <span className="ud-table-type">
+                                {TYPE_ICON[item.type]}
+                                {item.type}
+                              </span>
+                            </td>
+                            <td className="ud-table-title">{item.title}</td>
+                            <td>{item.date || "—"}</td>
+                            <td>{item.location || item.lastUpdate || "—"}</td>
+                            <td>
+                              <span className={`ud-badge ${STATUS_COLORS[item.projectStatus] || STATUS_COLORS[item.status] || "ud-badge-gray"}`}>
+                                {item.projectStatus !== "-" ? item.projectStatus : item.status}
+                              </span>
+                            </td>
+                            <td>
+                              <span className={`ud-badge ${STATUS_COLORS[item.participationType] || "ud-badge-gray"}`}>
+                                {item.participationType}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      }
+                    </tbody>
+                  </table>
+                )}
               </div>
             </motion.div>
           )}
