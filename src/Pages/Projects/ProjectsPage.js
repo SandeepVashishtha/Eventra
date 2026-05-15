@@ -158,7 +158,7 @@ const ProjectGallery = () => {
 
   return (
     // UPDATED: Main page background
-    <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-indigo-950 dark:to-black">
+    <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-zinc-950 dark:via-[#111827] dark:to-black">
       {/* Hero Section with CTA */}
       <ProjectHero setShowSubmissionModal={setShowSubmissionModal} scrollToCard={scrollToCard} />
       {/* Main Container */}
