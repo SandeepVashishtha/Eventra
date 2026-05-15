@@ -48,11 +48,10 @@ const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
                   e.stopPropagation();
                   setOpenDropdown(openDropdown === item.name ? null : item.name);
                 }}
-                className={`flex items-center gap-1 text-base font-medium transition-colors ${
-                  isActive || openDropdown === item.name
-                    ? "text-black dark:text-white"
-                    : "text-black/70 hover:text-black dark:text-white/70 dark:hover:text-white"
-                }`}
+                className={`flex items-center gap-1 text-base font-medium transition-colors ${isActive || openDropdown === item.name
+                  ? "text-black dark:text-white"
+                  : "text-black/70 hover:text-black dark:text-white/70 dark:hover:text-white"
+                  }`}
               >
                 {item.name}
                 <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${openDropdown === item.name ? "rotate-180" : ""}`} />
@@ -69,11 +68,10 @@ const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
                       key={sub.name}
                       to={sub.href}
                       onClick={() => setOpenDropdown(null)}
-                      className={`group flex items-center gap-3 w-full px-3 py-2 text-base font-medium rounded-md transition-colors ${
-                        location.pathname === sub.href
-                          ? "bg-black/10 dark:bg-white/15 text-black dark:text-white"
-                          : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
-                      }`}
+                      className={`group flex items-center gap-3 w-full px-3 py-2 text-base font-medium rounded-md transition-colors ${location.pathname === sub.href
+                        ? "bg-black/10 dark:bg-white/15 text-black dark:text-white"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
+                        }`}
                     >
                       {React.cloneElement(sub.icon, { className: "w-5 h-5 text-gray-500 dark:text-gray-400" })}
                       {sub.name}
@@ -88,11 +86,10 @@ const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
           <Link
             key={item.name}
             to={item.href}
-            className={`text-base font-medium transition-colors ${
-              isActive
-                ? "text-black dark:text-white"
-                : "text-black/70 hover:text-black dark:text-white/70 dark:hover:text-white"
-            }`}
+            className={`text-base font-medium transition-colors ${isActive
+              ? "text-black dark:text-white"
+              : "text-black/70 hover:text-black dark:text-white/70 dark:hover:text-white"
+              }`}
           >
             {item.name}
           </Link>
@@ -114,15 +111,15 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className={`fixed top-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-sm shadow-2xl z-50 flex flex-col transform transition-transform duration-300 ease-in-out bg-white backdrop-blur-lg dark:bg-gray-900/95 ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+      className={`fixed top-0 right-0 h-dvh w-[88vw] max-w-xs flex flex-col overflow-x-hidden overflow-y-auto shadow-2xl z-50 bg-white dark:bg-gray-900 transform transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"}`}
       role="dialog"
       aria-modal={isOpen}
     >
-      <div className="flex items-center justify-between p-3.5 sm:p-4 border-b border-gray-200 dark:border-white/20">
-        <h2 className="text-xl sm:text-2xl font-bold text-black dark:text-white" style={{ fontFamily: '"Anton", sans-serif' }}>
+      <div className="flex items-center justify-between px-3 py-3 border-b border-gray-200 dark:border-white/20 sticky top-0 bg-white dark:bg-gray-900 z-10">
+        <h2 className="text-xl font-bold text-black dark:text-white truncate" style={{ fontFamily: '"Anton", sans-serif' }}>
           Eventra
         </h2>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
           <button onClick={toggleTheme} className="p-2 rounded-full text-text-light bg-gray-100 dark:bg-white/10 hover:bg-gray-200">
             {isDarkMode ? '☀️' : '🌙'}
           </button>
@@ -138,7 +135,7 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
         </div>
       </div>
 
-      <div className="flex-grow p-3.5 sm:p-4 space-y-2 overflow-y-auto">
+      <div className="flex-grow px-2.5 py-3 space-y-1 overflow-y-auto overflow-x-hidden">
         {NAV_ITEMS.map((item) => {
           const isActive = item.href
             ? location.pathname === item.href
@@ -148,14 +145,16 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
               <div key={item.name}>
                 <button
                   onClick={() => setOpenDropdown(openDropdown === item.name ? null : item.name)}
-                  className={`flex items-center justify-between w-full px-4 py-2.5 rounded-lg transition-colors text-left text-base font-medium ${
-                    isActive
-                      ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
-                  }`}
+                  className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg transition-colors text-left text-sm font-medium ${isActive
+                    ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
+                    }`}
                 >
-                  <span className="flex items-center gap-3">{item.icon} {item.name}</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown === item.name ? "rotate-180" : ""}`} />
+                  <span className="flex items-center gap-2.5 min-w-0">
+                    <span className="flex-shrink-0">{item.icon}</span>
+                    <span className="truncate">{item.name}</span>
+                  </span>
+                  <ChevronDown className={`w-4 h-4 flex-shrink-0 ml-1 transition-transform ${openDropdown === item.name ? "rotate-180" : ""}`} />
                 </button>
                 {openDropdown === item.name && (
                   <div className="mt-2 ml-3 pl-3 border-l-2 border-gray-200 dark:border-white/20 space-y-1">
@@ -164,13 +163,13 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
                         key={sub.name}
                         to={sub.href}
                         onClick={closeAllMenus}
-                        className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium ${
-                          location.pathname === sub.href
-                            ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
-                            : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white"
-                        }`}
+                        className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${location.pathname === sub.href
+                          ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
+                          : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10"
+                          }`}
                       >
-                        {sub.icon}{sub.name}
+                        <span className="flex-shrink-0">{sub.icon}</span>
+                        <span className="truncate">{sub.name}</span>
                       </Link>
                     ))}
                   </div>
@@ -183,32 +182,34 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
               key={item.name}
               to={item.href}
               onClick={closeAllMenus}
-              className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium ${
-                isActive
-                  ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
-                  : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
-              }`}
+              className={`flex items-center gap-2.5 w-full px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${isActive
+                ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
+                : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
+                }`}
             >
-              {item.icon}{item.name}
+              <span className="flex-shrink-0">{item.icon}</span>
+              <span className="truncate">{item.name}</span>
             </Link>
           );
         })}
       </div>
 
-      <div className="p-4 border-t border-gray-200 dark:border-white/20">
+      <div className="px-2.5 py-3 border-t border-gray-200 dark:border-white/20 bg-white dark:bg-gray-900 space-y-2">
         {isAuthenticated() ? (
           <div className="space-y-1">
-            <div className="flex items-center gap-3 px-3 py-2 mb-2">
-              {user?.profilePicture ? (
-                <img src={user.profilePicture} alt="Profile" className="w-10 h-10 rounded-full object-cover" />
-              ) : (
-                <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white">
-                  <UserIcon className="w-6 h-6" />
-                </div>
-              )}
-              <div>
-                <p className="font-semibold text-gray-800 dark:text-white truncate">{primaryLine}</p>
-                {secondaryLine && <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{secondaryLine}</p>}
+            <div className="flex items-center gap-2.5 px-3 py-2 mb-1 min-w-0">
+              <div className="flex-shrink-0">
+                {user?.profilePicture ? (
+                  <img src={user.profilePicture} alt="Profile" className="w-10 h-10 rounded-full object-cover" />
+                ) : (
+                  <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white">
+                    <UserIcon className="w-6 h-6" />
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-gray-800 dark:text-white truncate">{primaryLine}</p>
+                {secondaryLine && <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{secondaryLine}</p>}
               </div>
             </div>
             <Link to="/dashboard" onClick={closeAllMenus} className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium ${location.pathname === "/dashboard" ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"}`}>
