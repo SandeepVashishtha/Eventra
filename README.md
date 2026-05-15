@@ -11,7 +11,7 @@ Eventra is a comprehensive, open-source platform designed to empower organizers 
 
 ---
 
-## Table of Contents
+## Table of Contentss
 
 - [Live Demo](#-live-demo)
 - [Project Insights](#-project-insights)
