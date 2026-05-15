@@ -4,15 +4,13 @@ import './index.css';
 
 import App from './App';
 import { MotionConfig } from "framer-motion";
-import { ThemeProvider } from './context/ThemeContext';
+
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <MotionConfig reducedMotion="always">
-      <ThemeProvider>
+    <MotionConfig reducedMotion="user">
       <App />
-      </ThemeProvider>
     </MotionConfig>
   </React.StrictMode>
 );
