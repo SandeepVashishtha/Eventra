@@ -1,15 +1,25 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import mockEvents from "./eventsMockData.json";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
-import { Grid, List } from "lucide-react";
+import { ChevronLeft, ChevronRight, Grid, List } from "lucide-react";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
 import Fuse from "fuse.js";
 import StyledDropdown from "../../components/StyledDropdown";
 import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
+import {
+  DEFAULT_EVENTS_PER_PAGE,
+  EVENTS_PER_PAGE_OPTIONS,
+  clampPage,
+  filterEventsByType,
+  getPaginatedEvents,
+  getTotalPages,
+  getVisiblePaginationPages,
+  sortEventsByDate,
+} from "./eventPaginationUtils";
 
-const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
+const renderCardSection = (isLoading, eventsToShow, viewMode, filterType) => {
   if (isLoading) {
     return (
       <div className="grid gap-8 grid-cols-1 sm:grid-cols-1 lg:grid-cols-3">
@@ -20,9 +30,15 @@ const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
     );
   }
 
-  if (filteredEvents.length === 0) {
+  if (eventsToShow.length === 0) {
     return (
       <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+          No events found
+        </h3>
+        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          Try changing your search or filters.
+        </p>
       </div>
     );
   }
@@ -36,9 +52,128 @@ const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
           : "grid-cols-1 max-w-4xl mx-auto"
       }`}
     >
-      {filteredEvents.map((event) => (
+      {eventsToShow.map((event) => (
         <EventCard key={event.id} event={event} />
       ))}
+    </div>
+  );
+};
+
+const PaginationControls = ({
+  currentPage,
+  eventsPerPage,
+  totalEvents,
+  totalPages,
+  onPageChange,
+  onPageSizeChange,
+}) => {
+  if (totalEvents === 0) {
+    return null;
+  }
+
+  const startEvent = (currentPage - 1) * eventsPerPage + 1;
+  const endEvent = Math.min(currentPage * eventsPerPage, totalEvents);
+  const { firstVisiblePage, lastVisiblePage, pages: visiblePages } =
+    getVisiblePaginationPages(currentPage, totalPages);
+
+  return (
+    <div className="mt-10 flex flex-col gap-4 border-t border-gray-200 pt-6 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Showing {startEvent}-{endEvent} of {totalEvents} events
+      </p>
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <label
+          htmlFor="events-per-page"
+          className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
+        >
+          Per page
+          <select
+            id="events-per-page"
+            value={eventsPerPage}
+            onChange={(event) => onPageSizeChange(Number(event.target.value))}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+          >
+            {EVENTS_PER_PAGE_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <nav className="flex items-center gap-2" aria-label="Event pagination">
+          <button
+            type="button"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+            aria-label="Previous page"
+          >
+            <ChevronLeft size={18} />
+          </button>
+
+          {firstVisiblePage > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={() => onPageChange(1)}
+                className="h-10 min-w-10 rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              >
+                1
+              </button>
+              {firstVisiblePage > 2 && (
+                <span className="px-1 text-sm text-gray-500 dark:text-gray-400">
+                  ...
+                </span>
+              )}
+            </>
+          )}
+
+          {visiblePages.map((page) => (
+            <button
+              type="button"
+              key={page}
+              onClick={() => onPageChange(page)}
+              className={`h-10 min-w-10 rounded-lg px-3 text-sm font-medium transition ${
+                page === currentPage
+                  ? "bg-black text-white"
+                  : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              }`}
+              aria-current={page === currentPage ? "page" : undefined}
+            >
+              {page}
+            </button>
+          ))}
+
+          {lastVisiblePage < totalPages && (
+            <>
+              {lastVisiblePage < totalPages - 1 && (
+                <span className="px-1 text-sm text-gray-500 dark:text-gray-400">
+                  ...
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => onPageChange(totalPages)}
+                className="h-10 min-w-10 rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              >
+                {totalPages}
+              </button>
+            </>
+          )}
+
+          <button
+            type="button"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+            aria-label="Next page"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </nav>
+      </div>
     </div>
   );
 };
@@ -48,9 +183,10 @@ const EventsPage = () => {
   const [filterType, setFilterType] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredEvents, setFilteredEvents] = useState([]);
   const [sortType, setSortType] = useState("Newest");
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [eventsPerPage, setEventsPerPage] = useState(DEFAULT_EVENTS_PER_PAGE);
   const cardSectionRef = useRef();
 
   useEffect(() => {
@@ -61,54 +197,50 @@ const EventsPage = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Fuse.js setup
-  const fuse = new Fuse(events, {
-    keys: ["title", "description", "location", "tags", "type"],
-    threshold: 0.35,
-  });
+  const filteredEvents = useMemo(() => {
+    const fuse = new Fuse(events, {
+      keys: ["title", "description", "location", "tags", "type"],
+      threshold: 0.35,
+    });
+
+    const searchResults = searchQuery.trim()
+      ? fuse.search(searchQuery).map((res) => res.item)
+      : events;
+
+    return sortEventsByDate(filterEventsByType(searchResults, filterType), sortType);
+  }, [events, filterType, searchQuery, sortType]);
+
+  const totalPages = getTotalPages(filteredEvents.length, eventsPerPage);
+  const paginatedEvents = useMemo(() => {
+    return getPaginatedEvents(filteredEvents, currentPage, eventsPerPage);
+  }, [currentPage, eventsPerPage, filteredEvents]);
 
   const handleSearch = (query = "") => {
     setSearchQuery(query);
-
-    let results = events;
-    if (query.trim()) {
-      results = fuse.search(query).map((res) => res.item);
-    }
-
-    const final = results.filter((event) => {
-      return (
-        filterType === "all" ||
-        (filterType === "upcoming" && event.status === "upcoming") ||
-        (filterType === "past" && event.status === "past") ||
-        event.type === filterType
-      );
-    });
-
-    setFilteredEvents(final);
   };
-
-  useEffect(() => {
-    handleSearch(searchQuery);
-  }, [events, filterType]);
 
   const handleSortChange = (type) => {
     setSortType(type);
-    let sorted = [...filteredEvents];
-    if (type === "Newest") {
-      sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
-    } else if (type === "upcoming") {
-      sorted.sort((a, b) => new Date(a.date) - new Date(b.date));
-    }
-    setFilteredEvents(sorted);
   };
 
   useEffect(() => {
-    handleSortChange(sortType);
-    // eslint-disable-next-line
-  }, [filterType, searchQuery]);
+    setCurrentPage(1);
+  }, [eventsPerPage, filterType, searchQuery, sortType]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const handlePageChange = (page) => {
+    const nextPage = clampPage(page, totalPages);
+    setCurrentPage(nextPage);
+    cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   const scrollToCard = () => {
-    cardSectionRef.current?.scrollIntoView({ behaviour: "smooth" });
+    cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
@@ -198,7 +330,18 @@ const EventsPage = () => {
           </div>
         </div>
 
-        {renderCardSection(isLoading, filteredEvents, viewMode, filterType)}
+        {renderCardSection(isLoading, paginatedEvents, viewMode, filterType)}
+
+        {!isLoading && (
+          <PaginationControls
+            currentPage={currentPage}
+            eventsPerPage={eventsPerPage}
+            totalEvents={filteredEvents.length}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            onPageSizeChange={setEventsPerPage}
+          />
+        )}
       </div>
 
       <EventCTA />
