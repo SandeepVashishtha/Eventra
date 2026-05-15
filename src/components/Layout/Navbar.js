@@ -84,6 +84,107 @@ const AuthButtons = ({ isMobile, closeAllMenus }) => (
   </div>
 );
 
+const MobileNavLink = ({ item, isActive, onClick }) => (
+  <Link
+    to={item.href}
+    onClick={onClick}
+    className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium ${
+      isActive
+        ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
+        : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
+    }`}
+  >
+    {item.icon}{item.name}
+  </Link>
+);
+
+const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, location }) => (
+  <div key={item.name}>
+    <button
+      onClick={onToggle}
+      className={`flex items-center justify-between w-full px-4 py-2.5 rounded-lg transition-colors text-left text-base font-medium ${
+        isActive
+          ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
+          : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
+      }`}
+    >
+      <span className="flex items-center gap-3">{item.icon} {item.name}</span>
+      <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+    </button>
+    {isOpen && (
+      <div className="mt-2 ml-3 pl-3 border-l-2 border-gray-200 dark:border-white/20 space-y-1">
+        {item.subItems.map((sub) => (
+          <Link
+            key={sub.name}
+            to={sub.href}
+            onClick={closeAllMenus}
+            className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium ${
+              location.pathname === sub.href
+                ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
+                : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white"
+            }`}
+          >
+            {sub.icon}{sub.name}
+          </Link>
+        ))}
+      </div>
+    )}
+  </div>
+);
+
+const DesktopNavLink = ({ item, isActive }) => (
+  <Link
+    to={item.href}
+    className={`text-base font-medium transition-colors ${
+      isActive
+        ? "text-black dark:text-white"
+        : "text-black/70 hover:text-black dark:text-white/70 dark:hover:text-white"
+    }`}
+  >
+    {item.name}
+  </Link>
+);
+
+const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location }) => (
+  <div className="relative">
+    <button
+      onClick={onToggle}
+      className={`flex items-center gap-1 text-base font-medium transition-colors ${
+        isActive || isOpen
+          ? "text-black dark:text-white"
+          : "text-black/70 hover:text-black dark:text-white/70 dark:hover:text-white"
+      }`}
+    >
+      {item.name}
+      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+    </button>
+    {isOpen && (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 10 }}
+        className="absolute left-1/2 -translate-x-1/2 mt-4 w-56 bg-white/90 dark:bg-black/80 backdrop-blur-md shadow-xl rounded-lg z-50 border border-black/10 dark:border-white/20 p-2"
+      >
+        {item.subItems.map((sub) => (
+          <Link
+            key={sub.name}
+            to={sub.href}
+            onClick={() => setOpenDropdown(null)}
+            className={`group flex items-center gap-3 w-full px-3 py-2 text-base font-medium rounded-md transition-colors ${
+              location.pathname === sub.href
+                ? "bg-black/10 dark:bg-white/15 text-black dark:text-white"
+                : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
+            }`}
+          >
+            {React.cloneElement(sub.icon, { className: "w-5 h-5 text-gray-500 dark:text-gray-400" })}
+            {sub.name}
+          </Link>
+        ))}
+      </motion.div>
+    )}
+  </div>
+);
+
 const UserProfileDropdown = ({ 
   user, primaryLine, secondaryLine, showProfileDropdown, setShowProfileDropdown, 
   location, handleLogoutClick 
@@ -196,62 +297,19 @@ const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
         const isActive = item.href
           ? location.pathname === item.href
           : item.subItems?.some((sub) => location.pathname === sub.href);
-        if (item.subItems) {
-          return (
-            <div key={item.name} className="relative">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setOpenDropdown(openDropdown === item.name ? null : item.name);
-                }}
-                className={`flex items-center gap-1 text-base font-medium transition-colors ${
-                  isActive || openDropdown === item.name
-                    ? "text-black dark:text-white"
-                    : "text-black/70 hover:text-black dark:text-white/70 dark:hover:text-white"
-                }`}
-              >
-                {item.name}
-                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${openDropdown === item.name ? "rotate-180" : ""}`} />
-              </button>
-              {openDropdown === item.name && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute left-1/2 -translate-x-1/2 mt-4 w-56 bg-white/90 dark:bg-black/80 backdrop-blur-md shadow-xl rounded-lg z-50 border border-black/10 dark:border-white/20 p-2"
-                >
-                  {item.subItems.map((sub) => (
-                    <Link
-                      key={sub.name}
-                      to={sub.href}
-                      onClick={() => setOpenDropdown(null)}
-                      className={`group flex items-center gap-3 w-full px-3 py-2 text-base font-medium rounded-md transition-colors ${
-                        location.pathname === sub.href
-                          ? "bg-black/10 dark:bg-white/15 text-black dark:text-white"
-                          : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
-                      }`}
-                    >
-                      {React.cloneElement(sub.icon, { className: "w-5 h-5 text-gray-500 dark:text-gray-400" })}
-                      {sub.name}
-                    </Link>
-                  ))}
-                </motion.div>
-              )}
-            </div>
-          );
-        }
-        return (
-          <Link
-            key={item.name}
-            to={item.href}
-            className={`text-base font-medium transition-colors ${
-              isActive
-                ? "text-black dark:text-white"
-                : "text-black/70 hover:text-black dark:text-white/70 dark:hover:text-white"
-            }`}
-          >
-            {item.name}
-          </Link>
+        
+        return item.subItems ? (
+          <DesktopNavGroup 
+            key={item.name} 
+            item={item} 
+            isActive={isActive} 
+            isOpen={openDropdown === item.name} 
+            onToggle={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === item.name ? null : item.name); }} 
+            setOpenDropdown={setOpenDropdown} 
+            location={location} 
+          />
+        ) : (
+          <DesktopNavLink key={item.name} item={item} isActive={isActive} />
         );
       })}
     </div>
@@ -296,54 +354,24 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
           const isActive = item.href
             ? location.pathname === item.href
             : item.subItems?.some((sub) => location.pathname === sub.href);
-          if (item.subItems) {
-            return (
-              <div key={item.name}>
-                <button
-                  onClick={() => setOpenDropdown(openDropdown === item.name ? null : item.name)}
-                  className={`flex items-center justify-between w-full px-4 py-2.5 rounded-lg transition-colors text-left text-base font-medium ${
-                    isActive
-                      ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
-                  }`}
-                >
-                  <span className="flex items-center gap-3">{item.icon} {item.name}</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown === item.name ? "rotate-180" : ""}`} />
-                </button>
-                {openDropdown === item.name && (
-                  <div className="mt-2 ml-3 pl-3 border-l-2 border-gray-200 dark:border-white/20 space-y-1">
-                    {item.subItems.map((sub) => (
-                      <Link
-                        key={sub.name}
-                        to={sub.href}
-                        onClick={closeAllMenus}
-                        className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium ${
-                          location.pathname === sub.href
-                            ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
-                            : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white"
-                        }`}
-                      >
-                        {sub.icon}{sub.name}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          }
-          return (
-            <Link
-              key={item.name}
-              to={item.href}
-              onClick={closeAllMenus}
-              className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium ${
-                isActive
-                  ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
-                  : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
-              }`}
-            >
-              {item.icon}{item.name}
-            </Link>
+          
+          return item.subItems ? (
+            <MobileNavGroup 
+              key={item.name} 
+              item={item} 
+              isActive={isActive} 
+              isOpen={openDropdown === item.name} 
+              onToggle={() => setOpenDropdown(openDropdown === item.name ? null : item.name)} 
+              closeAllMenus={closeAllMenus} 
+              location={location} 
+            />
+          ) : (
+            <MobileNavLink 
+              key={item.name} 
+              item={item} 
+              isActive={isActive} 
+              onClick={closeAllMenus} 
+            />
           );
         })}
       </div>
