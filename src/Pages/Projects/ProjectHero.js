@@ -49,7 +49,7 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
   return (
     // UPDATED: Main background gradient
     <div 
-      className="relative min-h-screen py-24 overflow-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-zinc-950 dark:via-[#111827] dark:to-black"
+      className="relative min-h-screen py-24 overflow-hidden"
       // AOS Implementation
       data-aos="fade-down"
       data-aos-once="true"
