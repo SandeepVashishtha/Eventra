@@ -27,6 +27,147 @@ import {
   Sun
 } from "lucide-react";
 
+const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => (
+  <button
+    onClick={toggleTheme}
+    title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+    className={isMobile 
+      ? "flex-1 flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg bg-black dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors font-medium"
+      : "flex items-center gap-1 px-2 py-1 mr-2 text-xs font-normal bg-black text-white dark:bg-white dark:text-black rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all"
+    }
+  >
+    {isDarkMode ? (
+      <Sun className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
+    ) : (
+      <Moon className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
+    )}
+    {isMobile ? (isDarkMode ? "Dark OFF" : "Dark ON") : (isDarkMode ? "DARK" : "LIGHT")}
+  </button>
+);
+
+const CursorToggleButton = ({ cursorEnabled, toggleCursor, isMobile }) => (
+  <button
+    onClick={toggleCursor}
+    title={cursorEnabled ? "Disable Fluid Cursor" : "Enable Fluid Cursor"}
+    className={isMobile 
+      ? "flex-1 flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg bg-black dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors font-medium"
+      : "flex items-center gap-1 px-2 py-1 mr-3 text-xs font-normal bg-black text-white dark:bg-white dark:text-black rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all"
+    }
+  >
+    <MousePointer className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
+    {isMobile ? (cursorEnabled ? "Cursor OFF" : "Cursor ON") : (cursorEnabled ? "CURSOR" : "STATIC")}
+  </button>
+);
+
+const AuthButtons = ({ isMobile, closeAllMenus }) => (
+  <div className={isMobile ? "space-y-3" : "flex items-center space-x-1"}>
+    <Link 
+      to="/login" 
+      onClick={isMobile ? closeAllMenus : undefined} 
+      className={isMobile 
+        ? "flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-semibold text-white bg-black hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 border border-transparent"
+        : "px-4 py-2 text-base font-medium text-black/75 hover:text-black dark:text-white/75 dark:hover:text-white transition-colors"
+      }
+    >
+      {isMobile && <LogIn className="w-5 h-5" />}Sign In
+    </Link>
+    <Link 
+      to="/signup" 
+      onClick={isMobile ? closeAllMenus : undefined} 
+      className={isMobile
+        ? "flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-semibold text-black dark:text-white bg-white dark:bg-black/50 hover:bg-gray-100 dark:hover:bg-white/10 border-2 border-black/15 dark:border-white/20 hover:border-black/25 dark:hover:border-white/30 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
+        : "px-5 py-2 text-sm font-semibold text-white transition-all duration-300 bg-black hover:bg-zinc-800 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 dark:bg-white dark:text-black dark:hover:bg-zinc-200 focus:outline-none focus:ring-4 focus:ring-black/20 dark:focus:ring-white/20"
+      }
+    >
+      {isMobile && <Sparkles className="w-5 h-5" />}Get Started
+    </Link>
+  </div>
+);
+
+const UserProfileDropdown = ({ 
+  user, primaryLine, secondaryLine, showProfileDropdown, setShowProfileDropdown, 
+  location, handleLogoutClick 
+}) => (
+  <div className="relative profile-container">
+    <button 
+      onClick={() => setShowProfileDropdown(!showProfileDropdown)} 
+      className="flex items-center gap-2 text-sm font-medium text-black/90 dark:text-white/90 hover:text-black dark:hover:text-white transition-colors"
+    >
+      {user?.profilePicture ? (
+        <img src={user.profilePicture} alt="Profile" className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20" onError={(e) => (e.currentTarget.style.display = "none")} />
+      ) : (
+        <div className="w-8 h-8 rounded-full dark:bg-white/20 bg-gray-300 flex items-center justify-center">
+          <UserIcon className="w-4 h-4 text-gray-600 dark:text-white" />
+        </div>
+      )}
+    </button>
+    <AnimatePresence>
+      {showProfileDropdown && (
+        <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} transition={{ duration: 0.15 }}
+          className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-900 rounded-lg shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-800">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+            <div className="flex items-center gap-3">
+              {user?.profilePicture ? (
+                <img src={user.profilePicture} alt="Profile" className="w-12 h-12 rounded-full object-cover ring-2 ring-purple-500/20" onError={(e) => (e.currentTarget.style.display = "none")} />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-800 to-indigo-950 flex items-center justify-center">
+                  <UserIcon className="w-6 h-6 text-white" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{primaryLine}</p>
+                {secondaryLine && <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{secondaryLine}</p>}
+              </div>
+            </div>
+          </div>
+          <div className="p-2 bg-white dark:bg-gray-900">
+            <Link to="/dashboard" onClick={() => setShowProfileDropdown(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/dashboard" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
+              <LayoutDashboard className="w-4 h-4" />Dashboard
+            </Link>
+            <Link to="/profile" onClick={() => setShowProfileDropdown(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/profile" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
+              <UserCog className="w-4 h-4" />Edit Profile
+            </Link>
+          </div>
+          <div className="p-2 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+            <button onClick={handleLogoutClick} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+              <LogOut className="w-4 h-4" />Logout
+            </button>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
+);
+
+const MobileUserSection = ({ 
+  user, primaryLine, secondaryLine, closeAllMenus, location, handleLogoutClick 
+}) => (
+  <div className="space-y-1">
+    <div className="flex items-center gap-3 px-3 py-2 mb-2">
+      {user?.profilePicture ? (
+        <img src={user.profilePicture} alt="Profile" className="w-10 h-10 rounded-full object-cover" />
+      ) : (
+        <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white">
+          <UserIcon className="w-6 h-6" />
+        </div>
+      )}
+      <div>
+        <p className="font-semibold text-gray-800 dark:text-white truncate">{primaryLine}</p>
+        {secondaryLine && <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{secondaryLine}</p>}
+      </div>
+    </div>
+    <Link to="/dashboard" onClick={closeAllMenus} className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium ${location.pathname === "/dashboard" ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"}`}>
+      <LayoutDashboard className="w-5 h-5" />Dashboard
+    </Link>
+    <Link to="/profile" onClick={closeAllMenus} className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors text-lg font-medium ${location.pathname === "/profile" ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"}`}>
+      <UserCog className="w-5 h-5" />Edit Profile
+    </Link>
+    <button onClick={handleLogoutClick} className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors font-medium">
+      <LogOut className="w-5 h-5" />Logout
+    </button>
+  </div>
+);
+
 const NAV_ITEMS = [
   { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
   { name: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
@@ -138,9 +279,6 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
           Eventra
         </h2>
         <div className="flex items-center gap-3">
-          <button onClick={toggleTheme} className="p-2 rounded-full text-text-light bg-gray-100 dark:bg-white/10 hover:bg-gray-200">
-            {isDarkMode ? '☀️' : '🌙'}
-          </button>
           <button
             ref={closeBtnRef}
             onClick={closeAllMenus}
@@ -212,55 +350,20 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
 
       <div className="p-4 border-t border-gray-200 dark:border-white/20">
         {isAuthenticated() ? (
-          <div className="space-y-1">
-            <div className="flex items-center gap-3 px-3 py-2 mb-2">
-              {user?.profilePicture ? (
-                <img src={user.profilePicture} alt="Profile" className="w-10 h-10 rounded-full object-cover" />
-              ) : (
-                <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white">
-                  <UserIcon className="w-6 h-6" />
-                </div>
-              )}
-              <div>
-                <p className="font-semibold text-gray-800 dark:text-white truncate">{primaryLine}</p>
-                {secondaryLine && <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{secondaryLine}</p>}
-              </div>
-            </div>
-            <Link to="/dashboard" onClick={closeAllMenus} className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium ${location.pathname === "/dashboard" ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"}`}>
-              <LayoutDashboard className="w-5 h-5" />Dashboard
-            </Link>
-            <Link to="/profile" onClick={closeAllMenus} className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors text-lg font-medium ${location.pathname === "/profile" ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"}`}>
-              <UserCog className="w-5 h-5" />Edit Profile
-            </Link>
-            <button onClick={handleLogoutClick} className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors font-medium">
-              <LogOut className="w-5 h-5" />Logout
-            </button>
-          </div>
+          <MobileUserSection 
+            user={user} 
+            primaryLine={primaryLine} 
+            secondaryLine={secondaryLine} 
+            closeAllMenus={closeAllMenus} 
+            location={location} 
+            handleLogoutClick={handleLogoutClick} 
+          />
         ) : (
-          <div className="space-y-3">
-            <Link to="/login" onClick={closeAllMenus} className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-semibold text-white bg-black hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 border border-transparent">
-              <LogIn className="w-5 h-5" />Sign In
-            </Link>
-            <Link to="/signup" onClick={closeAllMenus} className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-semibold text-black dark:text-white bg-white dark:bg-black/50 hover:bg-gray-100 dark:hover:bg-white/10 border-2 border-black/15 dark:border-white/20 hover:border-black/25 dark:hover:border-white/30 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300">
-              <Sparkles className="w-5 h-5" />Get Started
-            </Link>
-          </div>
+          <AuthButtons isMobile={true} closeAllMenus={closeAllMenus} />
         )}
         <div className="flex gap-2 mb-2">
-          <button
-            onClick={toggleTheme}
-            className="flex-1 flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg bg-black dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors font-medium"
-          >
-            {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            {isDarkMode ? "Dark OFF" : "Dark ON"}
-          </button>
-          <button
-            onClick={toggleCursor}
-            className="flex-1 flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg bg-black dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors font-medium"
-          >
-            <MousePointer className="w-5 h-5" />
-            {cursorEnabled ? "Cursor OFF" : "Cursor ON"}
-          </button>
+          <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={true} />
+          <CursorToggleButton cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} isMobile={true} />
         </div>
       </div>
     </div>
@@ -410,79 +513,22 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
 
           <div className="hidden lg:flex items-center ml-auto z-20">
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-              className="flex items-center gap-1 px-2 py-1 mr-2 text-xs font-normal bg-black text-white dark:bg-white dark:text-black rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all"
-            >
-              {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              {isDarkMode ? "DARK" : "LIGHT"}
-            </button>
-
-            {/* Cursor Toggle */}
-            <button
-              onClick={toggleCursor}
-              title={cursorEnabled ? "Disable Fluid Cursor" : "Enable Fluid Cursor"}
-              className="flex items-center gap-1 px-2 py-1 mr-3 text-xs font-normal bg-black text-white dark:bg-white dark:text-black rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all"
-            >
-              <MousePointer className="w-4 h-4" />
-              {cursorEnabled ? "CURSOR" : "STATIC"}
-            </button>
+            <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={false} />
+            <CursorToggleButton cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} isMobile={false} />
 
             <div className="flex items-center space-x-2 ml-2">
               {isAuthenticated() ? (
-                <div className="relative profile-container">
-                  <button onClick={() => setShowProfileDropdown(!showProfileDropdown)} className="flex items-center gap-2 text-sm font-medium text-black/90 dark:text-white/90 hover:text-black dark:hover:text-white transition-colors">
-                    {user?.profilePicture ? (
-                      <img src={user.profilePicture} alt="Profile" className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20" onError={(e) => (e.currentTarget.style.display = "none")} />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full dark:bg-white/20 bg-gray-300 flex items-center justify-center">
-                        <UserIcon className="w-4 h-4 text-gray-600 dark:text-white" />
-                      </div>
-                    )}
-                  </button>
-                  <AnimatePresence>
-                    {showProfileDropdown && (
-                      <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} transition={{ duration: 0.15 }}
-                        className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-900 rounded-lg shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-800">
-                        <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
-                          <div className="flex items-center gap-3">
-                            {user?.profilePicture ? (
-                              <img src={user.profilePicture} alt="Profile" className="w-12 h-12 rounded-full object-cover ring-2 ring-purple-500/20" onError={(e) => (e.currentTarget.style.display = "none")} />
-                            ) : (
-                              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-800 to-indigo-950 flex items-center justify-center">
-                                <UserIcon className="w-6 h-6 text-white" />
-                              </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{primaryLine}</p>
-                              {secondaryLine && <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{secondaryLine}</p>}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="p-2 bg-white dark:bg-gray-900">
-                          <Link to="/dashboard" onClick={() => setShowProfileDropdown(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/dashboard" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
-                            <LayoutDashboard className="w-4 h-4" />Dashboard
-                          </Link>
-                          <Link to="/profile" onClick={() => setShowProfileDropdown(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/profile" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
-                            <UserCog className="w-4 h-4" />Edit Profile
-                          </Link>
-                        </div>
-                        <div className="p-2 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
-                          <button onClick={handleLogoutClick} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                            <LogOut className="w-4 h-4" />Logout
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                <UserProfileDropdown 
+                  user={user} 
+                  primaryLine={primaryLine} 
+                  secondaryLine={secondaryLine} 
+                  showProfileDropdown={showProfileDropdown} 
+                  setShowProfileDropdown={setShowProfileDropdown} 
+                  location={location} 
+                  handleLogoutClick={handleLogoutClick} 
+                />
               ) : (
-                <div className="flex items-center space-x-1">
-                  <Link to="/login" className="px-4 py-2 text-base font-medium text-black/75 hover:text-black dark:text-white/75 dark:hover:text-white transition-colors">Sign In</Link>
-                  <Link to="/signup" className="px-5 py-2 text-sm font-semibold text-white transition-all duration-300 bg-black hover:bg-zinc-800 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 dark:bg-white dark:text-black dark:hover:bg-zinc-200 focus:outline-none focus:ring-4 focus:ring-black/20 dark:focus:ring-white/20">Get Started</Link>
-                </div>
+                <AuthButtons isMobile={false} />
               )}
             </div>
           </div>
