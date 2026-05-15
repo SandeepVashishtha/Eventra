@@ -27,6 +27,31 @@ import {
   Sun
 } from "lucide-react";
 
+// --- Helpers to reduce complexity ---
+const getUserDisplayNames = (user) => {
+  if (!user) return { primary: "User", secondary: null };
+  const primary = (user.fullName?.trim()) || 
+                 [user.firstName, user.lastName].filter(Boolean).join(" ").trim() || 
+                 (user.username?.trim()) || 
+                 (user.email?.trim()) || 
+                 "User";
+  const secondaryCand = (user.email?.trim()) || (user.username?.trim()) || "";
+  const secondary = secondaryCand && secondaryCand !== primary ? secondaryCand : null;
+  return { primary, secondary };
+};
+
+const clearBodyScrollStyles = () => {
+  try {
+    const stored = document.body.style.top;
+    Object.assign(document.body.style, { position: "", top: "", left: "", right: "", width: "" });
+    if (stored) window.scrollTo(0, parseInt(stored, 10) * -1 || 0);
+  } catch (e) { /* ignore */ }
+};
+
+const setBodyScrollStyles = (top) => {
+  Object.assign(document.body.style, { position: "fixed", top: `-${top}px`, left: "0", right: "0", width: "100%" });
+};
+
 const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => (
   <button
     onClick={toggleTheme}
@@ -312,49 +337,41 @@ const MobileUserSection = ({
   </div>
 );
 
-const NAV_ITEMS = [
-  { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
-  { name: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
-  { name: "Hackathons", href: "/hackathons", icon: <Sparkles className="w-5 h-5" /> },
-  { name: "Projects", href: "/projects", icon: <FolderKanban className="w-5 h-5" /> },
-  {
-    name: "Community",
-    icon: <Users className="w-5 h-5" />,
-    subItems: [
-      { name: "Leaderboard", href: "/leaderBoard", icon: <Trophy className="w-5 h-5" /> },
-      { name: "Contributors", href: "/contributors", icon: <Users className="w-5 h-5" /> },
-      { name: "Contributors Guide", href: "/contributorguide", icon: <Book className="w-5 h-5" /> },
-      { name: "Community Events", href: "/communityEvent", icon: <Users className="w-5 h-5" /> },
-    ],
-  },
-  { name: "About", href: "/about", icon: <Info className="w-5 h-5" /> },
-  { name: "FAQ", href: "/faq", icon: <HelpCircle className="w-5 h-5" /> },
-  { name: "Contact", href: "/contact", icon: <MessageSquare className="w-5 h-5" /> },
 ];
+
+const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile }) => (
+  <>
+    {NAV_ITEMS.map((item) => {
+      const isActive = item.href 
+        ? location.pathname === item.href 
+        : item.subItems?.some(s => location.pathname === s.href);
+      
+      if (item.subItems) {
+        return isMobile ? (
+          <MobileNavGroup key={item.name} item={item} isActive={isActive} isOpen={openDropdown === item.name} onToggle={() => onToggleGroup(item.name)} closeAllMenus={onLinkClick} location={location} />
+        ) : (
+          <DesktopNavGroup key={item.name} item={item} isActive={isActive} isOpen={openDropdown === item.name} onToggle={(e) => { e.stopPropagation(); onToggleGroup(item.name); }} setOpenDropdown={onToggleGroup} location={location} />
+        );
+      }
+      return isMobile ? (
+        <MobileNavLink key={item.name} item={item} isActive={isActive} onClick={onLinkClick} />
+      ) : (
+        <DesktopNavLink key={item.name} item={item} isActive={isActive} />
+      );
+    })}
+  </>
+);
 
 const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   const location = useLocation();
   return (
     <div className="hidden lg:flex absolute left-[48%] transform -translate-x-1/2 space-x-5 z-10">
-      {NAV_ITEMS.map((item) => {
-        const isActive = item.href
-          ? location.pathname === item.href
-          : item.subItems?.some((sub) => location.pathname === sub.href);
-        
-        return item.subItems ? (
-          <DesktopNavGroup 
-            key={item.name} 
-            item={item} 
-            isActive={isActive} 
-            isOpen={openDropdown === item.name} 
-            onToggle={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === item.name ? null : item.name); }} 
-            setOpenDropdown={setOpenDropdown} 
-            location={location} 
-          />
-        ) : (
-          <DesktopNavLink key={item.name} item={item} isActive={isActive} />
-        );
-      })}
+      <NavList 
+        location={location} 
+        openDropdown={openDropdown} 
+        onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)} 
+        isMobile={false} 
+      />
     </div>
   );
 };
@@ -378,30 +395,13 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
       <MobileDrawerHeader closeBtnRef={closeBtnRef} closeAllMenus={closeAllMenus} />
 
       <div className="flex-grow p-3.5 sm:p-4 space-y-2 overflow-y-auto">
-        {NAV_ITEMS.map((item) => {
-          const isActive = item.href
-            ? location.pathname === item.href
-            : item.subItems?.some((sub) => location.pathname === sub.href);
-          
-          return item.subItems ? (
-            <MobileNavGroup 
-              key={item.name} 
-              item={item} 
-              isActive={isActive} 
-              isOpen={openDropdown === item.name} 
-              onToggle={() => setOpenDropdown(openDropdown === item.name ? null : item.name)} 
-              closeAllMenus={closeAllMenus} 
-              location={location} 
-            />
-          ) : (
-            <MobileNavLink 
-              key={item.name} 
-              item={item} 
-              isActive={isActive} 
-              onClick={closeAllMenus} 
-            />
-          );
-        })}
+        <NavList 
+          location={location} 
+          openDropdown={openDropdown} 
+          onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)} 
+          onLinkClick={closeAllMenus} 
+          isMobile={true} 
+        />
       </div>
 
       <MobileDrawerFooter 
@@ -440,28 +440,13 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const primaryLine =
-    (user?.fullName && user.fullName.trim()) ||
-    [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() ||
-    (user?.username && user.username.trim()) ||
-    (user?.email && user.email.trim()) ||
-    "User";
-  const secondaryCandidate = (user?.email && user.email.trim()) || (user?.username && user.username.trim()) || "";
-  const secondaryLine = secondaryCandidate && secondaryCandidate !== primaryLine ? secondaryCandidate : null;
+  const { primary: primaryLine, secondary: secondaryLine } = getUserDisplayNames(user);
 
   const closeAllMenus = () => {
     setShowProfileDropdown(false);
     setIsMobileMenuOpen(false);
     setOpenDropdown(null);
-    try {
-      const stored = document.body.style.top;
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.left = "";
-      document.body.style.right = "";
-      document.body.style.width = "";
-      if (stored) window.scrollTo(0, parseInt(stored || "0", 10) * -1 || 0);
-    } catch (e) { /* ignore */ }
+    clearBodyScrollStyles();
     try { toggleBtnRef.current?.focus(); } catch (e) { /* ignore */ }
   };
 
@@ -471,33 +456,12 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
   useEffect(() => {
     if (isMobileMenuOpen) {
-      const prevTop = window.scrollY || 0;
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${prevTop}px`;
-      document.body.style.left = "0";
-      document.body.style.right = "0";
-      document.body.style.width = "100%";
+      setBodyScrollStyles(window.scrollY || 0);
       setTimeout(() => closeBtnRef.current?.focus(), 50);
     } else {
-      const stored = document.body.style.top;
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.left = "";
-      document.body.style.right = "";
-      document.body.style.width = "";
-      if (stored) window.scrollTo(0, parseInt(stored || "0", 10) * -1 || 0);
+      clearBodyScrollStyles();
     }
-    return () => {
-      try {
-        const stored = document.body.style.top;
-        document.body.style.position = "";
-        document.body.style.top = "";
-        document.body.style.left = "";
-        document.body.style.right = "";
-        document.body.style.width = "";
-        if (stored) window.scrollTo(0, parseInt(stored || "0", 10) * -1 || 0);
-      } catch (e) { /* ignore */ }
-    };
+    return clearBodyScrollStyles;
   }, [isMobileMenuOpen]);
 
   useEffect(() => { closeAllMenus(); }, [location.pathname]);
