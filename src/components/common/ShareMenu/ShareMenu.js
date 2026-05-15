@@ -87,8 +87,20 @@ const ShareMenu = ({
   };
 
   const handleShare = (platform) => {
+    //To generate the URL and data
     const url = generateSharingUrl(shareData, platform);
     
+    //Native Share Logic
+    if(platform === 'system' && navigator.share) {
+      navigator.share({
+        title: shareData.title,
+        text: shareData.description,
+        url: shareData.url || window.location.href,
+      })
+      .then(()=>setIsOpen(false))
+      .catch((err)=>console.log('Error sharing:', err));
+      return;
+    }
     if (platform === 'copy') {
       copyToClipboard(url);
       setCopied(true);
@@ -96,7 +108,7 @@ const ShareMenu = ({
       return;
     }
     
-    // Open URL in a new window
+    // Open URL in a new window for social platforms
     window.open(url, '_blank', 'noopener,noreferrer');
     setIsOpen(false);
   };
@@ -164,6 +176,21 @@ const ShareMenu = ({
             className={`share-menu-dropdown absolute z-[9999] ${positionClasses[currentPosition]} shadow-xl rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 ${menuClassName}`}
           >
             <div className="py-2 w-64">
+              {/* Native System Share (Only shows if browser supports it) */}
+              {navigator.share && (
+                <button
+                onClick={() => handleShare('system')}
+                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-800"
+                >
+                  <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                  <Share2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400"/>
+                  </div>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Share via System
+                  </span>
+                </button>
+              )}
+
               {/* Copy Link Button */}
               <button
                 onClick={handleCopyLink}

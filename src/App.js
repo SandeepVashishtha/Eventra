@@ -48,24 +48,19 @@ import ApiDocs from "./Pages/ApiDocs";
 import HelpCenter from "./Pages/HelpCenter";
 import FAQPage from "./Pages/FAQ/FAQPage";
 import EventRegistration from "./Pages/Events/EventRegistration";
+import EventAnalyticsDashboard from "./Pages/Events/EventAnalyticsDashboard";
 
 import { ThemeProvider } from "./context/ThemeContext";
 
 function App() {
-  // Cursor state with persistence
   const [cursorEnabled, setCursorEnabled] = useState(
     localStorage.getItem("cursor") !== "off"
   );
 
-  // Toggle function
   const toggleCursor = () => {
     const newValue = !cursorEnabled;
     setCursorEnabled(newValue);
-
-    localStorage.setItem(
-      "cursor",
-      newValue ? "on" : "off"
-    );
+    localStorage.setItem("cursor", newValue ? "on" : "off");
   };
 
   return (
@@ -74,8 +69,6 @@ function App() {
       <AuthProvider>
         <Router>
           <div className="App">
-
-            {/* PASS PROPS TO NAVBAR */}
             <Navbar
               cursorEnabled={cursorEnabled}
               toggleCursor={toggleCursor}
@@ -86,19 +79,13 @@ function App() {
 
                 <Route path="/" element={<HomePage />} />
                 <Route path="/events" element={<EventsPage />} />
-                <Route
-                  path="/events/:eventId/register"
-                  element={<EventRegistration />}
-                />
+                <Route path="/events/:eventId/register" element={<EventRegistration />} />
                 <Route path="/hackathons" element={<HackathonPage />} />
                 <Route path="/projects" element={<ProjectsPage />} />
                 <Route path="/contributors" element={<Contributors />} />
                 <Route path="/communityEvent" element={<CommunityEvent />} />
                 <Route path="/leaderBoard" element={<LeaderBoard />} />
-                <Route
-                  path="/contributorguide"
-                  element={<ContributorGuide />}
-                />
+                <Route path="/contributorguide" element={<ContributorGuide />} />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/faq" element={<FAQPage />} />
                 <Route path="/terms" element={<Terms />} />
@@ -107,15 +94,13 @@ function App() {
                 <Route path="/helpcenter" element={<HelpCenter />} />
                 <Route path="/contact" element={<ContactUs />} />
                 <Route path="/feedback" element={<FeedbackPage />} />
+                <Route path="/analytics" element={<EventAnalyticsDashboard />} />
 
                 {/* Protected Routes */}
-
                 <Route
                   path="/create-event"
                   element={
-                    <ProtectedRoute
-                      requiredPermissions={["CREATE_EVENT"]}
-                    >
+                    <ProtectedRoute requiredPermissions={["CREATE_EVENT"]}>
                       <EventCreation />
                     </ProtectedRoute>
                   }
@@ -130,22 +115,13 @@ function App() {
                   }
                 />
 
-                <Route
-                  path="/documentation"
-                  element={<DocumentationPage />}
-                />
-
-                <Route
-                  path="/submit-project"
-                  element={<SubmitProject />}
-                />
+                <Route path="/documentation" element={<DocumentationPage />} />
+                <Route path="/submit-project" element={<SubmitProject />} />
 
                 <Route
                   path="/host-hackathon"
                   element={
-                    <ProtectedRoute
-                      requiredPermissions={["HOST_HACKATHON"]}
-                    >
+                    <ProtectedRoute requiredPermissions={["HOST_HACKATHON"]}>
                       <HostHackathon />
                     </ProtectedRoute>
                   }
@@ -170,17 +146,10 @@ function App() {
                 />
 
                 {/* Auth Routes */}
-
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
-                <Route
-                  path="/unauthorized"
-                  element={<Unauthorized />}
-                />
-                <Route
-                  path="/password-reset"
-                  element={<PasswordReset />}
-                />
+                <Route path="/unauthorized" element={<Unauthorized />} />
+                <Route path="/password-reset" element={<PasswordReset />} />
 
                 <Route path="/*" element={<NotFound />} />
 
@@ -189,7 +158,6 @@ function App() {
 
             <ScrollToTop />
             <Chatbot />
-
             <FeedbackButton />
             <Footer />
 
