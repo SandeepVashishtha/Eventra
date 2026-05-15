@@ -521,13 +521,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
     touchCurrentXRef.current = null;
   };
 
-  const [navHeight, setNavHeight] = useState(0);
-  useEffect(() => {
-    if (navRef.current) setNavHeight(navRef.current.offsetHeight);
-    const handleResize = () => { if (navRef.current) setNavHeight(navRef.current.offsetHeight); };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   const navItems = [
     { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
@@ -702,22 +695,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
            {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
 </button>
 
-            {/* Cursor Toggle Button */}
-           <button
-             onClick={toggleCursor}
-              className="flex items-center gap-1 px-2 py-1 mr-3
-             text-s font-normal
-              bg-black text-white
-             rounded-md
-              hover:bg-zinc-800
-              transition-all"
->
-  <MousePointer className="w-4 h-4" />
-
-  {cursorEnabled
-    ? "OFF"
-    : "ON"}
-</button>
 
             <div className="flex items-center space-x-2 ml-2">
               {isAuthenticated() ? (
