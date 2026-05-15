@@ -1,13 +1,10 @@
 import { useState } from "react";
-import { SiX } from "react-icons/si";
 import {
   FaInfoCircle,
   FaInstagram,
   FaDiscord,
   FaTelegram,
   FaGithub,
-  FaShieldAlt,
-  FaFileContract,
   FaQuestionCircle,
   FaEnvelope,
   FaBookOpen,

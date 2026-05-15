@@ -15,7 +15,6 @@ import {
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import {
   Calendar,
-  Clock,
   MapPin,
   Link2,
   Users,

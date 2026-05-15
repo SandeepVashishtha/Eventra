@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
-import { Search, X, Sparkles, Users, Award, Code2, Calendar } from "lucide-react";
+import { Sparkles, Users, Award, Code2, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 
 export default function EventHero({

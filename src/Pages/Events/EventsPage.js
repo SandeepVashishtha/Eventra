@@ -89,6 +89,7 @@ const EventsPage = () => {
 
   useEffect(() => {
     handleSearch(searchQuery);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [events, filterType]);
 
   const handleSortChange = (type) => {

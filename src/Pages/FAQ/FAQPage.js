@@ -100,8 +100,6 @@ const FAQPage = () => {
     },
   ];
 
-  const categories = [...new Set(faqData.map((faq) => faq.category))];
-
   const toggleFAQ = (id) => {
     setOpenFAQ(openFAQ === id ? null : id);
   };

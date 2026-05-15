@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, Sparkles, Users, Award, Code2, Calendar } from "lucide-react";
+import { X, Sparkles, Users, Award, Code2, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import ModernSearchInput from "../../components/common/ModernSearchInput";

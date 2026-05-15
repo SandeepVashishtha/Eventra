@@ -1,12 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Mail, Phone, FileText, MessageSquare } from "lucide-react";
+import { User, Mail, FileText, MessageSquare } from "lucide-react";
 import {
   FiStar,
   FiMessageSquare,
-  FiUser,
-  FiMail,
-  FiCheckCircle,
 } from "react-icons/fi";
 
 // Toast Component
