@@ -1,8 +1,14 @@
 'use client';
 import React, { useEffect, useRef } from 'react';
 
-const FluidCursor = () => {
+const FluidCursor = ({ enabled = true }) => {
   const canvasRef = useRef(null);
+  const isEnabledRef = useRef(enabled);
+
+  // Update ref when prop changes
+  useEffect(() => {
+    isEnabledRef.current = enabled;
+  }, [enabled]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -138,7 +144,7 @@ const FluidCursor = () => {
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
 
       const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-      return status == gl.FRAMEBUFFER_COMPLETE;
+      return status === gl.FRAMEBUFFER_COMPLETE;
     }
 
     class Material {
@@ -161,7 +167,7 @@ const FluidCursor = () => {
           this.programs[hash] = program;
         }
 
-        if (program == this.activeProgram) return;
+        if (program === this.activeProgram) return;
 
         this.uniforms = getUniforms(program);
         this.activeProgram = program;
@@ -670,7 +676,7 @@ const FluidCursor = () => {
     }
 
     function resizeDoubleFBO(target, w, h, internalFormat, format, type, param) {
-      if (target.width == w && target.height == h) return target;
+      if (target.width === w && target.height === h) return target;
       target.read = resizeFBO(target.read, w, h, internalFormat, format, type, param);
       target.write = createFBO(w, h, internalFormat, format, type, param);
       target.width = w;
@@ -693,6 +699,12 @@ const FluidCursor = () => {
     let colorUpdateTimer = 0.0;
 
     function update() {
+      // Pause animation if disabled to save resources
+      if (!isEnabledRef.current) {
+        animationFrameId = requestAnimationFrame(update);
+        return;
+      }
+
       const dt = calcDeltaTime();
       if (resizeCanvas()) initFramebuffers();
       updateColors(dt);
@@ -713,7 +725,7 @@ const FluidCursor = () => {
     function resizeCanvas() {
       let width = scaleByPixelRatio(canvas.clientWidth);
       let height = scaleByPixelRatio(canvas.clientHeight);
-      if (canvas.width != width || canvas.height != height) {
+      if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width;
         canvas.height = height;
         return true;
@@ -861,7 +873,7 @@ const FluidCursor = () => {
     }
 
     function hashCode(s) {
-      if (s.length == 0) return 0;
+      if (s.length === 0) return 0;
       let hash = 0;
       for (let i = 0; i < s.length; i++) {
         hash = (hash << 5) - hash + s.charCodeAt(i);
@@ -872,7 +884,7 @@ const FluidCursor = () => {
 
     function wrap(value, min, max) {
       const range = max - min;
-      if (range == 0) return min;
+      if (range === 0) return min;
       return ((value - min) % range) + min;
     }
 
@@ -957,8 +969,9 @@ const FluidCursor = () => {
       if (aspectRatio > 1) delta /= aspectRatio;
       return delta;
     }
-
+/*
     const handleMouseDown = (e) => {
+      if (!isEnabledRef.current) return;
       let pointer = pointers[0];
       let posX = e.clientX * (canvas.width / canvas.clientWidth);
       let posY = e.clientY * (canvas.height / canvas.clientHeight);
@@ -967,14 +980,46 @@ const FluidCursor = () => {
     };
 
     const handleMouseMove = (e) => {
+      if (!isEnabledRef.current) return;
       let pointer = pointers[0];
       let posX = e.clientX * (canvas.width / canvas.clientWidth);
       let posY = e.clientY * (canvas.height / canvas.clientHeight);
       let color = pointer.color;
       updatePointerMoveData(pointer, posX, posY, color);
     };
+*/
+    const handleMouseDown = (e) => {
+      const blockedElement = e.target.closest(
+        "button, a, input, textarea, select, nav, form, .card-with-floating-elements, [class*='card'], [class*='Card'], [class*='modal'], [class*='popup'], [class*='rounded'], [class*='shadow']"
+      );
+
+      if (blockedElement) return;
+
+      let pointer = pointers[0];
+      let posX = scaleByPixelRatio(e.clientX);
+      let posY = scaleByPixelRatio(e.clientY);
+
+      updatePointerDownData(pointer, -1, posX, posY);
+      clickSplat(pointer);
+    };
+
+    const handleMouseMove = (e) => {
+      const blockedElement = e.target.closest(
+        "button, a, input, textarea, select, nav, form, .card-with-floating-elements, [class*='card'], [class*='Card'], [class*='modal'], [class*='popup'], [class*='rounded'], [class*='shadow']"
+      );
+
+      if (blockedElement) return;
+
+      let pointer = pointers[0];
+      let posX = scaleByPixelRatio(e.clientX);
+      let posY = scaleByPixelRatio(e.clientY);
+      let color = pointer.color;
+
+      updatePointerMoveData(pointer, posX, posY, color);
+    };
 
     const handleTouchStart = (e) => {
+      if (!isEnabledRef.current) return;
       const touches = e.targetTouches;
       let pointer = pointers[0];
       for (let i = 0; i < touches.length; i++) {
@@ -985,6 +1030,7 @@ const FluidCursor = () => {
     };
 
     const handleTouchMove = (e) => {
+      if (!isEnabledRef.current) return;
       const touches = e.targetTouches;
       let pointer = pointers[0];
       for (let i = 0; i < touches.length; i++) {
@@ -1020,7 +1066,7 @@ const FluidCursor = () => {
   }, []);
 
   return (
-    <div className='fixed top-0 left-0 z-[9999] pointer-events-none'>
+    <div className={`fixed top-0 left-0 z-[9999] pointer-events-none transition-opacity duration-300 ${enabled ? 'opacity-100' : 'opacity-0'}`}>
       <canvas ref={canvasRef} id='fluid' className='w-screen h-screen' />
     </div>
   );

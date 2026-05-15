@@ -273,3 +273,20 @@ A huge thank you to everyone who has contributed to Eventra! Your efforts make t
 
 ---
 Built with care by the Eventra Team
+## 🚀 Local Setup (Windows)
+
+## Frontend Setup Instructions
+
+Follow these steps to run the Eventra frontend locally:
+
+### Prerequisites
+- Node.js (v18 or later recommended)
+- npm (comes with Node.js)
+- Git
+
+### Steps to Run Locally
+
+1. Clone the repository
+```bash
+git clone https://github.com/SandeepVashishtha/Eventra.git
+
