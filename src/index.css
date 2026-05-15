@@ -1,4 +1,6 @@
-@import url("https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@100..900&display=swap");
+/* Fix: Removed 'Anton' decorative font — only 'Inter' is used for professionalism */
+/* Issue #828: Standardize and Professionalize Font Text and Size */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -48,6 +50,7 @@ body.dark {
 /* Global styles */
 html {
   scroll-behavior: auto;
+  font-size: 16px; /* Explicit root size for reliable rem calculations */
 }
 
 body {
@@ -56,16 +59,16 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  line-height: 1.6;
+  line-height: var(--lh-body);
   overflow-x: hidden;
   color: var(--text-color);
   background-color: var(--bg-color);
   transition: background-color 0.3s ease, color 0.3s ease;
-
-  /* Body font size */
   font-size: var(--font-body);
+  font-weight: var(--fw-regular);
 }
-body.dark .pastel-grid-bg {
+
+.dark .pastel-grid-bg {
   background-color: var(--bg-color);
   background-image:
     linear-gradient(to right, rgba(96, 165, 250, 0.18) 1px, transparent 1px),
@@ -89,31 +92,26 @@ body.dark .documentation-page .border-gray-300 {
   border-color: var(--border-color) !important;
 }
 
-*,
-*::before,
-*::after {
-  animation: none !important;
-  transition: none !important;
-  scroll-behavior: auto !important;
-}
 
-/* Headings */
-h1 { font-size: var(--font-h1); }
-h2 { font-size: var(--font-h2); }
-h3 { font-size: var(--font-h3); }
-h4 { font-size: var(--font-h4); }
-h5 { font-size: var(--font-h5); }
-h6 { font-size: var(--font-h6); }
+
+/* Fix: Headings use CSS variables + consistent line-height */
+h1 { font-size: var(--font-h1); font-weight: var(--fw-bold); line-height: var(--lh-heading); }
+h2 { font-size: var(--font-h2); font-weight: var(--fw-bold); line-height: var(--lh-heading); }
+h3 { font-size: var(--font-h3); font-weight: var(--fw-semibold); line-height: var(--lh-heading); }
+h4 { font-size: var(--font-h4); font-weight: var(--fw-semibold); line-height: var(--lh-heading); }
+h5 { font-size: var(--font-h5); font-weight: var(--fw-medium); }
+h6 { font-size: var(--font-h6); font-weight: var(--fw-medium); }
 
 /* Navigation items */
 nav, nav a {
   font-size: var(--font-nav);
+  font-weight: var(--fw-medium);
 }
 
 /* Code block */
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
-  font-size: 14px;
+  font-size: 0.875rem; /* 14px */
 }
 
 /* Custom scrollbar */
@@ -139,8 +137,8 @@ code {
   padding: 12px 32px;
   border: none;
   border-radius: 8px;
-  font-weight: 600;
-  font-size: 16px;
+  font-weight: var(--fw-semibold);
+  font-size: var(--font-body);
   text-decoration: none;
   display: inline-block;
   transition: all 0.3s ease;
@@ -159,8 +157,8 @@ code {
   padding: 12px 32px;
   border: 2px solid var(--border-color);
   border-radius: 8px;
-  font-weight: 600;
-  font-size: 16px;
+  font-weight: var(--fw-semibold);
+  font-size: var(--font-body);
   text-decoration: none;
   display: inline-block;
   transition: all 0.3s ease;
@@ -173,18 +171,20 @@ code {
   transform: translateY(-2px);
 }
 
-/* Responsive adjustments */
+/* Fix: Responsive font scale — uses em-based scaling for fluidity */
 @media (max-width: 768px) {
+  :root {
+    --font-h1: 1.75rem;   /* 28px on mobile */
+    --font-h2: 1.5rem;    /* 24px */
+    --font-h3: 1.25rem;   /* 20px */
+    --font-h4: 1.125rem;  /* 18px */
+    --font-h5: 1rem;
+    --font-h6: 0.9375rem;
+  }
+
   .container { padding: 0 16px; }
   .section-padding { padding: 60px 0; }
-  .btn-primary, .btn-secondary { padding: 10px 24px; font-size: 14px; }
-
-  h1 { font-size: 28px; }
-  h2 { font-size: 24px; }
-  h3 { font-size: 22px; }
-  h4 { font-size: 20px; }
-  h5, h6 { font-size: 18px; }
-  body, nav, nav a { font-size: 16px; }
+  .btn-primary, .btn-secondary { padding: 10px 24px; font-size: 0.875rem; }
 }
 
 /* Remove input clear buttons */

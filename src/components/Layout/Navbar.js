@@ -5,26 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import ConfirmationModal from "../common/ConfirmationModal"; // ADD THIS IMPORT
 import ThemeToggleButton from "../common/ThemeToggleButton";
 import { toast } from "react-toastify";
-
-
 import { UserCog } from "lucide-react";
 import {
-  Home,
-  Calendar,
-  Sparkles,
-  FolderKanban,
-  Users,
-  Trophy,
-  Info,
-  LayoutDashboard,
-  User as UserIcon,
-  LogOut,
-  LogIn,
-  MessageSquare,
-  Book,
-  HelpCircle,
-  ChevronDown,
-  MousePointer
+  Home, Calendar, Sparkles, FolderKanban, Users, Trophy,
+  Info, LayoutDashboard, User as UserIcon, LogOut, LogIn,
+  MessageSquare, Book, HelpCircle, ChevronDown, MousePointer
 } from "lucide-react";
 
   const Navbar = ({ cursorEnabled, toggleCursor }) => {
@@ -32,6 +17,7 @@ import {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [navHeight, setNavHeight] = useState(0);
 
   const drawerRef = useRef(null);
   const closeBtnRef = useRef(null);
@@ -50,14 +36,8 @@ import {
     (user?.username && user.username.trim()) ||
     (user?.email && user.email.trim()) ||
     "User";
-  const secondaryCandidate =
-    (user?.email && user.email.trim()) ||
-    (user?.username && user.username.trim()) ||
-    "";
-  const secondaryLine =
-    secondaryCandidate && secondaryCandidate !== primaryLine
-      ? secondaryCandidate
-      : null;
+  const secondaryCandidate = (user?.email && user.email.trim()) || (user?.username && user.username.trim()) || "";
+  const secondaryLine = secondaryCandidate && secondaryCandidate !== primaryLine ? secondaryCandidate : null;
 
   const closeAllMenus = () => {
     setShowProfileDropdown(false);
@@ -70,28 +50,18 @@ import {
       document.body.style.left = "";
       document.body.style.right = "";
       document.body.style.width = "";
-      if (stored) {
-        const scrollY = parseInt(stored || "0", 10) * -1 || 0;
-        window.scrollTo(0, scrollY);
-      }
-    } catch (e) {
-      /* ignore */
-    }
-    try {
-      toggleBtnRef.current?.focus();
-    } catch (e) {
-      /* ignore */
-    }
+      if (stored) window.scrollTo(0, parseInt(stored || "0", 10) * -1 || 0);
+    } catch (e) { /* ignore */ }
+    try { toggleBtnRef.current?.focus(); } catch (e) { /* ignore */ }
   };
 
   useEffect(() => {
-    const event = new CustomEvent("mobileMenuToggle", { detail: isMobileMenuOpen });
-    window.dispatchEvent(event);
+    window.dispatchEvent(new CustomEvent("mobileMenuToggle", { detail: isMobileMenuOpen }));
   }, [isMobileMenuOpen]);
 
   useEffect(() => {
     if (isMobileMenuOpen) {
-      const prevTop = window.scrollY || window.pageYOffset || 0;
+      const prevTop = window.scrollY || 0;
       document.body.style.position = "fixed";
       document.body.style.top = `-${prevTop}px`;
       document.body.style.left = "0";
@@ -105,10 +75,7 @@ import {
       document.body.style.left = "";
       document.body.style.right = "";
       document.body.style.width = "";
-      if (stored) {
-        const scrollY = parseInt(stored || "0", 10) * -1 || 0;
-        window.scrollTo(0, scrollY);
-      }
+      if (stored) window.scrollTo(0, parseInt(stored || "0", 10) * -1 || 0);
     }
     return () => {
       try {
@@ -118,161 +85,60 @@ import {
         document.body.style.left = "";
         document.body.style.right = "";
         document.body.style.width = "";
-        if (stored) {
-          const scrollY = parseInt(stored || "0", 10) * -1 || 0;
-          window.scrollTo(0, scrollY);
-        }
-      } catch (e) {
-        /* ignore */
-      }
+        if (stored) window.scrollTo(0, parseInt(stored || "0", 10) * -1 || 0);
+      } catch (e) { /* ignore */ }
     };
   }, [isMobileMenuOpen]);
 
-  useEffect(() => {
-    closeAllMenus();
-  }, [location.pathname]);
+  useEffect(() => { closeAllMenus(); }, [location.pathname]);
 
   useEffect(() => {
     if (!isMobileMenuOpen || !drawerRef.current) return;
     const drawer = drawerRef.current;
     const handleKeyDown = (e) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        closeAllMenus();
-        return;
-      }
+      if (e.key === "Escape") { e.preventDefault(); closeAllMenus(); return; }
       if (e.key === "Tab") {
-        const focusable = drawer.querySelectorAll(
-          'a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
+        const focusable = drawer.querySelectorAll('a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
         if (!focusable.length) return;
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
       }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isMobileMenuOpen]);
 
-  const handleTouchStart = (e) => {
-    touchStartXRef.current = e.touches[0].clientX;
-    touchCurrentXRef.current = e.touches[0].clientX;
-  };
-  const handleTouchMove = (e) => {
-    touchCurrentXRef.current = e.touches[0].clientX;
-  };
-  const handleTouchEnd = () => {
-    const start = touchStartXRef.current;
-    const end = touchCurrentXRef.current;
-    if (typeof start !== "number" || typeof end !== "number") return;
-    const deltaX = end - start;
-    if (deltaX > 50) {
-      // Swiped right to close
-      closeAllMenus();
-    }
-    touchStartXRef.current = null;
-    touchCurrentXRef.current = null;
-  };
-
-  const [navHeight, setNavHeight] = useState(0);
   useEffect(() => {
-    if (navRef.current) {
-      setNavHeight(navRef.current.offsetHeight);
-    }
-    const handleResize = () => {
-      if (navRef.current) {
-        setNavHeight(navRef.current.offsetHeight);
-      }
-    };
+    if (navRef.current) setNavHeight(navRef.current.offsetHeight);
+    const handleResize = () => { if (navRef.current) setNavHeight(navRef.current.offsetHeight); };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const navItems = [
-    { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
-    { name: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
-    {
-      name: "Hackathons",
-      href: "/hackathons",
-      icon: <Sparkles className="w-5 h-5" />,
-    },
-    {
-      name: "Projects",
-      href: "/projects",
-      icon: <FolderKanban className="w-5 h-5" />,
-    },
-    {
-      name: "Community",
-      icon: <Users className="w-5 h-5" />,
-      subItems: [
-        {
-          name: "Leaderboard",
-          href: "/leaderBoard",
-          icon: <Trophy className="w-5 h-5" />,
-        },
-        {
-          name: "Contributors",
-          href: "/contributors",
-          icon: <Users className="w-5 h-5" />,
-        },
-        {
-          name: "Contributors Guide",
-          href: "/contributorguide",
-          icon: <Book className="w-5 h-5" />,
-        },
-        {
-          name: "Community Events",
-          href: "/communityEvent",
-          icon: <Users className="w-5 h-5" />,
-        },
-      ],
-    },
-    { name: "About", href: "/about", icon: <Info className="w-5 h-5" /> },
-    { name: "FAQ", href: "/faq", icon: <HelpCircle className="w-5 h-5" /> },
-    {
-      name: "Contact",
-      href: "/contact",
-      icon: <MessageSquare className="w-5 h-5" />,
-    },
-  ];
-
-  // REPLACE THE EXISTING handleLogout FUNCTION WITH THESE 3 FUNCTIONS:
-  const handleLogoutClick = () => {
-    setShowLogoutModal(true);
-    setShowProfileDropdown(false);
+  const handleTouchStart = (e) => { touchStartXRef.current = e.touches[0].clientX; touchCurrentXRef.current = e.touches[0].clientX; };
+  const handleTouchMove = (e) => { touchCurrentXRef.current = e.touches[0].clientX; };
+  const handleTouchEnd = () => {
+    const delta = (touchCurrentXRef.current ?? 0) - (touchStartXRef.current ?? 0);
+    if (delta > 50) closeAllMenus();
+    touchStartXRef.current = null;
+    touchCurrentXRef.current = null;
   };
 
+  const handleLogoutClick = () => { setShowLogoutModal(true); setShowProfileDropdown(false); };
   const handleConfirmLogout = () => {
     setShowLogoutModal(false);
     logout();
-
-    toast.success("You have been logged out successfully.", {
-      className: "custom-toast",
-      autoClose: 3000,
-    });
-
+    toast.success("You have been logged out successfully.", { className: "custom-toast", autoClose: 3000 });
     navigate("/");
   };
-
-  const handleCancelLogout = () => {
-    setShowLogoutModal(false);
-  };
+  const handleCancelLogout = () => setShowLogoutModal(false);
 
   return (
     <>
       <div
-        className={`fixed inset-0 bg-black/60 z-30 transition-opacity duration-300 ${
-          isMobileMenuOpen || showProfileDropdown || openDropdown || showLogoutModal
-            ? "opacity-100"
-            : "opacity-0 pointer-events-none"
-        }`}
+        className={`fixed inset-0 bg-black/60 z-30 transition-opacity duration-300 ${isMobileMenuOpen || showProfileDropdown || openDropdown || showLogoutModal ? "opacity-100" : "opacity-0 pointer-events-none"}`}
         onClick={closeAllMenus}
       />
 
@@ -287,12 +153,8 @@ import {
              bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md border-b border-black/10 dark:border-white/15"
       >
         <div className="w-full flex items-center h-20 px-6 md:px-12 relative">
-          {/* Logo on the left */}
           <Link to="/" className="flex-shrink-0 z-20">
-            <h2
-              className="text-3xl font-semibold tracking-tight text-black dark:text-white"
-              style={{ fontFamily: '"Anton", sans-serif' }}
-            >
+            <h2 className="text-3xl font-semibold tracking-tight text-black dark:text-white" style={{ fontFamily: '"Anton", sans-serif' }}>
               Eventra
             </h2>
           </Link>
@@ -372,7 +234,6 @@ import {
             })}
           </div>
 
-          {/* Right Group: Auth Controls and Mobile Toggle */}
           <div className="hidden lg:flex items-center ml-auto z-20">
 
             {/* Cursor Toggle Button */}
@@ -397,107 +258,45 @@ import {
 
               {isAuthenticated() ? (
                 <div className="relative profile-container">
-                  <button
-                    onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                    className="flex items-center gap-2 text-sm font-medium text-black/90 dark:text-white/90 hover:text-black dark:hover:text-white transition-colors"
-                  >
+                  <button onClick={() => setShowProfileDropdown(!showProfileDropdown)} className="flex items-center gap-2 text-sm font-medium text-black/90 dark:text-white/90 hover:text-black dark:hover:text-white transition-colors">
                     {user?.profilePicture ? (
-                      <img
-                        src={user.profilePicture}
-                        alt="Profile"
-                        className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20"
-                        onError={(e) =>
-                          (e.currentTarget.style.display = "none")
-                        }
-                      />
+                      <img src={user.profilePicture} alt="Profile" className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20" onError={(e) => (e.currentTarget.style.display = "none")} />
                     ) : (
                       <div className="w-8 h-8 rounded-full dark:bg-white/20 bg-gray-300 flex items-center justify-center">
-                        <UserIcon className="w-4 h-4 text-gray-600  dark:text-white" />
+                        <UserIcon className="w-4 h-4 text-gray-600 dark:text-white" />
                       </div>
-                    )}                   
+                    )}
                   </button>
-
                   <AnimatePresence>
                     {showProfileDropdown && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute right-0 top-full mt-2 w-64 
-                 bg-white dark:bg-gray-900 
-                 rounded-lg shadow-2xl overflow-hidden 
-                 border border-gray-200 dark:border-gray-800"
-                      >
-                        {/* Profile header */}
+                      <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-900 rounded-lg shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-800">
                         <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
                           <div className="flex items-center gap-3">
                             {user?.profilePicture ? (
-                              <img
-                                src={user.profilePicture}
-                                alt="Profile"
-                                className="w-12 h-12 rounded-full object-cover ring-2 ring-purple-500/20"
-                                onError={(e) =>
-                                  (e.currentTarget.style.display = "none")
-                                }
-                              />
+                              <img src={user.profilePicture} alt="Profile" className="w-12 h-12 rounded-full object-cover ring-2 ring-purple-500/20" onError={(e) => (e.currentTarget.style.display = "none")} />
                             ) : (
                               <div className="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-800 to-indigo-950 flex items-center justify-center">
                                 <UserIcon className="w-6 h-6 text-white" />
                               </div>
                             )}
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                                {primaryLine}
-                              </p>
-                              {secondaryLine && (
-                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                  {secondaryLine}
-                                </p>
-                              )}
+                              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{primaryLine}</p>
+                              {secondaryLine && <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{secondaryLine}</p>}
                             </div>
                           </div>
                         </div>
-
-                        {/* Menu items */}
                         <div className="p-2 bg-white dark:bg-gray-900">
-                          <Link
-                            to="/dashboard"
-                            onClick={() => setShowProfileDropdown(false)}
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                              location.pathname === "/dashboard"
-                                ? "bg-black/5 dark:bg-white/10 text-black dark:text-white"
-                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                            }`}
-                          >
-                            <LayoutDashboard className="w-4 h-4" />
-                            Dashboard
+                          <Link to="/dashboard" onClick={() => setShowProfileDropdown(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/dashboard" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
+                            <LayoutDashboard className="w-4 h-4" />Dashboard
                           </Link>
-
-                          <Link
-                            to="/profile"
-                            onClick={() => setShowProfileDropdown(false)}
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                              location.pathname === "/profile"
-                                ? "bg-black/5 dark:bg-white/10 text-black dark:text-white"
-                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                            }`}
-                          >
-                            <UserCog className="w-4 h-4" />
-                            Edit Profile
+                          <Link to="/profile" onClick={() => setShowProfileDropdown(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/profile" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
+                            <UserCog className="w-4 h-4" />Edit Profile
                           </Link>
                         </div>
-
-                        {/* Logout - CHANGE ONLY THIS BUTTON */}
                         <div className="p-2 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
-                          <button
-                            onClick={handleLogoutClick}
-                            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm
-                     text-gray-700 dark:text-gray-300
-                     hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                          >
-                            <LogOut className="w-4 h-4" />
-                            Logout
+                          <button onClick={handleLogoutClick} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                            <LogOut className="w-4 h-4" />Logout
                           </button>
                         </div>
                       </motion.div>
@@ -506,18 +305,8 @@ import {
                 </div>
               ) : (
                 <div className="flex items-center space-x-1">
-                  <Link
-                    to="/login"
-                    className="px-4 py-2 text-base font-medium text-black/75 hover:text-black dark:text-white/75 dark:hover:text-white transition-colors"
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    to="/signup"
-                    className="px-5 py-2 text-sm font-semibold text-white transition-all duration-300 bg-black hover:bg-zinc-800 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 dark:bg-white dark:text-black dark:hover:bg-zinc-200 focus:outline-none focus:ring-4 focus:ring-black/20 dark:focus:ring-white/20"
-                  >
-                    Get Started
-                  </Link>
+                  <Link to="/login" className="px-4 py-2 text-base font-medium text-black/75 hover:text-black dark:text-white/75 dark:hover:text-white transition-colors">Sign In</Link>
+                  <Link to="/signup" className="px-5 py-2 text-sm font-semibold text-white transition-all duration-300 bg-black hover:bg-zinc-800 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 dark:bg-white dark:text-black dark:hover:bg-zinc-200 focus:outline-none focus:ring-4 focus:ring-black/20 dark:focus:ring-white/20">Get Started</Link>
                 </div>
               )}
             </div>
@@ -766,7 +555,6 @@ import {
         </div>
       </div>
 
-      {/* ADD THIS MODAL AT THE VERY BOTTOM */}
       <ConfirmationModal
         isOpen={showLogoutModal}
         onClose={handleCancelLogout}

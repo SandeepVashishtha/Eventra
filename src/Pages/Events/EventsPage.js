@@ -1,46 +1,72 @@
-// Importing necessary React hooks and libraries
 import { useState, useEffect, useRef } from "react";
-import mockEvents from "./eventsMockData.json"; // mock data file
-import EventHero from "./EventHero"; // Hero section with search
-import EventCard from "./EventCard"; // Card for displaying event details
-import { Grid, List } from "lucide-react"; // icons for toggle view
-import FeedbackButton from "../../components/FeedbackButton"; // Feedback button component
+import mockEvents from "./eventsMockData.json";
+import EventHero from "./EventHero";
+import EventCard from "./EventCard";
+import { Grid, List } from "lucide-react";
+import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
 import Fuse from "fuse.js";
 import StyledDropdown from "../../components/StyledDropdown";
-// -----------------------------
-// Main Events Page Component
-// -----------------------------
+import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
+
+const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
+  if (isLoading) {
+    return (
+      <div className="grid gap-8 grid-cols-1 sm:grid-cols-1 lg:grid-cols-3">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <EventCardSkeleton key={`skeleton-${i}`} />
+        ))}
+      </div>
+    );
+  }
+
+  if (filteredEvents.length === 0) {
+    return (
+      <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
+      </div>
+    );
+  }
+
+  return (
+    <div
+      key={filterType + viewMode}
+      className={`grid gap-8 ${
+        viewMode === "grid"
+          ? "grid-cols-1 sm:grid-cols-1 lg:grid-cols-3"
+          : "grid-cols-1 max-w-4xl mx-auto"
+      }`}
+    >
+      {filteredEvents.map((event) => (
+        <EventCard key={event.id} event={event} />
+      ))}
+    </div>
+  );
+};
+
 const EventsPage = () => {
-  // tate to store all events (raw data from mock file)
   const [events, setEvents] = useState([]);
-  // State for filter type (all, upcoming, past, conference, workshop)
   const [filterType, setFilterType] = useState("all");
-  // State for switching between grid view and list view
   const [viewMode, setViewMode] = useState("grid");
-  // State for storing user’s search query (from search bar)
   const [searchQuery, setSearchQuery] = useState("");
-  // State for storing the filtered + searched list of events
   const [filteredEvents, setFilteredEvents] = useState([]);
-  // Sort type state
   const [sortType, setSortType] = useState("Newest");
+  const [isLoading, setIsLoading] = useState(true);
   const cardSectionRef = useRef();
-  // -----------------------------
-  // Load events from mock JSON when component mounts
-  // -----------------------------
+
   useEffect(() => {
-    setEvents(mockEvents); // Setting mock data as events
+    const timer = setTimeout(() => {
+      setEvents(mockEvents);
+      setIsLoading(false);
+    }, 800);
+    return () => clearTimeout(timer);
   }, []);
 
   // Fuse.js setup
   const fuse = new Fuse(events, {
     keys: ["title", "description", "location", "tags", "type"],
-    threshold: 0.35, // adjust for fuzziness
+    threshold: 0.35,
   });
 
-  // -----------------------------
-  // Search handler function
-  // -----------------------------
   const handleSearch = (query = "") => {
     setSearchQuery(query);
 
@@ -49,7 +75,6 @@ const EventsPage = () => {
       results = fuse.search(query).map((res) => res.item);
     }
 
-    // Apply filterType after fuzzy results
     const final = results.filter((event) => {
       return (
         filterType === "all" ||
@@ -62,12 +87,10 @@ const EventsPage = () => {
     setFilteredEvents(final);
   };
 
-  // Recalculate when filterType or events change
   useEffect(() => {
     handleSearch(searchQuery);
   }, [events, filterType]);
 
-  // Sort handler
   const handleSortChange = (type) => {
     setSortType(type);
     let sorted = [...filteredEvents];
@@ -79,7 +102,6 @@ const EventsPage = () => {
     setFilteredEvents(sorted);
   };
 
-  // Ensure sorting is applied when filter/search changes
   useEffect(() => {
     handleSortChange(sortType);
     // eslint-disable-next-line
@@ -89,13 +111,8 @@ const EventsPage = () => {
     cardSectionRef.current?.scrollIntoView({ behaviour: "smooth" });
   };
 
-  // -----------------------------
-  // JSX Render
-  // -----------------------------
   return (
-    // UPDATED: Main page background
     <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 overflow-x-hidden">
-      {/* Hero section will be updated in the next step */}
       <EventHero
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -104,16 +121,13 @@ const EventsPage = () => {
         scrollToCard={scrollToCard}
       />
 
-      {/* Main content wrapper */}
       <div
         ref={cardSectionRef}
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12"
       >
-        {/* Filters + Sort + Toggle View Section */}
         <div
           className="mb-8 sm:mb-10 flex flex-col gap-4"
         >
-          {/* Filter Buttons */}
           <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center sm:justify-start">
             {[
               { key: "all", label: "All" },
@@ -153,7 +167,6 @@ const EventsPage = () => {
               />
             </div>
 
-            {/* Toggle View Buttons (Grid / List) */}
             <div
               className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm"
             >
@@ -185,27 +198,8 @@ const EventsPage = () => {
           </div>
         </div>
 
-        {/* Event Cards Section */}
-        {filteredEvents.length > 0 ? (
-          <div
-            key={filterType + viewMode}
-            className={`grid gap-8 ${
-              viewMode === "grid"
-                ? "grid-cols-1 sm:grid-cols-1 lg:grid-cols-3"
-                : "grid-cols-1 max-w-4xl mx-auto"
-            }`}
-          >
-            {filteredEvents.map((event) => (
-              <EventCard key={event.id} event={event} />
-            ))}
-          </div>
-        ) : (
-          <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
-          </div>
-        )}
+        {renderCardSection(isLoading, filteredEvents, viewMode, filterType)}
       </div>
-
-      {/* These components will be updated in the next steps */}
 
       <EventCTA />
 
