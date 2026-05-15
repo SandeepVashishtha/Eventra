@@ -90,7 +90,7 @@ export default function HackathonHero({
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
-          className="text-4xl sm:text-6xl font-extrabold leading-tight text-black"
+          className="text-4xl sm:text-6xl font-extrabold leading-tight text-black dark:text-white"
           style={{ fontFamily: '"Anton", sans-serif' }}
         >
           Discover Amazing Hackathons
@@ -138,7 +138,7 @@ export default function HackathonHero({
     onClick={() => onTagSelect(tag)}
     className={`px-3 py-1 text-xs font-medium rounded-full cursor-pointer transition ${
       selectedTags.includes(tag)
-        ? 'bg-black text-white shadow-md'
+        ? 'bg-black text-white dark:bg-white dark:text-gray-900 shadow-md'
         : 'text-black dark:text-white bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
     }`}
   >

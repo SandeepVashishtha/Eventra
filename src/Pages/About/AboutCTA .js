@@ -63,7 +63,7 @@ const AboutCTA = () => {
 
   return (
     <section 
-      className="relative py-12 px-12 mt-2 mb-8 mx-8 rounded-3xl bg-white text-center overflow-hidden shadow-2xl border border-gray-200"
+      className="relative py-12 px-12 mt-2 mb-8 mx-8 rounded-3xl bg-white dark:bg-gray-900 text-center overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700"
       // AOS Implementation
       data-aos="zoom-in-up"
       data-aos-duration="1000"
@@ -93,7 +93,7 @@ const AboutCTA = () => {
       ))}
 
       <motion.h2
-        className="text-4xl md:text-5xl font-bold text-black mb-6 relative z-10 flex justify-center items-center gap-3"
+        className="text-4xl md:text-5xl font-bold text-black dark:text-white mb-6 relative z-10 flex justify-center items-center gap-3"
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7 }}
@@ -102,7 +102,7 @@ const AboutCTA = () => {
       </motion.h2>
 
       <motion.p
-        className="text-black text-lg md:text-xl mb-12 max-w-3xl mx-auto relative z-10"
+        className="text-black dark:text-gray-300 text-lg md:text-xl mb-12 max-w-3xl mx-auto relative z-10"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.9 }}
@@ -124,7 +124,7 @@ const AboutCTA = () => {
 
         <Link
           to="/documentation"
-          className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-medium border border-black/20 text-black hover:bg-gray-100 hover:border-black/30 transition-all duration-300"
+          className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-medium border border-black/20 dark:border-gray-600 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-black/30 dark:hover:border-gray-500 transition-all duration-300"
           data-aos="zoom-in"
           data-aos-delay="400"
         >
@@ -133,7 +133,7 @@ const AboutCTA = () => {
 
         <Link
           to="/contact"
-          className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-medium border border-black/20 text-black hover:bg-gray-100 hover:border-black/30 transition-all duration-300"
+          className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-medium border border-black/20 dark:border-gray-600 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-black/30 dark:hover:border-gray-500 transition-all duration-300"
           data-aos="zoom-in"
           data-aos-delay="600"
         >

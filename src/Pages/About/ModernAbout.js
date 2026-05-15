@@ -81,12 +81,12 @@ export default function ModernAbout() {
           whileInView="visible"
           viewport={{ once: true }}
           // UPDATED: Text colors
-          className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-black mb-6"
+          className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-black dark:text-white mb-6"
           style={{ fontFamily: '"Anton", sans-serif' }}
           data-aos="zoom-in"
           data-aos-delay="100"
         >
-          About <span className="text-black">Us</span>
+          About <span className="text-black dark:text-white">Us</span>
         </motion.h1>
 
         <motion.p
@@ -95,7 +95,7 @@ export default function ModernAbout() {
           whileInView="visible"
           viewport={{ once: true }}
           // UPDATED: Text color
-          className="text-base sm:text-lg text-black mb-16"
+          className="text-base sm:text-lg text-black dark:text-gray-300 mb-16"
           data-aos="fade-up"
           data-aos-delay="200"
         >
@@ -121,8 +121,8 @@ export default function ModernAbout() {
             data-aos-delay="300"
           >
             {/* UPDATED: Card text */}
-            <h3 className="text-black text-2xl font-bold mb-2">100+</h3>
-            <p className="text-black text-sm">Events Managed</p>
+            <h3 className="text-black dark:text-white text-2xl font-bold mb-2">100+</h3>
+            <p className="text-black dark:text-gray-300 text-sm">Events Managed</p>
           </motion.div>
 
           <motion.div
@@ -133,8 +133,8 @@ export default function ModernAbout() {
             data-aos-delay="400"
           >
             {/* UPDATED: Card text */}
-            <h3 className="text-black text-2xl font-bold mb-2">500+</h3>
-            <p className="text-black text-sm">Active Users</p>
+            <h3 className="text-black dark:text-white text-2xl font-bold mb-2">500+</h3>
+            <p className="text-black dark:text-gray-300 text-sm">Active Users</p>
           </motion.div>
 
           <motion.div
@@ -145,8 +145,8 @@ export default function ModernAbout() {
             data-aos-delay="500"
           >
             {/* UPDATED: Card text */}
-            <h3 className="text-black text-2xl font-bold mb-2">Global</h3>
-            <p className="text-black text-sm">Community Reach</p>
+            <h3 className="text-black dark:text-white text-2xl font-bold mb-2">Global</h3>
+            <p className="text-black dark:text-gray-300 text-sm">Community Reach</p>
           </motion.div>
         </motion.div>
       </div>
