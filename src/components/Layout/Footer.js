@@ -99,8 +99,6 @@ const Footer = () => {
       { name: "Hackathons", href: "/hackathons", icon: <FaStar size={14} /> },
       { name: "Projects", href: "/projects", icon: <FaFolder size={14} /> },
       { name: "About", href: "/about", icon: <FaInfoCircle size={14} /> },
-      { name: "Privacy", href: "/privacy", icon: <FaShieldAlt size={14} /> },
-      { name: "Terms", href: "/terms", icon: <FaFileContract size={14} /> },
     ],
     community: [
       {
@@ -108,14 +106,6 @@ const Footer = () => {
         href: "/create-event",
         icon: <FaPlus size={14} />,
       },
-
-      //Can be reactivated later
-      // {
-      //   name: "Event Templates",
-      //   href: "#templates",
-      //   icon: <FaClipboardList size={14} />,
-      // },
-
       {
         name: "Community Events",
         href: "/communityEvent",
@@ -151,11 +141,13 @@ const Footer = () => {
       { name: "Contact Us", href: "/contact", icon: <FaEnvelope size={14} /> },
       { name: "Feedback", href: "/feedback", icon: <FaComments size={14} /> },
       { name: "API Docs", href: "/apiDocs", icon: <FaBookOpen size={14} /> },
-
-      //Can be reactivated later
-      // { name: "Status", href: "#status", icon: <FaServer size={14} /> },
     ],
   };
+
+  const legalLinks = [
+    { name: "Privacy Policy", href: "/privacy" },
+    { name: "Terms of Service", href: "/terms" },
+  ];
 
   const socialLinks = [
     {
@@ -312,27 +304,26 @@ const Footer = () => {
             {Object.entries(footerLinks).map(([key, links]) => (
               <div 
                 key={key} 
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-5 sm:p-6 border border-gray-100 dark:border-gray-700"
+                className="py-2"
                 data-aos="fade-up"
                 data-aos-delay={key === "quick_links" ? "100" : key === "community" ? "200" : "300"}
               >
-                {/* UPDATED: Added dark mode text color */}
-                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-4">
+                <h4 className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-widest mb-6">
                   {key.replace("_", " ")}
                 </h4>
-                <ul className="space-y-3">
+                <ul className="space-y-4">
                   {links.map((link) => (
                     <li key={link.name}>
                       <Link
                         to={link.href}
-                        className="text-sm text-gray-600 hover:text-black flex items-center gap-4 transition-all duration-300 hover:translate-x-1 group"
+                        className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-3 transition-colors group"
                       >
                         {link.icon && (
-                          <span className="text-black group-hover:text-black group-hover:scale-110 transition-all duration-300">
+                          <span className="text-gray-400 group-hover:text-indigo-600 transition-colors">
                             {link.icon}
                           </span>
                         )}
-                        <span className="group-hover:font-medium transition-all duration-300">
+                        <span>
                           {link.name}
                         </span>
                       </Link>
@@ -345,12 +336,21 @@ const Footer = () => {
 
           {/* Copyright - Below the line, centered */}
           {/* UPDATED: Added dark mode border color */}
-          <div className="border-t border-gray-300 dark:border-gray-700 mt-8 pt-4 pb-2 flex flex-col sm:flex-row justify-between items-center gap-3 text-center sm:text-left">
-            {/* UPDATED: Added dark mode text color */}
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+          <div className="border-t border-gray-200 dark:border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center md:text-left">
               © {currentYear} Eventra. All rights reserved. Created with ❤️ by Sandeep Vashishtha, Rhythm and the amazing open-source community.
             </p>
-            
+            <div className="flex gap-6">
+              {legalLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  to={link.href}
+                  className="text-xs text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                >
+                  {link.name}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </footer>
