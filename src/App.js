@@ -191,12 +191,10 @@ function App() {
             <Chatbot />
 
             <FeedbackButton />
-
             <Footer />
 
-            {/* CONDITIONAL CURSOR */}
-            {cursorEnabled && <FluidCursor />}
-
+            {/* KEEP CURSOR MOUNTED BUT TOGGLE VIA PROP */}
+            <FluidCursor enabled={cursorEnabled} />
           </div>
         </Router>
       </AuthProvider>
