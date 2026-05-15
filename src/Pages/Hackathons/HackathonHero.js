@@ -1,264 +1,211 @@
 import React, { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, Sparkles, Users, Award, Code2, Calendar } from "lucide-react";
+import { Search, X, Sparkles, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
-// Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
   <motion.div
-    initial={{ scale: 0.8, opacity: 0 }}
+    initial={{ scale: 0.92, opacity: 0 }}
     animate={{ scale: 1, opacity: 1 }}
-    exit={{ scale: 0.8, opacity: 0 }}
-    className="flex items-center gap-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm font-medium"
+    exit={{ scale: 0.92, opacity: 0 }}
+    className="flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-800 dark:border-blue-800 dark:bg-blue-900/50 dark:text-blue-200"
   >
     <span>{tag}</span>
     <button
+      type="button"
       onClick={() => onRemove(tag)}
-      className="hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full p-0.5 transition-colors"
+      className="rounded-full p-0.5 transition-colors hover:bg-blue-100 dark:hover:bg-blue-800"
+      aria-label={`Remove ${tag}`}
     >
-      <X className="w-3 h-3" />
+      <X className="h-3 w-3" />
     </button>
   </motion.div>
 );
 
+const MetricItem = ({ value, label }) => (
+  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+    <span className="text-base font-semibold text-gray-900 dark:text-gray-100">
+      {value}
+    </span>
+    <span>{label}</span>
+  </div>
+);
+
 export default function HackathonHero({
-  hackathons = [],
   searchQuery,
   setSearchQuery,
   scrollToCards,
-  // NEW: Add filteredCount prop
-  filteredCount = 0,
-  // Tag-related props
   selectedTags = [],
   onTagRemove,
   onSearchKeyDown,
   searchInputRef,
-  availableTags = [],
-  onTagSelect
 }) {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Floating shapes/bubbles
   const shapes = useMemo(
     () => [
-      { size: 42, pos: { top: "12%", left: "5%" }, color: "#dbeafe" },
-      { size: 50, pos: { top: "10%", right: "8%" }, color: "#bfdbfe" },
-      { size: 30, pos: { top: "24%", left: "8%" }, color: "#dcfce7" },
-      { size: 36, pos: { top: "30%", right: "12%" }, color: "#fde68a" },
-      { size: 46, pos: { top: "14%", right: "24%" }, color: "#fbcfe8" },
-      { size: 52, pos: { top: "22%", left: "22%" }, color: "#fed7aa" },
-      { size: 38, pos: { top: "48%", left: "6%" }, color: "#c7d2fe" },
-      { size: 44, pos: { top: "56%", right: "10%" }, color: "#bae6fd" },
+      { size: 34, pos: { top: "10%", left: "5%" }, color: "#dbeafe" },
+      { size: 42, pos: { top: "12%", right: "8%" }, color: "#bfdbfe" },
+      { size: 28, pos: { top: "28%", left: "10%" }, color: "#dcfce7" },
+      { size: 32, pos: { top: "34%", right: "14%" }, color: "#fde68a" },
+      { size: 30, pos: { top: "18%", right: "24%" }, color: "#fed7aa" },
     ],
-    []
+    [],
   );
 
   const floatShape = useMemo(
-    () => (i) => ({
-      y: [0, -20 - i * 5, 0],
-      x: [0, 20 + i * 5, 0],
-      rotate: [0, 15, -15, 0],
-      transition: { duration: 4.6 + i * 0.75, repeat: Infinity, ease: "easeInOut" },
+    () => (index) => ({
+      y: [0, -16 - index * 4, 0],
+      x: [0, 14 + index * 4, 0],
+      rotate: [0, 10, -10, 0],
+      transition: {
+        duration: 4.5 + index * 0.6,
+        repeat: Infinity,
+        ease: "easeInOut",
+      },
     }),
-    []
+    [],
   );
 
   return (
-    <div className="bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black relative overflow-hidden py-16 sm:py-20 md:py-24">
-      {/* ======================= FLOATING SHAPES ======================= */}
-      {shapes.map((shape, i) => (
+    <div className="relative overflow-hidden bg-gradient-to-l from-sky-50 via-white to-white py-10 dark:from-gray-900 dark:to-black sm:py-12 md:py-14">
+      {shapes.map((shape, index) => (
         <motion.div
-          key={i}
-          animate={floatShape(i)}
+          key={index}
+          animate={floatShape(index)}
           className="absolute rounded-full"
           style={{
             width: `${shape.size}px`,
             height: `${shape.size}px`,
             ...shape.pos,
             backgroundColor: shape.color,
-            opacity: 0.2,
+            opacity: 0.18,
           }}
         />
       ))}
 
-      {/* ======================= HERO SECTION ======================= */}
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 md:px-8 text-center">
+      <div className="relative mx-auto max-w-6xl px-4 text-center sm:px-6 md:px-8">
         <motion.h1
-          initial={{ opacity: 0, y: -30 }}
+          initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
-          className="text-4xl sm:text-6xl font-extrabold leading-tight text-black"
+          transition={{ duration: 0.6 }}
+          className="text-4xl font-extrabold leading-tight text-black sm:text-5xl"
           style={{ fontFamily: '"Anton", sans-serif' }}
         >
           Discover Amazing Hackathons
         </motion.h1>
 
         <motion.p
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.7 }}
-          className="mt-4 text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto"
+          transition={{ delay: 0.15, duration: 0.6 }}
+          className="mx-auto mt-3 max-w-2xl text-sm text-gray-600 dark:text-gray-400 sm:text-base"
         >
-          Find and join the most exciting hackathons, compete with the best,
-          and win amazing prizes.
+          Find curated hackathons, filter faster, and jump into the right build
+          challenge without digging through clutter.
         </motion.p>
 
-        {/* ======================= SEARCH BOX WITH TAGS ======================= */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.97 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.4, duration: 0.6 }}
-          className="w-full max-w-3xl mx-auto mt-12"
+          transition={{ delay: 0.25, duration: 0.55 }}
+          className="mx-auto mt-7 w-full max-w-3xl"
         >
           <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center z-10 pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-black dark:group-focus-within:text-white transition-colors" />
+            <div className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-4">
+              <Search className="h-5 w-5 text-gray-400 transition-colors group-focus-within:text-black dark:text-gray-500 dark:group-focus-within:text-white" />
             </div>
 
-            {/* Search bar with tags inside */}
-            <div className="flex flex-wrap items-center gap-2 w-full pl-12 pr-12 py-4 text-base text-gray-900 dark:text-gray-100 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl focus-within:ring-2 focus-within:ring-black/20 dark:focus-within:ring-white/20 focus-within:border-black/20 dark:focus-within:border-white/20 transition-all duration-300 shadow-lg hover:shadow-xl">
-              
-              {/* Selected tags displayed in search bar */}
+            <div className="flex min-h-[58px] w-full flex-wrap items-center gap-2 rounded-2xl border border-gray-200 bg-white/75 py-3 pl-12 pr-12 text-base text-gray-900 shadow-md backdrop-blur-xl transition-all duration-300 hover:shadow-lg focus-within:border-black/20 focus-within:ring-2 focus-within:ring-black/10 dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-100 dark:focus-within:border-white/20 dark:focus-within:ring-white/10">
               <AnimatePresence>
                 {selectedTags.map((tag) => (
                   <Tag key={tag} tag={tag} onRemove={onTagRemove} />
                 ))}
               </AnimatePresence>
-              
-              {/* Search input */}
+
               <input
                 ref={searchInputRef}
                 type="text"
-                placeholder={selectedTags.length === 0 ? "Search hackathons by name, location, or tags..." : ""}
-                className="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-gray-100 min-w-[120px] placeholder-gray-400 dark:placeholder-gray-500"
+                placeholder={
+                  selectedTags.length === 0
+                    ? "Search hackathons by name, location, or technology..."
+                    : ""
+                }
+                className="min-w-[160px] flex-1 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400 dark:text-gray-100 dark:placeholder:text-gray-500 sm:text-base"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(event) => setSearchQuery(event.target.value)}
                 onKeyDown={onSearchKeyDown}
               />
             </div>
 
             {(searchQuery || selectedTags.length > 0) && (
               <motion.button
-                whileHover={{ rotate: 90, scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
+                type="button"
+                whileHover={{ rotate: 90, scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => {
                   setSearchQuery("");
-                  // Clear all selected tags
-                  selectedTags.forEach(tag => onTagRemove(tag));
+                  selectedTags.forEach((tag) => onTagRemove(tag));
                 }}
-                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors z-10"
+                className="absolute inset-y-0 right-0 z-10 flex items-center pr-4 text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                aria-label="Clear search"
               >
                 <X className="h-5 w-5" />
               </motion.button>
             )}
           </div>
-
-          {/* ======================= TAG FILTERS ======================= */}
-          <div className="mt-4 flex items-center justify-between flex-wrap gap-3 px-2">
-            <div className="flex gap-2 flex-wrap justify-center">
-           {/* Quick tag suggestions from available tags */}
-{availableTags.slice(0, 10).map((tag, idx) => (  // CHANGED from 8 to 10
-  <motion.span
-    key={idx}
-    whileHover={{ scale: 1.1 }}
-    onClick={() => onTagSelect(tag)}
-    className={`px-3 py-1 text-xs font-medium rounded-full cursor-pointer transition ${
-      selectedTags.includes(tag)
-        ? 'bg-black text-white shadow-md'
-        : 'text-black dark:text-white bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
-    }`}
-  >
-    {tag}
-  </motion.span>
-))}
-            </div>
-
-            {/* UPDATED: Use filteredCount prop instead of local calculation */}
-            <span className="text-sm text-black dark:text-white font-semibold">
-              {filteredCount}{" "}
-              {filteredCount === 1 ? "hackathon" : "hackathons"} found
-            </span>
-          </div>
         </motion.div>
 
-        {/* ======================= CTA BUTTONS ======================= */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.7 }}
-          className="mt-8 flex justify-center gap-5 flex-wrap"
+          transition={{ delay: 0.35, duration: 0.6 }}
+          className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2"
+        >
+          <MetricItem value="120+" label="Hosted" />
+          <span className="hidden text-gray-300 sm:inline">•</span>
+          <MetricItem value="50k+" label="Participants" />
+          <span className="hidden text-gray-300 sm:inline">•</span>
+          <MetricItem value="8k+" label="Projects" />
+          <span className="hidden text-gray-300 sm:inline">•</span>
+          <MetricItem value="$1M+" label="Awarded" />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45, duration: 0.6 }}
+          className="mt-6 flex flex-wrap justify-center gap-3"
         >
           <motion.button
-            whileHover={{ scale: 1.07 }}
-            whileTap={{ scale: 0.95 }}
-            className="relative px-7 py-3.5 rounded-xl font-semibold text-black shadow-lg overflow-hidden group bg-blue-100 hover:bg-blue-200 transition-all duration-300"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            className="rounded-xl bg-blue-100 px-5 py-3 text-sm font-semibold text-black shadow-sm transition-all duration-300 hover:bg-blue-200"
             onClick={scrollToCards}
           >
-            <span className="relative flex items-center">
-              <Sparkles className="inline-block w-5 h-5 mr-2" />
+            <span className="flex items-center">
+              <Sparkles className="mr-2 h-4 w-4" />
               Explore Hackathons
             </span>
           </motion.button>
 
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => {
               if (!user) navigate("/login");
               else navigate("/host-hackathon");
             }}
-            className="relative px-7 py-3.5 rounded-xl font-medium text-black shadow-md hover:shadow-lg bg-green-100 hover:bg-green-200 transition-all duration-300"
+            className="rounded-xl bg-green-100 px-5 py-3 text-sm font-medium text-black shadow-sm transition-all duration-300 hover:bg-green-200"
           >
-            <span className="relative flex items-center">
-              <Users className="inline-block w-5 h-5 mr-2" />
+            <span className="flex items-center">
+              <Users className="mr-2 h-4 w-4" />
               Host a Hackathon
             </span>
           </motion.button>
         </motion.div>
-      </div>
-
-      {/* ======================= STATS SECTION ======================= */}
-      <div
-        className="relative max-w-6xl mx-auto px-4 sm:px-6 mt-12 sm:mt-16 md:mt-20 mb-12 sm:mb-16 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8"
-        data-aos="fade-up"
-        data-aos-duration="1000"
-        data-aos-delay="200"
-      >
-        {[
-          { label: "Hackathons Hosted", value: "120+", icon: Calendar },
-          { label: "Participants", value: "50k+", icon: Users },
-          { label: "Projects Built", value: "8k+", icon: Code2 },
-          { label: "Prizes Awarded", value: "$1M+", icon: Award },
-        ].map((stat, idx) => (
-          <motion.div
-            key={idx}
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 + idx * 0.15, duration: 0.6 }}
-            whileHover={{ scale: 1.05 }}
-            className="relative bg-gradient-to-br from-sky-50 via-white to-white dark:from-gray-800 dark:to-gray-800 rounded-3xl shadow-lg p-6 flex flex-col items-center text-center hover:shadow-2xl transition-all duration-300"
-          >
-            <motion.div
-              whileHover={{ rotate: 360, scale: 1.2 }}
-              transition={{ type: "spring", stiffness: 200, damping: 10 }}
-              className="mb-4 flex items-center justify-center h-14 w-14 rounded-full bg-gradient-to-tr from-blue-200 to-sky-100 shadow-md"
-            >
-              <stat.icon className="h-7 w-7 text-black" />
-            </motion.div>
-
-            <p className="text-3xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight">
-              {stat.value}
-            </p>
-            <p className="mt-1 text-sm font-medium text-gray-600 dark:text-gray-400">
-              {stat.label}
-            </p>
-
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-sky-300/10 to-blue-300/10 dark:from-sky-500/20 dark:to-blue-500/20 blur-2xl opacity-40 -z-10" />
-          </motion.div>
-        ))}
       </div>
     </div>
   );

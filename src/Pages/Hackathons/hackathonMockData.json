@@ -20,7 +20,13 @@
     "organizer": "TechCorp Inc.",
     "difficulty": "Advanced",
     "location": "Virtual",
-    "submissions": 89
+    "submissions": 89,
+    "mode": "Online",
+    "registrationStatus": "Open",
+    "teamSize": "2-4 Members",
+    "registrationDeadline": "2025-01-31",
+    "createdAt": "2024-11-15",
+    "featured": true
   },
   {
     "id": 2,
@@ -43,7 +49,13 @@
     "organizer": "EcoTech Foundation",
     "difficulty": "Intermediate",
     "location": "San Francisco, CA",
-    "submissions": 0
+    "submissions": 0,
+    "mode": "Hybrid",
+    "registrationStatus": "Open",
+    "teamSize": "Solo",
+    "registrationDeadline": "2025-03-12",
+    "createdAt": "2024-12-20",
+    "featured": true
   },
   {
     "id": 3,
@@ -67,7 +79,12 @@
     "difficulty": "Advanced",
     "location": "New York, NY",
     "submissions": 156,
-    "winner": "CryptoWallet Pro Team"
+    "winner": "CryptoWallet Pro Team",
+    "mode": "Offline",
+    "registrationStatus": "Closed",
+    "teamSize": "5+ Members",
+    "registrationDeadline": "2024-11-20",
+    "createdAt": "2024-08-15"
   },
   {
     "id": 4,
@@ -90,7 +107,13 @@
     "organizer": "VRX Studios",
     "difficulty": "Intermediate",
     "location": "Los Angeles, CA",
-    "submissions": 120
+    "submissions": 120,
+    "mode": "Offline",
+    "registrationStatus": "Closing Soon",
+    "teamSize": "2-4 Members",
+    "registrationDeadline": "2025-07-13",
+    "createdAt": "2025-02-18",
+    "featured": true
   },
   {
     "id": 5,
@@ -113,7 +136,12 @@
     "organizer": "Coding Bootcamp Alumni Association",
     "difficulty": "Beginner",
     "location": "Online",
-    "submissions": 0
+    "submissions": 0,
+    "mode": "Online",
+    "registrationStatus": "Open",
+    "teamSize": "2-4 Members",
+    "registrationDeadline": "2025-11-10",
+    "createdAt": "2025-04-10"
   },
   {
     "id": 6,
@@ -137,7 +165,12 @@
     "difficulty": "Advanced",
     "location": "New York, NY",
     "submissions": 80,
-    "winner": "CryptoVote Team"
+    "winner": "CryptoVote Team",
+    "mode": "Hybrid",
+    "registrationStatus": "Closed",
+    "teamSize": "5+ Members",
+    "registrationDeadline": "2025-04-20",
+    "createdAt": "2025-01-08"
   },
   {
     "id": 7,
@@ -160,7 +193,12 @@
     "organizer": "Chatbot Inc.",
     "difficulty": "Intermediate",
     "location": "San Francisco, CA",
-    "submissions": 180
+    "submissions": 180,
+    "mode": "Hybrid",
+    "registrationStatus": "Closing Soon",
+    "teamSize": "2-4 Members",
+    "registrationDeadline": "2025-08-12",
+    "createdAt": "2025-05-02"
   },
   {
     "id": 8,
@@ -183,6 +221,11 @@
     "organizer": "AI for Social Good Foundation",
     "difficulty": "Beginner",
     "location": "Online",
-    "submissions": 0
+    "submissions": 0,
+    "mode": "Online",
+    "registrationStatus": "Open",
+    "teamSize": "Solo",
+    "registrationDeadline": "2025-11-27",
+    "createdAt": "2025-04-25"
   }
 ]
