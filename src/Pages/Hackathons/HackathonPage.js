@@ -5,13 +5,7 @@ import mockHackathons from "./hackathonMockData.json";
 import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
 import FeedbackButton from "../../components/FeedbackButton";
-import {
-  FiCode,
-  FiRotateCw,
-  FiCompass,
-  FiChevronDown,
-  FiX,
-} from "react-icons/fi";
+import { FiCode, FiRotateCw, FiCompass, FiChevronDown, FiX } from "react-icons/fi";
 import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
@@ -42,13 +36,13 @@ const HackathonHub = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isScrollVisible, setIsScrollVisible] = useState(false);
   const [filters, setFilters] = useState({
-    difficulty: [],
-    prize: [],
-    location: [],
+    difficulty: "",
+    prize: "",
+    location: "",
   });
   const [showFilters, setShowFilters] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
-
+  
   // NEW: State for selected tags
   const [selectedTags, setSelectedTags] = useState([]);
   const [availableTags, setAvailableTags] = useState([]);
@@ -65,30 +59,30 @@ const HackathonHub = () => {
 
     return () => clearTimeout(timer);
   }, []);
-  // UPDATED: Extract available tags from hackathons - ADDED BLOCKCHAIN TAGS
-  useEffect(() => {
-    if (hackathons.length > 0) {
-      const allTags = new Set();
-      hackathons.forEach((hackathon) => {
-        if (hackathon.techStack && Array.isArray(hackathon.techStack)) {
-          hackathon.techStack.forEach((tag) => {
-            // Replace "Any" with "Blockchain"
-            if (tag === "Any") {
-              allTags.add("Blockchain");
-            } else {
-              allTags.add(tag);
-            }
-          });
-        }
-      });
-      // ADD ONLY THESE 3 BLOCKCHAIN TAGS
-      allTags.add("Blockchain");
-      allTags.add("Solidity");
-      allTags.add("Ethereum");
-
-      setAvailableTags(Array.from(allTags));
-    }
-  }, [hackathons]);
+// UPDATED: Extract available tags from hackathons - ADDED BLOCKCHAIN TAGS
+useEffect(() => {
+  if (hackathons.length > 0) {
+    const allTags = new Set();
+    hackathons.forEach(hackathon => {
+      if (hackathon.techStack && Array.isArray(hackathon.techStack)) {
+        hackathon.techStack.forEach(tag => {
+          // Replace "Any" with "Blockchain"
+          if (tag === "Any") {
+            allTags.add("Blockchain");
+          } else {
+            allTags.add(tag);
+          }
+        });
+      }
+    });
+    // ADD ONLY THESE 3 BLOCKCHAIN TAGS
+    allTags.add("Blockchain");
+    allTags.add("Solidity"); 
+    allTags.add("Ethereum");
+    
+    setAvailableTags(Array.from(allTags));
+  }
+}, [hackathons]);
 
   const scrollToCards = () => {
     cardsSectionRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -96,15 +90,15 @@ const HackathonHub = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrollVisible(window.scrollY > 50);
+      setIsScrollVisible(window.scrollY > 50); 
     };
     window.addEventListener("scroll", handleScroll);
     handleScroll();
-
+    
     const handleChatbotState = () => {
-      setIsChatbotOpen(document.querySelector("[data-chatbot-open]") !== null);
+      setIsChatbotOpen(document.querySelector('[data-chatbot-open]') !== null);
     };
-
+    
     handleChatbotState();
     const observer = new MutationObserver(handleChatbotState);
     observer.observe(document.body, { childList: true, subtree: true });
@@ -156,16 +150,12 @@ const HackathonHub = () => {
 
   // NEW: Handle tag removal
   const handleTagRemove = (tagToRemove) => {
-    setSelectedTags(selectedTags.filter((tag) => tag !== tagToRemove));
+    setSelectedTags(selectedTags.filter(tag => tag !== tagToRemove));
   };
 
   // NEW: Handle backspace in search input
   const handleSearchKeyDown = (e) => {
-    if (
-      e.key === "Backspace" &&
-      searchQuery === "" &&
-      selectedTags.length > 0
-    ) {
+    if (e.key === 'Backspace' && searchQuery === '' && selectedTags.length > 0) {
       // Remove the last tag when backspace is pressed on empty input
       const lastTag = selectedTags[selectedTags.length - 1];
       handleTagRemove(lastTag);
@@ -188,33 +178,27 @@ const HackathonHub = () => {
       return hackathon.status === activeTab;
     })
     .filter((hackathon) => {
+      if (filters.difficulty && hackathon.difficulty !== filters.difficulty)
+        return false;
       if (
-        filters.difficulty.length > 0 &&
-        !filters.difficulty.includes(hackathon.difficulty)
+        filters.prize &&
+        !hackathon.prize.toLowerCase().includes(filters.prize.toLowerCase())
       )
         return false;
       if (
-        filters.prize.length > 0 &&
-        !filters.prize.some(
-          (prize) =>
-            !hackathon.prize.toLowerCase().includes(prize.toLowerCase()),
-        )
+        filters.location &&
+        !hackathon.location
+          .toLowerCase()
+          .includes(filters.location.toLowerCase())
       )
         return false;
-      if (
-        filters.location.length > 0 &&
-        !filters.location.some((loc) =>
-          hackathon.location.toLowerCase().includes(loc.toLowerCase()),
-        )
-      )
-        return false;
-
+      
       // NEW: Filter by selected tags
       if (selectedTags.length > 0) {
         const hackathonTags = hackathon.techStack || [];
-        return selectedTags.some((tag) => hackathonTags.includes(tag));
+        return selectedTags.some(tag => hackathonTags.includes(tag));
       }
-
+      
       return true;
     });
 
@@ -225,9 +209,9 @@ const HackathonHub = () => {
   // UPDATED: Reset filters and tags
   const resetFilters = () => {
     setFilters({
-      difficulty: [],
-      prize: [],
-      location: [],
+      difficulty: "",
+      prize: "",
+      location: "",
     });
     setSearchQuery("");
     setSelectedTags([]);
@@ -245,162 +229,110 @@ const HackathonHub = () => {
   }, []);
 
   const CustomDropdown = ({
-    label,
-    value,
-    options,
-    onChange,
-    placeholder = "Select",
-  }) => {
-    const [open, setOpen] = useState(false);
-    const [search, setSearch] = useState("");
-    const [menuCoords, setMenuCoords] = useState({ top: 0, left: 0, width: 0 });
+  label,
+  value,
+  options,
+  onChange,
+  placeholder = "Select",
+}) => {
+  const [open, setOpen] = useState(false);
+  const [menuCoords, setMenuCoords] = useState({ top: 0, left: 0, width: 0 });
 
-    const buttonRef = useRef(null);
-    const dropdownRef = useRef(null);
+  const buttonRef = useRef(null);
+  const dropdownRef = useRef(null);
 
-    const toggleOpen = () => {
-      if (!open && buttonRef.current) {
-        const rect = buttonRef.current.getBoundingClientRect();
-        setMenuCoords({
-          top: rect.bottom + window.scrollY,
-          left: rect.left + window.scrollX,
-          width: rect.width,
-        });
-      }
-      setOpen((prev) => !prev);
-    };
-
-    useEffect(() => {
-      const handleClickOutside = (event) => {
-        if (
-          dropdownRef.current &&
-          !dropdownRef.current.contains(event.target) &&
-          !buttonRef.current.contains(event.target)
-        ) {
-          setSearch("");
-          setOpen(false);
-        }
-      };
-      document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
-    const displayText = value.length > 0 ? value.join(", ") : placeholder;
-    const filteredOptions = options.filter((opt) =>
-      opt.toLowerCase().includes(search.toLowerCase()),
-    );
-    return (
-      <div className="relative">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          {label}
-        </label>
-
-        <div
-          ref={buttonRef}
-          className="
-          group flex items-center justify-between
-          px-4 py-3.5
-          rounded-2xl
-          border border-gray-200 dark:border-gray-700
-          bg-white dark:bg-gray-900
-          hover:border-indigo-400
-          hover:shadow-lg
-          transition-all duration-300
-          cursor-pointer
-          "
-          onClick={toggleOpen}
-        >
-          <span
-            className={`text-gray-700 dark:text-gray-200 ${!value ? "text-gray-400" : ""}`}
-          >
-            {displayText}
-          </span>
-
-          <motion.div
-            animate={{ rotate: open ? 180 : 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <FiChevronDown className="text-gray-400 group-hover:text-indigo-500 transition-colors" />
-          </motion.div>
-        </div>
-
-        {open &&
-          createPortal(
-            <ul
-              ref={dropdownRef}
-              className="
-              z-[10000]
-              overflow-hidden
-              rounded-2xl
-              border border-white/20 dark:border-gray-700
-              bg-white/95 dark:bg-gray-900/95
-              backdrop-blur-xl
-              shadow-[0_10px_40px_rgba(0,0,0,0.15)]
-              py-2
-              "
-              style={{
-                position: "absolute",
-                top: menuCoords.top,
-                left: menuCoords.left,
-                width: menuCoords.width,
-              }}
-            >
-              <>
-                {/* Search Box */}
-                <div className="p-2 border-b border-gray-200 dark:border-gray-700">
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search..."
-                    onClick={(e) => e.stopPropagation()}
-                    className="
-                    w-full px-3 py-2 rounded-lg
-                    bg-gray-100 dark:bg-gray-800
-                    text-sm text-gray-700 dark:text-gray-200
-                    outline-none border border-transparent
-                    focus:border-indigo-400
-                  "
-                  />
-                </div>
-
-                {/* Clear All Option */}
-                <li
-                  onClick={() => onChange([])}
-                  className="px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
-                >
-                  {placeholder}
-                </li>
-              </>
-
-              {filteredOptions.map((opt) => (
-                <li
-                  key={opt}
-                  className={`px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 ${
-                    value.includes(opt)
-                      ? "font-semibold bg-indigo-100 dark:bg-indigo-900"
-                      : ""
-                  }`}
-                  onClick={() => {
-                    const updated = value.includes(opt)
-                      ? value.filter((item) => item !== opt)
-                      : [...value, opt];
-
-                    onChange(updated);
-                  }}
-                >
-                  <div className="flex items-center justify-between">
-                    <span>{opt}</span>
-                  </div>
-                </li>
-              ))}
-            </ul>,
-            document.body,
-          )}
-      </div>
-    );
+  const toggleOpen = () => {
+    if (!open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setMenuCoords({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+    setOpen((prev) => !prev);
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target) &&
+        !buttonRef.current.contains(event.target)
+      ) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const displayText = value || placeholder;
+
+  return (
+    <div className="relative">
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        {label}
+      </label>
+
+      <div
+        ref={buttonRef}
+        className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"
+        onClick={toggleOpen}
+      >
+        <span
+          className={`text-gray-700 dark:text-gray-200 ${!value ? "text-gray-400" : ""}`}
+        >
+          {displayText}
+        </span>
+
+        <FiChevronDown className="text-gray-400 dark:text-gray-500" />
+      </div>
+
+      {open &&
+        createPortal(
+          <ul
+            ref={dropdownRef}
+            className="z-[10000] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg"
+            style={{
+              position: "absolute",
+              top: menuCoords.top,
+              left: menuCoords.left,
+              width: menuCoords.width,
+            }}
+          >
+            <li
+              onClick={() => {
+                onChange("");
+                setOpen(false);
+              }}
+              className="px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+            >
+              {placeholder}
+            </li>
+
+            {options.map((opt) => (
+              <li
+                key={opt}
+                className={`px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 ${
+                  opt === value
+                    ? "font-semibold bg-indigo-100 dark:bg-indigo-900"
+                    : ""
+                }`}
+                onClick={() => {
+                  onChange(opt);
+                  setOpen(false);
+                }}
+              >
+                {opt}
+              </li>
+            ))}
+          </ul>,
+          document.body,
+        )}
+    </div>
+  );
+};
 
   return (
     <div className="overflow-x-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 py-6">
@@ -431,7 +363,7 @@ const HackathonHub = () => {
           </svg>
         </Link>
       </motion.div>
-
+      
       {/* FIXED: Hero Section with filteredCount prop */}
       <HackathonHero
         hackathons={hackathons}
@@ -533,10 +465,7 @@ const HackathonHub = () => {
                 </svg>
                 {showFilters ? "Hide Filters" : "Show Filters"}
               </button>
-              {(filters.difficulty ||
-                filters.prize ||
-                filters.location ||
-                selectedTags.length > 0) && (
+              {(filters.difficulty || filters.prize || filters.location || selectedTags.length > 0) && (
                 <button
                   onClick={resetFilters}
                   className="text-sm text-black dark:text-white hover:text-gray-700 dark:hover:text-gray-200 font-medium"
@@ -549,14 +478,12 @@ const HackathonHub = () => {
 
           {/* UPDATED: Tags display */}
           {selectedTags.length > 0 && (
-            <motion.div
+            <motion.div 
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               className="mb-4 flex flex-wrap gap-2"
             >
-              <span className="text-sm text-gray-600 dark:text-gray-400 mr-2">
-                Selected tags:
-              </span>
+              <span className="text-sm text-gray-600 dark:text-gray-400 mr-2">Selected tags:</span>
               <AnimatePresence>
                 {selectedTags.map((tag) => (
                   <Tag key={tag} tag={tag} onRemove={handleTagRemove} />
@@ -569,28 +496,18 @@ const HackathonHub = () => {
           <AnimatePresence>
             {showFilters && (
               <motion.div
-                initial={{ opacity: 0, y: -12, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -12, scale: 0.98 }}
-                transition={{ duration: 0.35, ease: "easeOut" }}
-                className="
-                relative overflow-hidden mb-6
-                rounded-3xl
-                border border-white/20 dark:border-gray-700
-                bg-white/80 dark:bg-gray-900/80
-                backdrop-blur-xl
-                shadow-[0_8px_30px_rgba(0,0,0,0.08)]
-                p-6 md:p-8
-                "
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 mb-6 overflow-hidden shadow-[0_4px_12px_rgba(59,130,246,0.1)]"
               >
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <CustomDropdown
                     label="Difficulty"
                     value={filters.difficulty}
                     options={difficulties}
-                    onChange={(val) =>
-                      setFilters({ ...filters, difficulty: val })
-                    }
+                    onChange={(val) => setFilters({ ...filters, difficulty: val })}
                     placeholder="All Levels"
                   />
 
@@ -606,17 +523,15 @@ const HackathonHub = () => {
                     label="Location"
                     value={filters.location}
                     options={locations}
-                    onChange={(val) =>
-                      setFilters({ ...filters, location: val })
-                    }
+                    onChange={(val) => setFilters({ ...filters, location: val })}
                     placeholder="All Locations"
                   />
                 </div>
 
                 {/* NEW: Available tags for selection - NOW INCLUDES BLOCKCHAIN */}
                 {availableTags.length > 0 && (
-                  <div className="mt-8 pt-6 border-t border-gray-200/70 dark:border-gray-700">
-                    <label className="block text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-4">
+                  <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                       Filter by Technology
                     </label>
                     <div className="flex flex-wrap gap-2">
@@ -624,10 +539,10 @@ const HackathonHub = () => {
                         <button
                           key={tag}
                           onClick={() => handleTagSelect(tag)}
-                          className={`px-4 py-2 rounded-full text-sm font-medium border transition-all duration-300 hover:scale-105 hover:shadow-md ${
+                          className={`px-3 py-1.5 text-sm rounded-full transition-all ${
                             selectedTags.includes(tag)
-                              ? "bg-black text-white border-black shadow-lg shadow-black/20"
-                              : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700"
+                              ? 'bg-black text-white'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                           }`}
                         >
                           {tag}
@@ -774,11 +689,7 @@ const HackathonHub = () => {
                 </h3>
 
                 <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                  {searchQuery ||
-                  filters.difficulty ||
-                  filters.prize ||
-                  filters.location ||
-                  selectedTags.length > 0
+                  {searchQuery || filters.difficulty || filters.prize || filters.location || selectedTags.length > 0
                     ? "No hackathons match your current filters. Try adjusting your search or filters."
                     : "Check back later for exciting new hackathons!"}
                 </p>

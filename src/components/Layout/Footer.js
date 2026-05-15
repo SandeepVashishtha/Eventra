@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SiX } from "react-icons/si";
 import {
   FaInfoCircle,
   FaInstagram,
@@ -228,7 +229,7 @@ const Footer = () => {
             >
               {/* UPDATED: Added dark mode text color */}
               <h2
-                className="text-2xl sm:text-3xl font-bold text-black dark:text-white"
+                className="text-2xl sm:text-3xl font-bold text-black"
                 style={{ fontFamily: "Anton, sans-serif" }}
               >
                 Eventra
@@ -266,7 +267,7 @@ const Footer = () => {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full sm:w-auto px-4 py-2.5 bg-black text-white dark:bg-white dark:text-black dark:hover:bg-gray-400 rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto px-4 py-2.5 bg-black text-white rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? "Subscribing..." : "Subscribe"}
                   </button>
@@ -315,10 +316,10 @@ const Footer = () => {
                     <li key={link.name}>
                       <Link
                         to={link.href}
-                        className="text-sm text-gray-600 hover:text-black flex items-center gap-4 transition-all duration-300 hover:translate-x-1 group"
+                        className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-3 transition-colors group"
                       >
                         {link.icon && (
-                          <span className="text-black group-hover:text-black group-hover:scale-110 transition-all duration-300">
+                          <span className="text-gray-400 group-hover:text-indigo-600 transition-colors">
                             {link.icon}
                           </span>
                         )}
@@ -367,7 +368,3 @@ const Footer = () => {
 };
 
 export default Footer;
-
-
-
-

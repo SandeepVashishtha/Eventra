@@ -100,6 +100,8 @@ const FAQPage = () => {
     },
   ];
 
+  const categories = [...new Set(faqData.map((faq) => faq.category))];
+
   const toggleFAQ = (id) => {
     setOpenFAQ(openFAQ === id ? null : id);
   };
@@ -133,7 +135,7 @@ const FAQPage = () => {
   }, [controls]);
 
   return (
-    <div className="pastel-grid-bg relative flex flex-col min-h-screen overflow-hidden">
+    <div className="pastel-grid-bg relative flex flex-col min-h-screen bg-white dark:bg-gray-900 overflow-hidden">
       {/* HERO */}
       <section className="py-10 sm:py-12 relative overflow-hidden">
         {/* HERO Content */}
@@ -160,7 +162,7 @@ const FAQPage = () => {
       </section>
 
       {/* FAQ SECTION */}
-      <section className=" relative z-10 pb-20" data-aos="fade-up" data-aos-duration="1000">
+      <section className="pb-20" data-aos="fade-up" data-aos-duration="1000">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           {faqData.map((faq, index) => (
             <motion.div
@@ -173,8 +175,8 @@ const FAQPage = () => {
                 onClick={() => toggleFAQ(faq.id)}
                 className="w-full p-6 text-left flex items-center justify-between outline-none focus:outline-none focus:ring-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
               >
-                <div className="flex items-center space-x-3 sm:space-x-4 pr-2">
-                  <div className="w-12 h-12 flex-shrink-0 bg-indigo-100 dark:bg-indigo-900 rounded-xl flex items-center justify-center">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl flex items-center justify-center">
                     <span className="text-black dark:text-white">
                       {faq.icon}
                     </span>
