@@ -138,7 +138,7 @@ const FluidCursor = () => {
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
 
       const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-      return status == gl.FRAMEBUFFER_COMPLETE;
+      return status === gl.FRAMEBUFFER_COMPLETE;
     }
 
     class Material {
@@ -161,7 +161,7 @@ const FluidCursor = () => {
           this.programs[hash] = program;
         }
 
-        if (program == this.activeProgram) return;
+        if (program === this.activeProgram) return;
 
         this.uniforms = getUniforms(program);
         this.activeProgram = program;
@@ -670,7 +670,7 @@ const FluidCursor = () => {
     }
 
     function resizeDoubleFBO(target, w, h, internalFormat, format, type, param) {
-      if (target.width == w && target.height == h) return target;
+      if (target.width === w && target.height === h) return target;
       target.read = resizeFBO(target.read, w, h, internalFormat, format, type, param);
       target.write = createFBO(w, h, internalFormat, format, type, param);
       target.width = w;
@@ -713,7 +713,7 @@ const FluidCursor = () => {
     function resizeCanvas() {
       let width = scaleByPixelRatio(canvas.clientWidth);
       let height = scaleByPixelRatio(canvas.clientHeight);
-      if (canvas.width != width || canvas.height != height) {
+      if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width;
         canvas.height = height;
         return true;
@@ -861,7 +861,7 @@ const FluidCursor = () => {
     }
 
     function hashCode(s) {
-      if (s.length == 0) return 0;
+      if (s.length === 0) return 0;
       let hash = 0;
       for (let i = 0; i < s.length; i++) {
         hash = (hash << 5) - hash + s.charCodeAt(i);
@@ -872,7 +872,7 @@ const FluidCursor = () => {
 
     function wrap(value, min, max) {
       const range = max - min;
-      if (range == 0) return min;
+      if (range === 0) return min;
       return ((value - min) % range) + min;
     }
 
