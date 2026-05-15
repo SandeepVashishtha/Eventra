@@ -447,7 +447,7 @@ const WhatsHappening = () => {
         </div>
 
         {/* Add progress animation keyframes - Updated timing */}
-        <style jsx>{`
+        <style dangerouslySetInnerHTML={{ __html: `
           @keyframes progress {
             from {
               transform: scale(0);
@@ -456,7 +456,7 @@ const WhatsHappening = () => {
               transform: scale(1.2);
             }
           }
-        `}</style>
+        ` }} />
 
       </div>
     </section>
