@@ -177,21 +177,11 @@ const ProjectGallery = () => {
         >
           <div className="flex flex-col md:flex-row gap-4 md:items-center">
             {/* Search Input Box */}
-            <div className="relative flex-1">
-              <motion.div
-                whileHover={{ scale: 1.2, rotate: 10 }}
-                className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-              >
-                {/* UPDATED: Icon color */}
-                <FiSearch className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-              </motion.div>
-              <input
-                type="text"
-                placeholder="Search projects by name, tech stack, or category..."
-                // UPDATED: Input styles
-                className="block w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-black/20 dark:focus:ring-white/20 focus:border-black/20 dark:focus:border-white/20 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-800 shadow-sm transition-all duration-300"
+            <div className="flex-1">
+              <ModernSearchInput
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search projects by name, tech stack, or category..."
               />
             </div>
 
@@ -317,7 +307,7 @@ const ProjectGallery = () => {
             // Show skeleton loaders while fetching
             <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <SkeletonCard key={`skeleton-${i}`} />
+                <ProjectCardSkeleton key={`skeleton-${i}`} />
               ))}
             </div>
           ) : error ? (
@@ -414,7 +404,8 @@ const ProjectGallery = () => {
                         height: size,
                         left: positions[i].left,
                         top: positions[i].top,
-                        opacity: 0.3,
+                        opacity: 0.6, // Increased from 0.3
+                        filter: "blur(2px)",
                       }}
                       animate={{
                         y: [0, -30, 0],

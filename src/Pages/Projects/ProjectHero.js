@@ -44,7 +44,7 @@ const repeatedIcons = [...iconList, ...iconList, ...iconList];
 
 export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
   const navigate = useNavigate();
-  const { user, token } = useAuth();
+  const { user } = useAuth();
 
   return (
     // UPDATED: Main background gradient
@@ -122,8 +122,7 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
           // UPDATED: Title text color and gradient
-          className="text-4xl sm:text-6xl font-extrabold mb-6 mt-6 text-black leading-tight"
-          style={{ fontFamily: '"Anton", sans-serif' }}
+         className="text-4xl sm:text-6xl font-extrabold mb-6 mt-6 text-black dark:text-white leading-tight"          style={{ fontFamily: '"Anton", sans-serif' }}
         >
           Discover Amazing Projects
         </motion.h1>
@@ -210,7 +209,7 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
               data-aos="zoom-in"
               data-aos-delay={700 + idx * 150}
               // UPDATED: Stat card background
-              className="bg-gradient-to-br from-sky-50 via-white to-white dark:bg-gray-800 shadow-md hover:shadow-xl rounded-3xl p-6 flex flex-col items-center justify-center transition-all duration-300"
+              className="bg-gradient-to-br from-sky-50 via-white to-white dark:from-gray-800 dark:via-gray-900 dark:to-black shadow-md hover:shadow-xl rounded-3xl p-6 flex flex-col items-center justify-center transition-all duration-300"
             >
               {/* UPDATED: Text colors */}
               <span className="text-3xl font-extrabold text-black dark:text-white">

@@ -5,30 +5,17 @@ import mockHackathons from "./hackathonMockData.json";
 import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
 import FeedbackButton from "../../components/FeedbackButton";
-import { FiCode, FiRotateCw, FiCompass, FiChevronDown, FiX } from "react-icons/fi";
+import {
+  FiCode,
+  FiRotateCw,
+  FiCompass,
+  FiChevronDown,
+  FiX,
+} from "react-icons/fi";
 import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
-
-// UPDATED: Skeleton Loader for dark mode
-const SkeletonCard = () => (
-  <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md animate-pulse">
-    <div className="p-6">
-      <div className="flex justify-between items-start mb-4">
-        <div className="h-6 w-24 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-        <div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
-      </div>
-      <div className="h-6 w-3/4 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
-      <div className="h-4 w-full bg-gray-100 dark:bg-gray-600 rounded mb-2"></div>
-      <div className="h-4 w-5/6 bg-gray-100 dark:bg-gray-600 rounded mb-4"></div>
-      <div className="space-y-3 mb-4">
-        <div className="h-4 w-3/4 bg-gray-100 dark:bg-gray-600 rounded"></div>
-        <div className="h-4 w-1/2 bg-gray-100 dark:bg-gray-600 rounded"></div>
-      </div>
-      <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
-    </div>
-  </div>
-);
+import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 
 // NEW: Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
@@ -55,9 +42,9 @@ const HackathonHub = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isScrollVisible, setIsScrollVisible] = useState(false);
   const [filters, setFilters] = useState({
-    difficulty: "",
-    prize: "",
-    location: "",
+    difficulty: [],
+    prize: [],
+    location: [],
   });
   const [showFilters, setShowFilters] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
@@ -115,7 +102,7 @@ const HackathonHub = () => {
     handleScroll();
 
     const handleChatbotState = () => {
-      setIsChatbotOpen(document.querySelector('[data-chatbot-open]') !== null);
+      setIsChatbotOpen(document.querySelector("[data-chatbot-open]") !== null);
     };
 
     handleChatbotState();
@@ -169,12 +156,16 @@ const HackathonHub = () => {
 
   // NEW: Handle tag removal
   const handleTagRemove = (tagToRemove) => {
-    setSelectedTags(selectedTags.filter(tag => tag !== tagToRemove));
+    setSelectedTags(selectedTags.filter((tag) => tag !== tagToRemove));
   };
 
   // NEW: Handle backspace in search input
   const handleSearchKeyDown = (e) => {
-    if (e.key === 'Backspace' && searchQuery === '' && selectedTags.length > 0) {
+    if (
+      e.key === "Backspace" &&
+      searchQuery === "" &&
+      selectedTags.length > 0
+    ) {
       // Remove the last tag when backspace is pressed on empty input
       const lastTag = selectedTags[selectedTags.length - 1];
       handleTagRemove(lastTag);
@@ -197,25 +188,31 @@ const HackathonHub = () => {
       return hackathon.status === activeTab;
     })
     .filter((hackathon) => {
-      if (filters.difficulty && hackathon.difficulty !== filters.difficulty)
-        return false;
       if (
-        filters.prize &&
-        !hackathon.prize.toLowerCase().includes(filters.prize.toLowerCase())
+        filters.difficulty.length > 0 &&
+        !filters.difficulty.includes(hackathon.difficulty)
       )
         return false;
       if (
-        filters.location &&
-        !hackathon.location
-          .toLowerCase()
-          .includes(filters.location.toLowerCase())
+        filters.prize.length > 0 &&
+        !filters.prize.some(
+          (prize) =>
+            !hackathon.prize.toLowerCase().includes(prize.toLowerCase()),
+        )
+      )
+        return false;
+      if (
+        filters.location.length > 0 &&
+        !filters.location.some((loc) =>
+          hackathon.location.toLowerCase().includes(loc.toLowerCase()),
+        )
       )
         return false;
 
       // NEW: Filter by selected tags
       if (selectedTags.length > 0) {
         const hackathonTags = hackathon.techStack || [];
-        return selectedTags.some(tag => hackathonTags.includes(tag));
+        return selectedTags.some((tag) => hackathonTags.includes(tag));
       }
 
       return true;
@@ -228,9 +225,9 @@ const HackathonHub = () => {
   // UPDATED: Reset filters and tags
   const resetFilters = () => {
     setFilters({
-      difficulty: "",
-      prize: "",
-      location: "",
+      difficulty: [],
+      prize: [],
+      location: [],
     });
     setSearchQuery("");
     setSelectedTags([]);
@@ -485,7 +482,10 @@ const HackathonHub = () => {
                 </svg>
                 {showFilters ? "Hide Filters" : "Show Filters"}
               </button>
-              {(filters.difficulty || filters.prize || filters.location || selectedTags.length > 0) && (
+              {(filters.difficulty ||
+                filters.prize ||
+                filters.location ||
+                selectedTags.length > 0) && (
                 <button
                   onClick={resetFilters}
                   className="text-sm text-black dark:text-white hover:text-gray-700 dark:hover:text-gray-200 font-medium"
@@ -503,7 +503,9 @@ const HackathonHub = () => {
               animate={{ opacity: 1, y: 0 }}
               className="mb-4 flex flex-wrap gap-2"
             >
-              <span className="text-sm text-gray-600 dark:text-gray-400 mr-2">Selected tags:</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400 mr-2">
+                Selected tags:
+              </span>
               <AnimatePresence>
                 {selectedTags.map((tag) => (
                   <Tag key={tag} tag={tag} onRemove={handleTagRemove} />
@@ -516,18 +518,28 @@ const HackathonHub = () => {
           <AnimatePresence>
             {showFilters && (
               <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-                className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 mb-6 overflow-hidden shadow-[0_4px_12px_rgba(59,130,246,0.1)]"
+                initial={{ opacity: 0, y: -12, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -12, scale: 0.98 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                className="
+                relative overflow-hidden mb-6
+                rounded-3xl
+                border border-white/20 dark:border-gray-700
+                bg-white/80 dark:bg-gray-900/80
+                backdrop-blur-xl
+                shadow-[0_8px_30px_rgba(0,0,0,0.08)]
+                p-6 md:p-8
+                "
               >
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <CustomDropdown
                     label="Difficulty"
                     value={filters.difficulty}
                     options={difficulties}
-                    onChange={(val) => setFilters({ ...filters, difficulty: val })}
+                    onChange={(val) =>
+                      setFilters({ ...filters, difficulty: val })
+                    }
                     placeholder="All Levels"
                   />
 
@@ -543,15 +555,17 @@ const HackathonHub = () => {
                     label="Location"
                     value={filters.location}
                     options={locations}
-                    onChange={(val) => setFilters({ ...filters, location: val })}
+                    onChange={(val) =>
+                      setFilters({ ...filters, location: val })
+                    }
                     placeholder="All Locations"
                   />
                 </div>
 
                 {/* NEW: Available tags for selection - NOW INCLUDES BLOCKCHAIN */}
                 {availableTags.length > 0 && (
-                  <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  <div className="mt-8 pt-6 border-t border-gray-200/70 dark:border-gray-700">
+                    <label className="block text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-4">
                       Filter by Technology
                     </label>
                     <div className="flex flex-wrap gap-2">
@@ -608,7 +622,7 @@ const HackathonHub = () => {
           {isLoading ? (
             <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <SkeletonCard key={`skeleton-${i}`} />
+                <HackathonCardSkeleton key={`skeleton-${i}`} />
               ))}
             </div>
           ) : filteredHackathons.length > 0 ? (
@@ -707,7 +721,11 @@ const HackathonHub = () => {
                 </h3>
 
                 <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                  {searchQuery || filters.difficulty || filters.prize || filters.location || selectedTags.length > 0
+                  {searchQuery ||
+                  filters.difficulty ||
+                  filters.prize ||
+                  filters.location ||
+                  selectedTags.length > 0
                     ? "No hackathons match your current filters. Try adjusting your search or filters."
                     : "Check back later for exciting new hackathons!"}
                 </p>

@@ -11,29 +11,43 @@
     />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+    <!-- ✅ Preconnect for faster font loading -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- ✅ Non-render-blocking font load using media trick -->
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
+    <!-- Fallback for no-JS -->
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <!-- ✅ Preload hero image for faster LCP -->
+    <link rel="preload" href="%PUBLIC_URL%/Eventra.png" as="image" />
 
     <title>Eventra - Open Source Event Management Platform</title>
 
-     <!-- 🔹 Added for Google OAuth -->
     <!-- Google Client ID meta tag -->
     <meta
       name="google-signin-client_id"
       content="%REACT_APP_GOOGLE_CLIENT_ID%"
     />
-    
-    <!-- 🔹 Google Identity Services script -->
+
+    <!-- ✅ Google Identity Services script - already async defer -->
     <script
       src="https://accounts.google.com/gsi/client"
       async
       defer
     ></script>
-    
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
