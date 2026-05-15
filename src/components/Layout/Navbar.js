@@ -7,9 +7,24 @@ import ConfirmationModal from "../common/ConfirmationModal";
 import { toast } from "react-toastify";
 import { UserCog } from "lucide-react";
 import {
-  Home, Calendar, Sparkles, FolderKanban, Users, Trophy,
-  Info, LayoutDashboard, User as UserIcon, LogOut, LogIn,
-  MessageSquare, Book, HelpCircle, ChevronDown, MousePointer
+  Home,
+  Calendar,
+  Sparkles,
+  FolderKanban,
+  Users,
+  Trophy,
+  Info,
+  LayoutDashboard,
+  User as UserIcon,
+  LogOut,
+  LogIn,
+  MessageSquare,
+  Book,
+  HelpCircle,
+  ChevronDown,
+  MousePointer,
+  Moon,
+  Sun
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -232,9 +247,21 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
           </div>
         )}
         <hr className="my-3" />
-        <button onClick={toggleCursor} className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg bg-black text-white hover:bg-zinc-800 transition-colors font-medium">
-          <MousePointer className="w-5 h-5" />
-          {cursorEnabled ? "Turn Cursor OFF" : "Turn Cursor ON"}
+        <button
+          onClick={toggleTheme}
+          className="flex items-center gap-3
+          w-full
+          px-4 py-2.5
+          rounded-lg
+          bg-black dark:bg-white
+          text-white dark:text-black
+          hover:bg-zinc-800 dark:hover:bg-zinc-200
+          transition-colors
+          font-medium
+          mb-2"
+        >
+          {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          {isDarkMode ? "Turn Dark Mode OFF" : "Turn Dark Mode ON"}
         </button>
       </div>
     </div>
@@ -383,10 +410,20 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
 
           <div className="hidden lg:flex items-center ml-auto z-20">
-            <button onClick={toggleCursor} className="flex items-center gap-1 px-2 py-1 mr-3 text-s font-normal bg-black text-white rounded-md hover:bg-zinc-800 transition-all">
-              <MousePointer className="w-4 h-4" />
-              {cursorEnabled ? "OFF" : "ON"}
+            {/* Dark Mode Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              className="flex items-center gap-1 px-2 py-1 mr-3
+              text-s font-normal
+              bg-black text-white dark:bg-white dark:text-black
+              rounded-md
+              hover:bg-zinc-800 dark:hover:bg-zinc-200
+              transition-all"
+            >
+              {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              {isDarkMode ? "OFF" : "ON"}
             </button>
+
             <div className="flex items-center space-x-2 ml-2">
               {isAuthenticated() ? (
                 <div className="relative profile-container">
