@@ -74,11 +74,11 @@
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-color-light);
-  background: none;
-  border: none;
+  background: transparent;
+  border: 1px solid transparent;
   cursor: pointer;
   text-decoration: none;
-  transition: all 0.18s ease;
+  transition: all 0.2s ease;
   width: 100%;
   text-align: left;
 }
@@ -86,14 +86,16 @@
 .ud-nav-item:hover {
   background: #f3f4f6;
   color: var(--text-color);
+  border-color: #e5e7eb;
 }
 
 /* removed dark mode override (handled by CSS variables) */
 
 .ud-nav-active {
-  background: linear-gradient(135deg, #6366f115, #8b5cf615);
+  background: linear-gradient(135deg, #6366f115, #8b5cf615) !important;
   color: #6366f1 !important;
   font-weight: 600;
+  border: 1px solid #c7d2fe !important;
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -104,6 +106,7 @@
 .ud-nav-logout:hover {
   background: #fee2e220 !important;
   color: #ef4444 !important;
+  border-color: #fca5a5 !important;
 }
 
 .ud-sidebar-bottom {

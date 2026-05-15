@@ -83,21 +83,26 @@ body {
   font-size: var(--font-body);
   font-weight: var(--fw-regular);
 }
-
-.dark .pastel-grid-bg {
+body.dark .pastel-grid-bg {
   background-color: var(--bg-color);
   opacity: 0.4;
 }
 
+*,
+*::before,
+*::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
 
-
-/* Fix: Headings use CSS variables + consistent line-height */
-h1 { font-size: var(--font-h1); font-weight: var(--fw-bold); line-height: var(--lh-heading); }
-h2 { font-size: var(--font-h2); font-weight: var(--fw-bold); line-height: var(--lh-heading); }
-h3 { font-size: var(--font-h3); font-weight: var(--fw-semibold); line-height: var(--lh-heading); }
-h4 { font-size: var(--font-h4); font-weight: var(--fw-semibold); line-height: var(--lh-heading); }
-h5 { font-size: var(--font-h5); font-weight: var(--fw-medium); }
-h6 { font-size: var(--font-h6); font-weight: var(--fw-medium); }
+/* Headings */
+h1 { font-size: var(--font-h1); }
+h2 { font-size: var(--font-h2); }
+h3 { font-size: var(--font-h3); }
+h4 { font-size: var(--font-h4); }
+h5 { font-size: var(--font-h5); }
+h6 { font-size: var(--font-h6); }
 
 /* Navigation items */
 nav, nav a {

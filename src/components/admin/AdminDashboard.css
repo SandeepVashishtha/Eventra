@@ -86,11 +86,11 @@
   font-size: 0.875rem;
   font-weight: 500;
   color: #6b7280;
-  background: none;
-  border: none;
+  background: transparent;
+  border: 1px solid transparent;
   cursor: pointer;
   text-decoration: none;
-  transition: all 0.18s ease;
+  transition: all 0.2s ease;
   width: 100%;
   text-align: left;
 }
@@ -98,22 +98,26 @@
 .ad-nav-item:hover {
   background: #f3f4f6;
   color: #111827;
+  border-color: #e5e7eb;
 }
 
 .dark .ad-nav-item:hover {
   background: #1f2937;
   color: #f9fafb;
+  border-color: #374151;
 }
 
 .ad-nav-active {
   background: linear-gradient(135deg, #6366f115, #8b5cf615) !important;
   color: #6366f1 !important;
   font-weight: 600;
+  border: 1px solid #c7d2fe !important;
 }
 
 .dark .ad-nav-active {
   background: linear-gradient(135deg, #6366f122, #8b5cf622) !important;
   color: #818cf8 !important;
+  border-color: #4f46e5 !important;
 }
 
 .ad-nav-logout {
@@ -123,6 +127,7 @@
 .ad-nav-logout:hover {
   background: #fee2e215 !important;
   color: #ef4444 !important;
+  border-color: #fca5a5 !important;
 }
 
 .ad-sidebar-bottom {
