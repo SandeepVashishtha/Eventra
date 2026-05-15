@@ -90,7 +90,7 @@ export default function HackathonHero({
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
-          className="text-4xl sm:text-6xl font-extrabold leading-tight text-black"
+          className="text-4xl sm:text-6xl font-extrabold leading-tight dark:text-white text-black"
           style={{ fontFamily: '"Anton", sans-serif' }}
         >
           Discover Amazing Hackathons

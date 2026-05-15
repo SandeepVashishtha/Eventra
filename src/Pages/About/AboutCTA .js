@@ -63,7 +63,7 @@ const AboutCTA = () => {
 
   return (
     <section 
-      className="relative py-12 px-12 mt-2 mb-8 mx-8 rounded-3xl bg-white text-center overflow-hidden shadow-2xl border border-gray-200"
+      className="relative py-12 px-12 mt-8 mb-8 mx-8 rounded-3xl bg-white dark:bg-black dark:border-none border text-center overflow-hidden shadow-2xl  border-gray-200"
       // AOS Implementation
       data-aos="zoom-in-up"
       data-aos-duration="1000"
@@ -93,7 +93,7 @@ const AboutCTA = () => {
       ))}
 
       <motion.h2
-        className="text-4xl md:text-5xl font-bold text-black mb-6 relative z-10 flex justify-center items-center gap-3"
+        className="text-4xl md:text-5xl font-bold text-black dark:text-white mb-6 relative z-10 flex justify-center items-center gap-3"
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7 }}
@@ -102,7 +102,7 @@ const AboutCTA = () => {
       </motion.h2>
 
       <motion.p
-        className="text-black text-lg md:text-xl mb-12 max-w-3xl mx-auto relative z-10"
+        className="text-black dark:text-gray-400 text-lg md:text-xl mb-12 max-w-3xl mx-auto relative z-10"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.9 }}
@@ -115,7 +115,7 @@ const AboutCTA = () => {
       <div className="flex flex-col md:flex-row justify-center gap-6 relative z-10">
         <Link
           to="/signup"
-          className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-medium text-white bg-black shadow-lg hover:shadow-xl hover:scale-105 hover:bg-zinc-800 transition-all duration-300"
+          className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-medium text-white dark:text-black dark:bg-white bg-black shadow-lg hover:shadow-xl hover:scale-105 hover:bg-zinc-800 transition-all duration-300"
           data-aos="zoom-in"
           data-aos-delay="200"
         >
@@ -124,7 +124,7 @@ const AboutCTA = () => {
 
         <Link
           to="/documentation"
-          className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-medium border border-black/20 text-black hover:bg-gray-100 hover:border-black/30 transition-all duration-300"
+          className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-medium border border-black/20 bg-black text-white dark:text-black dark:bg-white hover:bg-gray-100 hover:border-black/30 transition-all duration-300"
           data-aos="zoom-in"
           data-aos-delay="400"
         >
@@ -133,7 +133,7 @@ const AboutCTA = () => {
 
         <Link
           to="/contact"
-          className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-medium border border-black/20 text-black hover:bg-gray-100 hover:border-black/30 transition-all duration-300"
+          className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-medium border border-black/20 bg-black text-white dark:text-black dark:bg-white hover:bg-gray-100 hover:border-black/30 transition-all duration-300"
           data-aos="zoom-in"
           data-aos-delay="600"
         >

@@ -15,7 +15,7 @@ const HackathonCTA = () => {
 
   return (
     <section 
-      className="relative py-16 px-8 m-8 rounded-3xl bg-black text-center shadow-xl overflow-hidden"
+      className="relative py-16 px-8 m-8 rounded-3xl dark:bg-black bg-white text-center shadow-xl overflow-hidden"
       // AOS Implementation
       data-aos="zoom-in"
       data-aos-duration="1000"
@@ -44,7 +44,7 @@ const HackathonCTA = () => {
       ))}
 
       <motion.h2
-        className="text-4xl md:text-5xl font-bold text-white mb-4 relative z-10"
+        className="text-4xl md:text-5xl font-bold text-black dark:text-white mb-4 relative z-10"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
@@ -53,7 +53,7 @@ const HackathonCTA = () => {
       </motion.h2>
 
       <motion.p
-        className="text-white text-lg md:text-xl mb-8 max-w-2xl mx-auto relative z-10"
+        className="text-black dark:text-white text-lg md:text-xl mb-8 max-w-2xl mx-auto relative z-10"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
@@ -65,7 +65,7 @@ const HackathonCTA = () => {
       <div className="flex flex-col md:flex-row justify-center gap-4 relative z-10">
         <motion.a
           href="/hackathons"
-          className="inline-flex items-center justify-center gap-2 bg-blue-100 hover:bg-blue-200 text-black font-semibold px-8 py-4 rounded-full shadow-lg transition-transform duration-300"
+          className="inline-flex items-center justify-center gap-2 bg-blue-100 hover:bg-blue-200 text-black  font-semibold px-8 py-4 rounded-full shadow-lg transition-transform duration-300"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           data-aos="zoom-in"

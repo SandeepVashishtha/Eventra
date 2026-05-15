@@ -5,21 +5,21 @@ const EventCTA = () => {
   const [showModal, setShowModal] = useState(false);
 
   return (
-    <section 
-      className="relative py-16 px-8 m-8 rounded-3xl bg-black text-white shadow-xl overflow-hidden"
+    <section
+      className="relative py-16 px-8 m-8 rounded-3xl  bg-white dark:bg-black text-white shadow-xl overflow-hidden"
       // AOS Implementation
       data-aos="zoom-in-up"
       data-aos-duration="1000"
     >
       {/* Snake-like glowing line */}
       <svg
-        className="absolute inset-0 w-full h-full"
+        className="absolute inset-0 w-full h-full text-gray-100 dark:text-gray-600"
         xmlns="http://www.w3.org/2000/svg"
       >
         <path
           d="M0,100 Q150,200 300,100 T600,100 T900,150 T1200,120"
           fill="transparent"
-          stroke="rgba(255,255,255,0.2)"
+          stroke="currentColor"
           strokeWidth="3"
           strokeLinecap="round"
         />
@@ -29,12 +29,12 @@ const EventCTA = () => {
         {/* Text */}
         <div className="md:w-1/2 text-center md:text-left">
           <h2
-            className="text-4xl md:text-5xl font-bold mb-4"
+            className="text-4xl text-black dark:text-white md:text-5xl font-bold mb-4"
           >
             Stay Updated with Our Events
           </h2>
           <p
-            className="text-lg md:text-xl mb-6"
+            className="text-lg md:text-xl text-black dark:text-white mb-6"
           >
             Explore upcoming events, workshops, and webinars. Join the community
             and never miss out on learning opportunities.
