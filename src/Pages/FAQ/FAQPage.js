@@ -135,7 +135,7 @@ const FAQPage = () => {
   }, [controls]);
 
   return (
-    <div className="pastel-grid-bg relative flex flex-col min-h-screen bg-white dark:bg-gray-900 overflow-hidden">
+    <div className="pastel-grid-bg relative flex flex-col min-h-screen overflow-hidden">
       {/* HERO */}
       <section className="py-10 sm:py-12 relative overflow-hidden">
         {/* HERO Content */}
@@ -143,15 +143,15 @@ const FAQPage = () => {
           <motion.div variants={container} initial="hidden" animate={controls}>
             <motion.div variants={item}>
               <h1
-                className="text-4xl md:text-5xl lg:text-6xl font-bold text-black mb-4"
+                className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-4"
                 style={{ fontFamily: '"Anton", sans-serif' }}
               >
                 Frequently Asked{" "}
-                <span className="text-black">
+                <span className="text-gray-900 dark:text-white">
                   Questions
                 </span>
               </h1>
-              <p className="text-xl text-black max-w-3xl mx-auto leading-relaxed">
+              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
                 Everything you need to know about using Eventra, from getting
                 started to hosting your own events. Can't find what you're
                 looking for? Reach out to our community!
@@ -162,7 +162,7 @@ const FAQPage = () => {
       </section>
 
       {/* FAQ SECTION */}
-      <section className="pb-20" data-aos="fade-up" data-aos-duration="1000">
+      <section className=" relative z-10 pb-20" data-aos="fade-up" data-aos-duration="1000">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           {faqData.map((faq, index) => (
             <motion.div
@@ -176,7 +176,7 @@ const FAQPage = () => {
                 className="w-full p-6 text-left flex items-center justify-between outline-none focus:outline-none focus:ring-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
               >
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl flex items-center justify-center">
+                  <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900 rounded-xl flex items-center justify-center">
                     <span className="text-black dark:text-white">
                       {faq.icon}
                     </span>
