@@ -6,21 +6,19 @@
 .ud-root {
   display: flex;
   min-height: 100vh;
-  background: #f8fafc;
+  background: var(--bg-color);
   font-family: 'Inter', system-ui, sans-serif;
 }
 
 /* Dark mode root */
-.dark .ud-root {
-  background: #0f1117;
-}
+/* removed dark mode override (handled by CSS variables) */
 
 /* ── Sidebar ── */
 .ud-sidebar {
   width: 220px;
   height: 100vh;
-  background: #fff;
-  border-right: 1px solid #e5e7eb;
+  background: var(--card-bg-color);
+  border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   padding: 1.5rem 0.75rem;
@@ -30,10 +28,7 @@
   overflow-y: auto;
 }
 
-.dark .ud-sidebar {
-  background: #111827;
-  border-right-color: #1f2937;
-}
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-sidebar-brand {
   display: flex;
@@ -41,12 +36,12 @@
   gap: 0.6rem;
   font-size: 1.15rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-color);
   padding: 0.25rem 0.75rem 1.5rem;
   letter-spacing: -0.3px;
 }
 
-.dark .ud-sidebar-brand { color: #f9fafb; }
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-brand-dot {
   width: 10px;
@@ -72,7 +67,7 @@
   border-radius: 10px;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-color-light);
   background: none;
   border: none;
   cursor: pointer;
@@ -84,13 +79,10 @@
 
 .ud-nav-item:hover {
   background: #f3f4f6;
-  color: #111827;
+  color: var(--text-color);
 }
 
-.dark .ud-nav-item:hover {
-  background: #1f2937;
-  color: #f9fafb;
-}
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-nav-active {
   background: linear-gradient(135deg, #6366f115, #8b5cf615);
@@ -98,10 +90,7 @@
   font-weight: 600;
 }
 
-.dark .ud-nav-active {
-  background: linear-gradient(135deg, #6366f122, #8b5cf622);
-  color: #818cf8 !important;
-}
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-nav-logout {
   color: #ef4444 !important;
@@ -116,13 +105,11 @@
   flex-direction: column;
   gap: 2px;
   padding-top: 1rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border-color);
   margin-top: auto;
 }
 
-.dark .ud-sidebar-bottom {
-  border-top-color: #1f2937;
-}
+/* removed dark mode override (handled by CSS variables) */
 
 /* ── Main ── */
 .ud-main {
@@ -138,21 +125,18 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.25rem 2rem;
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--card-bg-color);
+  border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
   z-index: 10;
 }
 
-.dark .ud-topbar {
-  background: #111827;
-  border-bottom-color: #1f2937;
-}
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-greeting {
   font-size: 0.78rem;
-  color: #9ca3af;
+  color: var(--text-color-light);
   margin: 0;
   font-weight: 400;
 }
@@ -160,11 +144,11 @@
 .ud-username {
   font-size: 1.4rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-color);
   margin: 0;
 }
 
-.dark .ud-username { color: #f9fafb; }
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-topbar-right {
   display: flex;
@@ -181,7 +165,7 @@
 .ud-search-icon {
   position: absolute;
   left: 0.75rem;
-  color: #9ca3af;
+  color: var(--text-color-light);
   pointer-events: none;
 }
 
@@ -197,26 +181,20 @@
 
 .ud-search-wrap:focus-within {
   border-color: #6366f1;
-  background: #fff;
+  background: var(--card-bg-color);
   box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.2), 0 8px 10px -6px rgba(99, 102, 241, 0.1);
   transform: translateY(-4px) scale(1.02);
   width: 260px;
 }
 
-.dark .ud-search-wrap {
-  background: #1f2937;
-  border-color: #374151;
-}
+/* removed dark mode override (handled by CSS variables) */
 
-.dark .ud-search-wrap:focus-within {
-  background: #111827;
-  border-color: #818cf8;
-}
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-search-icon {
   position: absolute;
   left: 0.75rem;
-  color: #9ca3af;
+  color: var(--text-color-light);
   pointer-events: none;
   transition: color 0.3s ease;
 }
@@ -230,26 +208,16 @@
   border: none;
   background: transparent;
   font-size: 0.875rem;
-  color: #111827;
+  color: var(--text-color);
   width: 220px;
   outline: none;
 }
 
-.dark .ud-search {
-  color: #f9fafb;
-}
+/* removed dark mode override (handled by CSS variables) */
 
-.dark .ud-search {
-  background: #1f2937;
-  border-color: #374151;
-  color: #f9fafb;
-}
+/* removed dark mode override (handled by CSS variables) */
 
-.dark .ud-search:focus {
-  border-color: #818cf8;
-  background: #111827;
-  box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.15), 0 4px 12px rgba(0, 0, 0, 0.2);
-}
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-search-clear {
   position: absolute;
@@ -257,7 +225,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #9ca3af;
+  color: var(--text-color-light);
   display: flex;
   align-items: center;
 }
@@ -265,11 +233,11 @@
 .ud-icon-btn {
   position: relative;
   background: none;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-color);
   border-radius: 10px;
   padding: 0.45rem;
   cursor: pointer;
-  color: #6b7280;
+  color: var(--text-color-light);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -283,15 +251,9 @@
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 }
 
-.dark .ud-icon-btn {
-  border-color: #374151;
-  color: #9ca3af;
-}
+/* removed dark mode override (handled by CSS variables) */
 
-.dark .ud-icon-btn:hover {
-  background: #1f2937;
-  color: #f9fafb;
-}
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-notif-dot {
   position: absolute;
@@ -315,40 +277,34 @@
   top: calc(100% + 8px);
   right: 0;
   width: 300px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--card-bg-color);
+  border: 1px solid var(--border-color);
   border-radius: 14px;
   box-shadow: 0 20px 40px rgba(0,0,0,0.1);
   z-index: 100;
   overflow: hidden;
 }
 
-.dark .ud-notif-panel {
-  background: #1f2937;
-  border-color: #374151;
-}
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-notif-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0.85rem 1rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-color);
   font-weight: 600;
   font-size: 0.875rem;
-  color: #111827;
+  color: var(--text-color);
 }
 
-.dark .ud-notif-header {
-  border-bottom-color: #374151;
-  color: #f9fafb;
-}
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-notif-header button {
   background: none;
   border: none;
   cursor: pointer;
-  color: #9ca3af;
+  color: var(--text-color-light);
 }
 
 .ud-notif-item {
@@ -359,7 +315,7 @@
 
 .ud-notif-item:last-child { border-bottom: none; }
 
-.dark .ud-notif-item { border-bottom-color: #374151; }
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-notif-unread {
   background: #6366f108;
@@ -367,16 +323,16 @@
 
 .ud-notif-text {
   font-size: 0.82rem;
-  color: #374151;
+  color: var(--text-color);
   margin: 0 0 3px;
   line-height: 1.4;
 }
 
-.dark .ud-notif-text { color: #d1d5db; }
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-notif-time {
   font-size: 0.73rem;
-  color: #9ca3af;
+  color: var(--text-color-light);
   margin: 0;
 }
 
@@ -409,11 +365,11 @@
   gap: 0.5rem;
   font-size: 1rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-color);
   margin: 0 0 1rem;
 }
 
-.dark .ud-section-title { color: #d1d5db; }
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-page-title {
   display: flex;
@@ -421,11 +377,11 @@
   gap: 0.5rem;
   font-size: 1.2rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-color);
   margin: 0;
 }
 
-.dark .ud-page-title { color: #f9fafb; }
+/* removed dark mode override (handled by CSS variables) */
 
 /* ── Stat Cards ── */
 .ud-stats-grid {
@@ -435,8 +391,8 @@
 }
 
 .ud-stat-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--card-bg-color);
+  border: 1px solid var(--border-color);
   border-radius: 14px;
   padding: 1.25rem;
   display: flex;
@@ -456,15 +412,9 @@
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.dark .ud-stat-card {
-  background: #111827;
-  border-color: #1f2937;
-}
+/* removed dark mode override (handled by CSS variables) */
 
-.dark .ud-stat-card:hover {
-  border-color: #4f46e5;
-  box-shadow: 0 8px 24px rgba(99,102,241,0.12);
-}
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-stat-icon {
   width: 42px;
@@ -481,7 +431,7 @@
 
 .ud-stat-label {
   font-size: 0.78rem;
-  color: #9ca3af;
+  color: var(--text-color-light);
   margin: 0 0 2px;
   font-weight: 500;
   text-transform: uppercase;
@@ -491,16 +441,16 @@
 .ud-stat-value {
   font-size: 1.75rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-color);
   margin: 0 0 2px;
   line-height: 1.1;
 }
 
-.dark .ud-stat-value { color: #f9fafb; }
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-stat-sub {
   font-size: 0.75rem;
-  color: #9ca3af;
+  color: var(--text-color-light);
   margin: 0;
 }
 
@@ -517,8 +467,8 @@
   align-items: center;
   gap: 0.5rem;
   padding: 1rem 0.5rem;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--card-bg-color);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   text-decoration: none;
   transition: all 0.2s ease;
@@ -549,10 +499,7 @@
   opacity: 1;
 }
 
-.dark .ud-quick-card {
-  background: #111827;
-  border-color: #1f2937;
-}
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-quick-icon {
   width: 42px;
@@ -567,12 +514,12 @@
 .ud-quick-label {
   font-size: 0.78rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-color);
   text-align: center;
   transition: color 0.25s ease;
 }
 
-.dark .ud-quick-label { color: #d1d5db; }
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-quick-arrow {
   position: absolute;
@@ -591,8 +538,8 @@
 }
 
 .ud-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--card-bg-color);
+  border: 1px solid var(--border-color);
   border-radius: 14px;
   padding: 1.25rem;
   display: flex;
@@ -600,10 +547,7 @@
   gap: 0.85rem;
 }
 
-.dark .ud-card {
-  background: #111827;
-  border-color: #1f2937;
-}
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-card-head {
   display: flex;
@@ -614,12 +558,12 @@
 .ud-card-head h3 {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-color);
   margin: 0;
   flex: 1;
 }
 
-.dark .ud-card-head h3 { color: #d1d5db; }
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-card-icon {
   width: 30px;
@@ -657,34 +601,32 @@
 
 .ud-list-item:hover { background: #f9fafb; }
 
-.dark .ud-list-item {
-  border-color: #1f2937;
-}
+/* removed dark mode override (handled by CSS variables) */
 
-.dark .ud-list-item:hover { background: #1f2937; }
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-list-title {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--text-color);
   margin: 0 0 4px;
 }
 
-.dark .ud-list-title { color: #f9fafb; }
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-list-meta {
   display: flex;
   align-items: center;
   gap: 0.35rem;
   font-size: 0.75rem;
-  color: #9ca3af;
+  color: var(--text-color-light);
   margin: 0;
   flex-wrap: wrap;
 }
 
 .ud-empty {
   font-size: 0.85rem;
-  color: #9ca3af;
+  color: var(--text-color-light);
   text-align: center;
   padding: 1rem 0;
 }
@@ -704,13 +646,13 @@
 .ud-badge-blue   { background: #dbeafe; color: #1e40af; }
 .ud-badge-yellow { background: #fef3c7; color: #92400e; }
 .ud-badge-red    { background: #fee2e2; color: #991b1b; }
-.ud-badge-gray   { background: #f3f4f6; color: #6b7280; }
+.ud-badge-gray   { background: #f3f4f6; color: var(--text-color-light); }
 
-.dark .ud-badge-green  { background: #064e3b; color: #6ee7b7; }
-.dark .ud-badge-blue   { background: #1e3a5f; color: #93c5fd; }
-.dark .ud-badge-yellow { background: #78350f; color: #fde68a; }
-.dark .ud-badge-red    { background: #7f1d1d; color: #fca5a5; }
-.dark .ud-badge-gray   { background: #1f2937; color: #9ca3af; }
+/* removed dark mode override (handled by CSS variables) */
+/* removed dark mode override (handled by CSS variables) */
+/* removed dark mode override (handled by CSS variables) */
+/* removed dark mode override (handled by CSS variables) */
+/* removed dark mode override (handled by CSS variables) */
 
 /* ── Tab header ── */
 .ud-tab-header {
@@ -752,8 +694,8 @@
 }
 
 .ud-item-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--card-bg-color);
+  border: 1px solid var(--border-color);
   border-radius: 14px;
   padding: 1.25rem;
   display: flex;
@@ -768,14 +710,9 @@
   transform: translateY(-2px);
 }
 
-.dark .ud-item-card {
-  background: #111827;
-  border-color: #1f2937;
-}
+/* removed dark mode override (handled by CSS variables) */
 
-.dark .ud-item-card:hover {
-  border-color: #4f46e5;
-}
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-item-top {
   display: flex;
@@ -796,19 +733,19 @@
 .ud-item-title {
   font-size: 1rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-color);
   margin: 0;
   line-height: 1.3;
 }
 
-.dark .ud-item-title { color: #f9fafb; }
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-item-meta {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
   font-size: 0.78rem;
-  color: #9ca3af;
+  color: var(--text-color-light);
 }
 
 .ud-item-meta span {
@@ -839,11 +776,11 @@
 
 .ud-select {
   padding: 0.45rem 0.75rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-color);
   border-radius: 9px;
   font-size: 0.82rem;
-  background: #fff;
-  color: #374151;
+  background: var(--card-bg-color);
+  color: var(--text-color);
   cursor: pointer;
   outline: none;
   transition: border-color 0.18s;
@@ -851,70 +788,60 @@
 
 .ud-select:focus { border-color: #6366f1; }
 
-.dark .ud-select {
-  background: #1f2937;
-  border-color: #374151;
-  color: #d1d5db;
-}
+/* removed dark mode override (handled by CSS variables) */
 
 /* ── Table ── */
 .ud-table-wrap {
   overflow-x: auto;
   border-radius: 14px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-color);
 }
 
-.dark .ud-table-wrap { border-color: #1f2937; }
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-table {
   width: 100%;
   border-collapse: collapse;
-  background: #fff;
+  background: var(--card-bg-color);
   font-size: 0.85rem;
 }
 
-.dark .ud-table { background: #111827; }
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-table thead tr {
   background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-color);
 }
 
-.dark .ud-table thead tr {
-  background: #1f2937;
-  border-bottom-color: #374151;
-}
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-table th {
   padding: 0.9rem 1rem;
   text-align: left;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--text-color-light);
   text-transform: uppercase;
   letter-spacing: 0.4px;
   white-space: nowrap;
 }
 
-.dark .ud-table th { color: #9ca3af; }
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-table td {
   padding: 0.85rem 1rem;
   border-bottom: 1px solid #f3f4f6;
-  color: #374151;
+  color: var(--text-color);
   vertical-align: middle;
 }
 
-.dark .ud-table td {
-  border-bottom-color: #1f2937;
-  color: #d1d5db;
-}
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-table tbody tr:last-child td { border-bottom: none; }
 
 .ud-table tbody tr:hover td { background: #f9fafb; }
 
-.dark .ud-table tbody tr:hover td { background: #1a2332; }
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-table-type {
   display: inline-flex;
@@ -923,14 +850,14 @@
   font-weight: 600;
 }
 
-.ud-table-title { font-weight: 600; color: #111827; }
+.ud-table-title { font-weight: 600; color: var(--text-color); }
 
-.dark .ud-table-title { color: #f9fafb; }
+/* removed dark mode override (handled by CSS variables) */
 
 .ud-table-empty {
   text-align: center;
   padding: 2.5rem 1rem;
-  color: #9ca3af;
+  color: var(--text-color-light);
 }
 
 /* ── Responsive ── */
