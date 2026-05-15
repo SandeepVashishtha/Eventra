@@ -22,7 +22,9 @@ import {
   Book,
   HelpCircle,
   ChevronDown,
-  MousePointer
+  MousePointer,
+  Sun,
+  Moon
 } from "lucide-react";
 
 // --- Helpers to reduce complexity ---
@@ -691,16 +693,24 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
           {/* Right Group: Auth Controls and Mobile Toggle */}
           <div className="hidden lg:flex items-center ml-auto z-20">
+          
+          {/* Theme Toggle Button */}
+          <button
+           onClick={toggleTheme}
+           className="text-xl text-gray-700 dark:text-white hover:opacity-70 transition-opacity mr-2"
+            >
+           {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+</button>
 
             {/* Cursor Toggle Button */}
            <button
-  onClick={toggleCursor}
-  className="flex items-center gap-1 px-2 py-1 mr-3
-  text-s font-normal
-  bg-black text-white
-  rounded-md
-  hover:bg-zinc-800
-  transition-all"
+             onClick={toggleCursor}
+              className="flex items-center gap-1 px-2 py-1 mr-3
+             text-s font-normal
+              bg-black text-white
+             rounded-md
+              hover:bg-zinc-800
+              transition-all"
 >
   <MousePointer className="w-4 h-4" />
 
