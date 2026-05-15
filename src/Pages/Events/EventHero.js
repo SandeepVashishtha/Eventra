@@ -62,7 +62,7 @@ export default function EventHero({
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 text-center z-10">
         <h1
-          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight px-4 sm:px-0 text-black"
+          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight px-4 sm:px-0 text-black dark:text-white"
           style={{ fontFamily: '"Anton", sans-serif' }}
         >
           Discover <span className="text-indigo-600">Amazing Events</span>
@@ -100,7 +100,7 @@ export default function EventHero({
 
         <div className="mt-8 sm:mt-12 flex justify-center gap-3 sm:gap-5 flex-wrap px-4 sm:px-0">
           <button
-            className="relative px-5 sm:px-7 py-2.5 sm:py-3.5 rounded-xl text-sm sm:text-base font-semibold text-black shadow-lg overflow-hidden group bg-blue-100 hover:bg-blue-200 transition-all duration-300"
+            className="relative px-5 sm:px-7 py-2.5 sm:py-3.5 rounded-xl text-sm sm:text-base font-semibold text-black dark:text-white shadow-lg overflow-hidden group bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 dark:hover:bg-blue-900/60 transition-all duration-300"
             onClick={scrollToCard}
           >
             <span className="relative flex items-center">
@@ -111,7 +111,7 @@ export default function EventHero({
 
           <button
             onClick={() => navigate("/create-event")}
-            className="relative px-5 sm:px-7 py-2.5 sm:py-3.5 rounded-xl text-sm sm:text-base font-medium text-black shadow-md hover:shadow-lg bg-green-100 hover:bg-green-200 transition-all duration-300"
+            className="relative px-5 sm:px-7 py-2.5 sm:py-3.5 rounded-xl text-sm sm:text-base font-medium text-black dark:text-white shadow-md hover:shadow-lg bg-green-100 dark:bg-green-900/40 hover:bg-green-200 dark:hover:bg-green-900/60 transition-all duration-300"
           >
             <span className="relative flex items-center">
               <Users className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-2" />

@@ -122,10 +122,10 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
           // UPDATED: Title text color and gradient
-          className="text-4xl sm:text-6xl font-extrabold mb-6 mt-6 text-black leading-tight"
+          className="text-4xl sm:text-6xl font-extrabold mb-6 mt-6 text-black dark:text-white leading-tight"
           style={{ fontFamily: '"Anton", sans-serif' }}
         >
-          Discover Amazing Projects
+          Discover <span className="text-indigo-600">Amazing Projects</span>
         </motion.h1>
 
         <motion.p
@@ -150,7 +150,7 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
                 navigate("/submit-project");
               }
             }}
-            className="bg-pink-100 text-black px-7 py-3 rounded-2xl font-semibold flex items-center gap-3 shadow-md hover:bg-pink-200 hover:shadow-lg transition-all duration-300"
+            className="bg-pink-100 dark:bg-pink-900/40 text-black dark:text-white px-7 py-3 rounded-2xl font-semibold flex items-center gap-3 shadow-md hover:bg-pink-200 dark:hover:bg-pink-900/60 hover:shadow-lg transition-all duration-300"
             whileTap={{ scale: 0.95 }}
             whileHover={{ scale: 1.05 }}
             initial="rest"
@@ -171,7 +171,7 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
           </motion.button>
           {/* Explore Projects Button */}
           <motion.button
-          className="bg-yellow-100 text-black px-6 py-3 rounded-2xl font-semibold flex items-center gap-2 shadow-md hover:bg-yellow-200 hover:shadow-lg transition-all duration-300"
+          className="bg-yellow-100 dark:bg-yellow-900/40 text-black dark:text-white px-6 py-3 rounded-2xl font-semibold flex items-center gap-2 shadow-md hover:bg-yellow-200 dark:hover:bg-yellow-900/60 hover:shadow-lg transition-all duration-300"
           whileTap={{ scale: 0.95}}
           whileHover={{ scale: 1.05 }}
           onClick={scrollToCard}
