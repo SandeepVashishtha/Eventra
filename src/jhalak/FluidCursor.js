@@ -1,8 +1,14 @@
 'use client';
 import React, { useEffect, useRef } from 'react';
 
-const FluidCursor = () => {
+const FluidCursor = ({ enabled = true }) => {
   const canvasRef = useRef(null);
+  const isEnabledRef = useRef(enabled);
+
+  // Update ref when prop changes
+  useEffect(() => {
+    isEnabledRef.current = enabled;
+  }, [enabled]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -693,6 +699,12 @@ const FluidCursor = () => {
     let colorUpdateTimer = 0.0;
 
     function update() {
+      // Pause animation if disabled to save resources
+      if (!isEnabledRef.current) {
+        animationFrameId = requestAnimationFrame(update);
+        return;
+      }
+
       const dt = calcDeltaTime();
       if (resizeCanvas()) initFramebuffers();
       updateColors(dt);
@@ -959,6 +971,7 @@ const FluidCursor = () => {
     }
 
     const handleMouseDown = (e) => {
+      if (!isEnabledRef.current) return;
       let pointer = pointers[0];
       let posX = e.clientX * (canvas.width / canvas.clientWidth);
       let posY = e.clientY * (canvas.height / canvas.clientHeight);
@@ -967,6 +980,7 @@ const FluidCursor = () => {
     };
 
     const handleMouseMove = (e) => {
+      if (!isEnabledRef.current) return;
       let pointer = pointers[0];
       let posX = e.clientX * (canvas.width / canvas.clientWidth);
       let posY = e.clientY * (canvas.height / canvas.clientHeight);
@@ -975,6 +989,7 @@ const FluidCursor = () => {
     };
 
     const handleTouchStart = (e) => {
+      if (!isEnabledRef.current) return;
       const touches = e.targetTouches;
       let pointer = pointers[0];
       for (let i = 0; i < touches.length; i++) {
@@ -985,6 +1000,7 @@ const FluidCursor = () => {
     };
 
     const handleTouchMove = (e) => {
+      if (!isEnabledRef.current) return;
       const touches = e.targetTouches;
       let pointer = pointers[0];
       for (let i = 0; i < touches.length; i++) {
@@ -1020,7 +1036,7 @@ const FluidCursor = () => {
   }, []);
 
   return (
-    <div className='fixed top-0 left-0 z-[9999] pointer-events-none'>
+    <div className={`fixed top-0 left-0 z-[9999] pointer-events-none transition-opacity duration-300 ${enabled ? 'opacity-100' : 'opacity-0'}`}>
       <canvas ref={canvasRef} id='fluid' className='w-screen h-screen' />
     </div>
   );
