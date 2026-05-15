@@ -246,23 +246,22 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
             </Link>
           </div>
         )}
-        <hr className="my-3" />
-        <button
-          onClick={toggleTheme}
-          className="flex items-center gap-3
-          w-full
-          px-4 py-2.5
-          rounded-lg
-          bg-black dark:bg-white
-          text-white dark:text-black
-          hover:bg-zinc-800 dark:hover:bg-zinc-200
-          transition-colors
-          font-medium
-          mb-2"
-        >
-          {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          {isDarkMode ? "Turn Dark Mode OFF" : "Turn Dark Mode ON"}
-        </button>
+        <div className="flex gap-2 mb-2">
+          <button
+            onClick={toggleTheme}
+            className="flex-1 flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg bg-black dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors font-medium"
+          >
+            {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            {isDarkMode ? "Dark OFF" : "Dark ON"}
+          </button>
+          <button
+            onClick={toggleCursor}
+            className="flex-1 flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg bg-black dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors font-medium"
+          >
+            <MousePointer className="w-5 h-5" />
+            {cursorEnabled ? "Cursor OFF" : "Cursor ON"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -411,18 +410,24 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
 
           <div className="hidden lg:flex items-center ml-auto z-20">
-            {/* Dark Mode Toggle Button */}
+            {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="flex items-center gap-1 px-2 py-1 mr-3
-              text-s font-normal
-              bg-black text-white dark:bg-white dark:text-black
-              rounded-md
-              hover:bg-zinc-800 dark:hover:bg-zinc-200
-              transition-all"
+              title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              className="flex items-center gap-1 px-2 py-1 mr-2 text-xs font-normal bg-black text-white dark:bg-white dark:text-black rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all"
             >
               {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              {isDarkMode ? "OFF" : "ON"}
+              {isDarkMode ? "DARK" : "LIGHT"}
+            </button>
+
+            {/* Cursor Toggle */}
+            <button
+              onClick={toggleCursor}
+              title={cursorEnabled ? "Disable Fluid Cursor" : "Enable Fluid Cursor"}
+              className="flex items-center gap-1 px-2 py-1 mr-3 text-xs font-normal bg-black text-white dark:bg-white dark:text-black rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all"
+            >
+              <MousePointer className="w-4 h-4" />
+              {cursorEnabled ? "CURSOR" : "STATIC"}
             </button>
 
             <div className="flex items-center space-x-2 ml-2">
