@@ -1,4 +1,4 @@
-# Eventra 🎉
+# Eventra
 
 **A Modern Event Management Platform for Builders and Communities**
 
@@ -13,25 +13,36 @@ Eventra is a comprehensive, open-source platform designed to empower organizers 
 
 ## Table of Contents
 
-- [Live Demo](#-live-demo)
-- [Project Insights](#-project-insights)
-- [Features](#-features)
-- [Tech Stack](#-tech-stack)
-- [Getting Started](#-getting-started)
-- [Project Structure](#-project-structure)
-- [Deployment](#-deployment)
-- [Contributing](#-contributing)
-- [License](#-license)
-- [Contributors](#-contributors)
+- [Overview](#overview)
+- [Live Demo](#live-demo)
+- [API Reference](#api-reference)
+- [Project Insights](#project-insights)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
+- [Google OAuth Setup](#google-oauth-setup)
+- [Environment Variables](#environment-variables)
+- [Project Structure](#project-structure)
+- [Deployment](#deployment)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contributors](#contributors)
+
+## Overview
+
+Eventra helps communities and organizers run events end-to-end, including registrations, dashboards, hackathon workflows, and feedback collection. The frontend is a React single-page app, and the backend is a Spring Boot REST API documented with Swagger.
 
 ## Live Demo
 
-## 🌐 Live Demo
+- **Website**: [https://eventra.sandeepvashishtha.in/](https://eventra.sandeepvashishtha.in/)
+- **Backend Repo**: [https://github.com/SandeepVashishtha/Eventra-Backend](https://github.com/SandeepVashishtha/Eventra-Backend)
+- **Backend API**: [https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net](https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net)
+- **API Documentation**: [Swagger UI](https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html)
 
-- **Frontend**: [https://eventra-psi.vercel.app/](https://eventra-psi.vercel.app/)
-- **Backend Repo**: https://github.com/SandeepVashishtha/Eventra-Backend
-- **Backend API**: [https://eventra-backend-dgcae3etebbag8ft.centralindia-01.azurewebsites.net](https://eventra-backend-dgcae3etebbag8ft.centralindia-01.azurewebsites.net)
-- **API Documentation**: [Backend Swagger UI](https://eventra-backend-dgcae3etebbag8ft.centralindia-01.azurewebsites.net/swagger-ui.html)
+## API Reference
+
+- **Base URL**: [https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net](https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net)
+- **Swagger**: [https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html](https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html)
 
 
 ## Project Insights
@@ -39,13 +50,13 @@ Eventra is a comprehensive, open-source platform designed to empower organizers 
 <table align="center">
   <thead align="center">
     <tr>
-      <td><b>🌟 Stars</b></td>
-      <td><b>🍴 Forks</b></td>
-      <td><b>🐛 Issues</b></td>
-      <td><b>🔔 Open PRs</b></td>
-      <td><b>🔕 Closed PRs</b></td>
-      <td><b>🛠️ Languages</b></td>
-      <td><b>👥 Contributors</b></td>
+      <td><b>Stars</b></td>
+      <td><b>Forks</b></td>
+      <td><b>Issues</b></td>
+      <td><b>Open PRs</b></td>
+      <td><b>Closed PRs</b></td>
+      <td><b>Languages</b></td>
+      <td><b>Contributors</b></td>
     </tr>
   </thead>
   <tbody>
@@ -84,7 +95,7 @@ Eventra is a comprehensive, open-source platform designed to empower organizers 
 | **React Router** for Routing | **Java 17** | **Vercel** for Frontend Hosting |
 | **Framer Motion** for Animations | **Spring Security & JWT** | **Maven** for Build Automation |
 | **Tailwind CSS** (or CSS) for Styling | **MySQL & H2** Databases | **OpenAPI 3.0** for API Docs |
-| **Create React App** | **Spring Data JPA** | |
+| **Create React App** | **Spring Data JPA** | **Azure App Service** for Backend Hosting |
 
 ## Getting Started
 
@@ -109,13 +120,9 @@ Follow these steps to set up and run the frontend application on your local mach
     ```
 
 3.  **Configure Environment Variables:**
-    Create a `.env` file in the root of the project and add the backend API URL. The backend server runs on port `8080` by default.
+  Set up your local `.env` file as described in the [Environment Variables](#environment-variables) section. The backend server runs on port `8080` by default.
 
-    ```bash
-    # .env
-    REACT_APP_API_URL=http://localhost:8080/api
-    ```
-    > **Note:** For the backend setup instructions, please refer to the [backend repository's README](https://github.com/SandeepVashishtha/Eventra-Backend).
+  > **Note:** For the backend setup instructions, please refer to the [backend repository's README](https://github.com/SandeepVashishtha/Eventra-Backend).
 
 4.  **Run the Development Server:**
     ```bash
@@ -155,10 +162,20 @@ Follow these steps to enable Google Sign-In for the project:
    - For production, add your deployed domain in **Authorized JavaScript origins**.
 
 
-## 🏗️ Project Structure
+## Environment Variables
+
+Create a `.env` file in the project root and add the variables below.
+
+```env
+REACT_APP_API_URL=http://localhost:8080/api
+REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id_here
 ```
+
+## Project Structure
+
 The frontend codebase is organized to be scalable and maintainable.
 
+```
 Eventra/
 ├── public/                  # Static assets and index.html
 └── src/
@@ -177,7 +194,7 @@ Eventra/
 └── index.js             # Entry point of the React application
 ```
 
-## ☁️ Deployment
+## Deployment
 
 This project is configured for easy deployment on **Vercel**.
 
@@ -189,7 +206,7 @@ This project is configured for easy deployment on **Vercel**.
     - `REACT_APP_API_URL`: The URL of your deployed backend API.
 4.  Click **Deploy**. That's it!
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions from the community! To get started, please follow these guidelines.
 
@@ -214,11 +231,11 @@ We welcome contributions from the community! To get started, please follow these
 - To keep your assignment, please **open a draft Pull Request** within the 7-day period to show progress.
 - For more details, see our [Auto-unassign Documentation](.github/AUTO_UNASSIGN.md).
 
-## 📄 License
+## License
 
 This project is licensed under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for details.
 
-## 👥 Contributors
+## Contributors
 
 A huge thank you to everyone who has contributed to Eventra! Your efforts make this project possible.
 
@@ -255,4 +272,21 @@ A huge thank you to everyone who has contributed to Eventra! Your efforts make t
 </table>
 
 ---
-**Built with ❤️ by the Eventra Team**
+Built with care by the Eventra Team
+## 🚀 Local Setup (Windows)
+
+## Frontend Setup Instructions
+
+Follow these steps to run the Eventra frontend locally:
+
+### Prerequisites
+- Node.js (v18 or later recommended)
+- npm (comes with Node.js)
+- Git
+
+### Steps to Run Locally
+
+1. Clone the repository
+```bash
+git clone https://github.com/SandeepVashishtha/Eventra.git
+

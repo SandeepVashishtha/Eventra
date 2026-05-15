@@ -10,6 +10,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
 import Chatbot from "./components/Chatbot";
 import FluidCursor from "./jhalak/FluidCursor";
+import AppRoutes from "./components/AppRoutes";
 
 // --------------- ROUTES
 import AppRoutes from "./components/AppRoutes";

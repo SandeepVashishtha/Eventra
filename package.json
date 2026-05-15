@@ -18,6 +18,7 @@
     "react-router-dom": "^6.8.0",
     "react-scripts": "^5.0.1",
     "react-toastify": "^11.0.5",
+    "recharts": "^3.8.1",
     "zxcvbn": "^4.4.2"
   },
   "scripts": {
@@ -26,6 +27,7 @@
     "build": "react-scripts build",
     "build:fast": "set \"GENERATE_SOURCEMAP=false\" && set \"DISABLE_ESLINT_PLUGIN=true\" && set \"NODE_OPTIONS=--no-deprecation --max-old-space-size=4096\" && react-scripts build",
     "test": "react-scripts test",
+    "test:pagination": "node --no-warnings tests/eventPaginationUtils.test.mjs",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
