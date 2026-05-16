@@ -128,7 +128,7 @@ const EventCard = ({ event }) => {
 
       {/* Description */}
       <div className="px-8 py-6 border-b border-gray-200/60 dark:border-gray-700/50 bg-gradient-to-r from-transparent to-indigo-50/30 dark:to-indigo-950/30">
-        <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-3 leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors duration-300">
+        <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors duration-300">
           {event.description}
         </p>
       </div>

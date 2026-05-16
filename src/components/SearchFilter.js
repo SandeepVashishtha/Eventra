@@ -118,14 +118,15 @@ const SearchFilter = () => {
   return (
     <div className="search-filter-container bg-gray-50 dark:bg-black">
       <div className="search-header">
-        <motion.h1
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="search-title"
-        >
-          Discover Amazing Events 🎯
-        </motion.h1>
+       <motion.h1
+  initial={{ opacity: 0, y: -20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.6 }}
+  className="text-5xl font-bold"
+  style={{ color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
+>
+  {"Discover Amazing Events 🎯"}
+</motion.h1>
         <p className="search-subtitle">Find the perfect event for your interests</p>
       </div>
 
@@ -143,7 +144,7 @@ const SearchFilter = () => {
             placeholder="Search events, topics, or keywords..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
+            className="search-input"+655544
           />
         </div>
       </motion.div>

@@ -445,19 +445,6 @@ const WhatsHappening = () => {
             )
           )}
         </div>
-
-        {/* Add progress animation keyframes - Updated timing */}
-        <style dangerouslySetInnerHTML={{ __html: `
-          @keyframes progress {
-            from {
-              transform: scale(0);
-            }
-            to {
-              transform: scale(1.2);
-            }
-          }
-        ` }} />
-
       </div>
     </section>
   );

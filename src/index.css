@@ -83,9 +83,13 @@ body {
   font-size: var(--font-body);
   font-weight: var(--fw-regular);
 }
-body.dark .pastel-grid-bg {
+.dark .pastel-grid-bg {
+  /* Use a solid dark background in dark mode and remove the light pastel grid image
+     which remains visible otherwise. This ensures pages that use the pastel grid
+     utility (like Contributors) render correctly in dark mode. */
   background-color: var(--bg-color);
-  opacity: 0.4;
+  background-image: none !important;
+  opacity: 1;
 }
 
 *,
@@ -206,3 +210,36 @@ input::-webkit-password-toggle { display: none !important; }
   background-size: 40px 40px, 40px 40px, 80px 80px, 80px 80px;
 }
 
+/* Shake Animation (Global) */
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-5px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+.animate-shake {
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* Progress Animation (Global) */
+@keyframes progress {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1.2);
+  }
+}

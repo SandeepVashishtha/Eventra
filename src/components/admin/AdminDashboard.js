@@ -10,6 +10,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import './AdminDashboard.css';
+import { toast } from 'react-toastify';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -82,14 +83,8 @@ const AdminDashboard = () => {
   const [searchUser,  setSearchUser]  = useState('');
   const [searchEvent, setSearchEvent] = useState('');
   const [confirmModal, setConfirmModal] = useState({ open: false, type: '', id: null });
-  const [toast, setToast] = useState(null);
 
   const firstName = user?.firstName || user?.username || 'Admin';
-
-  const showToast = (msg, type = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  };
 
   /* Stats */
   const totalUsers  = users.length;
@@ -106,7 +101,7 @@ const AdminDashboard = () => {
     if (type === 'user')  setUsers(prev  => prev.filter(u => u.id !== id));
     if (type === 'event') setEvents(prev => prev.filter(e => e.id !== id));
     setConfirmModal({ open: false, type: '', id: null });
-    showToast(`${type === 'user' ? 'User' : 'Event'} deleted successfully.`);
+    toast.success(`${type === 'user' ? 'User' : 'Event'} deleted successfully.`);
   };
 
   const filteredUsers  = users.filter(u =>
@@ -185,19 +180,7 @@ const AdminDashboard = () => {
           </div>
         </header>
 
-        {/* Toast */}
-        <AnimatePresence>
-          {toast && (
-            <motion.div
-              className={`ad-toast ${toast.type === 'error' ? 'ad-toast-error' : ''}`}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-            >
-              <CheckCircle size={15} /> {toast.msg}
-            </motion.div>
-          )}
-        </AnimatePresence>
+
 
         <div className="ad-content">
           <AnimatePresence mode="wait">
@@ -316,7 +299,7 @@ const AdminDashboard = () => {
                             <td>
                               <div className="ad-action-btns">
                                 {hasPermission('EDIT_USER') && (
-                                  <button className="ad-icon-action" title="Edit" onClick={() => showToast('Edit coming soon', 'info')}>
+                                  <button className="ad-icon-action" title="Edit" onClick={() => toast.info('Edit coming soon')}>
                                     <Edit2 size={14} />
                                   </button>
                                 )}
@@ -380,7 +363,7 @@ const AdminDashboard = () => {
                             <td>
                               <div className="ad-action-btns">
                                 {hasPermission('EDIT_EVENT') && (
-                                  <button className="ad-icon-action" title="Edit" onClick={() => showToast('Edit coming soon', 'info')}>
+                                  <button className="ad-icon-action" title="Edit" onClick={() => toast.info('Edit coming soon')}>
                                     <Edit2 size={14} />
                                   </button>
                                 )}
