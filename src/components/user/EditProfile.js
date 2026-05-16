@@ -1,6 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { useContext } from "react";
-import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 
 import {
@@ -85,7 +83,7 @@ const EditProfile = () => {
   const [form, setForm] = useState(user || initialFormState);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [loadingInitial, setLoadingInitial] = useState(false);
+  const [loadingInitial] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [currentSkillInput, setCurrentSkillInput] = useState("");

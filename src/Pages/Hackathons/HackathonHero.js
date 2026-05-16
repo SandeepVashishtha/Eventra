@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, Sparkles, Users, Award, Code2, Calendar } from "lucide-react";
+import { X, Sparkles, Users, Award, Code2, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
@@ -90,7 +90,7 @@ export default function HackathonHero({
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
-          className="text-4xl sm:text-6xl font-extrabold leading-tight text-black"
+          className="text-4xl sm:text-6xl font-extrabold leading-tight text-black dark:text-white"
           style={{ fontFamily: '"Anton", sans-serif' }}
         >
           Discover Amazing Hackathons
@@ -192,6 +192,7 @@ export default function HackathonHero({
       </div>
 
       {/* ======================= STATS SECTION ======================= */}
+      {searchQuery.trim() === "" && selectedTags.length === 0 && (
       <div
         className="relative max-w-6xl mx-auto px-4 sm:px-6 mt-12 sm:mt-16 md:mt-20 mb-12 sm:mb-16 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8"
         data-aos="fade-up"
@@ -231,7 +232,7 @@ export default function HackathonHero({
             <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-sky-300/10 to-blue-300/10 dark:from-sky-500/20 dark:to-blue-500/20 blur-2xl opacity-40 -z-10" />
           </motion.div>
         ))}
-      </div>
+      </div>)}
     </div>
   );
 }
