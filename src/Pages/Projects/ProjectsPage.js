@@ -8,6 +8,9 @@ import ProjectCTA from "./ProjectCTA";
 // Import mock data directly (assuming it's named mockProjectsData.json in the same folder as ProjectsPage.js)
 import mockProjects from "./mockProjectsData.json";
 
+import ModernSearchInput from "../../components/common/ModernSearchInput";
+import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
+
 // Skeleton loader for project cards while data is loading
 const SkeletonCard = () => (
   <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden animate-pulse">
@@ -15,7 +18,7 @@ const SkeletonCard = () => (
     <div className="p-6">
       <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded w-3/4 mb-4"></div>
       <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-full mb-2"></div>
-      <div className="h-4 w-5/6 bg-gray-100 dark:bg-gray-600 rounded w-5/6 mb-4"></div>
+      <div className="h-4 w-5/6 bg-gray-100 dark:bg-gray-600 rounded mb-4"></div>
       <div className="flex flex-wrap gap-2 mb-4">
         <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-16"></div>
         <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-24"></div>

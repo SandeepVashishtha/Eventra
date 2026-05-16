@@ -70,7 +70,7 @@ function App() {
               toggleCursor={toggleCursor}
             />
 
-            <main className="min-h-screen bg-white dark:bg-black">
+            <main className="min-h-screen bg-white dark:bg-black ">
               <AppRoutes />
             </main>
 
