@@ -21,29 +21,7 @@ import {
   FaDiscord,
   FaRegComment,
 } from "react-icons/fa";
-
-// Toast notification component
-const Toast = ({ message, type, onClose }) => {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 4000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  return (
-      <motion.div
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -50 }}
-          className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg ${
-              type === "success"
-                  ? "bg-green-500 text-white"
-                  : "bg-red-500 text-white"
-          }`}
-      >
-        <p className="font-medium">{message}</p>
-      </motion.div>
-  );
-};
+import { toast } from "react-toastify";
 
 //Social media links
 const socialLinks = [
@@ -391,7 +369,6 @@ const FeedbackPage = () => {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [toast, setToast] = useState(null);
   const [isFocused, setIsFocused] = useState(false);
   const [submittedFeedback, setSubmittedFeedback] = useState([]);
   const formRef = useRef(null);
@@ -410,9 +387,6 @@ const FeedbackPage = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  const showToast = (message, type) => {
-    setToast({ message, type });
-  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -501,7 +475,7 @@ const FeedbackPage = () => {
       }
 
       // Show error toast
-      showToast("Please fill in all required fields correctly", "error");
+      toast.error("Please fill in all required fields correctly");
       return;
     }
 
@@ -527,9 +501,8 @@ const FeedbackPage = () => {
       console.log("Feedback submitted:", payload);
       console.log("All feedback:", [...submittedFeedback, payload]);
 
-      showToast(
-          "Thank you for your feedback! We've received your submission and will review it shortly",
-          "success"
+      toast.success(
+          "Thank you for your feedback! We've received your submission and will review it shortly"
       );
 
       setFormData({
@@ -542,9 +515,8 @@ const FeedbackPage = () => {
       setErrors({});
       setIsSubmitting(false);
     } catch (error) {
-      showToast(
-          "There was an error submitting your feedback. Please try again.",
-          "error"
+      toast.error(
+          "There was an error submitting your feedback. Please try again."
       );
       setIsSubmitting(false);
     }
@@ -552,16 +524,6 @@ const FeedbackPage = () => {
 
   return (
       <div className="pastel-grid-bg min-h-screen bg-white dark:bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        <AnimatePresence>
-          {toast && (
-              <Toast
-                  message={toast.message}
-                  type={toast.type}
-                  onClose={() => setToast(null)}
-              />
-          )}
-        </AnimatePresence>
-
         <div className="max-w-4xl w-full mx-auto">
           <motion.div
               initial={{ opacity: 0, y: 20 }}

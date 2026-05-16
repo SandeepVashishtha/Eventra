@@ -25,52 +25,26 @@ import {
   FaLinkedin,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
 
 
-// Toast Component
-const Toast = ({ message, type, onClose }) => {
-  return (
-    <div
-      className={`fixed bottom-4 left-4 p-4 rounded-md shadow-lg text-white ${
-        type === "success" ? "bg-green-500" : "bg-red-500"
-      } transition-opacity duration-300`}
-    >
-      <div className="flex items-center justify-between">
-        <span>{message}</span>
-        <button
-          onClick={onClose}
-          className="ml-4 text-white hover:text-gray-200"
-        >
-          &times;
-        </button>
-      </div>
-    </div>
-  );
-};
+
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [toast, setToast] = useState({ show: false, message: "", type: "" });
-
-  const showToast = (message, type = "success") => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast({ show: false, message: "", type: "" });
-    }, 3000);
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!email) {
-      showToast("Please enter your email address", "error");
+      toast.error("Please enter your email address");
       return;
     }
 
     if (!/\S+@\S+\.\S+/.test(email)) {
-      showToast("Please enter a valid email address", "error");
+      toast.error("Please enter a valid email address");
       return;
     }
 
@@ -83,10 +57,10 @@ const Footer = () => {
       // In a real application, you would make an API call to your backend here
       console.log("Submitting email:", email);
 
-      showToast("Thank you for subscribing to our newsletter!");
+      toast.success("Thank you for subscribing to our newsletter!");
       setEmail("");
     } catch (error) {
-      showToast("Something went wrong. Please try again.", "error");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -355,14 +329,7 @@ const Footer = () => {
         </div>
       </footer>
 
-      {/* Toast Notification */}
-      {toast.show && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast({ show: false, message: "", type: "" })}
-        />
-      )}
+
     </>
   );
 };
