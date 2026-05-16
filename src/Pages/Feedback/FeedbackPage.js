@@ -16,9 +16,6 @@ import {
 } from "react-icons/fi";
 import {
   FaBug,
-  FaGithub,
-  FaLinkedin,
-  FaDiscord,
   FaRegComment,
 } from "react-icons/fa";
 
@@ -44,34 +41,6 @@ const Toast = ({ message, type, onClose }) => {
       </motion.div>
   );
 };
-
-//Social media links
-const socialLinks = [
-  {
-    name: "X",
-    icon: (
-        <span className="w-5 h-5 flex items-center justify-center font-bold">
-        X
-      </span>
-    ),
-    href: "https://twitter.com",
-  },
-  {
-    name: "GitHub",
-    icon: <FaGithub className="w-5 h-5" />,
-    href: "https://github.com/SandeepVashishtha/Eventra",
-  },
-  {
-    name: "LinkedIn",
-    icon: <FaLinkedin className="w-5 h-5" />,
-    href: "https://linkedin.com/in",
-  },
-  {
-    name: "Discord",
-    icon: <FaDiscord className="w-5 h-5" />,
-    href: "https://discord.gg/",
-  },
-];
 
 // Star Rating Component
 const StarRating = ({ rating, onRatingChange, error }) => {
