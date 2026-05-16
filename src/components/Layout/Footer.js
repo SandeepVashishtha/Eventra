@@ -152,7 +152,7 @@ const Footer = () => {
       href: "https://github.com/sandeepvashishtha/Eventra",
       icon: (
         <FaGithub
-          className="size-10 p-2 rounded-full text-black bg-white shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 hover:scale-110 hover:-translate-y-1"
+          className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
           size={20}
         />
       ),
@@ -163,7 +163,7 @@ const Footer = () => {
       href: "https://www.linkedin.com/in/sandeepvashishtha/",
       icon: (
         <FaLinkedin
-          className="size-10 p-2 rounded-full text-black bg-white shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 hover:scale-110 hover:-translate-y-1"
+          className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
           size={20}
         />
       ),
@@ -174,7 +174,7 @@ const Footer = () => {
       href: "https://www.discord.com/",
       icon: (
         <FaDiscord
-          className="size-10 p-2 rounded-full text-black bg-white shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 hover:scale-110 hover:-translate-y-1"
+          className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
           size={20}
         />
       ),
@@ -185,7 +185,7 @@ const Footer = () => {
       href: "https://www.telegram.com/",
       icon: (
         <FaTelegram
-          className="size-10 p-2 rounded-full text-black bg-white shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 hover:scale-110 hover:-translate-y-1"
+          className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
           size={20}
         />
       ),
@@ -196,7 +196,7 @@ const Footer = () => {
       href: "https://www.instagram.com/",
       icon: (
         <FaInstagram
-          className="size-10 p-2 rounded-full text-black bg-white shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 hover:scale-110 hover:-translate-y-1"
+          className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
           size={20}
         />
       ),
@@ -313,10 +313,10 @@ const Footer = () => {
                     <li key={link.name}>
                       <Link
                         to={link.href}
-                        className="text-sm text-gray-600 hover:text-black flex items-center gap-4 transition-all duration-300 hover:translate-x-1 group"
+                        className="text-sm text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white flex items-center gap-4 transition-all duration-300 hover:translate-x-1 group"
                       >
                         {link.icon && (
-                          <span className="text-black group-hover:text-black group-hover:scale-110 transition-all duration-300">
+                          <span className="text-black dark:text-white group-hover:text-black dark:group-hover:text-white group-hover:scale-110 transition-all duration-300">
                             {link.icon}
                           </span>
                         )}
