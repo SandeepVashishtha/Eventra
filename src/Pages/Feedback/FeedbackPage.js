@@ -42,8 +42,6 @@ const Toast = ({ message, type, onClose }) => {
   );
 };
 
-
-
 // Star Rating Component
 const StarRating = ({ rating, onRatingChange, error }) => {
   const [hoveredRating, setHoveredRating] = useState(0);
@@ -738,7 +736,7 @@ const FeedbackPage = () => {
   </motion.div>
 </div>
 
-        <style jsx>{`
+        <style dangerouslySetInnerHTML={{ __html: `
         @keyframes shake {
           0%,
           100% {
@@ -761,7 +759,7 @@ const FeedbackPage = () => {
         .animate-shake {
           animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
         }
-      `}</style>
+      ` }} />
       </div>
   );
 };

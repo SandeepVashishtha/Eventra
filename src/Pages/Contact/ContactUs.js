@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Mail, FileText, MessageSquare } from "lucide-react";
-
 import {
   FiStar,
   FiMessageSquare,
@@ -506,7 +505,7 @@ const ContactUs = () => {
         )}
       </AnimatePresence>
 
-      <style jsx>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @keyframes shake {
           0%,
           100% {
@@ -530,7 +529,7 @@ const ContactUs = () => {
         .animate-shake {
           animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
         }
-      `}</style>
+      ` }} />
     </div>
   );
 };
