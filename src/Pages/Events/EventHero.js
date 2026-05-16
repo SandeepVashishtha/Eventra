@@ -58,12 +58,16 @@ export default function EventHero({
       </div>
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 text-center z-10">
-        <h1
-          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight px-4 sm:px-0 text-black"
-          style={{ fontFamily: '"Anton", sans-serif' }}
-        >
-          Discover <span className="text-black">Amazing Events</span>
-        </h1>
+       <h1
+  className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight px-4"
+  style={{
+    fontFamily: '"Anton", sans-serif',
+    color: "white",
+    WebkitTextFillColor: "white",
+  }}
+>
+  Discover Amazing Events 🎯
+</h1>
 
         <p className="mt-4 text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto px-4 sm:px-0">
           Discover exciting events, compete with talented participants, learn

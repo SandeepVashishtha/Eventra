@@ -109,7 +109,7 @@ const Login = () => {
                 />
               </svg>
             </motion.div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400">
               Welcome Back
             </h1>
             <p className="text-gray-600 dark:text-gray-400 font-medium">
