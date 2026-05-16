@@ -1,3 +1,4 @@
+import React, { useEffect } from "react";
 import { useRef } from "react";
 import EventHero from "./EventHero";
 import FeedbackButton from "../../components/FeedbackButton";
@@ -15,26 +16,23 @@ const EventsPage = () => {
     listing.setSearchQuery(query);
   };
 
-<<<<<<< fix/eslint-warnings
+  // Fix: Syncing with listing custom hook properties safely
   useEffect(() => {
-    handleSearch(searchQuery);
+    if (listing.searchQuery !== undefined) {
+      handleSearch(listing.searchQuery);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [events, filterType]);
+  }, [listing.events, listing.filterType]);
 
   const handleSortChange = (type) => {
-    setSortType(type);
-    let sorted = [...filteredEvents];
-    if (type === "Newest") {
-      sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
-    } else if (type === "upcoming") {
-      sorted.sort((a, b) => new Date(a.date) - new Date(b.date));
+    if (typeof listing.setSortType === "function") {
+      listing.setSortType(type);
     }
-    setFilteredEvents(sorted);
-=======
+    // Note: GSoC baseline repository sorts dynamically via hook, keeping wrapper safe
+  }; 
   const handlePageChange = (page) => {
     listing.setSafePage(page);
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
->>>>>>> master
   };
 
   const scrollToCard = () => {
@@ -59,7 +57,7 @@ const EventsPage = () => {
           filterType={listing.filterType}
           onFilterChange={listing.setFilterType}
           sortType={listing.sortType}
-          onSortChange={listing.setSortType}
+          onSortChange={handleSortChange}
           viewMode={listing.viewMode}
           onViewModeChange={listing.setViewMode}
         />

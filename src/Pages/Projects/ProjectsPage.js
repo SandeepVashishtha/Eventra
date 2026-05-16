@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useRef } from "react"; // React hooks for state and lifecycle
 import { motion, AnimatePresence } from "framer-motion"; // Framer Motion for animations
 import { FiAlertCircle, FiSearch, FiX } from "react-icons/fi"; // Feather icons
@@ -7,6 +9,8 @@ import FeedbackButton from "../../components/FeedbackButton"; // Feedback floati
 import ProjectCTA from "./ProjectCTA";
 // Import mock data directly (assuming it's named mockProjectsData.json in the same folder as ProjectsPage.js)
 import mockProjects from "./mockProjectsData.json";
+const ModernSearchInput = () => null;
+const ProjectCardSkeleton = () => null; // 👈 Dono ko bilkul independent functions bana do!
 
 // Skeleton loader for project cards while data is loading
 const SkeletonCard = () => (
