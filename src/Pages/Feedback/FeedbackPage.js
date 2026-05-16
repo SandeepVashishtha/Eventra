@@ -493,43 +493,24 @@ const FeedbackPage = () => {
 
   return (
       <div className="pastel-grid-bg min-h-screen bg-white dark:bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-feat/global-toast-1012
-        <div className="max-w-4xl w-full mx-auto">
-          <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
-
-        <AnimatePresence>
-          {toast && (
-              <Toast
-                  message={toast.message}
-                  type={toast.type}
-                  onClose={() => setToast(null)}
-              />
-          )}
-        </AnimatePresence>
-
         <div className="max-w-6xl w-full mx-auto">
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.5 }}
-    className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
-  >
-    {/* FIXED FLEX LAYOUT */}
-    <div className="md:flex">
-
-      {/* LEFT SECTION */}
-      <div className="md:w-2/5 bg-black text-white p-12 flex flex-col justify-between">
-        <div>
-          <h2
-            className="text-4xl font-extrabold mb-6 tracking-wide"
-            style={{ fontFamily: '"Anton", sans-serif' }}
- master
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
           >
-            Share Your Feedback
+            {/* FIXED FLEX LAYOUT */}
+            <div className="md:flex">
+
+              {/* LEFT SECTION */}
+              <div className="md:w-2/5 bg-black text-white p-12 flex flex-col justify-between">
+                <div>
+                  <h2
+                    className="text-4xl font-extrabold mb-6 tracking-wide"
+                    style={{ fontFamily: '"Anton", sans-serif' }}
+                  >
+                    Share Your Feedback
           </h2>
 
           <p className="mb-8 text-lg opacity-90 leading-relaxed">

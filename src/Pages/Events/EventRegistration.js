@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { API_ENDPOINTS } from "../../config/api";
-import { toast } from "../../utils/toast";
+import { toast } from "react-toastify";
 import mockEvents from "./eventsMockData.json";
 
 const EventRegistration = () => {

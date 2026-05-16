@@ -1,7 +1,8 @@
 import { BrowserRouter as Router } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
-import ToastProvider from "./components/Toastprovider";
 
 // --------------- LAYOUT
 import Navbar from "./components/Layout/Navbar";
@@ -61,7 +62,18 @@ function App() {
 
   return (
     <ThemeProvider>
-      <ToastProvider />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
       <AuthProvider>
         <Router>
           <div className="App">

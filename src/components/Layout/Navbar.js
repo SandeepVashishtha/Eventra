@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import ConfirmationModal from "../common/ConfirmationModal";
-import { toast } from "../../utils/toast";
+import { toast } from "react-toastify";
 import { UserCog } from "lucide-react";
 import {
   Home,
