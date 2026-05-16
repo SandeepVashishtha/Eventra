@@ -40,6 +40,8 @@ const Login = () => {
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
+    
+
     try {
       const ok = await login(formData.usernameOrEmail, formData.password);
       if (ok) {
@@ -226,13 +228,18 @@ const Login = () => {
             )}
 
             {/* Sign in button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 focus:ring-2 focus:ring-blue-500 transition-all duration-200 disabled:opacity-50"
-            >
-              {loading ? "Signing In..." : "Sign In"}
-            </button>
+            <div
+  title={loading ? "Signing in, please wait..." : ""}
+  className="w-full"
+>
+     <button
+    type="submit"
+    disabled={loading}
+    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 focus:ring-2 focus:ring-blue-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+     >
+    {loading ? "Signing In..." : "Sign In"}
+    </button>
+    </div>
 
             {/* Google Sign-In */}
             <div className="pt-2">
