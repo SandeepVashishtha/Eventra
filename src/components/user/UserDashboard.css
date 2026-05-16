@@ -8,6 +8,12 @@
   min-height: 100vh;
   background: var(--bg-color);
   font-family: 'Inter', system-ui, sans-serif;
+  --ud-space-xxs: 0.25rem;
+  --ud-space-xs: 0.5rem;
+  --ud-space-sm: 0.75rem;
+  --ud-space-md: 1rem;
+  --ud-space-lg: 1.5rem;
+  --ud-space-xl: 2rem;
 }
 
 /* Dark mode root */
@@ -21,7 +27,7 @@
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  padding: 1.5rem 0.75rem;
+  padding: var(--ud-space-lg) var(--ud-space-sm);
   position: sticky;
   top: 0;
   flex-shrink: 0;
@@ -33,11 +39,11 @@
 .ud-sidebar-brand {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--ud-space-xs);
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--text-color);
-  padding: 0.25rem 0.75rem 1.5rem;
+  padding: var(--ud-space-xxs) var(--ud-space-sm) var(--ud-space-lg);
   letter-spacing: -0.3px;
 }
 
@@ -56,15 +62,15 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--ud-space-xxs);
 }
 
 .ud-nav-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.65rem 1rem;
-  border-radius: 0.5rem;
+  gap: var(--ud-space-sm);
+  padding: 0.6rem 0.85rem;
+  border-radius: 10px;
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-color-light);
@@ -106,8 +112,8 @@
 .ud-sidebar-bottom {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding-top: 1rem;
+  gap: var(--ud-space-xxs);
+  padding-top: var(--ud-space-md);
   border-top: 1px solid var(--border-color);
   margin-top: auto;
 }
@@ -127,7 +133,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.25rem 2rem;
+  padding: 1.25rem var(--ud-space-xl);
   background: var(--card-bg-color);
   border-bottom: 1px solid var(--border-color);
   position: sticky;
@@ -156,7 +162,7 @@
 .ud-topbar-right {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--ud-space-sm);
 }
 
 .ud-search-wrap {
@@ -167,7 +173,7 @@
 
 .ud-search-icon {
   position: absolute;
-  left: 0.75rem;
+  left: var(--ud-space-sm);
   color: var(--text-color-light);
   pointer-events: none;
 }
@@ -277,7 +283,7 @@
 /* Notification panel */
 .ud-notif-panel {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + var(--ud-space-xs));
   right: 0;
   width: 300px;
   background: var(--card-bg-color);
@@ -294,7 +300,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.85rem 1rem;
+  padding: 0.85rem var(--ud-space-md);
   border-bottom: 1px solid var(--border-color);
   font-weight: 600;
   font-size: 0.875rem;
@@ -311,7 +317,7 @@
 }
 
 .ud-notif-item {
-  padding: 0.85rem 1rem;
+  padding: 0.85rem var(--ud-space-md);
   border-bottom: 1px solid #f3f4f6;
   transition: background 0.15s;
 }
@@ -354,10 +360,10 @@
 
 /* ── Content area ── */
 .ud-content {
-  padding: 1.75rem 2rem;
+  padding: 1.75rem var(--ud-space-xl);
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: var(--ud-space-lg);
   flex: 1;
 }
 
@@ -365,11 +371,11 @@
 .ud-section-title {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--ud-space-xs);
   font-size: 1rem;
   font-weight: 600;
   color: var(--text-color);
-  margin: 0 0 1rem;
+  margin: 0 0 var(--ud-space-sm);
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -390,7 +396,7 @@
 .ud-stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
+  gap: var(--ud-space-md);
 }
 
 .ud-stat-card {
@@ -400,7 +406,7 @@
   padding: 1.25rem;
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
+  gap: var(--ud-space-md);
   transition: all 0.2s ease;
 }
 
@@ -435,7 +441,7 @@
 .ud-stat-label {
   font-size: 0.78rem;
   color: var(--text-color-light);
-  margin: 0 0 2px;
+  margin: 0 0 var(--ud-space-xxs);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -445,7 +451,7 @@
   font-size: 1.75rem;
   font-weight: 700;
   color: var(--text-color);
-  margin: 0 0 2px;
+  margin: 0 0 var(--ud-space-xxs);
   line-height: 1.1;
 }
 
@@ -461,14 +467,14 @@
 .ud-quick-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 0.75rem;
+  gap: var(--ud-space-md);
 }
 
 .ud-quick-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--ud-space-xs);
   padding: 1rem 0.5rem;
   background: var(--card-bg-color);
   border: 1px solid var(--border-color);
@@ -537,7 +543,7 @@
 .ud-three-col {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.25rem;
+  gap: var(--ud-space-md);
 }
 
 .ud-card {
@@ -547,7 +553,7 @@
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: var(--ud-space-sm);
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -555,7 +561,7 @@
 .ud-card-head {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--ud-space-sm);
 }
 
 .ud-card-head h3 {
@@ -595,8 +601,8 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.75rem;
+  gap: var(--ud-space-sm);
+  padding: var(--ud-space-sm);
   border-radius: 10px;
   border: 1px solid #f3f4f6;
   transition: background 0.15s;
@@ -612,7 +618,7 @@
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-color);
-  margin: 0 0 4px;
+  margin: 0 0 var(--ud-space-xxs);
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -620,7 +626,7 @@
 .ud-list-meta {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: var(--ud-space-xxs);
   font-size: 0.75rem;
   color: var(--text-color-light);
   margin: 0;
@@ -819,7 +825,7 @@
 /* removed dark mode override (handled by CSS variables) */
 
 .ud-table th {
-  padding: 0.9rem 1rem;
+  padding: 0.85rem var(--ud-space-md);
   text-align: left;
   font-size: 0.75rem;
   font-weight: 600;
@@ -832,7 +838,7 @@
 /* removed dark mode override (handled by CSS variables) */
 
 .ud-table td {
-  padding: 0.85rem 1rem;
+  padding: 0.85rem var(--ud-space-md);
   border-bottom: 1px solid #f3f4f6;
   color: var(--text-color);
   vertical-align: middle;
