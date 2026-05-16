@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { toast } from "react-toastify";
+import { toast } from "../../utils/toast";
 import {
   ArrowRightIcon,
   LightBulbIcon,
