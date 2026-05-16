@@ -40,7 +40,8 @@ const Dropdown = ({
       >
         <span
           className={`text-sm ${
-            !value ? "text-gray-400" : "text-gray-700 dark:text-gray-200"
+            /* Fix #599: Added dark:text-gray-300 — placeholder had no dark mode color */
+            !value ? "text-gray-400 dark:text-gray-300" : "text-gray-700 dark:text-gray-200"
           }`}
         >
           {value || placeholder}

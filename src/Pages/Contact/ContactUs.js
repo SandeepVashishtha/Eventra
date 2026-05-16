@@ -1,12 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Mail, Phone, FileText, MessageSquare } from "lucide-react";
+import { User, Mail, FileText, MessageSquare } from "lucide-react";
 import {
   FiStar,
   FiMessageSquare,
-  FiUser,
-  FiMail,
-  FiCheckCircle,
 } from "react-icons/fi";
 
 // Toast Component
@@ -142,13 +139,12 @@ const FloatingInput = ({
 // Contact Us Page Component
 
 const ContactUs = () => {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    subject: "",
-    message: "",
-    phone: "",
-  });
+ const [formData, setFormData] = useState({
+  name: "",
+  email: "",
+  subject: "",
+  message: "",
+});
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -276,7 +272,7 @@ const ContactUs = () => {
           // UPDATED: Card background and border
           className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
         >
-          <div className="md:flex">
+          <div className="md:flex gap-0">
             <div
               className="md:w-3/5 lg:w-2/5 bg-black text-white p-12 flex flex-col justify-between rounded-3xl shadow-xl backdrop-blur-lg"
               data-aos="fade-right"
@@ -509,7 +505,7 @@ const ContactUs = () => {
         )}
       </AnimatePresence>
 
-      <style jsx>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @keyframes shake {
           0%,
           100% {
@@ -533,7 +529,7 @@ const ContactUs = () => {
         .animate-shake {
           animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
         }
-      `}</style>
+      ` }} />
     </div>
   );
 };

@@ -101,6 +101,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const navRef = useRef(null);
 
   const { user, isAuthenticated, logout } = useAuth();
+  const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -234,10 +235,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         <div className="w-full flex items-center h-20 px-6 md:px-12 relative">
           {/* Logo */}
           <Link to="/" className="flex-shrink-0 z-20">
-            <h2
-              className="text-3xl font-semibold tracking-tight text-black dark:text-white"
-              style={{ fontFamily: '"Anton", sans-serif' }}
-            >
+            <h2 className="text-3xl font-semibold tracking-tight text-black dark:text-white" style={{ fontFamily: '"Anton", sans-serif' }}>
               Eventra
             </h2>
           </Link>
