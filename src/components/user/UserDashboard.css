@@ -16,6 +16,13 @@
   --ud-space-xl: 2rem;
 }
 
+.dark .ud-root {
+  --card-bg-color: rgba(17, 24, 39, 0.92);
+  --border-color: rgba(148, 163, 184, 0.18);
+  --text-color: #f8fafc;
+  --text-color-light: #cbd5e1;
+}
+
 /* Dark mode root */
 /* removed dark mode override (handled by CSS variables) */
 
@@ -89,6 +96,12 @@
   border-color: #e5e7eb;
 }
 
+.dark .ud-nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #f8fafc;
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
 /* removed dark mode override (handled by CSS variables) */
 
 .ud-nav-active {
@@ -96,6 +109,12 @@
   color: #6366f1 !important;
   font-weight: 600;
   border: 1px solid #c7d2fe !important;
+}
+
+.dark .ud-nav-active {
+  background: rgba(99, 102, 241, 0.18) !important;
+  color: #c7d2fe !important;
+  border-color: rgba(129, 140, 248, 0.35) !important;
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -107,6 +126,11 @@
   background: #fee2e220 !important;
   color: #ef4444 !important;
   border-color: #fca5a5 !important;
+}
+
+.dark .ud-nav-logout:hover {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border-color: rgba(248, 113, 113, 0.3) !important;
 }
 
 .ud-sidebar-bottom {
@@ -139,6 +163,10 @@
   position: sticky;
   top: 0;
   z-index: 10;
+}
+
+.dark .ud-topbar {
+  background: rgba(15, 23, 42, 0.92);
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -188,12 +216,22 @@
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+.dark .ud-search-wrap {
+  background: rgba(15, 23, 42, 0.9);
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
 .ud-search-wrap:focus-within {
   border-color: #6366f1;
   background: var(--card-bg-color);
   box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.2), 0 8px 10px -6px rgba(99, 102, 241, 0.1);
   transform: translateY(-4px) scale(1.02);
   width: 260px;
+}
+
+.dark .ud-search-wrap:focus-within {
+  background: rgba(15, 23, 42, 0.98);
+  border-color: rgba(129, 140, 248, 0.4);
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -206,6 +244,10 @@
   color: var(--text-color-light);
   pointer-events: none;
   transition: color 0.3s ease;
+}
+
+.dark .ud-search-icon {
+  color: #94a3b8;
 }
 
 .ud-search-wrap:focus-within .ud-search-icon {
@@ -239,6 +281,10 @@
   align-items: center;
 }
 
+.dark .ud-search-clear {
+  color: #cbd5e1;
+}
+
 .ud-icon-btn {
   position: relative;
   background: none;
@@ -258,6 +304,18 @@
   color: #6366f1;
   transform: scale(1.05);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.dark .ud-icon-btn {
+  background: rgba(15, 23, 42, 0.9);
+  border-color: rgba(148, 163, 184, 0.18);
+  color: #cbd5e1;
+}
+
+.dark .ud-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -294,6 +352,12 @@
   overflow: hidden;
 }
 
+.dark .ud-notif-panel {
+  background: rgba(15, 23, 42, 0.98);
+  border-color: rgba(148, 163, 184, 0.18);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.35);
+}
+
 /* removed dark mode override (handled by CSS variables) */
 
 .ud-notif-header {
@@ -320,6 +384,14 @@
   padding: 0.85rem var(--ud-space-md);
   border-bottom: 1px solid #f3f4f6;
   transition: background 0.15s;
+}
+
+.dark .ud-notif-item {
+  border-bottom-color: rgba(148, 163, 184, 0.14);
+}
+
+.dark .ud-notif-item:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .ud-notif-item:last-child { border-bottom: none; }
@@ -410,6 +482,16 @@
   transition: all 0.2s ease;
 }
 
+.dark .ud-stat-card {
+  background: rgba(17, 24, 39, 0.95);
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+.dark .ud-stat-card:hover {
+  border-color: rgba(129, 140, 248, 0.4);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28);
+}
+
 .ud-stat-card:hover {
   border-color: #6366f1;
   box-shadow: 0 12px 30px rgba(99, 102, 241, 0.12);
@@ -485,6 +567,16 @@
   position: relative;
 }
 
+.dark .ud-quick-card {
+  background: rgba(17, 24, 39, 0.95);
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+.dark .ud-quick-card:hover {
+  border-color: rgba(129, 140, 248, 0.35);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
+}
+
 .ud-quick-card:hover {
   border-color: var(--qa-color, #6366f1);
   box-shadow: 0 12px 25px -5px color-mix(in srgb, var(--qa-color, #6366f1) 25%, transparent), 
@@ -556,6 +648,11 @@
   gap: var(--ud-space-sm);
 }
 
+.dark .ud-card {
+  background: rgba(17, 24, 39, 0.95);
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
 /* removed dark mode override (handled by CSS variables) */
 
 .ud-card-head {
@@ -610,6 +707,14 @@
 
 .ud-list-item:hover { background: #f9fafb; }
 
+.dark .ud-list-item {
+  border-color: rgba(148, 163, 184, 0.14);
+}
+
+.dark .ud-list-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
 /* removed dark mode override (handled by CSS variables) */
 
 /* removed dark mode override (handled by CSS variables) */
@@ -656,6 +761,12 @@
 .ud-badge-yellow { background: #fef3c7; color: #92400e; }
 .ud-badge-red    { background: #fee2e2; color: #991b1b; }
 .ud-badge-gray   { background: #f3f4f6; color: var(--text-color-light); }
+
+.dark .ud-badge-gray {
+  background: rgba(148, 163, 184, 0.16);
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
 
 /* removed dark mode override (handled by CSS variables) */
 /* removed dark mode override (handled by CSS variables) */
@@ -711,6 +822,16 @@
   flex-direction: column;
   gap: 0.75rem;
   transition: all 0.2s;
+}
+
+.dark .ud-item-card {
+  background: rgba(17, 24, 39, 0.95);
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+.dark .ud-item-card:hover {
+  border-color: rgba(129, 140, 248, 0.35);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.24);
 }
 
 .ud-item-card:hover {
@@ -795,6 +916,12 @@
   transition: border-color 0.18s;
 }
 
+.dark .ud-select {
+  background: rgba(15, 23, 42, 0.92);
+  border-color: rgba(148, 163, 184, 0.18);
+  color: #f8fafc;
+}
+
 .ud-select:focus { border-color: #6366f1; }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -822,6 +949,11 @@
   border-bottom: 1px solid var(--border-color);
 }
 
+.dark .ud-table thead tr {
+  background: rgba(30, 41, 59, 0.92);
+  border-bottom-color: rgba(148, 163, 184, 0.18);
+}
+
 /* removed dark mode override (handled by CSS variables) */
 
 .ud-table th {
@@ -842,6 +974,23 @@
   border-bottom: 1px solid #f3f4f6;
   color: var(--text-color);
   vertical-align: middle;
+}
+
+.dark .ud-table td {
+  border-bottom-color: rgba(148, 163, 184, 0.14);
+  color: #e2e8f0;
+}
+
+.dark .ud-table tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark .ud-table-wrap {
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+.dark .ud-table {
+  background: rgba(17, 24, 39, 0.95);
 }
 
 /* removed dark mode override (handled by CSS variables) */
