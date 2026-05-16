@@ -55,32 +55,43 @@ const setBodyScrollStyles = (top) => {
 const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => (
   <button
     onClick={toggleTheme}
+    aria-label={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
     title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-    className={isMobile 
-      ? "flex-1 flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg bg-black dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors font-medium"
-      : "flex items-center gap-1 px-2 py-1 mr-2 text-xs font-normal bg-black text-white dark:bg-white dark:text-black rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all"
+    className={isMobile
+      ? "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 font-medium text-sm"
+      : "flex items-center gap-1.5 px-2.5 py-1 mr-2 text-xs font-medium border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
     }
   >
     {isDarkMode ? (
-      <Sun className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
+      <Sun className={isMobile ? "w-5 h-5 text-amber-500" : "w-4 h-4 text-amber-500"} />
     ) : (
-      <Moon className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
+      <Moon className={isMobile ? "w-5 h-5 text-indigo-500" : "w-4 h-4 text-indigo-500"} />
     )}
-    {isMobile ? (isDarkMode ? "Dark OFF" : "Dark ON") : (isDarkMode ? "DARK" : "LIGHT")}
+    {isMobile
+      ? (isDarkMode ? "Light Mode" : "Dark Mode")
+      : (isDarkMode ? "LIGHT" : "DARK")
+    }
   </button>
 );
 
 const CursorToggleButton = ({ cursorEnabled, toggleCursor, isMobile }) => (
   <button
     onClick={toggleCursor}
+    aria-label={cursorEnabled ? "Disable Fluid Cursor" : "Enable Fluid Cursor"}
     title={cursorEnabled ? "Disable Fluid Cursor" : "Enable Fluid Cursor"}
-    className={isMobile 
-      ? "flex-1 flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg bg-black dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors font-medium"
-      : "flex items-center gap-1 px-2 py-1 mr-3 text-xs font-normal bg-black text-white dark:bg-white dark:text-black rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all"
+    className={isMobile
+      ? "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 font-medium text-sm"
+      : "flex items-center gap-1.5 px-2.5 py-1 mr-3 text-xs font-medium border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
     }
   >
-    <MousePointer className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
-    {isMobile ? (cursorEnabled ? "Cursor OFF" : "Cursor ON") : (cursorEnabled ? "CURSOR" : "STATIC")}
+    <MousePointer className={isMobile
+      ? `w-5 h-5 ${cursorEnabled ? "text-emerald-500" : "text-gray-400"}`
+      : `w-4 h-4 ${cursorEnabled ? "text-emerald-500" : "text-gray-400"}`
+    } />
+    {isMobile
+      ? (cursorEnabled ? "Cursor On" : "Cursor Off")
+      : (cursorEnabled ? "ON" : "OFF")
+    }
   </button>
 );
 
