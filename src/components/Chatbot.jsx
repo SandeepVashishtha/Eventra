@@ -99,135 +99,139 @@ export default function Chatbot() {
     setDraft("");
   };
 
-  if (!isOpen) {
-    return (
-      <button
-        type="button"
-        onClick={() => {
-          setIsOpen(true);
-          setIsMinimized(false);
-        }}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-2xl shadow-indigo-500/30 hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300"
-        aria-label="Open Eventra assistant"
-      >
-        <Bot className="h-6 w-6" />
-      </button>
-    );
-  }
-
   return (
-    <section
-      data-chatbot-open
-      className={`fixed bottom-6 right-6 z-50 w-[calc(100vw-2rem)] max-w-sm overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900 ${
-        isMinimized ? "h-16" : ""
-      }`}
-      aria-label="Eventra assistant"
-    >
-      <header className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-950 px-4 py-3 text-white dark:border-slate-700">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-500">
-            <Sparkles className="h-4 w-4" />
-          </div>
-          <div>
-            <h2 className="text-sm font-bold">Eventra Assist</h2>
-            <p className="text-xs text-slate-300">Events, workshops, and support</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => setIsMinimized((value) => !value)}
-            className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white"
-            aria-label={isMinimized ? "Expand assistant" : "Minimize assistant"}
-          >
-            <Minus className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsOpen(false)}
-            className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white"
-            aria-label="Close assistant"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      </header>
+    <>
+      {/* Toggle button — always rendered so state is never destroyed */}
+      {!isOpen && (
+        <button
+          type="button"
+          onClick={() => {
+            setIsOpen(true);
+            setIsMinimized(false);
+          }}
+          className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-2xl shadow-indigo-500/30 hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300"
+          aria-label="Open Eventra assistant"
+        >
+          <Bot className="h-6 w-6" />
+        </button>
+      )}
 
-      {!isMinimized && (
-        <>
-          <div className="max-h-80 space-y-3 overflow-y-auto px-4 py-4">
-            {messages.map((message, index) => (
-              <div
-                key={`${message.role}-${index}`}
-                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-[82%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                    message.role === "user"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-100"
-                  }`}
-                >
-                  {message.content}
-                </div>
+      {/* Chat panel */}
+      {isOpen && (
+        <section
+          data-chatbot-open
+          className={`fixed bottom-6 right-6 z-50 w-[calc(100vw-2rem)] max-w-sm overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900 ${
+            isMinimized ? "h-16" : ""
+          }`}
+          aria-label="Eventra assistant"
+        >
+          <header className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-950 px-4 py-3 text-white dark:border-slate-700">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-500">
+                <Sparkles className="h-4 w-4" />
               </div>
-            ))}
-          </div>
-
-          <div className="border-t border-slate-200 px-4 py-3 dark:border-slate-700">
-            <div className="mb-3 flex flex-wrap gap-2">
-              {quickPrompts.map((prompt) => (
-                <button
-                  key={prompt}
-                  type="button"
-                  onClick={() => sendMessage(prompt)}
-                  className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-600 dark:border-slate-700 dark:text-slate-300"
-                >
-                  {prompt}
-                </button>
-              ))}
+              <div>
+                <h2 className="text-sm font-bold">Eventra Assist</h2>
+                <p className="text-xs text-slate-300">Events, workshops, and support</p>
+              </div>
             </div>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setIsMinimized((value) => !value)}
+                className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white"
+                aria-label={isMinimized ? "Expand assistant" : "Minimize assistant"}
+              >
+                <Minus className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white"
+                aria-label="Close assistant"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </header>
 
-            {latestActions.length > 0 && (
-              <div className="mb-3 flex flex-wrap gap-2">
-                {latestActions.map(({ label, to, icon: Icon }) => (
-                  <Link
-                    key={`${label}-${to}`}
-                    to={to}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-slate-950 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+          {!isMinimized && (
+            <>
+              <div className="max-h-80 space-y-3 overflow-y-auto px-4 py-4">
+                {messages.map((message, index) => (
+                  <div
+                    key={`${message.role}-${index}`}
+                    className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                   >
-                    <Icon className="h-3.5 w-3.5" />
-                    {label}
-                  </Link>
+                    <div
+                      className={`max-w-[82%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                        message.role === "user"
+                          ? "bg-indigo-600 text-white"
+                          : "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-100"
+                      }`}
+                    >
+                      {message.content}
+                    </div>
+                  </div>
                 ))}
               </div>
-            )}
 
-            <form
-              className="flex items-center gap-2"
-              onSubmit={(event) => {
-                event.preventDefault();
-                sendMessage();
-              }}
-            >
-              <input
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                placeholder="Ask about Eventra..."
-                className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-              />
-              <button
-                type="submit"
-                disabled={!draft.trim()}
-                className="rounded-xl bg-indigo-600 p-2.5 text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
-                aria-label="Send message"
-              >
-                <Send className="h-4 w-4" />
-              </button>
-            </form>
-          </div>
-        </>
+              <div className="border-t border-slate-200 px-4 py-3 dark:border-slate-700">
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {quickPrompts.map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => sendMessage(prompt)}
+                      className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-600 dark:border-slate-700 dark:text-slate-300"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+
+                {latestActions.length > 0 && (
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    {latestActions.map(({ label, to, icon: Icon }) => (
+                      <Link
+                        key={`${label}-${to}`}
+                        to={to}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-slate-950 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                        {label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
+                <form
+                  className="flex items-center gap-2"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    sendMessage();
+                  }}
+                >
+                  <input
+                    value={draft}
+                    onChange={(event) => setDraft(event.target.value)}
+                    placeholder="Ask about Eventra..."
+                    className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!draft.trim()}
+                    className="rounded-xl bg-indigo-600 p-2.5 text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label="Send message"
+                  >
+                    <Send className="h-4 w-4" />
+                  </button>
+                </form>
+              </div>
+            </>
+          )}
+        </section>
       )}
-    </section>
+    </>
   );
 }
