@@ -1,13 +1,11 @@
-import { useEffect, useState, Fragment } from "react";
+import { useEffect, useState } from "react";
 import {
   FaCode,
   FaStar,
-  FaChevronDown,
   FaChevronLeft,
   FaChevronRight,
   FaUsers,
 } from "react-icons/fa";
-import { Menu, Transition } from "@headlessui/react";
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
 import StyledDropdown from "../../components/StyledDropdown";
@@ -32,7 +30,6 @@ export default function LeaderBoard() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("points");
-  const [isDark, setIsDark] = useState(false);
 
   // Constants for pagination and UI
   const CONTRIBUTORS_PER_PAGE = 10;
@@ -186,6 +183,7 @@ export default function LeaderBoard() {
   // Initial data load on component mount
   useEffect(() => {
     loadLeaderboardData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Filter & sort
