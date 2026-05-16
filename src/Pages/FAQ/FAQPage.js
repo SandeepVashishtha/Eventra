@@ -131,7 +131,8 @@ const FAQPage = () => {
 
   useEffect(() => {
     controls.start("show");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Note: scroll-to-top on route change is handled globally by the
+    // ScrollToTop component — no need to call window.scrollTo() here.
   }, [controls]);
 
   return (
