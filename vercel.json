@@ -7,6 +7,17 @@
   },
   "rewrites": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "header",
+          "key": "Accept",
+          "value": "text/markdown"
+        }
+      ],
+      "destination": "/index.md"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/api/:path*"
     },
@@ -16,6 +27,15 @@
     }
   ],
   "headers": [
+    {
+      "source": "/",
+      "headers": [
+        {
+          "key": "Link",
+          "value": "</.well-known/api-catalog>; rel=\"api-catalog\", </apiDocs>; rel=\"service-doc\""
+        }
+      ]
+    },
     {
       "source": "/api/(.*)",
       "headers": [

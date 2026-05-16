@@ -1,12 +1,16 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+
 import { toast } from "react-toastify";
 
 import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
 
 import ConfirmationModal from "../common/ConfirmationModal";
+
+
+import { UserCog } from "lucide-react";
 
 import {
   Home,
@@ -165,16 +169,35 @@ const setBodyScrollStyles = (top) => {
   });
 };
 
+
 /* =========================================================
    COMPONENTS
 ========================================================= */
 
-const ThemeToggleButton = ({
-  isDarkMode,
-  toggleTheme,
-  isMobile = false,
-}) => {
-  return (
+
+const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => (
+  <button
+    onClick={toggleTheme}
+    aria-label={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+    title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+    className={isMobile
+      ? "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 font-medium text-sm"
+      : "flex items-center gap-1.5 px-2.5 py-1 mr-2 text-xs font-medium border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
+    }
+  >
+    {isDarkMode ? (
+      <Sun className={isMobile ? "w-5 h-5 text-amber-500" : "w-4 h-4 text-amber-500"} />
+    ) : (
+      <Moon className={isMobile ? "w-5 h-5 text-indigo-500" : "w-4 h-4 text-indigo-500"} />
+    )}
+    {isMobile
+      ? (isDarkMode ? "Light Mode" : "Dark Mode")
+      : (isDarkMode ? "LIGHT" : "DARK")
+    }
+  </button>
+);
+
+
     <button
       onClick={toggleTheme}
       className={
@@ -183,8 +206,29 @@ const ThemeToggleButton = ({
           : "p-2 rounded-full text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 hover:scale-110 transition-all duration-300"
       }
     >
-      {isDarkMode ? (
-        <Sun className={isMobile ? "w-5 h-5" : "w-5 h-5"} />
+      {user?.profilePicture ? (
+        <img
+          src={user.profilePicture}
+          alt="Profile"
+          className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20"
+          onError={(e) => (e.currentTarget.style.display = "none")}
+        />
+      ) : (
+        <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold text-sm">
+          {primaryLine?.charAt(0).toUpperCase()}
+        </div>
+      )}
+    </button>
+
+    <AnimatePresence>
+      {showProfileDropdown && (
+        <motion.div
+          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+          transition={{ duration: 0.15 }}
+          className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-900 rounded-lg shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-800"
+        >
       ) : (
         <Moon className={isMobile ? "w-5 h-5" : "w-5 h-5"} />
       )}
