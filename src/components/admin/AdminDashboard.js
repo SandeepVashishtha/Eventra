@@ -1,3 +1,4 @@
+import StatusBadge from "../common/StatusBadge";
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
@@ -9,6 +10,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import './AdminDashboard.css';
+import { toast } from 'react-toastify';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -81,14 +83,8 @@ const AdminDashboard = () => {
   const [searchUser,  setSearchUser]  = useState('');
   const [searchEvent, setSearchEvent] = useState('');
   const [confirmModal, setConfirmModal] = useState({ open: false, type: '', id: null });
-  const [toast, setToast] = useState(null);
 
   const firstName = user?.firstName || user?.username || 'Admin';
-
-  const showToast = (msg, type = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  };
 
   /* Stats */
   const totalUsers  = users.length;
@@ -105,7 +101,7 @@ const AdminDashboard = () => {
     if (type === 'user')  setUsers(prev  => prev.filter(u => u.id !== id));
     if (type === 'event') setEvents(prev => prev.filter(e => e.id !== id));
     setConfirmModal({ open: false, type: '', id: null });
-    showToast(`${type === 'user' ? 'User' : 'Event'} deleted successfully.`);
+    toast.success(`${type === 'user' ? 'User' : 'Event'} deleted successfully.`);
   };
 
   const filteredUsers  = users.filter(u =>
@@ -184,19 +180,7 @@ const AdminDashboard = () => {
           </div>
         </header>
 
-        {/* Toast */}
-        <AnimatePresence>
-          {toast && (
-            <motion.div
-              className={`ad-toast ${toast.type === 'error' ? 'ad-toast-error' : ''}`}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-            >
-              <CheckCircle size={15} /> {toast.msg}
-            </motion.div>
-          )}
-        </AnimatePresence>
+
 
         <div className="ad-content">
           <AnimatePresence mode="wait">
@@ -239,7 +223,7 @@ const AdminDashboard = () => {
                           <p className="ad-list-title">{u.firstName} {u.lastName}</p>
                           <p className="ad-list-sub">{u.email}</p>
                         </div>
-                        <span className={`ad-badge ${STATUS_COLORS[u.status] || 'ad-badge-gray'}`}>{u.status}</span>
+                        <StatusBadge status={u.status} />
                       </div>
                     ))}
                   </motion.section>
@@ -257,7 +241,7 @@ const AdminDashboard = () => {
                           <p className="ad-list-title">{ev.title}</p>
                           <p className="ad-list-sub">{ev.date} · {ev.participantCount} participants</p>
                         </div>
-                        <span className={`ad-badge ${STATUS_COLORS[ev.status] || 'ad-badge-gray'}`}>{ev.status}</span>
+                        <StatusBadge status={ev.status} />
                       </div>
                     ))}
                   </motion.section>
@@ -307,15 +291,15 @@ const AdminDashboard = () => {
                             <td className="ad-muted">{u.email}</td>
                             <td>
                               {u.roles.map(r => (
-                                <span key={r} className={`ad-badge ${STATUS_COLORS[r] || 'ad-badge-gray'}`} style={{ marginRight: '4px' }}>{r}</span>
+                                <span key={r} style={{ marginRight: '4px' }}><StatusBadge status={r} /></span>
                               ))}
                             </td>
                             <td className="ad-muted">{u.createdAt}</td>
-                            <td><span className={`ad-badge ${STATUS_COLORS[u.status] || 'ad-badge-gray'}`}>{u.status}</span></td>
+                            <td><StatusBadge status={u.status} /></td>
                             <td>
                               <div className="ad-action-btns">
                                 {hasPermission('EDIT_USER') && (
-                                  <button className="ad-icon-action" title="Edit" onClick={() => showToast('Edit coming soon', 'info')}>
+                                  <button className="ad-icon-action" title="Edit" onClick={() => toast.info('Edit coming soon')}>
                                     <Edit2 size={14} />
                                   </button>
                                 )}
@@ -369,17 +353,17 @@ const AdminDashboard = () => {
                           <tr key={ev.id}>
                             <td className="ad-table-bold">{ev.title}</td>
                             <td>
-                              <span className={`ad-badge ${ev.type === 'Hackathon' ? 'ad-badge-purple' : 'ad-badge-blue'}`}>
-                                {ev.type}
-                              </span>
+                              <StatusBadge status={ev.type} />
+                              
+                              
                             </td>
                             <td className="ad-muted">{ev.date}</td>
                             <td className="ad-muted">{ev.participantCount}</td>
-                            <td><span className={`ad-badge ${STATUS_COLORS[ev.status] || 'ad-badge-gray'}`}>{ev.status}</span></td>
+                            <td><StatusBadge status={ev.status} /></td>
                             <td>
                               <div className="ad-action-btns">
                                 {hasPermission('EDIT_EVENT') && (
-                                  <button className="ad-icon-action" title="Edit" onClick={() => showToast('Edit coming soon', 'info')}>
+                                  <button className="ad-icon-action" title="Edit" onClick={() => toast.info('Edit coming soon')}>
                                     <Edit2 size={14} />
                                   </button>
                                 )}
@@ -454,7 +438,7 @@ const AdminDashboard = () => {
                       const count = users.filter(u => u.roles.includes(role)).length;
                       return (
                         <div key={role} className="ad-role-chip">
-                          <span className={`ad-badge ${STATUS_COLORS[role] || 'ad-badge-gray'}`}>{role}</span>
+                          <StatusBadge status={role} />
                           <span className="ad-role-count">{count} user{count !== 1 ? 's' : ''}</span>
                         </div>
                       );

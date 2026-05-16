@@ -44,7 +44,7 @@ const repeatedIcons = [...iconList, ...iconList, ...iconList];
 
 export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
   const navigate = useNavigate();
-  const { user, token } = useAuth();
+  const { user } = useAuth();
 
   return (
     // UPDATED: Main background gradient
@@ -122,8 +122,7 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
           // UPDATED: Title text color and gradient
-          className="text-4xl sm:text-6xl font-extrabold mb-6 mt-6 text-black leading-tight"
-          style={{ fontFamily: '"Anton", sans-serif' }}
+         className="text-4xl sm:text-6xl font-extrabold mb-6 mt-6 text-black dark:text-white leading-tight"          style={{ fontFamily: '"Anton", sans-serif' }}
         >
           Discover Amazing Projects
         </motion.h1>

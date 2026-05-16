@@ -89,7 +89,7 @@ const events = [
 const CommunityEvent = () => {
   return (
     // UPDATED: Main page background
-    <div className="bg-white dark:bg-black">
+    <div className="bg-white dark:bg-black pt-20 md:pt-24">
       <div className="max-w-7xl mx-auto px-6 py-16">
         {/* Intro Section */}
         <motion.div

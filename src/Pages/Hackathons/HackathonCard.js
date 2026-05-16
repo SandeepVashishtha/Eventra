@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import {
   CalendarIcon,
   MapPinIcon,
@@ -13,6 +14,94 @@ import { addHackathonToGoogleCalendar } from "../../utils/calendarUtils";
 import ShareMenu from "../../components/common/ShareMenu";
 import { generateEventSharingData } from "../../utils/shareUtils";
 
+// ✅ Real-time countdown timer hook
+const useCountdown = (targetDate) => {
+  const calculateTimeLeft = () => {
+    const difference = new Date(targetDate) - new Date();
+    if (difference <= 0) return null;
+    return {
+      days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+      minutes: Math.floor((difference / 1000 / 60) % 60),
+      seconds: Math.floor((difference / 1000) % 60),
+    };
+  };
+
+  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [targetDate]);
+
+  return timeLeft;
+};
+
+// ✅ Countdown display component
+const CountdownTimer = ({ targetDate, label }) => {
+  const timeLeft = useCountdown(targetDate);
+
+  if (!timeLeft) {
+    return (
+      <span className="text-red-500 font-semibold text-xs">Deadline passed</span>
+    );
+  }
+
+  const isUrgent = timeLeft.days < 3;
+  const isVerySoon = timeLeft.days === 0;
+
+  return (
+    <div className={`flex items-center gap-2 ${isUrgent ? "text-red-500" : "text-blue-500"}`}>
+      <ClockIcon className={`w-4 h-4 ${isUrgent ? "animate-pulse" : ""}`} />
+      <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}:</span>
+      <div className="flex items-center gap-1 font-mono text-xs font-bold">
+        {timeLeft.days > 0 && (
+          <span className={`px-1.5 py-0.5 rounded ${isUrgent ? "bg-red-100 dark:bg-red-900/50 text-red-600" : "bg-blue-100 dark:bg-blue-900/50 text-blue-600"}`}>
+            {timeLeft.days}d
+          </span>
+        )}
+        <span className={`px-1.5 py-0.5 rounded ${isUrgent ? "bg-red-100 dark:bg-red-900/50 text-red-600" : "bg-blue-100 dark:bg-blue-900/50 text-blue-600"}`}>
+          {String(timeLeft.hours).padStart(2, "0")}h
+        </span>
+        <span className={`px-1.5 py-0.5 rounded ${isUrgent ? "bg-red-100 dark:bg-red-900/50 text-red-600" : "bg-blue-100 dark:bg-blue-900/50 text-blue-600"}`}>
+          {String(timeLeft.minutes).padStart(2, "0")}m
+        </span>
+        {isVerySoon && (
+          <span className="px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/50 text-red-600">
+            {String(timeLeft.seconds).padStart(2, "0")}s
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ✅ Urgency badge component
+const UrgencyBadge = ({ startDate, endDate, status }) => {
+  const timeLeft = useCountdown(status === "upcoming" ? startDate : endDate);
+
+  if (status === "completed") return null;
+  if (!timeLeft) return null;
+
+  if (timeLeft.days < 1) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500 text-white text-xs font-bold animate-pulse">
+        🔥 Closing Today!
+      </span>
+    );
+  }
+  if (timeLeft.days < 3) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-400 text-white text-xs font-bold">
+        ⚡ Closing Soon
+      </span>
+    );
+  }
+  return null;
+};
+
 const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
   const stats = {
     participants: hackathon.status === "live" ? hackathon.participants : 0,
@@ -20,7 +109,6 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
     submissions: hackathon.status === "live" ? hackathon.submissions : 0,
   };
 
-  // Generate sharing data for this hackathon
   const hackathonSharingData = generateEventSharingData({
     ...hackathon,
     title: hackathon.title,
@@ -32,18 +120,10 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 50, rotateX: 15, scale: 0.95 }}
-      whileInView={{
-        opacity: 1,
-        y: 0,
-        rotateX: 0,
-        scale: 1,
-      }}
-      transition={{
-        duration: 0.6,
-        ease: "easeOut",
-      }}
-      viewport={{ once: true, amount: 0.3 }} // triggers when 30% visible
-      whileHover={{ y: -4, scale: 1.02 }} // keeps your hover lift effect
+      whileInView={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      viewport={{ once: true, amount: 0.3 }}
+      whileHover={{ y: -4, scale: 1.02 }}
       className={`bg-gradient-to-br from-white to-white dark:from-gray-800 dark:to-black rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-blue-200 dark:border-gray-700 relative card-with-floating-elements ${
         isFeatured ? "ring-2 ring-blue-300 dark:ring-blue-400" : ""
       }`}
@@ -56,7 +136,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
         </div>
       )}
 
-      {/* Share button in top-right corner */}
+      {/* Share button */}
       <div className="absolute -top-4 -right-4 z-[200]">
         <ShareMenu
           shareData={hackathonSharingData}
@@ -65,19 +145,11 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
           buttonClassName=""
         >
           <motion.div
-            className="
-  bg-white dark:bg-gray-800 
-  rounded-full p-3 
-  shadow-lg cursor-pointer hover:shadow-xl 
-  border border-gray-200 dark:border-gray-600 
-  group/share
-"
+            className="bg-white dark:bg-gray-800 rounded-full p-3 shadow-lg cursor-pointer hover:shadow-xl border border-gray-200 dark:border-gray-600 group/share"
             whileHover={{ scale: 1.1 }}
             transition={{ type: "spring", stiffness: 400, damping: 10 }}
           >
             <ShareIcon className="w-4 h-4 text-gray-400" />
-
-            {/* Tooltip */}
             <div className="absolute invisible group-hover/share:visible opacity-0 group-hover/share:opacity-100 transition-opacity duration-300 -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10">
               Share Hackathon
             </div>
@@ -87,10 +159,9 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
 
       <div className="p-6 flex flex-col gap-5 min-h-[500px]">
         {/* Header: Status, Difficulty, Prize */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
+        <div className="flex justify-between items-center flex-wrap gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span
-              // UPDATED: Status tag colors
               className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
                 hackathon.status === "live"
                   ? "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
@@ -99,49 +170,44 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
                   : "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
               }`}
             >
-              {hackathon.status.charAt(0).toUpperCase() +
-                hackathon.status.slice(1)}
+              {hackathon.status.charAt(0).toUpperCase() + hackathon.status.slice(1)}
             </span>
-            {/* UPDATED: Difficulty tag colors */}
             <span className="px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 text-xs font-medium">
               {hackathon.difficulty}
             </span>
+            {/* ✅ Urgency badge */}
+            <UrgencyBadge
+              startDate={hackathon.startDate}
+              endDate={hackathon.endDate}
+              status={hackathon.status}
+            />
           </div>
           <span className="text-white text-sm font-semibold px-3 py-1 rounded-full bg-black animate-gradient">
             {hackathon.prize}
           </span>
         </div>
 
-        {/* Divider */}
-        {/* UPDATED: Divider color */}
         <div className="border-b border-gray-400 dark:border-gray-700" />
 
         {/* Title & Description */}
         <div>
-          {/* UPDATED: Text colors */}
           <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-1">
             {hackathon.title}
           </h3>
-          <p className="text-gray-600 text-sm line-clamp-2">
-            {hackathon.description}
-          </p>
+          <p className="text-gray-600 text-sm line-clamp-2">{hackathon.description}</p>
         </div>
 
-        {/* UPDATED: Divider color */}
         <div className="border-b border-gray-400 dark:border-gray-700" />
 
         {/* Organizer */}
-        {/* UPDATED: Text color */}
         <div className="flex items-center text-gray-600 dark:text-gray-400 text-sm gap-1.5">
           <BuildingLibraryIcon className="w-4 h-4 text-gray-700 dark:text-gray-300" />
           <span>{hackathon.organizer}</span>
         </div>
 
-        {/* UPDATED: Divider color */}
         <div className="border-b border-gray-400 dark:border-gray-700" />
 
-        {/* Date & Location */}
-        {/* UPDATED: Text color */}
+        {/* Date, Location & Countdown */}
         <div className="flex flex-col gap-3 text-gray-600 dark:text-gray-400 text-sm">
           <div className="flex items-center gap-2">
             <CalendarIcon className="w-4 h-4 text-sky-500" />
@@ -160,23 +226,26 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
             <MapPinIcon className="w-4 h-4 text-green-500" />
             {hackathon.location}
           </div>
-          <div className="flex items-center gap-2">
-            <ClockIcon className="w-4 h-4 text-blue-500" />
-            <span className="font-medium">Time Left:</span>{" "}
-            {hackathon.status === "live"
-              ? hackathon.timeLeft
-              : hackathon.status === "upcoming"
-              ? "Starts Soon"
-              : "Ended"}
-          </div>
+
+          {/* ✅ Real-time countdown timer */}
+          {hackathon.status === "upcoming" && hackathon.startDate && (
+            <CountdownTimer targetDate={hackathon.startDate} label="Starts in" />
+          )}
+          {hackathon.status === "live" && hackathon.endDate && (
+            <CountdownTimer targetDate={hackathon.endDate} label="Ends in" />
+          )}
+          {hackathon.status === "completed" && (
+            <div className="flex items-center gap-2 text-gray-400">
+              <ClockIcon className="w-4 h-4" />
+              <span className="text-xs">Ended</span>
+            </div>
+          )}
         </div>
 
-        {/* UPDATED: Divider color */}
         <div className="border-b border-gray-400 dark:border-gray-700" />
 
         {/* Tech Stack */}
         <div>
-          {/* UPDATED: Text color */}
           <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Tech Stack:
           </h4>
@@ -184,7 +253,6 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
             {hackathon.techStack.map((tech, index) => (
               <span
                 key={index}
-                // UPDATED: Tech tag colors
                 className="px-3 py-1 border border-blue-200 dark:border-blue-700 bg-blue-100 dark:bg-blue-900/60 text-gray-800 dark:text-gray-200 text-xs font-medium rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
                 {tech}
@@ -193,11 +261,9 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
           </div>
         </div>
 
-        {/* UPDATED: Divider color */}
         <div className="border-b border-gray-400 dark:border-gray-700" />
 
         {/* Rules */}
-        {/* UPDATED: Text colors */}
         <div className="text-gray-600 dark:text-gray-400 text-sm">
           <h4 className="font-medium mb-1 flex items-center gap-1.5">
             <DocumentTextIcon className="w-4 h-4 text-blue-500" />
@@ -210,46 +276,30 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
           </ul>
         </div>
 
-        {/* UPDATED: Divider color */}
         <div className="border-b border-gray-400 dark:border-gray-700" />
 
         {/* Stats */}
-        {/* UPDATED: Background and text colors */}
         <div className="grid grid-cols-3 gap-4 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg min-h-[60px]">
           <div className="text-center">
             <UserGroupIcon className="w-5 h-5 text-red-500 mx-auto mb-1" />
-            <div className="text-lg font-bold text-red-500">
-              {stats.participants || "--"}
-            </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              Participants
-            </div>
+            <div className="text-lg font-bold text-red-500">{stats.participants || "--"}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">Participants</div>
           </div>
           <div className="text-center">
             <UserGroupIcon className="w-5 h-5 text-green-500 mx-auto mb-1 rotate-90" />
-            <div className="text-lg font-bold text-green-500">
-              {stats.teams || "--"}
-            </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              Teams
-            </div>
+            <div className="text-lg font-bold text-green-500">{stats.teams || "--"}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">Teams</div>
           </div>
           <div className="text-center">
             <UserGroupIcon className="w-5 h-5 text-blue-500 mx-auto mb-1" />
-            <div className="text-lg font-bold text-blue-500">
-              {stats.submissions || "--"}
-            </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              Submissions
-            </div>
+            <div className="text-lg font-bold text-blue-500">{stats.submissions || "--"}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">Submissions</div>
           </div>
         </div>
 
-        {/* UPDATED: Divider color */}
         <div className="border-b border-gray-400 dark:border-gray-700" />
 
         {/* Winner */}
-        {/* UPDATED: Background, border, and text colors */}
         <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/40 p-3 rounded-lg border border-yellow-100 dark:border-yellow-800 min-h-[48px]">
           <TrophyIcon className="w-5 h-5 text-yellow-500" />
           <span className="text-sm font-medium">Winner:</span>
@@ -260,7 +310,6 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
           </span>
         </div>
 
-        {/* UPDATED: Divider color */}
         <div className="border-b border-gray-400 dark:border-gray-700" />
 
         {/* Action Buttons */}
@@ -270,20 +319,16 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
               <button className="px-4 py-2 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800  hover:to-indigo-900 text-white text-sm font-medium rounded-lg transition-colors">
                 Join Now
               </button>
-              {/* UPDATED: Secondary button colors */}
               <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                 Submit Project
               </button>
             </div>
           ) : hackathon.status === "upcoming" ? (
             <div className="grid grid-cols-1 gap-3">
-              {/* Action buttons row */}
               <div className="flex gap-3">
                 <button className="flex-1 px-4 py-2 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800  hover:to-indigo-900 text-white text-sm font-medium rounded-lg  transition-colors">
                   Register
                 </button>
-
-                {/* Google Calendar integration */}
                 <a
                   href={addHackathonToGoogleCalendar(hackathon)}
                   target="_blank"
@@ -296,8 +341,6 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
                     <CalendarIcon className="w-4 h-4 text-sky-500" />
                     <span className="hidden sm:inline">Set Reminder</span>
                   </button>
-
-                  {/* Tooltip */}
                   <div className="absolute invisible group-hover/calendar:visible opacity-0 group-hover/calendar:opacity-100 transition-opacity duration-300 -top-8 left-1/2 transform -translate-x-1/2 bg-indigo-600 text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10">
                     Add to Google Calendar
                   </div>
@@ -309,7 +352,6 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
               <button className="px-4 py-2 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800  hover:to-indigo-900 text-white text-sm font-medium rounded-lg hover:bg-zinc-800 transition-colors">
                 View Results
               </button>
-              {/* UPDATED: Secondary button colors */}
               <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                 Resources
               </button>

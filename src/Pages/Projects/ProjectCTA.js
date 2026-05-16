@@ -6,7 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 
 const ProjectCTA = () => {
 
-    const { user, token } = useAuth();
+    const { user } = useAuth();
   
   return (
     <section 

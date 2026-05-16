@@ -262,7 +262,7 @@ const WhatsHappening = () => {
                 animate="center"
                 exit="exit"
                 transition={{ duration: 0.4, ease: "easeInOut" }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pointer-events-auto"
+               className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5 lg:gap-6 pointer-events-auto"
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.2}
@@ -445,19 +445,6 @@ const WhatsHappening = () => {
             )
           )}
         </div>
-
-        {/* Add progress animation keyframes - Updated timing */}
-        <style jsx>{`
-          @keyframes progress {
-            from {
-              transform: scale(0);
-            }
-            to {
-              transform: scale(1.2);
-            }
-          }
-        `}</style>
-
       </div>
     </section>
   );

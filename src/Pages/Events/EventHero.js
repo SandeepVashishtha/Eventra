@@ -1,6 +1,10 @@
+
+
+
 import { motion } from "framer-motion";
-import { Search, X, Sparkles, Users, Award, Code2, Calendar } from "lucide-react";
+import { Sparkles, Users, Award, Code2, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import ModernSearchInput from "../../components/common/ModernSearchInput";
 
 export default function EventHero({
   searchQuery,
@@ -51,19 +55,24 @@ export default function EventHero({
               top: circle.y,
               left: circle.x,
               backgroundColor: circle.color,
-              opacity: 0.2,
+              opacity: 0.5, // Increased from 0.2 for better visibility
+              filter: "blur(2px)", // Added a slight blur for a premium look
             }}
           />
         ))}
       </div>
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 text-center z-10">
-        <h1
-          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight px-4 sm:px-0 text-black"
-          style={{ fontFamily: '"Anton", sans-serif' }}
-        >
-          Discover <span className="text-black">Amazing Events</span>
-        </h1>
+       <h1
+  className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight px-4"
+  style={{
+    fontFamily: '"Anton", sans-serif',
+    color: "white",
+    WebkitTextFillColor: "white",
+  }}
+>
+  Discover Amazing Events 🎯
+</h1>
 
         <p className="mt-4 text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto px-4 sm:px-0">
           Discover exciting events, compete with talented participants, learn
@@ -71,28 +80,11 @@ export default function EventHero({
         </p>
 
         <div className="w-full max-w-3xl mx-auto mt-8 sm:mt-12 px-4 sm:px-0">
-          <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center z-10 pointer-events-none">
-              <Search className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 dark:text-gray-500 transition-colors" />
-            </div>
-
-            <input
-              type="text"
-              placeholder="Search events by name, location, or tags..."
-              className="block w-full pl-10 sm:pl-12 pr-10 sm:pr-12 py-3 sm:py-4 text-sm sm:text-base text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-white/20 transition-all duration-300 shadow-lg hover:shadow-xl"
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-            />
-
-            {searchQuery && (
-              <button
-                onClick={() => handleSearch("")}
-                className="absolute inset-y-0 right-0 pr-3 sm:pr-4 flex items-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors z-10"
-              >
-                <X className="h-4 w-4 sm:h-5 sm:w-5" />
-              </button>
-            )}
-          </div>
+          <ModernSearchInput
+            value={searchQuery}
+            onChange={(e) => handleSearch(e.target.value)}
+            placeholder="Search events by name, location, or tags..."
+          />
 
           <div className="mt-4 flex items-center justify-between flex-wrap gap-2 sm:gap-3 px-2">
             <div className="flex gap-1.5 sm:gap-2 flex-wrap">
@@ -114,7 +106,7 @@ export default function EventHero({
 
         <div className="mt-8 sm:mt-12 flex justify-center gap-3 sm:gap-5 flex-wrap px-4 sm:px-0">
           <button
-            className="relative px-5 sm:px-7 py-2.5 sm:py-3.5 rounded-xl text-sm sm:text-base font-semibold text-black shadow-lg overflow-hidden group bg-blue-100 hover:bg-blue-200 transition-all duration-300"
+            className="relative px-5 sm:px-7 py-2.5 sm:py-3.5 rounded-xl text-sm sm:text-base font-semibold text-black dark:text-white shadow-lg overflow-hidden group bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 dark:hover:bg-blue-900/60 transition-all duration-300"
             onClick={scrollToCard}
           >
             <span className="relative flex items-center">
@@ -125,7 +117,7 @@ export default function EventHero({
 
           <button
             onClick={() => navigate("/create-event")}
-            className="relative px-5 sm:px-7 py-2.5 sm:py-3.5 rounded-xl text-sm sm:text-base font-medium text-black shadow-md hover:shadow-lg bg-green-100 hover:bg-green-200 transition-all duration-300"
+            className="relative px-5 sm:px-7 py-2.5 sm:py-3.5 rounded-xl text-sm sm:text-base font-medium text-black dark:text-white shadow-md hover:shadow-lg bg-green-100 dark:bg-green-900/40 hover:bg-green-200 dark:hover:bg-green-900/60 transition-all duration-300"
           >
             <span className="relative flex items-center">
               <Users className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-2" />
@@ -134,7 +126,7 @@ export default function EventHero({
           </button>
         </div>
       </div>
-
+{searchQuery.trim() === "" && (
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 mt-12 sm:mt-16 md:mt-20 mb-8 sm:mb-12 md:mb-16 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
         {[
           {
@@ -192,7 +184,7 @@ export default function EventHero({
             <div className={`absolute inset-0 rounded-2xl sm:rounded-3xl bg-gradient-to-br ${stat.glow} dark:from-gray-500/20 dark:to-gray-600/10 blur-2xl opacity-40 -z-10`} />
           </div>
         ))}
-      </div>
+      </div>)}
     </div>
   );
 }

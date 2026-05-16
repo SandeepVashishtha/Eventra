@@ -1,80 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Mail, Phone, FileText, MessageSquare } from "lucide-react";
+import { User, Mail, FileText, MessageSquare } from "lucide-react";
 import {
   FiStar,
   FiMessageSquare,
-  FiUser,
-  FiMail,
-  FiCheckCircle,
 } from "react-icons/fi";
+import { toast } from "react-toastify";
 
-// Toast Component
-const Toast = ({ message, type = "success", onClose }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 50, scale: 0.3 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
-      className={`fixed top-24 right-4 max-w-sm w-full shadow-lg rounded-lg pointer-events-auto overflow-hidden ${
-        type === "success" ? "bg-green-500" : "bg-red-500"
-      }`}
-    >
-      <div className="p-4">
-        <div className="flex items-start">
-          <div className="flex-shrink-0">
-            {type === "success" ? (
-              <svg
-                className="h-6 w-6 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            ) : (
-              <svg
-                className="h-6 w-6 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            )}
-          </div>
-          <div className="ml-3 w-0 flex-1 pt-0.5">
-            <p className="text-sm font-medium text-white">{message}</p>
-          </div>
-          <div className="ml-4 flex-shrink-0 flex">
-            <button
-              onClick={onClose}
-              className="bg-transparent inline-flex text-white hover:text-gray-200 focus:outline-none"
-            >
-              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path
-                  fillRule="evenodd"
-                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
+
 
 // Floating Label Input Component
 const FloatingInput = ({
@@ -90,7 +23,7 @@ const FloatingInput = ({
   const [isFocused, setIsFocused] = useState(false);
 
   return (
-    <div className="relative mt-6">
+    <div className="relative mt-6 pt-20 md:pt-24">
       {Icon && (
         <Icon className="absolute left-3 top-4 text-gray-400 w-5 h-5 pointer-events-none" />
       )}
@@ -142,17 +75,15 @@ const FloatingInput = ({
 // Contact Us Page Component
 
 const ContactUs = () => {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    subject: "",
-    message: "",
-    phone: "",
-  });
+ const [formData, setFormData] = useState({
+  name: "",
+  email: "",
+  subject: "",
+  message: "",
+});
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [toast, setToast] = useState(null);
   const formRef = useRef(null);
 
   // Scroll to top when component mounts
@@ -234,11 +165,7 @@ const ContactUs = () => {
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
       // Show success toast
-      setToast({
-        message:
-          "Your message has been sent successfully! We'll get back to you soon.",
-        type: "success",
-      });
+      toast.success("Your message has been sent successfully! We'll get back to you soon.");
 
       // Reset form
       setFormData({
@@ -248,17 +175,9 @@ const ContactUs = () => {
         message: "",
       });
     } catch (error) {
-      setToast({
-        message: "There was an error sending your message. Please try again.",
-        type: "error",
-      });
+      toast.error("There was an error sending your message. Please try again.");
     } finally {
       setIsSubmitting(false);
-
-      // Auto-close toast after 5 seconds
-      setTimeout(() => {
-        setToast(null);
-      }, 5000);
     }
   };
   const [isFocused, setIsFocused] = useState(false);
@@ -276,7 +195,7 @@ const ContactUs = () => {
           // UPDATED: Card background and border
           className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
         >
-          <div className="md:flex">
+          <div className="md:flex gap-0">
             <div
               className="md:w-3/5 lg:w-2/5 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white p-12 flex flex-col justify-between rounded-3xl shadow-xl backdrop-blur-lg"
               data-aos="fade-right"
@@ -499,41 +418,8 @@ const ContactUs = () => {
         </motion.div>
       </div>
 
-      <AnimatePresence>
-        {toast && (
-          <Toast
-            message={toast.message}
-            type={toast.type}
-            onClose={() => setToast(null)}
-          />
-        )}
-      </AnimatePresence>
 
-      <style jsx>{`
-        @keyframes shake {
-          0%,
-          100% {
-            transform: translateX(0);
-          }
-          10%,
-          30%,
-          50%,
-          70%,
-          90% {
-            transform: translateX(-5px);
-          }
-          20%,
-          40%,
-          60%,
-          80% {
-            transform: translateX(5px);
-          }
-        }
 
-        .animate-shake {
-          animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-        }
-      `}</style>
     </div>
   );
 };
