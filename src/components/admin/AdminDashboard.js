@@ -1,3 +1,4 @@
+import StatusBadge from "../common/StatusBadge";
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
@@ -239,7 +240,7 @@ const AdminDashboard = () => {
                           <p className="ad-list-title">{u.firstName} {u.lastName}</p>
                           <p className="ad-list-sub">{u.email}</p>
                         </div>
-                        <span className={`ad-badge ${STATUS_COLORS[u.status] || 'ad-badge-gray'}`}>{u.status}</span>
+                        <StatusBadge status={u.status} />
                       </div>
                     ))}
                   </motion.section>
@@ -257,7 +258,7 @@ const AdminDashboard = () => {
                           <p className="ad-list-title">{ev.title}</p>
                           <p className="ad-list-sub">{ev.date} · {ev.participantCount} participants</p>
                         </div>
-                        <span className={`ad-badge ${STATUS_COLORS[ev.status] || 'ad-badge-gray'}`}>{ev.status}</span>
+                        <StatusBadge status={ev.status} />
                       </div>
                     ))}
                   </motion.section>
@@ -307,11 +308,11 @@ const AdminDashboard = () => {
                             <td className="ad-muted">{u.email}</td>
                             <td>
                               {u.roles.map(r => (
-                                <span key={r} className={`ad-badge ${STATUS_COLORS[r] || 'ad-badge-gray'}`} style={{ marginRight: '4px' }}>{r}</span>
+                                <span key={r} style={{ marginRight: '4px' }}><StatusBadge status={r} /></span>
                               ))}
                             </td>
                             <td className="ad-muted">{u.createdAt}</td>
-                            <td><span className={`ad-badge ${STATUS_COLORS[u.status] || 'ad-badge-gray'}`}>{u.status}</span></td>
+                            <td><StatusBadge status={u.status} /></td>
                             <td>
                               <div className="ad-action-btns">
                                 {hasPermission('EDIT_USER') && (
@@ -369,13 +370,13 @@ const AdminDashboard = () => {
                           <tr key={ev.id}>
                             <td className="ad-table-bold">{ev.title}</td>
                             <td>
-                              <span className={`ad-badge ${ev.type === 'Hackathon' ? 'ad-badge-purple' : 'ad-badge-blue'}`}>
-                                {ev.type}
-                              </span>
+                              <StatusBadge status={ev.type} />
+                              
+                              
                             </td>
                             <td className="ad-muted">{ev.date}</td>
                             <td className="ad-muted">{ev.participantCount}</td>
-                            <td><span className={`ad-badge ${STATUS_COLORS[ev.status] || 'ad-badge-gray'}`}>{ev.status}</span></td>
+                            <td><StatusBadge status={ev.status} /></td>
                             <td>
                               <div className="ad-action-btns">
                                 {hasPermission('EDIT_EVENT') && (
@@ -454,7 +455,7 @@ const AdminDashboard = () => {
                       const count = users.filter(u => u.roles.includes(role)).length;
                       return (
                         <div key={role} className="ad-role-chip">
-                          <span className={`ad-badge ${STATUS_COLORS[role] || 'ad-badge-gray'}`}>{role}</span>
+                          <StatusBadge status={role} />
                           <span className="ad-role-count">{count} user{count !== 1 ? 's' : ''}</span>
                         </div>
                       );
