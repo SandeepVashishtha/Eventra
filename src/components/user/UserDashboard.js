@@ -214,11 +214,6 @@ export default function UserDashboard() {
               </AnimatePresence>
             </div>
 
-            <Link to="/profile" className="ud-icon-btn">
-              <div className="ud-avatar">
-                {firstName.charAt(0).toUpperCase()}
-              </div>
-            </Link>
           </div>
         </header>
 

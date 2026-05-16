@@ -393,27 +393,31 @@ const Hero = () => {
           </motion.div>
 
           {/* Animated Stats Cards */}
-          <motion.div
-            variants={fadeUp}
-            className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
-          >
-            {stats.map((stat, i) => (
-              <motion.div
-                key={i}
-                variants={fadeUp}
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 300 }}
-                className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-lg border border-gray-100 dark:border-gray-700"
-              >
-                <p className="text-3xl font-bold mb-2 text-black dark:text-white">
-                  {stat.value}
-                </p>
-                <p className="text-black dark:text-gray-300 text-sm">
-                  {stat.label}
-                </p>
-              </motion.div>
-            ))}
-          </motion.div>
+          {/* Animated Stats Cards */}
+{!searchQuery.trim() && (
+  <motion.div
+    variants={fadeUp}
+    className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
+  >
+    {stats.map((stat, i) => (
+      <motion.div
+        key={i}
+        variants={fadeUp}
+        whileHover={{ scale: 1.05 }}
+        transition={{ type: "spring", stiffness: 300 }}
+        className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-lg border border-gray-100 dark:border-gray-700"
+      >
+        <p className="text-3xl font-bold mb-2 text-black dark:text-white">
+          {stat.value}
+        </p>
+        <p className="text-black dark:text-gray-300 text-sm">
+          {stat.label}
+        </p>
+      </motion.div>
+    ))}
+  </motion.div>
+)}
+          
         </motion.div>
       </div>
     </section>

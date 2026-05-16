@@ -6,8 +6,6 @@ import {
   FaDiscord,
   FaTelegram,
   FaGithub,
-  FaShieldAlt,
-  FaFileContract,
   FaQuestionCircle,
   FaEnvelope,
   FaBookOpen,
