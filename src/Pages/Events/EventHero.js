@@ -1,3 +1,6 @@
+
+
+
 import { motion } from "framer-motion";
 import { Search, X, Sparkles, Users, Award, Code2, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -120,7 +123,7 @@ export default function EventHero({
           </button>
         </div>
       </div>
-
+{searchQuery.trim() === "" && (
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 mt-12 sm:mt-16 md:mt-20 mb-8 sm:mb-12 md:mb-16 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
         {[
           {
@@ -178,7 +181,7 @@ export default function EventHero({
             <div className={`absolute inset-0 rounded-2xl sm:rounded-3xl bg-gradient-to-br ${stat.glow} dark:from-gray-500/20 dark:to-gray-600/10 blur-2xl opacity-40 -z-10`} />
           </div>
         ))}
-      </div>
+      </div>)}
     </div>
   );
 }
