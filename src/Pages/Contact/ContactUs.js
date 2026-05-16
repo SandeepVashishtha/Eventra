@@ -259,7 +259,7 @@ const ContactUs = () => {
   };
   const [isFocused, setIsFocused] = useState(false);
   return (
-    <div className="pastel-grid-bg min-h-screen bg-white dark:bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
       <div className="max-w-4xl w-full mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
