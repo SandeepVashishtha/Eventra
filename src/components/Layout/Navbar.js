@@ -276,9 +276,9 @@ const UserProfileDropdown = ({
       {user?.profilePicture ? (
         <img src={user.profilePicture} alt="Profile" className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20" onError={(e) => (e.currentTarget.style.display = "none")} />
       ) : (
-        <div className="w-8 h-8 rounded-full dark:bg-white/20 bg-gray-300 flex items-center justify-center">
-          <UserIcon className="w-4 h-4 text-gray-600 dark:text-white" />
-        </div>
+       <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold text-sm">
+        {primaryLine?.charAt(0).toUpperCase()}
+      </div>
       )}
     </button>
     <AnimatePresence>
