@@ -23,7 +23,7 @@ const FloatingInput = ({
   const [isFocused, setIsFocused] = useState(false);
 
   return (
-    <div className="relative mt-6">
+    <div className="relative mt-6 pt-20 md:pt-24">
       {Icon && (
         <Icon className="absolute left-3 top-4 text-gray-400 w-5 h-5 pointer-events-none" />
       )}

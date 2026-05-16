@@ -9,6 +9,9 @@ import ProjectCTA from "./ProjectCTA";
 // Import mock data directly (assuming it's named mockProjectsData.json in the same folder as ProjectsPage.js)
 import mockProjects from "./mockProjectsData.json";
 
+import ModernSearchInput from "../../components/common/ModernSearchInput";
+import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
+
 // Skeleton loader for project cards while data is loading
 const SkeletonCard = () => (
   <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden animate-pulse">
