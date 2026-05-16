@@ -55,7 +55,7 @@ const handleCopyLink = (e) => {
       data-aos="zoom-in"
       data-aos-duration="1000"
       className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl   
-      backdrop-blur-sm transition-all duration-500 flex flex-col card-with-floating-elements z-10 hover:z-50"
+      backdrop-blur-sm transition-all duration-500 hover:-translate-y-2 flex flex-col card-with-floating-elements z-10 hover:z-50"
     >
       {/* Animated gradient border overlay */}
       <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-90 transition-opacity duration-500 bg-black/10 -z-10"></div>
@@ -171,13 +171,13 @@ const handleCopyLink = (e) => {
 
       {/* --- Enhanced Description --- */}
       <div className="px-8 py-6 border-b border-gray-200/60 dark:border-gray-700/50 bg-gradient-to-r from-transparent to-indigo-50/30 dark:to-indigo-950/30">
-        <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-3 leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors duration-300">
+        <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors duration-300">
           {event.description}
         </p>
       </div>
 
       {/* --- Enhanced Info Section --- */}
-      <div className="px-8 py-6 grid grid-cols-2 gap-6 text-gray-700 dark:text-gray-300 text-sm bg-gradient-to-br from-gray-50/50 to-indigo-50/30 dark:from-gray-800/50 dark:to-indigo-950/30">
+      <div className="className=px-8 py-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div
           className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all duration-300"
         >
@@ -193,7 +193,9 @@ const handleCopyLink = (e) => {
           <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
             <Clock size={16} className="text-blue-500" />
           </div>
-          <span className="font-medium">{event.time}</span>
+          <span className="font-semibold text-blue-600 dark:text-blue-400">
+  {event.time}
+</span>
         </div>
 
         <div
@@ -202,7 +204,9 @@ const handleCopyLink = (e) => {
           <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
             <Tag size={16} className="text-green-500" />
           </div>
-          <span className="font-medium">{event.type}</span>
+          <span className="font-semibold text-green-600 dark:text-green-400">
+  {event.type}
+</span>
         </div>
 
         <div
@@ -211,7 +215,7 @@ const handleCopyLink = (e) => {
           <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
             <Calendar size={16} className="text-indigo-500" />
           </div>
-          <span className="font-medium">
+          <span className="font-semibold text-indigo-600 dark:text-indigo-400">
             {new Date(event.date).toLocaleDateString("en-US", {
               weekday: "short",
               day: "numeric",
@@ -225,7 +229,7 @@ const handleCopyLink = (e) => {
       <div className="px-8 py-6 flex gap-4 bg-gradient-to-r from-gray-50/30 to-white/60 dark:from-gray-800/30 dark:to-gray-900/60">
         <Link to={`/events/${event.id}/register`} className="group/btn flex-1">
           <div
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-black text-white px-6 py-3 text-sm font-bold shadow-lg hover:bg-zinc-800 hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 text-sm font-bold shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden"
           >
             {/* Shimmer effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700"></div>
