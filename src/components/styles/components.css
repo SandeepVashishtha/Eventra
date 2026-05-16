@@ -10,8 +10,11 @@
 .dark .search-filter-container {
   color: #d1d5db; /* gray-300 */
 }
-.dark .search-header .search-title {
-  color: #f9fafb; /* gray-50 */
+.search-title {
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: white !important;
 }
 .dark .search-header .search-subtitle {
   color: #9ca3af; /* gray-400 */

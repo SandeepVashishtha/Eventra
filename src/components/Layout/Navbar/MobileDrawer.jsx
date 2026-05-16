@@ -7,6 +7,8 @@ import {
   LayoutDashboard,
   Sparkles,
   MousePointer,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { UserCog } from "lucide-react";
 import { useTheme } from "../../../context/ThemeContext";
@@ -59,9 +61,11 @@ const MobileDrawer = ({
         <div className="flex items-center gap-3">
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-full text-text-light bg-gray-100 dark:bg-white/10 hover:bg-gray-200"
+            aria-label={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            className="p-2 rounded-full text-gray-700 dark:text-white bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
-            {isDarkMode ? "☀️" : "🌙"}
+            {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>
           <button
             ref={closeBtnRef}
