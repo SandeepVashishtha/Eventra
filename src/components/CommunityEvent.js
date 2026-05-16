@@ -147,7 +147,7 @@ const CommunityEvent = () => {
               {/* Learn More Button is fine for both themes */}
               <motion.button
                 whileHover={{ scale: 1.05 }}
-                className="mt-6 px-4 py-2 text-sm font-semibold text-white bg-black rounded-lg shadow-md hover:bg-zinc-800 transition-all"
+                className="mt-6 px-4 py-2 text-sm font-semibold text-white  rounded-lg shadow-md bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 transition-all"
               >
                 Learn More →
               </motion.button>

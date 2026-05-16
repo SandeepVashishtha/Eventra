@@ -267,7 +267,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
         <div className="pt-3">
           {hackathon.status === "live" ? (
             <div className="grid grid-cols-2 gap-3">
-              <button className="px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-zinc-800 transition-colors">
+              <button className="px-4 py-2 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800  hover:to-indigo-900 text-white text-sm font-medium rounded-lg transition-colors">
                 Join Now
               </button>
               {/* UPDATED: Secondary button colors */}
@@ -279,7 +279,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
             <div className="grid grid-cols-1 gap-3">
               {/* Action buttons row */}
               <div className="flex gap-3">
-                <button className="flex-1 px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-zinc-800 transition-colors">
+                <button className="flex-1 px-4 py-2 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800  hover:to-indigo-900 text-white text-sm font-medium rounded-lg  transition-colors">
                   Register
                 </button>
 
@@ -306,7 +306,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
-              <button className="px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-zinc-800 transition-colors">
+              <button className="px-4 py-2 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800  hover:to-indigo-900 text-white text-sm font-medium rounded-lg hover:bg-zinc-800 transition-colors">
                 View Results
               </button>
               {/* UPDATED: Secondary button colors */}
