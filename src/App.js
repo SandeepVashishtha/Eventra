@@ -14,7 +14,6 @@ import NotificationProvider from "./components/common/NotificationProvider";
 
 // --------------- CONTEXT & HOOKS
 import { AuthProvider } from "./context/AuthContext";
-import { ThemeProvider } from "./context/ThemeContext";
 import { useModelContext } from "./hooks/useModelContext";
 
 function App() {
@@ -31,7 +30,7 @@ function App() {
   };
 
   return (
-    <ThemeProvider>
+    <>
       <NotificationProvider />
       <AuthProvider>
         <Router>
@@ -54,7 +53,7 @@ function App() {
           </div>
         </Router>
       </AuthProvider>
-    </ThemeProvider>
+    </>
   );
 }
 
