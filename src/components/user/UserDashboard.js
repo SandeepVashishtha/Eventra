@@ -214,11 +214,6 @@ export default function UserDashboard() {
               </AnimatePresence>
             </div>
 
-            <Link to="/profile" className="ud-icon-btn">
-              <div className="ud-avatar">
-                {firstName.charAt(0).toUpperCase()}
-              </div>
-            </Link>
           </div>
         </header>
 
@@ -508,9 +503,13 @@ export default function UserDashboard() {
                               {item.type}
                             </span>
                           </td>
-                          <td className="ud-table-title">{item.title}</td>
+                          {/* title tooltip shows full text on hover */}
+                          <td className="ud-table-title" title={item.title}>{item.title}</td>
                           <td>{item.date || "—"}</td>
-                          <td>{item.location || item.lastUpdate || "—"}</td>
+                          {/* location tooltip shows full text on hover */}
+                          <td title={item.location || item.lastUpdate || "—"}>
+                            {item.location || item.lastUpdate || "—"}
+                          </td>
                           <td>
                             <span className={`ud-badge ${STATUS_COLORS[item.projectStatus] || STATUS_COLORS[item.status] || "ud-badge-gray"}`}>
                               {item.projectStatus !== "-" ? item.projectStatus : item.status}

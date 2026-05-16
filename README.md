@@ -30,7 +30,9 @@ Eventra is a comprehensive, open-source platform designed to empower organizers 
 
 ## Overview
 
-Eventra helps communities and organizers run events end-to-end, including registrations, dashboards, hackathon workflows, and feedback collection. The frontend is a React single-page app, and the backend is a Spring Boot REST API documented with Swagger.
+Eventra helps communities and organizers run events end-to-end, including registrations, dashboards, hackathon workflows, and feedback collection.
+
+This repository contains the React frontend application for Eventra. The backend services are maintained separately in the Eventra-Backend repository using Spring Boot and Java.
 
 ## Live Demo
 
@@ -96,6 +98,9 @@ Eventra helps communities and organizers run events end-to-end, including regist
 | **Framer Motion** for Animations | **Spring Security & JWT** | **Maven** for Build Automation |
 | **Tailwind CSS** (or CSS) for Styling | **MySQL & H2** Databases | **OpenAPI 3.0** for API Docs |
 | **Create React App** | **Spring Data JPA** | **Azure App Service** for Backend Hosting |
+
+> **Note:** This repository mainly contains the frontend implementation. Backend APIs and services are maintained separately in the [Eventra-Backend](https://github.com/SandeepVashishtha/Eventra-Backend) repository.
+
 
 ## Getting Started
 
@@ -173,25 +178,35 @@ REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id_here
 
 ## Project Structure
 
-The frontend codebase is organized to be scalable and maintainable.
+The repository is organized into modular frontend components, contexts, configuration files, and utility helpers.
 
-```
+```text
 Eventra/
-├── public/                  # Static assets and index.html
-└── src/
-├── assets/              # Images, fonts, etc.
-├── components/          # Reusable UI components (common, layout, etc.)
-│   ├── auth/            # Login, Signup, ProtectedRoute
-│   ├── common/          # Buttons, Modals, Loading spinners
-│   └── layout/          # Navbar, Footer
-├── context/             # React Context providers (AuthContext, ThemeContext)
-├── hooks/               # Custom React hooks
-├── pages/               # Top-level page components (HomePage, EventsPage, etc.)
-├── services/            # API calls and external service integrations
-├── styles/              # Global CSS files
-├── utils/               # Utility functions
-├── App.js               # Main application component with routing
-└── index.js             # Entry point of the React application
+├── public/
+├── src/
+│   ├── assets/
+│   ├── components/
+│   │   ├── admin/
+│   │   ├── auth/
+│   │   ├── common/
+│   │   ├── Layout/
+│   │   ├── routes/
+│   │   ├── styles/
+│   │   └── user/
+│   ├── config/
+│   ├── context/
+│   ├── jhalak/
+│   ├── Pages/
+│   ├── utils/
+│   ├── App.js
+│   ├── App.css
+│   ├── index.js
+│   └── index.css
+├── tests/
+├── .env.example
+├── package.json
+├── tailwind.config.js
+└── README.md
 ```
 
 ## Deployment
@@ -224,7 +239,7 @@ We welcome contributions from the community! To get started, please follow these
     ```bash
     git push origin feature/your-amazing-feature
     ```
-5.  **Open a Pull Request** to the `main` branch of the original repository.
+5.  **Open a Pull Request** to the `master` branch of the original repository.
 
 ### Issue Assignment Policy
 - To ensure active development, issues are **automatically unassigned after 7 days** of inactivity.
@@ -273,3 +288,5 @@ A huge thank you to everyone who has contributed to Eventra! Your efforts make t
 
 ---
 Built with care by the Eventra Team
+
+

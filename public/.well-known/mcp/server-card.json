@@ -1,0 +1,14 @@
+{
+  "serverInfo": {
+    "name": "Eventra Agent API",
+    "version": "1.0.0"
+  },
+  "transport": {
+    "type": "http",
+    "endpoint": "https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/mcp"
+  },
+  "capabilities": {
+    "tools": true,
+    "resources": true
+  }
+}

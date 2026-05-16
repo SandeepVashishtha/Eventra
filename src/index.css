@@ -1,4 +1,6 @@
-@import url("https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@100..900&display=swap");
+/* Fix: Removed 'Anton' decorative font — only 'Inter' is used for professionalism */
+/* Issue #828: Standardize and Professionalize Font Text and Size */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -22,32 +24,49 @@
   --scrollbar-thumb-hover-color: #262626;
   --btn-secondary-text: #4a4a4a;
 
-  /* Font sizes */
-  --font-body: 16px;
-  --font-nav: 16px;
-  --font-h1: 32px;
-  --font-h2: 28px;
-  --font-h3: 24px;
-  --font-h4: 22px;
-  --font-h5: 20px;
-  --font-h6: 18px;
+  /* Fix: Standardized professional type scale based on 1rem = 16px baseline */
+  --font-body: 1rem;        /* 16px — readable body text */
+  --font-nav: 0.9375rem;    /* 15px — compact but legible nav */
+  --font-h1: 2.25rem;       /* 36px — authoritative, not oversized */
+  --font-h2: 1.875rem;      /* 30px */
+  --font-h3: 1.5rem;        /* 24px */
+  --font-h4: 1.25rem;       /* 20px */
+  --font-h5: 1.125rem;      /* 18px */
+  --font-h6: 1rem;          /* 16px */
+
+  /* Fix: Added line-height tokens for consistent vertical rhythm */
+  --lh-heading: 1.2;
+  --lh-body: 1.65;
+
+  /* Fix: Added font-weight tokens */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-extrabold: 800;
 }
 
-body.dark {
-  --bg-color: #121212;
-  --text-color: #e0e0e0;
-  --text-color-light: #a0a0a0;
-  --border-color: #333333;
-  --card-bg-color: #1e1e1e;
-  --scrollbar-track-color: #2c2c2c;
-  --scrollbar-thumb-color: #000000;
-  --scrollbar-thumb-hover-color: #262626;
-  --btn-secondary-text: #e0e0e0;
+/* Fix #599: Changed from body.dark to .dark
+   ThemeToggleButton.js applies the dark class to document.documentElement (html),
+   not to body. Using body.dark meant these variables never activated in dark mode. */
+.dark {
+  --bg-color: transparent;
+  --text-color: #ffffff;
+  --text-color-light: #e0e0e0;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --card-bg-color: rgba(20, 20, 30, 0.5);
+  --scrollbar-track-color: rgba(0, 0, 0, 0.3);
+  --scrollbar-thumb-color: rgba(255, 255, 255, 0.2);
+  --scrollbar-thumb-hover-color: rgba(255, 255, 255, 0.4);
+  --btn-secondary-text: #ffffff;
+  background: linear-gradient(180deg, #090218 0%, #1c0836 40%, #4a154b 75%, #a12b59 100%) no-repeat center center fixed;
+  background-size: cover;
 }
 
 /* Global styles */
 html {
   scroll-behavior: auto;
+  font-size: 16px; /* Explicit root size for reliable rem calculations */
 }
 
 body {
@@ -56,14 +75,13 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  line-height: 1.6;
+  line-height: var(--lh-body);
   overflow-x: hidden;
   color: var(--text-color);
   background-color: var(--bg-color);
   transition: background-color 0.3s ease, color 0.3s ease;
-
-  /* Body font size */
   font-size: var(--font-body);
+  font-weight: var(--fw-regular);
 }
 body.dark .pastel-grid-bg {
   background-color: var(--bg-color);
@@ -89,12 +107,13 @@ h6 { font-size: var(--font-h6); }
 /* Navigation items */
 nav, nav a {
   font-size: var(--font-nav);
+  font-weight: var(--fw-medium);
 }
 
 /* Code block */
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
-  font-size: 14px;
+  font-size: 0.875rem; /* 14px */
 }
 
 /* Custom scrollbar */
@@ -120,8 +139,8 @@ code {
   padding: 12px 32px;
   border: none;
   border-radius: 8px;
-  font-weight: 600;
-  font-size: 16px;
+  font-weight: var(--fw-semibold);
+  font-size: var(--font-body);
   text-decoration: none;
   display: inline-block;
   transition: all 0.3s ease;
@@ -140,8 +159,8 @@ code {
   padding: 12px 32px;
   border: 2px solid var(--border-color);
   border-radius: 8px;
-  font-weight: 600;
-  font-size: 16px;
+  font-weight: var(--fw-semibold);
+  font-size: var(--font-body);
   text-decoration: none;
   display: inline-block;
   transition: all 0.3s ease;
@@ -154,18 +173,20 @@ code {
   transform: translateY(-2px);
 }
 
-/* Responsive adjustments */
+/* Fix: Responsive font scale — uses em-based scaling for fluidity */
 @media (max-width: 768px) {
+  :root {
+    --font-h1: 1.75rem;   /* 28px on mobile */
+    --font-h2: 1.5rem;    /* 24px */
+    --font-h3: 1.25rem;   /* 20px */
+    --font-h4: 1.125rem;  /* 18px */
+    --font-h5: 1rem;
+    --font-h6: 0.9375rem;
+  }
+
   .container { padding: 0 16px; }
   .section-padding { padding: 60px 0; }
-  .btn-primary, .btn-secondary { padding: 10px 24px; font-size: 14px; }
-
-  h1 { font-size: 28px; }
-  h2 { font-size: 24px; }
-  h3 { font-size: 22px; }
-  h4 { font-size: 20px; }
-  h5, h6 { font-size: 18px; }
-  body, nav, nav a { font-size: 16px; }
+  .btn-primary, .btn-secondary { padding: 10px 24px; font-size: 0.875rem; }
 }
 
 /* Remove input clear buttons */
@@ -184,3 +205,4 @@ input::-webkit-password-toggle { display: none !important; }
     linear-gradient(-45deg, rgba(250, 204, 21, 0.10) 1px, transparent 1px);
   background-size: 40px 40px, 40px 40px, 80px 80px, 80px 80px;
 }
+
