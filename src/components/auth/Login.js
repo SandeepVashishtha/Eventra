@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import GoogleSignInButton from '../GoogleSignInButton';
-import { toast } from '../../utils/toast';
+import { toast } from 'react-toastify';
 
 const Login = () => {
   const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
