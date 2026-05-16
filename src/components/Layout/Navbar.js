@@ -690,7 +690,12 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           {/* Theme Toggle Button */}
           <button
            onClick={toggleTheme}
-           className="text-xl text-gray-700 dark:text-white hover:opacity-70 transition-opacity mr-2"
+           className="p-2 rounded-full text-gray-700 dark:text-white
+           hover:bg-gray-100 dark:hover:bg-white/10
+           hover:scale-110
+           transition-all duration-300
+           mr-2
+           "
             >
            {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
 </button>

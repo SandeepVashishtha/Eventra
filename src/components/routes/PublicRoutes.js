@@ -22,7 +22,7 @@ import FeedbackPage from "../../Pages/Feedback/FeedbackPage";
 import EventAnalyticsDashboard from "../../Pages/Events/EventAnalyticsDashboard";
 import DocumentationPage from "../../Pages/About/DocumentationPage";
 import SubmitProject from "../../Pages/Projects/SubmitProject";
-
+import EventDetails from "../../Pages/EventDetails";
 export const getPublicRoutes = () => [
   <Route key="/" path="/" element={<HomePage />} />,
   <Route key="/events" path="/events" element={<EventsPage />} />,
