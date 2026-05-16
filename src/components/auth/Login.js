@@ -68,23 +68,45 @@ const Login = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
-      className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-gray-900 dark:to-black py-12 px-4 sm:px-6 lg:px-8"
+      className="pastel-grid-bg min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-gray-900 dark:to-black py-12 px-4 sm:px-6 lg:px-8"
     >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-        className="absolute inset-0 bg-gradient-to-br from-gray-400/5 via-gray-500/5 to-gray-700/5 dark:from-gray-900/10 dark:via-gray-800/10 dark:to-gray-700/10"
-        aria-hidden
-      />
 
-      <div className="relative w-full max-w-md">
+      <div className="max-w-4xl w-full mx-auto">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="backdrop-blur-xl bg-white/80 dark:bg-gray-900/70 border border-white/20 dark:border-white/10 shadow-2xl rounded-2xl p-8 space-y-8"
+          className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
         >
+        <div className="md:flex">
+
+        {/* LEFT PANEL */}
+        <div className="md:w-2/5 bg-black text-white p-12 flex flex-col justify-between rounded-3xl">
+          <div>
+            <h2 className="text-4xl font-extrabold mb-4" style={{ fontFamily: '"Anton", sans-serif' }}>
+              Welcome Back
+            </h2>
+            <p className="mb-8 text-lg opacity-90 leading-relaxed">
+              Sign in to your Eventra account and pick up where you left off.
+            </p>
+          </div>
+          <div className="mt-8 flex items-center p-4 bg-white/10 rounded-2xl hover:bg-white/20 transition duration-300 ease-in-out">
+            <div className="bg-white/20 p-3 rounded-full mr-4 flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+              </svg>
+            </div>
+            <p className="text-sm text-white/80">
+              Don't have an account?{" "}
+              <Link to="/signup" className="font-semibold hover:text-white/80 transition-colors" style={{ color: 'white' }}>
+                Sign up
+              </Link>
+            </p>
+          </div>
+        </div>
+
+        {/* RIGHT PANEL */}
+        <div className="md:w-3/5 p-10 space-y-6">
           {/* Logo / Title */}
           <motion.div
             initial={{ scale: 0 }}
@@ -111,13 +133,13 @@ const Login = () => {
                 />
               </svg>
             </motion.div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400">
+            <h1 className="text-black dark:text-white text-2xl font-bold mt-2">
               Welcome Back
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 font-medium">
+            <p className="text-md text-black dark:text-white">
               Sign in to your Eventra account
             </p>
-          </motion.div>
+            </motion.div>
 
           {/* Login Form */}
           <motion.form
@@ -228,18 +250,15 @@ const Login = () => {
             )}
 
             {/* Sign in button */}
-            <div
-  title={loading ? "Signing in, please wait..." : ""}
-  className="w-full"
->
-     <button
-    type="submit"
-    disabled={loading}
-    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 focus:ring-2 focus:ring-blue-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-     >
-    {loading ? "Signing In..." : "Sign In"}
-    </button>
-    </div>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              type="submit"
+              disabled={loading}
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
+            >
+              {loading ? "Signing In..." : "Sign In"}
+          </motion.button>
 
             {/* Google Sign-In */}
             <div className="pt-2">
@@ -279,6 +298,8 @@ const Login = () => {
               Privacy Policy
             </Link>
           </p>
+          </div>
+          </div>
         </motion.div>
       </div>
     </motion.div>
