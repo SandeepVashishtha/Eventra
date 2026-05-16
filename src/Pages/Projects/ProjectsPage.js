@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react"; // React hooks for state and lifecycle
 import { motion, AnimatePresence } from "framer-motion"; // Framer Motion for animations
 import { FiAlertCircle, FiSearch, FiX } from "react-icons/fi"; // Feather icons
+import ModernSearchInput from "../../components/common/ModernSearchInput";
 import ProjectHero from "./ProjectHero"; // Hero section component
 import ProjectCard from "./ProjectCard"; // Individual project card component
 import FeedbackButton from "../../components/FeedbackButton"; // Feedback floating button
@@ -15,7 +16,7 @@ const SkeletonCard = () => (
     <div className="p-6">
       <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded w-3/4 mb-4"></div>
       <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-full mb-2"></div>
-      <div className="h-4 w-5/6 bg-gray-100 dark:bg-gray-600 rounded w-5/6 mb-4"></div>
+      <div className="h-4 w-5/6 bg-gray-100 dark:bg-gray-600 rounded mb-4"></div>
       <div className="flex flex-wrap gap-2 mb-4">
         <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-16"></div>
         <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-24"></div>
@@ -300,7 +301,7 @@ const ProjectGallery = () => {
             // Show skeleton loaders while fetching
             <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <ProjectCardSkeleton key={`skeleton-${i}`} />
+                <SkeletonCard key={`skeleton-${i}`} />
               ))}
             </div>
           ) : error ? (
