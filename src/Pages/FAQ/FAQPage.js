@@ -133,7 +133,7 @@ const FAQPage = () => {
   }, [controls]);
 
   return (
-    <div className="pastel-grid-bg relative flex flex-col min-h-screen overflow-hidden">
+    <div className="pastel-grid-bg dark:bg-gray-900 relative flex flex-col min-h-screen overflow-hidden">
       {/* HERO */}
       <section className="pt-28 pb-10 sm:pt-32 sm:pb-12 relative overflow-hidden">
         {/* HERO Content */}
@@ -141,7 +141,7 @@ const FAQPage = () => {
           <motion.div variants={container} initial="hidden" animate={controls}>
             <motion.div variants={item}>
               <h1
-                className="text-4xl md:text-5xl lg:text-6xl font-bold text-black mb-4"
+                className="text-4xl md:text-5xl lg:text-6xl font-bold text-black dark:text-white dark:text-white mb-4"
                 style={{ fontFamily: '"Anton", sans-serif' }}
               >
                 Frequently Asked{" "}
@@ -149,7 +149,7 @@ const FAQPage = () => {
                   Questions
                 </span>
               </h1>
-              <p className="text-xl text-black max-w-3xl mx-auto leading-relaxed">
+              <p className="text-xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
                 Everything you need to know about using Eventra, from getting
                 started to hosting your own events. Can't find what you're
                 looking for? Reach out to our community!
@@ -180,7 +180,7 @@ const FAQPage = () => {
                     </span>
                   </div>
                   <div>
-                    <span className="text-xs font-medium text-black dark:text-white uppercase tracking-wide">
+                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                       {faq.category}
                     </span>
                     <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mt-1">
