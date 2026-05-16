@@ -1,27 +1,33 @@
 import React, { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, Sparkles, Users } from "lucide-react";
+import { X, Sparkles, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import ModernSearchInput from "../../components/common/ModernSearchInput";
 
-const Tag = ({ tag, onRemove }) => (
-  <motion.div
-    initial={{ scale: 0.92, opacity: 0 }}
-    animate={{ scale: 1, opacity: 1 }}
-    exit={{ scale: 0.92, opacity: 0 }}
-    className="flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-800 dark:border-blue-800 dark:bg-blue-900/50 dark:text-blue-200"
-  >
-    <span>{tag}</span>
-    <button
-      type="button"
-      onClick={() => onRemove(tag)}
-      className="rounded-full p-0.5 transition-colors hover:bg-blue-100 dark:hover:bg-blue-800"
-      aria-label={`Remove ${tag}`}
+const Tag = ({ tag, onRemove }) => {
+  const handleRemove = () => onRemove(tag);
+
+  return (
+    <motion.div
+      initial={{ scale: 0.92, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      exit={{ scale: 0.92, opacity: 0 }}
+      className="flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-800 dark:border-blue-800 dark:bg-blue-900/50 dark:text-blue-200"
     >
-      <X className="h-3 w-3" />
-    </button>
-  </motion.div>
-);
+      <span>{tag}</span>
+
+      <button
+        type="button"
+        onClick={handleRemove}
+        className="rounded-full p-0.5 transition-colors hover:bg-blue-100 dark:hover:bg-blue-800"
+        aria-label={`Remove tag ${tag}`}
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </motion.div>
+  );
+};
 
 const MetricItem = ({ value, label }) => (
   <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
@@ -43,6 +49,9 @@ export default function HackathonHero({
 }) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const handleHostNavigation = () => {
+  navigate(user ? "/host-hackathon" : "/login");
+};
 
   const shapes = useMemo(
     () => [
@@ -68,6 +77,20 @@ export default function HackathonHero({
     }),
     [],
   );
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    selectedTags.forEach(onTagRemove);
+  };
+
+  const tagNodes = selectedTags.map((tag) => (
+    <Tag key={tag} tag={tag} onRemove={onTagRemove} />
+  ));
+ const searchTags = selectedTags.length ? (
+  <AnimatePresence key="selected-tags">
+    {tagNodes}
+  </AnimatePresence>
+) : null;
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-l from-sky-50 via-white to-white py-10 dark:from-gray-900 dark:to-black sm:py-12 md:py-14">
@@ -113,43 +136,26 @@ export default function HackathonHero({
           transition={{ delay: 0.25, duration: 0.55 }}
           className="mx-auto mt-7 w-full max-w-3xl"
         >
-          <div className="relative group">
-            <div className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-4">
-              <Search className="h-5 w-5 text-gray-400 transition-colors group-focus-within:text-black dark:text-gray-500 dark:group-focus-within:text-white" />
-            </div>
-
-            <div className="flex min-h-[58px] w-full flex-wrap items-center gap-2 rounded-2xl border border-gray-200 bg-white/75 py-3 pl-12 pr-12 text-base text-gray-900 shadow-md backdrop-blur-xl transition-all duration-300 hover:shadow-lg focus-within:border-black/20 focus-within:ring-2 focus-within:ring-black/10 dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-100 dark:focus-within:border-white/20 dark:focus-within:ring-white/10">
-              <AnimatePresence>
-                {selectedTags.map((tag) => (
-                  <Tag key={tag} tag={tag} onRemove={onTagRemove} />
-                ))}
-              </AnimatePresence>
-
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder={
-                  selectedTags.length === 0
-                    ? "Search hackathons by name, location, or technology..."
-                    : ""
-                }
-                className="min-w-[160px] flex-1 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400 dark:text-gray-100 dark:placeholder:text-gray-500 sm:text-base"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                onKeyDown={onSearchKeyDown}
-              />
-            </div>
+          <div className="relative">
+            <ModernSearchInput
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              onKeyDown={onSearchKeyDown}
+              placeholder="Search hackathons by name, location, or technology..."
+              tags={searchTags}
+              containerClassName="w-full"
+              inputClassName="min-h-[58px] rounded-2xl border-gray-200 bg-white/75 py-3 shadow-md backdrop-blur-xl hover:shadow-lg dark:border-gray-700 dark:bg-gray-800/70"
+              showClearButton={false}
+              searchInputRef={searchInputRef}
+            />
 
             {(searchQuery || selectedTags.length > 0) && (
               <motion.button
                 type="button"
                 whileHover={{ rotate: 90, scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => {
-                  setSearchQuery("");
-                  selectedTags.forEach((tag) => onTagRemove(tag));
-                }}
-                className="absolute inset-y-0 right-0 z-10 flex items-center pr-4 text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                onClick={handleClearSearch}
+                className="absolute inset-y-0 right-0 z-20 flex items-center pr-4 text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                 aria-label="Clear search"
               >
                 <X className="h-5 w-5" />
@@ -165,11 +171,11 @@ export default function HackathonHero({
           className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2"
         >
           <MetricItem value="120+" label="Hosted" />
-          <span className="hidden text-gray-300 sm:inline">•</span>
+          <span className="hidden text-gray-300 sm:inline">|</span>
           <MetricItem value="50k+" label="Participants" />
-          <span className="hidden text-gray-300 sm:inline">•</span>
+          <span className="hidden text-gray-300 sm:inline">|</span>
           <MetricItem value="8k+" label="Projects" />
-          <span className="hidden text-gray-300 sm:inline">•</span>
+          <span className="hidden text-gray-300 sm:inline">|</span>
           <MetricItem value="$1M+" label="Awarded" />
         </motion.div>
 
@@ -190,21 +196,17 @@ export default function HackathonHero({
               Explore Hackathons
             </span>
           </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => {
-              if (!user) navigate("/login");
-              else navigate("/host-hackathon");
-            }}
-            className="rounded-xl bg-green-100 px-5 py-3 text-sm font-medium text-black shadow-sm transition-all duration-300 hover:bg-green-200"
-          >
-            <span className="flex items-center">
-              <Users className="mr-2 h-4 w-4" />
-              Host a Hackathon
-            </span>
-          </motion.button>
+                   <motion.button
+                 whileHover={{ scale: 1.03 }}
+                     whileTap={{ scale: 0.97 }}
+                      onClick={handleHostNavigation}
+                     className="rounded-xl bg-green-100 px-5 py-3 text-sm font-medium text-black shadow-sm transition-all duration-300 hover:bg-green-200"
+                  >
+                 <span className="flex items-center">
+                  <Users className="mr-2 h-4 w-4" />
+                    Host a Hackathon
+               </span>
+              </motion.button>
         </motion.div>
       </div>
     </div>

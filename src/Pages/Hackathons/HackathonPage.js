@@ -1,21 +1,22 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import EmptyHackathonState from "./EmptyHackathonState";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
+import Fuse from "fuse.js";
+import { createPortal } from "react-dom";
+import {
+  FiChevronDown,
+  FiCode,
+  FiCompass,
+  FiRotateCw,
+  FiSliders,
+  FiX,
+} from "react-icons/fi";
 import mockHackathons from "./hackathonMockData.json";
 import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
-import FeedbackButton from "../../components/FeedbackButton";
-import {
-  FiCode,
-  FiRotateCw,
-  FiCompass,
-  FiChevronDown,
-  FiX,
-  FiSliders,
-} from "react-icons/fi";
 import HackathonCTA from "./HackathonCTA";
-import Fuse from "fuse.js";
-import { createPortal } from "react-dom";
+import FeedbackButton from "../../components/FeedbackButton";
 import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 
 const INITIAL_FILTERS = {
@@ -39,6 +40,16 @@ const TAB_CONFIG = [
   { key: "completed", label: "Completed" },
 ];
 
+const TECH_TAG_LIMIT = 10;
+const ONLINE_MODE_KEYWORDS = ["online", "virtual", "remote"];
+const HYBRID_MODE_KEYWORDS = ["hybrid"];
+const STATUS_COUNTS_TEMPLATE = {
+  all: 0,
+  live: 0,
+  upcoming: 0,
+  completed: 0,
+};
+
 const parsePrizeAmount = (prize = "") =>
   Number(prize.replace(/[^0-9]/g, "")) || 0;
 
@@ -47,34 +58,51 @@ const getDateValue = (value) => {
   return Number.isNaN(timestamp) ? 0 : timestamp;
 };
 
-const matchesPrizeFilter = (hackathon, prizeFilter) => {
-  if (!prizeFilter) return true;
+const normalizeText = (value = "") => value.toLowerCase().trim();
 
-  const prizeAmount = parsePrizeAmount(hackathon.prize);
+const includesAnyKeyword = (values, keywords) =>
+  values.some((value) =>
+    keywords.some((keyword) => normalizeText(value).includes(keyword)),
+  );
 
-  if (prizeFilter === "Under $1,000") {
-    return prizeAmount < 1000;
-  }
+const normalizeHackathon = (hackathon) => ({
+  ...hackathon,
+  techStack: (hackathon.techStack || []).map((tag) =>
+    tag === "Any" ? "Blockchain" : tag,
+  ),
+});
 
-  if (prizeFilter === "$1,000 - $5,000") {
-    return prizeAmount >= 1000 && prizeAmount <= 5000;
-  }
+const getUniqueFieldValues = (hackathons, field) =>
+  [...new Set(hackathons.map((hackathon) => hackathon[field]).filter(Boolean))];
 
-  if (prizeFilter === "$5,000+") {
-    return prizeAmount >= 5000;
-  }
+const getAvailableTags = (hackathons) => {
+  const tags = new Set(["Blockchain", "Solidity", "Ethereum"]);
 
-  return true;
+  hackathons.forEach((hackathon) => {
+    (hackathon.techStack || []).forEach((tag) => tags.add(tag));
+  });
+
+  return Array.from(tags).sort((left, right) => left.localeCompare(right));
+};
+
+const PRIZE_RANGES = {
+  "Under $1,000": (amount) => amount < 1000,
+  "$1,000 - $5,000": (amount) => amount >= 1000 && amount <= 5000,
+  "$5,000+": (amount) => amount >= 5000,
 };
 
 const getHackathonMode = (hackathon) => {
-  if (hackathon.mode) return hackathon.mode;
+  if (hackathon.mode) {
+    return hackathon.mode;
+  }
 
-  const normalizedLocation = hackathon.location?.toLowerCase() || "";
-  if (
-    normalizedLocation.includes("online") ||
-    normalizedLocation.includes("virtual")
-  ) {
+  const searchableValues = [hackathon.mode, hackathon.location].filter(Boolean);
+
+  if (includesAnyKeyword(searchableValues, HYBRID_MODE_KEYWORDS)) {
+    return "Hybrid";
+  }
+
+  if (includesAnyKeyword(searchableValues, ONLINE_MODE_KEYWORDS)) {
     return "Online";
   }
 
@@ -82,20 +110,32 @@ const getHackathonMode = (hackathon) => {
 };
 
 const getRegistrationStatus = (hackathon) => {
-  if (hackathon.registrationStatus) return hackathon.registrationStatus;
-  if (hackathon.status === "completed") return "Closed";
-  return "Open";
+  if (hackathon.registrationStatus) {
+    return hackathon.registrationStatus;
+  }
+
+  return hackathon.status === "completed" ? "Closed" : "Open";
 };
 
 const getTeamSizeCategory = (hackathon) => {
-  if (hackathon.teamSize) return hackathon.teamSize;
+  if (hackathon.teamSize) {
+    return hackathon.teamSize;
+  }
 
   const teamRule =
     hackathon.rules?.find((rule) => /team|individual|solo/i.test(rule)) || "";
 
-  if (/individual|solo/i.test(teamRule)) return "Solo";
-  if (/5\+|5\s*members|3\s*-\s*5/i.test(teamRule)) return "5+ Members";
-  if (/2\s*-\s*4/i.test(teamRule)) return "2-4 Members";
+  if (/individual|solo/i.test(teamRule)) {
+    return "Solo";
+  }
+
+  if (/5\+|5\s*members|3\s*-\s*5/i.test(teamRule)) {
+    return "5+ Members";
+  }
+
+  if (/2\s*-\s*4/i.test(teamRule)) {
+    return "2-4 Members";
+  }
 
   return "";
 };
@@ -104,85 +144,61 @@ const getPopularityScore = (hackathon) =>
   hackathon.popularityScore ??
   hackathon.participants + hackathon.teams * 2 + hackathon.submissions * 3;
 
-const sortHackathons = (hackathons, sortBy) => {
-  if (!sortBy) return hackathons;
+const SORT_FUNCTIONS = {
+  Deadline: (left, right) =>
+    getDateValue(left.registrationDeadline || left.startDate) -
+    getDateValue(right.registrationDeadline || right.startDate),
+  Newest: (left, right) =>
+    getDateValue(right.createdAt || right.startDate) -
+    getDateValue(left.createdAt || left.startDate),
+  Popularity: (left, right) =>
+    getPopularityScore(right) - getPopularityScore(left),
+  "Prize Amount": (left, right) =>
+    parsePrizeAmount(right.prize) - parsePrizeAmount(left.prize),
+};
 
-  return [...hackathons].sort((left, right) => {
-    if (sortBy === "Deadline") {
-      return (
-        getDateValue(left.registrationDeadline || left.startDate) -
-        getDateValue(right.registrationDeadline || right.startDate)
-      );
-    }
+const matchesPrizeFilter = (hackathon, prizeFilter) => {
+  if (!prizeFilter) {
+    return true;
+  }
 
-    if (sortBy === "Newest") {
-      return (
-        getDateValue(right.createdAt || right.startDate) -
-        getDateValue(left.createdAt || left.startDate)
-      );
-    }
-
-    if (sortBy === "Popularity") {
-      return getPopularityScore(right) - getPopularityScore(left);
-    }
-
-    if (sortBy === "Prize Amount") {
-      return parsePrizeAmount(right.prize) - parsePrizeAmount(left.prize);
-    }
-
-    return 0;
-  });
+  const matchPrizeRange = PRIZE_RANGES[prizeFilter];
+  return matchPrizeRange ? matchPrizeRange(parsePrizeAmount(hackathon.prize)) : true;
 };
 
 const matchesSelectedTags = (hackathon, selectedTags) => {
-  if (selectedTags.length === 0) return true;
+  if (selectedTags.length === 0) {
+    return true;
+  }
+
   const hackathonTags = hackathon.techStack || [];
   return selectedTags.some((tag) => hackathonTags.includes(tag));
 };
 
-const matchesFilters = (hackathon, filters, selectedTags) => {
-  if (filters.difficulty && hackathon.difficulty !== filters.difficulty) {
-    return false;
-  }
+const FILTER_MATCHERS = {
+  difficulty: (hackathon, value) => !value || hackathon.difficulty === value,
+  prize: (hackathon, value) => matchesPrizeFilter(hackathon, value),
+  location: (hackathon, value) =>
+    !value || normalizeText(hackathon.location).includes(normalizeText(value)),
+  mode: (hackathon, value) => !value || getHackathonMode(hackathon) === value,
+  registrationStatus: (hackathon, value) =>
+    !value || getRegistrationStatus(hackathon) === value,
+  teamSize: (hackathon, value) =>
+    !value || getTeamSizeCategory(hackathon) === value,
+};
 
-  if (!matchesPrizeFilter(hackathon, filters.prize)) {
-    return false;
-  }
+const matchesFilters = (hackathon, filters, selectedTags) =>
+  Object.entries(filters).every(([key, value]) =>
+    FILTER_MATCHERS[key] ? FILTER_MATCHERS[key](hackathon, value) : true,
+  ) && matchesSelectedTags(hackathon, selectedTags);
 
-  if (
-    filters.location &&
-    !(hackathon.location || "")
-      .toLowerCase()
-      .includes(filters.location.toLowerCase())
-  ) {
-    return false;
-  }
-
-  if (filters.mode && getHackathonMode(hackathon) !== filters.mode) {
-    return false;
-  }
-
-  if (
-    filters.registrationStatus &&
-    getRegistrationStatus(hackathon) !== filters.registrationStatus
-  ) {
-    return false;
-  }
-
-  if (filters.teamSize && getTeamSizeCategory(hackathon) !== filters.teamSize) {
-    return false;
-  }
-
-  return matchesSelectedTags(hackathon, selectedTags);
+const sortHackathons = (hackathons, sortBy) => {
+  const sortComparator = SORT_FUNCTIONS[sortBy];
+  return sortComparator ? [...hackathons].sort(sortComparator) : hackathons;
 };
 
 const getStatusCounts = (hackathons) => {
-  const counts = {
-    all: hackathons.length,
-    live: 0,
-    upcoming: 0,
-    completed: 0,
-  };
+  const counts = { ...STATUS_COUNTS_TEMPLATE, all: hackathons.length };
 
   hackathons.forEach((hackathon) => {
     if (counts[hackathon.status] !== undefined) {
@@ -191,6 +207,29 @@ const getStatusCounts = (hackathons) => {
   });
 
   return counts;
+};
+
+const pageVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.2,
+    },
+  },
+};
+
+const sectionItemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  show: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      duration: 0.5,
+      ease: [0.16, 1, 0.3, 1],
+    },
+  },
 };
 
 const ActiveFilterChip = ({ label, onRemove }) => (
@@ -241,7 +280,9 @@ const CustomDropdown = ({
   const dropdownRef = useRef(null);
 
   const setDropdownPosition = () => {
-    if (!buttonRef.current) return;
+    if (!buttonRef.current) {
+      return;
+    }
 
     const rect = buttonRef.current.getBoundingClientRect();
     setMenuCoords({
@@ -255,11 +296,14 @@ const CustomDropdown = ({
     if (!open) {
       setDropdownPosition();
     }
-    setOpen((previous) => !previous);
+
+    setOpen((currentOpen) => !currentOpen);
   };
 
   useEffect(() => {
-    if (!open) return undefined;
+    if (!open) {
+      return undefined;
+    }
 
     const handleClickOutside = (event) => {
       if (
@@ -308,7 +352,13 @@ const CustomDropdown = ({
         className="flex w-full items-center justify-between rounded-xl border border-slate-200/90 bg-white/95 px-3 py-1.5 text-left text-sm text-slate-800 shadow-sm transition-all hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-600 dark:focus:ring-slate-600"
         onClick={toggleOpen}
       >
-        <span className={value ? "text-slate-800 dark:text-slate-100" : "text-slate-500 dark:text-slate-400"}>
+        <span
+          className={
+            value
+              ? "text-slate-800 dark:text-slate-100"
+              : "text-slate-500 dark:text-slate-400"
+          }
+        >
           {value || placeholder}
         </span>
         <FiChevronDown
@@ -386,14 +436,7 @@ const HackathonHub = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setHackathons(
-        mockHackathons.map((hackathon) => ({
-          ...hackathon,
-          techStack: (hackathon.techStack || []).map((tag) =>
-            tag === "Any" ? "Blockchain" : tag,
-          ),
-        })),
-      );
+      setHackathons(mockHackathons.map(normalizeHackathon));
       setIsLoading(false);
     }, 1000);
 
@@ -401,23 +444,9 @@ const HackathonHub = () => {
   }, []);
 
   useEffect(() => {
-    if (hackathons.length === 0) return;
-
-    const allTags = new Set();
-
-    hackathons.forEach((hackathon) => {
-      if (Array.isArray(hackathon.techStack)) {
-        hackathon.techStack.forEach((tag) => {
-          allTags.add(tag);
-        });
-      }
-    });
-
-    allTags.add("Blockchain");
-    allTags.add("Solidity");
-    allTags.add("Ethereum");
-
-    setAvailableTags(Array.from(allTags).sort((left, right) => left.localeCompare(right)));
+    if (hackathons.length > 0) {
+      setAvailableTags(getAvailableTags(hackathons));
+    }
   }, [hackathons]);
 
   useEffect(() => {
@@ -425,14 +454,14 @@ const HackathonHub = () => {
       setIsScrollVisible(window.scrollY > 50);
     };
 
-    window.addEventListener("scroll", handleScroll);
-    handleScroll();
-
     const handleChatbotState = () => {
       setIsChatbotOpen(document.querySelector("[data-chatbot-open]") !== null);
     };
 
+    window.addEventListener("scroll", handleScroll);
+    handleScroll();
     handleChatbotState();
+
     const observer = new MutationObserver(handleChatbotState);
     observer.observe(document.body, { childList: true, subtree: true });
 
@@ -454,31 +483,11 @@ const HackathonHub = () => {
     ${isChatbotOpen ? "left-6" : "right-6"}
   `;
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.08,
-        delayChildren: 0.2,
-      },
-    },
-  };
-
-  const sectionItem = {
-    hidden: { y: 20, opacity: 0 },
-    show: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        duration: 0.5,
-        ease: [0.16, 1, 0.3, 1],
-      },
-    },
-  };
-
   const scrollToCards = () => {
-    cardsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    cardsSectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   };
 
   const handleTagSelect = (tag) => {
@@ -565,13 +574,67 @@ const HackathonHub = () => {
   );
 
   const difficulties = useMemo(
-    () => [...new Set(hackathons.map((hackathon) => hackathon.difficulty).filter(Boolean))],
+    () => getUniqueFieldValues(hackathons, "difficulty"),
     [hackathons],
   );
 
   const locations = useMemo(
-    () => [...new Set(hackathons.map((hackathon) => hackathon.location).filter(Boolean))],
+    () => getUniqueFieldValues(hackathons, "location"),
     [hackathons],
+  );
+
+  const primaryDropdowns = useMemo(
+    () => [
+      {
+        key: "difficulty",
+        label: "Difficulty",
+        value: filters.difficulty,
+        options: difficulties,
+        placeholder: "All Levels",
+      },
+      {
+        key: "mode",
+        label: "Format",
+        value: filters.mode,
+        options: MODE_OPTIONS,
+        placeholder: "Any Format",
+      },
+      {
+        key: "registrationStatus",
+        label: "Registration",
+        value: filters.registrationStatus,
+        options: REGISTRATION_STATUS_OPTIONS,
+        placeholder: "All Statuses",
+      },
+    ],
+    [difficulties, filters.difficulty, filters.mode, filters.registrationStatus],
+  );
+
+  const advancedDropdowns = useMemo(
+    () => [
+      {
+        key: "prize",
+        label: "Prize Pool",
+        value: filters.prize,
+        options: PRIZE_OPTIONS,
+        placeholder: "Any Prize",
+      },
+      {
+        key: "teamSize",
+        label: "Team Size",
+        value: filters.teamSize,
+        options: TEAM_SIZE_OPTIONS,
+        placeholder: "Any Team Size",
+      },
+      {
+        key: "location",
+        label: "Location",
+        value: filters.location,
+        options: locations,
+        placeholder: "All Locations",
+      },
+    ],
+    [filters.location, filters.prize, filters.teamSize, locations],
   );
 
   const activeFilterChips = [
@@ -584,60 +647,13 @@ const HackathonHub = () => {
           },
         ]
       : []),
-    ...(filters.difficulty
-      ? [
-          {
-            key: "difficulty",
-            label: filters.difficulty,
-            onRemove: () => updateFilter("difficulty", ""),
-          },
-        ]
-      : []),
-    ...(filters.mode
-      ? [
-          {
-            key: "mode",
-            label: filters.mode,
-            onRemove: () => updateFilter("mode", ""),
-          },
-        ]
-      : []),
-    ...(filters.registrationStatus
-      ? [
-          {
-            key: "registrationStatus",
-            label: filters.registrationStatus,
-            onRemove: () => updateFilter("registrationStatus", ""),
-          },
-        ]
-      : []),
-    ...(filters.prize
-      ? [
-          {
-            key: "prize",
-            label: filters.prize,
-            onRemove: () => updateFilter("prize", ""),
-          },
-        ]
-      : []),
-    ...(filters.teamSize
-      ? [
-          {
-            key: "teamSize",
-            label: filters.teamSize,
-            onRemove: () => updateFilter("teamSize", ""),
-          },
-        ]
-      : []),
-    ...(filters.location
-      ? [
-          {
-            key: "location",
-            label: filters.location,
-            onRemove: () => updateFilter("location", ""),
-          },
-        ]
-      : []),
+    ...Object.entries(filters)
+      .filter(([, value]) => Boolean(value))
+      .map(([key, value]) => ({
+        key,
+        label: value,
+        onRemove: () => updateFilter(key, ""),
+      })),
     ...selectedTags.map((tag) => ({
       key: `tag-${tag}`,
       label: tag,
@@ -650,7 +666,7 @@ const HackathonHub = () => {
   const hasAnyActiveControls = hasActiveFilters || hasActiveSorting;
   const visibleTechTags = showAllTechTags
     ? availableTags
-    : availableTags.slice(0, 10);
+    : availableTags.slice(0, TECH_TAG_LIMIT);
 
   return (
     <div className="overflow-x-hidden bg-gradient-to-l from-sky-50 via-white to-white py-6 text-gray-900 dark:from-gray-900 dark:to-black dark:text-gray-100">
@@ -693,53 +709,35 @@ const HackathonHub = () => {
 
       <div
         ref={cardsSectionRef}
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-5"
+        className="mx-auto max-w-7xl px-4 py-3 sm:px-6 sm:py-5 lg:px-8"
       >
         <motion.section
           initial="hidden"
           animate="show"
-          variants={containerVariants}
+          variants={pageVariants}
           className="mb-10"
         >
-          <motion.div
-            variants={sectionItem}
-            className="mb-3"
-          >
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-slate-50 sm:text-3xl">
-                All Hackathons
-              </h2>
-            </div>
+          <motion.div variants={sectionItemVariants} className="mb-3">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-slate-50 sm:text-3xl">
+              All Hackathons
+            </h2>
           </motion.div>
 
           <motion.div
-            variants={sectionItem}
+            variants={sectionItemVariants}
             className="rounded-[20px] border border-slate-200/70 bg-white/80 p-2.5 shadow-[0_4px_18px_rgba(15,23,42,0.04)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/80"
           >
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-[170px_170px_190px_180px_150px_auto] xl:items-end">
-              <CustomDropdown
-                label="Difficulty"
-                value={filters.difficulty}
-                options={difficulties}
-                onChange={(value) => updateFilter("difficulty", value)}
-                placeholder="All Levels"
-              />
-
-              <CustomDropdown
-                label="Format"
-                value={filters.mode}
-                options={MODE_OPTIONS}
-                onChange={(value) => updateFilter("mode", value)}
-                placeholder="Any Format"
-              />
-
-              <CustomDropdown
-                label="Registration"
-                value={filters.registrationStatus}
-                options={REGISTRATION_STATUS_OPTIONS}
-                onChange={(value) => updateFilter("registrationStatus", value)}
-                placeholder="All Statuses"
-              />
+              {primaryDropdowns.map((dropdown) => (
+                <CustomDropdown
+                  key={dropdown.key}
+                  label={dropdown.label}
+                  value={dropdown.value}
+                  options={dropdown.options}
+                  onChange={(value) => updateFilter(dropdown.key, value)}
+                  placeholder={dropdown.placeholder}
+                />
+              ))}
 
               <CustomDropdown
                 label="Sort By"
@@ -756,8 +754,8 @@ const HackathonHub = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    setShowMoreFilters((current) => {
-                      const nextValue = !current;
+                    setShowMoreFilters((currentValue) => {
+                      const nextValue = !currentValue;
                       if (!nextValue) {
                         setShowAllTechTags(false);
                       }
@@ -803,29 +801,16 @@ const HackathonHub = () => {
                 >
                   <div className="mt-2.5 border-t border-slate-200/80 pt-2.5 dark:border-slate-800">
                     <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
-                      <CustomDropdown
-                        label="Prize Pool"
-                        value={filters.prize}
-                        options={PRIZE_OPTIONS}
-                        onChange={(value) => updateFilter("prize", value)}
-                        placeholder="Any Prize"
-                      />
-
-                      <CustomDropdown
-                        label="Team Size"
-                        value={filters.teamSize}
-                        options={TEAM_SIZE_OPTIONS}
-                        onChange={(value) => updateFilter("teamSize", value)}
-                        placeholder="Any Team Size"
-                      />
-
-                      <CustomDropdown
-                        label="Location"
-                        value={filters.location}
-                        options={locations}
-                        onChange={(value) => updateFilter("location", value)}
-                        placeholder="All Locations"
-                      />
+                      {advancedDropdowns.map((dropdown) => (
+                        <CustomDropdown
+                          key={dropdown.key}
+                          label={dropdown.label}
+                          value={dropdown.value}
+                          options={dropdown.options}
+                          onChange={(value) => updateFilter(dropdown.key, value)}
+                          placeholder={dropdown.placeholder}
+                        />
+                      ))}
                     </div>
 
                     {availableTags.length > 0 && (
@@ -848,13 +833,15 @@ const HackathonHub = () => {
                             />
                           ))}
                         </div>
-                        {availableTags.length > 10 && (
+                        {availableTags.length > TECH_TAG_LIMIT && (
                           <button
                             type="button"
                             onClick={() => setShowAllTechTags((current) => !current)}
                             className="mt-2 inline-flex rounded-full border border-slate-200/90 px-2.5 py-1 text-[11px] font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
                           >
-                            {showAllTechTags ? "Show fewer tags" : `+ ${availableTags.length - 10} more tags`}
+                            {showAllTechTags
+                              ? "Show fewer tags"
+                              : `+ ${availableTags.length - TECH_TAG_LIMIT} more tags`}
                           </button>
                         )}
                       </div>
@@ -867,7 +854,7 @@ const HackathonHub = () => {
 
           {hasActiveFilters && (
             <motion.div
-              variants={sectionItem}
+              variants={sectionItemVariants}
               className="mt-2.5 flex flex-wrap items-center gap-2"
             >
               <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-600 dark:text-slate-300">
@@ -886,7 +873,7 @@ const HackathonHub = () => {
           )}
 
           <motion.div
-            variants={sectionItem}
+            variants={sectionItemVariants}
             className="mt-3 flex flex-wrap gap-1.5 border-b border-slate-200/80 pb-2.5 dark:border-slate-800"
           >
             {TAB_CONFIG.map((tab) => (
@@ -925,7 +912,7 @@ const HackathonHub = () => {
               <motion.div
                 key={activeTab}
                 className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
-                variants={containerVariants}
+                variants={pageVariants}
                 initial="hidden"
                 animate="show"
                 exit={{ opacity: 0 }}
@@ -940,72 +927,13 @@ const HackathonHub = () => {
                 ))}
               </motion.div>
             ) : (
-              <motion.div
-                className="relative mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]"
-                initial={{ opacity: 0, y: 24, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.45, ease: "easeOut" }}
-              >
-                <motion.div
-                  className="absolute inset-0 -z-10 bg-black/10 blur-3xl dark:bg-black/30"
-                  animate={{
-                    opacity: [0.3, 0.55, 0.3],
-                    scale: [1, 1.08, 1],
-                  }}
-                  transition={{
-                    duration: 8,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
+                <EmptyHackathonState
+                  hasActiveFilters={hasActiveFilters}
+                    resetFilters={resetFilters}
+                   scrollToCards={scrollToCards}
                 />
-
-                <div className="mx-auto max-w-md">
-                  <motion.div
-                    animate={{ y: [0, -8, 0] }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                    className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800"
-                  >
-                    <FiCode className="h-10 w-10 text-indigo-600 dark:text-indigo-400" />
-                  </motion.div>
-
-                  <h3 className="mt-6 text-2xl font-bold text-slate-900 dark:text-slate-100">
-                    No Hackathons Found
-                  </h3>
-
-                  <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-                    {hasActiveFilters
-                      ? "No hackathons match your current filters. Try adjusting your search or selections."
-                      : "Check back later for exciting new hackathons."}
-                  </p>
-
-                  <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
-                    <motion.button
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={resetFilters}
-                      className="flex items-center justify-center gap-2 rounded-lg bg-black px-6 py-2.5 text-sm font-medium text-white shadow-lg transition-all hover:bg-zinc-800"
-                    >
-                      <FiRotateCw className="h-4 w-4" />
-                      Reset Filters
-                    </motion.button>
-
-                    <motion.button
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={scrollToCards}
-                      className="flex items-center justify-center gap-2 rounded-lg border border-black/15 bg-white px-6 py-2.5 text-sm font-medium text-black shadow-md transition-all hover:bg-gray-100 dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
-                    >
-                      Explore Hackathons
-                      <FiCompass className="h-4 w-4" />
-                    </motion.button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
+             )}   
+            
           </AnimatePresence>
         </motion.section>
 
