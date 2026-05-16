@@ -135,7 +135,7 @@ const FAQPage = () => {
   return (
     <div className="pastel-grid-bg relative flex flex-col min-h-screen overflow-hidden">
       {/* HERO */}
-      <section className="py-10 sm:py-12 relative overflow-hidden">
+      <section className="pt-28 pb-10 sm:pt-32 sm:pb-12 relative overflow-hidden">
         {/* HERO Content */}
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <motion.div variants={container} initial="hidden" animate={controls}>
