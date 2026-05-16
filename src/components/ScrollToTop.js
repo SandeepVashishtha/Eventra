@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaCaretUp } from "react-icons/fa";
 import { ChevronUp } from "lucide-react";
 
 export default function ScrollToTopButton() {

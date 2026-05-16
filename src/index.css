@@ -83,20 +83,30 @@ body {
   font-size: var(--font-body);
   font-weight: var(--fw-regular);
 }
-/* body.dark .pastel-grid-bg {
+.dark .pastel-grid-bg {
+  /* Use a solid dark background in dark mode and remove the light pastel grid image
+     which remains visible otherwise. This ensures pages that use the pastel grid
+     utility (like Contributors) render correctly in dark mode. */
   background-color: var(--bg-color);
-  opacity: 0.4;
-} */
+  background-image: none !important;
+  opacity: 1;
+}
 
+*,
+*::before,
+*::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
 
-
-/* Fix: Headings use CSS variables + consistent line-height */
-h1 { font-size: var(--font-h1); font-weight: var(--fw-bold); line-height: var(--lh-heading); }
-h2 { font-size: var(--font-h2); font-weight: var(--fw-bold); line-height: var(--lh-heading); }
-h3 { font-size: var(--font-h3); font-weight: var(--fw-semibold); line-height: var(--lh-heading); }
-h4 { font-size: var(--font-h4); font-weight: var(--fw-semibold); line-height: var(--lh-heading); }
-h5 { font-size: var(--font-h5); font-weight: var(--fw-medium); }
-h6 { font-size: var(--font-h6); font-weight: var(--fw-medium); }
+/* Headings */
+h1 { font-size: var(--font-h1); }
+h2 { font-size: var(--font-h2); }
+h3 { font-size: var(--font-h3); }
+h4 { font-size: var(--font-h4); }
+h5 { font-size: var(--font-h5); }
+h6 { font-size: var(--font-h6); }
 
 /* Navigation items */
 nav, nav a {
@@ -199,13 +209,37 @@ input::-webkit-password-toggle { display: none !important; }
     linear-gradient(-45deg, rgba(250, 204, 21, 0.10) 1px, transparent 1px);
   background-size: 40px 40px, 40px 40px, 80px 80px, 80px 80px;
 }
-.dark .pastel-grid-bg {
-  background-color: #0d1117;
-  background-image:
-    linear-gradient(to right, rgba(147, 197, 253, 0.08) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(147, 197, 253, 0.08) 1px, transparent 1px),
-    linear-gradient(45deg, rgba(99, 102, 241, 0.05) 1px, transparent 1px),
-    linear-gradient(-45deg, rgba(99, 102, 241, 0.05) 1px, transparent 1px);
-  background-size: 40px 40px, 40px 40px, 80px 80px, 80px 80px;
-  background-attachment: fixed;
+
+/* Shake Animation (Global) */
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-5px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+.animate-shake {
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* Progress Animation (Global) */
+@keyframes progress {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1.2);
+  }
 }

@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import GoogleSignInButton from "../GoogleSignInButton";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
-import {User, AtSign} from 'lucide-react'
+import { User, AtSign } from 'lucide-react'
 
 const assessStrength = (password) => {
   if (!password) {
@@ -15,7 +15,7 @@ const assessStrength = (password) => {
   let criteriaMet = 0;
 
   if (password.length >= 8) {
-      criteriaMet++;
+    criteriaMet++;
   }
   if (/[A-Z]/.test(password)) {
     criteriaMet++;
@@ -29,7 +29,7 @@ const assessStrength = (password) => {
   if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
     criteriaMet++;
   }
-  
+
   return { criteriaMet };
 };
 
@@ -48,7 +48,7 @@ const Signup = () => {
   const [emailError, setEmailError] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [showPassword, setShowPassword] = useState(false); 
+  const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordMatchMessage, setPasswordMatchMessage] = useState("");
   const navigate = useNavigate();
@@ -64,23 +64,23 @@ const Signup = () => {
     setFormData(newData);
 
     if (e.target.name === "confirmPassword" || e.target.name === "password") {
-        const password = e.target.name === "password" ? e.target.value : newData.password;
+      const password = e.target.name === "password" ? e.target.value : newData.password;
       const confirmPassword = e.target.name === "confirmPassword" ? e.target.value : newData.confirmPassword;
-        
-        if (password && confirmPassword) {
-            if (password === confirmPassword) {
-                setError("");
-                setPasswordMatchMessage("Passwords match!");
-            } else {
-                setError("Passwords do not match");
-                setPasswordMatchMessage("");
-            }
+
+      if (password && confirmPassword) {
+        if (password === confirmPassword) {
+          setError("");
+          setPasswordMatchMessage("Passwords match!");
         } else {
-             setPasswordMatchMessage("");
-         if (e.target.name === "confirmPassword" && e.target.value) {
-                setError("Passwords do not match");
-             }
+          setError("Passwords do not match");
+          setPasswordMatchMessage("");
         }
+      } else {
+        setPasswordMatchMessage("");
+        if (e.target.name === "confirmPassword" && e.target.value) {
+          setError("Passwords do not match");
+        }
+      }
     }
 
     if (e.target.name === "email") {
@@ -125,14 +125,15 @@ const Signup = () => {
       setError("Passwords do not match");
       return;
     }
-    
+
     const { criteriaMet } = assessStrength(formData.password);
     if (criteriaMet < 5) {
       setError("Password doesn't meet the security criteria (must meet all 5 requirements).");
       return;
     }
-    
+
     setLoading(true);
+    
     setError("");
 
     try {
@@ -288,25 +289,25 @@ const Signup = () => {
                 )}
               </div>
               <div>
-                  <label className="block text-sm text-gray-700 dark:text-gray-300">
-                    Last name <sup className="text-red-500">*</sup>
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      placeholder="Last name"
-                      className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
-                      required
-                    />
-                  </div>
-                  {lastNameError && (
-                    <p className="text-red-500 text-xs">{lastNameError}</p>
-                  )}
+                <label className="block text-sm text-gray-700 dark:text-gray-300">
+                  Last name <sup className="text-red-500">*</sup>
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    placeholder="Last name"
+                    className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                    required
+                  />
+                </div>
+                {lastNameError && (
+                  <p className="text-red-500 text-xs">{lastNameError}</p>
+                )}
               </div>
-          </div>
+            </div>
 
             <div>
               <label className="block text-sm text-gray-700 dark:text-gray-300">
@@ -358,7 +359,7 @@ const Signup = () => {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Enter your password"
-                 className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                  className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                   required
                 />
                 <button
@@ -428,11 +429,11 @@ const Signup = () => {
                 </svg>
                 <input
                   name="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"} 
+                  type={showConfirmPassword ? "text" : "password"}
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   placeholder="Confirm your password"
-                 className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                  className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                   required
                 />
                 <button
@@ -478,13 +479,13 @@ const Signup = () => {
                 </button>
               </div>
               {passwordMatchMessage && (
-                <motion.p 
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    transition={{ duration: 0.3 }}
-                    className="text-xs mt-1 text-green-600 dark:text-green-400"
+                <motion.p
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  transition={{ duration: 0.3 }}
+                  className="text-xs mt-1 text-green-600 dark:text-green-400"
                 >
-                    {passwordMatchMessage}
+                  {passwordMatchMessage}
                 </motion.p>
               )}
             </div>

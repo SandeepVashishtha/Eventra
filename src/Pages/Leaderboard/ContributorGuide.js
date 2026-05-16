@@ -169,7 +169,7 @@ const ContributorGuide = () => {
   };
 
   return (
-    <div className="pastel-grid-bg bg-gray-50 dark:bg-black min-h-screen px-4 sm:px-6 lg:px-12 py-12 max-w-6xl mx-auto space-y-16 overflow-x-hidden">
+    <div className="pastel-grid-bg bg-gray-50 dark:bg-black min-h-screen pt-20 md:pt-24 px-4 sm:px-6 lg:px-12 py-12 max-w-6xl mx-auto space-y-16 overflow-x-hidden">
       {/* Page Heading */}
       <div className="text-center mb-12">
         <h1
