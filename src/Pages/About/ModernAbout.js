@@ -145,7 +145,7 @@ function HeroSection({ anim, prefersReducedMotion }) {
       <motion.div aria-hidden="true" className="absolute bottom-20 right-4 sm:right-10 w-24 sm:w-32 h-24 sm:h-32 bg-yellow-200 dark:bg-yellow-800/40 rounded-full blur-2xl opacity-25 will-change-transform" animate={prefersReducedMotion ? {} : { y: [0, 25, 0], x: [0, -15, 0] }} transition={{ repeat: Infinity, duration: 12, ease: "easeInOut" }} />
       <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(to_right,rgba(147,197,253,0.22)_1px,transparent_1px),linear-gradient(to_bottom,rgba(250,204,21,0.2)_1px,transparent_1px),linear-gradient(45deg,rgba(59,130,246,0.1)_1px,transparent_1px),linear-gradient(-45deg,rgba(250,204,21,0.08)_1px,transparent_1px)] bg-[size:40px_40px,40px_40px,80px_80px,80px_80px]" />
       <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-white/0 via-white/30 to-white dark:from-transparent dark:to-gray-950" />
-      <div className="max-w-4xl w-full text-center z-10">
+      <div className="max-w-4xl md:my-24 my-16 w-full text-center z-10">
         <motion.p {...anim(fadeUp)} className="text-xs uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-4">
           Open-source, community-driven, free forever
         </motion.p>
