@@ -83,9 +83,13 @@ body {
   font-size: var(--font-body);
   font-weight: var(--fw-regular);
 }
-body.dark .pastel-grid-bg {
+.dark .pastel-grid-bg {
+  /* Use a solid dark background in dark mode and remove the light pastel grid image
+     which remains visible otherwise. This ensures pages that use the pastel grid
+     utility (like Contributors) render correctly in dark mode. */
   background-color: var(--bg-color);
-  opacity: 0.4;
+  background-image: none !important;
+  opacity: 1;
 }
 
 *,
