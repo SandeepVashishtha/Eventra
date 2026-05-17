@@ -55,8 +55,10 @@ const knowledgeBase = [
 function getAssistantReply(input) {
   const lower = input.toLowerCase();
   return (
-    knowledgeBase.find((item) => item.keywords.some((kw) => lower.includes(kw))) ||
-    { answer: "I can help with event registration, recommendations, hosting guidance, and platform support. Try asking about the event you want to attend or what kind of workshop you are looking for.", actions: [{ label: "Explore events", to: "/events", icon: CalendarDays }] }
+    knowledgeBase.find((item) => item.keywords.some((kw) => lower.includes(kw))) || {
+      answer: "I can help with event registration, recommendations, hosting guidance, and platform support. Try asking about the event you want to attend or what kind of workshop you are looking for.",
+      actions: [{ label: "Explore events", to: "/events", icon: CalendarDays }],
+    }
   );
 }
 
@@ -64,28 +66,28 @@ function getAssistantReply(input) {
 
 const STORAGE_KEY = "eventra_chat_messages";
 
+const ALL_ACTIONS = [
+  ...knowledgeBase.flatMap((k) => k.actions),
+  ...INITIAL_MESSAGE.actions,
+];
+
 function loadMessages() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      // Icons cannot be serialised — rehydrate them from knowledgeBase
-      const parsed = JSON.parse(stored);
-      return parsed.map((msg) => ({
+      return JSON.parse(stored).map((msg) => ({
         ...msg,
-        actions: (msg.actions || []).map((a) => {
-          const found = [...knowledgeBase.flatMap((k) => k.actions), ...INITIAL_MESSAGE.actions]
-            .find((kb) => kb.to === a.to && kb.label === a.label);
-          return found || a;
-        }),
+        actions: (msg.actions || []).map(
+          (a) => ALL_ACTIONS.find((kb) => kb.to === a.to && kb.label === a.label) || a
+        ),
       }));
     }
-  } catch { /* ignore quota / parse errors */ }
+  } catch { /* ignore parse or quota errors */ }
   return [INITIAL_MESSAGE];
 }
 
 function saveMessages(messages) {
   try {
-    // Strip non-serialisable icon references before storing
     const serialisable = messages.map(({ actions, ...rest }) => ({
       ...rest,
       actions: (actions || []).map(({ icon: _icon, ...a }) => a),
@@ -174,10 +176,8 @@ export default function Chatbot() {
 
   const messagesEndRef = useRef(null);
 
-  // Persist messages to localStorage whenever they change
   useEffect(() => { saveMessages(messages); }, [messages]);
 
-  // Auto-scroll to latest message
   useEffect(() => {
     if (isOpen && !isMinimized) messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isOpen, isMinimized]);
