@@ -323,7 +323,7 @@ const Footer = () => {
               data-aos-delay="0"
             >
               <h2
-                className="text-2xl sm:text-3xl font-bold text-black"
+                className="text-2xl sm:text-3xl font-bold text-black dark:text-white"
                 style={{ fontFamily: "Anton, sans-serif" }}
               >
                 Eventra

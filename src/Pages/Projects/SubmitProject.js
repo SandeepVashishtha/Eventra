@@ -467,8 +467,8 @@ const SubmitProject = () => {
             data-aos="zoom-in"
             data-aos-delay={1500 + index * 100}
           >
-            <stat.icon className="w-10 h-10 text-black mb-3" />
-            <h3 className="text-3xl font-bold text-black">
+            <stat.icon className="w-10 h-10 text-black dark:text-white mb-3" />
+            <h3 className="text-3xl font-bold text-black dark:text-white">
               {stat.number}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
@@ -501,7 +501,7 @@ const SubmitProject = () => {
             href="#"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center justify-center gap-2 bg-white text-black px-8 py-3 rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300"
+            className="inline-flex items-center justify-center gap-2 bg-white dark:bg-gray-800 text-black dark:text-white px-8 py-3 rounded-xl shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300"
           >
             <ArrowUpTrayIcon className="w-5 h-5" /> Submit Another Project
           </motion.a>
@@ -509,7 +509,7 @@ const SubmitProject = () => {
             href="/projects"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center justify-center gap-2 bg-white text-black px-8 py-3 rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300"
+            className="inline-flex items-center justify-center gap-2 bg-white dark:bg-gray-800 text-black dark:text-white px-8 py-3 rounded-xl shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300"
           >
             <ClipboardDocumentCheckIcon className="w-5 h-5" />
             Explore Projects

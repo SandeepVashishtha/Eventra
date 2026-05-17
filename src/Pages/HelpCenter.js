@@ -544,7 +544,7 @@ const HelpCenter = () => {
 
               <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <span
-                  className="text-xs font-bold text-black"
+                  className="text-xs font-bold text-black dark:text-white"
                 >
                   {String(idx + 1).padStart(2, "0")}
                 </span>
