@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 // Framer Motion Variants
 const container = {
@@ -24,7 +24,56 @@ const cardItem = {
   },
 };
 
+const fadeUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+};
+
+const scaleIn = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.55, ease: "easeOut" } },
+};
+
+const staggerContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
+};
+
+const staggerItem = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } },
+};
+
+const stats = [
+  { label: "User Growth", value: "1200+" },
+  { label: "Events Hosted", value: "350+" },
+  { label: "Global Members", value: "45+" },
+];
+
+const values = [
+  {
+    title: "Accessibility",
+    desc: "Build inclusive event experiences for participants of all backgrounds.",
+    color: "bg-gradient-to-b from-slate-50 via-white to-slate-100",
+    border: "border-slate-200",
+  },
+  {
+    title: "Collaboration",
+    desc: "Connect organizers, volunteers, sponsors, and attendees seamlessly.",
+    color: "bg-gradient-to-b from-violet-50 via-white to-violet-100",
+    border: "border-violet-200",
+  },
+  {
+    title: "Transparency",
+    desc: "Track event progress with clear, data-driven dashboards.",
+    color: "bg-gradient-to-b from-cyan-50 via-white to-cyan-100",
+    border: "border-cyan-200",
+  },
+];
+
 export default function ModernAbout() {
+  const prefersReducedMotion = useReducedMotion();
+
   return (
     <section className="relative min-h-[82vh] flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900 overflow-hidden py-20 px-4">
       <motion.div aria-hidden="true" className="absolute top-0 left-1/4 w-48 sm:w-72 h-48 sm:h-72 bg-indigo-100 dark:bg-indigo-900/50 rounded-full blur-3xl opacity-40 will-change-transform" animate={prefersReducedMotion ? {} : { scale: [1, 1.3, 1], rotate: [0, 45, 0] }} transition={{ repeat: Infinity, duration: 12, ease: "easeInOut" }} />
@@ -125,17 +174,22 @@ function MissionSection({ anim, prefersReducedMotion }) {
             </p>
           </motion.div>
           <motion.div
-
-            variants={cardItem}
-            // UPDATED: Card background and shadow
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
             className="grid grid-cols-1 sm:grid-cols-2 gap-4 backdrop-blur-sm rounded-2xl transition-transform duration-500"
             data-aos="zoom-in"
             data-aos-delay="400"
-            {...(prefersReducedMotion ? {} : { variants: staggerContainer, initial: "hidden", whileInView: "visible", viewport: { once: true } })}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-4"
           >
             {values.map((v) => (
-              <motion.div key={v.title} variants={staggerItem} whileHover={prefersReducedMotion ? {} : { y: -4, scale: 1.02 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className={`rounded-2xl border p-5 cursor-default bg-gradient-to-b from-white via-white to-slate-50 border border-slate-100 shadow-xl shadow-slate-100/70 dark:bg-gray-800/50 transition-transform duration-300 ${v.color} ${v.border}`}>
+              <motion.div
+                key={v.title}
+                variants={staggerItem}
+                whileHover={prefersReducedMotion ? {} : { y: -4, scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className={`rounded-2xl border p-5 cursor-default ${v.color} ${v.border} bg-gradient-to-b from-white via-white to-slate-50 shadow-xl shadow-slate-100/70 dark:bg-gray-800/50 transition-transform duration-300`}
+              >
                 <h4 className="font-bold text-sm text-black dark:text-white mb-2">{v.title}</h4>
                 <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{v.desc}</p>
               </motion.div>
@@ -143,14 +197,12 @@ function MissionSection({ anim, prefersReducedMotion }) {
           </motion.div>
 
           <motion.div
-          
             variants={cardItem}
             // UPDATED: Card background and shadow
-            className="bg-gradient-to-b from-white via-white to-slate-50 border border-slate-100 shadow-xl shadow-slate-100/70 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-lg shadow-blue-100 dark:shadow-indigo-900/50 p-6 hover:scale-105 transition-transform duration-500"
+            className="bg-gradient-to-b from-white via-white to-slate-50 border border-slate-100 shadow-xl shadow-slate-100/70 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-lg shadow-blue-100 dark:shadow-indigo-900/50 p-6 hover:scale-105 transition-transform duration-500 space-y-4"
             data-aos="zoom-in"
             data-aos-delay="500"
             {...(prefersReducedMotion ? {} : { variants: staggerContainer, initial: "hidden", whileInView: "visible", viewport: { once: true } })}
-            className="space-y-4"
           >
             <h3 className="text-black dark:text-white text-2xl font-bold mb-2">500+</h3>
             <p className="text-black dark:text-gray-300 text-sm">Active Users</p>

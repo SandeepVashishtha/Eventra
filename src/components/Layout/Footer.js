@@ -284,66 +284,6 @@ const Footer = () => {
                 Open-source event management for communities worldwide.
               </p>
 
-              {/* Newsletter Subscription Form */}
-              <div className="mt-4">
-                {/* UPDATED: Added dark mode text color */}
-                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-2">
-                  Subscribe to our newsletter
-                </h4>
-                {/* UPDATED: Added dark mode text color */}
-                <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
-                  Get the latest updates, event tips, and community news.
-                </p>
-                <form
-                  onSubmit={handleSubmit}
-                  className="flex flex-col sm:flex-row gap-3"
-                >
-                  <div className="relative flex-grow">
-                    <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Enter your email"
-                      className="pl-10 pr-4 py-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full"
-                      disabled={isSubmitting}
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSubmitting ? "Subscribing..." : "Subscribe"}
-                  </button>
-                </form>
-                {/* UPDATED: Added dark mode text color */}
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  We respect your privacy. Unsubscribe at any time.
-                </p>
-              </div>
-              {/* Social Media Icons - Below Newsletter */}
-              <div className="mt-6">
-                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-3">
-                  Follow Us
-                </h4>
-                <div className="flex flex-wrap gap-3">
-                  {socialLinks.map((link) => (
-                    <a
-                      key={link.name}
-                      href={link.href}
-                      className="text-gray-400 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={link.name}
-                      title={link.name}
-                    >
-                      <span className="sr-only">{link.name}</span>
-                      {link.icon}
-                    </a>
-                  ))}
-                </div>
-              </div>
               <Newsletter />
               <SocialLinksRender />
             </div>
