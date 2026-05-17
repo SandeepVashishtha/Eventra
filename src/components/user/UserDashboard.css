@@ -38,7 +38,7 @@
   position: sticky;
   top: 0;
   flex-shrink: 0;
-  overflow-y: auto;
+  overflow: hidden;   /* ← changed */
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -70,6 +70,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--ud-space-xxs);
+  overflow-y: auto;   /* ← add this line */
+  min-height: 0;      /* ← add this line (required for flex scroll to work) */
 }
 
 .ud-nav-item {
