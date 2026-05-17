@@ -824,7 +824,22 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                   </AnimatePresence>
                 </div>
               ) : (
-                <AuthButtons isMobile={false} />
+                <div className="flex items-center space-x-1">
+                  <Link
+                    to="/login"
+                    className="px-4 py-2 text-base font-medium text-black/75 hover:text-black dark:text-white/75 dark:hover:text-white transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="px-5 py-2 text-sm font-semibold text-white transition-all duration-300 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 dark:bg-white dark:text-black dark:hover:bg-zinc-200 focus:outline-none focus:ring-4 focus:ring-black/20 dark:focus:ring-white/20"
+                  >
+                    Get Started
+                  </Link>
+                </div>
+              ) : (
+              <AuthButtons isMobile={false} />
               )}
             </div>
           </div>

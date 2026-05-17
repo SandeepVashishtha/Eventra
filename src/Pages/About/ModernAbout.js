@@ -161,6 +161,17 @@ function HeroSection({ anim, prefersReducedMotion }) {
           {...(prefersReducedMotion ? {} : { variants: staggerContainer, initial: "hidden", whileInView: "visible", viewport: { once: true } })}
           className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4"
         >
+          <motion.div
+            variants={cardItem}
+            // UPDATED: Card background and shadow
+            className="bg-gradient-to-b from-white via-white to-slate-50 border border-slate-100 shadow-xl shadow-slate-100/70 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-lg shadow-blue-100 dark:shadow-indigo-900/50 p-6 hover:scale-105 transition-transform duration-500"
+            data-aos="zoom-in"
+            data-aos-delay="300"
+          >
+            {/* UPDATED: Card text */}
+            <h3 className="text-black text-2xl font-bold mb-2">100+</h3>
+            <p className="text-black text-sm">Events Managed</p>
+          </motion.div>
           {stats.map((s) => (
             <motion.div key={s.label} variants={scaleIn} whileHover={prefersReducedMotion ? {} : { scale: 1.05, y: -4 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl shadow-lg shadow-blue-100 dark:shadow-indigo-900/50 p-4 sm:p-5 cursor-default">
               <h3 className="text-black dark:text-white text-xl sm:text-2xl font-bold mb-1">{s.value}</h3>
@@ -195,11 +206,17 @@ function MissionSection({ anim, prefersReducedMotion }) {
             </p>
           </motion.div>
           <motion.div
+
+            variants={cardItem}
+            // UPDATED: Card background and shadow
+            className="grid grid-cols-1 sm:grid-cols-2 gap-4 backdrop-blur-sm rounded-2xl transition-transform duration-500"
+            data-aos="zoom-in"
+            data-aos-delay="400"
             {...(prefersReducedMotion ? {} : { variants: staggerContainer, initial: "hidden", whileInView: "visible", viewport: { once: true } })}
             className="grid grid-cols-1 sm:grid-cols-2 gap-4"
           >
             {values.map((v) => (
-              <motion.div key={v.title} variants={staggerItem} whileHover={prefersReducedMotion ? {} : { y: -4, scale: 1.02 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className={`rounded-2xl border p-5 cursor-default ${v.color} ${v.border}`}>
+              <motion.div key={v.title} variants={staggerItem} whileHover={prefersReducedMotion ? {} : { y: -4, scale: 1.02 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className={`rounded-2xl border p-5 cursor-default bg-gradient-to-b from-white via-white to-slate-50 border border-slate-100 shadow-xl shadow-slate-100/70 dark:bg-gray-800/50 transition-transform duration-300 ${v.color} ${v.border}`}>
                 <h4 className="font-bold text-sm text-black dark:text-white mb-2">{v.title}</h4>
                 <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{v.desc}</p>
               </motion.div>
@@ -302,6 +319,12 @@ function TechStackSection({ anim, prefersReducedMotion }) {
             </motion.a>
           </motion.div>
           <motion.div
+          
+            variants={cardItem}
+            // UPDATED: Card background and shadow
+            className="bg-gradient-to-b from-white via-white to-slate-50 border border-slate-100 shadow-xl shadow-slate-100/70 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-lg shadow-blue-100 dark:shadow-indigo-900/50 p-6 hover:scale-105 transition-transform duration-500"
+            data-aos="zoom-in"
+            data-aos-delay="500"
             {...(prefersReducedMotion ? {} : { variants: staggerContainer, initial: "hidden", whileInView: "visible", viewport: { once: true } })}
             className="space-y-4"
           >
