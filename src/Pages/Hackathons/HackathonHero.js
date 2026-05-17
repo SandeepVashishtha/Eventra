@@ -1,9 +1,9 @@
-import React, { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, Sparkles, Users, Award, Code2, Calendar } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Award, Calendar, Code2, Sparkles, Users, X } from "lucide-react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
+import { useAuth } from "../../context/AuthContext";
 
 // Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
@@ -90,7 +90,7 @@ export default function HackathonHero({
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
-          className="text-4xl sm:text-6xl font-extrabold leading-tight text-black"
+          className="text-4xl sm:text-6xl font-extrabold leading-tight text-text"
           style={{ fontFamily: '"Anton", sans-serif' }}
         >
           Discover Amazing Hackathons
