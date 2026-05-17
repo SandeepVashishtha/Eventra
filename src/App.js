@@ -1,5 +1,5 @@
 import { BrowserRouter as Router } from "react-router-dom";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import "./App.css";
 
 // --------------- LAYOUT
@@ -45,22 +45,24 @@ function App() {
       <NotificationProvider />
       <AuthProvider>
         <Router>
-          <div className="App">
-            <Navbar
-              cursorEnabled={cursorEnabled}
-              toggleCursor={toggleCursor}
-            />
-
-            <main className="min-h-screen bg-white dark:bg-black ">
-              <AppRoutes />
-            </main>
-
-            <ScrollToTop />
-            <Chatbot />
-            <FeedbackButton />
-            <Footer />
-
+          <div className="App relative">
             <FluidCursor enabled={cursorEnabled} />
+
+            <div className="relative z-10">
+              <Navbar
+                cursorEnabled={cursorEnabled}
+                toggleCursor={toggleCursor}
+              />
+
+              <main className="min-h-screen bg-white dark:bg-black ">
+                <AppRoutes />
+              </main>
+
+              <ScrollToTop />
+              <Chatbot />
+              <FeedbackButton />
+              <Footer />
+            </div>
           </div>
         </Router>
       </AuthProvider>

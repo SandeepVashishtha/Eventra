@@ -1,10 +1,14 @@
 'use client';
 import React, { useEffect, useRef } from 'react';
 
-const FluidCursor = () => {
+const FluidCursor = ({ enabled = true }) => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
+    if (!enabled) {
+      return undefined;
+    }
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -854,10 +858,14 @@ const FluidCursor = () => {
       dye.swap();
     }
 
+    function getBrowserZoomScale() {
+      return window.visualViewport?.scale ?? 1;
+    }
+
     function correctRadius(radius) {
       let aspectRatio = canvas.width / canvas.height;
       if (aspectRatio > 1) radius *= aspectRatio;
-      return radius;
+      return radius / getBrowserZoomScale();
     }
 
     function hashCode(s) {
@@ -1007,7 +1015,16 @@ const FluidCursor = () => {
 
     update();
 
+    const handleViewportChange = () => {
+      resizeCanvas();
+    };
+
+    window.visualViewport?.addEventListener('resize', handleViewportChange);
+    window.visualViewport?.addEventListener('scroll', handleViewportChange);
+
     return () => {
+      window.visualViewport?.removeEventListener('resize', handleViewportChange);
+      window.visualViewport?.removeEventListener('scroll', handleViewportChange);
       window.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('touchstart', handleTouchStart);
@@ -1017,11 +1034,15 @@ const FluidCursor = () => {
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, []);
+  }, [enabled]);
+
+  if (!enabled) {
+    return null;
+  }
 
   return (
-    <div className='fixed top-0 left-0 z-[9999] pointer-events-none'>
-      <canvas ref={canvasRef} id='fluid' className='w-screen h-screen' />
+    <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden="true">
+      <canvas ref={canvasRef} id="fluid" className="h-full w-full" />
     </div>
   );
 };
