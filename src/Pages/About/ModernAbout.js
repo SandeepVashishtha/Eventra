@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 /**
@@ -78,6 +78,30 @@ const staggerContainer = {
 const staggerItem = {
   hidden: { opacity: 0, y: 10 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
+};
+
+const missionFanContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.12, delayChildren: 0.05 },
+  },
+};
+
+const missionFanCard = (index, total) => {
+  const center = (total - 1) / 2;
+  const spread = index - center;
+  return {
+    hidden: { opacity: 0, y: 36, rotate: 0, scale: 0.9 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      rotate: spread * 7,
+      x: spread * 22,
+      scale: 1,
+      transition: { type: "spring", stiffness: 240, damping: 20 },
+    },
+  };
 };
 
 // ADDED: Statistics data array
@@ -216,6 +240,28 @@ export default function ModernAbout() {
 }
 
 function MissionSection({ anim, prefersReducedMotion }) {
+  const fanRef = useRef(null);
+  const [fanInView, setFanInView] = useState(false);
+
+  useEffect(() => {
+    if (prefersReducedMotion) return undefined;
+    const node = fanRef.current;
+    if (!node) return undefined;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setFanInView(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.35, rootMargin: "0px 0px -10% 0px" },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [prefersReducedMotion]);
+
   return (
     <section className="border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -237,20 +283,31 @@ function MissionSection({ anim, prefersReducedMotion }) {
             </p>
           </motion.div>
           <motion.div
-            variants={cardItem}
-            // UPDATED: Card background and shadow
-            className="grid grid-cols-1 sm:grid-cols-2 gap-4 backdrop-blur-sm rounded-2xl transition-transform duration-500"
+            ref={fanRef}
+            className="grid grid-cols-1 sm:grid-cols-2 gap-4 backdrop-blur-sm rounded-2xl"
             data-aos="zoom-in"
             data-aos-delay="400"
-            {...(prefersReducedMotion ? {} : { variants: staggerContainer, initial: "hidden", whileInView: "visible", viewport: { once: true } })}
+            variants={prefersReducedMotion ? staggerContainer : missionFanContainer}
+            initial="hidden"
+            animate={prefersReducedMotion ? undefined : fanInView ? "visible" : "hidden"}
+            whileInView={prefersReducedMotion ? undefined : undefined}
+            {...(prefersReducedMotion
+              ? { whileInView: "visible", viewport: { once: true } }
+              : {})}
           >
-            {values.map((v) => (
+            {values.map((v, index) => (
               <motion.div
                 key={v.title}
-                variants={staggerItem}
+                custom={index}
+                variants={
+                  prefersReducedMotion
+                    ? staggerItem
+                    : missionFanCard(index, values.length)
+                }
                 whileHover={prefersReducedMotion ? {} : { y: -4, scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                className={`rounded-2xl border p-5 cursor-default ${v.color} ${v.border} bg-gradient-to-b from-white via-white to-slate-50 shadow-xl shadow-slate-100/70 dark:bg-gray-800/50 transition-transform duration-300`}
+                className={`rounded-2xl border p-5 cursor-default origin-bottom ${v.color} ${v.border} bg-gradient-to-b from-white via-white to-slate-50 shadow-xl shadow-slate-100/70 dark:bg-gray-800/50 transition-transform duration-300`}
+                style={prefersReducedMotion ? undefined : { zIndex: index + 1 }}
               >
                 <h4 className="font-bold text-sm text-black dark:text-white mb-2">{v.title}</h4>
                 <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{v.desc}</p>
