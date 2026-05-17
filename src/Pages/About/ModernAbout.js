@@ -243,7 +243,13 @@ function MissionSection({ anim, prefersReducedMotion }) {
             {...(prefersReducedMotion ? {} : { variants: staggerContainer, initial: "hidden", whileInView: "visible", viewport: { once: true } })}
           >
             {values.map((v) => (
-              <motion.div key={v.title} variants={staggerItem} whileHover={prefersReducedMotion ? {} : { y: -4, scale: 1.02 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className={`rounded-2xl border p-5 cursor-default bg-gradient-to-b from-white via-white to-slate-50 border border-slate-100 shadow-xl shadow-slate-100/70 dark:bg-gray-800/50 transition-transform duration-300 ${v.color} ${v.border}`}>
+              <motion.div
+                key={v.title}
+                variants={staggerItem}
+                whileHover={prefersReducedMotion ? {} : { y: -4, scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className={`rounded-2xl border p-5 cursor-default ${v.color} ${v.border} bg-gradient-to-b from-white via-white to-slate-50 shadow-xl shadow-slate-100/70 dark:bg-gray-800/50 transition-transform duration-300`}
+              >
                 <h4 className="font-bold text-sm text-black dark:text-white mb-2">{v.title}</h4>
                 <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{v.desc}</p>
               </motion.div>
