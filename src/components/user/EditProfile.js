@@ -1,6 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { useContext } from "react";
-import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 
 import {
@@ -85,7 +83,7 @@ const EditProfile = () => {
   const [form, setForm] = useState(user || initialFormState);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [loadingInitial, setLoadingInitial] = useState(false);
+  const [loadingInitial] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [currentSkillInput, setCurrentSkillInput] = useState("");
@@ -102,7 +100,7 @@ const EditProfile = () => {
 
   const validate = (nextForm) => {
     const v = {};
-    if (!nextForm.fullName?.trim()) v.fullName = "Full name is required";
+    // if (!nextForm.fullName?.trim()) v.fullName = "Full name is required";
     // if (!nextForm.username?.trim()) v.username = 'Username is required';
     if (nextForm.phone && !/^[+]?\d{7,15}$/.test(nextForm.phone))
       v.phone = "Enter a valid phone number";
@@ -150,7 +148,13 @@ const EditProfile = () => {
 
 const performSave = () => {
   setSuccessMessage("");
-  const validation = validate(form);
+
+  // Build the actual form with the resolved fullName
+  const resolvedForm = {
+    ...form,
+    fullName: form.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim(),
+  };
+  const validation = validate(resolvedForm);
   setErrors(validation);
 
   if (Object.keys(validation).length > 0) {
@@ -211,7 +215,7 @@ const performSave = () => {
             <div className="relative">
               <div className="h-20 w-20 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center ring-2 ring-indigo-200/60 dark:ring-indigo-900/40">
                 {form.avatarBase64 ? (
-                  <img
+                  <img loading="lazy"
                     src={form.avatarBase64}
                     alt="Avatar preview"
                     className="h-full w-full object-cover"
@@ -289,10 +293,10 @@ const performSave = () => {
                       <input
                         type="text"
                         name="fullName"
-                        value={form.fullName}
-                        onChange={handleChange}
+                        value={form.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim()}
+                        readOnly 
                         placeholder="Jane Doe"
-                        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 pl-9 pr-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 pl-9 pr-3 py-2 text-gray-500 cursor-not-allowed"
                       />
                     </div>
                     {errors.fullName && (

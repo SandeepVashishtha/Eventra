@@ -92,7 +92,7 @@ const ProjectCard = ({ project, index }) => {
       {/* Image */}
       {/* UPDATED: Image container background and border */}
       <div className="relative aspect-[16/9] bg-gray-100 dark:bg-gray-700 border-b border-gray-300 dark:border-gray-700 overflow-hidden">
-        <img
+        <img loading="lazy"
           src={project.lowResImage || project.image}
           alt={project.title}
           className={`absolute inset-0 w-full h-full object-cover blur-lg scale-105 transition-opacity duration-500 ${
@@ -100,7 +100,7 @@ const ProjectCard = ({ project, index }) => {
           }`}
           aria-hidden="true"
         />
-        <img
+        <img loading="lazy"
           src={project.image}
           alt={project.title}
           loading="lazy"

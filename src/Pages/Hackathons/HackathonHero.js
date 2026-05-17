@@ -1,9 +1,9 @@
-import React, { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, Sparkles, Users, Award, Code2, Calendar } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Award, Calendar, Code2, Sparkles, Users, X } from "lucide-react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
+import { useAuth } from "../../context/AuthContext";
 
 // Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
@@ -11,12 +11,12 @@ const Tag = ({ tag, onRemove }) => (
     initial={{ scale: 0.8, opacity: 0 }}
     animate={{ scale: 1, opacity: 1 }}
     exit={{ scale: 0.8, opacity: 0 }}
-    className="flex items-center gap-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm font-medium"
+    className="flex items-center gap-2 rounded-full border border-blue-200 bg-white px-3 py-1 text-sm font-medium text-slate-700 shadow-sm dark:border-blue-700 dark:bg-slate-800 dark:text-slate-100"
   >
     <span>{tag}</span>
     <button
       onClick={() => onRemove(tag)}
-      className="hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full p-0.5 transition-colors"
+      className="rounded-full p-0.5 transition-colors hover:bg-blue-100 dark:hover:bg-slate-700"
     >
       <X className="w-3 h-3" />
     </button>
@@ -67,7 +67,7 @@ export default function HackathonHero({
   );
 
   return (
-    <div className="bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black relative overflow-hidden py-16 sm:py-20 md:py-24">
+    <div className="bg-gradient-to-r from-white via-slate-50 to-indigo-50 dark:from-gray-900 dark:to-black relative overflow-hidden py-16 sm:py-20 md:py-24">
       {/* ======================= FLOATING SHAPES ======================= */}
       {shapes.map((shape, i) => (
         <motion.div
@@ -90,7 +90,7 @@ export default function HackathonHero({
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
-          className="text-4xl sm:text-6xl font-extrabold leading-tight text-black"
+          className="text-4xl sm:text-6xl font-extrabold leading-tight text-text"
           style={{ fontFamily: '"Anton", sans-serif' }}
         >
           Discover Amazing Hackathons
@@ -192,6 +192,7 @@ export default function HackathonHero({
       </div>
 
       {/* ======================= STATS SECTION ======================= */}
+      {searchQuery.trim() === "" && selectedTags.length === 0 && (
       <div
         className="relative max-w-6xl mx-auto px-4 sm:px-6 mt-12 sm:mt-16 md:mt-20 mb-12 sm:mb-16 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8"
         data-aos="fade-up"
@@ -231,7 +232,7 @@ export default function HackathonHero({
             <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-sky-300/10 to-blue-300/10 dark:from-sky-500/20 dark:to-blue-500/20 blur-2xl opacity-40 -z-10" />
           </motion.div>
         ))}
-      </div>
+      </div>)}
     </div>
   );
 }
