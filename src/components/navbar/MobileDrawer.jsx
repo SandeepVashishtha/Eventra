@@ -9,13 +9,13 @@ const MobileDrawer = ({ isOpen, closeMenu }) => {
       }`}
     >
       <div className="p-4 flex justify-between items-center border-b">
-        <h2 className="text-2xl font-bold">Eventra</h2>
+        <h2 className="text-2xl font-bold text-black dark:text-white">Eventra</h2>
 
         <button onClick={closeMenu}>X</button>
       </div>
 
       <div className="p-4">
-        <NavbarLinks />
+        <NavbarLinks variant="mobile" onNavigate={closeMenu} />
       </div>
     </div>
   );
