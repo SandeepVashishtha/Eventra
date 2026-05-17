@@ -1,28 +1,32 @@
-import React from 'react';
+import { lazy } from 'react';
 import { Route } from 'react-router-dom';
-import PageLayout from '../Layout/PageLayout';
 
-// --------------- PAGES
-import HomePage from "../../Pages/Home/HomePage";
-import EventsPage from "../../Pages/Events/EventsPage";
-import EventRegistration from "../../Pages/Events/EventRegistration";
-import HackathonPage from "../../Pages/Hackathons/HackathonPage";
-import ProjectsPage from "../../Pages/Projects/ProjectsPage";
-import Contributors from "../Contributors";
-import CommunityEvent from "../CommunityEvent";
-import LeaderBoard from "../../Pages/Leaderboard/Leaderboard";
-import ContributorGuide from "../../Pages/Leaderboard/ContributorGuide";
-import AboutPage from "../../Pages/About/AboutPage";
-import FAQPage from "../../Pages/FAQ/FAQPage";
-import Terms from "../../Pages/Terms";
-import { Privacy } from "../../Pages/Privacy";
-import ApiDocs from "../../Pages/ApiDocs";
-import HelpCenter from "../../Pages/HelpCenter";
-import ContactUs from "../../Pages/Contact/ContactUs";
-import FeedbackPage from "../../Pages/Feedback/FeedbackPage";
-import EventAnalyticsDashboard from "../../Pages/Events/EventAnalyticsDashboard";
-import DocumentationPage from "../../Pages/About/DocumentationPage";
-import SubmitProject from "../../Pages/Projects/SubmitProject";
+import PageLayout from '../Layout/PageLayout';
+import HomePage from '../../Pages/Home/HomePage';
+
+const EventsPage = lazy(() => import('../../Pages/Events/EventsPage'));
+const EventRegistration = lazy(() => import('../../Pages/Events/EventRegistration'));
+const HackathonPage = lazy(() => import('../../Pages/Hackathons/HackathonPage'));
+const ProjectsPage = lazy(() => import('../../Pages/Projects/ProjectsPage'));
+const Contributors = lazy(() => import('../Contributors'));
+const CommunityEvent = lazy(() => import('../CommunityEvent'));
+const LeaderBoard = lazy(() => import('../../Pages/Leaderboard/Leaderboard'));
+const ContributorGuide = lazy(() => import('../../Pages/Leaderboard/ContributorGuide'));
+const AboutPage = lazy(() => import('../../Pages/About/AboutPage'));
+const FAQPage = lazy(() => import('../../Pages/FAQ/FAQPage'));
+const Terms = lazy(() => import('../../Pages/Terms'));
+const Privacy = lazy(() =>
+  import('../../Pages/Privacy').then((module) => ({ default: module.Privacy }))
+);
+const ApiDocs = lazy(() => import('../../Pages/ApiDocs'));
+const HelpCenter = lazy(() => import('../../Pages/HelpCenter'));
+const ContactUs = lazy(() => import('../../Pages/Contact/ContactUs'));
+const FeedbackPage = lazy(() => import('../../Pages/Feedback/FeedbackPage'));
+const EventAnalyticsDashboard = lazy(() =>
+  import('../../Pages/Events/EventAnalyticsDashboard')
+);
+const DocumentationPage = lazy(() => import('../../Pages/About/DocumentationPage'));
+const SubmitProject = lazy(() => import('../../Pages/Projects/SubmitProject'));
 
 export const getPublicRoutes = () => [
   <Route key="/" path="/" element={<HomePage />} />,
@@ -46,5 +50,5 @@ export const getPublicRoutes = () => [
     <Route key="/analytics" path="/analytics" element={<EventAnalyticsDashboard />} />
     <Route key="/documentation" path="/documentation" element={<DocumentationPage />} />
     <Route key="/submit-project" path="/submit-project" element={<SubmitProject />} />
-  </Route>
+  </Route>,
 ];
