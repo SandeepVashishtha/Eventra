@@ -4,7 +4,7 @@ import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
 const EventCardSection = ({ isLoading, events, viewMode, filterType, onClearFilters }) => {
   if (isLoading) {
     return (
-      <div className="grid gap-8 grid-cols-1 sm:grid-cols-1 lg:grid-cols-3">
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <EventCardSkeleton key={`skeleton-${i}`} />
         ))}
@@ -53,9 +53,9 @@ const EventCardSection = ({ isLoading, events, viewMode, filterType, onClearFilt
   return (
     <div
       key={filterType + viewMode}
-      className={`grid gap-8 ${
+      className={`grid gap-6 ${
         viewMode === "grid"
-          ? "grid-cols-1 sm:grid-cols-1 lg:grid-cols-3"
+          ? "grid-cols-1 md:grid-cols-3"
           : "grid-cols-1 max-w-4xl mx-auto"
       }`}
     >
