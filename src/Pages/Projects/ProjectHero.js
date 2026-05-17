@@ -1,16 +1,16 @@
-import React from "react";
 import { motion } from "framer-motion";
+import React from "react";
 import {
-  FaGithub,
-  FaTwitter,
-  FaLinkedin,
-  FaDiscord,
-  FaCode,
-  FaLaptopCode,
   FaBrain,
+  FaCode,
+  FaDiscord,
+  FaGithub,
+  FaLaptopCode,
+  FaLinkedin,
+  FaTwitter,
 } from "react-icons/fa";
+import { HiArrowRight, HiPlus } from "react-icons/hi";
 import { SiHackaday } from "react-icons/si";
-import { HiPlus, HiArrowRight } from "react-icons/hi";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
@@ -125,7 +125,7 @@ dark:from-[#020617] dark:via-[#0f172a] dark:to-black"
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
           // UPDATED: Title text color and gradient
-          className="text-4xl sm:text-6xl font-extrabold mb-6 mt-6 text-black leading-tight"
+          className="text-4xl sm:text-6xl font-extrabold mb-6 mt-6 text-white leading-tight"
           style={{ fontFamily: '"Anton", sans-serif' }}
         >
           Discover Amazing Projects
@@ -136,7 +136,7 @@ dark:from-[#020617] dark:via-[#0f172a] dark:to-black"
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 0.3 }}
           // UPDATED: Subtitle text color
-          className="text-base sm:text-lg text-gray-600 dark:text-slate-300 max-w-2xl mx-auto mb-12"
+          className="text-base sm:text-lg text-white dark:white max-w-2xl mx-auto mb-12"
         >
           Explore, contribute to, and showcase innovative open-source creations
           from developers worldwide.

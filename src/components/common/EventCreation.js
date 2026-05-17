@@ -701,7 +701,7 @@ const EventCreation = () => {
                   {/* Preview Section */}
                   {formData.bannerPreview && (
                     <div className="rounded-lg overflow-hidden border border-indigo-200 dark:border-gray-700 shadow-md">
-                      <img
+                      <img loading="lazy"
                         src={formData.bannerPreview}
                         alt="Banner preview"
                         className="w-full h-48 object-cover hover:scale-[1.02] transition-transform duration-300"
@@ -1505,7 +1505,7 @@ const EventCreation = () => {
           <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl overflow-hidden border border-indigo-300 dark:border-gray-700">
             {formData.bannerPreview && (
               <div className="w-full h-64 overflow-hidden">
-                <img
+                <img loading="lazy"
                   src={formData.bannerPreview}
                   alt="Event banner"
                   className="w-full h-full object-cover"
