@@ -206,7 +206,7 @@ const Contributors = () => {
               {/* Avatar with Glow */}
               <div className="absolute -top-8 left-1/2 -translate-x-1/2">
                 <div className="relative">
-                  <img
+                  <img loading="lazy"
                     src={c.avatar_url}
                     alt={c.login}
                     className="w-20 h-20 rounded-full border-4 border-black shadow-xl"

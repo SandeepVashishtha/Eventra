@@ -2,7 +2,7 @@
 
 
 import { motion } from "framer-motion";
-import { Sparkles, Users, Award, Code2, Calendar } from "lucide-react";
+import { Award, Calendar, Code2, Sparkles, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 
@@ -63,16 +63,12 @@ export default function EventHero({
       </div>
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 text-center z-10">
-       <h1
-  className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight px-4"
-  style={{
-    fontFamily: '"Anton", sans-serif',
-    color: "white",
-    WebkitTextFillColor: "white",
-  }}
->
-  Discover Amazing Events 🎯
-</h1>
+        <h1
+          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight px-4 sm:px-0 text-black dark:text-white"
+          style={{ fontFamily: '"Anton", sans-serif' }}
+        >
+          Discover <span className="text-indigo-600">Amazing Events</span>
+        </h1>
 
         <p className="mt-4 text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto px-4 sm:px-0">
           Discover exciting events, compete with talented participants, learn

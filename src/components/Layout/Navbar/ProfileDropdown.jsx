@@ -27,7 +27,7 @@ const ProfileDropdown = ({
           className="flex items-center gap-2 text-sm font-medium text-black/90 dark:text-white/90 hover:text-black dark:hover:text-white transition-colors"
         >
           {user?.profilePicture ? (
-            <img
+            <img loading="lazy"
               src={user.profilePicture}
               alt="Profile"
               className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20"
@@ -56,7 +56,7 @@ const ProfileDropdown = ({
               <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
                 <div className="flex items-center gap-3">
                   {user?.profilePicture ? (
-                    <img
+                    <img loading="lazy"
                       src={user.profilePicture}
                       alt="Profile"
                       className="w-12 h-12 rounded-full object-cover ring-2 ring-purple-500/20"
