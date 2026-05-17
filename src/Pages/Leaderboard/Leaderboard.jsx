@@ -1,13 +1,11 @@
-import { useEffect, useState, Fragment } from "react";
+import { useEffect, useState } from "react";
 import {
   FaCode,
   FaStar,
-  FaChevronDown,
   FaChevronLeft,
   FaChevronRight,
   FaUsers,
 } from "react-icons/fa";
-import { Menu, Transition } from "@headlessui/react";
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
 import StyledDropdown from "../../components/StyledDropdown";
@@ -32,7 +30,6 @@ export default function LeaderBoard() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("points");
-  const [isDark, setIsDark] = useState(false);
 
   // Constants for pagination and UI
   const CONTRIBUTORS_PER_PAGE = 10;
@@ -110,9 +107,17 @@ export default function LeaderBoard() {
           `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`,
           { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} }
         );
+
+        if (!res.ok) {
+          console.warn(`GitHub API request failed with status: ${res.status}`);
+          hasMore = false;
+          break;
+        }
+
         const prs = await res.json();
-        // If no PRs returned, stop paginating
-        if (prs.length === 0) {
+        
+        // Ensure standard array shape to avoid runtime TypeError crash
+        if (!Array.isArray(prs) || prs.length === 0) {
           hasMore = false;
           break;
         }
@@ -186,6 +191,7 @@ export default function LeaderBoard() {
   // Initial data load on component mount
   useEffect(() => {
     loadLeaderboardData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Filter & sort
@@ -238,7 +244,7 @@ export default function LeaderBoard() {
   ];
 
   return (
-    <div className="bg-white dark:bg-black py-12 sm:py-16">
+    <div className="bg-white dark:bg-black pt-20 md:pt-24 py-12 sm:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           {/* UPDATED: Header text */}

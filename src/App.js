@@ -1,7 +1,6 @@
 import { BrowserRouter as Router } from "react-router-dom";
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./App.css";
-import ToastProvider from "./components/Toastprovider";
 
 // --------------- LAYOUT
 import Navbar from "./components/Layout/Navbar";
@@ -11,15 +10,18 @@ import FeedbackButton from "./components/FeedbackButton";
 import Chatbot from "./components/Chatbot";
 import FluidCursor from "./jhalak/FluidCursor";
 import AppRoutes from "./components/AppRoutes";
+import NotificationProvider from "./components/common/NotificationProvider";
 
-// --------------- CONTEXT
+// --------------- CONTEXT & HOOKS
 import { AuthProvider } from "./context/AuthContext";
-import { ThemeProvider } from "./context/ThemeContext";
+import { useModelContext } from "./hooks/useModelContext";
 
 function App() {
   const [cursorEnabled, setCursorEnabled] = useState(
     localStorage.getItem("cursor") !== "off"
   );
+
+  useModelContext();
 
   const toggleCursor = () => {
     const newValue = !cursorEnabled;
@@ -27,9 +29,20 @@ function App() {
     localStorage.setItem("cursor", newValue ? "on" : "off");
   };
 
+  React.useEffect(() => {
+    const handleCursorPreference = (event) => {
+      if (event?.detail?.cursorEnabled !== undefined) {
+        setCursorEnabled(event.detail.cursorEnabled);
+      }
+    };
+
+    window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
+    return () => window.removeEventListener("cursorPreferenceChanged", handleCursorPreference);
+  }, []);
+
   return (
-    <ThemeProvider>
-      <ToastProvider />
+    <>
+      <NotificationProvider />
       <AuthProvider>
         <Router>
           <div className="App">
@@ -38,7 +51,7 @@ function App() {
               toggleCursor={toggleCursor}
             />
 
-            <main className="min-h-screen bg-white dark:bg-black">
+            <main className="min-h-screen bg-white dark:bg-black ">
               <AppRoutes />
             </main>
 
@@ -47,12 +60,11 @@ function App() {
             <FeedbackButton />
             <Footer />
 
-            {/* KEEP CURSOR MOUNTED BUT TOGGLE VIA PROP */}
             <FluidCursor enabled={cursorEnabled} />
           </div>
         </Router>
       </AuthProvider>
-    </ThemeProvider>
+    </>
   );
 }
 

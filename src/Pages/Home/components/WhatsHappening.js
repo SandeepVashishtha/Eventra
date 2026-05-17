@@ -19,7 +19,7 @@ const WhatsHappening = () => {
   // Combine and format events and hackathons data
   const formatEventsData = (events) => {
     return events
-      .filter((event) => event.status !== "past")
+      .filter((event) => new Date(event.date) >= new Date())
       .map((event) => ({
         id: `event-${event.id}`,
         title: event.title,
@@ -176,10 +176,10 @@ const WhatsHappening = () => {
           transition={{ duration: 0.6 }}
         >
           {/* UPDATED: Text colors */}
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-gray-100">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-black dark:text-gray-100">
             What's Happening Now
           </h2>
-          <p className="mt-2 sm:mt-3 max-w-xl mx-auto text-sm sm:text-lg text-gray-500 dark:text-gray-400">
+          <p className="mt-2 sm:mt-3 max-w-xl mx-auto text-sm sm:text-lg text-black dark:text-gray-400">
             Stay updated with {upcomingEvents.length} upcoming events, community
             programs, and opportunities to contribute to Eventra
           </p>
@@ -191,7 +191,7 @@ const WhatsHappening = () => {
           <div className="absolute top-4 right-4 z-20">
             <button
               onClick={() => setIsAutoPlaying(!isAutoPlaying)}
-              className="p-2 rounded-full bg-white/90 dark:bg-gray-700/90 shadow-lg hover:bg-white dark:hover:bg-gray-700 transition-colors"
+              className="p-2 rounded-full bg-white/20 dark:bg-gray-700/90 shadow-lg hover:bg-white dark:hover:bg-gray-700 transition-colors"
               title={isAutoPlaying ? "Pause auto-play" : "Resume auto-play"}
             >
               {isAutoPlaying ? (
@@ -445,19 +445,6 @@ const WhatsHappening = () => {
             )
           )}
         </div>
-
-        {/* Add progress animation keyframes - Updated timing */}
-        <style dangerouslySetInnerHTML={{ __html: `
-          @keyframes progress {
-            from {
-              transform: scale(0);
-            }
-            to {
-              transform: scale(1.2);
-            }
-          }
-        ` }} />
-
       </div>
     </section>
   );
