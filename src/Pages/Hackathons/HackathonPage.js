@@ -294,12 +294,12 @@ const HackathonHub = () => {
         <button
           type="button"
           ref={buttonRef}
-          className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"
+          className="flex w-full items-center justify-between gap-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"
           onClick={toggleOpen}
           aria-expanded={open}
         >
           <span
-            className={`text-gray-700 dark:text-gray-100 ${!value ? "text-gray-400 dark:text-gray-300" : ""}`}
+            className={`flex-1 text-left text-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis text-gray-700 dark:text-gray-100 ${!value ? "text-gray-400 dark:text-gray-300" : ""}`}
           >
             {displayText}
           </span>
@@ -311,7 +311,7 @@ const HackathonHub = () => {
           createPortal(
             <ul
               ref={dropdownRef}
-              className="z-[10000] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg"
+              className="z-[10000] min-w-[220px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg"
               style={{
                 position: "absolute",
                 top: menuCoords.top,
@@ -324,7 +324,7 @@ const HackathonHub = () => {
                   onChange("");
                   setOpen(false);
                 }}
-                className="px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                className="px-4 py-2 cursor-pointer whitespace-nowrap hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               >
                 {placeholder}
               </li>
@@ -332,7 +332,7 @@ const HackathonHub = () => {
               {options.map((opt) => (
                 <li
                   key={opt}
-                  className={`px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 ${opt === value
+                  className={`px-4 py-2 cursor-pointer whitespace-nowrap hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 ${opt === value
                       ? "font-semibold bg-indigo-100 dark:bg-indigo-900"
                       : ""
                     }`}
