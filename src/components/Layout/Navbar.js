@@ -851,8 +851,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                     Get Started
                   </Link>
                 </div>
-              ) : (
-              <AuthButtons isMobile={false} />
               )}
             </div>
           </div>
