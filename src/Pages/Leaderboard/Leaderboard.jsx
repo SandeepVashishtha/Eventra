@@ -107,9 +107,17 @@ export default function LeaderBoard() {
           `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`,
           { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} }
         );
+
+        if (!res.ok) {
+          console.warn(`GitHub API request failed with status: ${res.status}`);
+          hasMore = false;
+          break;
+        }
+
         const prs = await res.json();
-        // If no PRs returned, stop paginating
-        if (prs.length === 0) {
+        
+        // Ensure standard array shape to avoid runtime TypeError crash
+        if (!Array.isArray(prs) || prs.length === 0) {
           hasMore = false;
           break;
         }

@@ -150,7 +150,7 @@ const ProjectGallery = () => {
     });
 
   const scrollToCard = () => {
-    cardSectionRef.current?.scrollIntoView({ behaviour: 'smooth' })
+    cardSectionRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
   return (
