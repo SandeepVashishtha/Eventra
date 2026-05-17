@@ -146,7 +146,7 @@ const FAQPage = () => {
                 style={{ fontFamily: '"Anton", sans-serif' }}
               >
                 Frequently Asked{" "}
-                <span className="text-black">
+                <span className="text-black  dark:text-white">
                   Questions
                 </span>
               </h1>
