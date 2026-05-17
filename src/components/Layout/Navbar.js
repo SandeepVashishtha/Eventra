@@ -400,7 +400,7 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
 const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   const location = useLocation();
   return (
-    <div className="hidden lg:flex absolute left-[48%] transform -translate-x-1/2 space-x-5 z-10">
+    <div className="hidden lg:flex absolute left-[48%] transform -translate-x-1/2 gap-x-8 px-4 z-10">
       <NavList 
         location={location} 
         openDropdown={openDropdown} 
@@ -628,7 +628,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           </Link>
 
           {/* Centered nav links */}
-          <div className="hidden lg:flex absolute left-[48%] transform -translate-x-1/2 space-x-5 z-10">
+          <div className="hidden lg:flex absolute left-[48%] transform -translate-x-1/2 z-10" style={{ gap: '2.5rem', padding: '0 1rem' }}>
             {navItems.map((item) => {
               const isActive = item.href
                 ? location.pathname === item.href
