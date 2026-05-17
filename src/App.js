@@ -41,30 +41,28 @@ function App() {
   }, []);
 
   return (
-    <>
-      <NotificationProvider />
-      <AuthProvider>
-        <Router>
-          <div className="App">
-            <Navbar
-              cursorEnabled={cursorEnabled}
-              toggleCursor={toggleCursor}
-            />
+    <AuthProvider>
+      <Router>
+        <div className="App">
+          <Navbar
+            cursorEnabled={cursorEnabled}
+            toggleCursor={toggleCursor}
+          />
 
-            <main className="min-h-screen bg-white dark:bg-black ">
-              <AppRoutes />
-            </main>
+          <main className="min-h-screen bg-white dark:bg-black ">
+            <AppRoutes />
+          </main>
 
-            <ScrollToTop />
-            <Chatbot />
-            <FeedbackButton />
-            <Footer />
+          <ScrollToTop />
+          <Chatbot />
+          <FeedbackButton />
+          <Footer />
 
-            <FluidCursor enabled={cursorEnabled} />
-          </div>
-        </Router>
-      </AuthProvider>
-    </>
+          <FluidCursor enabled={cursorEnabled} />
+          <NotificationProvider />
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 
