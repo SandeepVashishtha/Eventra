@@ -2,7 +2,7 @@
   {
     "id": 1,
     "title": "React Conference",
-    "date": "2025-03-15",
+    "date": "2026-03-15",
     "time": "10:00 AM",
     "location": "San Francisco, CA",
     "type": "conference",
@@ -16,7 +16,7 @@
   {
     "id": 2,
     "title": "AI & ML Workshop",
-    "date": "2025-02-28",
+    "date": "2026-02-28",
     "time": "2:00 PM",
     "location": "Online",
     "type": "workshop",
@@ -29,8 +29,8 @@
   },
   {
     "id": 3,
-    "title": "DevOps Summit 2024",
-    "date": "2024-12-10",
+    "title": "DevOps Summit 2026",
+    "date": "2026-12-10",
     "time": "9:00 AM",
     "location": "New York, NY",
     "type": "summit",
@@ -44,7 +44,7 @@
   {
     "id": 4,
     "title": "Blockchain Intensive",
-    "date": "2025-04-22",
+    "date": "2026-04-22",
     "time": "1:00 PM",
     "location": "Austin, TX",
     "type": "bootcamp",
@@ -58,7 +58,7 @@
   {
     "id": 5,
     "title": "UX Masterclass",
-    "date": "2025-05-08",
+    "date": "2026-05-08",
     "time": "3:00 PM",
     "location": "Los Angeles, CA",
     "type": "workshop",
@@ -72,7 +72,7 @@
   {
     "id": 6,
     "title": "Cybersecurity Conference",
-    "date": "2025-06-12",
+    "date": "2026-06-12",
     "time": "9:30 AM",
     "location": "Seattle, WA",
     "type": "conference",
@@ -86,7 +86,7 @@
   {
     "id": 7,
     "title": "Cloud Native Conference",
-    "date": "2025-07-18",
+    "date": "2026-07-18",
     "time": "10:00 AM",
     "location": "Chicago, IL",
     "type": "conference",
@@ -100,7 +100,7 @@
   {
     "id": 8,
     "title": "Data Science Hackathon",
-    "date": "2025-08-05",
+    "date": "2026-08-05",
     "time": "6:00 PM",
     "location": "Boston, MA",
     "type": "hackathon",
@@ -114,7 +114,7 @@
   {
     "id": 9,
     "title": "Android Development Workshop",
-    "date": "2024-11-15",
+    "date": "2026-11-15",
     "time": "1:30 PM",
     "location": "Online",
     "type": "workshop",
@@ -128,7 +128,7 @@
   {
     "id": 10,
     "title": "Tech Leadership Summit",
-    "date": "2025-09-22",
+    "date": "2026-09-22",
     "time": "9:00 AM",
     "location": "Austin, TX",
     "type": "summit",
@@ -142,7 +142,7 @@
   {
     "id": 11,
     "title": "Game Development Bootcamp",
-    "date": "2025-10-10",
+    "date": "2026-10-10",
     "time": "11:00 AM",
     "location": "Los Angeles, CA",
     "type": "bootcamp",
@@ -156,7 +156,7 @@
   {
     "id": 12,
     "title": "AI in Healthcare Conference",
-    "date": "2025-11-18",
+    "date": "2026-11-18",
     "time": "8:30 AM",
     "location": "Boston, MA",
     "type": "conference",
@@ -170,7 +170,7 @@
   {
     "id": 13,
     "title": "Web3 & DeFi Workshop",
-    "date": "2024-10-05",
+    "date": "2026-10-05",
     "time": "2:00 PM",
     "location": "Miami, FL",
     "type": "workshop",
@@ -184,7 +184,7 @@
   {
     "id": 14,
     "title": "DevOps Days",
-    "date": "2025-12-03",
+    "date": "2026-12-03",
     "time": "9:00 AM",
     "location": "Portland, OR",
     "type": "conference",
@@ -198,7 +198,7 @@
   {
     "id": 15,
     "title": "UX Research Bootcamp",
-    "date": "2025-09-05",
+    "date": "2026-09-05",
     "time": "10:00 AM",
     "location": "Online",
     "type": "bootcamp",
@@ -212,7 +212,7 @@
   {
     "id": 16,
     "title": "Startup Pitch Night",
-    "date": "2025-11-30",
+    "date": "2026-11-30",
     "time": "6:00 PM",
     "location": "San Francisco, CA",
     "type": "networking",

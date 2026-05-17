@@ -16,62 +16,9 @@ import {
 } from "react-icons/fi";
 import {
   FaBug,
-  FaGithub,
-  FaLinkedin,
-  FaDiscord,
   FaRegComment,
 } from "react-icons/fa";
-
-// Toast notification component
-const Toast = ({ message, type, onClose }) => {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 4000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  return (
-      <motion.div
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -50 }}
-          className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg ${
-              type === "success"
-                  ? "bg-green-500 text-white"
-                  : "bg-red-500 text-white"
-          }`}
-      >
-        <p className="font-medium">{message}</p>
-      </motion.div>
-  );
-};
-
-//Social media links
-const socialLinks = [
-  {
-    name: "X",
-    icon: (
-        <span className="w-5 h-5 flex items-center justify-center font-bold">
-        X
-      </span>
-    ),
-    href: "https://twitter.com",
-  },
-  {
-    name: "GitHub",
-    icon: <FaGithub className="w-5 h-5" />,
-    href: "https://github.com/SandeepVashishtha/Eventra",
-  },
-  {
-    name: "LinkedIn",
-    icon: <FaLinkedin className="w-5 h-5" />,
-    href: "https://linkedin.com/in",
-  },
-  {
-    name: "Discord",
-    icon: <FaDiscord className="w-5 h-5" />,
-    href: "https://discord.gg/",
-  },
-];
+import { toast } from "react-toastify";
 
 // Star Rating Component
 const StarRating = ({ rating, onRatingChange, error }) => {
@@ -391,7 +338,6 @@ const FeedbackPage = () => {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [toast, setToast] = useState(null);
   const [isFocused, setIsFocused] = useState(false);
   const [submittedFeedback, setSubmittedFeedback] = useState([]);
   const formRef = useRef(null);
@@ -410,9 +356,6 @@ const FeedbackPage = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  const showToast = (message, type) => {
-    setToast({ message, type });
-  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -501,7 +444,7 @@ const FeedbackPage = () => {
       }
 
       // Show error toast
-      showToast("Please fill in all required fields correctly", "error");
+      toast.error("Please fill in all required fields correctly");
       return;
     }
 
@@ -527,9 +470,8 @@ const FeedbackPage = () => {
       console.log("Feedback submitted:", payload);
       console.log("All feedback:", [...submittedFeedback, payload]);
 
-      showToast(
-          "Thank you for your feedback! We've received your submission and will review it shortly",
-          "success"
+      toast.success(
+          "Thank you for your feedback! We've received your submission and will review it shortly"
       );
 
       setFormData({
@@ -542,9 +484,8 @@ const FeedbackPage = () => {
       setErrors({});
       setIsSubmitting(false);
     } catch (error) {
-      showToast(
-          "There was an error submitting your feedback. Please try again.",
-          "error"
+      toast.error(
+          "There was an error submitting your feedback. Please try again."
       );
       setIsSubmitting(false);
     }
@@ -552,249 +493,210 @@ const FeedbackPage = () => {
 
   return (
       <div className="pastel-grid-bg min-h-screen bg-white dark:bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        <AnimatePresence>
-          {toast && (
-              <Toast
-                  message={toast.message}
-                  type={toast.type}
-                  onClose={() => setToast(null)}
-              />
-          )}
-        </AnimatePresence>
-
-        <div className="max-w-4xl w-full mx-auto">
+        <div className="max-w-6xl w-full mx-auto">
           <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
           >
+            {/* FIXED FLEX LAYOUT */}
             <div className="md:flex">
-              <div className="md:w-3/5 lg:w-2/5 bg-black text-white p-12 flex flex-col justify-between rounded-3xl shadow-xl backdrop-blur-lg">
+
+              {/* LEFT SECTION */}
+              <div className="md:w-2/5 bg-black text-white p-12 flex flex-col justify-between">
                 <div>
                   <h2
                     className="text-4xl font-extrabold mb-6 tracking-wide"
                     style={{ fontFamily: '"Anton", sans-serif' }}
                   >
                     Share Your Feedback
-                  </h2>
-                  <p className="mb-8 text-lg opacity-90 leading-relaxed">
-                    Your feedback helps us improve Eventra and create better
-                    experiences for our community. We value your input!
-                  </p>
+          </h2>
 
-                  <div className="space-y-6">
-                    <div className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out">
-                      <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
-                        <FiMessageSquare className="w-7 h-7 text-white" />
-                      </div>
-                      <div className="overflow-hidden max-w-full">
-                        <p className="font-semibold text-white">Quick Response</p>
-                        <p className="text-sm opacity-80">
-                          We review all feedback within 24 hours
-                        </p>
-                      </div>
-                    </div>
+          <p className="mb-8 text-lg opacity-90 leading-relaxed">
+            Your feedback helps us improve Eventra and create better
+            experiences for our community. We value your input!
+          </p>
 
-                    <div className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out">
-                      <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
-                        <FiStar className="w-7 h-7 text-white" />
-                      </div>
-                      <div className="overflow-hidden max-w-full">
-                        <p className="font-semibold text-white">
-                          Anonymous Option
-                        </p>
-                        <p className="text-sm opacity-80">
-                          Share feedback anonymously if preferred
-                        </p>
-                      </div>
-                    </div>
+          <div className="space-y-6">
 
-                    <div className="flex items-center p-4 bg-white bg-opacity-10 rounded-2xl hover:bg-white hover:bg-opacity-20 transition duration-300 ease-in-out">
-                      <div className="bg-white bg-opacity-20 p-3 rounded-full mr-5 flex items-center justify-center">
-                        <FiCheckCircle className="w-7 h-7 text-white" />
-                      </div>
-                      <div className="overflow-hidden max-w-full">
-                        <p className="font-semibold text-white">Action Taken</p>
-                        <p className="text-sm opacity-80">
-                          We implement improvements based on feedback
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+            {/* CARD 1 */}
+            <div className="flex items-center p-4 bg-white/10 rounded-2xl hover:bg-white/20 transition duration-300">
+              <div className="bg-white/20 p-3 rounded-full mr-5 flex items-center justify-center">
+                <FiMessageSquare className="w-7 h-7 text-white" />
               </div>
-            </div>
 
-            <div className="md:w-3/5 p-10">
-              <div className="text-center mb-8">
-                {/* UPDATED: Text colors */}
-                <h2
-                  className="text-3xl font-extrabold text-gray-900 dark:text-gray-100"
-                  style={{ fontFamily: '"Anton", sans-serif' }}
-                >
-                  We'd Love to Hear From You
-                </h2>
-                <p className="mt-2 text-gray-600 dark:text-gray-400">
-                  Help us make Eventra better for everyone
+              <div>
+                <p className="font-semibold text-white">
+                  Quick Response
+                </p>
+
+                <p className="text-sm opacity-80">
+                  We review all feedback within 24 hours
                 </p>
               </div>
-
-              <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
-                  <FloatingInput
-                      id="name"
-                      label="Your Name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      error={errors.name}
-                      icon={FiUser}
-                      required={true}
-                  />
-                  <FloatingInput
-                      id="email"
-                      label="Email Address"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      error={errors.email}
-                      icon={FiMail}
-                      required={true}
-                  />
-                  <CustomFloatingSelect
-                      id="feedbackType"
-                      label="Feedback Type"
-                      value={formData.feedbackType}
-                      onChange={handleSelectChange}
-                      options={feedbackTypes}
-                      error={errors.feedbackType}
-                      icon={FiMessageSquare}
-                      required={true}
-                  />
-                  <div className="relative mt-6">
-                    <div className="relative">
-                      <FiMessageSquare className="absolute left-4 top-4 text-gray-400 dark:text-gray-500 w-5 h-5 z-10" />
-                      <textarea
-                          id="message"
-                          name="message"
-                          rows="4"
-                          value={formData.message}
-                          onChange={handleChange}
-                          className={`w-full px-4 pl-14 pt-6 pb-2 border-2 rounded-xl focus:ring-4 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-all duration-300 resize-none ${
-                              errors.message
-                                  ? "border-red-500 focus:border-red-500 focus:ring-red-100 dark:focus:ring-red-900/30"
-                                  : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-100 dark:focus:ring-indigo-900/30"
-                          }`}
-                      ></textarea>
-                      <label
-                          htmlFor="message"
-                          className={`absolute left-14 pointer-events-none transition-all duration-200 ease-out ${
-                              formData.message
-                                  ? "top-2 text-xs font-medium"
-                                  : "top-4 text-sm"
-                          } ${
-                              errors.message
-                                  ? "text-red-500 dark:text-red-400"
-                                  : formData.message
-                                      ? "text-black dark:text-white"
-                                      : "text-gray-500 dark:text-gray-400"
-                          }`}
-                      >
-                        Your Message <span className="text-red-500">*</span>
-                      </label>
-                    </div>
-                    <AnimatePresence>
-                      {errors.message && (
-                          <motion.p
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: "auto" }}
-                              exit={{ opacity: 0, height: 0 }}
-                              className="text-red-500 dark:text-red-400 text-xs mt-2 ml-1 flex items-center gap-1"
-                          >
-                            <svg
-                                className="w-3 h-3"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                            >
-                              <path
-                                  fillRule="evenodd"
-                                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                  clipRule="evenodd"
-                              />
-                            </svg>
-                            {errors.message}
-                          </motion.p>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  <StarRating
-                      rating={formData.rating}
-                      onRatingChange={handleRatingChange}
-                      error={errors.rating}
-                  />
-
-                  <div className="mt-6">
-                    <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        type="submit"
-                        disabled={isSubmitting}
-                      className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
-                    >
-                      {isSubmitting && (
-                          <svg
-                              className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                          >
-                            <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                            ></circle>
-                            <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            ></path>
-                          </svg>
-                      )}
-                      {isSubmitting ? "Submitting..." : "Submit Feedback"}
-                    </motion.button>
-                  </div>
-                </form>
             </div>
-          </motion.div>
+
+            {/* CARD 2 */}
+            <div className="flex items-center p-4 bg-white/10 rounded-2xl hover:bg-white/20 transition duration-300">
+              <div className="bg-white/20 p-3 rounded-full mr-5 flex items-center justify-center">
+                <FiStar className="w-7 h-7 text-white" />
+              </div>
+
+              <div>
+                <p className="font-semibold text-white">
+                  Anonymous Option
+                </p>
+
+                <p className="text-sm opacity-80">
+                  Share feedback anonymously if preferred
+                </p>
+              </div>
+            </div>
+
+            {/* CARD 3 */}
+            <div className="flex items-center p-4 bg-white/10 rounded-2xl hover:bg-white/20 transition duration-300">
+              <div className="bg-white/20 p-3 rounded-full mr-5 flex items-center justify-center">
+                <FiCheckCircle className="w-7 h-7 text-white" />
+              </div>
+
+              <div>
+                <p className="font-semibold text-white">
+                  Action Taken
+                </p>
+
+                <p className="text-sm opacity-80">
+                  We implement improvements based on feedback
+                </p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT SECTION */}
+      <div className="md:w-3/5 p-10">
+        <div className="text-center mb-8">
+          <h2
+            className="text-3xl font-extrabold text-gray-900 dark:text-gray-100"
+            style={{ fontFamily: '"Anton", sans-serif' }}
+          >
+            We'd Love to Hear From You
+          </h2>
+
+          <p className="mt-2 text-gray-600 dark:text-gray-400">
+            Help us make Eventra better for everyone
+          </p>
         </div>
 
-        <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes shake {
-          0%,
-          100% {
-            transform: translateX(0);
-          }
-          10%,
-          30%,
-          50%,
-          70%,
-          90% {
-            transform: translateX(-5px);
-          }
-          20%,
-          40%,
-          60%,
-          80% {
-            transform: translateX(5px);
-          }
-        }
-        .animate-shake {
-          animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-        }
-      ` }} />
+        <form
+          ref={formRef}
+          onSubmit={handleSubmit}
+          className="space-y-6"
+        >
+
+          <FloatingInput
+            id="name"
+            label="Your Name"
+            value={formData.name}
+            onChange={handleChange}
+            error={errors.name}
+            icon={FiUser}
+            required={true}
+          />
+
+          <FloatingInput
+            id="email"
+            label="Email Address"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            error={errors.email}
+            icon={FiMail}
+            required={true}
+          />
+
+          <CustomFloatingSelect
+            id="feedbackType"
+            label="Feedback Type"
+            value={formData.feedbackType}
+            onChange={handleSelectChange}
+            options={feedbackTypes}
+            error={errors.feedbackType}
+            icon={FiMessageSquare}
+            required={true}
+          />
+
+          {/* MESSAGE */}
+          <div className="relative mt-6">
+            <div className="relative">
+              <FiMessageSquare className="absolute left-4 top-4 text-gray-400 dark:text-gray-500 w-5 h-5 z-10" />
+
+              <textarea
+                id="message"
+                name="message"
+                rows="4"
+                value={formData.message}
+                onChange={handleChange}
+                className={`w-full px-4 pl-14 pt-6 pb-2 border-2 rounded-xl focus:ring-4 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-all duration-300 resize-none ${
+                  errors.message
+                    ? "border-red-500 focus:border-red-500 focus:ring-red-100"
+                    : "border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-100"
+                }`}
+              />
+
+              <label
+                htmlFor="message"
+                className={`absolute left-14 pointer-events-none transition-all duration-200 ease-out ${
+                  formData.message
+                    ? "top-2 text-xs font-medium"
+                    : "top-4 text-sm"
+                } ${
+                  errors.message
+                    ? "text-red-500"
+                    : formData.message
+                    ? "text-black dark:text-white"
+                    : "text-gray-500 dark:text-gray-400"
+                }`}
+              >
+                Your Message <span className="text-red-500">*</span>
+              </label>
+            </div>
+
+            {errors.message && (
+              <p className="text-red-500 text-xs mt-2 ml-1">
+                {errors.message}
+              </p>
+            )}
+          </div>
+
+          {/* STAR RATING */}
+          <StarRating
+            rating={formData.rating}
+            onRatingChange={handleRatingChange}
+            error={errors.rating}
+          />
+
+          {/* SUBMIT BUTTON */}
+          <div className="mt-6">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full flex justify-center py-3 px-4 rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
+            >
+              {isSubmitting ? "Submitting..." : "Submit Feedback"}
+            </motion.button>
+          </div>
+
+        </form>
+      </div>
+
+    </div>
+  </motion.div>
+</div>
       </div>
   );
 };
