@@ -12,7 +12,7 @@ import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
 const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
   if (isLoading) {
     return (
-      <div className="grid gap-8 grid-cols-1 sm:grid-cols-1 lg:grid-cols-3">
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <EventCardSkeleton key={`skeleton-${i}`} />
         ))}
@@ -30,9 +30,9 @@ const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
   return (
     <div
       key={filterType + viewMode}
-      className={`grid gap-8 ${
+      className={`grid gap-6 ${
         viewMode === "grid"
-          ? "grid-cols-1 sm:grid-cols-1 lg:grid-cols-3"
+          ? "grid-cols-1 md:grid-cols-3"
           : "grid-cols-1 max-w-4xl mx-auto"
       }`}
     >
@@ -124,10 +124,10 @@ const EventsPage = () => {
 
       <div
         ref={cardSectionRef}
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12"
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
       >
         <div
-          className="mb-8 sm:mb-10 flex flex-col gap-4"
+          className="mb-5 sm:mb-6 flex flex-col gap-3"
         >
           <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center sm:justify-start">
             {[
