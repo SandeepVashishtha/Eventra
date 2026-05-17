@@ -96,7 +96,7 @@ const EventsPage = () => {
     let sorted = [...filteredEvents];
     if (type === "Newest") {
       sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
-    } else if (type === "upcoming") {
+    } else if (type === "Upcoming" || type === "upcoming") {
       sorted.sort((a, b) => new Date(a.date) - new Date(b.date));
     }
     setFilteredEvents(sorted);
@@ -108,7 +108,7 @@ const EventsPage = () => {
   }, [filterType, searchQuery]);
 
   const scrollToCard = () => {
-    cardSectionRef.current?.scrollIntoView({ behaviour: "smooth" });
+    cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
