@@ -1,5 +1,5 @@
 import { BrowserRouter as Router } from "react-router-dom";
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./App.css";
 
 // --------------- LAYOUT
@@ -28,6 +28,17 @@ function App() {
     setCursorEnabled(newValue);
     localStorage.setItem("cursor", newValue ? "on" : "off");
   };
+
+  React.useEffect(() => {
+    const handleCursorPreference = (event) => {
+      if (event?.detail?.cursorEnabled !== undefined) {
+        setCursorEnabled(event.detail.cursorEnabled);
+      }
+    };
+
+    window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
+    return () => window.removeEventListener("cursorPreferenceChanged", handleCursorPreference);
+  }, []);
 
   return (
     <>
