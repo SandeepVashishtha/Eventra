@@ -15,7 +15,7 @@ const MobileDrawer = ({ isOpen, closeMenu }) => {
       </div>
 
       <div className="p-4">
-        <NavbarLinks />
+        <NavbarLinks onNavigate={closeMenu} />
       </div>
     </div>
   );
