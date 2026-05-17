@@ -232,7 +232,7 @@ const Hero = () => {
           {/* Subtext */}
           <motion.p
             variants={fadeUp}
-            className="text-sm sm:text-base md:text-lg text-black dark:text-gray-300 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0 text-black dark:text-white"
+            className="text-sm sm:text-lg md:text-xl text-black dark:text-gray-300 max-w-2xl mx-auto mt-4 mb-8 px-6 text-center leading-relaxed"
           >
             Connect with developers, learn new skills, and grow your network at
             the best tech events, hackathons, and workshops in your area.
