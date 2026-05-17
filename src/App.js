@@ -4,7 +4,7 @@ import "./App.css";
 import ToastProvider from "./components/Toastprovider";
 
 // --------------- LAYOUT
-import Navbar from "./components/Layout/Navbar";
+import Navbar from "./components/navbar/Navbar";
 import Footer from "./components/Layout/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
