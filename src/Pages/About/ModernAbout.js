@@ -165,7 +165,7 @@ function MissionSection({ anim, prefersReducedMotion }) {
             <h3 className="text-black dark:text-white text-2xl font-bold mb-2">Global</h3>
             <p className="text-black dark:text-gray-300 text-sm">Community Reach</p>
           </motion.div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
