@@ -39,6 +39,7 @@ const MobileDrawer = ({
   return (
     <div
       id="mobile-drawer"
+    
       ref={drawerRef}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -47,6 +48,7 @@ const MobileDrawer = ({
       bg-white backdrop-blur-lg dark:bg-gray-900/95
       ${isMobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}
       role="dialog"
+      aria-label="Mobile navigation drawer"
       aria-modal={isMobileMenuOpen}
     >
       {/* Drawer header */}
@@ -69,8 +71,9 @@ const MobileDrawer = ({
           </button>
           <button
             ref={closeBtnRef}
+            aria-label="Close navigation menu"
             onClick={closeAllMenus}
-            className="p-2 rounded-full text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20"
+            className="p-2 rounded-full text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             <svg
               className="h-5 w-5"
@@ -187,7 +190,13 @@ const MobileDrawer = ({
         <hr className="my-3" />
 
         <button
-          onClick={toggleCursor}
+  onClick={toggleCursor}
+  aria-pressed={cursorEnabled}
+  aria-label={
+    cursorEnabled
+      ? "Disable custom cursor"
+      : "Enable custom cursor"
+  }
           className="flex items-center gap-3
           w-full
           px-4 py-2.5
@@ -196,7 +205,8 @@ const MobileDrawer = ({
           text-white
           hover:bg-zinc-800
           transition-colors
-          font-medium"
+          font-medium
+          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
           <MousePointer className="w-5 h-5" />
           {cursorEnabled ? "Turn Cursor OFF" : "Turn Cursor ON"}
