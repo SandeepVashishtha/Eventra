@@ -316,7 +316,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
         <div className="pt-3">
           {hackathon.status === "live" ? (
             <div className="grid grid-cols-2 gap-3">
-              <button className="px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-zinc-800 transition-colors">
+              <button className="px-4 py-2 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800  hover:to-indigo-900 text-white text-sm font-medium rounded-lg transition-colors">
                 Join Now
               </button>
               <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
@@ -326,7 +326,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
           ) : hackathon.status === "upcoming" ? (
             <div className="grid grid-cols-1 gap-3">
               <div className="flex gap-3">
-                <button className="flex-1 px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-zinc-800 transition-colors">
+                <button className="flex-1 px-4 py-2 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800  hover:to-indigo-900 text-white text-sm font-medium rounded-lg  transition-colors">
                   Register
                 </button>
                 <a
@@ -349,7 +349,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
-              <button className="px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-zinc-800 transition-colors">
+              <button className="px-4 py-2 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800  hover:to-indigo-900 text-white text-sm font-medium rounded-lg hover:bg-zinc-800 transition-colors">
                 View Results
               </button>
               <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">

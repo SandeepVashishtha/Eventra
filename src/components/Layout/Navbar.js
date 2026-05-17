@@ -55,32 +55,43 @@ const setBodyScrollStyles = (top) => {
 const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => (
   <button
     onClick={toggleTheme}
+    aria-label={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
     title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-    className={isMobile 
-      ? "flex-1 flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg bg-black dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors font-medium"
-      : "flex items-center gap-1 px-2 py-1 mr-2 text-xs font-normal bg-black text-white dark:bg-white dark:text-black rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all"
+    className={isMobile
+      ? "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 font-medium text-sm"
+      : "flex items-center gap-1.5 px-2.5 py-1 mr-2 text-xs font-medium border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
     }
   >
     {isDarkMode ? (
-      <Sun className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
+      <Sun className={isMobile ? "w-5 h-5 text-amber-500" : "w-4 h-4 text-amber-500"} />
     ) : (
-      <Moon className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
+      <Moon className={isMobile ? "w-5 h-5 text-indigo-500" : "w-4 h-4 text-indigo-500"} />
     )}
-    {isMobile ? (isDarkMode ? "Dark OFF" : "Dark ON") : (isDarkMode ? "DARK" : "LIGHT")}
+    {isMobile
+      ? (isDarkMode ? "Light Mode" : "Dark Mode")
+      : (isDarkMode ? "LIGHT" : "DARK")
+    }
   </button>
 );
 
 const CursorToggleButton = ({ cursorEnabled, toggleCursor, isMobile }) => (
   <button
     onClick={toggleCursor}
+    aria-label={cursorEnabled ? "Disable Fluid Cursor" : "Enable Fluid Cursor"}
     title={cursorEnabled ? "Disable Fluid Cursor" : "Enable Fluid Cursor"}
-    className={isMobile 
-      ? "flex-1 flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg bg-black dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors font-medium"
-      : "flex items-center gap-1 px-2 py-1 mr-3 text-xs font-normal bg-black text-white dark:bg-white dark:text-black rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all"
+    className={isMobile
+      ? "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 font-medium text-sm"
+      : "flex items-center gap-1.5 px-2.5 py-1 mr-3 text-xs font-medium border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
     }
   >
-    <MousePointer className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
-    {isMobile ? (cursorEnabled ? "Cursor OFF" : "Cursor ON") : (cursorEnabled ? "CURSOR" : "STATIC")}
+    <MousePointer className={isMobile
+      ? `w-5 h-5 ${cursorEnabled ? "text-emerald-500" : "text-gray-400"}`
+      : `w-4 h-4 ${cursorEnabled ? "text-emerald-500" : "text-gray-400"}`
+    } />
+    {isMobile
+      ? (cursorEnabled ? "Cursor On" : "Cursor Off")
+      : (cursorEnabled ? "ON" : "OFF")
+    }
   </button>
 );
 
@@ -138,20 +149,23 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
     </button>
     {isOpen && (
       <div className="mt-2 ml-3 pl-3 border-l-2 border-gray-200 dark:border-white/20 space-y-1">
-        {item.subItems.map((sub) => (
-          <Link
-            key={sub.name}
-            to={sub.href}
-            onClick={closeAllMenus}
-            className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium ${
-              location.pathname === sub.href
-                ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
-                : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white"
-            }`}
-          >
-            {sub.icon}{sub.name}
-          </Link>
-        ))}
+        {item.subItems.map((sub) => {
+          const darkActiveBg = item.name === 'Community' ? 'dark:bg-black/60' : 'dark:bg-white/15';
+          return (
+            <Link
+              key={sub.name}
+              to={sub.href}
+              onClick={closeAllMenus}
+              className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium ${
+                location.pathname === sub.href
+                  ? `bg-black/10 ${darkActiveBg} border border-black/10 dark:border-white/20 text-black dark:text-white`
+                  : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white"
+              }`}
+            >
+              {sub.icon}{sub.name}
+            </Link>
+          );
+        })}
       </div>
     )}
   </div>
@@ -190,21 +204,24 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
         exit={{ opacity: 0, y: 10 }}
         className="absolute left-1/2 -translate-x-1/2 mt-4 w-56 bg-white/90 dark:bg-black/80 backdrop-blur-md shadow-xl rounded-lg z-50 border border-black/10 dark:border-white/20 p-2"
       >
-        {item.subItems.map((sub) => (
-          <Link
-            key={sub.name}
-            to={sub.href}
-            onClick={() => setOpenDropdown(null)}
-            className={`group flex items-center gap-3 w-full px-3 py-2 text-base font-medium rounded-md transition-colors ${
-              location.pathname === sub.href
-                ? "bg-black/10 dark:bg-white/15 text-black dark:text-white"
-                : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
-            }`}
-          >
-            {React.cloneElement(sub.icon, { className: "w-5 h-5 text-gray-500 dark:text-gray-400" })}
-            {sub.name}
-          </Link>
-        ))}
+        {item.subItems.map((sub) => {
+          const darkActiveBg = item.name === 'Community' ? 'dark:bg-black/60' : 'dark:bg-white/15';
+          return (
+            <Link
+              key={sub.name}
+              to={sub.href}
+              onClick={() => setOpenDropdown(null)}
+              className={`group flex items-center gap-3 w-full px-3 py-2 text-base font-medium rounded-md transition-colors ${
+                location.pathname === sub.href
+                  ? `bg-black/10 ${darkActiveBg} text-black dark:text-white`
+                  : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
+              }`}
+            >
+              {React.cloneElement(sub.icon, { className: "w-5 h-5 text-gray-500 dark:text-gray-400" })}
+              {sub.name}
+            </Link>
+          );
+        })}
       </motion.div>
     )}
   </div>
@@ -265,9 +282,9 @@ const UserProfileDropdown = ({
       {user?.profilePicture ? (
         <img src={user.profilePicture} alt="Profile" className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20" onError={(e) => (e.currentTarget.style.display = "none")} />
       ) : (
-        <div className="w-8 h-8 rounded-full dark:bg-white/20 bg-gray-300 flex items-center justify-center">
-          <UserIcon className="w-4 h-4 text-gray-600 dark:text-white" />
-        </div>
+       <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold text-sm">
+        {primaryLine?.charAt(0).toUpperCase()}
+      </div>
       )}
     </button>
     <AnimatePresence>

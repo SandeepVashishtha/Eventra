@@ -23,7 +23,7 @@ const Tag = ({ tag, onRemove }) => (
     initial={{ scale: 0.8, opacity: 0 }}
     animate={{ scale: 1, opacity: 1 }}
     exit={{ scale: 0.8, opacity: 0 }}
-    className="flex items-center gap-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-3 py-1 rounded-full text-sm font-medium"
+    className="flex items-center gap-2 bg-gradient-to-r from-white via-slate-50 to-indigo-50 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-3 py-1 rounded-full text-sm font-medium"
   >
     <span>{tag}</span>
     <button
@@ -69,9 +69,9 @@ const HackathonHub = () => {
   useEffect(() => {
     if (hackathons.length > 0) {
       const allTags = new Set();
-      hackathons.forEach((hackathon) => {
+      hackathons.forEach(hackathon => {
         if (hackathon.techStack && Array.isArray(hackathon.techStack)) {
-          hackathon.techStack.forEach((tag) => {
+          hackathon.techStack.forEach(tag => {
             // Replace "Any" with "Blockchain"
             if (tag === "Any") {
               allTags.add("Blockchain");
@@ -252,7 +252,6 @@ const HackathonHub = () => {
     placeholder = "Select",
   }) => {
     const [open, setOpen] = useState(false);
-    const [search, setSearch] = useState("");
     const [menuCoords, setMenuCoords] = useState({ top: 0, left: 0, width: 0 });
 
     const buttonRef = useRef(null);
@@ -277,39 +276,27 @@ const HackathonHub = () => {
           !dropdownRef.current.contains(event.target) &&
           !buttonRef.current.contains(event.target)
         ) {
-          setSearch("");
           setOpen(false);
         }
       };
       document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const displayText = value.length > 0 ? value.join(", ") : placeholder;
-    const filteredOptions = options.filter((opt) =>
-      opt.toLowerCase().includes(search.toLowerCase()),
-    );
+    const displayText = value || placeholder;
+
     return (
       <div className="relative">
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           {label}
         </label>
 
-        <div
+        <button
+          type="button"
           ref={buttonRef}
-          className="
-          group flex items-center justify-between
-          px-4 py-3.5
-          rounded-2xl
-          border border-gray-200 dark:border-gray-700
-          bg-white dark:bg-gray-900
-          hover:border-indigo-400
-          hover:shadow-lg
-          transition-all duration-300
-          cursor-pointer
-          "
+          className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"
           onClick={toggleOpen}
+          aria-expanded={open}
         >
           <span
             className={`text-gray-700 dark:text-gray-200 ${!value ? "text-gray-400" : ""}`}
@@ -317,28 +304,14 @@ const HackathonHub = () => {
             {displayText}
           </span>
 
-          <motion.div
-            animate={{ rotate: open ? 180 : 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <FiChevronDown className="text-gray-400 group-hover:text-indigo-500 transition-colors" />
-          </motion.div>
-        </div>
+          <FiChevronDown className="text-gray-400 dark:text-gray-500" />
+        </button>
 
         {open &&
           createPortal(
             <ul
               ref={dropdownRef}
-              className="
-              z-[10000]
-              overflow-hidden
-              rounded-2xl
-              border border-white/20 dark:border-gray-700
-              bg-white/95 dark:bg-gray-900/95
-              backdrop-blur-xl
-              shadow-[0_10px_40px_rgba(0,0,0,0.15)]
-              py-2
-              "
+              className="z-[10000] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg"
               style={{
                 position: "absolute",
                 top: menuCoords.top,
@@ -346,53 +319,29 @@ const HackathonHub = () => {
                 width: menuCoords.width,
               }}
             >
-              <>
-                {/* Search Box */}
-                <div className="p-2 border-b border-gray-200 dark:border-gray-700">
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search..."
-                    onClick={(e) => e.stopPropagation()}
-                    className="
-                    w-full px-3 py-2 rounded-lg
-                    bg-gray-100 dark:bg-gray-800
-                    text-sm text-gray-700 dark:text-gray-200
-                    outline-none border border-transparent
-                    focus:border-indigo-400
-                  "
-                  />
-                </div>
+              <li
+                onClick={() => {
+                  onChange("");
+                  setOpen(false);
+                }}
+                className="px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+              >
+                {placeholder}
+              </li>
 
-                {/* Clear All Option */}
-                <li
-                  onClick={() => onChange([])}
-                  className="px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
-                >
-                  {placeholder}
-                </li>
-              </>
-
-              {filteredOptions.map((opt) => (
+              {options.map((opt) => (
                 <li
                   key={opt}
-                  className={`px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 ${
-                    value.includes(opt)
+                  className={`px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 ${opt === value
                       ? "font-semibold bg-indigo-100 dark:bg-indigo-900"
                       : ""
-                  }`}
+                    }`}
                   onClick={() => {
-                    const updated = value.includes(opt)
-                      ? value.filter((item) => item !== opt)
-                      : [...value, opt];
-
-                    onChange(updated);
+                    onChange(opt);
+                    setOpen(false);
                   }}
                 >
-                  <div className="flex items-center justify-between">
-                    <span>{opt}</span>
-                  </div>
+                  {opt}
                 </li>
               ))}
             </ul>,
@@ -624,11 +573,10 @@ const HackathonHub = () => {
                         <button
                           key={tag}
                           onClick={() => handleTagSelect(tag)}
-                          className={`px-4 py-2 rounded-full text-sm font-medium border transition-all duration-300 hover:scale-105 hover:shadow-md ${
-                            selectedTags.includes(tag)
-                              ? "bg-black text-white border-black shadow-lg shadow-black/20"
-                              : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700"
-                          }`}
+                          className={`px-3 py-1.5 text-sm rounded-full transition-all ${selectedTags.includes(tag)
+                              ? 'bg-black text-white'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            }`}
                         >
                           {tag}
                         </button>
@@ -658,11 +606,10 @@ const HackathonHub = () => {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-300 transform ${
-                  activeTab === tab.key
+                className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-300 transform ${activeTab === tab.key
                     ? "bg-black text-white shadow-lg scale-105"
                     : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105"
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -797,7 +744,7 @@ const HackathonHub = () => {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => {}}
+                    onClick={() => { }}
                     className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-black dark:text-white border border-black/15 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 shadow-md transition-all"
                   >
                     Explore Hackathons

@@ -1,3 +1,4 @@
+import StatusBadge from "./common/StatusBadge";
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import './components.css';
@@ -150,9 +151,9 @@ const CollaborationHub = () => {
                 >
                   <div className="opportunity-header">
                     <h3 className="opportunity-title">{opportunity.title}</h3>
-                    <span className={`status-badge ${opportunity.status}`}>
-                      {opportunity.status}
-                    </span>
+                    
+                      <StatusBadge status={opportunity.status} />
+                    
                   </div>
                   
                   <div className="opportunity-meta">
@@ -214,7 +215,7 @@ const CollaborationHub = () => {
                 >
                   <div className="collaboration-header">
                     <h3>{collab.title}</h3>
-                    <span className={`status-badge ${collab.status}`}>{collab.status}</span>
+                    <StatusBadge status={collab.status} />
                   </div>
                   
                   <p className="partner">🤝 Partner: {collab.partner}</p>
