@@ -11,12 +11,12 @@ const Tag = ({ tag, onRemove }) => (
     initial={{ scale: 0.8, opacity: 0 }}
     animate={{ scale: 1, opacity: 1 }}
     exit={{ scale: 0.8, opacity: 0 }}
-    className="flex items-center gap-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm font-medium"
+    className="flex items-center gap-2 rounded-full border border-blue-200 bg-white px-3 py-1 text-sm font-medium text-slate-700 shadow-sm dark:border-blue-700 dark:bg-slate-800 dark:text-slate-100"
   >
     <span>{tag}</span>
     <button
       onClick={() => onRemove(tag)}
-      className="hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full p-0.5 transition-colors"
+      className="rounded-full p-0.5 transition-colors hover:bg-blue-100 dark:hover:bg-slate-700"
     >
       <X className="w-3 h-3" />
     </button>
