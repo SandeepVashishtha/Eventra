@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { MousePointer } from "lucide-react";
+import { MousePointer, Sun, Moon } from "lucide-react";
+import { useTheme } from "../../../context/ThemeContext";
 
 import ConfirmationModal from "../../common/ConfirmationModal";
 
@@ -40,6 +41,8 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
     handleConfirmLogout,
     handleCancelLogout,
   } = useNavbarState();
+
+  const { isDarkMode, toggleTheme } = useTheme();
 
   return (
     <>
@@ -88,6 +91,15 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
           {/* Desktop right controls */}
           <div className="hidden lg:flex items-center ml-auto z-20">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full text-gray-700 dark:text-white bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors mr-2"
+              aria-label={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+
             {/* Cursor toggle */}
             <button
               onClick={toggleCursor}

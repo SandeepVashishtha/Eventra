@@ -236,7 +236,7 @@ export default function LeaderBoard() {
   ];
 
   return (
-    <div className="bg-white dark:bg-black py-12 sm:py-16">
+    <div className="bg-white dark:bg-black pt-20 md:pt-24 py-12 sm:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           {/* UPDATED: Header text */}

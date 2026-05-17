@@ -50,17 +50,15 @@
    ThemeToggleButton.js applies the dark class to document.documentElement (html),
    not to body. Using body.dark meant these variables never activated in dark mode. */
 .dark {
-  --bg-color: transparent;
-  --text-color: #ffffff;
-  --text-color-light: #e0e0e0;
-  --border-color: rgba(255, 255, 255, 0.1);
-  --card-bg-color: rgba(20, 20, 30, 0.5);
-  --scrollbar-track-color: rgba(0, 0, 0, 0.3);
-  --scrollbar-thumb-color: rgba(255, 255, 255, 0.2);
-  --scrollbar-thumb-hover-color: rgba(255, 255, 255, 0.4);
-  --btn-secondary-text: #ffffff;
-  background: linear-gradient(180deg, #090218 0%, #1c0836 40%, #4a154b 75%, #a12b59 100%) no-repeat center center fixed;
-  background-size: cover;
+  --bg-color: #121212;
+  --text-color: #e0e0e0;
+  --text-color-light: #a0a0a0;
+  --border-color: #333333;
+  --card-bg-color: #1e1e1e;
+  --scrollbar-track-color: #2c2c2c;
+  --scrollbar-thumb-color: #000000;
+  --scrollbar-thumb-hover-color: #262626;
+  --btn-secondary-text: #e0e0e0;
 }
 
 /* Global styles */
@@ -83,26 +81,24 @@ body {
   font-size: var(--font-body);
   font-weight: var(--fw-regular);
 }
-body.dark .pastel-grid-bg {
+.dark .pastel-grid-bg {
+  /* Use a solid dark background in dark mode and remove the light pastel grid image
+     which remains visible otherwise. This ensures pages that use the pastel grid
+     utility (like Contributors) render correctly in dark mode. */
   background-color: var(--bg-color);
-  opacity: 0.4;
+  background-image: none !important;
+  opacity: 1;
 }
 
-*,
-*::before,
-*::after {
-  animation: none !important;
-  transition: none !important;
-  scroll-behavior: auto !important;
-}
 
-/* Headings */
-h1 { font-size: var(--font-h1); }
-h2 { font-size: var(--font-h2); }
-h3 { font-size: var(--font-h3); }
-h4 { font-size: var(--font-h4); }
-h5 { font-size: var(--font-h5); }
-h6 { font-size: var(--font-h6); }
+
+/* Fix: Headings use CSS variables + consistent line-height */
+h1 { font-size: var(--font-h1); font-weight: var(--fw-bold); line-height: var(--lh-heading); }
+h2 { font-size: var(--font-h2); font-weight: var(--fw-bold); line-height: var(--lh-heading); }
+h3 { font-size: var(--font-h3); font-weight: var(--fw-semibold); line-height: var(--lh-heading); }
+h4 { font-size: var(--font-h4); font-weight: var(--fw-semibold); line-height: var(--lh-heading); }
+h5 { font-size: var(--font-h5); font-weight: var(--fw-medium); }
+h6 { font-size: var(--font-h6); font-weight: var(--fw-medium); }
 
 /* Navigation items */
 nav, nav a {
@@ -206,3 +202,36 @@ input::-webkit-password-toggle { display: none !important; }
   background-size: 40px 40px, 40px 40px, 80px 80px, 80px 80px;
 }
 
+/* Shake Animation (Global) */
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-5px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+.animate-shake {
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* Progress Animation (Global) */
+@keyframes progress {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1.2);
+  }
+}

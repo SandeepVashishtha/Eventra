@@ -38,7 +38,7 @@
   position: sticky;
   top: 0;
   flex-shrink: 0;
-  overflow-y: auto;
+  overflow: hidden;   /* ← changed */
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -70,6 +70,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--ud-space-xxs);
+  overflow-y: auto;   /* ← add this line */
+  min-height: 0;      /* ← add this line (required for flex scroll to work) */
 }
 
 .ud-nav-item {
@@ -940,6 +942,21 @@
   border-collapse: collapse;
   background: var(--card-bg-color);
   font-size: 0.85rem;
+  table-layout: fixed;
+}
+
+.ud-table th:nth-child(1) { width: 120px; }
+.ud-table th:nth-child(2) { width: 200px; }
+.ud-table th:nth-child(3) { width: 110px; }
+.ud-table th:nth-child(4) { width: 150px; }
+.ud-table th:nth-child(5) { width: 110px; }
+.ud-table th:nth-child(6) { width: 120px; }
+
+.ud-table td:nth-child(4) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -1008,7 +1025,14 @@
   font-weight: 600;
 }
 
-.ud-table-title { font-weight: 600; color: var(--text-color); }
+.ud-table-title {
+  font-weight: 600;
+  color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
 
 /* removed dark mode override (handled by CSS variables) */
 
