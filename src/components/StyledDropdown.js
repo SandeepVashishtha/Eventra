@@ -41,7 +41,7 @@ const Dropdown = ({
         <span
           className={`text-sm ${
             /* Fix #599: Added dark:text-gray-300 — placeholder had no dark mode color */
-            !value ? "text-gray-400 dark:text-gray-300" : "text-gray-700 dark:text-gray-200"
+            !value ? "text-gray-400 dark:text-gray-300" : "text-gray-700 dark:text-gray-100"
           }`}
         >
           {value || placeholder}
@@ -62,7 +62,7 @@ const Dropdown = ({
               <li
                 key={opt}
                 onClick={() => handleSelect(opt)}
-                className={`px-4 py-2 text-sm cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 ${
+                className={`px-4 py-2 text-sm cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100 ${
                   value === opt
                     ? "font-semibold bg-indigo-100 dark:bg-indigo-900"
                     : ""

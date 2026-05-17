@@ -107,7 +107,7 @@ const MobileDrawer = ({
             {/* User info */}
             <div className="flex items-center gap-3 px-3 py-2 mb-2">
               {user?.profilePicture ? (
-                <img
+                <img loading="lazy"
                   src={user.profilePicture}
                   alt="Profile"
                   className="w-10 h-10 rounded-full object-cover"

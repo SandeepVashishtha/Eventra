@@ -57,12 +57,12 @@ const Tag = ({ tag, onRemove }) => (
     exit={{ scale: 0.8, opacity: 0 }}
     className="flex items-center gap-2 bg-gradient-to-r from-white via-slate-50 to-indigo-50 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-3 py-1 rounded-full text-sm font-medium"
   >
-    <span>{tag}</span>
+    <span className="dark:text-black">{tag}</span>
     <button
       onClick={() => onRemove(tag)}
-      className="hover:bg-indigo-200 dark:hover:bg-indigo-800 rounded-full p-0.5 transition-colors"
+      className="hover:bg-indigo-200 dark:hover:bg-indigo-800 rounded-full p-0.5 transition-colors "
     >
-      <FiX className="w-3 h-3" />
+      <FiX className="w-3 h-3 dark:text-black" />
     </button>
   </motion.div>
 );
@@ -74,9 +74,9 @@ const HackathonHub = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isScrollVisible, setIsScrollVisible] = useState(false);
   const [filters, setFilters] = useState({
-    difficulty: [],
-    prize: [],
-    location: [],
+    difficulty: "",
+    prize: "",
+    location: "",
   });
   const [showFilters, setShowFilters] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
@@ -220,24 +220,25 @@ const HackathonHub = () => {
       return hackathon.status === activeTab;
     })
     .filter((hackathon) => {
-      if (
-        filters.difficulty.length > 0 &&
-        !filters.difficulty.includes(hackathon.difficulty)
-      )
+      if (filters.difficulty && hackathon.difficulty !== filters.difficulty)
         return false;
-      if (
-        filters.prize.length > 0 &&
-        !filters.prize.some(
-          (prize) =>
-            !hackathon.prize.toLowerCase().includes(prize.toLowerCase()),
+      if (filters.prize) {
+        const prizeValue = Number.parseInt(
+          String(hackathon.prize).replace(/[^\d]/g, ""),
+          10,
+        );
+
+        if (filters.prize === "Under $1,000" && prizeValue >= 1000) return false;
+        if (
+          filters.prize === "$1,000 - $5,000" &&
+          (prizeValue < 1000 || prizeValue > 5000)
         )
-      )
-        return false;
+          return false;
+        if (filters.prize === "$5,000+" && prizeValue < 5000) return false;
+      }
       if (
-        filters.location.length > 0 &&
-        !filters.location.some((loc) =>
-          hackathon.location.toLowerCase().includes(loc.toLowerCase()),
-        )
+        filters.location &&
+        !hackathon.location.toLowerCase().includes(filters.location.toLowerCase())
       )
         return false;
 
@@ -257,9 +258,9 @@ const HackathonHub = () => {
   // UPDATED: Reset filters and tags
   const resetFilters = () => {
     setFilters({
-      difficulty: [],
-      prize: [],
-      location: [],
+      difficulty: "",
+      prize: "",
+      location: "",
     });
     setSearchQuery("");
     setSelectedTags([]);
@@ -326,12 +327,12 @@ const HackathonHub = () => {
         <button
           type="button"
           ref={buttonRef}
-          className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"
+          className="flex w-full items-center justify-between gap-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"
           onClick={toggleOpen}
           aria-expanded={open}
         >
           <span
-            className={`text-gray-700 dark:text-gray-200 ${!value ? "text-gray-400" : ""}`}
+            className={`flex-1 text-left text-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis text-gray-700 dark:text-gray-100 ${!value ? "text-gray-400 dark:text-gray-300" : ""}`}
           >
             {displayText}
           </span>
@@ -612,7 +613,7 @@ const HackathonHub = () => {
                           key={tag}
                           onClick={() => handleTagSelect(tag)}
                           className={`px-3 py-1.5 text-sm rounded-full transition-all ${selectedTags.includes(tag)
-                              ? 'bg-black text-white'
+                                  ? 'bg-black text-white dark:bg-white dark:text-black'
                               : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                             }`}
                         >
@@ -645,7 +646,7 @@ const HackathonHub = () => {
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-300 transform ${activeTab === tab.key
-                    ? "bg-black text-white shadow-lg scale-105"
+                    ? "bg-black text-white shadow-lg scale-105 dark:bg-white dark:text-black"
                     : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105"
                   }`}
               >

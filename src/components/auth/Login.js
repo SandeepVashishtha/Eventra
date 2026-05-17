@@ -33,8 +33,9 @@ const Login = () => {
   };
 
   useEffect(() => {
-    if (isAuthenticated()) navigate('/dashboard', { replace: true });
-  }, [isAuthenticated, navigate]);
+  if (isAuthenticated()) navigate('/dashboard', { replace: true });
+}, []); // eslint-disable-line react-hooks/exhaustive-deps'/dashboard', { replace: true });
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -45,14 +46,9 @@ const Login = () => {
     try {
       const ok = await login(formData.usernameOrEmail, formData.password);
       if (ok) {
-        // Show success toast
-        toast.success('Login successful! Redirecting to dashboard...');
-        
-        // Redirect after a brief delay to show the toast
-        setTimeout(() => {
-          navigate('/dashboard', { replace: true });
-        }, 1500);
-      }
+  toast.success('Login successful! Redirecting to dashboard...');
+  navigate('/dashboard', { replace: true });
+}
     } catch (err) {
       console.error("Login error:", err);
       setError({ general: err.message || "Invalid email or password" });

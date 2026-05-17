@@ -215,7 +215,7 @@ const performSave = () => {
             <div className="relative">
               <div className="h-20 w-20 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center ring-2 ring-indigo-200/60 dark:ring-indigo-900/40">
                 {form.avatarBase64 ? (
-                  <img
+                  <img loading="lazy"
                     src={form.avatarBase64}
                     alt="Avatar preview"
                     className="h-full w-full object-cover"
