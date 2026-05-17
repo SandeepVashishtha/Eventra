@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react"; // React hooks for state and lifecycle
 import { motion, AnimatePresence } from "framer-motion"; // Framer Motion for animations
 import { FiAlertCircle, FiSearch, FiX } from "react-icons/fi"; // Feather icons
-import ModernSearchInput from "../../components/common/ModernSearchInput";
+
 import ProjectHero from "./ProjectHero"; // Hero section component
 import ProjectCard from "./ProjectCard"; // Individual project card component
 import FeedbackButton from "../../components/FeedbackButton"; // Feedback floating button
