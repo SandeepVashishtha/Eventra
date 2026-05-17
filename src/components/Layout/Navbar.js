@@ -24,7 +24,8 @@ import {
   ChevronDown,
   MousePointer,
   Sun,
-  Moon
+  Moon,
+  Settings as SettingsIcon
 } from "lucide-react";
 
 // --- Helpers to reduce complexity ---
@@ -805,6 +806,18 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                             <UserCog className="w-4 h-4" />
                             Edit Profile
                           </Link>
+                          <Link
+                            to="/settings"
+                            onClick={() => setShowProfileDropdown(false)}
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                              location.pathname === "/settings"
+                                ? "bg-black/5 dark:bg-white/10 text-black dark:text-white"
+                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                            }`}
+                          >
+                            <SettingsIcon className="w-4 h-4" />
+                            Settings
+                          </Link>
                         </div>
 
                         {/* Logout - CHANGE ONLY THIS BUTTON */}
@@ -1006,6 +1019,18 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               >
                 <UserCog className="w-5 h-5" />
                 Edit Profile
+              </Link>
+              <Link
+                to="/settings"
+                onClick={closeAllMenus}
+                className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors text-lg font-medium ${
+                  location.pathname === "/settings"
+                    ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
+                }`}
+              >
+                <SettingsIcon className="w-5 h-5" />
+                Settings
               </Link>
               {/* CHANGE ONLY THIS BUTTON */}
               <button

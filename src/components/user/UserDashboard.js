@@ -48,7 +48,7 @@ const QUICK_ACTIONS = [
   { label: "Hackathons", icon: <Trophy size={22} />, to: "/hackathons", color: "#ec4899" },
   { label: "Projects", icon: <FolderOpen size={22} />, to: "/projects", color: "#8b5cf6" },
   { label: "Profile", icon: <User size={22} />, to: "/profile", color: "#10b981" },
-  { label: "Settings", icon: <Settings size={22} />, to: "/profile", color: "#f59e0b" },
+  { label: "Settings", icon: <Settings size={22} />, to: "/settings", color: "#f59e0b" },
 ];
 
 export default function UserDashboard() {
