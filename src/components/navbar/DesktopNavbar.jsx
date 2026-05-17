@@ -15,10 +15,12 @@ const DesktopNavbar = ({
   toggleCursor,
 }) => {
   return (
-    <div className="hidden lg:flex items-center justify-between flex-1">
-      <NavbarLinks />
+    <div className="hidden lg:flex flex-1 items-center">
+      <div className="flex flex-1 justify-center min-w-0 px-8">
+        <NavbarLinks />
+      </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 ml-auto">
         <ThemeToggle
           isDarkMode={isDarkMode}
           toggleTheme={toggleTheme}

@@ -14,11 +14,11 @@ const NavbarLinks = () => {
           <Link
             key={item.name}
             to={item.href || "#"}
-            className={
+            className={`text-sm font-medium transition-colors whitespace-nowrap ${
               active
                 ? "text-black dark:text-white"
-                : "text-gray-500"
-            }
+                : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white"
+            }`}
           >
             {item.name}
           </Link>
