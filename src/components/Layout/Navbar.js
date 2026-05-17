@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import ConfirmationModal from "../common/ConfirmationModal";
-import { toast } from "../../utils/toast";
+import { toast } from "react-toastify";
 import { UserCog } from "lucide-react";
 import {
   Home,
@@ -149,20 +149,23 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
     </button>
     {isOpen && (
       <div className="mt-2 ml-3 pl-3 border-l-2 border-gray-200 dark:border-white/20 space-y-1">
-        {item.subItems.map((sub) => (
-          <Link
-            key={sub.name}
-            to={sub.href}
-            onClick={closeAllMenus}
-            className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium ${
-              location.pathname === sub.href
-                ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
-                : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white"
-            }`}
-          >
-            {sub.icon}{sub.name}
-          </Link>
-        ))}
+        {item.subItems.map((sub) => {
+          const darkActiveBg = item.name === 'Community' ? 'dark:bg-black/60' : 'dark:bg-white/15';
+          return (
+            <Link
+              key={sub.name}
+              to={sub.href}
+              onClick={closeAllMenus}
+              className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium ${
+                location.pathname === sub.href
+                  ? `bg-black/10 ${darkActiveBg} border border-black/10 dark:border-white/20 text-black dark:text-white`
+                  : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white"
+              }`}
+            >
+              {sub.icon}{sub.name}
+            </Link>
+          );
+        })}
       </div>
     )}
   </div>
@@ -201,21 +204,24 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
         exit={{ opacity: 0, y: 10 }}
         className="absolute left-1/2 -translate-x-1/2 mt-4 w-56 bg-white/90 dark:bg-black/80 backdrop-blur-md shadow-xl rounded-lg z-50 border border-black/10 dark:border-white/20 p-2"
       >
-        {item.subItems.map((sub) => (
-          <Link
-            key={sub.name}
-            to={sub.href}
-            onClick={() => setOpenDropdown(null)}
-            className={`group flex items-center gap-3 w-full px-3 py-2 text-base font-medium rounded-md transition-colors ${
-              location.pathname === sub.href
-                ? "bg-black/10 dark:bg-white/15 text-black dark:text-white"
-                : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
-            }`}
-          >
-            {React.cloneElement(sub.icon, { className: "w-5 h-5 text-gray-500 dark:text-gray-400" })}
-            {sub.name}
-          </Link>
-        ))}
+        {item.subItems.map((sub) => {
+          const darkActiveBg = item.name === 'Community' ? 'dark:bg-black/60' : 'dark:bg-white/15';
+          return (
+            <Link
+              key={sub.name}
+              to={sub.href}
+              onClick={() => setOpenDropdown(null)}
+              className={`group flex items-center gap-3 w-full px-3 py-2 text-base font-medium rounded-md transition-colors ${
+                location.pathname === sub.href
+                  ? `bg-black/10 ${darkActiveBg} text-black dark:text-white`
+                  : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
+              }`}
+            >
+              {React.cloneElement(sub.icon, { className: "w-5 h-5 text-gray-500 dark:text-gray-400" })}
+              {sub.name}
+            </Link>
+          );
+        })}
       </motion.div>
     )}
   </div>
@@ -818,7 +824,22 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                   </AnimatePresence>
                 </div>
               ) : (
-                <AuthButtons isMobile={false} />
+                <div className="flex items-center space-x-1">
+                  <Link
+                    to="/login"
+                    className="px-4 py-2 text-base font-medium text-black/75 hover:text-black dark:text-white/75 dark:hover:text-white transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="px-5 py-2 text-sm font-semibold text-white transition-all duration-300 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 dark:bg-white dark:text-black dark:hover:bg-zinc-200 focus:outline-none focus:ring-4 focus:ring-black/20 dark:focus:ring-white/20"
+                  >
+                    Get Started
+                  </Link>
+                </div>
+              ) : (
+              <AuthButtons isMobile={false} />
               )}
             </div>
           </div>

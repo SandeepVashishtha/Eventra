@@ -67,7 +67,7 @@ export default function HackathonHero({
   );
 
   return (
-    <div className="bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black relative overflow-hidden py-16 sm:py-20 md:py-24">
+    <div className="bg-gradient-to-r from-white via-slate-50 to-indigo-50 dark:from-gray-900 dark:to-black relative overflow-hidden py-16 sm:py-20 md:py-24">
       {/* ======================= FLOATING SHAPES ======================= */}
       {shapes.map((shape, i) => (
         <motion.div
@@ -90,7 +90,7 @@ export default function HackathonHero({
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
-          className="text-4xl sm:text-6xl font-extrabold leading-tight text-black"
+          className="text-4xl sm:text-6xl font-extrabold leading-tight text-white"
           style={{ fontFamily: '"Anton", sans-serif' }}
         >
           Discover Amazing Hackathons

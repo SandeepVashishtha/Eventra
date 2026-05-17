@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { toast } from "../../utils/toast";
+import { toast } from "react-toastify";
 import {
   ArrowRightIcon,
   LightBulbIcon,
@@ -463,7 +463,7 @@ const SubmitProject = () => {
           <motion.div
             key={index}
             whileHover={{ scale: 1.05 }}
-            className="bg-white dark:bg-gray-800 border border-indigo-300 dark:border-gray-700 rounded-2xl shadow-xl p-6 text-center flex flex-col items-center"
+            className="bg-gradient-to-b from-white via-white to-slate-50  border-slate-100 shadow-xl shadow-slate-100/70 dark:bg-gray-800 border  dark:border-gray-700 rounded-2xl  p-6 text-center flex flex-col items-center"
             data-aos="zoom-in"
             data-aos-delay={1500 + index * 100}
           >

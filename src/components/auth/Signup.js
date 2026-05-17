@@ -195,22 +195,53 @@ const Signup = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
-      className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8"
+      className="pastel-grid-bg  min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8"
     >
-      <div className="relative w-full max-w-md">
+       <div className="max-w-4xl w-full mx-auto">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6 }}
-          className="space-y-6 bg-white dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 p-8 rounded-lg shadow-lg backdrop-blur-xl"
+          className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
         >
+        <div className="md:flex">  
+
+          {/* LEFT PANEL */}
+          <div className="md:w-2/5 bg-black text-white p-12 flex flex-col justify-between rounded-3xl">
+            <div>
+              <h2 className="text-4xl font-extrabold mb-4" style={{ fontFamily: '"Anton", sans-serif' }}>
+                Join Eventra
+              </h2>
+              
+              <p className="mb-8 text-lg opacity-90 leading-relaxed">
+                Create your free account and start building amazing events.
+              </p>
+            </div>
+       
+            <div className="mt-8 flex items-center p-4 bg-white/10 rounded-2xl hover:bg-white/20 transition duration-300 ease-in-out">
+              <div className="bg-white/20 p-3 rounded-full mr-4 flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                </svg>
+              </div>
+              <p className="text-sm text-white/80">
+                Already have an account?{" "}
+                <Link to="/login" className="font-semibold text-white hover:text-white/80 transition-colors" style={{ color: 'white' }}>
+                  Sign in
+                </Link>
+              </p>
+            </div>
+          </div>
+          
+           {/* RIGHT PANEL */}
+        <div className="md:w-3/5 p-10">
           <div className="mb-4">
             <GoogleSignInButton className="w-full" />
           </div>
 
           <div className="text-center space-y-2">
             <motion.div
-              whileHover={{ scale: 1.05 }}
+               whileHover={{ scale: 1.05, rotate: 5 }}
               whileTap={{ scale: 0.95 }}
               className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg"
             >
@@ -228,10 +259,10 @@ const Signup = () => {
                 />
               </svg>
             </motion.div>
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+            <h1 className="text-black dark:text-white text-2xl font-bold text-gray-900 dark:text-gray-100">
               Create Your Account
             </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600 dark:text-gray-400 p-2">
               Join Eventra and start building amazing events
             </p>
           </div>
@@ -470,14 +501,26 @@ const Signup = () => {
               </div>
             )}
 
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={loading}
-              title={loading ? "Account creation in progress..." : ""}
-              className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition disabled:cursor-not-allowed disabled:opacity-70"
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
             >
+              {loading ? (
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+              ) : null}
               {loading ? "Creating Account..." : "Create Account"}
-            </button>
+            </motion.button>
           </form>
 
           <p className="text-xs text-center text-gray-500 dark:text-gray-500 mt-4 leading-relaxed">
@@ -499,13 +542,19 @@ const Signup = () => {
 
           <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-3">
             Already have an account?{" "}
-            <Link to="/login" className="text-blue-600 hover:underline">
+            <Link to="/login" className="text-blue-600 hover:underline font-medium">
               Sign in
             </Link>
           </p>
+            
+        </div>
+
+        </div> 
         </motion.div>
       </div>
     </motion.div>
+
+    
   );
 };
 

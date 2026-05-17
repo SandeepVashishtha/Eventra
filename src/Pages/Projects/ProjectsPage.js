@@ -9,6 +9,9 @@ import ProjectCTA from "./ProjectCTA";
 // Import mock data directly (assuming it's named mockProjectsData.json in the same folder as ProjectsPage.js)
 import mockProjects from "./mockProjectsData.json";
 
+import ModernSearchInput from "../../components/common/ModernSearchInput";
+import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
+
 // Skeleton loader for project cards while data is loading
 const SkeletonCard = () => (
   <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden animate-pulse">
@@ -152,7 +155,7 @@ const ProjectGallery = () => {
 
   return (
     // UPDATED: Main page background
-    <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-indigo-950 dark:to-black">
+    <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
       {/* Hero Section with CTA */}
       <ProjectHero scrollToCard={scrollToCard} />
       {/* Main Container */}
@@ -279,7 +282,7 @@ const ProjectGallery = () => {
               {/* Clear Filters Button */}
               <motion.button
                 whileHover={{ scale: 1.05 }}
-                className="px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm font-semibold rounded-xl flex items-center gap-2 hover:from-blue-500 hover:to-cyan-500 transition-all shadow-lg"
+                className="px-4 py-3 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white text-sm font-semibold rounded-xl flex items-center gap-2 hover:from-blue-500 hover:to-cyan-500 transition-all shadow-lg"
                 onClick={() => {
                   setFilterCategory("all"); // Reset category
                   setSearchQuery(""); // Clear search

@@ -129,11 +129,12 @@ const FAQPage = () => {
 
   useEffect(() => {
     controls.start("show");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Note: scroll-to-top on route change is handled globally by the
+    // ScrollToTop component — no need to call window.scrollTo() here.
   }, [controls]);
 
   return (
-    <div className="pastel-grid-bg dark:bg-gray-900 relative flex flex-col min-h-screen overflow-hidden">
+    <div className="relative flex flex-col min-h-screen overflow-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
       {/* HERO */}
       <section className="pt-28 pb-10 sm:pt-32 sm:pb-12 relative overflow-hidden">
         {/* HERO Content */}
@@ -141,7 +142,7 @@ const FAQPage = () => {
           <motion.div variants={container} initial="hidden" animate={controls}>
             <motion.div variants={item}>
               <h1
-                className="text-4xl md:text-5xl lg:text-6xl font-bold text-black dark:text-white dark:text-white mb-4"
+                className="text-4xl md:text-5xl lg:text-6xl font-bold text-black dark:text-white mb-4"
                 style={{ fontFamily: '"Anton", sans-serif' }}
               >
                 Frequently Asked{" "}

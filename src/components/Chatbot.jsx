@@ -222,10 +222,8 @@ export default function Chatbot() {
         shadow-2xl
 
         /* KEY FIX: constrain total height to viewport so it never overflows.
-           max-h uses dvh (dynamic viewport height) with a px fallback.
            bottom-6 = 1.5rem offset from bottom, so we subtract that + a little breathing room. */
         max-h-[calc(100vh-5rem)]
-        max-h-[calc(100dvh-5rem)]
       "
     >
       {/* ── Header — always visible, never scrolls away ── */}
