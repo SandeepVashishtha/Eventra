@@ -125,10 +125,10 @@ dark:from-[#020617] dark:via-[#0f172a] dark:to-black"
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
           // UPDATED: Title text color and gradient
-          className="text-4xl sm:text-6xl font-extrabold mb-6 mt-6 text-white leading-tight"
+          className="text-4xl sm:text-6xl font-extrabold mb-6 mt-6 text-black dark:text-white leading-tight"
           style={{ fontFamily: '"Anton", sans-serif' }}
         >
-          Discover Amazing Projects
+          Discover <span className="text-indigo-600">Amazing Projects</span>
         </motion.h1>
 
         <motion.p
@@ -136,7 +136,7 @@ dark:from-[#020617] dark:via-[#0f172a] dark:to-black"
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 0.3 }}
           // UPDATED: Subtitle text color
-          className="text-base sm:text-lg text-white dark:white max-w-2xl mx-auto mb-12"
+          className="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-12"
         >
           Explore, contribute to, and showcase innovative open-source creations
           from developers worldwide.
@@ -174,12 +174,12 @@ dark:from-[#020617] dark:via-[#0f172a] dark:to-black"
           </motion.button>
           {/* Explore Projects Button */}
           <motion.button
-            className="bg-yellow-100 text-black dark:bg-yellow-500/20 dark:text-yellow-200 dark:border dark:border-yellow-500/30 px-6 py-3 rounded-2xl font-semibold flex items-center gap-2 shadow-md hover:bg-yellow-200 dark:hover:bg-yellow-500/30 hover:shadow-lg transition-all duration-300"
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ scale: 1.05 }}
-            onClick={scrollToCard}
-            data-aos="zoom-in"
-            data-aos-delay="600"
+          className="bg-yellow-100 text-black dark:bg-yellow-500/20 dark:text-yellow-200 dark:border dark:border-yellow-500/30 px-6 py-3 rounded-2xl font-semibold flex items-center gap-2 shadow-md hover:bg-yellow-200 dark:hover:bg-yellow-500/30 hover:shadow-lg transition-all duration-300"
+          whileTap={{ scale: 0.95}}
+          whileHover={{ scale: 1.05 }}
+          onClick={scrollToCard}
+          data-aos="zoom-in"
+          data-aos-delay="600"
           >
             Explore Projects
             <motion.span
