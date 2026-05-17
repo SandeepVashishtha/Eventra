@@ -9,6 +9,7 @@ import Fuse from "fuse.js";
 import StyledDropdown from "../../components/StyledDropdown";
 import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { matchesEventTimingFilter } from "../../utils/eventTiming";
 
 const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
   if (isLoading) {
@@ -77,14 +78,7 @@ const EventsPage = () => {
       results = fuse.search(query).map((res) => res.item);
     }
 
-    const final = results.filter((event) => {
-      return (
-        filterType === "all" ||
-        (filterType === "upcoming" && event.status === "upcoming") ||
-        (filterType === "past" && event.status === "past") ||
-        event.type === filterType
-      );
-    });
+    const final = results.filter((event) => matchesEventTimingFilter(event, filterType));
 
     setFilteredEvents(final);
   };

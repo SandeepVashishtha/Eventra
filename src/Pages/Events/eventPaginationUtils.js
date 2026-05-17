@@ -1,3 +1,5 @@
+import { matchesEventTimingFilter } from "../../utils/eventTiming";
+
 export const DEFAULT_EVENTS_PER_PAGE = 6;
 export const EVENTS_PER_PAGE_OPTIONS = [6, 9, 12];
 
@@ -33,14 +35,7 @@ export const getVisiblePaginationPages = (currentPage, totalPages, siblingCount 
 };
 
 export const filterEventsByType = (events, filterType) => {
-  return events.filter((event) => {
-    return (
-      filterType === "all" ||
-      (filterType === "upcoming" && event.status === "upcoming") ||
-      (filterType === "past" && event.status === "past") ||
-      event.type === filterType
-    );
-  });
+  return events.filter((event) => matchesEventTimingFilter(event, filterType));
 };
 
 export const sortEventsByDate = (events, sortType) => {
