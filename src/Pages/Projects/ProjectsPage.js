@@ -10,7 +10,6 @@ import ProjectCTA from "./ProjectCTA";
 import mockProjects from "./mockProjectsData.json";
 
 import ModernSearchInput from "../../components/common/ModernSearchInput";
-import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
 
 // Skeleton loader for project cards while data is loading
 const SkeletonCard = () => (

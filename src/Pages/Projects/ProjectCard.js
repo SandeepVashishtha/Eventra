@@ -103,7 +103,6 @@ const ProjectCard = ({ project, index }) => {
         <img loading="lazy"
           src={project.image}
           alt={project.title}
-          loading="lazy"
           onLoad={() => setIsLoaded(true)}
           className="relative w-full h-full object-cover transition-transform duration-300"
         />

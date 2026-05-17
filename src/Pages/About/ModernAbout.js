@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 // Framer Motion Variants
 const container = {
@@ -24,7 +24,47 @@ const cardItem = {
   },
 };
 
+const scaleIn = {
+  hidden: { opacity: 0, scale: 0.9 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.5 } }
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const staggerItem = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+};
+
+const stats = [
+  { label: "Community Members", value: "2,000+" },
+  { label: "Colleges Reached", value: "50+" },
+  { label: "Cities Presence", value: "15+" },
+];
+
+const values = [
+  { title: "Open Source", desc: "Built with transparency and community contribution at its heart.", color: "text-blue-600", border: "border-blue-100", label: "Open Source" },
+  { title: "Empowerment", desc: "Giving smaller groups tools usually reserved for large organizations.", color: "text-purple-600", border: "border-purple-100", label: "Empowerment" },
+  { title: "Free Always", desc: "No subscriptions or hidden fees. Our core will always be free.", color: "text-green-600", border: "border-green-100", label: "Free Always" },
+  { title: "Innovation", desc: "Pushing the boundaries of what a community management platform can do.", color: "text-yellow-600", border: "border-yellow-100", label: "Innovation" },
+];
+
 export default function ModernAbout() {
+  const prefersReducedMotion = useReducedMotion();
+
   return (
     <section className="relative min-h-[82vh] flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-black dark:to-gray-900 overflow-hidden py-20 px-4">
       <motion.div aria-hidden="true" className="absolute top-0 left-1/4 w-48 sm:w-72 h-48 sm:h-72 bg-indigo-100 dark:bg-indigo-900/50 rounded-full blur-3xl opacity-40 will-change-transform" animate={prefersReducedMotion ? {} : { scale: [1, 1.3, 1], rotate: [0, 45, 0] }} transition={{ repeat: Infinity, duration: 12, ease: "easeInOut" }} />
@@ -98,16 +138,25 @@ export default function ModernAbout() {
             </motion.div>
           ))}
         </motion.div>
+        
+        <MissionSection prefersReducedMotion={prefersReducedMotion} />
       </div>
     </section>
   );
 }
 
-function MissionSection({ anim, prefersReducedMotion }) {
+function MissionSection({ prefersReducedMotion }) {
+  const anim = (variants) => ({
+    initial: "hidden",
+    whileInView: "visible",
+    viewport: { once: true },
+    variants
+  });
+
   return (
-    <section className="border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950">
+    <section className="border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 mt-20">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center text-left">
           <motion.div {...anim(fadeUp)}>
             <p className="text-xs uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">Why we exist</p>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-black dark:text-white mb-5" style={{ fontFamily: '"Anton", sans-serif' }}>
@@ -125,12 +174,7 @@ function MissionSection({ anim, prefersReducedMotion }) {
             </p>
           </motion.div>
           <motion.div
-
-            variants={cardItem}
-            // UPDATED: Card background and shadow
-            className="grid grid-cols-1 sm:grid-cols-2 gap-4 backdrop-blur-sm rounded-2xl transition-transform duration-500"
-            data-aos="zoom-in"
-            data-aos-delay="400"
+            variants={container}
             {...(prefersReducedMotion ? {} : { variants: staggerContainer, initial: "hidden", whileInView: "visible", viewport: { once: true } })}
             className="grid grid-cols-1 sm:grid-cols-2 gap-4"
           >
@@ -140,30 +184,6 @@ function MissionSection({ anim, prefersReducedMotion }) {
                 <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{v.desc}</p>
               </motion.div>
             ))}
-          </motion.div>
-
-          <motion.div
-          
-            variants={cardItem}
-            // UPDATED: Card background and shadow
-            className="bg-gradient-to-b from-white via-white to-slate-50 border border-slate-100 shadow-xl shadow-slate-100/70 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-lg shadow-blue-100 dark:shadow-indigo-900/50 p-6 hover:scale-105 transition-transform duration-500"
-            data-aos="zoom-in"
-            data-aos-delay="500"
-            {...(prefersReducedMotion ? {} : { variants: staggerContainer, initial: "hidden", whileInView: "visible", viewport: { once: true } })}
-            className="space-y-4"
-          >
-            <h3 className="text-black dark:text-white text-2xl font-bold mb-2">500+</h3>
-            <p className="text-black dark:text-gray-300 text-sm">Active Users</p>
-          </motion.div>
-
-          <motion.div
-            variants={cardItem}
-            className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-lg shadow-blue-100 dark:shadow-indigo-900/50 p-6 hover:scale-105 transition-transform duration-500"
-            data-aos="zoom-in"
-            data-aos-delay="500"
-          >
-            <h3 className="text-black dark:text-white text-2xl font-bold mb-2">Global</h3>
-            <p className="text-black dark:text-gray-300 text-sm">Community Reach</p>
           </motion.div>
         </div>
       </div>

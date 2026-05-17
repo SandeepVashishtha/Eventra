@@ -44,7 +44,7 @@ const ModernSearchInput = ({
         className="relative group"
       >
         <div
-          className={`absolute inset-y-0 left-0 pl-4 flex items-center z-20 pointer-events-none transition-colors duration-300 ${
+          className={`absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center z-20 pointer-events-none transition-colors duration-300 ${
             isFocused ? "text-indigo-500" : "text-gray-400 dark:text-gray-500"
           }`}
         >
@@ -52,7 +52,7 @@ const ModernSearchInput = ({
         </div>
 
         <div
-          className={`flex flex-wrap items-center gap-2 w-full pl-12 pr-12 py-3.5 sm:py-4 text-base text-gray-900 dark:text-gray-100 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl transition-all duration-300 shadow-lg ${inputClassName}`}
+          className={`flex flex-wrap items-center gap-2 w-full pl-10 sm:pl-12 pr-10 sm:pr-12 py-3.5 sm:py-4 text-base text-gray-900 dark:text-gray-100 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl transition-all duration-300 shadow-lg ${inputClassName}`}
           style={{
             borderColor: isFocused ? "#6366f1" : "",
             borderWidth: isFocused ? "2px" : "1px",
@@ -66,7 +66,7 @@ const ModernSearchInput = ({
             ref={searchInputRef}
             type="text"
             placeholder={tags && tags.length > 0 ? "" : placeholder}
-            className="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-gray-100 min-w-[120px] placeholder-gray-400 dark:placeholder-gray-500"
+            className="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-gray-100 min-w-[100px] placeholder-gray-400 dark:placeholder-gray-500"
             value={value}
             onChange={onChange}
             onFocus={handleFocus}
@@ -83,7 +83,7 @@ const ModernSearchInput = ({
             whileHover={{ rotate: 90, scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => onChange({ target: { value: "" } })}
-            className="absolute inset-y-0 right-4 flex items-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors z-20"
+            className="absolute inset-y-0 right-3 sm:right-4 flex items-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors z-20"
           >
             <X className="h-5 w-5" />
           </motion.button>

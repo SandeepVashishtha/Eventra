@@ -119,7 +119,7 @@ const Hero = () => {
   };
 
   const fadeUp = {
-    hidden: { y: 40, opacity: 0 },
+    hidden: { y: 20, opacity: 0 },
     show: { y: 0, opacity: 1, transition: { duration: 0.8, ease: "easeOut" } },
   };
 
@@ -161,13 +161,13 @@ const Hero = () => {
   ];
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 py-16 sm:py-20 md:py-24">
+    <section className="relative overflow-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 py-16 sm:py-20 md:py-24 w-full">
       {/* Floating pastel shapes */}
       {shapes.map((shape, i) => (
         <motion.div
           key={i}
           animate={floatShape(i)}
-          className="absolute rounded-full"
+          className="absolute rounded-full hidden sm:block"
           style={{
             width: `${shape.size}px`,
             height: `${shape.size}px`,
@@ -180,9 +180,9 @@ const Hero = () => {
       ))}
 
       {/* Hero Content */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full overflow-x-hidden">
         <motion.div
-          className="text-center"
+          className="text-center w-full"
           variants={container}
           initial="hidden"
           animate={controls}
@@ -192,26 +192,25 @@ const Hero = () => {
           data-aos-duration="1000"
         >
           <MotionConfig reducedMotion="never">
-            {/* Headline */}
             <motion.h1
-              className="mx-auto max-w-[92vw] text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 sm:mb-6 leading-[0.95] sm:leading-tight text-text break-words px-2 sm:px-0"
+              className="mx-auto w-full max-w-full text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 sm:mb-6 leading-tight text-text text-black dark:text-white"
               style={{ fontFamily: '"Anton", sans-serif' }}
             >
               <motion.span
-                className="block text-black dark:text-white mb-2 md:mb-0"
-                initial={{ opacity: 0, y: 20 }}
+                className="block text-black dark:text-white mb-2 md:mb-0 text-center px-2"
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                <RespawningText texts={["Discover & Join", "Innovate & Create", "Learn & Grow"]} />
+                Learn
               </motion.span>
 
-              <div className="relative mx-auto mt-2 sm:mt-3 h-14 sm:h-24 md:h-28 lg:h-32 overflow-hidden flex justify-center items-center max-w-full">
+              <div className="relative mx-auto mt-2 sm:mt-3 h-24 sm:h-24 md:h-28 lg:h-32 overflow-hidden flex justify-center items-center w-full max-w-full">
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={index}
-                    className="block mt-2 text-black dark:text-white mb-4 pb-2 whitespace-normal text-center px-1 text-black dark:text-white"
-                    initial={{ opacity: 0, y: 40 }}
+                    className="block text-black dark:text-white pb-2 whitespace-normal text-center px-4 w-full text-3xl sm:text-5xl md:text-6xl lg:text-7xl"
+                    initial={{ opacity: 0, y: 20 }}
                     animate={{
                       opacity: 1,
                       y: 0,
@@ -219,7 +218,7 @@ const Hero = () => {
                     }}
                     exit={{
                       opacity: 0,
-                      y: -40,
+                      y: -20,
                       transition: { duration: 0.5, ease: "easeIn" },
                     }}
                   >
@@ -233,14 +232,14 @@ const Hero = () => {
           {/* Subtext */}
           <motion.p
             variants={fadeUp}
-            className="text-sm sm:text-base md:text-lg text-black dark:text-gray-300 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0 text-black dark:text-white"
+            className="text-sm sm:text-lg md:text-xl text-black dark:text-gray-300 max-w-2xl mx-auto mt-4 mb-8 px-6 text-center leading-relaxed"
           >
             Connect with developers, learn new skills, and grow your network at
             the best tech events, hackathons, and workshops in your area.
           </motion.p>
 
           {/* Global Search Bar */}
-          <div className="w-full max-w-2xl mx-auto mb-10 sm:mb-12 text-black dark:text-white">
+          <div className="w-full max-w-xl mx-auto mb-10 sm:mb-12 px-6 sm:px-4 text-left">
             <ModernSearchInput
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
@@ -257,14 +256,14 @@ const Hero = () => {
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
                     className="absolute top-full left-0 right-0 mt-3 
-                     bg-white rounded-3xl 
-                     shadow-2xl border border-gray-200 
-                     max-h-96 overflow-y-auto z-50"
+                     bg-white dark:bg-gray-800 rounded-2xl 
+                     shadow-2xl border border-gray-200 dark:border-gray-700
+                     max-h-96 overflow-y-auto z-50 mx-0 sm:mx-0 w-full"
                   >
                     <div className="p-4">
                       {searchResults.length > 0 ? (
                         <>
-                          <div className="text-sm text-gray-500 mb-3 font-medium">
+                          <div className="text-sm text-gray-400 mb-3 font-medium">
                             Search Results ({searchResults.length})
                           </div>
                           <div className="space-y-2">
@@ -277,30 +276,30 @@ const Hero = () => {
                                 onClick={() =>
                                   handleResultClick(result.item, result.item.type)
                                 }
-                                className="flex items-center gap-3 p-3 rounded-2xl 
-                                 hover:bg-gray-50 
+                                className="flex items-center gap-3 p-3 rounded-xl 
+                                 hover:bg-gray-50 dark:hover:bg-gray-700
                                  cursor-pointer transition-colors group"
                               >
                                 <div
-                                  className="flex-shrink-0 p-2 bg-blue-100 rounded-xl text-blue-600 
-                                      group-hover:bg-blue-200 transition-colors"
+                                  className="flex-shrink-0 p-2 bg-blue-50 dark:bg-blue-900/40 rounded-lg text-blue-600 dark:text-blue-400
+                                      group-hover:bg-blue-100 transition-colors"
                                 >
                                   {getResultIcon(result.item.type)}
                                 </div>
-                                <div className="flex-1 min-w-0 relative">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <h4 className="text-sm font-semibold text-gray-900 truncate">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-0.5">
+                                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                                       {result.item.title}
                                     </h4>
                                     <span
-                                      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium 
-                                           bg-gray-100 text-gray-600"
+                                      className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium 
+                                           bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
                                     >
                                       {result.item.searchType}
                                     </span>
                                   </div>
-                                  <p className="text-xs text-gray-500 line-clamp-2 absolute left-0">
-                                    {result.item.description?.substring(0, 80)}...
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+                                    {result.item.description}
                                   </p>
                                 </div>
                                 <ExternalLink
@@ -319,7 +318,7 @@ const Hero = () => {
                           className="text-center text-gray-500 py-10 text-base"
                         >
                           No results match “
-                          <span className="font-medium text-gray-700">
+                          <span className="font-medium text-gray-700 dark:text-gray-200">
                             {searchQuery}
                           </span>
                           ”
@@ -335,18 +334,18 @@ const Hero = () => {
           {/* Buttons */}
           <motion.div
             variants={container}
-            className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6 mb-12 sm:mb-16"
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mb-12 sm:mb-16 px-4"
           >
             {/* Primary Button - Explore Events */}
-            <motion.div variants={fadeUp}>
+            <motion.div variants={fadeUp} className="w-full sm:w-auto">
               <Link
                 to="/events"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-100 dark:bg-blue-900 text-black dark:text-white font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-200 dark:hover:bg-blue-800"
+                className="relative inline-flex items-center justify-center w-full px-8 py-4 rounded-full bg-[#1e3a8a] text-white font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-[#1e40af]"
               >
                 <span className="relative z-10 flex items-center">
                   Explore Events
                   <svg
-                    className="ml-3 w-5 h-5 text-black dark:text-white transition-transform duration-300 group-hover:translate-x-2"
+                    className="ml-3 w-5 h-5 text-white transition-transform duration-300 group-hover:translate-x-2"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -361,62 +360,63 @@ const Hero = () => {
             </motion.div>
 
             {/* Secondary Button - Join Hackathons - FIXED */}
-            <motion.div variants={fadeUp}>
+            <motion.div variants={fadeUp} className="w-full sm:w-auto">
               <Link
                 to="/hackathons"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full border border-yellow-200 dark:border-yellow-700 bg-yellow-100 dark:bg-yellow-900 text-black dark:text-white font-semibold shadow-sm hover:shadow-md hover:bg-yellow-200 dark:hover:bg-yellow-800 hover:scale-105 transition-all duration-300"
+                className="relative inline-flex items-center justify-center w-full px-8 py-4 rounded-full border border-yellow-200 dark:border-yellow-700 bg-[#78350f] text-white font-bold shadow-sm hover:shadow-md hover:bg-[#92400e] hover:scale-105 transition-all duration-300"
               >
                 Join Hackathons
               </Link>
             </motion.div>
 
-            {/* Optional Tertiary Button - Learn More */}
-            <motion.div variants={fadeUp}>
+            {/* Tertiary Button - Learn More */}
+            <motion.div variants={fadeUp} className="w-full sm:w-auto">
               <Link
                 to="/about"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-pink-100 dark:bg-pink-900 text-black dark:text-white font-semibold shadow-sm transform transition-all duration-300 hover:scale-105 hover:bg-pink-200 dark:hover:bg-pink-800"
+                className="relative inline-flex items-center justify-center w-full px-8 py-4 rounded-full bg-[#831843] text-white font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-[#9d174d]"
               >
-                Learn More
-                <svg
-                  className="ml-3 w-5 h-5 text-black dark:text-white transition-transform duration-300 group-hover:translate-x-2"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                <span className="relative z-10 flex items-center text-center">
+                  Learn More
+                  <svg
+                    className="ml-3 w-5 h-5 text-white transition-transform duration-300 group-hover:translate-x-2"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </span>
               </Link>
             </motion.div>
           </motion.div>
 
           {/* Animated Stats Cards */}
-          {/* Animated Stats Cards */}
-{!searchQuery.trim() && (
-  <motion.div
-    variants={fadeUp}
-    className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
-  >
-    {stats.map((stat, i) => (
-      <motion.div
-        key={i}
-        variants={fadeUp}
-        whileHover={{ scale: 1.05 }}
-        transition={{ type: "spring", stiffness: 300 }}
-        className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-lg border border-gray-100 dark:border-gray-700"
-      >
-        <p className="text-3xl font-bold mb-2 text-black dark:text-white">
-          {stat.value}
-        </p>
-        <p className="text-black dark:text-gray-300 text-sm">
-          {stat.label}
-        </p>
-      </motion.div>
-    ))}
-  </motion.div>
-)}
+          {!searchQuery.trim() && (
+            <motion.div
+              variants={fadeUp}
+              className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
+            >
+              {stats.map((stat, i) => (
+                <motion.div
+                  key={i}
+                  variants={fadeUp}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-lg border border-gray-100 dark:border-gray-700"
+                >
+                  <p className="text-3xl font-bold mb-2 text-black dark:text-white">
+                    {stat.value}
+                  </p>
+                  <p className="text-black dark:text-gray-300 text-sm">
+                    {stat.label}
+                  </p>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
           
         </motion.div>
       </div>

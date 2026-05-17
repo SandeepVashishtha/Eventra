@@ -25,11 +25,13 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
     <>
       <nav
         ref={navRef}
-        className="fixed top-0 left-0 w-full h-20 bg-white dark:bg-gray-900 border-b z-50"
+        className="fixed top-0 left-0 w-full h-20 bg-white dark:bg-gray-900 border-b-2 border-gray-200 dark:border-gray-700/50 z-[110] overflow-x-hidden transition-colors duration-300"
       >
-        <div className="h-full px-6 flex items-center justify-between">
-          <Link to="/">
-            <h1 className="text-3xl font-bold">Eventra</h1>
+        <div className="max-w-7xl mx-auto h-full px-4 flex items-center justify-between gap-4">
+          <Link to="/" className="flex-shrink-0">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-black dark:text-white tracking-tighter truncate max-w-[200px] sm:max-w-none">
+              Eventra
+            </h1>
           </Link>
 
           <DesktopNavbar

@@ -2,11 +2,15 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { NAV_ITEMS } from "./constants/navItems";
 
-const NavbarLinks = () => {
+const NavbarLinks = ({ isMobile = false, closeMenu }) => {
   const location = useLocation();
 
   return (
-    <div className="flex items-center gap-5">
+    <div
+      className={`${
+        isMobile ? "flex flex-col items-start gap-4" : "flex items-center gap-5"
+      }`}
+    >
       {NAV_ITEMS.map((item) => {
         const active = location.pathname === item.href;
 
@@ -14,6 +18,7 @@ const NavbarLinks = () => {
           <Link
             key={item.name}
             to={item.href || "#"}
+            onClick={closeMenu}
             className={`text-sm font-medium transition-colors whitespace-nowrap ${
               active
                 ? "text-black dark:text-white"

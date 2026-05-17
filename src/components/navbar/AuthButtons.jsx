@@ -13,7 +13,7 @@ const AuthButtons = () => {
 
       <Link
         to="/signup"
-        className="px-4 py-2 bg-black text-white rounded-lg text-sm font-semibold hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 transition-colors whitespace-nowrap"
+        className="px-6 py-2.5 bg-black text-white rounded-xl text-sm font-semibold hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 transition-colors whitespace-nowrap flex items-center justify-center text-center shadow-lg"
       >
         Get Started
       </Link>

@@ -39,7 +39,7 @@ const RespawningText = ({ texts = ["Discover & Join"], typingSpeed = 150, deleti
       <motion.span
         animate={{ opacity: [1, 0] }}
         transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-        className="inline-block w-1 h-8 sm:h-12 md:h-16 lg:h-20 bg-black ml-1 align-middle"
+        className="inline-block w-1 h-8 sm:h-12 md:h-16 lg:h-20 bg-current ml-1 align-middle"
         style={{ marginBottom: '0.1em' }}
       />
     </span>
