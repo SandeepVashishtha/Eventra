@@ -32,7 +32,6 @@ function App() {
 
   return (
     <ThemeProvider>
-      <NotificationProvider />
       <AuthProvider>
         <Router>
           <div className="App">
@@ -51,6 +50,7 @@ function App() {
             <Footer />
 
             <FluidCursor enabled={cursorEnabled} />
+            <NotificationProvider />
           </div>
         </Router>
       </AuthProvider>
