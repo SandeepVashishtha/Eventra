@@ -141,7 +141,7 @@ const EventsPage = () => {
                 onClick={() => setFilterType(filter.key)}
                 className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-full transition ${
                   filterType === filter.key
-                    ? "bg-black text-white"
+                    ? "bg-black text-white dark:bg-white dark:text-black"
                     : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-700"
                 }`}
                 aria-pressed={filterType === filter.key}
@@ -174,7 +174,7 @@ const EventsPage = () => {
                 onClick={() => setViewMode("grid")}
                 className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
                   viewMode === "grid"
-                    ? "bg-black text-white shadow-md"
+                    ? "bg-black text-white shadow-md dark:bg-white dark:text-black"
                     : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                 }`}
                 aria-label="Grid view"
@@ -186,7 +186,7 @@ const EventsPage = () => {
                 onClick={() => setViewMode("list")}
                 className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
                   viewMode === "list"
-                    ? "bg-black text-white shadow-md"
+                    ? "bg-black text-white shadow-md dark:bg-white dark:text-black"
                     : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                 }`}
                 aria-label="List view"
