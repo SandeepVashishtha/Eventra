@@ -11,7 +11,7 @@ const ProfileMenu = ({ user, logout }) => {
     <div className="relative">
       <button>
         {user?.profilePicture ? (
-          <img
+          <img loading="lazy"
             src={user.profilePicture}
             alt="profile"
             className="w-10 h-10 rounded-full"
