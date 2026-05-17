@@ -42,9 +42,9 @@ const HackathonHub = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isScrollVisible, setIsScrollVisible] = useState(false);
   const [filters, setFilters] = useState({
-    difficulty: [],
-    prize: [],
-    location: [],
+    difficulty: "",
+    prize: "",
+    location: "",
   });
   const [showFilters, setShowFilters] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
@@ -188,24 +188,25 @@ const HackathonHub = () => {
       return hackathon.status === activeTab;
     })
     .filter((hackathon) => {
-      if (
-        filters.difficulty.length > 0 &&
-        !filters.difficulty.includes(hackathon.difficulty)
-      )
+      if (filters.difficulty && hackathon.difficulty !== filters.difficulty)
         return false;
-      if (
-        filters.prize.length > 0 &&
-        !filters.prize.some(
-          (prize) =>
-            !hackathon.prize.toLowerCase().includes(prize.toLowerCase()),
+      if (filters.prize) {
+        const prizeValue = Number.parseInt(
+          String(hackathon.prize).replace(/[^\d]/g, ""),
+          10,
+        );
+
+        if (filters.prize === "Under $1,000" && prizeValue >= 1000) return false;
+        if (
+          filters.prize === "$1,000 - $5,000" &&
+          (prizeValue < 1000 || prizeValue > 5000)
         )
-      )
-        return false;
+          return false;
+        if (filters.prize === "$5,000+" && prizeValue < 5000) return false;
+      }
       if (
-        filters.location.length > 0 &&
-        !filters.location.some((loc) =>
-          hackathon.location.toLowerCase().includes(loc.toLowerCase()),
-        )
+        filters.location &&
+        !hackathon.location.toLowerCase().includes(filters.location.toLowerCase())
       )
         return false;
 
@@ -225,9 +226,9 @@ const HackathonHub = () => {
   // UPDATED: Reset filters and tags
   const resetFilters = () => {
     setFilters({
-      difficulty: [],
-      prize: [],
-      location: [],
+      difficulty: "",
+      prize: "",
+      location: "",
     });
     setSearchQuery("");
     setSelectedTags([]);
