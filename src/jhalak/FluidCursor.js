@@ -1,12 +1,16 @@
 'use client';
 import React, { useEffect, useRef } from 'react';
 
-const FluidCursor = () => {
+const FluidCursor = ({ enabled = true }) => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
+    if (!enabled) {
+      return undefined;
+    }
+
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return undefined;
 
     let animationFrameId;
 
@@ -1017,7 +1021,11 @@ const FluidCursor = () => {
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, []);
+  }, [enabled]);
+
+  if (!enabled) {
+    return null;
+  }
 
   return (
     <div className='fixed top-0 left-0 z-[9999] pointer-events-none'>
