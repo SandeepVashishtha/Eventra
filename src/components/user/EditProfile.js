@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 import {
   User as UserIcon,
@@ -78,7 +79,7 @@ const allSkillSuggestions = [
   /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-._~:/?#[\]@!$&'()*+,;=]*)?$/i;
 
 const EditProfile = () => {
-
+   const navigate = useNavigate();
    const { user, setUser } = useAuth();
   const [form, setForm] = useState(user || initialFormState);
   const [errors, setErrors] = useState({});
@@ -171,6 +172,11 @@ const performSave = () => {
     // ✅ Persist updates to both context and localStorage
     setUser(form);
     localStorage.setItem("user", JSON.stringify(form));
+
+    // ✅ Navigate away after a short delay to let user see success message
+    setTimeout(() => {
+      navigate("/dashboard");
+    }, 1000);
 
   }, 1500);
 };
