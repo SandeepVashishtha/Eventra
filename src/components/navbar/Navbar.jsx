@@ -25,6 +25,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
     <>
       <nav
         ref={navRef}
+        aria-label="Main navigation"
         className="fixed top-0 left-0 w-full h-20 bg-white dark:bg-gray-900 border-b z-50"
       >
         <div className="h-full px-6 flex items-center justify-between">

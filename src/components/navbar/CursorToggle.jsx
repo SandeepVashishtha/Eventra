@@ -1,15 +1,17 @@
-import React from "react";
-import { MousePointer } from "lucide-react";
+import { MousePointer } from 'lucide-react';
 
-const CursorToggle = ({ cursorEnabled, toggleCursor }) => {
-  return (
-    <button
-      onClick={toggleCursor}
-      className="px-3 py-2 rounded-lg bg-black text-white dark:bg-white dark:text-black"
-    >
-      <MousePointer />
-    </button>
-  );
-};
+import Button from '../common/Button';
+
+const CursorToggle = ({ cursorEnabled, toggleCursor }) => (
+  <Button
+    variant="primary"
+    onClick={toggleCursor}
+    aria-label={cursorEnabled ? 'Turn fluid cursor off' : 'Turn fluid cursor on'}
+    aria-pressed={cursorEnabled}
+    title={cursorEnabled ? 'Turn fluid cursor off' : 'Turn fluid cursor on'}
+  >
+    <MousePointer aria-hidden="true" />
+  </Button>
+);
 
 export default CursorToggle;

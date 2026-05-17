@@ -1,15 +1,17 @@
-import React from "react";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun } from 'lucide-react';
 
-const ThemeToggle = ({ isDarkMode, toggleTheme }) => {
-  return (
-    <button
-      onClick={toggleTheme}
-      className="px-3 py-2 rounded-lg bg-black text-white dark:bg-white dark:text-black"
-    >
-      {isDarkMode ? <Sun /> : <Moon />}
-    </button>
-  );
-};
+import Button from '../common/Button';
+
+const ThemeToggle = ({ isDarkMode, toggleTheme }) => (
+  <Button
+    variant="primary"
+    onClick={toggleTheme}
+    aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+    aria-pressed={isDarkMode}
+    title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+  >
+    {isDarkMode ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}
+  </Button>
+);
 
 export default ThemeToggle;
