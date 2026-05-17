@@ -26,6 +26,8 @@ const EventCard = ({ event }) => {
   ];
 
   const randomIcon = icons[Math.floor(Math.random() * icons.length)];
+  const eventDateTime = new Date(`${event.date} ${event.time}`);
+  const isPastEvent = eventDateTime < new Date();
 
   const eventSharingData = generateEventSharingData({
     ...event,
@@ -70,7 +72,18 @@ const EventCard = ({ event }) => {
           className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow cursor-pointer hover:shadow-md border border-gray-200 group/copy relative"
           title="Copy Event Link"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-gray-600"
+          >
             <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
             <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
           </svg>
@@ -148,11 +161,17 @@ const EventCard = ({ event }) => {
 
       {/* CTA */}
       <div className="px-4 py-3 flex gap-2 mt-auto">
-        <Link to={`/events/${event.id}/register`} className="flex-1">
-          <div className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-slate-900 to-indigo-900 hover:from-slate-800 hover:to-indigo-800 text-white px-4 py-2 text-xs font-semibold shadow transition-all duration-200 w-full">
-            Register Now
+        {isPastEvent ? (
+          <div className="flex-1 inline-flex items-center justify-center rounded-xl bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-4 py-2 text-xs font-semibold cursor-not-allowed">
+            Event Ended
           </div>
-        </Link>
+        ) : (
+          <Link to={`/events/${event.id}/register`} className="flex-1">
+            <div className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-slate-900 to-indigo-900 hover:from-slate-800 hover:to-indigo-800 text-white px-4 py-2 text-xs font-semibold shadow transition-all duration-200 w-full">
+              Register Now
+            </div>
+          </Link>
+        )}
         <Link to={`/events/${event.id}`} className="flex-1">
           <div className="inline-flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 w-full">
             View Details
