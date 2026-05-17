@@ -198,8 +198,8 @@ export default function ModernAbout() {
             data-aos-delay="300"
           >
             {/* UPDATED: Card text */}
-            <h3 className="text-black text-2xl font-bold mb-2">100+</h3>
-            <p className="text-black text-sm">Events Managed</p>
+            <h3 className="text-2xl font-bold mb-2 text-black dark:text-white">100+</h3>
+            <p className="text-sm text-black dark:text-gray-300">Events Managed</p>
           </motion.div>
           {stats.map((s) => (
             <motion.div key={s.label} variants={scaleIn} whileHover={prefersReducedMotion ? {} : { scale: 1.05, y: -4 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl shadow-lg shadow-blue-100 dark:shadow-indigo-900/50 p-4 sm:p-5 cursor-default">
