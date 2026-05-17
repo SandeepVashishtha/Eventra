@@ -10,8 +10,10 @@ import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
 import RespawningText from "../../../jhalak/RespawningText";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
+import useDocumentTitle from "../../../hooks/useDocumentTitle";
 
 const Hero = () => {
+  useDocumentTitle("Eventra | Home")
   const navigate = useNavigate();
   const phrases = [
     "Amazing Tech Events",
