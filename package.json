@@ -16,7 +16,7 @@
     "react-icons": "^5.5.0",
     "react-intersection-observer": "^9.4.1",
     "react-router-dom": "^6.8.0",
-    "react-scripts": "^5.0.1",
+    "react-scripts": "5.0.1",
     "react-toastify": "^11.0.5",
     "recharts": "^3.8.1",
     "zxcvbn": "^4.4.2"
