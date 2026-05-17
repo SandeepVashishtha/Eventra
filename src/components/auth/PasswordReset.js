@@ -87,13 +87,13 @@ const PasswordReset = () => {
 
           {error && (
             // UPDATED: Error message styles
-            <div className="bg-red-50 dark:bg-red-900/40 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-md text-sm">
+            <div role="alert" className="bg-red-50 dark:bg-red-900/40 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-md text-sm">
               {error}
             </div>
           )}
           {message && (
             // UPDATED: Success message styles
-            <div className="bg-green-50 dark:bg-green-900/40 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-300 px-4 py-3 rounded-md text-sm">
+            <div role="status" className="bg-green-50 dark:bg-green-900/40 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-300 px-4 py-3 rounded-md text-sm">
               {message}
             </div>
           )}
@@ -102,6 +102,7 @@ const PasswordReset = () => {
           <button
             type="submit"
             disabled={loading}
+            aria-busy={loading}
             className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {loading ? 'Sending...' : 'Send Reset Link'}

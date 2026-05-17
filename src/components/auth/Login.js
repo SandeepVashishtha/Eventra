@@ -33,8 +33,10 @@ const Login = () => {
   };
 
   useEffect(() => {
-  if (isAuthenticated()) navigate('/dashboard', { replace: true });
-}, []); // eslint-disable-line react-hooks/exhaustive-deps'/dashboard', { replace: true });
+    if (isAuthenticated()) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
   
 
   const handleSubmit = async (e) => {
@@ -160,13 +162,15 @@ const Login = () => {
                   value={formData.usernameOrEmail}
                   onChange={handleChange}
                   required
+                  aria-invalid={Boolean(error.usernameOrEmail)}
+                  aria-describedby={error.usernameOrEmail ? "login-username-error" : undefined}
                   // disabled={loading}
                   placeholder="Enter your email address or username"
                   className="w-full pl-3 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                 />
               </div>
               {error.usernameOrEmail && (
-                <p className="text-red-500 text-sm mt-1">{error.usernameOrEmail}</p>
+                <p id="login-username-error" role="alert" className="text-red-500 text-sm mt-1">{error.usernameOrEmail}</p>
               )}
             </div>
 
@@ -203,6 +207,8 @@ const Login = () => {
                   onChange={handleChange}
                   required
                   disabled={loading}
+                  aria-invalid={Boolean(error.password)}
+                  aria-describedby={error.password ? "login-password-error" : undefined}
                   placeholder="Enter your password"
                   className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                 />
@@ -210,6 +216,8 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword((s) => !s)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   {showPassword ? (
@@ -226,7 +234,7 @@ const Login = () => {
               </div>
 
               {error.password && (
-                <p className="text-red-500 text-sm mt-1">{error.password}</p>
+                <p id="login-password-error" role="alert" className="text-red-500 text-sm mt-1">{error.password}</p>
               )}
               <div className="flex justify-end">
                 <Link
@@ -240,7 +248,7 @@ const Login = () => {
 
             {/* Error message */}
             {error.general && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+              <div role="alert" className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm dark:bg-red-900/30 dark:border-red-800 dark:text-red-200">
                 {error.general}
               </div>
             )}
@@ -251,6 +259,7 @@ const Login = () => {
               whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={loading}
+              aria-busy={loading}
               className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
             >
               {loading ? "Signing In..." : "Sign In"}

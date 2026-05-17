@@ -365,6 +365,8 @@ const Signup = () => {
                 <button
                   type="button"
                   onClick={togglePasswordVisibility}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
                 >
                   {showPassword ? (
@@ -439,6 +441,8 @@ const Signup = () => {
                 <button
                   type="button"
                   onClick={toggleConfirmPasswordVisibility}
+                  aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                  aria-pressed={showConfirmPassword}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
                 >
                   {showConfirmPassword ? (
@@ -491,7 +495,7 @@ const Signup = () => {
             </div>
 
             {error && (
-              <div className="text-sm text-red-500 bg-red-50 dark:bg-red-900/40 p-2 rounded-md">
+              <div role="alert" className="text-sm text-red-500 bg-red-50 dark:bg-red-900/40 p-2 rounded-md">
                 {error}
               </div>
             )}
@@ -506,6 +510,7 @@ const Signup = () => {
               whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={loading}
+              aria-busy={loading}
               className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
             >
               {loading ? (
