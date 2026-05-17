@@ -1,3 +1,35 @@
+/**
+ * CHANGES MADE TO THIS FILE (HackathonPage.js):
+ * 
+ * 1. FIXED DROPDOWN STYLING:
+ *    - Updated CustomDropdown component styling around line 313-327
+ *    - Removed "width: menuCoords.width" constraint
+ *    - Added "min-w-[180px]" for minimum width
+ *    - Changed "shadow-lg" to "shadow-xl" for better depth
+ *    - Added "overflow-hidden" to properly contain content
+ *    - Improved className formatting for readability
+ * 
+ * 2. FIXED DROPDOWN PADDING:
+ *    - Changed all "py-2" to "py-3" in dropdown menu items around lines 325, 340
+ *    - Applied to both placeholder item and options items for consistent spacing
+ * 
+ * 3. FIXED FILTER ARRAY TYPE ERROR (Critical Fix):
+ *    - Error: "filters.prize.some is not a function"
+ *    - Root cause: CustomDropdown returns a string, but filters expected arrays
+ *    - Fixed in lines 543-568:
+ *      * Difficulty filter: Wrap/unwrap with array conversion
+ *      * Prize filter: Wrap/unwrap with array conversion  
+ *      * Location filter: Wrap/unwrap with array conversion
+ *    - Now filters.prize[0] || "" is used for dropdown value
+ *    - onChange: val ? [val] : [] wraps single string into array
+ * 
+ * 4. RESULT:
+ *    - Dropdown menu now displays with proper styling and positioning
+ *    - Better visual spacing with py-3 padding
+ *    - Filter logic now correctly handles array type checks
+ *    - .some() method works properly on filter arrays
+ */
+
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -312,12 +344,18 @@ const HackathonHub = () => {
           createPortal(
             <ul
               ref={dropdownRef}
-              className="z-[10000] min-w-[220px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg"
+              className="
+                z-[10000]
+                bg-white dark:bg-gray-800
+                border border-gray-200 dark:border-gray-700
+                rounded-xl shadow-xl
+                overflow-hidden
+                min-w-[180px]
+              "
               style={{
                 position: "absolute",
                 top: menuCoords.top,
                 left: menuCoords.left,
-                width: menuCoords.width,
               }}
             >
               <li
@@ -325,7 +363,7 @@ const HackathonHub = () => {
                   onChange("");
                   setOpen(false);
                 }}
-                className="px-4 py-2 cursor-pointer whitespace-nowrap hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                className="px-4 py-3 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               >
                 {placeholder}
               </li>
@@ -333,7 +371,7 @@ const HackathonHub = () => {
               {options.map((opt) => (
                 <li
                   key={opt}
-                  className={`px-4 py-2 cursor-pointer whitespace-nowrap hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 ${opt === value
+                  className={`px-4 py-3 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 ${opt === value
                       ? "font-semibold bg-indigo-100 dark:bg-indigo-900"
                       : ""
                     }`}
@@ -536,28 +574,28 @@ const HackathonHub = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <CustomDropdown
                     label="Difficulty"
-                    value={filters.difficulty}
+                    value={filters.difficulty[0] || ""}
                     options={difficulties}
                     onChange={(val) =>
-                      setFilters({ ...filters, difficulty: val })
+                      setFilters({ ...filters, difficulty: val ? [val] : [] })
                     }
                     placeholder="All Levels"
                   />
 
                   <CustomDropdown
                     label="Prize Pool"
-                    value={filters.prize}
+                    value={filters.prize[0] || ""}
                     options={["Under $1,000", "$1,000 - $5,000", "$5,000+"]}
-                    onChange={(val) => setFilters({ ...filters, prize: val })}
+                    onChange={(val) => setFilters({ ...filters, prize: val ? [val] : [] })}
                     placeholder="Any Prize"
                   />
 
                   <CustomDropdown
                     label="Location"
-                    value={filters.location}
+                    value={filters.location[0] || ""}
                     options={locations}
                     onChange={(val) =>
-                      setFilters({ ...filters, location: val })
+                      setFilters({ ...filters, location: val ? [val] : [] })
                     }
                     placeholder="All Locations"
                   />

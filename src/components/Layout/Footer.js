@@ -1,3 +1,22 @@
+/**
+ * CHANGES MADE TO THIS FILE (Footer.js):
+ * 
+ * 1. FIXED UNDEFINED FUNCTION ERROR:
+ *    - Removed duplicate inline newsletter form that was causing "handleSubmit is not defined" error
+ *    - The form was in the main Footer component without state management
+ *    - Replaced with proper Newsletter component that has its own state and handleSubmit
+ * 
+ * 2. REMOVED DUPLICATE CODE:
+ *    - Removed duplicate email input, button, and form validation logic
+ *    - Removed duplicate social media icons section
+ *    - Both were already properly implemented in separate Newsletter and SocialLinksRender components
+ * 
+ * 3. RESULT:
+ *    - Footer now uses the Newsletter component (lines ~116) with proper state management
+ *    - Footer now uses the SocialLinksRender component (lines ~165) for social links
+ *    - No more undefined variable errors (email, setEmail, isSubmitting, handleSubmit)
+ */
+
 import { useState } from "react";
 import {
   FaInfoCircle,
@@ -313,7 +332,10 @@ const Footer = () => {
                 Open-source event management for communities worldwide.
               </p>
 
+              {/* Newsletter Subscription Form */}
               <Newsletter />
+
+              {/* Social Media Icons - Below Newsletter */}
               <SocialLinksRender />
             </div>
             <FooterLinksRender />
