@@ -19,7 +19,7 @@ const WhatsHappening = () => {
   // Combine and format events and hackathons data
   const formatEventsData = (events) => {
     return events
-      .filter((event) => event.status !== "past")
+      .filter((event) => new Date(event.date) >= new Date())
       .map((event) => ({
         id: `event-${event.id}`,
         title: event.title,
@@ -262,7 +262,7 @@ const WhatsHappening = () => {
                 animate="center"
                 exit="exit"
                 transition={{ duration: 0.4, ease: "easeInOut" }}
-               className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5 lg:gap-6 pointer-events-auto"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pointer-events-auto"
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.2}

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SiX } from "react-icons/si";
 import {
   FaInfoCircle,
   FaInstagram,
@@ -274,7 +275,7 @@ const Footer = () => {
               data-aos-delay="0"
             >
               <h2
-                className="text-2xl sm:text-3xl font-bold text-black dark:text-white"
+                className="text-2xl sm:text-3xl font-bold text-black"
                 style={{ fontFamily: "Anton, sans-serif" }}
               >
                 Eventra
