@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../../../context/AuthContext";
-import { toast } from "react-toastify";
+import { showAuthToast } from "../../../../utils/toast";
 
 const useNavbarState = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -103,12 +103,7 @@ const useNavbarState = () => {
 
     logout();
 
-    toast.success("You have been logged out successfully.", {
-      className: "custom-toast",
-      autoClose: 3000,
-    });
-
-    navigate("/");
+    showAuthToast("You have been logged out successfully.", () => navigate("/"));
   };
 
   const handleCancelLogout = () => {
