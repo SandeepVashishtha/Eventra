@@ -1,15 +1,15 @@
-import { motion, useAnimation, AnimatePresence, MotionConfig } from "framer-motion";
+import { AnimatePresence, motion, MotionConfig, useAnimation } from "framer-motion";
+import Fuse from "fuse.js";
+import { Calendar, Code, ExternalLink, Search, Trophy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Fuse from "fuse.js";
-import { Search, X, Calendar, Trophy, Code, ExternalLink } from "lucide-react";
 
 // Import mock data
+import ModernSearchInput from "../../../components/common/ModernSearchInput";
+import RespawningText from "../../../jhalak/RespawningText";
 import eventsData from "../../Events/eventsMockData.json";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
-import RespawningText from "../../../jhalak/RespawningText";
-import ModernSearchInput from "../../../components/common/ModernSearchInput";
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -194,7 +194,7 @@ const Hero = () => {
           <MotionConfig reducedMotion="never">
             {/* Headline */}
             <motion.h1
-              className="mx-auto max-w-[92vw] text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 sm:mb-6 leading-[0.95] sm:leading-tight text-black dark:text-white break-words px-2 sm:px-0"
+              className="mx-auto max-w-[92vw] text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 sm:mb-6 leading-[0.95] sm:leading-tight text-text break-words px-2 sm:px-0"
               style={{ fontFamily: '"Anton", sans-serif' }}
             >
               <motion.span
@@ -210,7 +210,7 @@ const Hero = () => {
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={index}
-                    className="block mt-2 text-black dark:text-white mb-4 pb-2 whitespace-normal text-center px-1"
+                    className="block mt-2 text-black dark:text-white mb-4 pb-2 whitespace-normal text-center px-1 text-black dark:text-white"
                     initial={{ opacity: 0, y: 40 }}
                     animate={{
                       opacity: 1,
@@ -233,14 +233,14 @@ const Hero = () => {
           {/* Subtext */}
           <motion.p
             variants={fadeUp}
-            className="text-sm sm:text-base md:text-lg text-black dark:text-gray-300 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
+            className="text-sm sm:text-base md:text-lg text-black dark:text-gray-300 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0 text-black dark:text-white"
           >
             Connect with developers, learn new skills, and grow your network at
             the best tech events, hackathons, and workshops in your area.
           </motion.p>
 
           {/* Global Search Bar */}
-          <div className="w-full max-w-2xl mx-auto mb-10 sm:mb-12">
+          <div className="w-full max-w-2xl mx-auto mb-10 sm:mb-12 text-black dark:text-white">
             <ModernSearchInput
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
