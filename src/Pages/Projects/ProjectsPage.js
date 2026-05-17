@@ -7,6 +7,9 @@ import FeedbackButton from "../../components/FeedbackButton"; // Feedback floati
 import ProjectCTA from "./ProjectCTA";
 // Import mock data directly (assuming it's named mockProjectsData.json in the same folder as ProjectsPage.js)
 import mockProjects from "./mockProjectsData.json";
+import ModernSearchInput from "../../components/common/ModernSearchInput";
+import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
+
 
 // Skeleton loader for project cards while data is loading
 const SkeletonCard = () => (
