@@ -25,12 +25,12 @@ const Tag = ({ tag, onRemove }) => (
     exit={{ scale: 0.8, opacity: 0 }}
     className="flex items-center gap-2 bg-gradient-to-r from-white via-slate-50 to-indigo-50 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-3 py-1 rounded-full text-sm font-medium"
   >
-    <span>{tag}</span>
+    <span className="dark:text-black">{tag}</span>
     <button
       onClick={() => onRemove(tag)}
-      className="hover:bg-indigo-200 dark:hover:bg-indigo-800 rounded-full p-0.5 transition-colors"
+      className="hover:bg-indigo-200 dark:hover:bg-indigo-800 rounded-full p-0.5 transition-colors "
     >
-      <FiX className="w-3 h-3" />
+      <FiX className="w-3 h-3 dark:text-black" />
     </button>
   </motion.div>
 );
