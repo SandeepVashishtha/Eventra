@@ -582,7 +582,7 @@ const ContributorGuide = () => {
       </section>
 
       {/* Call to Action */}
-      <div className="relative overflow-hidden rounded-xl p-10 shadow-xl text-center text-white bg-black">
+      <div className="relative overflow-hidden rounded-xl p-10 shadow-xl text-center text-white bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950">
         <FiGithub className="absolute top-5 left-5 text-white/10 text-6xl rotate-12" />
         <FiGithub className="absolute bottom-5 right-5 text-white/10 text-6xl -rotate-12" />
 

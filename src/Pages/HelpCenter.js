@@ -557,7 +557,7 @@ const HelpCenter = () => {
       {/* FAQ Section */}
       <section className="py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center mb-4 text-gray-900 dark:text-white">
+          <h2 className="text-3xl font-bold bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-center mb-4 text-gray-900 dark:text-white">
             Frequently Asked Questions
           </h2>
           <p className="text-center text-gray-600 dark:text-gray-300 mb-12 max-w-2xl mx-auto">

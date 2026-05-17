@@ -63,7 +63,9 @@ const AboutCTA = () => {
 
   return (
     <section 
-      className="relative py-12 px-12 mt-2 mb-8 mx-8 rounded-3xl bg-white text-center overflow-hidden shadow-2xl border border-gray-200"
+      className="relative py-12 px-12 mt-2 mb-8 mx-8 rounded-3xl bg-gradient-to-br from-white via-slate-50 to-zinc-100
+border border-slate-200
+shadow-2xl shadow-slate-200/50 text-center overflow-hidden shadow-2xl border border-gray-200"
       // AOS Implementation
       data-aos="zoom-in-up"
       data-aos-duration="1000"

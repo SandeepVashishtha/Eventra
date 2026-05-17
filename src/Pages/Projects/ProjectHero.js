@@ -209,7 +209,7 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
               data-aos="zoom-in"
               data-aos-delay={700 + idx * 150}
               // UPDATED: Stat card background
-              className="bg-gradient-to-br from-sky-50 via-white to-white dark:from-gray-800 dark:via-gray-900 dark:to-black shadow-md hover:shadow-xl rounded-3xl p-6 flex flex-col items-center justify-center transition-all duration-300"
+              className="bg-gradient-to-b from-white via-white to-slate-50 border border-slate-100 shadow-xl shadow-slate-100/70 dark:bg-gray-800  hover:shadow-xl rounded-3xl p-6 flex flex-col items-center justify-center transition-all duration-300"
             >
               {/* UPDATED: Text colors */}
               <span className="text-3xl font-extrabold text-black dark:text-white">
