@@ -152,7 +152,7 @@ const Contributors = () => {
 
   return (
     // UPDATED: Section background
-    <section className="pastel-grid-bg py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+    <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
       <div className="max-w-7xl mx-auto px-6">
 
       {/* Added The Search Bar */}

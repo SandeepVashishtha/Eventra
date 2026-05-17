@@ -1,7 +1,6 @@
 import { BrowserRouter as Router } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import "./App.css";
-import ToastProvider from "./components/Toastprovider";
 
 // --------------- LAYOUT
 import Navbar from "./components/Layout/Navbar";
@@ -11,18 +10,25 @@ import FeedbackButton from "./components/FeedbackButton";
 import Chatbot from "./components/Chatbot";
 import FluidCursor from "./jhalak/FluidCursor";
 import AppRoutes from "./components/AppRoutes";
+import NotificationProvider from "./components/common/NotificationProvider";
 
+<<<<<<< HEAD
 // --------------- ROUTES
 import AppRoutes from "./components/AppRoutes";
 
 // --------------- PROVIDERS
+=======
+// --------------- CONTEXT & HOOKS
+>>>>>>> 481cbb0f9c46982337d082d5f25e87471f5c281a
 import { AuthProvider } from "./context/AuthContext";
-import { ThemeProvider } from "./context/ThemeContext";
+import { useModelContext } from "./hooks/useModelContext";
 
 function App() {
   const [cursorEnabled, setCursorEnabled] = useState(
     localStorage.getItem("cursor") !== "off"
   );
+
+  useModelContext();
 
   const toggleCursor = () => {
     const newValue = !cursorEnabled;
@@ -30,47 +36,19 @@ function App() {
     localStorage.setItem("cursor", newValue ? "on" : "off");
   };
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && navigator.modelContext) {
-      navigator.modelContext.provideContext({
-        tools: [
-          {
-            name: "search_events",
-            description: "Search for events on Eventra",
-            inputSchema: {
-              type: "object",
-              properties: {
-                query: { type: "string", description: "Search term for events" }
-              }
-            },
-            execute: async ({ query }) => {
-              window.location.href = `/events?search=${encodeURIComponent(query)}`;
-              return { success: true, message: `Searching for ${query}` };
-            }
-          },
-          {
-            name: "get_api_docs",
-            description: "Get information about Eventra APIs",
-            inputSchema: { type: "object", properties: {} },
-            execute: async () => {
-              window.location.href = "/apiDocs";
-              return { success: true, message: "Navigating to API documentation" };
-            }
-          }
-        ]
-      });
-    }
-  }, []);
-
   return (
-    <ThemeProvider>
-      <ToastProvider />
+    <>
+      <NotificationProvider />
       <AuthProvider>
         <Router>
           <div className="App">
             <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
 
+<<<<<<< HEAD
             <main className="min-h-screen bg-bg text-text">
+=======
+            <main className="min-h-screen bg-white dark:bg-black ">
+>>>>>>> 481cbb0f9c46982337d082d5f25e87471f5c281a
               <AppRoutes />
             </main>
 
@@ -79,11 +57,15 @@ function App() {
             <FeedbackButton />
             <Footer />
 
+<<<<<<< HEAD
             {cursorEnabled && <FluidCursor />}
+=======
+            <FluidCursor enabled={cursorEnabled} />
+>>>>>>> 481cbb0f9c46982337d082d5f25e87471f5c281a
           </div>
         </Router>
       </AuthProvider>
-    </ThemeProvider>
+    </>
   );
 }
 

@@ -463,7 +463,11 @@ const SubmitProject = () => {
           <motion.div
             key={index}
             whileHover={{ scale: 1.05 }}
+<<<<<<< HEAD
             className="bg-white dark:bg-gradient-to-br dark:from-zinc-800 dark:via-zinc-900 dark:to-slate-950 border border-indigo-300 dark:border-white/10 rounded-2xl shadow-xl dark:shadow-black/40 p-6 text-center flex flex-col items-center"
+=======
+            className="bg-gradient-to-b from-white via-white to-slate-50  border-slate-100 shadow-xl shadow-slate-100/70 dark:bg-gray-800 border  dark:border-gray-700 rounded-2xl  p-6 text-center flex flex-col items-center"
+>>>>>>> 481cbb0f9c46982337d082d5f25e87471f5c281a
             data-aos="zoom-in"
             data-aos-delay={1500 + index * 100}
           >

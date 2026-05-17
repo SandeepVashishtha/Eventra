@@ -1,12 +1,16 @@
 import React, { useState, useEffect, useRef } from "react"; // React hooks for state and lifecycle
 import { motion, AnimatePresence } from "framer-motion"; // Framer Motion for animations
 import { FiAlertCircle, FiSearch, FiX } from "react-icons/fi"; // Feather icons
+
 import ProjectHero from "./ProjectHero"; // Hero section component
 import ProjectCard from "./ProjectCard"; // Individual project card component
 import FeedbackButton from "../../components/FeedbackButton"; // Feedback floating button
 import ProjectCTA from "./ProjectCTA";
 // Import mock data directly (assuming it's named mockProjectsData.json in the same folder as ProjectsPage.js)
 import mockProjects from "./mockProjectsData.json";
+
+import ModernSearchInput from "../../components/common/ModernSearchInput";
+import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
 
 // Skeleton loader for project cards while data is loading
 const SkeletonCard = () => (
@@ -15,7 +19,7 @@ const SkeletonCard = () => (
     <div className="p-6">
       <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded w-3/4 mb-4"></div>
       <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-full mb-2"></div>
-      <div className="h-4 w-5/6 bg-gray-100 dark:bg-gray-600 rounded w-5/6 mb-4"></div>
+      <div className="h-4 w-5/6 bg-gray-100 dark:bg-gray-600 rounded mb-4"></div>
       <div className="flex flex-wrap gap-2 mb-4">
         <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-16"></div>
         <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-24"></div>
@@ -151,7 +155,11 @@ const ProjectGallery = () => {
 
   return (
     // UPDATED: Main page background
+<<<<<<< HEAD
     <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-zinc-950 dark:via-[#111827] dark:to-black">
+=======
+    <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
+>>>>>>> 481cbb0f9c46982337d082d5f25e87471f5c281a
       {/* Hero Section with CTA */}
       <ProjectHero scrollToCard={scrollToCard} />
       {/* Main Container */}
@@ -278,7 +286,7 @@ const ProjectGallery = () => {
               {/* Clear Filters Button */}
               <motion.button
                 whileHover={{ scale: 1.05 }}
-                className="px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm font-semibold rounded-xl flex items-center gap-2 hover:from-blue-500 hover:to-cyan-500 transition-all shadow-lg"
+                className="px-4 py-3 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white text-sm font-semibold rounded-xl flex items-center gap-2 hover:from-blue-500 hover:to-cyan-500 transition-all shadow-lg"
                 onClick={() => {
                   setFilterCategory("all"); // Reset category
                   setSearchQuery(""); // Clear search
@@ -300,7 +308,7 @@ const ProjectGallery = () => {
             // Show skeleton loaders while fetching
             <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <ProjectCardSkeleton key={`skeleton-${i}`} />
+                <SkeletonCard key={`skeleton-${i}`} />
               ))}
             </div>
           ) : error ? (

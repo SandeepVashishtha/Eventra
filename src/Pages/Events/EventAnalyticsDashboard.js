@@ -34,11 +34,8 @@ const TABS = ['overview', 'registrations', 'demographics', 'feedback'];
 
 const totalRegistrations = eventsData.reduce((sum, e) => sum + e.attendees, 0);
 const totalCapacity = eventsData.reduce((sum, e) => sum + e.maxAttendees, 0);
-const fillRate = totalCapacity > 0 ? Math.round((totalRegistrations / totalCapacity) * 100) : 0;
-const avgRating = feedbackData.length > 0
-  ? (feedbackData.reduce((s, f) => s + f.rating, 0) / feedbackData.length).toFixed(1)
-  : "0.0";
-
+const fillRate = Math.round((totalRegistrations / totalCapacity) * 100);
+const avgRating = (feedbackData.reduce((s, f) => s + f.rating, 0) / feedbackData.length).toFixed(1);
 
 const getTopEvents = () =>
   [...eventsData].sort((a, b) => b.attendees - a.attendees).slice(0, 6)
@@ -102,7 +99,7 @@ const AttendanceBarChart = ({ height = 260, layout = 'horizontal', showLegend = 
 const KPIHeader = () => (
   <div className="ead-header">
     <div className="ead-header-left">
-      <span className="ead-badge">Organizer View</span>
+      <span className="sb-badge sb-hosted">Organizer View</span>
       <h1 className="ead-title">Event Analytics</h1>
       <p className="ead-subtitle">Data-driven insights for smarter decisions</p>
     </div>

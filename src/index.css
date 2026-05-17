@@ -35,6 +35,7 @@
   --font-h6: 18px;
 }
 
+<<<<<<< HEAD
 body.dark {
   --bg-color: #0f1115;
   --text-color: #f4f7fb;
@@ -45,6 +46,21 @@ body.dark {
   --scrollbar-thumb-color: #667085;
   --scrollbar-thumb-hover-color: #98a2b3;
   --btn-secondary-text: #f4f7fb;
+=======
+/* Fix #599: Changed from body.dark to .dark
+   ThemeToggleButton.js applies the dark class to document.documentElement (html),
+   not to body. Using body.dark meant these variables never activated in dark mode. */
+.dark {
+  --bg-color: #121212;
+  --text-color: #e0e0e0;
+  --text-color-light: #a0a0a0;
+  --border-color: #333333;
+  --card-bg-color: #1e1e1e;
+  --scrollbar-track-color: #2c2c2c;
+  --scrollbar-thumb-color: #000000;
+  --scrollbar-thumb-hover-color: #262626;
+  --btn-secondary-text: #e0e0e0;
+>>>>>>> 481cbb0f9c46982337d082d5f25e87471f5c281a
 }
 
 /* Global styles */
@@ -67,8 +83,12 @@ body {
   font-size: var(--font-body);
   font-weight: var(--fw-regular);
 }
-body.dark .pastel-grid-bg {
+.dark .pastel-grid-bg {
+  /* Use a solid dark background in dark mode and remove the light pastel grid image
+     which remains visible otherwise. This ensures pages that use the pastel grid
+     utility (like Contributors) render correctly in dark mode. */
   background-color: var(--bg-color);
+<<<<<<< HEAD
   background-image:
     linear-gradient(to right, rgba(96, 165, 250, 0.18) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(250, 204, 21, 0.14) 1px, transparent 1px),
@@ -89,23 +109,21 @@ body.dark .documentation-page .bg-gray-100 {
 
 body.dark .documentation-page .border-gray-300 {
   border-color: var(--border-color) !important;
+=======
+  background-image: none !important;
+  opacity: 1;
+>>>>>>> 481cbb0f9c46982337d082d5f25e87471f5c281a
 }
 
-*,
-*::before,
-*::after {
-  animation: none !important;
-  transition: none !important;
-  scroll-behavior: auto !important;
-}
 
-/* Headings */
-h1 { font-size: var(--font-h1); }
-h2 { font-size: var(--font-h2); }
-h3 { font-size: var(--font-h3); }
-h4 { font-size: var(--font-h4); }
-h5 { font-size: var(--font-h5); }
-h6 { font-size: var(--font-h6); }
+
+/* Fix: Headings use CSS variables + consistent line-height */
+h1 { font-size: var(--font-h1); font-weight: var(--fw-bold); line-height: var(--lh-heading); }
+h2 { font-size: var(--font-h2); font-weight: var(--fw-bold); line-height: var(--lh-heading); }
+h3 { font-size: var(--font-h3); font-weight: var(--fw-semibold); line-height: var(--lh-heading); }
+h4 { font-size: var(--font-h4); font-weight: var(--fw-semibold); line-height: var(--lh-heading); }
+h5 { font-size: var(--font-h5); font-weight: var(--fw-medium); }
+h6 { font-size: var(--font-h6); font-weight: var(--fw-medium); }
 
 /* Navigation items */
 nav, nav a {
@@ -207,4 +225,38 @@ input::-webkit-password-toggle { display: none !important; }
     linear-gradient(45deg, rgba(59, 130, 246, 0.10) 1px, transparent 1px),
     linear-gradient(-45deg, rgba(250, 204, 21, 0.10) 1px, transparent 1px);
   background-size: 40px 40px, 40px 40px, 80px 80px, 80px 80px;
+}
+
+/* Shake Animation (Global) */
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-5px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+.animate-shake {
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* Progress Animation (Global) */
+@keyframes progress {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1.2);
+  }
 }

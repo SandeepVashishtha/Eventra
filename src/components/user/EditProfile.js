@@ -100,7 +100,7 @@ const EditProfile = () => {
 
   const validate = (nextForm) => {
     const v = {};
-    if (!nextForm.fullName?.trim()) v.fullName = "Full name is required";
+    // if (!nextForm.fullName?.trim()) v.fullName = "Full name is required";
     // if (!nextForm.username?.trim()) v.username = 'Username is required';
     if (nextForm.phone && !/^[+]?\d{7,15}$/.test(nextForm.phone))
       v.phone = "Enter a valid phone number";
@@ -148,7 +148,13 @@ const EditProfile = () => {
 
 const performSave = () => {
   setSuccessMessage("");
-  const validation = validate(form);
+
+  // Build the actual form with the resolved fullName
+  const resolvedForm = {
+    ...form,
+    fullName: form.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim(),
+  };
+  const validation = validate(resolvedForm);
   setErrors(validation);
 
   if (Object.keys(validation).length > 0) {
@@ -287,10 +293,10 @@ const performSave = () => {
                       <input
                         type="text"
                         name="fullName"
-                        value={form.fullName}
-                        onChange={handleChange}
+                        value={form.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim()}
+                        readOnly 
                         placeholder="Jane Doe"
-                        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 pl-9 pr-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 pl-9 pr-3 py-2 text-gray-500 cursor-not-allowed"
                       />
                     </div>
                     {errors.fullName && (

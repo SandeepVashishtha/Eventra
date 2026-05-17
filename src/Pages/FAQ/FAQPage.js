@@ -129,11 +129,12 @@ const FAQPage = () => {
 
   useEffect(() => {
     controls.start("show");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Note: scroll-to-top on route change is handled globally by the
+    // ScrollToTop component — no need to call window.scrollTo() here.
   }, [controls]);
 
   return (
-    <div className="pastel-grid-bg relative flex flex-col min-h-screen overflow-hidden">
+    <div className="relative flex flex-col min-h-screen overflow-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
       {/* HERO */}
       <section className="pt-28 pb-10 sm:pt-32 sm:pb-12 relative overflow-hidden">
         {/* HERO Content */}
@@ -145,7 +146,11 @@ const FAQPage = () => {
                 style={{ fontFamily: '"Anton", sans-serif' }}
               >
                 Frequently Asked{" "}
+<<<<<<< HEAD
                 <span className="text-black dark:text-white">
+=======
+                <span className="text-black  dark:text-white">
+>>>>>>> 481cbb0f9c46982337d082d5f25e87471f5c281a
                   Questions
                 </span>
               </h1>
@@ -180,7 +185,7 @@ const FAQPage = () => {
                     </span>
                   </div>
                   <div>
-                    <span className="text-xs font-medium text-black dark:text-white uppercase tracking-wide">
+                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                       {faq.category}
                     </span>
                     <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mt-1">
