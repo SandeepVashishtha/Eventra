@@ -46,6 +46,12 @@ import { toast } from "react-toastify";
 
 
 
+const footerSectionTitles = {
+  quick_links: "Quick Links",
+  community: "Community",
+  support: "Support",
+};
+
 const footerLinks = {
   quick_links: [
     { name: "Home", href: "/", icon: <FaHome size={14} /> },
@@ -229,10 +235,10 @@ const FooterLinksRender = () => (
         data-aos="fade-up"
         data-aos-delay={key === "quick_links" ? "100" : key === "community" ? "200" : "300"}
       >
-        <h4 className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-widest mb-6">
-          {key.replace("_", " ")}
+        <h4 className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-widest mb-4">
+          {footerSectionTitles[key] ?? key.replace("_", " ")}
         </h4>
-        <ul className="space-y-4">
+        <ul className="space-y-3">
           {links.map((link) => (
             <li key={link.name}>
               <Link
@@ -277,68 +283,40 @@ const FooterBottom = () => {
 };
 
 const Footer = () => {
-  const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!email) {
-      toast.error("Please enter your email address");
-      return;
-    }
-
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      toast.error("Please enter a valid email address");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Submitting email:", email);
-      toast.success("Thank you for subscribing to our newsletter!");
-      setEmail("");
-    } catch (error) {
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
     <>
-      <footer 
+      <footer
+        aria-label="Site footer"
         className="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
         data-aos="fade-up"
         data-aos-duration="1000"
         data-aos-offset="100"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-            <div 
-              className="space-y-4 lg:col-span-2"
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
+          <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-8">
+            <div
+              className="space-y-5 lg:col-span-4"
               data-aos="fade-up"
               data-aos-delay="0"
             >
               <h2
-                className="text-2xl sm:text-3xl font-bold text-black"
+                className="text-2xl sm:text-3xl font-bold text-black dark:text-white"
                 style={{ fontFamily: "Anton, sans-serif" }}
               >
                 Eventra
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">
+              <p className="text-gray-600 dark:text-gray-400 text-sm max-w-md">
                 Open-source event management for communities worldwide.
               </p>
 
-              {/* Newsletter Subscription Form */}
               <Newsletter />
 
-              {/* Social Media Icons - Below Newsletter */}
               <SocialLinksRender />
             </div>
-            <FooterLinksRender />
+
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-3 lg:col-span-8">
+              <FooterLinksRender />
+            </div>
           </div>
           <FooterBottom />
         </div>
