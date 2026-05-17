@@ -48,6 +48,7 @@ import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
 import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 // NEW: Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
@@ -68,6 +69,7 @@ const Tag = ({ tag, onRemove }) => (
 );
 
 const HackathonHub = () => {
+  useDocumentTitle("Eventra | Hackathon Hub")
   const [hackathons, setHackathons] = useState([]);
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");

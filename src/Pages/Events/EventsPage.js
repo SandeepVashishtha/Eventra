@@ -8,6 +8,7 @@ import EventCTA from "./EventCTA";
 import Fuse from "fuse.js";
 import StyledDropdown from "../../components/StyledDropdown";
 import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
   if (isLoading) {
@@ -44,6 +45,7 @@ const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
 };
 
 const EventsPage = () => {
+  useDocumentTitle("Eventra | Events")
   const [events, setEvents] = useState([]);
   const [filterType, setFilterType] = useState("all");
   const [viewMode, setViewMode] = useState("grid");

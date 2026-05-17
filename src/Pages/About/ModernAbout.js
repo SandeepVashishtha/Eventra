@@ -1,5 +1,8 @@
 import { motion, useInView } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
+import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 /**
  * CHANGES MADE TO THIS FILE (ModernAbout.js):
@@ -109,6 +112,7 @@ const values = [
 ];
 
 export default function ModernAbout() {
+  useDocumentTitle("Eventra | About")
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
