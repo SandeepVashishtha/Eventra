@@ -11,6 +11,7 @@ import {
   Gift,
   Share2,
 } from "lucide-react";
+
 import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
 import ShareMenu from "../../components/common/ShareMenu";
 import { generateEventSharingData } from "../../utils/shareUtils";
@@ -18,11 +19,11 @@ import StatusBadge from "../../components/common/StatusBadge";
 
 const EventCard = ({ event }) => {
   const icons = [
-    <Star size={20} className="text-yellow-500" />,
-    <Heart size={20} className="text-red-500" />,
-    <Zap size={20} className="text-pink-500" />,
-    <BookOpen size={20} className="text-indigo-500" />,
-    <Gift size={20} className="text-pink-500" />,
+    <Star size={18} className="text-yellow-400" />,
+    <Heart size={18} className="text-red-400" />,
+    <Zap size={18} className="text-pink-400" />,
+    <BookOpen size={18} className="text-indigo-400" />,
+    <Gift size={18} className="text-orange-400" />,
   ];
 
   const randomIcon = icons[Math.floor(Math.random() * icons.length)];
@@ -37,140 +38,243 @@ const EventCard = ({ event }) => {
 
   const handleCopyLink = (e) => {
     e.preventDefault();
+
     const shareUrl = `${window.location.origin}/events/${event.id}`;
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      alert("Event link copied to clipboard!");
-    }).catch(err => {
-      console.error("Failed to copy: ", err);
-    });
+
+    navigator.clipboard.writeText(shareUrl);
   };
 
   return (
     <div
       data-aos="zoom-in"
-      data-aos-duration="1000"
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl
-      backdrop-blur-sm transition-all duration-500 flex flex-col card-with-floating-elements z-10 hover:z-50"
+      className="
+        group
+        relative
+        h-full
+        overflow-hidden
+        rounded-[28px]
+        border
+        border-white/20
+        bg-white/80
+        dark:bg-gray-900/80
+        backdrop-blur-xl
+        shadow-lg
+        hover:shadow-2xl
+        transition-all
+        duration-500
+        hover:-translate-y-2
+        flex
+        flex-col
+      "
     >
-      <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-90 transition-opacity duration-500 bg-black/10 -z-10"></div>
+      {/* Glow */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-gradient-to-br from-indigo-500/10 via-pink-500/10 to-cyan-500/10" />
 
-      <div className="absolute top-20 right-4 z-[200] flex space-x-2">
+      {/* Top Actions */}
+      <div className="absolute top-4 right-4 z-30 flex gap-2">
         <ShareMenu
           shareData={eventSharingData}
           position="above"
-          menuClassName="!z-[999] shadow-2xl"
-          buttonClassName=""
         >
-          <div className="bg-white rounded-full p-3 shadow-lg cursor-pointer hover:shadow-xl border border-gray-200 group/share share-button-pop share-button-float">
-            <Share2 size={18} className="text-gray-600" />
-            <div className="absolute invisible group-hover/share:visible opacity-0 group-hover/share:opacity-100 transition-opacity duration-300 -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap">
-              Share Event
-            </div>
-          </div>
+          <button
+            className="
+              w-10 h-10
+              rounded-full
+              bg-white/90
+              dark:bg-gray-800/90
+              backdrop-blur-lg
+              border border-white/20
+              flex items-center justify-center
+              shadow-lg
+              hover:scale-110
+              transition
+            "
+          >
+            <Share2 size={16} className="text-gray-700 dark:text-white" />
+          </button>
         </ShareMenu>
 
-        <div
+        <button
           onClick={handleCopyLink}
-          className="bg-white rounded-full p-3 shadow-lg cursor-pointer hover:shadow-xl border border-gray-200 group/copy share-button-pop share-button-float relative"
-          title="Copy Event Link"
+          className="
+            w-10 h-10
+            rounded-full
+            bg-white/90
+            dark:bg-gray-800/90
+            backdrop-blur-lg
+            border border-white/20
+            flex items-center justify-center
+            shadow-lg
+            hover:scale-110
+            transition
+          "
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
-            <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="text-gray-700 dark:text-white"
+          >
+            <rect width="14" height="14" x="8" y="8" rx="2" />
             <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
           </svg>
-          <div className="absolute invisible group-hover/copy:visible opacity-0 group-hover/copy:opacity-100 transition-opacity duration-300 -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap">
-            Copy Link
-          </div>
-        </div>
-
-        <a
-          href={addEventToGoogleCalendar(event)}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          title="Add to Google Calendar"
-          className="group/cal"
-        >
-          <div className="bg-white rounded-full p-3 shadow-lg cursor-pointer hover:shadow-xl border border-gray-200 share-button-pop share-button-float">
-            <Calendar size={18} className="text-gray-600" />
-            <div className="absolute invisible group-hover/cal:visible opacity-0 group-hover/cal:opacity-100 transition-opacity duration-300 -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap">
-              Add to Google Calendar
-            </div>
-          </div>
-        </a>
-      </div>
-
-      <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
-        <div className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-br from-gray-500 to-gray-700 rounded-full opacity-20 group-hover:animate-pulse"></div>
-        <div className="absolute top-1/2 -left-2 w-4 h-4 bg-gradient-to-br from-pink-400 to-red-500 rounded-full opacity-20 group-hover:animate-bounce"></div>
-        <div className="absolute bottom-4 right-1/4 w-6 h-6 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full opacity-20 group-hover:animate-ping"></div>
-      </div>
-
-      {/* Header */}
-      <div className="flex items-center px-8 py-6 gap-4 bg-gradient-to-r from-white/80 to-indigo-50/60 dark:from-gray-900/80 dark:to-indigo-950/60 border-b border-gray-200/60 dark:border-gray-700/50 backdrop-blur-sm">
-        <div className="p-3 bg-gradient-to-br from-gray-100 to-white dark:from-gray-800 dark:to-gray-700 rounded-2xl shadow-inner">
-          {randomIcon}
-        </div>
-        <h3 className="text-gray-800 dark:text-gray-100 font-bold text-xl truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300">
-          {event.title}
-        </h3>
-        {/* ✅ Replaced inline badge with StatusBadge */}
-        <div className="ml-auto">
-          {event.status && <StatusBadge status={event.status} />}
-        </div>
+        </button>
       </div>
 
       {/* Image */}
-      <div className="relative h-64 card-content-overflow">
-        <img loading="lazy" src={event.image} alt={event.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent group-hover:from-black/50 transition-all duration-500"></div>
-      </div>
+      <div className="relative h-64 overflow-hidden">
+        <img
+          src={event.image}
+          alt={event.title}
+          loading="lazy"
+          className="
+            w-full
+            h-full
+            object-cover
+            transition-transform
+            duration-700
+            group-hover:scale-110
+          "
+        />
 
-      {/* Description */}
-      <div className="px-8 py-6 border-b border-gray-200/60 dark:border-gray-700/50 bg-gradient-to-r from-transparent to-indigo-50/30 dark:to-indigo-950/30">
-        <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors duration-300">
-          {event.description}
-        </p>
-      </div>
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
-      {/* Info */}
-      <div className="px-8 py-6 grid grid-cols-2 gap-6 text-gray-700 dark:text-gray-300 text-sm bg-gradient-to-br from-gray-50/50 to-indigo-50/30 dark:from-gray-800/50 dark:to-indigo-950/30">
-        <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all duration-300">
-          <div className="p-1.5 bg-pink-100 dark:bg-pink-900/30 rounded-lg"><MapPin size={16} className="text-pink-500" /></div>
-          <span className="truncate font-medium">{event.location}</span>
+        {/* Floating Status */}
+        <div className="absolute top-4 left-4">
+          {event.status && <StatusBadge status={event.status} />}
         </div>
-        <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all duration-300">
-          <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg"><Clock size={16} className="text-blue-500" /></div>
-          <span className="font-medium">{event.time}</span>
-        </div>
-        <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all duration-300">
-          <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg"><Tag size={16} className="text-green-500" /></div>
-          <span className="font-medium">{event.type}</span>
-        </div>
-        <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all duration-300">
-          <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg"><Calendar size={16} className="text-indigo-500" /></div>
-          <span className="font-medium">
-            {new Date(event.date).toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short" })}
+
+        {/* Event Type */}
+        <div className="absolute bottom-4 left-4 flex items-center gap-2">
+          <div className="p-2 rounded-xl bg-white/20 backdrop-blur-md border border-white/20">
+            {randomIcon}
+          </div>
+
+          <span className="text-white font-semibold text-sm backdrop-blur-md bg-white/10 px-3 py-1 rounded-full border border-white/20">
+            {event.type}
           </span>
         </div>
       </div>
 
-      {/* CTA */}
-      <div className="px-8 py-6 flex gap-4 bg-gradient-to-r from-gray-50/30 to-white/60 dark:from-gray-800/30 dark:to-gray-900/60">
-        <Link to={`/events/${event.id}/register`} className="group/btn flex-1">
-          <div
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800  hover:to-indigo-900 text-white px-6 py-3 text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden"
+      {/* Content */}
+      <div className="flex flex-col flex-grow p-6">
+        {/* Title */}
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white line-clamp-1 group-hover:text-indigo-500 transition">
+          {event.title}
+        </h3>
+
+        {/* Description */}
+        <p className="mt-3 text-sm leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-3 min-h-[72px]">
+          {event.description}
+        </p>
+
+        {/* Meta */}
+        <div className="grid grid-cols-2 gap-3 mt-6">
+          <div className="flex items-center gap-2 p-3 rounded-2xl bg-gray-100/70 dark:bg-gray-800/60">
+            <MapPin size={16} className="text-pink-500" />
+            <span className="text-sm truncate">
+              {event.location}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 p-3 rounded-2xl bg-gray-100/70 dark:bg-gray-800/60">
+            <Clock size={16} className="text-blue-500" />
+            <span className="text-sm">
+              {event.time}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 p-3 rounded-2xl bg-gray-100/70 dark:bg-gray-800/60">
+            <Tag size={16} className="text-green-500" />
+            <span className="text-sm truncate">
+              {event.type}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 p-3 rounded-2xl bg-gray-100/70 dark:bg-gray-800/60">
+            <Calendar size={16} className="text-indigo-500" />
+            <span className="text-sm">
+              {new Date(event.date).toLocaleDateString()}
+            </span>
+          </div>
+        </div>
+
+        {/* Buttons */}
+        <div className="mt-6 flex gap-3">
+          <Link
+            to={`/events/${event.id}/register`}
+            className="flex-1"
           >
-            {/* Shimmer effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-900 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700"></div>
-            <span className="relative">Register Now</span>
-          </div>
-        </Link>
-        <Link to={`/events/${event.id}`} className="group/btn flex-1">
-          <div className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-6 py-3 text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-300 w-full backdrop-blur-sm">
-            <span className="relative">View Details</span>
-          </div>
-        </Link>
+            <button
+              className="
+                w-full
+                py-3
+                rounded-2xl
+                font-semibold
+                text-white
+                bg-gradient-to-r
+                from-indigo-600
+                via-purple-600
+                to-pink-600
+                hover:opacity-90
+                shadow-lg
+                hover:shadow-xl
+                transition-all
+                duration-300
+              "
+            >
+              Register
+            </button>
+          </Link>
+
+          <Link
+            to={`/events/${event.id}`}
+            className="flex-1"
+          >
+            <button
+              className="
+                w-full
+                py-3
+                rounded-2xl
+                font-semibold
+                border
+                border-gray-300
+                dark:border-gray-700
+                bg-white/70
+                dark:bg-gray-800/70
+                backdrop-blur-md
+                hover:bg-gray-100
+                dark:hover:bg-gray-700
+                transition-all
+                duration-300
+              "
+            >
+              Details
+            </button>
+          </Link>
+        </div>
+
+        {/* Google Calendar */}
+        <a
+          href={addEventToGoogleCalendar(event)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="
+            mt-4
+            text-center
+            text-sm
+            text-indigo-500
+            hover:text-indigo-600
+            transition
+          "
+        >
+          + Add to Google Calendar
+        </a>
       </div>
     </div>
   );
