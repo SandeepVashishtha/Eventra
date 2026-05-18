@@ -98,12 +98,16 @@ const ApiDocs = () => {
           API Documentation
         </motion.h1>
         <p className="text-black dark:text-white max-w-2xl mx-auto text-lg">
-          Use our RESTful APIs to interact with{" "}
+          Explore mock REST API responses for{" "}
           <span className="text-black dark:text-white">Hackathons</span>,{" "}
           <span className="text-black dark:text-white">Projects</span>,{" "}
           <span className="text-black dark:text-white">Contributors</span>, and{" "}
           <span className="text-black dark:text-white">Leaderboards</span>{" "}
-          programmatically.
+          in this frontend demo.
+        </p>
+        <p className="mt-4 text-sm text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          These documented endpoints return sample JSON-style data in the demo app.
+          Connect a backend service before using them as production APIs.
         </p>
       </section>
 

@@ -27,6 +27,9 @@ const EventCard = ({ event }) => {
 
   const randomIcon = icons[Math.floor(Math.random() * icons.length)];
 
+  const eventDateTime = new Date(`${event.date} ${event.time}`);
+  const isPastEvent = eventDateTime < new Date();
+
   const eventSharingData = generateEventSharingData({
     ...event,
     title: event.title,
@@ -168,11 +171,17 @@ const EventCard = ({ event }) => {
 
       {/* CTA */}
       <div className="px-5 py-4 flex gap-3 mt-auto">
-        <Link to={`/events/${event.id}/register`} className="flex-1">
-          <div className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-900 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 text-white px-4 py-3 text-sm font-semibold shadow-lg transition-all duration-300 w-full hover:scale-[1.03] hover:shadow-xl">
-            Register Now
+        {isPastEvent ? (
+          <div className="flex-1 inline-flex items-center justify-center rounded-2xl bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-4 py-3 text-sm font-semibold shadow-md cursor-not-allowed">
+            Event Ended
           </div>
-        </Link>
+        ) : (
+          <Link to={`/events/${event.id}/register`} className="flex-1">
+            <div className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-900 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 text-white px-4 py-3 text-sm font-semibold shadow-lg transition-all duration-300 w-full hover:scale-[1.03] hover:shadow-xl">
+              Register Now
+            </div>
+          </Link>
+        )}
 
         <Link to={`/events/${event.id}`} className="flex-1">
           <div className="inline-flex items-center justify-center rounded-2xl bg-white/80 dark:bg-gray-800 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 px-4 py-3 text-sm font-semibold shadow-md hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-800 dark:hover:text-white hover:scale-[1.03] hover:shadow-lg transition-all duration-300 w-full">
