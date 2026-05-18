@@ -32,9 +32,11 @@ const Login = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  useEffect(() => {
-  if (isAuthenticated()) navigate('/dashboard', { replace: true });
-}, []); 
+useEffect(() => {
+  if (isAuthenticated()) {
+    navigate('/dashboard', { replace: true });
+  }
+}, [navigate]);
   
 
   const handleSubmit = async (e) => {
