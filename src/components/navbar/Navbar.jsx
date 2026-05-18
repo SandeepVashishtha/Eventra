@@ -31,45 +31,45 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
           {/* Logo */}
           <Link to="/">
-          <div className="flex items-center justify-center gap-2">
-          <img
-              src="/Eventra.png"
-              alt="Eventra Logo"
-              className="h-11 w-11 rounded-xl object-contain"
+            <div className="flex items-center justify-center gap-2">
+              <img
+                src="/Eventra.png"
+                alt="Eventra Logo"
+                className="h-8 w-8 rounded-xl object-contain"
               />
-            <h1 className="text-3xl font-bold text-text">
-              Eventra
-            </h1>
-              </div>
+              <h1 className="text-xl font-bold text-text">
+                Eventra
+              </h1>
+            </div>
           </Link>
 
           {/* Right Side */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
 
             {/* Desktop Navbar */}
-  <DesktopNavbar
-  isAuthenticated={isAuthenticated()}
-  user={user}
-  logout={logout}
-/>
+            <DesktopNavbar
+              isAuthenticated={isAuthenticated()}
+              user={user}
+              logout={logout}
+            />
             {/* Dark Mode Toggle */}
-          <button
-  onClick={toggleTheme}
-  className="w-10 h-10 flex items-center justify-center rounded-lg border border-border bg-card-bg text-text transition-all duration-300 hover:scale-105"
->
-  <img src={isDarkMode ? "/sun.svg" : "/moon.svg"} alt="" />
-</button>
+            <button
+              onClick={toggleTheme}
+              className="w-10 h-10 flex items-center justify-center rounded-lg border border-border bg-card-bg text-text transition-all duration-300 hover:scale-105"
+            >
+              <img src={isDarkMode ? "/sun.svg" : "/moon.svg"} alt="" />
+            </button>
             {/* Curson Toggle */}
             <CursorToggle
-          cursorEnabled={cursorEnabled}
-          toggleCursor={toggleCursor}
-        />
+              cursorEnabled={cursorEnabled}
+              toggleCursor={toggleCursor}
+            />
 
-  {/* Mobile Navbar */}
-  <MobileNavbar
-    isOpen={isMobileMenuOpen}
-    setIsOpen={setIsMobileMenuOpen}
-  />
+            {/* Mobile Navbar */}
+            <MobileNavbar
+              isOpen={isMobileMenuOpen}
+              setIsOpen={setIsMobileMenuOpen}
+            />
           </div>
 
           <MobileNavbar
