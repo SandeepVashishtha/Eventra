@@ -11,6 +11,7 @@ import mockProjects from "./mockProjectsData.json";
 
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 // Skeleton loader for project cards while data is loading
 const SkeletonCard = () => (
@@ -43,6 +44,7 @@ const SkeletonCard = () => (
 
 // Main ProjectGallery component
 const ProjectGallery = () => {
+  useDocumentTitle("Eventra | Projects")
   // State variables
   const [projects, setProjects] = useState([]); // Stores all fetched projects
   const [isLoading, setIsLoading] = useState(true); // Loading state
