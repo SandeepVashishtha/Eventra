@@ -1,17 +1,24 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
+import { ChevronDown } from "lucide-react";
 import { NAV_ITEMS } from "./constants/navItems";
-import { ChevronDown } from "lucide-react"; 
 
 const NavbarLinks = ({ vertical = false, onClick }) => {
   const location = useLocation();
 
   return (
-    <div className={`flex ${vertical ? "flex-col items-start w-full gap-4" : "items-center gap-5"}`}>
+    <div
+      className={`flex ${
+        vertical
+          ? "flex-col items-start w-full gap-4"
+          : "items-center justify-center gap-1 xl:gap-2 min-w-0"
+      }`}
+    >
       {NAV_ITEMS.map((item) => {
-
         const isCurrentPath = location.pathname === item.href;
-        const isSubItemActive = item.subItems?.some(sub => location.pathname === sub.href);
+        const isSubItemActive = item.subItems?.some(
+          (sub) => location.pathname === sub.href
+        );
         const active = isCurrentPath || isSubItemActive;
 
         const activeClasses = active
@@ -20,13 +27,20 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
 
         if (item.subItems) {
           return (
-            <div key={item.name} className="relative group/nav flex items-center gap-1.5 cursor-pointer py-2">
+            <div
+              key={item.name}
+              className={`relative group/nav flex items-center cursor-pointer ${
+                vertical ? "w-full" : "flex-none"
+              }`}
+            >
               <Link
                 to={item.href}
                 onClick={onClick}
-                className={`flex items-center gap-1.5 text-sm font-medium transition-colors whitespace-nowrap ${activeClasses}`}
+                className={`flex items-center gap-1.5 text-sm font-medium transition-colors whitespace-nowrap ${
+                  vertical ? "py-2" : "px-1 py-2 rounded-md"
+                } ${activeClasses}`}
               >
-                {item.icon} 
+                {item.icon}
                 <span>{item.name}</span>
               </Link>
               <button
@@ -44,13 +58,14 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                     <Link
                       key={sub.name}
                       to={sub.href}
+                      onClick={onClick}
                       className={`flex items-center gap-2 p-2 rounded-md text-sm font-medium transition-colors ${
                         subActive
                           ? "bg-gray-100 dark:bg-gray-700 text-black dark:text-white"
                           : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50"
                       }`}
                     >
-                      {sub.icon} 
+                      {sub.icon}
                       <span>{sub.name}</span>
                     </Link>
                   );
@@ -65,21 +80,21 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
             key={item.name}
             to={item.href || "#"}
             onClick={onClick}
-            className={`text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+            className={`flex items-center gap-1.5 text-sm font-medium transition-all duration-200 whitespace-nowrap ${
               vertical
-                ? `pl-3 border-l-2 w-full text-left py-1 ${
+                ? `pl-3 border-l-2 w-full text-left py-2 ${
                     active
                       ? "text-black dark:text-white border-black dark:border-white font-semibold"
                       : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent"
                   }`
-                : `pb-1 border-b-2 ${
+                : `px-1 py-2 rounded-md border-b-2 ${
                     active
                       ? "text-black dark:text-white border-black dark:border-white font-semibold"
                       : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent"
                   }`
             }`}
           >
-            {item.icon} 
+            {item.icon}
             <span>{item.name}</span>
           </Link>
         );

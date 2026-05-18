@@ -27,43 +27,30 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         ref={navRef}
         className="fixed top-0 left-0 w-full h-20 bg-white dark:bg-gray-900 border-b border-border z-50 transition-all duration-300"
       >
-        <div className="h-full px-6 flex items-center justify-between">
-
-          {/* Logo */}
-          <Link to="/">
-            <h1 className="text-3xl font-bold text-text">
-              Eventra
-            </h1>
+        <div className="h-full px-6 lg:px-8 flex items-center">
+          <Link to="/" className="w-44 flex-none" aria-label="Go to homepage">
+            <h1 className="text-3xl font-bold text-text">Eventra</h1>
           </Link>
 
-          {/* Right Side */}
-          <div className="flex items-center gap-4">
-
-            {/* Dark Mode Toggle */}
-          <button
-  onClick={toggleTheme}
-  className="w-10 h-10 flex items-center justify-center rounded-lg border border-border bg-card-bg text-text transition-all duration-300 hover:scale-105"
->
-  {isDarkMode ? "☀️" : "🌙"}
-</button>
-
-            {/* Desktop Navbar */}
-  <DesktopNavbar
-  isAuthenticated={isAuthenticated()}
-  user={user}
-  logout={logout}
-/>
-
-            {/* Mobile Navbar */}
-            <MobileNavbar
-              isOpen={isMobileMenuOpen}
-              setIsOpen={setIsMobileMenuOpen}
+          <div className="hidden lg:flex flex-1 items-center min-w-0">
+            <DesktopNavbar
+              isAuthenticated={isAuthenticated()}
+              user={user}
+              logout={logout}
+              isDarkMode={isDarkMode}
+              toggleTheme={toggleTheme}
+              cursorEnabled={cursorEnabled}
+              toggleCursor={toggleCursor}
             />
           </div>
+
+          <MobileNavbar
+            isOpen={isMobileMenuOpen}
+            setIsOpen={setIsMobileMenuOpen}
+          />
         </div>
       </nav>
 
-      {/* Navbar Spacer */}
       <div style={{ height: navHeight }} />
     </>
   );
