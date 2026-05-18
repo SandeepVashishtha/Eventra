@@ -125,17 +125,30 @@ const MobileNavLink = ({ item, isActive, onClick }) => (
 
 const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, location }) => (
   <div key={item.name}>
-    <button
-      onClick={onToggle}
+    <div
       className={`flex items-center justify-between w-full px-4 py-2.5 rounded-lg transition-colors text-left text-base font-medium ${
         isActive
           ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
           : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
       }`}
     >
-      <span className="flex items-center gap-3">{item.icon} {item.name}</span>
-      <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
-    </button>
+      <Link
+        to={item.href}
+        onClick={closeAllMenus}
+        className="flex flex-1 items-center gap-3"
+      >
+        {item.icon} {item.name}
+      </Link>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="rounded-md p-1 text-gray-500 transition-colors hover:bg-black/5 hover:text-black dark:text-gray-300 dark:hover:bg-white/10 dark:hover:text-white"
+        aria-expanded={isOpen}
+        aria-label={`Toggle ${item.name} menu`}
+      >
+        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+    </div>
     {isOpen && (
       <div className="mt-2 ml-3 pl-3 border-l-2 border-gray-200 dark:border-white/20 space-y-1">
         {item.subItems.map((sub) => (
@@ -171,16 +184,29 @@ const DesktopNavLink = ({ item, isActive }) => (
 );
 
 const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location }) => (
-  <div className="relative">
-    <button
-      onClick={onToggle}
-      className={`flex items-center gap-1 text-base font-medium transition-colors ${
+  <div className="relative flex items-center gap-1">
+    <Link
+      to={item.href}
+      onClick={() => setOpenDropdown(null)}
+      className={`text-base font-medium transition-colors ${
         isActive || isOpen
           ? "text-black dark:text-white"
           : "text-black/70 hover:text-black dark:text-white/70 dark:hover:text-white"
       }`}
     >
       {item.name}
+    </Link>
+    <button
+      type="button"
+      onClick={onToggle}
+      className={`rounded-md p-1 transition-colors ${
+        isActive || isOpen
+          ? "text-black dark:text-white"
+          : "text-black/70 hover:text-black dark:text-white/70 dark:hover:text-white"
+      }`}
+      aria-expanded={isOpen}
+      aria-label={`Toggle ${item.name} menu`}
+    >
       <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
     </button>
     {isOpen && (
@@ -343,6 +369,7 @@ const NAV_ITEMS = [
   { name: "Projects", href: "/projects", icon: <FolderKanban className="w-5 h-5" /> },
   {
     name: "Community",
+    href: "/communityEvent",
     icon: <Users className="w-5 h-5" />,
     subItems: [
       { name: "Leaderboard", href: "/leaderBoard", icon: <Trophy className="w-5 h-5" /> },
