@@ -1,0 +1,315 @@
+// import React from "react";
+// import { Link } from "react-router-dom";
+// import { motion, AnimatePresence } from "framer-motion";
+// import {
+//   User as UserIcon,
+//   LogOut,
+//   LayoutDashboard,
+//   } 
+// from "lucide-react";
+// import { UserCog } from "lucide-react";
+
+// const ProfileDropdown = ({
+//   user,
+//   isAuthenticated,
+//   showProfileDropdown,
+//   setShowProfileDropdown,
+//   location,
+//   primaryLine,
+//   secondaryLine,
+//   handleLogoutClick,
+// }) => {
+//   if (isAuthenticated()) {
+//     return (
+//       <div className="relative profile-container">
+//         <button
+//   onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+//   aria-expanded={showProfileDropdown}
+//   aria-haspopup="menu"
+//   aria-label="Open profile menu"
+//           className="flex items-center gap-2 text-sm font-medium text-black/90 dark:text-white/90 hover:text-black dark:hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+//         >
+//           {user?.profilePicture ? (
+//             <img loading="lazy"
+//               src={user.profilePicture}
+//               alt="Profile"
+//               className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20"
+//               onError={(e) => (e.currentTarget.style.display = "none")}
+//             />
+//           ) : (
+//             <div className="w-8 h-8 rounded-full dark:bg-white/20 bg-gray-300 flex items-center justify-center">
+//               <UserIcon className="w-4 h-4 text-gray-600 dark:text-white" />
+//             </div>
+//           )}
+//         </button>
+
+//         <AnimatePresence>
+//           {showProfileDropdown && (
+//             <motion.div
+//               initial={{ opacity: 0, y: 10, scale: 0.95 }}
+//               animate={{ opacity: 1, y: 0, scale: 1 }}
+//               exit={{ opacity: 0, y: 10, scale: 0.95 }}
+//               transition={{ duration: 0.15 }}
+//               className="absolute right-0 top-full mt-2 w-64 
+//                bg-white dark:bg-gray-900 
+//                rounded-lg shadow-2xl overflow-hidden 
+//                border border-gray-200 dark:border-gray-800"
+//             >
+//               {/* Profile header */}
+//               <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+//                 <div className="flex items-center gap-3">
+//                   {user?.profilePicture ? (
+//                     <img loading="lazy"
+//                       src={user.profilePicture}
+//                       alt="Profile"
+//                       className="w-12 h-12 rounded-full object-cover ring-2 ring-purple-500/20"
+//                       onError={(e) => (e.currentTarget.style.display = "none")}
+//                     />
+//                   ) : (
+//                     <div className="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-800 to-indigo-950 flex items-center justify-center">
+//                       <UserIcon className="w-6 h-6 text-white" />
+//                     </div>
+//                   )}
+//                   <div className="flex-1 min-w-0">
+//                     <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+//                       {primaryLine}
+//                     </p>
+//                     {secondaryLine && (
+//                       <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+//                         {secondaryLine}
+//                       </p>
+//                     )}
+//                   </div>
+//                 </div>
+//               </div>
+
+//               {/* Menu items */}
+//               <div className="p-2 bg-white dark:bg-gray-900">
+//                 <Link
+//                   to="/dashboard"
+//                   onClick={() => setShowProfileDropdown(false)}
+//                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+//                     location.pathname === "/dashboard"
+//                       ? "bg-black/5 dark:bg-white/10 text-black dark:text-white"
+//                       : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+//                   }`}
+//                 >
+//                   <LayoutDashboard className="w-4 h-4" />
+//                   Dashboard
+//                 </Link>
+
+//                 <Link
+//                   to="/profile"
+//                   onClick={() => setShowProfileDropdown(false)}
+//                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+//                     location.pathname === "/profile"
+//                       ? "bg-black/5 dark:bg-white/10 text-black dark:text-white"
+//                       : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+//                   }`}
+//                 >
+//                   <UserCog className="w-4 h-4" />
+//                   Edit Profile
+//                 </Link>
+//               </div>
+
+//               {/* Logout */}
+//               <div className="p-2 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+//                 <button
+//                   onClick={handleLogoutClick}
+//                   className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm
+//                    text-gray-700 dark:text-gray-300
+//                    hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+//                 >
+//                   <LogOut className="w-4 h-4" />
+//                   Logout
+//                 </button>
+//               </div>
+//             </motion.div>
+//           )}
+//         </AnimatePresence>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="flex items-center space-x-1">
+//       <Link
+//         to="/login"
+//         className="px-4 py-2 text-base font-medium text-black/75 hover:text-black dark:text-white/75 dark:hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+//       >
+//         Sign In
+//       </Link>
+//       <Link
+//         to="/signup"
+//         className="px-5 py-2 text-sm font-semibold text-white transition-all duration-300 bg-black hover:bg-zinc-800 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 dark:bg-white dark:text-black dark:hover:bg-zinc-200 focus:outline-none focus:ring-4 focus:ring-black/20 dark:focus:ring-white/20"
+//       >
+//         Get Started
+//       </Link>
+//     </div>
+//   );
+// };
+
+// export default ProfileDropdown;
+
+import React from "react";
+import { Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  User as UserIcon,
+  LogOut,
+  LayoutDashboard,
+} from "lucide-react";
+import { UserCog } from "lucide-react";
+
+const ProfileDropdown = ({
+  user,
+  isAuthenticated,
+  showProfileDropdown,
+  setShowProfileDropdown,
+  location,
+  primaryLine,
+  secondaryLine,
+  handleLogoutClick,
+}) => {
+  if (isAuthenticated()) {
+    return (
+      <div className="relative profile-container">
+        <button
+          onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+          aria-expanded={showProfileDropdown}
+          aria-haspopup="menu"
+          aria-label="Open profile menu"
+          className="flex items-center gap-2 text-sm font-medium text-black/90 dark:text-white/90 hover:text-black dark:hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md"
+        >
+          {user?.profilePicture ? (
+            <img
+              loading="lazy"
+              src={user.profilePicture}
+              alt="User profile"
+              className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20"
+              onError={(e) => (e.currentTarget.style.display = "none")}
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-full dark:bg-white/20 bg-gray-300 flex items-center justify-center">
+              <UserIcon className="w-4 h-4 text-gray-600 dark:text-white" />
+            </div>
+          )}
+        </button>
+
+        <AnimatePresence>
+          {showProfileDropdown && (
+            <motion.div
+              role="menu"
+              aria-label="Profile options"
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              transition={{ duration: 0.15 }}
+              className="absolute right-0 top-full mt-2 w-64 
+              bg-white dark:bg-gray-900 
+              rounded-lg shadow-2xl overflow-hidden 
+              border border-gray-200 dark:border-gray-800"
+            >
+              {/* Profile header */}
+              <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+                <div className="flex items-center gap-3">
+                  {user?.profilePicture ? (
+                    <img
+                      loading="lazy"
+                      src={user.profilePicture}
+                      alt="User profile"
+                      className="w-12 h-12 rounded-full object-cover ring-2 ring-purple-500/20"
+                      onError={(e) => (e.currentTarget.style.display = "none")}
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-800 to-indigo-950 flex items-center justify-center">
+                      <UserIcon className="w-6 h-6 text-white" />
+                    </div>
+                  )}
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                      {primaryLine}
+                    </p>
+
+                    {secondaryLine && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {secondaryLine}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Menu items */}
+              <div className="p-2 bg-white dark:bg-gray-900">
+                <Link
+                  role="menuitem"
+                  to="/dashboard"
+                  onClick={() => setShowProfileDropdown(false)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    location.pathname === "/dashboard"
+                      ? "bg-black/5 dark:bg-white/10 text-black dark:text-white"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  Dashboard
+                </Link>
+
+                <Link
+                  role="menuitem"
+                  to="/profile"
+                  onClick={() => setShowProfileDropdown(false)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    location.pathname === "/profile"
+                      ? "bg-black/5 dark:bg-white/10 text-black dark:text-white"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  <UserCog className="w-4 h-4" />
+                  Edit Profile
+                </Link>
+              </div>
+
+              {/* Logout */}
+              <div className="p-2 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+                <button
+                  onClick={handleLogoutClick}
+                  aria-label="Logout from account"
+                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm
+                  text-gray-700 dark:text-gray-300
+                  hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors
+                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center space-x-1">
+      <Link
+        to="/login"
+        className="px-4 py-2 text-base font-medium text-black/75 hover:text-black dark:text-white/75 dark:hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md"
+      >
+        Sign In
+      </Link>
+
+      <Link
+        to="/signup"
+        className="px-5 py-2 text-sm font-semibold text-white transition-all duration-300 bg-black hover:bg-zinc-800 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 dark:bg-white dark:text-black dark:hover:bg-zinc-200 focus:outline-none focus:ring-4 focus:ring-black/20 dark:focus:ring-white/20"
+      >
+        Get Started
+      </Link>
+    </div>
+  );
+};
+
+export default ProfileDropdown;

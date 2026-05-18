@@ -1,0 +1,206 @@
+/* ============================================================
+   ErrorBoundary.css
+   Styles for the GlobalErrorBoundary fallback UI.
+   Matches Eventra design tokens defined in index.css.
+   ============================================================ */
+
+/* Full-screen overlay — sits above everything */
+.eb-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background-color: var(--bg-color, #ffffff);
+  /* Subtle pastel grid inherited from the app's design language */
+  background-image:
+    linear-gradient(to right, rgba(147, 197, 253, 0.2) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(250, 204, 21, 0.2) 1px, transparent 1px);
+  background-size: 40px 40px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  z-index: 9999;
+}
+
+/* Central card */
+.eb-card {
+  background: var(--card-bg-color, #ffffff);
+  border: 1px solid var(--border-color, #e1e5e9);
+  border-radius: 20px;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 20px 60px -10px rgba(102, 126, 234, 0.15);
+  padding: 56px 48px;
+  max-width: 520px;
+  width: 100%;
+  text-align: center;
+  animation: eb-fade-up 0.4s ease both;
+}
+
+/* Entrance animation */
+@keyframes eb-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Icon wrapper */
+.eb-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.12), rgba(118, 75, 162, 0.12));
+  margin: 0 auto 24px;
+}
+
+.eb-icon {
+  width: 36px;
+  height: 36px;
+  color: #667eea;
+}
+
+/* Title */
+.eb-title {
+  font-size: var(--font-h3, 1.5rem);
+  font-weight: var(--fw-bold, 700);
+  line-height: var(--lh-heading, 1.2);
+  color: var(--text-color, #1a1a1a);
+  margin-bottom: 12px;
+}
+
+/* Body message */
+.eb-message {
+  font-size: var(--font-body, 1rem);
+  font-weight: var(--fw-regular, 400);
+  line-height: var(--lh-body, 1.65);
+  color: var(--text-color-light, #4a4a4a);
+  margin-bottom: 36px;
+}
+
+/* Action buttons row */
+.eb-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+
+/* Primary CTA — Refresh Page */
+.eb-btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  padding: 12px 28px;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: var(--font-body, 1rem);
+  font-weight: var(--fw-semibold, 600);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.eb-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.35);
+}
+
+.eb-btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Secondary CTA — Try Again (re-renders without full reload) */
+.eb-btn-secondary {
+  background: transparent;
+  color: var(--btn-secondary-text, #4a4a4a);
+  padding: 12px 28px;
+  border: 2px solid var(--border-color, #e1e5e9);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: var(--font-body, 1rem);
+  font-weight: var(--fw-semibold, 600);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.eb-btn-secondary:hover {
+  border-color: #667eea;
+  color: #667eea;
+  transform: translateY(-2px);
+}
+
+.eb-btn-secondary:active {
+  transform: translateY(0);
+}
+
+/* Collapsible dev-only error details */
+.eb-details {
+  margin-top: 4px;
+  text-align: left;
+}
+
+.eb-details-summary {
+  font-size: 0.8125rem;
+  font-weight: var(--fw-medium, 500);
+  color: var(--text-color-light, #4a4a4a);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+}
+
+.eb-details-summary::-webkit-details-marker { display: none; }
+
+.eb-stack {
+  margin-top: 12px;
+  padding: 16px;
+  background: var(--scrollbar-track-color, #f1f1f1);
+  border-radius: 8px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--text-color, #1a1a1a);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Dark mode overrides */
+.dark .eb-card {
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.3),
+    0 20px 60px -10px rgba(102, 126, 234, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .eb-card {
+    padding: 40px 24px;
+  }
+
+  .eb-title {
+    font-size: var(--font-h4, 1.25rem);
+  }
+
+  .eb-actions {
+    flex-direction: column;
+  }
+
+  .eb-btn-primary,
+  .eb-btn-secondary {
+    width: 100%;
+    text-align: center;
+  }
+}

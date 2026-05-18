@@ -1,5 +1,6 @@
 import React from 'react';
 import { Route } from 'react-router-dom';
+import PageLayout from '../Layout/PageLayout';
 
 // --------------- PAGES
 import HomePage from "../../Pages/Home/HomePage";
@@ -29,19 +30,21 @@ export const getPublicRoutes = () => [
   <Route key="/register" path="/events/:eventId/register" element={<EventRegistration />} />,
   <Route key="/hackathons" path="/hackathons" element={<HackathonPage />} />,
   <Route key="/projects" path="/projects" element={<ProjectsPage />} />,
-  <Route key="/contributors" path="/contributors" element={<Contributors />} />,
-  <Route key="/communityEvent" path="/communityEvent" element={<CommunityEvent />} />,
-  <Route key="/leaderBoard" path="/leaderBoard" element={<LeaderBoard />} />,
-  <Route key="/contributorguide" path="/contributorguide" element={<ContributorGuide />} />,
-  <Route key="/about" path="/about" element={<AboutPage />} />,
-  <Route key="/faq" path="/faq" element={<FAQPage />} />,
-  <Route key="/terms" path="/terms" element={<Terms />} />,
-  <Route key="/privacy" path="/privacy" element={<Privacy />} />,
-  <Route key="/apiDocs" path="/apiDocs" element={<ApiDocs />} />,
-  <Route key="/helpcenter" path="/helpcenter" element={<HelpCenter />} />,
-  <Route key="/contact" path="/contact" element={<ContactUs />} />,
-  <Route key="/feedback" path="/feedback" element={<FeedbackPage />} />,
-  <Route key="/analytics" path="/analytics" element={<EventAnalyticsDashboard />} />,
-  <Route key="/documentation" path="/documentation" element={<DocumentationPage />} />,
-  <Route key="/submit-project" path="/submit-project" element={<SubmitProject />} />,
+  <Route key="page-layout" element={<PageLayout />}>
+    <Route key="/contributors" path="/contributors" element={<Contributors />} />
+    <Route key="/communityEvent" path="/communityEvent" element={<CommunityEvent />} />
+    <Route key="/leaderBoard" path="/leaderBoard" element={<LeaderBoard />} />
+    <Route key="/contributorguide" path="/contributorguide" element={<ContributorGuide />} />
+    <Route key="/about" path="/about" element={<AboutPage />} />
+    <Route key="/faq" path="/faq" element={<FAQPage />} />
+    <Route key="/terms" path="/terms" element={<Terms />} />
+    <Route key="/privacy" path="/privacy" element={<Privacy />} />
+    <Route key="/apiDocs" path="/apiDocs" element={<ApiDocs />} />
+    <Route key="/helpcenter" path="/helpcenter" element={<HelpCenter />} />
+    <Route key="/contact" path="/contact" element={<ContactUs />} />
+    <Route key="/feedback" path="/feedback" element={<FeedbackPage />} />
+    <Route key="/analytics" path="/analytics" element={<EventAnalyticsDashboard />} />
+    <Route key="/documentation" path="/documentation" element={<DocumentationPage />} />
+    <Route key="/submit-project" path="/submit-project" element={<SubmitProject />} />
+  </Route>
 ];

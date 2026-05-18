@@ -12,8 +12,10 @@ import {
   Globe,
 } from "lucide-react";
 import FAQCTA from "./FaqCTA";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 const FAQPage = () => {
+  useDocumentTitle("Eventra | FAQ")
   const [openFAQ, setOpenFAQ] = useState(null);
   const controls = useAnimation();
 
@@ -100,8 +102,6 @@ const FAQPage = () => {
     },
   ];
 
-  const categories = [...new Set(faqData.map((faq) => faq.category))];
-
   const toggleFAQ = (id) => {
     setOpenFAQ(openFAQ === id ? null : id);
   };
@@ -131,27 +131,28 @@ const FAQPage = () => {
 
   useEffect(() => {
     controls.start("show");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Note: scroll-to-top on route change is handled globally by the
+    // ScrollToTop component — no need to call window.scrollTo() here.
   }, [controls]);
 
   return (
-    <div className="pastel-grid-bg relative flex flex-col min-h-screen overflow-hidden">
+    <div className="relative flex flex-col min-h-screen overflow-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
       {/* HERO */}
-      <section className="py-10 sm:py-12 relative overflow-hidden">
+      <section className="pt-28 pb-10 sm:pt-32 sm:pb-12 relative overflow-hidden">
         {/* HERO Content */}
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <motion.div variants={container} initial="hidden" animate={controls}>
             <motion.div variants={item}>
               <h1
-                className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-4"
+                className="text-4xl md:text-5xl lg:text-6xl font-bold text-black dark:text-white mb-4"
                 style={{ fontFamily: '"Anton", sans-serif' }}
               >
                 Frequently Asked{" "}
-                <span className="text-gray-900 dark:text-white">
+                <span className="text-black  dark:text-white">
                   Questions
                 </span>
               </h1>
-              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
+              <p className="text-xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
                 Everything you need to know about using Eventra, from getting
                 started to hosting your own events. Can't find what you're
                 looking for? Reach out to our community!
@@ -173,16 +174,16 @@ const FAQPage = () => {
             >
               <button
                 onClick={() => toggleFAQ(faq.id)}
-                className="w-full p-6 text-left flex items-center justify-between outline-none focus:outline-none focus:ring-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
+                className="w-full p-4 sm:p-6 text-left flex items-center justify-between outline-none focus:outline-none focus:ring-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
               >
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900 rounded-xl flex items-center justify-center">
+                <div className="flex items-start sm:items-center space-x-3 sm:space-x-4 pr-2">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-indigo-100 dark:bg-indigo-900 rounded-xl flex items-center justify-center flex-shrink-0">
                     <span className="text-black dark:text-white">
                       {faq.icon}
                     </span>
                   </div>
                   <div>
-                    <span className="text-xs font-medium text-black dark:text-white uppercase tracking-wide">
+                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                       {faq.category}
                     </span>
                     <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mt-1">
