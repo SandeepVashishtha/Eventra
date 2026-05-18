@@ -2,18 +2,13 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { MousePointer, Sun, Moon } from "lucide-react";
 import { useTheme } from "../../../context/ThemeContext";
-
 import ConfirmationModal from "../../common/ConfirmationModal";
-
 import useNavbarState from "./hooks/useNavbarState";
 import { navItems } from "./constants";
-
 import MobileNav from "./MobileNav";
 import MobileDrawer from "./MobileDrawer";
 import ProfileDropdown from "./ProfileDropdown";
-
 import { DesktopNavLinks } from "./NavLinks";
-
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const {
     isMobileMenuOpen,
@@ -47,20 +42,28 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   return (
     <>
       {/* Backdrop overlay */}
-      <div
-        className={`fixed inset-0 bg-black/60 z-30 transition-opacity duration-300 ${
-          isMobileMenuOpen ||
-          showProfileDropdown ||
-          openDropdown ||
-          showLogoutModal
-            ? "opacity-100"
-            : "opacity-0 pointer-events-none"
-        }`}
-        onClick={closeAllMenus}
-      />
-
+        <div
+  role="button"
+  tabIndex={0}
+  aria-label="Close navigation menu"
+  className={`fixed inset-0 bg-black/60 z-30 transition-opacity duration-300 ${
+    isMobileMenuOpen ||
+    showProfileDropdown ||
+    openDropdown ||
+    showLogoutModal
+      ? "opacity-100"
+      : "opacity-0 pointer-events-none"
+  }`}
+  onClick={closeAllMenus}
+  onKeyDown={(e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      closeAllMenus();
+    }
+  }}
+/>
       {/* Main navbar */}
       <nav
+      aria-label="Main Navigation"
         ref={navRef}
         data-aos="fade-down"
         data-aos-once="true"
@@ -70,7 +73,11 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       >
         <div className="w-full flex items-center h-20 px-6 md:px-12 relative">
           {/* Logo */}
-          <Link to="/" className="flex-shrink-0 z-20">
+          <Link
+  to="/"
+  className="flex-shrink-0 z-20"
+  aria-label="Go to homepage"
+>
             <h2
               className="text-3xl font-semibold tracking-tight text-black dark:text-white"
               style={{ fontFamily: '"Anton", sans-serif' }}
@@ -93,22 +100,29 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           <div className="hidden lg:flex items-center ml-auto z-20">
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-full text-gray-700 dark:text-white bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors mr-2"
+              className="p-2 rounded-full text-gray-700 dark:text-white bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors mr-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               aria-label={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
               title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              
             >
               {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
 
             {/* Cursor toggle */}
-            <button
-              onClick={toggleCursor}
+              <button
+  onClick={toggleCursor}
+  aria-pressed={cursorEnabled}
+  aria-label={
+    cursorEnabled
+      ? "Disable custom cursor"
+      : "Enable custom cursor"
+  }
               className="flex items-center gap-1 px-2 py-1 mr-3
               text-s font-normal
               bg-black text-white
               rounded-md
               hover:bg-zinc-800
-              transition-all"
+              transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               <MousePointer className="w-4 h-4" />
 

@@ -33,8 +33,8 @@ const Login = () => {
   };
 
   useEffect(() => {
-    if (isAuthenticated()) navigate('/dashboard', { replace: true });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  if (isAuthenticated()) navigate('/dashboard', { replace: true });
+}, []); 
   
 
   const handleSubmit = async (e) => {
