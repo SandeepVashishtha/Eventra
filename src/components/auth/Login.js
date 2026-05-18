@@ -33,9 +33,10 @@ const Login = () => {
   };
 
   useEffect(() => {
-  if (isAuthenticated()) navigate('/dashboard', { replace: true });
-}, []); // eslint-disable-line react-hooks/exhaustive-deps'/dashboard', { replace: true });
-  
+  if (isAuthenticated()) {
+    navigate('/dashboard', { replace: true });
+  }
+}, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -160,14 +161,20 @@ const Login = () => {
                   value={formData.usernameOrEmail}
                   onChange={handleChange}
                   required
-                  // disabled={loading}
+                  disabled={loading}
                   placeholder="Enter your email address or username"
                   className="w-full pl-3 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                 />
               </div>
               {error.usernameOrEmail && (
-                <p className="text-red-500 text-sm mt-1">{error.usernameOrEmail}</p>
-              )}
+  <motion.p
+    initial={{ opacity: 0, y: -5 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="text-red-500 text-sm mt-1"
+  >
+    {error.usernameOrEmail}
+  </motion.p>
+)}
             </div>
 
             {/* Password */}
@@ -226,8 +233,14 @@ const Login = () => {
               </div>
 
               {error.password && (
-                <p className="text-red-500 text-sm mt-1">{error.password}</p>
-              )}
+  <motion.p
+    initial={{ opacity: 0, y: -5 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="text-red-500 text-sm mt-1"
+  >
+    {error.password}
+  </motion.p>
+)}
               <div className="flex justify-end">
                 <Link
                   to="/password-reset"
@@ -240,10 +253,14 @@ const Login = () => {
 
             {/* Error message */}
             {error.general && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
-                {error.general}
-              </div>
-            )}
+  <motion.div
+    initial={{ opacity: 0, y: -5 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm"
+  >
+    {error.general}
+  </motion.div>
+)}
 
             {/* Sign in button */}
             <motion.button
@@ -253,7 +270,14 @@ const Login = () => {
               disabled={loading}
               className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
             >
-              {loading ? "Signing In..." : "Sign In"}
+              {loading ? (
+  <div className="flex items-center gap-2">
+    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+    Signing In...
+  </div>
+) : (
+  "Sign In"
+)}
           </motion.button>
 
             {/* Google Sign-In */}
