@@ -19,3 +19,14 @@ root.render(
     </GlobalErrorBoundary>
   </React.StrictMode>
 );
+import { NotificationProvider } from './context/NotificationContext';
+
+function App() {
+  return (
+    <AuthProvider>
+      <NotificationProvider>
+        {/* Your Routing and layout tree goes here */}
+      </NotificationProvider>
+    </AuthProvider>
+  );
+}
