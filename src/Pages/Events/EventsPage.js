@@ -13,7 +13,7 @@ import useDocumentTitle from "../../hooks/useDocumentTitle";
 const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
   if (isLoading) {
     return (
-      <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <EventCardSkeleton key={`skeleton-${i}`} />
         ))}
@@ -32,10 +32,10 @@ const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
     <div
       key={filterType + viewMode}
       className={`grid gap-6 ${
-        viewMode === "grid"
-          ? "grid-cols-1 md:grid-cols-3"
-          : "grid-cols-1 max-w-4xl mx-auto"
-      }`}
+  viewMode === "grid"
+    ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+    : "grid-cols-1 max-w-4xl mx-auto"
+}`}
     >
       {filteredEvents.map((event) => (
         <EventCard key={event.id} event={event} />
@@ -170,9 +170,9 @@ const EventsPage = () => {
           </div>
 
           {/* Sort Dropdown and View Toggle */}
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
             {/* Sort Dropdown */}
-            <div className="w-full sm:w-auto">
+            <div className="w-full sm:w-48">
               <label htmlFor="sort-events" className="sr-only">
                 Sort events
               </label>
