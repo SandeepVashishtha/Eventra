@@ -10,7 +10,7 @@ import FeedbackButton from "./components/FeedbackButton";
 import Chatbot from "./components/Chatbot";
 import FluidCursor from "./jhalak/FluidCursor";
 import AppRoutes from "./components/AppRoutes";
-import NewFooter from "./components/Layout/NewFooter";
+import Footer from "./components/Layout/NewFooter";
 
 // --------------- CONTEXT
 import { AuthProvider } from "./context/AuthContext";
@@ -77,7 +77,7 @@ function App() {
             <ScrollToTop />
             <Chatbot />
             <FeedbackButton />
-            <NewFooter />
+            <Footer />
 
             {/* KEEP CURSOR MOUNTED BUT TOGGLE VIA PROP */}
             <FluidCursor enabled={cursorEnabled} />
