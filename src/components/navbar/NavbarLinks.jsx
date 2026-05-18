@@ -18,15 +18,24 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           ? "text-black dark:text-white"
           : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white";
 
-        
         if (item.subItems) {
           return (
             <div key={item.name} className="relative group/nav flex items-center gap-1.5 cursor-pointer py-2">
-              <div className={`flex items-center gap-1.5 text-sm font-medium transition-colors whitespace-nowrap ${activeClasses}`}>
+              <Link
+                to={item.href}
+                onClick={onClick}
+                className={`flex items-center gap-1.5 text-sm font-medium transition-colors whitespace-nowrap ${activeClasses}`}
+              >
                 {item.icon} 
                 <span>{item.name}</span>
+              </Link>
+              <button
+                type="button"
+                className={`flex items-center justify-center rounded-md p-1 transition-colors ${activeClasses}`}
+                aria-label={`Toggle ${item.name} menu`}
+              >
                 <ChevronDown className="w-4 h-4 opacity-50 group-hover/nav:rotate-180 transition-transform" />
-              </div>
+              </button>
 
               <div className="absolute top-full left-0 hidden group-hover/nav:block bg-white dark:bg-gray-800 shadow-lg rounded-md p-2 min-w-[200px] z-50 border border-gray-100 dark:border-gray-700 mt-1 animate-in fade-in slide-in-from-top-1 duration-200">
                 {item.subItems.map((sub) => {

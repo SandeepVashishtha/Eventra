@@ -1,5 +1,5 @@
 import { BrowserRouter as Router } from "react-router-dom";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import "./App.css";
 
 // --------------- LAYOUT
@@ -14,10 +14,8 @@ import AppRoutes from "./components/AppRoutes";
 // --------------- CONTEXT & HOOKS
 import NotificationProvider from "./components/common/NotificationProvider";
 import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import { useModelContext } from "./hooks/useModelContext";
-import UserAchievements from './Pages/UserAchievements';
-
-// Inside your main routing switch declaration (<Routes> setup):
 
 function App() {
   const [cursorEnabled, setCursorEnabled] = useState(
@@ -44,11 +42,9 @@ function App() {
   }, []);
 
   return (
-    <>
     <ThemeProvider>
-    <AuthProvider>
-      <NotificationProvider />
-    
+      <AuthProvider>
+        <NotificationProvider />
         <Router>
           <div className="App">
             <Navbar
@@ -66,11 +62,10 @@ function App() {
             <Footer />
 
             <FluidCursor enabled={cursorEnabled} />
-            <NotificationProvider />
           </div>
         </Router>
       </AuthProvider>
-    </>
+    </ThemeProvider>
   );
 }
 
