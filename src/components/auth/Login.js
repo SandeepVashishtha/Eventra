@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import GoogleSignInButton from '../GoogleSignInButton';
-import { toast } from 'react-toastify';
+import { toast } from "react-toastify";
+import { showAuthToast } from "../../utils/toast";
 
 const Login = () => {
   const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
@@ -49,9 +50,10 @@ useEffect(() => {
     try {
       const ok = await login(formData.usernameOrEmail, formData.password);
       if (ok) {
-  toast.success('Login successful! Redirecting to dashboard...');
-  navigate('/dashboard', { replace: true });
-}
+        showAuthToast("Login successful! Redirecting to dashboard...", () =>
+          navigate("/dashboard", { replace: true })
+        );
+      }
     } catch (err) {
       console.error("Login error:", err);
       setError({ general: err.message || "Invalid email or password" });
