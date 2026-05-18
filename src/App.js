@@ -17,6 +17,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { useModelContext } from "./hooks/useModelContext";
 
+
 function App() {
   const [cursorEnabled, setCursorEnabled] = useState(
     localStorage.getItem("cursor") !== "off"
