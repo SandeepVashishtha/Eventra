@@ -14,12 +14,25 @@ import StyledDropdown from "../../components/StyledDropdown";
 const GITHUB_REPO = "SandeepVashishtha/Eventra";
 // Token read from env for higher rate limits (optional)
 const TOKEN = process.env.REACT_APP_GITHUB_TOKEN || "";
+const LEADERBOARD_CACHE_KEY = "leaderboardData:v2";
 
 // Points mapping for PR labels (keeps scoring logic centralized)
 const POINTS = {
-  "level-1": 3,
-  "level-2": 7,
-  "level-3": 10,
+  level1: 3,
+  level2: 7,
+  level3: 10,
+};
+const DEFAULT_MERGED_PR_POINTS = 1;
+
+const normalizeLabel = (label = "") => label.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+const calculatePrPoints = (labels) => {
+  const levelPoints = labels.reduce((total, label) => {
+    const normalized = normalizeLabel(label);
+    return total + (POINTS[normalized] || 0);
+  }, 0);
+
+  return levelPoints || DEFAULT_MERGED_PR_POINTS;
 };
 
 export default function LeaderBoard() {
@@ -50,7 +63,7 @@ export default function LeaderBoard() {
   // Load data from cache or network
   const loadLeaderboardData = async () => {
     setLoading(true);
-    const cachedData = localStorage.getItem("leaderboardData");
+    const cachedData = localStorage.getItem(LEADERBOARD_CACHE_KEY);
     const now = Date.now();
 
     // If cached data exists and is fresh (1 hour), use it to avoid rate limits
@@ -135,12 +148,7 @@ export default function LeaderBoard() {
           if (!hasGsocLabel) return;
 
           const author = pr.user.login;
-          let points = 0;
-          // Sum points for all matching labels on the PR
-          labels.forEach((label) => {
-            const normalized = label.replace(/\s+/g, "").toLowerCase();
-            if (POINTS[normalized]) points += POINTS[normalized];
-          });
+          const points = calculatePrPoints(labels);
 
           // Initialize contributor entry if needed
           if (!contributorsMap[author]) {
@@ -177,7 +185,7 @@ export default function LeaderBoard() {
       setContributors(sortedContributors);
       setLastUpdated(new Date().toLocaleString());
       localStorage.setItem(
-        "leaderboardData",
+        LEADERBOARD_CACHE_KEY,
         JSON.stringify({ data: sortedContributors, timestamp: Date.now() })
       );
     } catch (err) {
