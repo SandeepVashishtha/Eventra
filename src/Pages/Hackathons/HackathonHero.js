@@ -1,9 +1,9 @@
-import React, { useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkles, Users, Award, Code2, Calendar } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Award, Calendar, Code2, Sparkles, Users, X } from "lucide-react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
+import { useAuth } from "../../context/AuthContext";
 
 // Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
@@ -11,12 +11,12 @@ const Tag = ({ tag, onRemove }) => (
     initial={{ scale: 0.8, opacity: 0 }}
     animate={{ scale: 1, opacity: 1 }}
     exit={{ scale: 0.8, opacity: 0 }}
-    className="flex items-center gap-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm font-medium"
+    className="flex items-center gap-2 rounded-full border border-blue-200 bg-white px-3 py-1 text-sm font-medium text-slate-700 shadow-sm dark:border-blue-700 dark:bg-slate-800 dark:text-slate-100"
   >
     <span>{tag}</span>
     <button
       onClick={() => onRemove(tag)}
-      className="hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full p-0.5 transition-colors"
+      className="rounded-full p-0.5 transition-colors hover:bg-blue-100 dark:hover:bg-slate-700"
     >
       <X className="w-3 h-3" />
     </button>
@@ -90,10 +90,10 @@ export default function HackathonHero({
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
-          className="text-4xl sm:text-6xl font-extrabold leading-tight text-white"
+          className="text-4xl sm:text-6xl font-extrabold leading-tight text-black dark:text-white"
           style={{ fontFamily: '"Anton", sans-serif' }}
         >
-          Discover Amazing Hackathons
+          Discover <span className="text-indigo-600">Amazing Hackathons</span>
         </motion.h1>
 
         <motion.p
@@ -165,7 +165,7 @@ export default function HackathonHero({
           <motion.button
             whileHover={{ scale: 1.07 }}
             whileTap={{ scale: 0.95 }}
-            className="relative px-7 py-3.5 rounded-xl font-semibold text-black shadow-lg overflow-hidden group bg-blue-100 hover:bg-blue-200 transition-all duration-300"
+            className="relative px-7 py-3.5 rounded-xl font-semibold text-black dark:text-white shadow-lg overflow-hidden group bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 dark:hover:bg-blue-900/60 transition-all duration-300"
             onClick={scrollToCards}
           >
             <span className="relative flex items-center">
@@ -181,7 +181,7 @@ export default function HackathonHero({
               if (!user) navigate("/login");
               else navigate("/host-hackathon");
             }}
-            className="relative px-7 py-3.5 rounded-xl font-medium text-black shadow-md hover:shadow-lg bg-green-100 hover:bg-green-200 transition-all duration-300"
+            className="relative px-7 py-3.5 rounded-xl font-medium text-black dark:text-white shadow-md hover:shadow-lg bg-green-100 dark:bg-green-900/40 hover:bg-green-200 dark:hover:bg-green-900/60 transition-all duration-300"
           >
             <span className="relative flex items-center">
               <Users className="inline-block w-5 h-5 mr-2" />
@@ -219,7 +219,7 @@ export default function HackathonHero({
               transition={{ type: "spring", stiffness: 200, damping: 10 }}
               className="mb-4 flex items-center justify-center h-14 w-14 rounded-full bg-gradient-to-tr from-blue-200 to-sky-100 shadow-md"
             >
-              <stat.icon className="h-7 w-7 text-black" />
+              <stat.icon className="h-7 w-7 text-blue-700 dark:text-blue-300" />
             </motion.div>
 
             <p className="text-3xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight">

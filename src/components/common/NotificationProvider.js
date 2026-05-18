@@ -9,11 +9,14 @@ const NotificationProvider = () => {
       hideProgressBar={false}
       newestOnTop
       closeOnClick
+      closeButton
       rtl={false}
       pauseOnFocusLoss
       draggable
       pauseOnHover
       theme="colored"
+      limit={3}
+      style={{ zIndex: 10050 }}
     />
   );
 };

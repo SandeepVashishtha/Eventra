@@ -12,8 +12,10 @@ import {
   Globe,
 } from "lucide-react";
 import FAQCTA from "./FaqCTA";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 const FAQPage = () => {
+  useDocumentTitle("Eventra | FAQ")
   const [openFAQ, setOpenFAQ] = useState(null);
   const controls = useAnimation();
 

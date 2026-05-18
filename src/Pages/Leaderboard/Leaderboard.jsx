@@ -107,9 +107,17 @@ export default function LeaderBoard() {
           `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`,
           { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} }
         );
+
+        if (!res.ok) {
+          console.warn(`GitHub API request failed with status: ${res.status}`);
+          hasMore = false;
+          break;
+        }
+
         const prs = await res.json();
-        // If no PRs returned, stop paginating
-        if (prs.length === 0) {
+        
+        // Ensure standard array shape to avoid runtime TypeError crash
+        if (!Array.isArray(prs) || prs.length === 0) {
           hasMore = false;
           break;
         }
@@ -382,7 +390,7 @@ export default function LeaderBoard() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
-                              <img
+                              <img loading="lazy"
                                 className="h-10 w-10 rounded-full border-2 border-indigo-200 dark:border-gray-600"
                                 src={c.avatar}
                                 alt={c.username}

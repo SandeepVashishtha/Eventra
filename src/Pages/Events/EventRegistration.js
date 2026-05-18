@@ -222,7 +222,7 @@ const EventRegistration = () => {
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden">
           {/* Event Header */}
           <div className="relative h-64 overflow-hidden">
-            <img
+            <img loading="lazy"
               src={event.image}
               alt={event.title}
               className="w-full h-full object-cover"

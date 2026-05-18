@@ -1,5 +1,23 @@
+/**
+ * CHANGES MADE TO THIS FILE (Footer.js):
+ * 
+ * 1. FIXED UNDEFINED FUNCTION ERROR:
+ *    - Removed duplicate inline newsletter form that was causing "handleSubmit is not defined" error
+ *    - The form was in the main Footer component without state management
+ *    - Replaced with proper Newsletter component that has its own state and handleSubmit
+ * 
+ * 2. REMOVED DUPLICATE CODE:
+ *    - Removed duplicate email input, button, and form validation logic
+ *    - Removed duplicate social media icons section
+ *    - Both were already properly implemented in separate Newsletter and SocialLinksRender components
+ * 
+ * 3. RESULT:
+ *    - Footer now uses the Newsletter component with proper state management
+ *    - Footer now uses the SocialLinksRender component for social links
+ *    - No more undefined variable errors (email, setEmail, isSubmitting, handleSubmit)
+ */
+
 import { useState } from "react";
-import { SiX } from "react-icons/si";
 import {
   FaInfoCircle,
   FaInstagram,
@@ -10,10 +28,8 @@ import {
   FaEnvelope,
   FaBookOpen,
   FaPlus,
-  // FaClipboardList,  //can be reactivated later
   FaUsers,
   FaBook,
-  // FaServer,   //can be reactivated later
   FaHome,
   FaCalendarAlt,
   FaStar,
@@ -266,7 +282,7 @@ const Footer = () => {
             data-aos-delay="0"
           >
             <h2
-              className="text-2xl sm:text-3xl font-bold text-black"
+              className="text-2xl sm:text-3xl font-bold text-black dark:text-white"
               style={{ fontFamily: "Anton, sans-serif" }}
             >
               Eventra
@@ -275,7 +291,7 @@ const Footer = () => {
               Open-source event management for communities worldwide.
             </p>
 
-            {/* Newsletter Component - This is the ONLY newsletter form */}
+            {/* Newsletter Component */}
             <Newsletter />
             
             {/* Social Links */}
