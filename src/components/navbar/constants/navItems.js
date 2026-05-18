@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Home,
   Calendar,
@@ -8,13 +7,21 @@ import {
   Trophy,
   Info,
   MessageSquare,
-  Book,
   HelpCircle,
+  Book,
 } from "lucide-react";
 
-export const navItems = [
-  { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
-  { name: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
+export const NAV_ITEMS = [
+  {
+    name: "Home",
+    href: "/",
+    icon: <Home className="w-5 h-5" />,
+  },
+  {
+    name: "Events",
+    href: "/events",
+    icon: <Calendar className="w-5 h-5" />,
+  },
   {
     name: "Hackathons",
     href: "/hackathons",
@@ -27,8 +34,14 @@ export const navItems = [
   },
   {
     name: "Community",
+    href: "/communityEvent",
     icon: <Users className="w-5 h-5" />,
     subItems: [
+      {
+        name: "Community Events",
+        href: "/communityEvent",
+        icon: <Users className="w-5 h-5" />,
+      },
       {
         name: "Leaderboard",
         href: "/leaderBoard",
@@ -44,15 +57,18 @@ export const navItems = [
         href: "/contributorguide",
         icon: <Book className="w-5 h-5" />,
       },
-      {
-        name: "Community Events",
-        href: "/communityEvent",
-        icon: <Users className="w-5 h-5" />,
-      },
     ],
   },
-  { name: "About", href: "/about", icon: <Info className="w-5 h-5" /> },
-  { name: "FAQ", href: "/faq", icon: <HelpCircle className="w-5 h-5" /> },
+  {
+    name: "About",
+    href: "/about",
+    icon: <Info className="w-5 h-5" />,
+  },
+  {
+    name: "FAQ",
+    href: "/faq",
+    icon: <HelpCircle className="w-5 h-5" />,
+  },
   {
     name: "Contact",
     href: "/contact",

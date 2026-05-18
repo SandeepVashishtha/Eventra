@@ -38,7 +38,7 @@
   position: sticky;
   top: 0;
   flex-shrink: 0;
-  overflow-y: auto;
+  overflow: hidden;   /* ← changed */
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -70,6 +70,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--ud-space-xxs);
+  overflow-y: auto;   /* ← add this line */
+  min-height: 0;      /* ← add this line (required for flex scroll to work) */
 }
 
 .ud-nav-item {
@@ -1059,4 +1061,18 @@
 @media (max-width: 480px) {
   .ud-stats-grid { grid-template-columns: 1fr; }
   .ud-quick-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── Large screen fix (Issue #891) ── */
+@media (min-width: 1400px) {
+  .ud-content { max-width: 1400px; padding-left: 2.5rem; padding-right: 2.5rem; }
+  .ud-stats-grid { grid-template-columns: repeat(4, 1fr); }
+  .ud-quick-grid { grid-template-columns: repeat(6, 1fr); }
+  .ud-three-col  { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 1400px) and (min-width: 1100px) {
+  .ud-stats-grid { grid-template-columns: repeat(4, 1fr); }
+  .ud-quick-grid { grid-template-columns: repeat(4, 1fr); }
+  .ud-three-col  { grid-template-columns: repeat(3, 1fr); }
 }

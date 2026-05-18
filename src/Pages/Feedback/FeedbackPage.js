@@ -19,6 +19,7 @@ import {
   FaRegComment,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 // Star Rating Component
 const StarRating = ({ rating, onRatingChange, error }) => {
@@ -328,6 +329,7 @@ const CustomFloatingSelect = ({
 
 // Feedback Page Component
 const FeedbackPage = () => {
+  useDocumentTitle("Eventra | Feedback")
   const [formData, setFormData] = useState({
     name: "",
     email: "",

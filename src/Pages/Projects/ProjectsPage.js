@@ -11,6 +11,7 @@ import mockProjects from "./mockProjectsData.json";
 
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 // Skeleton loader for project cards while data is loading
 const SkeletonCard = () => (
@@ -43,12 +44,14 @@ const SkeletonCard = () => (
 
 // Main ProjectGallery component
 const ProjectGallery = () => {
+  useDocumentTitle("Eventra | Projects")
+  const initialSearchQuery = new URLSearchParams(window.location.search).get("search") || "";
   // State variables
   const [projects, setProjects] = useState([]); // Stores all fetched projects
   const [isLoading, setIsLoading] = useState(true); // Loading state
   const [filterCategory, setFilterCategory] = useState("all"); // Current category filter
   const [sortBy, setSortBy] = useState("recent"); // Sorting option
-  const [searchQuery, setSearchQuery] = useState(""); // Search input
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery); // Search input
   const [categories, setCategories] = useState(["all"]); // Categories available
   const [error, setError] = useState(""); // Error message
   const [categoryOpen, setCategoryOpen] = useState(false); // Category dropdown state
@@ -110,6 +113,14 @@ const ProjectGallery = () => {
     fetchProjects(); // Trigger data fetch
   }, []);
 
+  useEffect(() => {
+    if (!isLoading && initialSearchQuery) {
+      setTimeout(() => {
+        cardSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
+  }, [isLoading, initialSearchQuery]);
+
   // Filter, search, and sort projects dynamically
   const filteredAndSortedProjects = projects
     .filter((project) => {
@@ -150,7 +161,7 @@ const ProjectGallery = () => {
     });
 
   const scrollToCard = () => {
-    cardSectionRef.current?.scrollIntoView({ behaviour: 'smooth' })
+    cardSectionRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
   return (

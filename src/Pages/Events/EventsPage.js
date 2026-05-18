@@ -8,11 +8,12 @@ import EventCTA from "./EventCTA";
 import Fuse from "fuse.js";
 import StyledDropdown from "../../components/StyledDropdown";
 import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
   if (isLoading) {
     return (
-      <div className="grid gap-8 grid-cols-1 sm:grid-cols-1 lg:grid-cols-3">
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <EventCardSkeleton key={`skeleton-${i}`} />
         ))}
@@ -30,9 +31,9 @@ const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
   return (
     <div
       key={filterType + viewMode}
-      className={`grid gap-8 ${
+      className={`grid gap-6 ${
         viewMode === "grid"
-          ? "grid-cols-1 sm:grid-cols-1 lg:grid-cols-3"
+          ? "grid-cols-1 md:grid-cols-3"
           : "grid-cols-1 max-w-4xl mx-auto"
       }`}
     >
@@ -44,10 +45,12 @@ const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
 };
 
 const EventsPage = () => {
+  useDocumentTitle("Eventra | Events")
+  const initialSearchQuery = new URLSearchParams(window.location.search).get("search") || "";
   const [events, setEvents] = useState([]);
   const [filterType, setFilterType] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [sortType, setSortType] = useState("Newest");
   const [isLoading, setIsLoading] = useState(true);
@@ -91,12 +94,20 @@ const EventsPage = () => {
     handleSearch(searchQuery);
   }, [events, filterType]);
 
+  useEffect(() => {
+    if (!isLoading && initialSearchQuery) {
+      setTimeout(() => {
+        cardSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
+  }, [isLoading, initialSearchQuery]);
+
   const handleSortChange = (type) => {
     setSortType(type);
     let sorted = [...filteredEvents];
     if (type === "Newest") {
       sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
-    } else if (type === "upcoming") {
+    } else if (type === "Upcoming" || type === "upcoming") {
       sorted.sort((a, b) => new Date(a.date) - new Date(b.date));
     }
     setFilteredEvents(sorted);
@@ -108,7 +119,7 @@ const EventsPage = () => {
   }, [filterType, searchQuery]);
 
   const scrollToCard = () => {
-    cardSectionRef.current?.scrollIntoView({ behaviour: "smooth" });
+    cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
@@ -123,10 +134,10 @@ const EventsPage = () => {
 
       <div
         ref={cardSectionRef}
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12"
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
       >
         <div
-          className="mb-8 sm:mb-10 flex flex-col gap-4"
+          className="mb-5 sm:mb-6 flex flex-col gap-3"
         >
           <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center sm:justify-start">
             {[
@@ -141,7 +152,7 @@ const EventsPage = () => {
                 onClick={() => setFilterType(filter.key)}
                 className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-full transition ${
                   filterType === filter.key
-                    ? "bg-black text-white"
+                    ? "bg-black text-white dark:bg-white dark:text-black"
                     : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-700"
                 }`}
                 aria-pressed={filterType === filter.key}
@@ -174,7 +185,7 @@ const EventsPage = () => {
                 onClick={() => setViewMode("grid")}
                 className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
                   viewMode === "grid"
-                    ? "bg-black text-white shadow-md"
+                    ? "bg-black text-white shadow-md dark:bg-white dark:text-black"
                     : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                 }`}
                 aria-label="Grid view"
@@ -186,7 +197,7 @@ const EventsPage = () => {
                 onClick={() => setViewMode("list")}
                 className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
                   viewMode === "list"
-                    ? "bg-black text-white shadow-md"
+                    ? "bg-black text-white shadow-md dark:bg-white dark:text-black"
                     : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                 }`}
                 aria-label="List view"
