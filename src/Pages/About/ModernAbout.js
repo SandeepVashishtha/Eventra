@@ -48,7 +48,6 @@ const staggerItem = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 },
 };
-
 const stats = [
   { value: "100+", label: "Events Managed" },
   { value: "500+", label: "Active Users" },
