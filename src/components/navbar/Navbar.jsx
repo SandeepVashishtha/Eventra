@@ -71,11 +71,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
     setIsOpen={setIsMobileMenuOpen}
   />
           </div>
-
-          <MobileNavbar
-            isOpen={isMobileMenuOpen}
-            setIsOpen={setIsMobileMenuOpen}
-          />
         </div>
       </nav>
 
