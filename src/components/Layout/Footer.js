@@ -98,38 +98,7 @@ const socialLinks = [
     ),
   },
 
-  {
-    name: "Discord",
-    href: "https://www.discord.com/",
-    icon: (
-      <FaDiscord
-        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
-        size={20}
-      />
-    ),
-  },
-
-  {
-    name: "Telegram",
-    href: "https://www.telegram.com/",
-    icon: (
-      <FaTelegram
-        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
-        size={20}
-      />
-    ),
-  },
-
-  {
-    name: "Instagram",
-    href: "https://www.instagram.com/",
-    icon: (
-      <FaInstagram
-        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
-        size={20}
-      />
-    ),
-  },
+ 
 ];
 
 const Newsletter = () => {
@@ -309,7 +278,7 @@ const Footer = () => {
 
   return (
     <>
-      <footer 
+      <footer
         className="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
         data-aos="fade-up"
         data-aos-duration="1000"
@@ -317,36 +286,45 @@ const Footer = () => {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-            <div 
+
+            {/* Left Section */}
+            <div
               className="space-y-4 lg:col-span-2"
               data-aos="fade-up"
               data-aos-delay="0"
             >
               <h2
-                className="text-2xl sm:text-3xl font-bold text-black"
+                className="text-2xl sm:text-3xl font-bold text-black dark:text-white"
                 style={{ fontFamily: "Anton, sans-serif" }}
               >
                 Eventra
               </h2>
+
               <p className="text-gray-600 dark:text-gray-400 text-sm">
                 Open-source event management for communities worldwide.
               </p>
 
-              {/* Newsletter Subscription Form */}
+              {/* Newsletter */}
               <Newsletter />
 
-              {/* Social Media Icons - Below Newsletter */}
+              {/* Social Links */}
               <SocialLinksRender />
             </div>
+
+            {/* Footer Links */}
             <FooterLinksRender />
+
           </div>
+
+          {/* Bottom Footer */}
           <FooterBottom />
         </div>
       </footer>
-
     </>
   );
 };
+
+
 
 export default Footer;
 
