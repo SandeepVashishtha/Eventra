@@ -840,7 +840,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                 </div>
               ) : (
               <AuthButtons isMobile={false} />
-              )}
+              )
             </div>
           </div>
 
