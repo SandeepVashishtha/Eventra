@@ -3,11 +3,11 @@ import { Link, useLocation } from "react-router-dom";
 import { NAV_ITEMS } from "./constants/navItems";
 import { ChevronDown } from "lucide-react"; 
 
-const NavbarLinks = () => {
+const NavbarLinks = ({ vertical = false, onClick }) => {
   const location = useLocation();
 
   return (
-    <div className="flex flex-wrap justify-center gap-4 w-full">
+    <div className={`flex ${vertical ? "flex-col items-start w-full gap-4" : "items-center gap-5"}`}>
       {NAV_ITEMS.map((item) => {
 
         const isCurrentPath = location.pathname === item.href;
@@ -55,10 +55,19 @@ const NavbarLinks = () => {
           <Link
             key={item.name}
             to={item.href || "#"}
-            className={`text-sm font-medium transition-colors whitespace-nowrap py-3 px-2 min-h-[44px] flex items-center justify-center ${
-              active
-                ? "text-black dark:text-white"
-                : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white"
+            onClick={onClick}
+            className={`text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+              vertical
+                ? `pl-3 border-l-2 w-full text-left py-1 ${
+                    active
+                      ? "text-black dark:text-white border-black dark:border-white font-semibold"
+                      : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent"
+                  }`
+                : `pb-1 border-b-2 ${
+                    active
+                      ? "text-black dark:text-white border-black dark:border-white font-semibold"
+                      : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent"
+                  }`
             }`}
           >
             {item.icon} 
