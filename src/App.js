@@ -14,6 +14,7 @@ import AppRoutes from "./components/AppRoutes";
 // --------------- CONTEXT & HOOKS
 import NotificationProvider from "./components/common/NotificationProvider";
 import { AuthProvider } from "./context/AuthContext";
+import { MyEventsProvider } from "./context/MyEventsContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { useModelContext } from "./hooks/useModelContext";
 
@@ -45,6 +46,7 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
+        <MyEventsProvider>
         <NotificationProvider />
         <Router>
           <div className="App">
@@ -65,6 +67,7 @@ function App() {
             <FluidCursor enabled={cursorEnabled} />
           </div>
         </Router>
+        </MyEventsProvider>
       </AuthProvider>
     </ThemeProvider>
   );
