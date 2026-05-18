@@ -98,38 +98,7 @@ const socialLinks = [
     ),
   },
 
-  {
-    name: "Discord",
-    href: "https://www.discord.com/",
-    icon: (
-      <FaDiscord
-        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
-        size={20}
-      />
-    ),
-  },
-
-  {
-    name: "Telegram",
-    href: "https://www.telegram.com/",
-    icon: (
-      <FaTelegram
-        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
-        size={20}
-      />
-    ),
-  },
-
-  {
-    name: "Instagram",
-    href: "https://www.instagram.com/",
-    icon: (
-      <FaInstagram
-        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
-        size={20}
-      />
-    ),
-  },
+ 
 ];
 
 const Newsletter = () => {
