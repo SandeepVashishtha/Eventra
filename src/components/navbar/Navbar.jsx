@@ -5,7 +5,7 @@ import { useTheme } from "../../context/ThemeContext";
 
 import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
-
+import CursorToggle from "./CursorToggle";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useNavbarHeight from "./hooks/useNavbarHeight";
 
@@ -31,21 +31,20 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
           {/* Logo */}
           <Link to="/">
+          <div className="flex items-center justify-center gap-2">
+          <img
+              src="/Eventra.png"
+              alt="Eventra Logo"
+              className="h-11 w-11 rounded-xl object-contain"
+              />
             <h1 className="text-3xl font-bold text-text">
               Eventra
             </h1>
+              </div>
           </Link>
 
           {/* Right Side */}
           <div className="flex items-center gap-4">
-
-            {/* Dark Mode Toggle */}
-          <button
-  onClick={toggleTheme}
-  className="w-10 h-10 flex items-center justify-center rounded-lg border border-border bg-card-bg text-text transition-all duration-300 hover:scale-105"
->
-  {isDarkMode ? "☀️" : "🌙"}
-</button>
 
             {/* Desktop Navbar */}
   <DesktopNavbar
@@ -53,12 +52,24 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   user={user}
   logout={logout}
 />
+            {/* Dark Mode Toggle */}
+          <button
+  onClick={toggleTheme}
+  className="w-10 h-10 flex items-center justify-center rounded-lg border border-border bg-card-bg text-text transition-all duration-300 hover:scale-105"
+>
+  <img src={isDarkMode ? "/sun.svg" : "/moon.svg"} alt="" />
+</button>
+            {/* Curson Toggle */}
+            <CursorToggle
+          cursorEnabled={cursorEnabled}
+          toggleCursor={toggleCursor}
+        />
 
-            {/* Mobile Navbar */}
-            <MobileNavbar
-              isOpen={isMobileMenuOpen}
-              setIsOpen={setIsMobileMenuOpen}
-            />
+  {/* Mobile Navbar */}
+  <MobileNavbar
+    isOpen={isMobileMenuOpen}
+    setIsOpen={setIsMobileMenuOpen}
+  />
           </div>
         </div>
       </nav>
