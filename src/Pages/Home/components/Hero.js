@@ -1,17 +1,19 @@
-import { AnimatePresence, motion, MotionConfig, useAnimation } from "framer-motion";
-import Fuse from "fuse.js";
-import { Calendar, Code, ExternalLink, Search, Trophy } from "lucide-react";
+import { motion, useAnimation, AnimatePresence, MotionConfig } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import Fuse from "fuse.js";
+import { Search, X, Calendar, Trophy, Code, ExternalLink } from "lucide-react";
 
 // Import mock data
-import ModernSearchInput from "../../../components/common/ModernSearchInput";
-import RespawningText from "../../../jhalak/RespawningText";
 import eventsData from "../../Events/eventsMockData.json";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
+import RespawningText from "../../../jhalak/RespawningText";
+import ModernSearchInput from "../../../components/common/ModernSearchInput";
+import useDocumentTitle from "../../../hooks/useDocumentTitle";
 
 const Hero = () => {
+  useDocumentTitle("Eventra | Home")
   const navigate = useNavigate();
   const phrases = [
     "Amazing Tech Events",
@@ -173,8 +175,8 @@ const Hero = () => {
             height: `${shape.size}px`,
             ...shape.pos,
             backgroundColor: shape.color,
-            opacity: 0.5, // Increased from 0.2 for better visibility
-            filter: "blur(2px)", // Added a slight blur for a premium look
+            opacity: 0.5,
+            filter: "blur(2px)",
           }}
         />
       ))}
@@ -194,7 +196,7 @@ const Hero = () => {
           <MotionConfig reducedMotion="never">
             {/* Headline */}
             <motion.h1
-              className="mx-auto max-w-[92vw] text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 sm:mb-6 leading-[0.95] sm:leading-tight text-text break-words px-2 sm:px-0"
+              className="mx-auto max-w-[92vw] text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 sm:mb-6 leading-[0.95] sm:leading-tight text-black dark:text-white break-words px-2 sm:px-0"
               style={{ fontFamily: '"Anton", sans-serif' }}
             >
               <motion.span
@@ -210,7 +212,7 @@ const Hero = () => {
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={index}
-                    className="block mt-2 text-black dark:text-white mb-4 pb-2 whitespace-normal text-center px-1 text-black dark:text-white"
+                    className="block mt-2 text-black dark:text-white mb-4 pb-2 whitespace-normal text-center px-1"
                     initial={{ opacity: 0, y: 40 }}
                     animate={{
                       opacity: 1,
@@ -233,14 +235,14 @@ const Hero = () => {
           {/* Subtext */}
           <motion.p
             variants={fadeUp}
-            className="text-sm sm:text-base md:text-lg text-black dark:text-gray-300 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0 text-black dark:text-white"
+            className="text-sm sm:text-base md:text-lg text-black dark:text-gray-300 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
           >
             Connect with developers, learn new skills, and grow your network at
             the best tech events, hackathons, and workshops in your area.
           </motion.p>
 
-          {/* Global Search Bar */}
-          <div className="w-full max-w-2xl mx-auto mb-10 sm:mb-12 text-black dark:text-white">
+          {/* Global Search Bar — below heading & subtitle for breathing room */}
+          <div className="w-full max-w-2xl mx-auto mb-8 sm:mb-10">
             <ModernSearchInput
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
@@ -318,11 +320,11 @@ const Hero = () => {
                           transition={{ duration: 0.25, ease: "easeOut" }}
                           className="text-center text-gray-500 py-10 text-base"
                         >
-                          No results match “
+                          No results match "
                           <span className="font-medium text-gray-700">
                             {searchQuery}
                           </span>
-                          ”
+                          "
                         </motion.div>
                       )}
                     </div>
@@ -360,7 +362,7 @@ const Hero = () => {
               </Link>
             </motion.div>
 
-            {/* Secondary Button - Join Hackathons - FIXED */}
+            {/* Secondary Button - Join Hackathons */}
             <motion.div variants={fadeUp}>
               <Link
                 to="/hackathons"
@@ -370,7 +372,7 @@ const Hero = () => {
               </Link>
             </motion.div>
 
-            {/* Optional Tertiary Button - Learn More */}
+            {/* Tertiary Button - Learn More */}
             <motion.div variants={fadeUp}>
               <Link
                 to="/about"
@@ -393,31 +395,29 @@ const Hero = () => {
           </motion.div>
 
           {/* Animated Stats Cards */}
-          {/* Animated Stats Cards */}
-{!searchQuery.trim() && (
-  <motion.div
-    variants={fadeUp}
-    className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
-  >
-    {stats.map((stat, i) => (
-      <motion.div
-        key={i}
-        variants={fadeUp}
-        whileHover={{ scale: 1.05 }}
-        transition={{ type: "spring", stiffness: 300 }}
-        className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-lg border border-gray-100 dark:border-gray-700"
-      >
-        <p className="text-3xl font-bold mb-2 text-black dark:text-white">
-          {stat.value}
-        </p>
-        <p className="text-black dark:text-gray-300 text-sm">
-          {stat.label}
-        </p>
-      </motion.div>
-    ))}
-  </motion.div>
-)}
-          
+          {!searchQuery.trim() && (
+            <motion.div
+              variants={fadeUp}
+              className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
+            >
+              {stats.map((stat, i) => (
+                <motion.div
+                  key={i}
+                  variants={fadeUp}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-lg border border-gray-100 dark:border-gray-700"
+                >
+                  <p className="text-3xl font-bold mb-2 text-black dark:text-white">
+                    {stat.value}
+                  </p>
+                  <p className="text-black dark:text-gray-300 text-sm">
+                    {stat.label}
+                  </p>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
         </motion.div>
       </div>
     </section>

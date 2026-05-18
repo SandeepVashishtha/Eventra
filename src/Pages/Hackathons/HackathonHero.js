@@ -90,10 +90,10 @@ export default function HackathonHero({
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
-          className="text-4xl sm:text-6xl font-extrabold leading-tight text-text"
+          className="text-4xl sm:text-6xl font-extrabold leading-tight text-black dark:text-white"
           style={{ fontFamily: '"Anton", sans-serif' }}
         >
-          Discover Amazing Hackathons
+          Discover <span className="text-indigo-600">Amazing Hackathons</span>
         </motion.h1>
 
         <motion.p
@@ -165,7 +165,7 @@ export default function HackathonHero({
           <motion.button
             whileHover={{ scale: 1.07 }}
             whileTap={{ scale: 0.95 }}
-            className="relative px-7 py-3.5 rounded-xl font-semibold text-black shadow-lg overflow-hidden group bg-blue-100 hover:bg-blue-200 transition-all duration-300"
+            className="relative px-7 py-3.5 rounded-xl font-semibold text-black dark:text-white shadow-lg overflow-hidden group bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 dark:hover:bg-blue-900/60 transition-all duration-300"
             onClick={scrollToCards}
           >
             <span className="relative flex items-center">
@@ -181,7 +181,7 @@ export default function HackathonHero({
               if (!user) navigate("/login");
               else navigate("/host-hackathon");
             }}
-            className="relative px-7 py-3.5 rounded-xl font-medium text-black shadow-md hover:shadow-lg bg-green-100 hover:bg-green-200 transition-all duration-300"
+            className="relative px-7 py-3.5 rounded-xl font-medium text-black dark:text-white shadow-md hover:shadow-lg bg-green-100 dark:bg-green-900/40 hover:bg-green-200 dark:hover:bg-green-900/60 transition-all duration-300"
           >
             <span className="relative flex items-center">
               <Users className="inline-block w-5 h-5 mr-2" />
@@ -219,7 +219,7 @@ export default function HackathonHero({
               transition={{ type: "spring", stiffness: 200, damping: 10 }}
               className="mb-4 flex items-center justify-center h-14 w-14 rounded-full bg-gradient-to-tr from-blue-200 to-sky-100 shadow-md"
             >
-              <stat.icon className="h-7 w-7 text-black" />
+              <stat.icon className="h-7 w-7 text-blue-700 dark:text-blue-300" />
             </motion.div>
 
             <p className="text-3xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight">
