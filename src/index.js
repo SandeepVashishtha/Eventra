@@ -11,7 +11,7 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <GlobalErrorBoundary>
-      <MotionConfig reducedMotion="always">
+      <MotionConfig reducedMotion="user">
         <ThemeProvider>
           <App />
         </ThemeProvider>
