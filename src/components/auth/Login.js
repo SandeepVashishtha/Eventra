@@ -33,8 +33,9 @@ const Login = () => {
   };
 
   useEffect(() => {
-    if (isAuthenticated()) navigate('/dashboard', { replace: true });
-  }, [isAuthenticated, navigate]);
+  if (isAuthenticated()) navigate('/dashboard', { replace: true });
+}, []); 
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -45,14 +46,9 @@ const Login = () => {
     try {
       const ok = await login(formData.usernameOrEmail, formData.password);
       if (ok) {
-        // Show success toast
-        toast.success('Login successful! Redirecting to dashboard...');
-        
-        // Redirect after a brief delay to show the toast
-        setTimeout(() => {
-          navigate('/dashboard', { replace: true });
-        }, 1500);
-      }
+  toast.success('Login successful! Redirecting to dashboard...');
+  navigate('/dashboard', { replace: true });
+}
     } catch (err) {
       console.error("Login error:", err);
       setError({ general: err.message || "Invalid email or password" });
@@ -68,23 +64,35 @@ const Login = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
-      className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-gray-900 dark:to-black py-12 px-4 sm:px-6 lg:px-8"
+      className="pastel-grid-bg min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-pink-50 py-12 px-4 sm:px-6 lg:px-8"
     >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-        className="absolute inset-0 bg-gradient-to-br from-gray-400/5 via-gray-500/5 to-gray-700/5 dark:from-gray-900/10 dark:via-gray-800/10 dark:to-gray-700/10"
-        aria-hidden
-      />
 
-      <div className="relative w-full max-w-md">
+      <div className="max-w-5xl w-full mx-auto">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="backdrop-blur-xl bg-white/80 dark:bg-gray-900/70 border border-white/20 dark:border-white/10 shadow-2xl rounded-2xl p-8 space-y-8"
+          className="relative bg-white/90 backdrop-blur-xl shadow-xl rounded-[2rem] overflow-hidden border border-gray-100"
         >
+          <div className="absolute top-8 left-10 w-16 h-16 bg-blue-100 rounded-full blur-sm opacity-60"></div>
+<div className="absolute bottom-10 left-32 w-20 h-20 bg-pink-100 rounded-full blur-sm opacity-60"></div>
+<div className="absolute top-20 right-20 w-14 h-14 bg-yellow-100 rounded-full blur-sm opacity-60"></div>
+        <div className="md:flex">
+
+        {/* LEFT PANEL */}
+        <div className="relative z-10 md:w-[38%] bg-gradient-to-br from-blue-100 via-yellow-50 to-pink-100 text-gray-900 p-12 flex flex-col justify-between rounded-3xl">
+          <div>
+            <h2 className="text-4xl font-extrabold mb-4" style={{ fontFamily: '"Anton", sans-serif' }}>
+              Welcome Back
+            </h2>
+            <p className="mb-8 text-lg opacity-90 leading-relaxed">
+              Sign in to your Eventra account and pick up where you left off.
+            </p>
+          </div>
+        </div>
+
+        {/* RIGHT PANEL */}
+        <div className="md:w-3/5 p-10 space-y-6">
           {/* Logo / Title */}
           <motion.div
             initial={{ scale: 0 }}
@@ -95,10 +103,10 @@ const Login = () => {
             <motion.div
               whileHover={{ scale: 1.05, rotate: 5 }}
               whileTap={{ scale: 0.95 }}
-              className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg"
+              className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-yellow-100 rounded-3xl flex items-center justify-center shadow-md border border-blue-100"
             >
               <svg
-                className="w-8 h-8 text-white"
+                className="w-8 h-8 text-blue-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -111,13 +119,13 @@ const Login = () => {
                 />
               </svg>
             </motion.div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400">
+            <h1 className="text-black dark:text-white text-2xl font-bold mt-2">
               Welcome Back
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 font-medium">
+            <p className="text-md text-black dark:text-white">
               Sign in to your Eventra account
             </p>
-          </motion.div>
+            </motion.div>
 
           {/* Login Form */}
           <motion.form
@@ -228,18 +236,15 @@ const Login = () => {
             )}
 
             {/* Sign in button */}
-            <div
-  title={loading ? "Signing in, please wait..." : ""}
-  className="w-full"
->
-     <button
-    type="submit"
-    disabled={loading}
-    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 focus:ring-2 focus:ring-blue-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-     >
-    {loading ? "Signing In..." : "Sign In"}
-    </button>
-    </div>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              type="submit"
+              disabled={loading}
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-300 hover:bg-blue-400 hover:text-black focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
+            >
+              {loading ? "Signing In..." : "Sign In"}
+          </motion.button>
 
             {/* Google Sign-In */}
             <div className="pt-2">
@@ -279,6 +284,8 @@ const Login = () => {
               Privacy Policy
             </Link>
           </p>
+          </div>
+          </div>
         </motion.div>
       </div>
     </motion.div>

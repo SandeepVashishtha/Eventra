@@ -25,8 +25,10 @@ import {
   FileText as LucideFileText, 
   Users,
 } from "lucide-react";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 const ContributorGuide = () => {
+  useDocumentTitle("Eventra | Contributor Guide")
   const [expandedFAQ, setExpandedFAQ] = useState(null);
   const [copied, setCopied] = useState("");
 
@@ -169,7 +171,7 @@ const ContributorGuide = () => {
   };
 
   return (
-    <div className="pastel-grid-bg bg-gray-50 dark:bg-black min-h-screen px-4 sm:px-6 lg:px-12 py-12 max-w-6xl mx-auto space-y-16 overflow-x-hidden">
+    <div className="pastel-grid-bg bg-gray-50 dark:bg-black min-h-screen pt-20 md:pt-24 px-4 sm:px-6 lg:px-12 py-12 max-w-6xl mx-auto space-y-16 overflow-x-hidden">
       {/* Page Heading */}
       <div className="text-center mb-12">
         <h1
@@ -582,7 +584,7 @@ const ContributorGuide = () => {
       </section>
 
       {/* Call to Action */}
-      <div className="relative overflow-hidden rounded-xl p-10 shadow-xl text-center text-white bg-black">
+      <div className="relative overflow-hidden rounded-xl p-10 shadow-xl text-center text-white bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950">
         <FiGithub className="absolute top-5 left-5 text-white/10 text-6xl rotate-12" />
         <FiGithub className="absolute bottom-5 right-5 text-white/10 text-6xl -rotate-12" />
 

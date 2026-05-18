@@ -1,16 +1,16 @@
-import React from "react";
 import { motion } from "framer-motion";
+import React from "react";
 import {
-  FaGithub,
-  FaTwitter,
-  FaLinkedin,
-  FaDiscord,
-  FaCode,
-  FaLaptopCode,
   FaBrain,
+  FaCode,
+  FaDiscord,
+  FaGithub,
+  FaLaptopCode,
+  FaLinkedin,
+  FaTwitter,
 } from "react-icons/fa";
+import { HiArrowRight, HiPlus } from "react-icons/hi";
 import { SiHackaday } from "react-icons/si";
-import { HiPlus, HiArrowRight } from "react-icons/hi";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
@@ -44,12 +44,14 @@ const repeatedIcons = [...iconList, ...iconList, ...iconList];
 
 export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
 
   return (
     // UPDATED: Main background gradient
-    <div 
-      className="relative min-h-screen py-24 overflow-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-indigo-950 dark:to-black"
+    <div
+      className="relative min-h-screen py-24 overflow-hidden bg-gradient-to-br 
+from-sky-50 via-white to-white 
+dark:from-[#020617] dark:via-[#0f172a] dark:to-black"
       // AOS Implementation
       data-aos="fade-down"
       data-aos-once="true"
@@ -67,11 +69,12 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
             scale: [0.8, 1.1, 0.9, 1],
           }}
           transition={{ duration: 5.8, delay: shape.delay, repeat: Infinity }}
-          className="absolute rounded-full"
+          className="absolute rounded-full dark:opacity-20"
           style={{
             width: shape.size,
             height: shape.size,
             backgroundColor: shape.color,
+            filter: "blur(2px)",
           }}
         />
       ))}
@@ -96,7 +99,7 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
             <motion.div
               key={idx}
               // UPDATED: Icon wrapper background
-              className="rounded-full p-3 shadow-lg flex items-center justify-center bg-white dark:bg-gray-800"
+              className="rounded-full p-3 shadow-lg flex items-center justify-center bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-700"
               animate={{
                 x: [0, 8, -8, 0],
                 rotate: [0, 15, -15, 0],
@@ -122,9 +125,10 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
           // UPDATED: Title text color and gradient
-         className="text-4xl sm:text-6xl font-extrabold mb-6 mt-6 text-black dark:text-white leading-tight"          style={{ fontFamily: '"Anton", sans-serif' }}
+          className="text-4xl sm:text-6xl font-extrabold mb-6 mt-6 text-black dark:text-white leading-tight"
+          style={{ fontFamily: '"Anton", sans-serif' }}
         >
-          Discover Amazing Projects
+          Discover <span className="text-indigo-600">Amazing Projects</span>
         </motion.h1>
 
         <motion.p
@@ -149,7 +153,7 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
                 navigate("/submit-project");
               }
             }}
-            className="bg-pink-100 text-black px-7 py-3 rounded-2xl font-semibold flex items-center gap-3 shadow-md hover:bg-pink-200 hover:shadow-lg transition-all duration-300"
+            className="bg-pink-100 text-black dark:bg-pink-500/20 dark:text-pink-200 dark:border dark:border-pink-500/30 px-7 py-3 rounded-2xl font-semibold flex items-center gap-3 shadow-md hover:bg-pink-200 dark:hover:bg-pink-500/30 hover:shadow-lg transition-all duration-300"
             whileTap={{ scale: 0.95 }}
             whileHover={{ scale: 1.05 }}
             initial="rest"
@@ -170,7 +174,7 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
           </motion.button>
           {/* Explore Projects Button */}
           <motion.button
-          className="bg-yellow-100 text-black px-6 py-3 rounded-2xl font-semibold flex items-center gap-2 shadow-md hover:bg-yellow-200 hover:shadow-lg transition-all duration-300"
+          className="bg-yellow-100 text-black dark:bg-yellow-500/20 dark:text-yellow-200 dark:border dark:border-yellow-500/30 px-6 py-3 rounded-2xl font-semibold flex items-center gap-2 shadow-md hover:bg-yellow-200 dark:hover:bg-yellow-500/30 hover:shadow-lg transition-all duration-300"
           whileTap={{ scale: 0.95}}
           whileHover={{ scale: 1.05 }}
           onClick={scrollToCard}
@@ -209,7 +213,7 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
               data-aos="zoom-in"
               data-aos-delay={700 + idx * 150}
               // UPDATED: Stat card background
-              className="bg-gradient-to-br from-sky-50 via-white to-white dark:from-gray-800 dark:via-gray-900 dark:to-black shadow-md hover:shadow-xl rounded-3xl p-6 flex flex-col items-center justify-center transition-all duration-300"
+              className="bg-gradient-to-br from-sky-50 via-white to-white dark:from-[#111827] dark:via-[#0f172a] dark:to-[#020617] border border-gray-100 dark:border-gray-800 shadow-md hover:shadow-xl rounded-3xl p-6 flex flex-col items-center justify-center transition-all duration-300"
             >
               {/* UPDATED: Text colors */}
               <span className="text-3xl font-extrabold text-black dark:text-white">

@@ -10,8 +10,10 @@ import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
 import RespawningText from "../../../jhalak/RespawningText";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
+import useDocumentTitle from "../../../hooks/useDocumentTitle";
 
 const Hero = () => {
+  useDocumentTitle("Eventra | Home")
   const navigate = useNavigate();
   const phrases = [
     "Amazing Tech Events",
@@ -173,8 +175,8 @@ const Hero = () => {
             height: `${shape.size}px`,
             ...shape.pos,
             backgroundColor: shape.color,
-            opacity: 0.5, // Increased from 0.2 for better visibility
-            filter: "blur(2px)", // Added a slight blur for a premium look
+            opacity: 0.5,
+            filter: "blur(2px)",
           }}
         />
       ))}
@@ -239,8 +241,8 @@ const Hero = () => {
             the best tech events, hackathons, and workshops in your area.
           </motion.p>
 
-          {/* Global Search Bar */}
-          <div className="w-full max-w-2xl mx-auto mb-10 sm:mb-12 min-h-[72px] relative ">
+          {/* Global Search Bar — below heading & subtitle for breathing room */}
+          <div className="w-full max-w-2xl mx-auto mb-8 sm:mb-10">
             <ModernSearchInput
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
@@ -318,11 +320,11 @@ const Hero = () => {
                           transition={{ duration: 0.25, ease: "easeOut" }}
                           className="text-center text-gray-500 py-10 text-base"
                         >
-                          No results match “
+                          No results match "
                           <span className="font-medium text-gray-700">
                             {searchQuery}
                           </span>
-                          ”
+                          "
                         </motion.div>
                       )}
                     </div>
@@ -360,7 +362,7 @@ const Hero = () => {
               </Link>
             </motion.div>
 
-            {/* Secondary Button - Join Hackathons - FIXED */}
+            {/* Secondary Button - Join Hackathons */}
             <motion.div variants={fadeUp}>
               <Link
                 to="/hackathons"
@@ -370,7 +372,7 @@ const Hero = () => {
               </Link>
             </motion.div>
 
-            {/* Optional Tertiary Button - Learn More */}
+            {/* Tertiary Button - Learn More */}
             <motion.div variants={fadeUp}>
               <Link
                 to="/about"
@@ -393,31 +395,29 @@ const Hero = () => {
           </motion.div>
 
           {/* Animated Stats Cards */}
-          {/* Animated Stats Cards */}
-{!searchQuery.trim() && (
-  <motion.div
-    variants={fadeUp}
-    className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
-  >
-    {stats.map((stat, i) => (
-      <motion.div
-        key={i}
-        variants={fadeUp}
-        whileHover={{ scale: 1.05 }}
-        transition={{ type: "spring", stiffness: 300 }}
-        className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-lg border border-gray-100 dark:border-gray-700"
-      >
-        <p className="text-3xl font-bold mb-2 text-black dark:text-white">
-          {stat.value}
-        </p>
-        <p className="text-black dark:text-gray-300 text-sm">
-          {stat.label}
-        </p>
-      </motion.div>
-    ))}
-  </motion.div>
-)}
-          
+          {!searchQuery.trim() && (
+            <motion.div
+              variants={fadeUp}
+              className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
+            >
+              {stats.map((stat, i) => (
+                <motion.div
+                  key={i}
+                  variants={fadeUp}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-lg border border-gray-100 dark:border-gray-700"
+                >
+                  <p className="text-3xl font-bold mb-2 text-black dark:text-white">
+                    {stat.value}
+                  </p>
+                  <p className="text-black dark:text-gray-300 text-sm">
+                    {stat.label}
+                  </p>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
         </motion.div>
       </div>
     </section>

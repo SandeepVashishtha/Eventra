@@ -6,6 +6,7 @@ import {
   FiMessageSquare,
 } from "react-icons/fi";
 import { toast } from "react-toastify";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 
 
@@ -23,17 +24,16 @@ const FloatingInput = ({
   const [isFocused, setIsFocused] = useState(false);
 
   return (
-    <div className="relative mt-6">
+    <div className="relative mt-6 pt-20 md:pt-24">
       {Icon && (
         <Icon className="absolute left-3 top-4 text-gray-400 w-5 h-5 pointer-events-none" />
       )}
       <motion.label
         htmlFor={id}
-        className={`absolute transition-all duration-300 ${
-          isFocused || value
-            ? "top-0 text-xs text-black dark:text-white font-medium"
-            : "top-4 text-sm text-gray-500 dark:text-gray-400"
-        } ${error ? "text-red-500 dark:text-red-400" : ""}`}
+        className={`absolute transition-all duration-300 ${isFocused || value
+          ? "top-0 text-xs text-black dark:text-white font-medium"
+          : "top-4 text-sm text-gray-500 dark:text-gray-400"
+          } ${error ? "text-red-500 dark:text-red-400" : ""}`}
         initial={false}
         animate={{
           y: isFocused || value ? -20 : 0,
@@ -53,11 +53,10 @@ const FloatingInput = ({
         onChange={onChange}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        className={`w-full py-3 pl-10 pr-4 border rounded-lg focus:ring-2 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
-          error
-            ? "border-red-500 focus:ring-red-200"
-            : "border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-200 dark:focus:ring-indigo-900/50"
-        }`}
+        className={`w-full py-3 pl-10 pr-4 border rounded-lg focus:ring-2 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${error
+          ? "border-red-500 focus:ring-red-200"
+          : "border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-200 dark:focus:ring-indigo-900/50"
+          }`}
       />
       {error && (
         <motion.p
@@ -75,12 +74,13 @@ const FloatingInput = ({
 // Contact Us Page Component
 
 const ContactUs = () => {
- const [formData, setFormData] = useState({
-  name: "",
-  email: "",
-  subject: "",
-  message: "",
-});
+  useDocumentTitle("Eventra | Contact Us")
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: "",
+  });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -92,43 +92,43 @@ const ContactUs = () => {
   }, []);
 
   const validateForm = () => {
-  const newErrors = {};
+    const newErrors = {};
 
-  // Name validation
-  if (!formData.name.trim()) {
-    newErrors.name = "Name is required";
-  } else if (formData.name.trim().length < 2) {
-    newErrors.name = "Name must be at least 2 characters";
-  } else if (!/^[A-Za-z\s]+$/.test(formData.name)) {
-    newErrors.name = "Name should contain only letters";
-  }
+    // Name validation
+    if (!formData.name.trim()) {
+      newErrors.name = "Name is required";
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = "Name must be at least 2 characters";
+    } else if (!/^[A-Za-z\s]+$/.test(formData.name)) {
+      newErrors.name = "Name should contain only letters";
+    }
 
-  // Email validation (unchanged)
-  if (!formData.email.trim()) {
-    newErrors.email = "Email is required";
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-    newErrors.email = "Please enter a valid email";
-  }
+    // Email validation (unchanged)
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email";
+    }
 
-  // Subject validation
-  if (!formData.subject.trim()) {
-    newErrors.subject = "Subject is required";
-  } else if (formData.subject.trim().length < 5) {
-    newErrors.subject = "Subject must be at least 5 characters";
-  } else if (!/[a-zA-Z]{2,}/.test(formData.subject)) {
-    newErrors.subject = "Please enter a meaningful subject";
-  }
+    // Subject validation
+    if (!formData.subject.trim()) {
+      newErrors.subject = "Subject is required";
+    } else if (formData.subject.trim().length < 5) {
+      newErrors.subject = "Subject must be at least 5 characters";
+    } else if (!/[a-zA-Z]{2,}/.test(formData.subject)) {
+      newErrors.subject = "Please enter a meaningful subject";
+    }
 
-  // Message validation
-  if (!formData.message.trim()) {
-    newErrors.message = "Message is required";
-  } else if (formData.message.trim().length < 10) {
-    newErrors.message = "Message must be at least 10 characters";
-  }
+    // Message validation
+    if (!formData.message.trim()) {
+      newErrors.message = "Message is required";
+    } else if (formData.message.trim().length < 10) {
+      newErrors.message = "Message must be at least 10 characters";
+    }
 
-  setErrors(newErrors);
-  return Object.keys(newErrors).length === 0;
-};
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -182,7 +182,7 @@ const ContactUs = () => {
   };
   const [isFocused, setIsFocused] = useState(false);
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
+    <div className="pastel-grid-bg min-h-screen bg-white bg-gradient-to-r from-slate-900 to-black hover:from-black hover:to-slate-800 shadow-xl shadow-black/20 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       <div className="max-w-4xl w-full mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -197,7 +197,7 @@ const ContactUs = () => {
         >
           <div className="md:flex gap-0">
             <div
-              className="md:w-3/5 lg:w-2/5 bg-black text-white p-12 flex flex-col justify-between rounded-3xl shadow-xl backdrop-blur-lg"
+              className="md:w-3/5 lg:w-2/5 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white p-12 flex flex-col justify-between rounded-3xl shadow-xl backdrop-blur-lg"
               data-aos="fade-right"
               data-aos-duration="1000"
               data-aos-anchor=".ContactUs"
@@ -336,13 +336,11 @@ const ContactUs = () => {
                   <MessageSquare className="absolute left-3 top-4 text-gray-400 w-5 h-5 pointer-events-none" />
                   <motion.label
                     htmlFor="message"
-                    className={`absolute left-10 transition-all duration-300 ${
-                      isFocused || formData.message
-                        ? "top-0 text-xs text-black dark:text-white font-medium"
-                        : "top-4 text-sm text-gray-500 dark:text-gray-400"
-                    } ${
-                      errors.message ? "text-red-500 dark:text-red-400" : ""
-                    }`}
+                    className={`absolute left-10 transition-all duration-300 ${isFocused || formData.message
+                      ? "top-0 text-xs text-black dark:text-white font-medium"
+                      : "top-4 text-sm text-gray-500 dark:text-gray-400"
+                      } ${errors.message ? "text-red-500 dark:text-red-400" : ""
+                      }`}
                     initial={false}
                     animate={{
                       y: isFocused || formData.message ? -20 : 0,
@@ -362,11 +360,10 @@ const ContactUs = () => {
                     onChange={handleChange}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
-                    className={`w-full py-3 pl-10 pr-4 border rounded-lg focus:ring-2 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
-                      errors.message
-                        ? "border-red-500 focus:ring-red-200"
-                        : "border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-200 dark:focus:ring-indigo-900/50"
-                    }`}
+                    className={`w-full py-3 pl-10 pr-4 border rounded-lg focus:ring-2 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.message
+                      ? "border-red-500 focus:ring-red-200"
+                      : "border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-200 dark:focus:ring-indigo-900/50"
+                      }`}
                   ></textarea>
                   {errors.message && (
                     <motion.p

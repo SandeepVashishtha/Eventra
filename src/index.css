@@ -13,54 +13,83 @@
 }
 
 /* Theme variables */
+/* Theme variables */
 :root {
   --bg-color: #ffffff;
   --text-color: #1a1a1a;
   --text-color-light: #4a4a4a;
   --border-color: #e1e5e9;
   --card-bg-color: #ffffff;
+
   --scrollbar-track-color: #f1f1f1;
   --scrollbar-thumb-color: #000000;
   --scrollbar-thumb-hover-color: #262626;
+
   --btn-secondary-text: #4a4a4a;
 
-  /* Fix: Standardized professional type scale based on 1rem = 16px baseline */
-  --font-body: 1rem;        /* 16px — readable body text */
-  --font-nav: 0.9375rem;    /* 15px — compact but legible nav */
-  --font-h1: 2.25rem;       /* 36px — authoritative, not oversized */
-  --font-h2: 1.875rem;      /* 30px */
-  --font-h3: 1.5rem;        /* 24px */
-  --font-h4: 1.25rem;       /* 20px */
-  --font-h5: 1.125rem;      /* 18px */
-  --font-h6: 1rem;          /* 16px */
+  /* Additional Light Theme Variables */
+  --navbar-bg: #ffffff;
+  --sidebar-bg: #f9fafb;
 
-  /* Fix: Added line-height tokens for consistent vertical rhythm */
+  --input-bg: #ffffff;
+  --input-text: #1a1a1a;
+
+  --table-bg: #ffffff;
+  --modal-bg: #ffffff;
+
+  /* Typography */
+  --font-body: 1rem;
+  --font-nav: 0.9375rem;
+
+  --font-h1: 2.25rem;
+  --font-h2: 1.875rem;
+  --font-h3: 1.5rem;
+  --font-h4: 1.25rem;
+  --font-h5: 1.125rem;
+  --font-h6: 1rem;
+
+  /* Line Heights */
   --lh-heading: 1.2;
   --lh-body: 1.65;
 
-  /* Fix: Added font-weight tokens */
+  /* Font Weights */
   --fw-regular: 400;
   --fw-medium: 500;
   --fw-semibold: 600;
   --fw-bold: 700;
   --fw-extrabold: 800;
+
+  --touch-target-min: 44px;
+  --touch-target-gap: 0.75rem;
 }
 
 /* Fix #599: Changed from body.dark to .dark
    ThemeToggleButton.js applies the dark class to document.documentElement (html),
    not to body. Using body.dark meant these variables never activated in dark mode. */
 .dark {
-  --bg-color: transparent;
-  --text-color: #ffffff;
-  --text-color-light: #e0e0e0;
-  --border-color: rgba(255, 255, 255, 0.1);
-  --card-bg-color: rgba(20, 20, 30, 0.5);
-  --scrollbar-track-color: rgba(0, 0, 0, 0.3);
-  --scrollbar-thumb-color: rgba(255, 255, 255, 0.2);
-  --scrollbar-thumb-hover-color: rgba(255, 255, 255, 0.4);
-  --btn-secondary-text: #ffffff;
-  background: linear-gradient(180deg, #090218 0%, #1c0836 40%, #4a154b 75%, #a12b59 100%) no-repeat center center fixed;
-  background-size: cover;
+  --bg-color: #0f172a;
+  --text-color: #f8fafc;
+  --text-color-light: #cbd5e1;
+
+  --border-color: #334155;
+
+  --card-bg-color: #111827;
+
+  --scrollbar-track-color: #1e293b;
+  --scrollbar-thumb-color: #475569;
+  --scrollbar-thumb-hover-color: #64748b;
+
+  --btn-secondary-text: #f1f5f9;
+
+  /* Additional Dark Theme Colors */
+  --navbar-bg: #111827;
+  --sidebar-bg: #0f172a;
+
+  --input-bg: #1e293b;
+  --input-text: #f8fafc;
+
+  --table-bg: #111827;
+  --modal-bg: #1e293b;
 }
 
 /* Global styles */
@@ -92,21 +121,15 @@ body {
   opacity: 1;
 }
 
-*,
-*::before,
-*::after {
-  animation: none !important;
-  transition: none !important;
-  scroll-behavior: auto !important;
-}
 
-/* Headings */
-h1 { font-size: var(--font-h1); }
-h2 { font-size: var(--font-h2); }
-h3 { font-size: var(--font-h3); }
-h4 { font-size: var(--font-h4); }
-h5 { font-size: var(--font-h5); }
-h6 { font-size: var(--font-h6); }
+
+/* Fix: Headings use CSS variables + consistent line-height */
+h1 { font-size: var(--font-h1); font-weight: var(--fw-bold); line-height: var(--lh-heading); }
+h2 { font-size: var(--font-h2); font-weight: var(--fw-bold); line-height: var(--lh-heading); }
+h3 { font-size: var(--font-h3); font-weight: var(--fw-semibold); line-height: var(--lh-heading); }
+h4 { font-size: var(--font-h4); font-weight: var(--fw-semibold); line-height: var(--lh-heading); }
+h5 { font-size: var(--font-h5); font-weight: var(--fw-medium); }
+h6 { font-size: var(--font-h6); font-weight: var(--fw-medium); }
 
 /* Navigation items */
 nav, nav a {
@@ -138,7 +161,7 @@ code {
 
 /* Buttons */
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #fbf7ffff 100%);
+  background: linear-gradient(135deg, #667eea 0%, #5a67d8 100%);
   color: white;
   padding: 12px 32px;
   border: none;
@@ -186,11 +209,97 @@ code {
     --font-h4: 1.125rem;  /* 18px */
     --font-h5: 1rem;
     --font-h6: 0.9375rem;
+
   }
 
   .container { padding: 0 16px; }
   .section-padding { padding: 60px 0; }
   .btn-primary, .btn-secondary { padding: 10px 24px; font-size: 0.875rem; }
+}
+
+/* Issue #862: keep mobile and coarse-pointer controls comfortable to tap. */
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
+  :where(
+    button,
+    [role="button"],
+    input[type="button"],
+    input[type="reset"],
+    input[type="submit"],
+    select,
+    summary
+  ) {
+    min-height: var(--touch-target-min);
+    min-width: var(--touch-target-min);
+    touch-action: manipulation;
+  }
+
+  :where(
+    a[href].btn-primary,
+    a[href].btn-secondary,
+    a[href].btn-outline,
+    a[href].cta-button,
+    a[href].button,
+    a[href][class*="rounded"],
+    nav a[href],
+    .mobile-nav-link
+  ) {
+    min-height: var(--touch-target-min);
+    touch-action: manipulation;
+  }
+
+  :where(
+    button[class*="p-1"],
+    button[class*="p-2"],
+    a[href][class*="p-1"],
+    a[href][class*="p-2"]
+  ) {
+    padding: 0.75rem;
+  }
+
+  :where(
+    button[class*="py-1"],
+    a[href][class*="py-1"]
+  ) {
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+  }
+
+  :where(
+    button[class*="py-2"],
+    a[href][class*="py-2"]
+  ) {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  :where(
+    .share-button-pop,
+    .social-link,
+    .theme-toggle,
+    .profile-button,
+    .mobile-menu-button,
+    .ud-search-clear
+  ) {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+    min-height: var(--touch-target-min);
+    min-width: var(--touch-target-min);
+  }
+
+  :where(
+    .filter-controls,
+    .view-controls,
+    .event-actions,
+    .hackathon-actions,
+    .project-actions,
+    .cta-actions,
+    .mobile-auth,
+    .navbar-auth,
+    .social-links
+  ) {
+    gap: max(var(--touch-target-gap), 0.75rem);
+  }
 }
 
 /* Remove input clear buttons */
@@ -242,4 +351,35 @@ input::-webkit-password-toggle { display: none !important; }
   to {
     transform: scale(1.2);
   }
+}
+/* Inputs */
+input,
+textarea,
+select {
+  background-color: var(--input-bg);
+  color: var(--input-text);
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+/* Tables */
+table {
+  background-color: var(--table-bg);
+  color: var(--text-color);
+}
+
+/* Modals */
+.modal-content {
+  background-color: var(--modal-bg);
+  color: var(--text-color);
+}
+
+/* Navbar */
+.theme-navbar {
+  background-color: var(--navbar-bg);
+}
+
+/* Sidebar */
+.theme-sidebar {
+  background-color: var(--sidebar-bg);
 }

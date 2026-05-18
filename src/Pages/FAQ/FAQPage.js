@@ -12,8 +12,10 @@ import {
   Globe,
 } from "lucide-react";
 import FAQCTA from "./FaqCTA";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 const FAQPage = () => {
+  useDocumentTitle("Eventra | FAQ")
   const [openFAQ, setOpenFAQ] = useState(null);
   const controls = useAnimation();
 
@@ -129,7 +131,8 @@ const FAQPage = () => {
 
   useEffect(() => {
     controls.start("show");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Note: scroll-to-top on route change is handled globally by the
+    // ScrollToTop component — no need to call window.scrollTo() here.
   }, [controls]);
 
   return (
@@ -145,7 +148,7 @@ const FAQPage = () => {
                 style={{ fontFamily: '"Anton", sans-serif' }}
               >
                 Frequently Asked{" "}
-                <span className="text-black">
+                <span className="text-black  dark:text-white">
                   Questions
                 </span>
               </h1>
