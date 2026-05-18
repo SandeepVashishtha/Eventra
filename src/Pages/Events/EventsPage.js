@@ -8,6 +8,7 @@ import EventCTA from "./EventCTA";
 import Fuse from "fuse.js";
 import StyledDropdown from "../../components/StyledDropdown";
 import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
   if (isLoading) {
@@ -44,10 +45,12 @@ const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
 };
 
 const EventsPage = () => {
+  useDocumentTitle("Eventra | Events")
+  const initialSearchQuery = new URLSearchParams(window.location.search).get("search") || "";
   const [events, setEvents] = useState([]);
   const [filterType, setFilterType] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [sortType, setSortType] = useState("Newest");
   const [isLoading, setIsLoading] = useState(true);
@@ -90,6 +93,14 @@ const EventsPage = () => {
   useEffect(() => {
     handleSearch(searchQuery);
   }, [events, filterType]);
+
+  useEffect(() => {
+    if (!isLoading && initialSearchQuery) {
+      setTimeout(() => {
+        cardSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
+  }, [isLoading, initialSearchQuery]);
 
   const handleSortChange = (type) => {
     setSortType(type);

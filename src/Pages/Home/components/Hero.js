@@ -1,8 +1,8 @@
 import { motion, useAnimation, AnimatePresence, MotionConfig } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
-import { Search, X, Calendar, Trophy, Code, ExternalLink } from "lucide-react";
+import { Search, Calendar, Trophy, Code, ExternalLink } from "lucide-react";
 
 // Import mock data
 import eventsData from "../../Events/eventsMockData.json";
@@ -10,9 +10,12 @@ import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
 import RespawningText from "../../../jhalak/RespawningText";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
+import useDocumentTitle from "../../../hooks/useDocumentTitle";
+
+const MotionLink = motion(Link);
 
 const Hero = () => {
-  const navigate = useNavigate();
+  useDocumentTitle("Eventra | Home")
   const phrases = [
     "Amazing Tech Events",
     "Exciting Hackathons Today",
@@ -24,7 +27,6 @@ const Hero = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
 
   // Change phrase every 3 seconds
   useEffect(() => {
@@ -88,16 +90,18 @@ const Hero = () => {
     }
   };
 
-  const handleResultClick = (result, type) => {
+  const clearSearch = () => {
     setShowResults(false);
     setSearchQuery("");
-    if (type === "event") {
-      navigate("/events");
-    } else if (type === "hackathon") {
-      navigate("/hackathons");
-    } else if (type === "project") {
-      navigate("/projects");
-    }
+  };
+
+  const getResultHref = (item) => {
+    const query = encodeURIComponent(item.title || searchQuery);
+
+    if (item.type === "event") return `/events?search=${query}`;
+    if (item.type === "hackathon") return `/hackathons?search=${query}`;
+    if (item.type === "project") return `/projects?search=${query}`;
+    return "/";
   };
 
   const getResultIcon = (type) => {
@@ -269,17 +273,17 @@ const Hero = () => {
                           </div>
                           <div className="space-y-2">
                             {searchResults.map((result, index) => (
-                              <motion.div
+                              <MotionLink
                                 key={`${result.item.type}-${result.item.id}`}
+                                to={getResultHref(result.item)}
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.05 }}
-                                onClick={() =>
-                                  handleResultClick(result.item, result.item.type)
-                                }
+                                onClick={clearSearch}
                                 className="flex items-center gap-3 p-3 rounded-2xl 
                                  hover:bg-gray-50 
-                                 cursor-pointer transition-colors group"
+                                 cursor-pointer transition-colors group text-left no-underline"
+                                aria-label={`Open ${result.item.title} in ${result.item.searchType}`}
                               >
                                 <div
                                   className="flex-shrink-0 p-2 bg-blue-100 rounded-xl text-blue-600 
@@ -306,7 +310,7 @@ const Hero = () => {
                                 <ExternalLink
                                   className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors"
                                 />
-                              </motion.div>
+                              </MotionLink>
                             ))}
                           </div>
                         </>

@@ -25,8 +25,10 @@ import {
   FileText as LucideFileText, 
   Users,
 } from "lucide-react";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 const ContributorGuide = () => {
+  useDocumentTitle("Eventra | Contributor Guide")
   const [expandedFAQ, setExpandedFAQ] = useState(null);
   const [copied, setCopied] = useState("");
 
