@@ -2,12 +2,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar, Trophy, FolderOpen, Users, Settings,
   Clock, MapPin, Zap, Activity, Bell, ChevronRight,
-  LogOut, User, Plus, Search, X
+  LogOut, User, Plus, Search, X, Ticket
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useMyEvents } from "../../context/MyEventsContext";
 import StatusBadge from "../common/StatusBadge";
+import MyEventsTab from "./MyEventsTab";
 import "./UserDashboard.css";
 
 const fadeUp = {
@@ -53,6 +55,7 @@ const QUICK_ACTIONS = [
 
 export default function UserDashboard() {
   const { user, logout } = useAuth();
+  const { myEvents } = useMyEvents();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState("overview");
@@ -120,6 +123,7 @@ export default function UserDashboard() {
         <nav className="ud-nav">
           {[
             { id: "overview", icon: <Activity size={18} />, label: "Overview" },
+            { id: "my-events", icon: <Ticket size={18} />, label: "My Events", badge: myEvents.length || null },
             { id: "events", icon: <Calendar size={18} />, label: "Events" },
             { id: "hackathons", icon: <Trophy size={18} />, label: "Hackathons" },
             { id: "projects", icon: <FolderOpen size={18} />, label: "Projects" },
@@ -132,6 +136,9 @@ export default function UserDashboard() {
             >
               {item.icon}
               <span>{item.label}</span>
+              {item.badge > 0 && (
+                <span className="ud-nav-badge">{item.badge}</span>
+              )}
             </button>
           ))}
         </nav>
@@ -302,6 +309,9 @@ export default function UserDashboard() {
               </div>
             </motion.div>
           )}
+
+          {/* My Events tab */}
+          {activeTab === "my-events" && <MyEventsTab />}
 
           {/* Events tab */}
           {activeTab === "events" && (

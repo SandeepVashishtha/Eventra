@@ -14,6 +14,7 @@ import NotificationProvider from "./components/common/NotificationProvider";
 
 // --------------- CONTEXT & HOOKS
 import { AuthProvider } from "./context/AuthContext";
+import { MyEventsProvider } from "./context/MyEventsContext";
 import { useModelContext } from "./hooks/useModelContext";
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
     <>
       <NotificationProvider />
       <AuthProvider>
+        <MyEventsProvider>
         <Router>
           <div className="App">
             <Navbar
@@ -52,6 +54,7 @@ function App() {
             <FluidCursor enabled={cursorEnabled} />
           </div>
         </Router>
+        </MyEventsProvider>
       </AuthProvider>
     </>
   );
