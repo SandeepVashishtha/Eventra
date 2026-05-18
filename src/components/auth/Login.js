@@ -69,7 +69,7 @@ useEffect(() => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
-      className="pastel-grid-bg min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-pink-50 py-12 px-4 sm:px-6 lg:px-8"
+      className="pastel-grid-bg min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-pink-50 dark:from-gray-950 dark:via-gray-900 dark:to-black py-12 px-4 sm:px-6 lg:px-8"
     >
 
       <div className="max-w-5xl w-full mx-auto">
@@ -77,7 +77,7 @@ useEffect(() => {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="relative bg-white/90 backdrop-blur-xl shadow-xl rounded-[2rem] overflow-hidden border border-gray-100"
+          className="relative bg-white/90 dark:bg-gray-900 backdrop-blur-xl shadow-xl rounded-[2rem] overflow-hidden border border-gray-100 dark:border-gray-800"
         >
           <div className="absolute top-8 left-10 w-16 h-16 bg-blue-100 rounded-full blur-sm opacity-60"></div>
 <div className="absolute bottom-10 left-32 w-20 h-20 bg-pink-100 rounded-full blur-sm opacity-60"></div>
@@ -124,10 +124,10 @@ useEffect(() => {
                 />
               </svg>
             </motion.div>
-            <h1 className="text-black dark:text-white text-2xl font-bold mt-2">
+            <h1 className="text-gray-900 text-2xl font-bold mt-2">
               Welcome Back
             </h1>
-            <p className="text-md text-black dark:text-white">
+            <p className="text-md text-gray-600">
               Sign in to your Eventra account
             </p>
             </motion.div>
@@ -142,7 +142,7 @@ useEffect(() => {
             <div className="space-y-2">
               <label
                 htmlFor="usernameOrEmail"
-                className="block text-sm font-semibold text-gray-700 dark:text-gray-300"
+                className="block text-sm font-semibold text-gray-700"
               >
                 Email or username <sup className='ml-1 text-sm text-red-500'>*</sup>
               </label>
@@ -157,7 +157,7 @@ useEffect(() => {
                   required
                   disabled={loading}
                   placeholder="Enter your email address or username"
-                  className="w-full pl-3 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                  className="w-full pl-3 pr-4 py-3 bg-white border border-gray-200 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                 />
               </div>
               {error.usernameOrEmail && (

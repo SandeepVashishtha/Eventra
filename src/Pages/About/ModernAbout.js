@@ -34,10 +34,7 @@ const container = {
   },
 };
 
-const staggerItem = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
-};
+
 
 const cardItem = {
   hidden: { opacity: 0, scale: 0.8 },
@@ -141,7 +138,7 @@ export default function ModernAbout() {
 
         <div className="max-w-4xl md:my-24 my-16 w-full text-center z-10">
           <motion.p
-            variants={item}
+            variants={staggerItem}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
@@ -151,7 +148,7 @@ export default function ModernAbout() {
           </motion.p>
 
           <motion.h1
-            variants={item}
+            variants={staggerItem}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
@@ -164,7 +161,7 @@ export default function ModernAbout() {
           </motion.h1>
 
           <motion.p
-            variants={item}
+            variants={staggerItem}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
