@@ -1,4 +1,5 @@
 import React from "react";
+import { Moon, Sun } from "lucide-react";
 import NavbarLinks from "./NavbarLinks";
 import AuthButtons from "./AuthButtons";
 import ProfileMenu from "./ProfileMenu";
@@ -7,6 +8,8 @@ const DesktopNavbar = ({
   isAuthenticated,
   user,
   logout,
+  isDarkMode,
+  toggleTheme,
   cursorEnabled,
   toggleCursor,
 }) => {
