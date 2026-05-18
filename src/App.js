@@ -5,12 +5,12 @@ import ToastProvider from "./components/Toastprovider";
 
 // --------------- LAYOUT
 import Navbar from "./components/Layout/Navbar";
-import Footer from "./components/Layout/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
 import Chatbot from "./components/Chatbot";
 import FluidCursor from "./jhalak/FluidCursor";
 import AppRoutes from "./components/AppRoutes";
+import NewFooter from "./components/Layout/NewFooter";
 
 // --------------- CONTEXT
 import { AuthProvider } from "./context/AuthContext";
@@ -77,7 +77,7 @@ function App() {
             <ScrollToTop />
             <Chatbot />
             <FeedbackButton />
-            <Footer />
+            <NewFooter />
 
             {/* KEEP CURSOR MOUNTED BUT TOGGLE VIA PROP */}
             <FluidCursor enabled={cursorEnabled} />
