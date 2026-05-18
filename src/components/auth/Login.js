@@ -32,11 +32,13 @@ const Login = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  useEffect(() => {
+ 
+useEffect(() => {
   if (isAuthenticated()) {
     navigate('/dashboard', { replace: true });
   }
-}, []); // eslint-disable-line react-hooks/exhaustive-deps
+}, [navigate]);
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -65,39 +67,29 @@ const Login = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
-      className="pastel-grid-bg min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-gray-900 dark:to-black py-12 px-4 sm:px-6 lg:px-8"
+      className="pastel-grid-bg min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-pink-50 py-12 px-4 sm:px-6 lg:px-8"
     >
 
-      <div className="max-w-4xl w-full mx-auto">
+      <div className="max-w-5xl w-full mx-auto">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
+          className="relative bg-white/90 backdrop-blur-xl shadow-xl rounded-[2rem] overflow-hidden border border-gray-100"
         >
+          <div className="absolute top-8 left-10 w-16 h-16 bg-blue-100 rounded-full blur-sm opacity-60"></div>
+<div className="absolute bottom-10 left-32 w-20 h-20 bg-pink-100 rounded-full blur-sm opacity-60"></div>
+<div className="absolute top-20 right-20 w-14 h-14 bg-yellow-100 rounded-full blur-sm opacity-60"></div>
         <div className="md:flex">
 
         {/* LEFT PANEL */}
-        <div className="md:w-2/5 bg-black text-white p-12 flex flex-col justify-between rounded-3xl">
+        <div className="relative z-10 md:w-[38%] bg-gradient-to-br from-blue-100 via-yellow-50 to-pink-100 text-gray-900 p-12 flex flex-col justify-between rounded-3xl">
           <div>
             <h2 className="text-4xl font-extrabold mb-4" style={{ fontFamily: '"Anton", sans-serif' }}>
               Welcome Back
             </h2>
             <p className="mb-8 text-lg opacity-90 leading-relaxed">
               Sign in to your Eventra account and pick up where you left off.
-            </p>
-          </div>
-          <div className="mt-8 flex items-center p-4 bg-white/10 rounded-2xl hover:bg-white/20 transition duration-300 ease-in-out">
-            <div className="bg-white/20 p-3 rounded-full mr-4 flex items-center justify-center flex-shrink-0">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-              </svg>
-            </div>
-            <p className="text-sm text-white/80">
-              Don't have an account?{" "}
-              <Link to="/signup" className="font-semibold hover:text-white/80 transition-colors" style={{ color: 'white' }}>
-                Sign up
-              </Link>
             </p>
           </div>
         </div>
@@ -114,10 +106,10 @@ const Login = () => {
             <motion.div
               whileHover={{ scale: 1.05, rotate: 5 }}
               whileTap={{ scale: 0.95 }}
-              className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg"
+              className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-yellow-100 rounded-3xl flex items-center justify-center shadow-md border border-blue-100"
             >
               <svg
-                className="w-8 h-8 text-white"
+                className="w-8 h-8 text-blue-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -268,7 +260,7 @@ const Login = () => {
               whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-300 hover:bg-blue-400 hover:text-black focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
             >
               {loading ? (
   <div className="flex items-center gap-2">
