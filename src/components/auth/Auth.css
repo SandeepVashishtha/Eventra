@@ -307,23 +307,3 @@
   text-align: center;
 }
 
-.google-signin {
-  margin-top: 1rem;
-}
-
-.google-signin button {
-  width: 100%;
-  background-color: #4285f4;
-  color: white;
-  border: none;
-  padding: 0.5rem;
-  border-radius: 4px;
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-.google-signin button:hover {
-  background-color: #357ae8;
-}
-
-

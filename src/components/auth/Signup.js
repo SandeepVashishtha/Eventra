@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
-import GoogleSignInButton from "../GoogleSignInButton";
+
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
 import { User, AtSign } from 'lucide-react'
 
@@ -235,9 +235,6 @@ const Signup = () => {
           
            {/* RIGHT PANEL */}
         <div className="md:w-3/5 p-10">
-          <div className="mb-4">
-            <GoogleSignInButton className="w-full" />
-          </div>
 
           <div className="text-center space-y-2">
             <motion.div
