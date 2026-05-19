@@ -357,7 +357,7 @@ const MobileUserSection = ({
 const NAV_ITEMS = [
   { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
   { name: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
-  { name: "Hackathons", href: "/hackathons", icon: <Sparkles className="w-5 h-5" /> },
+  { name: "Hackathons", href: "/hackathons", icon: <Trophy className="w-5 h-5" /> },
   { name: "Projects", href: "/projects", icon: <FolderKanban className="w-5 h-5" /> },
   {
     name: "Community",
@@ -400,7 +400,7 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
 const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   const location = useLocation();
   return (
-    <div className="hidden lg:flex absolute left-[48%] transform -translate-x-1/2 space-x-5 z-10">
+    <div className="hidden lg:flex flex-1 justify-center items-center gap-8 lg:gap-12 xl:gap-16 z-10">
       <NavList 
         location={location} 
         openDropdown={openDropdown} 
@@ -544,7 +544,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
     {
       name: "Hackathons",
       href: "/hackathons",
-      icon: <Sparkles className="w-5 h-5" />,
+      icon: <Trophy className="w-5 h-5" />,
     },
     {
       name: "Projects",
@@ -622,7 +622,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           </Link>
 
           {/* Centered nav links */}
-          <div className="hidden lg:flex absolute left-[48%] transform -translate-x-1/2 space-x-5 z-10">
+          <div className="hidden lg:flex flex-1 justify-center items-center gap-8 lg:gap-12 xl:gap-16 z-10">
             {navItems.map((item) => {
               const isActive = item.href
                 ? location.pathname === item.href
