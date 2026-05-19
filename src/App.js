@@ -10,7 +10,7 @@ import FeedbackButton from "./components/FeedbackButton";
 import Chatbot from "./components/Chatbot";
 import FluidCursor from "./jhalak/FluidCursor";
 import AppRoutes from "./components/AppRoutes";
-import Footer from "./components/Layout/NewFooter";
+import Footer from "./components/Layout/Footer";
 
 // --------------- CONTEXT
 import { AuthProvider } from "./context/AuthContext";
