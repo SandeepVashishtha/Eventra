@@ -125,7 +125,7 @@ const CommunityEvent = () => {
               whileHover={{ scale: 1.03 }}
               transition={{ type: "spring", stiffness: 200, damping: 15 }}
               // UPDATED: Card background and border
-              className="p-6 rounded-2xl bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+              className="p-7 rounded-3xl bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-2xl transition-all duration-300"
             >
               {/* Event Header */}
               <div className="flex items-center gap-3 mb-4">

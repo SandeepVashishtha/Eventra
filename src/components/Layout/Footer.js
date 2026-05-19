@@ -1,28 +1,7 @@
-/**
- * CHANGES MADE TO THIS FILE (Footer.js):
- * 
- * 1. FIXED UNDEFINED FUNCTION ERROR:
- *    - Removed duplicate inline newsletter form that was causing "handleSubmit is not defined" error
- *    - The form was in the main Footer component without state management
- *    - Replaced with proper Newsletter component that has its own state and handleSubmit
- * 
- * 2. REMOVED DUPLICATE CODE:
- *    - Removed duplicate email input, button, and form validation logic
- *    - Removed duplicate social media icons section
- *    - Both were already properly implemented in separate Newsletter and SocialLinksRender components
- * 
- * 3. RESULT:
- *    - Footer now uses the Newsletter component with proper state management
- *    - Footer now uses the SocialLinksRender component for social links
- *    - No more undefined variable errors (email, setEmail, isSubmitting, handleSubmit)
- */
-
-import { useState } from "react";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
 import {
-  FaInfoCircle,
-  FaInstagram,
-  FaDiscord,
-  FaTelegram,
   FaGithub,
   FaQuestionCircle,
   FaEnvelope,
@@ -37,9 +16,11 @@ import {
   FaTrophy,
   FaComments,
   FaLinkedin,
+  FaDiscord,
+  FaTelegram,
+  FaInstagram,
+  FaInfoCircle,
 } from "react-icons/fa";
-import { Link } from "react-router-dom";
-import { toast } from "react-toastify";
 
 const footerLinks = {
   quick_links: [
@@ -169,6 +150,7 @@ const Newsletter = () => {
             placeholder="Enter your email"
             className="pl-10 pr-4 py-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full"
             disabled={isSubmitting}
+            required
           />
         </div>
         <button
@@ -244,32 +226,10 @@ const FooterLinksRender = () => (
   </>
 );
 
-const FooterBottom = () => {
-  const currentYear = new Date().getFullYear();
-  return (
-    <div className="border-t border-gray-200 dark:border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
-      <p className="text-sm text-gray-500 dark:text-gray-400 text-center md:text-left">
-        © {currentYear} Eventra. All rights reserved. Created with ❤️ by Sandeep Vashishtha, Rhythm and the amazing open-source community.
-      </p>
-      <div className="flex gap-6">
-        {legalLinks.map((link) => (
-          <Link
-            key={link.name}
-            to={link.href}
-            className="text-xs text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-          >
-            {link.name}
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-};
-
 const Footer = () => {
   return (
     <footer 
-      className="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
+      className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
       data-aos="fade-up"
       data-aos-duration="1000"
       data-aos-offset="100"
@@ -299,7 +259,6 @@ const Footer = () => {
           </div>
           <FooterLinksRender />
         </div>
-        <FooterBottom />
       </div>
     </footer>
   );

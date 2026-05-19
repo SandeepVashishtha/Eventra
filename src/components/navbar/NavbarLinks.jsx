@@ -7,7 +7,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
   const location = useLocation();
 
   return (
-    <div className={`flex ${vertical ? "flex-col items-start w-full gap-4" : "items-center gap-6"}`}>
+    <div className={`flex ${vertical ? "flex-col items-start w-full gap-4" : "items-center gap-3 mx-7"}`}>
       {NAV_ITEMS.map((item) => {
         const isCurrentPath = location.pathname === item.href;
         const isSubItemActive = item.subItems?.some(

@@ -1,7 +1,7 @@
 import React from "react";
 import MobileDrawer from "./MobileDrawer";
 
-const MobileNavbar = ({ isOpen, setIsOpen }) => {
+const MobileNavbar = ({ isOpen, setIsOpen, isAuthenticated, user, logout }) => {
   return (
     <>
       <button
@@ -14,6 +14,9 @@ const MobileNavbar = ({ isOpen, setIsOpen }) => {
       <MobileDrawer
         isOpen={isOpen}
         closeMenu={() => setIsOpen(false)}
+        isAuthenticated={isAuthenticated}
+        user={user}
+        logout={logout}
       />
     </>
   );

@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
-import GoogleSignInButton from "../GoogleSignInButton";
+
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
 import { User, AtSign } from 'lucide-react'
 
@@ -202,12 +202,12 @@ const Signup = () => {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6 }}
-          className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
+          className="bg-white dark:bg-gray-800 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700"
         >
         <div className="md:flex">  
 
           {/* LEFT PANEL */}
-          <div className="relative z-10 md:w-[38%] bg-gradient-to-br from-blue-100 via-yellow-50 to-pink-100 text-gray-900 p-12 flex flex-col justify-between rounded-3xl">
+          <div className="relative z-10 md:w-[38%] bg-gradient-to-br from-blue-100 via-yellow-50 to-pink-100 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900 text-gray-900 dark:text-white p-12 flex flex-col justify-between rounded-3xl">
             <div>
               <h2 className="text-4xl font-extrabold mb-4" style={{ fontFamily: '"Anton", sans-serif' }}>
                 Join Eventra
@@ -234,10 +234,7 @@ const Signup = () => {
           </div>
           
            {/* RIGHT PANEL */}
-        <div className="md:w-3/5 p-10">
-          <div className="mb-4">
-            <GoogleSignInButton className="w-full" />
-          </div>
+        <div className="md:w-3/5 p-10 bg-white dark:bg-gray-800">
 
           <div className="text-center space-y-2">
             <motion.div
@@ -280,7 +277,7 @@ const Signup = () => {
                     value={formData.firstName}
                     onChange={handleChange}
                     placeholder="First name"
-                    className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                    className="w-full pl-10 pr-4 py-3 bg-white/60 dark:bg-gray-700/70 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                     required
                   />
                 </div>
@@ -299,7 +296,7 @@ const Signup = () => {
                     value={formData.lastName}
                     onChange={handleChange}
                     placeholder="Last name"
-                    className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                    className="w-full pl-10 pr-4 py-3 bg-white/60 dark:bg-gray-700/70 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                     required
                   />
                 </div>
@@ -326,7 +323,7 @@ const Signup = () => {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="Enter your email address"
-                  className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                  className="w-full pl-10 pr-4 py-3 bg-white/60 dark:bg-gray-700/70 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                   required
                 />
               </div>
@@ -359,7 +356,7 @@ const Signup = () => {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Enter your password"
-                  className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                  className="w-full pl-10 pr-4 py-3 bg-white/60 dark:bg-gray-700/70 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                   required
                 />
                 <button
@@ -433,7 +430,7 @@ const Signup = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   placeholder="Confirm your password"
-                  className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                  className="w-full pl-10 pr-4 py-3 bg-white/60 dark:bg-gray-700/70 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                   required
                 />
                 <button

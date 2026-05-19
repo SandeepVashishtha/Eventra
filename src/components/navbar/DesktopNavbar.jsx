@@ -14,10 +14,10 @@ const DesktopNavbar = ({
   toggleCursor,
 }) => {
   return (
-    <div className="hidden lg:flex items-center justify-between flex-1 gap-12">
+    <div className="hidden lg:flex items-center justify-between flex-1 gap-2">
       <NavbarLinks />
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4 mr-5">
         {isAuthenticated ? (
           <ProfileMenu user={user} logout={logout} />
         ) : (
