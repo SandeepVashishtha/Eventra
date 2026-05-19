@@ -22,6 +22,7 @@ import HelpCenter from "../../Pages/HelpCenter";
 import ContactUs from "../../Pages/Contact/ContactUs";
 import FeedbackPage from "../../Pages/Feedback/FeedbackPage";
 import EventAnalyticsDashboard from "../../Pages/Events/EventAnalyticsDashboard";
+import FloorPlanDesignerPage from "../../Pages/Events/FloorPlanDesignerPage";
 import DocumentationPage from "../../Pages/About/DocumentationPage";
 import SubmitProject from "../../Pages/Projects/SubmitProject";
 import MockApiResponse from "../MockApiResponse";
@@ -51,6 +52,7 @@ export const getPublicRoutes = () => [
     <Route key="/contact" path="/contact" element={<ContactUs />} />
     <Route key="/feedback" path="/feedback" element={<FeedbackPage />} />
     <Route key="/analytics" path="/analytics" element={<EventAnalyticsDashboard />} />
+    <Route key="/events/:eventId/floor-plan" path="/events/:eventId/floor-plan" element={<FloorPlanDesignerPage />} />
     <Route key="/documentation" path="/documentation" element={<DocumentationPage />} />
     <Route key="/submit-project" path="/submit-project" element={<SubmitProject />} />
   </Route>

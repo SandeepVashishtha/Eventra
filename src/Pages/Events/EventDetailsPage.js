@@ -8,6 +8,7 @@ import {
   Tag,
   Share2,
   ArrowLeft,
+  LayoutTemplate,
 } from "lucide-react";
 import eventsMockData from "./eventsMockData.json";
 import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
@@ -283,6 +284,14 @@ const EventDetailsPage = () => {
 
               {/* Share & Actions */}
               <div className="space-y-3 border-t border-gray-200 dark:border-gray-700 pt-6">
+                <Link
+                  to={`/events/${event.id}/floor-plan`}
+                  className="w-full py-2.5 px-4 flex items-center justify-center gap-2 border border-indigo-500/30 hover:border-indigo-500 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg font-semibold text-center cursor-pointer transition-all duration-300"
+                >
+                  <LayoutTemplate size={18} />
+                  Floor Plan Designer
+                </Link>
+
                 <ShareMenu
                   shareData={eventSharingData}
                   position="above"
