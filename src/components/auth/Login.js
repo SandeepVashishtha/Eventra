@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import GoogleSignInButton from '../GoogleSignInButton';
+
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
 
@@ -295,18 +295,6 @@ text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black 
                   )}
                 </motion.button>
 
-                {/* Google Sign-In */}
-                <div className="pt-2">
-                  <div className="relative flex items-center">
-                    <div className="flex-grow border-t border-gray-200" />
-                    <span className="mx-4 text-xs text-gray-500">Or sign in with</span>
-                    <div className="flex-grow border-t border-gray-200" />
-                  </div>
-
-                  <div className="pt-4">
-                    <GoogleSignInButton />
-                  </div>
-                </div>
               </motion.form>
 
               {/* Sign up link */}
