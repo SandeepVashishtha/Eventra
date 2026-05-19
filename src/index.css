@@ -383,3 +383,99 @@ table {
 .theme-sidebar {
   background-color: var(--sidebar-bg);
 }
+/* =========================================
+   Advanced Theme Enhancements
+========================================= */
+
+/* Smooth Global Theme Transitions */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+* {
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+/* Reusable Theme Utility Classes */
+
+.card-theme {
+  background-color: var(--card-bg-color);
+  color: var(--text-color);
+
+  border: 1px solid var(--border-color);
+
+  transition: all 0.3s ease;
+}
+
+.input-theme {
+  background-color: var(--input-bg);
+
+  color: var(--input-text);
+
+  border: 1px solid var(--border-color);
+
+  transition: all 0.3s ease;
+}
+
+.section-theme {
+  background-color: var(--bg-color);
+
+  color: var(--text-color);
+
+  transition: all 0.3s ease;
+}
+
+.navbar-theme {
+  background-color: var(--navbar-bg);
+
+  color: var(--text-color);
+
+  transition: all 0.3s ease;
+}
+
+.modal-theme {
+  background-color: var(--modal-bg);
+
+  color: var(--text-color);
+
+  transition: all 0.3s ease;
+}
+
+/* Better Hover Effects */
+
+.hover-theme:hover {
+  transform: translateY(-2px);
+
+  transition: all 0.3s ease;
+}
+
+/* Better Shadows */
+
+.dark .shadow-theme {
+  box-shadow:
+    0 4px 20px
+    rgba(0, 0, 0, 0.4);
+}
+
+/* Better Focus States */
+
+.focus-theme:focus {
+  outline: none;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(59, 130, 246, 0.5);
+}
