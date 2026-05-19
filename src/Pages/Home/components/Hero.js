@@ -44,22 +44,28 @@ const Hero = () => {
   }, [controls]);
 
   // Global search functionality
+  const createSearchItem = (item, type, searchType) => ({
+    id: item.id,
+    title: item.title,
+    description: item.description,
+    location: item.location,
+    tags: item.tags,
+    techStack: item.techStack,
+    category: item.category,
+    author: item.author,
+    organizer: item.organizer,
+    type,
+    searchType,
+  });
+
   const allData = [
-    ...eventsData.map((item) => ({
-      ...item,
-      type: "event",
-      searchType: "Events",
-    })),
-    ...hackathonsData.map((item) => ({
-      ...item,
-      type: "hackathon",
-      searchType: "Hackathons",
-    })),
-    ...projectsData.map((item) => ({
-      ...item,
-      type: "project",
-      searchType: "Projects",
-    })),
+    ...eventsData.map((item) => createSearchItem(item, "event", "Events")),
+    ...hackathonsData.map((item) =>
+      createSearchItem(item, "hackathon", "Hackathons")
+    ),
+    ...projectsData.map((item) =>
+      createSearchItem(item, "project", "Projects")
+    ),
   ];
 
   const fuse = new Fuse(allData, {
@@ -283,7 +289,9 @@ const Hero = () => {
                                 className="flex items-center gap-3 p-3 rounded-2xl 
                                  hover:bg-gray-50 
                                  cursor-pointer transition-colors group text-left no-underline"
-                                aria-label={`Open ${result.item.title} in ${result.item.searchType}`}
+                                aria-label={`Open ${result.item.title} in ${
+                                  result.item.searchType || result.item.type || "page"
+                                }`}
                               >
                                 <div
                                   className="flex-shrink-0 p-2 bg-blue-100 rounded-xl text-blue-600 
