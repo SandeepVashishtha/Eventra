@@ -143,26 +143,30 @@ const UrgencyBadge = ({ startDate, endDate, status }) => {
   return null;
 };
 
+// FIX 3: Compute status dynamically from dates instead of relying on hardcoded JSON field
+const computeStatus = (startDate, endDate) => {
+  const now = new Date();
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  if (end < now) return "completed";
+  if (start <= now && now <= end) return "live";
+  return "upcoming";
+};
+
 const HackathonCard = ({
   hackathon,
   isFeatured = false,
   ...props
 }) => {
+  // FIX 3: Use computed status everywhere instead of hackathon.status
+  const status = computeStatus(hackathon.startDate, hackathon.endDate);
+
+  // Show real stats for ALL statuses (live, upcoming, completed)
   const stats = {
-    participants:
-      hackathon.status === "live"
-        ? hackathon.participants
-        : 0,
-
-    teams:
-      hackathon.status === "live"
-        ? hackathon.teams
-        : 0,
-
-    submissions:
-      hackathon.status === "live"
-        ? hackathon.submissions
-        : 0,
+    participants: hackathon.participants,
+    teams: hackathon.teams,
+    submissions: hackathon.submissions,
   };
 
   const hackathonSharingData = generateEventSharingData({
@@ -172,6 +176,9 @@ const HackathonCard = ({
     date: hackathon.startDate,
     id: hackathon.id,
   });
+
+  // FIX 3: Pass computed status (not hackathon.status) to UrgencyBadge
+  // (used below in JSX)
 
   return (
     <motion.div
@@ -263,25 +270,26 @@ const HackathonCard = ({
           <div className="flex items-center gap-2 flex-wrap">
             <span
               className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                hackathon.status === "live"
+                status === "live"
                   ? "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
-                  : hackathon.status === "upcoming"
+                  : status === "upcoming"
                   ? "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300"
                   : "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
               }`}
             >
-              {hackathon.status.charAt(0).toUpperCase() +
-                hackathon.status.slice(1)}
+              {/* FIX 3: Use computed status label */}
+              {status.charAt(0).toUpperCase() + status.slice(1)}
             </span>
 
             <span className="px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 text-xs font-medium">
               {hackathon.difficulty}
             </span>
 
+            {/* FIX 3: Pass computed status to UrgencyBadge */}
             <UrgencyBadge
               startDate={hackathon.startDate}
               endDate={hackathon.endDate}
-              status={hackathon.status}
+              status={status}
             />
           </div>
 
@@ -342,7 +350,8 @@ const HackathonCard = ({
             {hackathon.location}
           </div>
 
-          {hackathon.status === "upcoming" &&
+          {/* FIX 3: Use computed status for countdown logic */}
+          {status === "upcoming" &&
             hackathon.startDate && (
               <CountdownTimer
                 targetDate={hackathon.startDate}
@@ -350,7 +359,7 @@ const HackathonCard = ({
               />
             )}
 
-          {hackathon.status === "live" &&
+          {status === "live" &&
             hackathon.endDate && (
               <CountdownTimer
                 targetDate={hackathon.endDate}
@@ -447,8 +456,8 @@ const HackathonCard = ({
           </span>
 
           <span className="text-sm text-gray-700 dark:text-gray-300">
-            {hackathon.status === "completed" &&
-            hackathon.winner
+            {/* FIX 3: Use computed status for winner display */}
+            {status === "completed" && hackathon.winner
               ? hackathon.winner
               : "Announced soon"}
           </span>
@@ -456,7 +465,8 @@ const HackathonCard = ({
 
         {/* Buttons */}
         <div className="pt-3 mt-auto">
-          {hackathon.status === "live" ? (
+          {/* FIX 3: Use computed status for button rendering */}
+          {status === "live" ? (
             <div className="grid grid-cols-2 gap-3">
               <button className="px-4 py-2 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white text-sm font-medium rounded-lg">
                 Join Now
@@ -466,7 +476,7 @@ const HackathonCard = ({
                 Submit Project
               </button>
             </div>
-          ) : hackathon.status === "upcoming" ? (
+          ) : status === "upcoming" ? (
             <div className="grid grid-cols-2 gap-3">
               <button className="px-4 py-2 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white text-sm font-medium rounded-lg">
                 Register
