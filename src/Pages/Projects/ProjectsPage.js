@@ -8,6 +8,8 @@ import FeedbackButton from "../../components/FeedbackButton"; // Feedback floati
 import ProjectCTA from "./ProjectCTA";
 // Import mock data directly (assuming it's named mockProjectsData.json in the same folder as ProjectsPage.js)
 import mockProjects from "./mockProjectsData.json";
+// fix: import API config for real backend calls with mock fallback
+import { API_ENDPOINTS, apiUtils } from "../../config/api";
 
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
@@ -66,33 +68,49 @@ const ProjectGallery = () => {
     issues: "Most Issues",
   };
 
-  // Fetch projects and categories from API (or mock data)
+  // fix: try real API first; fall back to mock data if API is unavailable or returns empty
   useEffect(() => {
     const fetchProjects = async () => {
       try {
         setIsLoading(true); // Set loading before fetching
         setError(""); // Reset error
 
-        // --- PRODUCTION LOGIC (Commented out for reliable local run) ---
-        /*
+        // --- PRODUCTION LOGIC: attempt real API call to Spring Boot backend ---
         const response = await apiUtils.get(API_ENDPOINTS.PROJECTS.LIST);
+
         if (response.ok) {
           const projectsData = await response.json();
-          setProjects(projectsData);
-          const categoriesResponse = await apiUtils.get(
-            API_ENDPOINTS.PROJECTS.CATEGORIES
-          );
-          if (categoriesResponse.ok) {
-            const categoriesData = await categoriesResponse.json();
-            setCategories(["all", ...categoriesData]);
-          }
-        } else {
-          throw new Error("Failed to fetch projects from API");
-        }
-        */
 
-        // --- MOCK DATA FALLBACK/REPLACEMENT ---
-        // Load mock data and simulate network delay
+          // fix: only use API data if it is non-empty; otherwise fall back to mock
+          if (projectsData && projectsData.length > 0) {
+            setProjects(projectsData);
+
+            // Attempt to fetch categories from API
+            try {
+              const categoriesResponse = await apiUtils.get(
+                API_ENDPOINTS.PROJECTS.CATEGORIES
+              );
+              if (categoriesResponse.ok) {
+                const categoriesData = await categoriesResponse.json();
+                setCategories(["all", ...categoriesData]);
+              } else {
+                // fix: derive categories from API project data if categories endpoint fails
+                const uniqueCategories = [...new Set(projectsData.map(p => p.category))];
+                setCategories(["all", ...uniqueCategories]);
+              }
+            } catch {
+              // fix: derive categories from API project data if categories endpoint throws
+              const uniqueCategories = [...new Set(projectsData.map(p => p.category))];
+              setCategories(["all", ...uniqueCategories]);
+            }
+
+            setIsLoading(false);
+            return; // exit — API data loaded successfully
+          }
+        }
+
+        // --- MOCK DATA FALLBACK: API unavailable, not ok, or returned empty array ---
+        console.warn("Projects API unavailable or empty — loading mock data.");
         setTimeout(() => {
           const projectsData = mockProjects;
           setProjects(projectsData);
@@ -104,9 +122,14 @@ const ProjectGallery = () => {
         }, 500);
 
       } catch (error) {
-        console.error("Error fetching projects:", error);
-        setError("Failed to load projects. Please try again later.");
-        setIsLoading(false);
+        // fix: on any network error fall back to mock instead of showing error
+        console.warn("Projects API error — falling back to mock data:", error.message);
+        setTimeout(() => {
+          setProjects(mockProjects);
+          const uniqueCategories = [...new Set(mockProjects.map(p => p.category))];
+          setCategories(["all", ...uniqueCategories]);
+          setIsLoading(false);
+        }, 500);
       }
     };
 

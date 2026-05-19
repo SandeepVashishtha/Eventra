@@ -6,11 +6,20 @@ const AUTH_API_BASE_PATH = process.env.REACT_APP_API_URL
   ? `${process.env.REACT_APP_API_URL}/api/auth`
   : '/api/auth'; // ← goes through CRA proxy in dev
 
-// API endpoints — only login and signup are active
+// fix: shared base URL for all non-auth API routes
+const BASE_URL = process.env.REACT_APP_API_URL || '';
+
+// API endpoints
 export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: `${AUTH_API_BASE_PATH}/login`,
     REGISTER: `${AUTH_API_BASE_PATH}/signup`,
+  },
+  // fix: projects endpoints for list, categories, and submission
+  PROJECTS: {
+    LIST: `${BASE_URL}/api/projects`,
+    CATEGORIES: `${BASE_URL}/api/projects/categories`,
+    SUBMIT: `${BASE_URL}/api/projects/submit`,
   },
 };
 
@@ -34,6 +43,20 @@ export const apiUtils = {
       return response;
     } catch (error) {
       console.error('API POST Error:', error);
+      throw error;
+    }
+  },
+  // fix: GET helper used by ProjectsPage and other consumers
+  get: async (url, token = null) => {
+    try {
+      console.log('Making GET request to:', url);
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: getAuthHeaders(token),
+      });
+      return response;
+    } catch (error) {
+      console.error('API GET Error:', error);
       throw error;
     }
   },
