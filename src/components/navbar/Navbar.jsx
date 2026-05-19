@@ -29,8 +29,8 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         <div className="h-full px-6 flex items-center justify-between">
           <Link to="/">
             <div className="flex items-center justify-center gap-2">
-              <img src="/Eventra.png" alt="Eventra Logo" className="h-11 w-11 rounded-xl object-contain" />
-              <h1 className="text-3xl font-bold text-text">Eventra</h1>
+              <img src="/Eventra.png" alt="Eventra Logo" className="h-8 w-8 rounded-xl object-contain" />
+              <h1 className="text-xl font-bold text-text">Eventra</h1>
             </div>
           </Link>
 
