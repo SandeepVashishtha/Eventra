@@ -180,7 +180,7 @@ const Hero = () => {
       ))}
 
       {/* Hero Content */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10 pt-20">
         <motion.div
           className="text-center"
           variants={container}
@@ -194,7 +194,7 @@ const Hero = () => {
           <MotionConfig reducedMotion="never">
             {/* Headline */}
             <motion.h1
-              className="mx-auto max-w-[92vw] text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 sm:mb-6 leading-[0.95] sm:leading-tight text-black dark:text-white break-words px-2 sm:px-0"
+              className="mx-auto max-w-[92vw] text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-5 sm:mb-6 leading-tight sm:leading-tight text-black dark:text-white break-words px-2 sm:px-0"
               style={{ fontFamily: '"Anton", sans-serif' }}
             >
               <motion.span
