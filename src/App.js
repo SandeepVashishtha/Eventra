@@ -3,13 +3,15 @@ import React, { useState } from "react";
 import "./App.css";
 
 // --------------- LAYOUT
-import Navbar from "./components/navbar/Navbar";
+//import Navbar from "./components/Layout/Navbar";
+import Navbar from "./components/Layout/Navbar";
 import Footer from "./components/Layout/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
 import Chatbot from "./components/Chatbot";
 import FluidCursor from "./jhalak/FluidCursor";
 import AppRoutes from "./components/AppRoutes";
+import Footer from "./components/Layout/Footer";
 
 // --------------- CONTEXT & HOOKS
 import NotificationProvider from "./components/common/NotificationProvider";
