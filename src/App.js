@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import "./App.css";
 
 // --------------- LAYOUT
-import Navbar from "./components/Layout/Navbar";
+//import Navbar from "./components/Layout/Navbar";
 import Navbar from "./components/navbar/Navbar";
 import Footer from "./components/Layout/Footer";
 import ScrollToTop from "./components/ScrollToTop";
