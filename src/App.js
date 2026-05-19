@@ -3,7 +3,8 @@ import React, { useState } from "react";
 import "./App.css";
 
 // --------------- LAYOUT
-import Navbar from "./components/navbar/Navbar";
+//import Navbar from "./components/Layout/Navbar";
+import Navbar from "./components/Layout/Navbar";
 import Footer from "./components/Layout/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
@@ -18,6 +19,12 @@ import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { useModelContext } from "./hooks/useModelContext";
+import useOfflineSync from "./hooks/useOfflineSync";
+
+const OfflineSyncManager = () => {
+  useOfflineSync();
+  return null;
+};
 
 
 function App() {
@@ -49,6 +56,7 @@ function App() {
       <AuthProvider>
         <MyEventsProvider>
         <NotificationProvider />
+        <OfflineSyncManager />
         <Router>
           <div className="App">
             <Navbar
