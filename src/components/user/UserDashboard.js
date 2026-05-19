@@ -185,7 +185,7 @@ export default function UserDashboard() {
               <Search size={15} className="ud-search-icon" />
               <input className="ud-search" placeholder="Search…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
               {searchQuery && (
-                <button className="ud-search-clear" onClick={() => setSearchQuery("")}><X size={13} /></button>
+                <button className="ud-search-clear" onClick={() => setSearchQuery("")} aria-label="Clear search query"><X size={13} /></button>
               )}
             </div>
 
@@ -206,7 +206,7 @@ export default function UserDashboard() {
                   >
                     <div className="ud-notif-header">
                       <span>Notifications</span>
-                      <button onClick={() => setNotifOpen(false)}><X size={14} /></button>
+                      <button onClick={() => setNotifOpen(false)} aria-label="Close notification panel"><X size={14} /></button>
                     </div>
                     {notifications.map(n => (
                       <div key={n.id} className={`ud-notif-item ${n.unread ? "ud-notif-unread" : ""}`}>

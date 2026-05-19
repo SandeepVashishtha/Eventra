@@ -86,6 +86,7 @@ const ModernSearchInput = ({
             whileTap={{ scale: 0.9 }}
             onClick={() => onChange({ target: { value: "" } })}
             className="absolute inset-y-0 right-4 flex items-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors z-20"
+            aria-label="Clear search input"
           >
             <X className="h-5 w-5" />
           </motion.button>

@@ -17,7 +17,7 @@ const MobileDrawer = ({ isOpen, closeMenu, isAuthenticated, user, logout }) => {
           <img src="/Eventra.png" alt="Eventra Logo" className="h-8 w-8 rounded-xl object-contain" />
           <h2 className="text-2xl font-bold">Eventra</h2>
         </div>
-        <button onClick={closeMenu}>X</button>
+        <button onClick={closeMenu} aria-label="Close navigation menu">X</button>
       </div>
 
       <div className="p-4">
