@@ -114,9 +114,16 @@ const EventsPage = () => {
   };
 
   useEffect(() => {
-    handleSortChange(sortType);
-    // eslint-disable-next-line
-  }, [filterType, searchQuery]);
+    setFilteredEvents((currentEvents) => {
+      const sorted = [...currentEvents];
+      if (sortType === "Newest") {
+        sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
+      } else if (sortType === "Upcoming" || sortType === "upcoming") {
+        sorted.sort((a, b) => new Date(a.date) - new Date(b.date));
+      }
+      return sorted;
+    });
+  }, [filterType, searchQuery, sortType]);
 
   const scrollToCard = () => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
