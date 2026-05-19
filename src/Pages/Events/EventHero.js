@@ -79,6 +79,7 @@ export default function EventHero({
           <ModernSearchInput
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
+            autoFocus
             placeholder="Search events by name, location, or tags..."
           />
 
