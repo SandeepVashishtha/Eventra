@@ -175,7 +175,7 @@ const ProjectGallery = () => {
         <motion.div
           // UPDATED: Panel background and border
           className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8"
-          style={{ boxShadow: "0 10px 25px rgba(59, 130, 246, 0.08)" }}
+          style={{ boxShadow: "0 10px 25px rgba(59, 130, 246, 0.08)", fontFamily: '"Big Shoulders Display", sans-seri'}}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}

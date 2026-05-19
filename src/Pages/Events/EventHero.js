@@ -65,7 +65,7 @@ export default function EventHero({
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 text-center z-10">
         <h1
           className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight px-4 sm:px-0 text-black dark:text-white"
-          style={{ fontFamily: '"Anton", sans-serif' }}
+          style={{ fontFamily: '"Big Shoulders Display", sans-seri' }}
         >
           Discover <span className="text-indigo-600">Amazing Events</span>
         </h1>

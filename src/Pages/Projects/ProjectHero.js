@@ -81,7 +81,7 @@ dark:from-[#020617] dark:via-[#0f172a] dark:to-black"
 
       {/* Continuous Zigzag Icon Train */}
       <div
-        className="absolute right-8 top-0 h-full flex flex-col items-center justify-start overflow-hidden z-0
+        className="absolute right-8 top-0 h-full flex-col items-center justify-start overflow-hidden z-0
                 hidden lg:flex"
       >
         {" "}
@@ -126,7 +126,7 @@ dark:from-[#020617] dark:via-[#0f172a] dark:to-black"
           transition={{ duration: 1 }}
           // UPDATED: Title text color and gradient
           className="text-4xl sm:text-6xl font-extrabold mb-6 mt-6 text-black dark:text-white leading-tight"
-          style={{ fontFamily: '"Anton", sans-serif' }}
+          style={{ fontFamily: '"Big Shoulders Display", sans-seri' }}
         >
           Discover <span className="text-indigo-600">Amazing Projects</span>
         </motion.h1>
