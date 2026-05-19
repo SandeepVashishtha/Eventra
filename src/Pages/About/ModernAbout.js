@@ -1,6 +1,7 @@
 import { motion, useInView } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import CountUp from "react-countup";
 
 // Framer Motion Variants
 const container = {
@@ -158,7 +159,13 @@ export default function ModernAbout() {
                 transition={{ type: "spring", stiffness: 300, damping: 20 }} 
                 className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl shadow-lg shadow-blue-100 dark:shadow-indigo-900/50 p-4 sm:p-5 cursor-default"
               >
-                <h3 className="text-black dark:text-white text-xl sm:text-2xl font-bold mb-1">{s.value}</h3>
+                <h3 className="text-black dark:text-white text-xl sm:text-2xl font-bold mb-1">
+                  {s.value.includes("+") ? (
+                    <CountUp start={0} end={parseInt(s.value)} duration={3} suffix="+" enableScrollSpy scrollSpyOnce />
+                  ) : (
+                    s.value
+                  )}
+                </h3>
                 <p className="text-gray-500 dark:text-gray-400 text-xs">{s.label}</p>
               </motion.div>
             ))}
@@ -228,13 +235,15 @@ function MissionSection({ anim, prefersReducedMotion }) {
           </motion.div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-12 w-full">
+        <div ref={containerRef} className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-12 w-full">
           <motion.div
             variants={cardItem}
             className="bg-gradient-to-b from-white via-white to-slate-50 dark:from-gray-800 dark:to-gray-900 border border-slate-100 dark:border-gray-800 shadow-xl shadow-slate-100/70 dark:shadow-none backdrop-blur-sm rounded-2xl p-6 hover:scale-[1.02] transition-all duration-500"
             {...anim(scaleIn)}
           >
-            <h3 className="text-black dark:text-white text-2xl sm:text-3xl font-bold mb-2">500+</h3>
+            <h3 className="text-black dark:text-white text-2xl sm:text-3xl font-bold mb-2">
+              {isOpen ? <CountUp start={0} end={500} duration={3} suffix="+" /> : "0+"}
+            </h3>
             <p className="text-gray-500 dark:text-gray-400 text-sm">Active Users</p>
           </motion.div>
 
