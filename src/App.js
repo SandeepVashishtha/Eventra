@@ -3,13 +3,15 @@ import React, { useState } from "react";
 import "./App.css";
 
 // --------------- LAYOUT
-import Navbar from "./components/navbar/Navbar";
+//import Navbar from "./components/Layout/Navbar";
+import Navbar from "./components/Layout/Navbar";
 import Footer from "./components/Layout/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
 import Chatbot from "./components/Chatbot";
 import FluidCursor from "./jhalak/FluidCursor";
 import AppRoutes from "./components/AppRoutes";
+import PageTransition from "./components/common/PageTransition";
 
 // --------------- CONTEXT & HOOKS
 import NotificationProvider from "./components/common/NotificationProvider";
@@ -17,6 +19,12 @@ import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { useModelContext } from "./hooks/useModelContext";
+import useOfflineSync from "./hooks/useOfflineSync";
+
+const OfflineSyncManager = () => {
+  useOfflineSync();
+  return null;
+};
 
 
 function App() {
@@ -48,6 +56,7 @@ function App() {
       <AuthProvider>
         <MyEventsProvider>
         <NotificationProvider />
+        <OfflineSyncManager />
         <Router>
           <div className="App">
             <Navbar
@@ -56,7 +65,9 @@ function App() {
             />
 
             <main className="relative z-10 min-h-screen bg-white dark:bg-black">
-              <AppRoutes />
+              <PageTransition>
+                <AppRoutes />
+              </PageTransition>
             </main>
 
             <ScrollToTop />
