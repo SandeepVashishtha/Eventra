@@ -48,25 +48,7 @@ const Navbar = ({
     <>
       <nav
         ref={navRef}
-        className="
-          fixed
-          top-0
-          left-0
-          w-full
-          h-20
-
-          navbar-theme
-
-          border-b
-          border-border
-
-          z-50
-
-          backdrop-blur-md
-
-          transition-all
-          duration-300
-        "
+        className="fixed top-0 left-0 w-full h-20 bg-white dark:bg-gray-900 border-b border-border z-[200] transition-all duration-300"
       >
         <div
           className="
