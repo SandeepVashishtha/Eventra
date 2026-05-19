@@ -66,19 +66,6 @@ const handleUnauthorized = (response) => {
 
 // API utility functions
 export const apiUtils = {
-  get: async (url, token = null) => {
-    try {
-      console.log('Making GET request to:', url);
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: getAuthHeaders(token),
-      });
-      return response;
-    } catch (error) {
-      console.error('API GET Error:', error);
-      throw error;
-    }
-  },
   post: async (url, data, token = null) => {
     try {
       console.log('Making POST request to:', url);
