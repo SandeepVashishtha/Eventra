@@ -3,7 +3,6 @@
 
 main {
   position: relative;
-  z-index: 1;
 }
 
 .social-links a {

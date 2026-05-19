@@ -962,7 +962,18 @@ const FluidCursor = ({ enabled = true }) => {
       return delta;
     }
 
+
+    function isExcludedZone(clientX, clientY) {
+      const el = document.elementFromPoint(clientX, clientY);
+      if (!el) return false;
+      return (
+        el.closest('nav') !== null ||
+        el.closest('footer') !== null
+      );
+    }
+
     const handleMouseDown = (e) => {
+      if (isExcludedZone(e.clientX, e.clientY)) return;
       let pointer = pointers[0];
       let posX = e.clientX * (canvas.width / canvas.clientWidth);
       let posY = e.clientY * (canvas.height / canvas.clientHeight);
@@ -971,6 +982,7 @@ const FluidCursor = ({ enabled = true }) => {
     };
 
     const handleMouseMove = (e) => {
+      if (isExcludedZone(e.clientX, e.clientY)) return;
       let pointer = pointers[0];
       let posX = e.clientX * (canvas.width / canvas.clientWidth);
       let posY = e.clientY * (canvas.height / canvas.clientHeight);
@@ -982,6 +994,7 @@ const FluidCursor = ({ enabled = true }) => {
       const touches = e.targetTouches;
       let pointer = pointers[0];
       for (let i = 0; i < touches.length; i++) {
+        if (isExcludedZone(touches[i].clientX, touches[i].clientY)) continue;
         let posX = scaleByPixelRatio(touches[i].clientX);
         let posY = scaleByPixelRatio(touches[i].clientY);
         updatePointerDownData(pointer, touches[i].identifier, posX, posY);
@@ -992,6 +1005,7 @@ const FluidCursor = ({ enabled = true }) => {
       const touches = e.targetTouches;
       let pointer = pointers[0];
       for (let i = 0; i < touches.length; i++) {
+        if (isExcludedZone(touches[i].clientX, touches[i].clientY)) continue;
         let posX = scaleByPixelRatio(touches[i].clientX);
         let posY = scaleByPixelRatio(touches[i].clientY);
         updatePointerMoveData(pointer, posX, posY, pointer.color);
@@ -1028,7 +1042,7 @@ const FluidCursor = ({ enabled = true }) => {
   }
 
   return (
-    <div className='fixed top-0 left-0 z-[9999] pointer-events-none'>
+    <div className='fixed top-0 left-0 z-[40] pointer-events-none'>
       <canvas ref={canvasRef} id='fluid' className='w-screen h-screen' />
     </div>
   );

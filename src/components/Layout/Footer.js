@@ -269,7 +269,7 @@ const FooterBottom = () => {
 const Footer = () => {
   return (
     <footer 
-      className="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
+      className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
       data-aos="fade-up"
       data-aos-duration="1000"
       data-aos-offset="100"

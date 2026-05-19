@@ -155,8 +155,7 @@ const WhatsHappening = () => {
       data-aos-duration="1000"
       data-aos-offset="150"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
+      <div className="relative z-[50] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Heading */}
         <motion.div
           className="text-center mb-8 sm:mb-12"
@@ -233,7 +232,7 @@ const WhatsHappening = () => {
                 animate="center"
                 exit="exit"
                 transition={{ duration: 0.4, ease: "easeInOut" }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pointer-events-auto"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pointer-events-auto relative z-[50]"
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.2}
