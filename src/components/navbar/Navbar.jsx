@@ -19,8 +19,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
   useBodyScrollLock(isMobileMenuOpen);
 
-  const navHeight = useNavbarHeight(navRef);
-
+  
   return (
     <>
       <nav
@@ -28,53 +27,34 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         className="fixed top-0 left-0 w-full h-20 bg-white dark:bg-gray-900 border-b border-border z-50 transition-all duration-300"
       >
         <div className="h-full px-6 flex items-center justify-between">
-
-          {/* Logo */}
           <Link to="/">
             <div className="flex items-center justify-center gap-2">
-              <img
-                src="/Eventra.png"
-                alt="Eventra Logo"
-                className="h-8 w-8 rounded-xl object-contain"
-              />
-              <h1 className="text-xl font-bold text-text">
-                Eventra
-              </h1>
+              <img src="/Eventra.png" alt="Eventra Logo" className="h-11 w-11 rounded-xl object-contain" />
+              <h1 className="text-3xl font-bold text-text">Eventra</h1>
             </div>
           </Link>
 
-          {/* Right Side */}
-          <div className="flex items-center gap-2">
-
-            {/* Desktop Navbar */}
-            <DesktopNavbar
-              isAuthenticated={isAuthenticated()}
-              user={user}
-              logout={logout}
-            />
-            {/* Dark Mode Toggle */}
+          <div className="flex items-center gap-4">
+            <DesktopNavbar isAuthenticated={isAuthenticated()} user={user} logout={logout} />
             <button
               onClick={toggleTheme}
               className="w-10 h-10 flex items-center justify-center rounded-lg border border-border bg-card-bg text-text transition-all duration-300 hover:scale-105"
             >
               <img src={isDarkMode ? "/sun.svg" : "/moon.svg"} alt="" />
             </button>
-            {/* Curson Toggle */}
-            <CursorToggle
-              cursorEnabled={cursorEnabled}
-              toggleCursor={toggleCursor}
-            />
-
-            {/* Mobile Navbar */}
+            <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
             <MobileNavbar
               isOpen={isMobileMenuOpen}
               setIsOpen={setIsMobileMenuOpen}
+              isAuthenticated={isAuthenticated()}
+              user={user}
+              logout={logout}
             />
           </div>
         </div>
       </nav>
 
-      <div style={{ height: navHeight }} />
+      
     </>
   );
 };

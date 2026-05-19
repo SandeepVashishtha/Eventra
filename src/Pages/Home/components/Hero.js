@@ -171,7 +171,7 @@ const Hero = () => {
   ];
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 py-16 sm:py-20 md:py-24">
+    <section className="relative overflow-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 pb-16 sm:pb-20 md:pb-24 pt-6 sm:pt-10">
       {/* Floating pastel shapes */}
       {shapes.map((shape, i) => (
         <motion.div
