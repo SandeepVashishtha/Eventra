@@ -9,8 +9,10 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 const GSSoCContribution = () => {
+  useDocumentTitle("Eventra | GSSoC Contribution")
   const navigate = useNavigate();
 
   return (

@@ -11,6 +11,7 @@ import mockProjects from "./mockProjectsData.json";
 
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 // Skeleton loader for project cards while data is loading
 const SkeletonCard = () => (
@@ -43,12 +44,14 @@ const SkeletonCard = () => (
 
 // Main ProjectGallery component
 const ProjectGallery = () => {
+  useDocumentTitle("Eventra | Projects")
+  const initialSearchQuery = new URLSearchParams(window.location.search).get("search") || "";
   // State variables
   const [projects, setProjects] = useState([]); // Stores all fetched projects
   const [isLoading, setIsLoading] = useState(true); // Loading state
   const [filterCategory, setFilterCategory] = useState("all"); // Current category filter
   const [sortBy, setSortBy] = useState("recent"); // Sorting option
-  const [searchQuery, setSearchQuery] = useState(""); // Search input
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery); // Search input
   const [categories, setCategories] = useState(["all"]); // Categories available
   const [error, setError] = useState(""); // Error message
   const [categoryOpen, setCategoryOpen] = useState(false); // Category dropdown state
@@ -110,6 +113,14 @@ const ProjectGallery = () => {
     fetchProjects(); // Trigger data fetch
   }, []);
 
+  useEffect(() => {
+    if (!isLoading && initialSearchQuery) {
+      setTimeout(() => {
+        cardSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
+  }, [isLoading, initialSearchQuery]);
+
   // Filter, search, and sort projects dynamically
   const filteredAndSortedProjects = projects
     .filter((project) => {
@@ -164,7 +175,7 @@ const ProjectGallery = () => {
         <motion.div
           // UPDATED: Panel background and border
           className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8"
-          style={{ boxShadow: "0 10px 25px rgba(59, 130, 246, 0.08)" }}
+          style={{ boxShadow: "0 10px 25px rgba(59, 130, 246, 0.08)", fontFamily: '"Big Shoulders Display", sans-seri'}}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}

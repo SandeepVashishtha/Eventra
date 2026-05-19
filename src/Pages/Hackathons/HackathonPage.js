@@ -48,6 +48,7 @@ import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
 import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 // NEW: Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
@@ -68,9 +69,11 @@ const Tag = ({ tag, onRemove }) => (
 );
 
 const HackathonHub = () => {
+  useDocumentTitle("Eventra | Hackathon Hub")
+  const initialSearchQuery = new URLSearchParams(window.location.search).get("search") || "";
   const [hackathons, setHackathons] = useState([]);
   const [activeTab, setActiveTab] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [isLoading, setIsLoading] = useState(true);
   const [isScrollVisible, setIsScrollVisible] = useState(false);
   const [filters, setFilters] = useState({
@@ -97,6 +100,15 @@ const HackathonHub = () => {
 
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (!isLoading && initialSearchQuery) {
+      setTimeout(() => {
+        cardsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
+  }, [isLoading, initialSearchQuery]);
+
   // UPDATED: Extract available tags from hackathons - ADDED BLOCKCHAIN TAGS
   useEffect(() => {
     if (hackathons.length > 0) {

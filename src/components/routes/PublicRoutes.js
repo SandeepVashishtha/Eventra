@@ -5,6 +5,7 @@ import PageLayout from '../Layout/PageLayout';
 // --------------- PAGES
 import HomePage from "../../Pages/Home/HomePage";
 import EventsPage from "../../Pages/Events/EventsPage";
+import EventDetailsPage from "../../Pages/Events/EventDetailsPage";
 import EventRegistration from "../../Pages/Events/EventRegistration";
 import HackathonPage from "../../Pages/Hackathons/HackathonPage";
 import ProjectsPage from "../../Pages/Projects/ProjectsPage";
@@ -23,13 +24,19 @@ import FeedbackPage from "../../Pages/Feedback/FeedbackPage";
 import EventAnalyticsDashboard from "../../Pages/Events/EventAnalyticsDashboard";
 import DocumentationPage from "../../Pages/About/DocumentationPage";
 import SubmitProject from "../../Pages/Projects/SubmitProject";
+import MockApiResponse from "../MockApiResponse";
 
 export const getPublicRoutes = () => [
   <Route key="/" path="/" element={<HomePage />} />,
   <Route key="/events" path="/events" element={<EventsPage />} />,
+  <Route key="/event-details" path="/events/:eventId" element={<EventDetailsPage />} />,
   <Route key="/register" path="/events/:eventId/register" element={<EventRegistration />} />,
   <Route key="/hackathons" path="/hackathons" element={<HackathonPage />} />,
   <Route key="/projects" path="/projects" element={<ProjectsPage />} />,
+  <Route key="/api/hackathons" path="/api/hackathons" element={<MockApiResponse />} />,
+  <Route key="/api/projects" path="/api/projects" element={<MockApiResponse />} />,
+  <Route key="/api/contributors" path="/api/contributors" element={<MockApiResponse />} />,
+  <Route key="/api/leaderboard" path="/api/leaderboard" element={<MockApiResponse />} />,
   <Route key="page-layout" element={<PageLayout />}>
     <Route key="/contributors" path="/contributors" element={<Contributors />} />
     <Route key="/communityEvent" path="/communityEvent" element={<CommunityEvent />} />

@@ -11,6 +11,7 @@ const ModernSearchInput = ({
   onChange,
   placeholder = "Search...",
   onFocus,
+  autoFocus,
   onBlur,
   onKeyDown,
   containerClassName = "",
@@ -70,6 +71,7 @@ const ModernSearchInput = ({
             value={value}
             onChange={onChange}
             onFocus={handleFocus}
+            autoFocus={autoFocus}
             onBlur={handleBlur}
             onKeyDown={onKeyDown}
           />

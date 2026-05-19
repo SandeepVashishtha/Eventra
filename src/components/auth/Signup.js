@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
-import GoogleSignInButton from "../GoogleSignInButton";
+
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
 import { User, AtSign } from 'lucide-react'
 
@@ -197,17 +197,17 @@ const Signup = () => {
       transition={{ duration: 0.6 }}
       className="pastel-grid-bg  min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8"
     >
-       <div className="max-w-4xl w-full mx-auto">
+       <div className="max-w-5xl w-full mx-auto">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6 }}
-          className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
+          className="bg-white dark:bg-gray-800 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700"
         >
         <div className="md:flex">  
 
           {/* LEFT PANEL */}
-          <div className="md:w-2/5 bg-black text-white p-12 flex flex-col justify-between rounded-3xl">
+          <div className="relative z-10 md:w-[38%] bg-gradient-to-br from-blue-100 via-yellow-50 to-pink-100 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900 text-gray-900 dark:text-white p-12 flex flex-col justify-between rounded-3xl">
             <div>
               <h2 className="text-4xl font-extrabold mb-4" style={{ fontFamily: '"Anton", sans-serif' }}>
                 Join Eventra
@@ -218,7 +218,7 @@ const Signup = () => {
               </p>
             </div>
        
-            <div className="mt-8 flex items-center p-4 bg-white/10 rounded-2xl hover:bg-white/20 transition duration-300 ease-in-out">
+            {/* <div className="mt-8 flex items-center p-4 bg-white/10 rounded-2xl hover:bg-white/20 transition duration-300 ease-in-out">
               <div className="bg-white/20 p-3 rounded-full mr-4 flex items-center justify-center flex-shrink-0">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
@@ -230,23 +230,20 @@ const Signup = () => {
                   Sign in
                 </Link>
               </p>
-            </div>
+            </div> */}
           </div>
           
            {/* RIGHT PANEL */}
-        <div className="md:w-3/5 p-10">
-          <div className="mb-4">
-            <GoogleSignInButton className="w-full" />
-          </div>
+        <div className="md:w-3/5 p-10 bg-white dark:bg-gray-800">
 
           <div className="text-center space-y-2">
             <motion.div
                whileHover={{ scale: 1.05, rotate: 5 }}
               whileTap={{ scale: 0.95 }}
-              className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg"
+              className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-yellow-100 rounded-3xl flex items-center justify-center shadow-md border border-blue-100"
             >
               <svg
-                className="w-8 h-8 text-white"
+                className="w-8 h-8 text-blue-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -259,7 +256,7 @@ const Signup = () => {
                 />
               </svg>
             </motion.div>
-            <h1 className="text-black dark:text-white text-2xl font-bold text-gray-900 dark:text-gray-100">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
               Create Your Account
             </h1>
             <p className="text-sm text-gray-600 dark:text-gray-400 p-2">
@@ -280,7 +277,7 @@ const Signup = () => {
                     value={formData.firstName}
                     onChange={handleChange}
                     placeholder="First name"
-                    className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                    className="w-full pl-10 pr-4 py-3 bg-white/60 dark:bg-gray-700/70 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                     required
                   />
                 </div>
@@ -299,7 +296,7 @@ const Signup = () => {
                     value={formData.lastName}
                     onChange={handleChange}
                     placeholder="Last name"
-                    className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                    className="w-full pl-10 pr-4 py-3 bg-white/60 dark:bg-gray-700/70 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                     required
                   />
                 </div>
@@ -326,7 +323,7 @@ const Signup = () => {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="Enter your email address"
-                  className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                  className="w-full pl-10 pr-4 py-3 bg-white/60 dark:bg-gray-700/70 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                   required
                 />
               </div>
@@ -359,7 +356,7 @@ const Signup = () => {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Enter your password"
-                  className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                  className="w-full pl-10 pr-4 py-3 bg-white/60 dark:bg-gray-700/70 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                   required
                 />
                 <button
@@ -433,7 +430,7 @@ const Signup = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   placeholder="Confirm your password"
-                  className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                  className="w-full pl-10 pr-4 py-3 bg-white/60 dark:bg-gray-700/70 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                   required
                 />
                 <button
@@ -506,7 +503,7 @@ const Signup = () => {
               whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-300 hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
             >
               {loading ? (
                 <svg

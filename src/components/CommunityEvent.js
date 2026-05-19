@@ -1,5 +1,5 @@
 // src/pages/CommunityEventsPage.jsx
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
   CalendarDays,
@@ -11,6 +11,7 @@ import {
   BookOpen,
   Code,
   Globe,
+  X,
 } from "lucide-react"; // icons
 
 const events = [
@@ -87,6 +88,8 @@ const events = [
 ];
 
 const CommunityEvent = () => {
+  const [selectedEvent, setSelectedEvent] = useState(null);
+
   return (
     // UPDATED: Main page background
     <div className="bg-white dark:bg-black pt-20 md:pt-24">
@@ -122,7 +125,7 @@ const CommunityEvent = () => {
               whileHover={{ scale: 1.03 }}
               transition={{ type: "spring", stiffness: 200, damping: 15 }}
               // UPDATED: Card background and border
-              className="p-6 rounded-2xl bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+              className="p-7 rounded-3xl bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-2xl transition-all duration-300"
             >
               {/* Event Header */}
               <div className="flex items-center gap-3 mb-4">
@@ -146,15 +149,69 @@ const CommunityEvent = () => {
 
               {/* Learn More Button is fine for both themes */}
               <motion.button
+                type="button"
                 whileHover={{ scale: 1.05 }}
-                className="mt-6 px-4 py-2 text-sm font-semibold text-white  rounded-lg shadow-md bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 transition-all"
+                onClick={() => setSelectedEvent(event)}
+                className="mt-6 px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-md bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 transition-all"
+                aria-label={`Learn more about ${event.title}`}
               >
-                Learn More →
+                Learn More -&gt;
               </motion.button>
             </motion.div>
           ))}
         </div>
       </div>
+
+      {selectedEvent && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="community-event-modal-title"
+          onClick={() => setSelectedEvent(null)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedEvent(null)}
+              className="absolute right-4 top-4 rounded-full p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+              aria-label="Close event details"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="mb-5 flex items-center gap-3 pr-10">
+              <div className="rounded-xl bg-indigo-100 p-3 text-indigo-600 dark:bg-gray-800 dark:text-indigo-400">
+                {selectedEvent.icon}
+              </div>
+              <h2
+                id="community-event-modal-title"
+                className="text-2xl font-bold text-gray-900 dark:text-gray-100"
+              >
+                {selectedEvent.title}
+              </h2>
+            </div>
+
+            <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
+              <p>
+                <strong>Date:</strong> {selectedEvent.date}
+              </p>
+              <p>
+                <strong>Location:</strong> {selectedEvent.location}
+              </p>
+              <p className="text-base leading-relaxed text-gray-700 dark:text-gray-200">
+                {selectedEvent.description}
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };
