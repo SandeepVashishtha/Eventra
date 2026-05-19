@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes } from 'react-router-dom';
+import { Routes , Route} from 'react-router-dom';
 import { getPublicRoutes } from './routes/PublicRoutes';
 import { getProtectedRoutes, getAuthRoutes } from './routes/ProtectedRoutes';
 import UserAchievements from '../Pages/UserAchievements'; // Check path distance relative to AppRoutes location

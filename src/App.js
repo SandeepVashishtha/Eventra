@@ -45,9 +45,9 @@ function App() {
 
   return (
     <>
-    <ThemeProvider>
+    {/* <ThemeProvider> */}
     <AuthProvider>
-      <NotificationProvider />
+      {/* <NotificationProvider /> */}
     
         <Router>
           <div className="App">
