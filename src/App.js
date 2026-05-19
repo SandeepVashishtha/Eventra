@@ -11,7 +11,7 @@ import FeedbackButton from "./components/FeedbackButton";
 import Chatbot from "./components/Chatbot";
 import FluidCursor from "./jhalak/FluidCursor";
 import AppRoutes from "./components/AppRoutes";
-import Footer from "./components/Layout/Footer";
+import PageTransition from "./components/common/PageTransition";
 
 // --------------- CONTEXT & HOOKS
 import NotificationProvider from "./components/common/NotificationProvider";
@@ -65,7 +65,9 @@ function App() {
             />
 
             <main className="min-h-screen bg-white dark:bg-black ">
-              <AppRoutes />
+              <PageTransition>
+                <AppRoutes />
+              </PageTransition>
             </main>
 
             <ScrollToTop />
