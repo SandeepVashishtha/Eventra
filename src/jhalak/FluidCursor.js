@@ -962,7 +962,9 @@ const FluidCursor = ({ enabled = true }) => {
       return delta;
     }
 
-
+    // Returns true if the real element under the cursor belongs to a nav or footer.
+    // Uses document.elementFromPoint to see through the pointer-events-none canvas
+    // and detect the actual DOM element beneath it.
     function isExcludedZone(clientX, clientY) {
       const el = document.elementFromPoint(clientX, clientY);
       if (!el) return false;
@@ -972,6 +974,7 @@ const FluidCursor = ({ enabled = true }) => {
       );
     }
 
+    // Skip click splat when mouse is over navbar or footer
     const handleMouseDown = (e) => {
       if (isExcludedZone(e.clientX, e.clientY)) return;
       let pointer = pointers[0];
@@ -981,6 +984,7 @@ const FluidCursor = ({ enabled = true }) => {
       clickSplat(pointer);
     };
 
+    // Skip fluid trail generation when mouse is over navbar or footer
     const handleMouseMove = (e) => {
       if (isExcludedZone(e.clientX, e.clientY)) return;
       let pointer = pointers[0];
@@ -990,6 +994,7 @@ const FluidCursor = ({ enabled = true }) => {
       updatePointerMoveData(pointer, posX, posY, color);
     };
 
+    // Skip touch splat when touch starts over navbar or footer
     const handleTouchStart = (e) => {
       const touches = e.targetTouches;
       let pointer = pointers[0];
@@ -1001,6 +1006,7 @@ const FluidCursor = ({ enabled = true }) => {
       }
     };
 
+    // Skip touch trail generation when touch moves over navbar or footer
     const handleTouchMove = (e) => {
       const touches = e.targetTouches;
       let pointer = pointers[0];
