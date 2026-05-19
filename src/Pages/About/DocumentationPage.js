@@ -433,7 +433,7 @@ npm start`}
         data-aos="fade-up"
         data-aos-delay="700"
       >
-        <h2 className="text-3xl font-bold mb-10 text-center text-black">
+        <h2 className="text-3xl font-bold mb-10 text-center text-black font-['Big_Shoulders_Display']">
           Frequently Asked Questions
         </h2>
         <div className="space-y-6">

@@ -91,7 +91,7 @@ export default function HackathonHero({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
           className="text-4xl sm:text-6xl font-extrabold leading-tight text-black dark:text-white"
-          style={{ fontFamily: '"Anton", sans-serif' }}
+          style={{ fontFamily: '"Big Shoulders Display", sans-seri' }}
         >
           Discover <span className="text-indigo-600">Amazing Hackathons</span>
         </motion.h1>
