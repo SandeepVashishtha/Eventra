@@ -18,29 +18,8 @@ import {
   FaBug,
   FaRegComment,
 } from "react-icons/fa";
-
-// Toast notification component
-const Toast = ({ message, type, onClose }) => {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 4000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  return (
-      <motion.div
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -50 }}
-          className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg ${
-              type === "success"
-                  ? "bg-green-500 text-white"
-                  : "bg-red-500 text-white"
-          }`}
-      >
-        <p className="font-medium">{message}</p>
-      </motion.div>
-  );
-};
+import { toast } from "react-toastify";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 // Star Rating Component
 const StarRating = ({ rating, onRatingChange, error }) => {
@@ -350,6 +329,7 @@ const CustomFloatingSelect = ({
 
 // Feedback Page Component
 const FeedbackPage = () => {
+  useDocumentTitle("Eventra | Feedback")
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -360,7 +340,6 @@ const FeedbackPage = () => {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [toast, setToast] = useState(null);
   const [isFocused, setIsFocused] = useState(false);
   const [submittedFeedback, setSubmittedFeedback] = useState([]);
   const formRef = useRef(null);
@@ -379,9 +358,6 @@ const FeedbackPage = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  const showToast = (message, type) => {
-    setToast({ message, type });
-  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -470,7 +446,7 @@ const FeedbackPage = () => {
       }
 
       // Show error toast
-      showToast("Please fill in all required fields correctly", "error");
+      toast.error("Please fill in all required fields correctly");
       return;
     }
 
@@ -496,9 +472,8 @@ const FeedbackPage = () => {
       console.log("Feedback submitted:", payload);
       console.log("All feedback:", [...submittedFeedback, payload]);
 
-      showToast(
-          "Thank you for your feedback! We've received your submission and will review it shortly",
-          "success"
+      toast.success(
+          "Thank you for your feedback! We've received your submission and will review it shortly"
       );
 
       setFormData({
@@ -511,9 +486,8 @@ const FeedbackPage = () => {
       setErrors({});
       setIsSubmitting(false);
     } catch (error) {
-      showToast(
-          "There was an error submitting your feedback. Please try again.",
-          "error"
+      toast.error(
+          "There was an error submitting your feedback. Please try again."
       );
       setIsSubmitting(false);
     }
@@ -521,34 +495,24 @@ const FeedbackPage = () => {
 
   return (
       <div className="pastel-grid-bg min-h-screen bg-white dark:bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        <AnimatePresence>
-          {toast && (
-              <Toast
-                  message={toast.message}
-                  type={toast.type}
-                  onClose={() => setToast(null)}
-              />
-          )}
-        </AnimatePresence>
-
         <div className="max-w-6xl w-full mx-auto">
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.5 }}
-    className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
-  >
-    {/* FIXED FLEX LAYOUT */}
-    <div className="md:flex">
-
-      {/* LEFT SECTION */}
-      <div className="md:w-2/5 bg-black text-white p-12 flex flex-col justify-between">
-        <div>
-          <h2
-            className="text-4xl font-extrabold mb-6 tracking-wide"
-            style={{ fontFamily: '"Anton", sans-serif' }}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
           >
-            Share Your Feedback
+            {/* FIXED FLEX LAYOUT */}
+            <div className="md:flex">
+
+              {/* LEFT SECTION */}
+              <div className="md:w-2/5 bg-black text-white p-12 flex flex-col justify-between">
+                <div>
+                  <h2
+                    className="text-4xl font-extrabold mb-6 tracking-wide"
+                    style={{ fontFamily: '"Anton", sans-serif' }}
+                  >
+                    Share Your Feedback
           </h2>
 
           <p className="mb-8 text-lg opacity-90 leading-relaxed">
@@ -735,31 +699,6 @@ const FeedbackPage = () => {
     </div>
   </motion.div>
 </div>
-
-        <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes shake {
-          0%,
-          100% {
-            transform: translateX(0);
-          }
-          10%,
-          30%,
-          50%,
-          70%,
-          90% {
-            transform: translateX(-5px);
-          }
-          20%,
-          40%,
-          60%,
-          80% {
-            transform: translateX(5px);
-          }
-        }
-        .animate-shake {
-          animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-        }
-      ` }} />
       </div>
   );
 };

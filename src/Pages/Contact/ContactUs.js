@@ -5,73 +5,10 @@ import {
   FiStar,
   FiMessageSquare,
 } from "react-icons/fi";
+import { toast } from "react-toastify";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
-// Toast Component
-const Toast = ({ message, type = "success", onClose }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 50, scale: 0.3 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
-      className={`fixed top-24 right-4 max-w-sm w-full shadow-lg rounded-lg pointer-events-auto overflow-hidden ${
-        type === "success" ? "bg-green-500" : "bg-red-500"
-      }`}
-    >
-      <div className="p-4">
-        <div className="flex items-start">
-          <div className="flex-shrink-0">
-            {type === "success" ? (
-              <svg
-                className="h-6 w-6 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            ) : (
-              <svg
-                className="h-6 w-6 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            )}
-          </div>
-          <div className="ml-3 w-0 flex-1 pt-0.5">
-            <p className="text-sm font-medium text-white">{message}</p>
-          </div>
-          <div className="ml-4 flex-shrink-0 flex">
-            <button
-              onClick={onClose}
-              className="bg-transparent inline-flex text-white hover:text-gray-200 focus:outline-none"
-            >
-              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path
-                  fillRule="evenodd"
-                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
+
 
 // Floating Label Input Component
 const FloatingInput = ({
@@ -87,17 +24,16 @@ const FloatingInput = ({
   const [isFocused, setIsFocused] = useState(false);
 
   return (
-    <div className="relative mt-6">
+    <div className="relative mt-6 pt-20 md:pt-24">
       {Icon && (
         <Icon className="absolute left-3 top-4 text-gray-400 w-5 h-5 pointer-events-none" />
       )}
       <motion.label
         htmlFor={id}
-        className={`absolute transition-all duration-300 ${
-          isFocused || value
-            ? "top-0 text-xs text-black dark:text-white font-medium"
-            : "top-4 text-sm text-gray-500 dark:text-gray-400"
-        } ${error ? "text-red-500 dark:text-red-400" : ""}`}
+        className={`absolute transition-all duration-300 ${isFocused || value
+          ? "top-0 text-xs text-black dark:text-white font-medium"
+          : "top-4 text-sm text-gray-500 dark:text-gray-400"
+          } ${error ? "text-red-500 dark:text-red-400" : ""}`}
         initial={false}
         animate={{
           y: isFocused || value ? -20 : 0,
@@ -117,11 +53,10 @@ const FloatingInput = ({
         onChange={onChange}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        className={`w-full py-3 pl-10 pr-4 border rounded-lg focus:ring-2 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
-          error
-            ? "border-red-500 focus:ring-red-200"
-            : "border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-200 dark:focus:ring-indigo-900/50"
-        }`}
+        className={`w-full py-3 pl-10 pr-4 border rounded-lg focus:ring-2 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${error
+          ? "border-red-500 focus:ring-red-200"
+          : "border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-200 dark:focus:ring-indigo-900/50"
+          }`}
       />
       {error && (
         <motion.p
@@ -139,16 +74,16 @@ const FloatingInput = ({
 // Contact Us Page Component
 
 const ContactUs = () => {
- const [formData, setFormData] = useState({
-  name: "",
-  email: "",
-  subject: "",
-  message: "",
-});
+  useDocumentTitle("Eventra | Contact Us")
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: "",
+  });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [toast, setToast] = useState(null);
   const formRef = useRef(null);
 
   // Scroll to top when component mounts
@@ -157,43 +92,43 @@ const ContactUs = () => {
   }, []);
 
   const validateForm = () => {
-  const newErrors = {};
+    const newErrors = {};
 
-  // Name validation
-  if (!formData.name.trim()) {
-    newErrors.name = "Name is required";
-  } else if (formData.name.trim().length < 2) {
-    newErrors.name = "Name must be at least 2 characters";
-  } else if (!/^[A-Za-z\s]+$/.test(formData.name)) {
-    newErrors.name = "Name should contain only letters";
-  }
+    // Name validation
+    if (!formData.name.trim()) {
+      newErrors.name = "Name is required";
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = "Name must be at least 2 characters";
+    } else if (!/^[A-Za-z\s]+$/.test(formData.name)) {
+      newErrors.name = "Name should contain only letters";
+    }
 
-  // Email validation (unchanged)
-  if (!formData.email.trim()) {
-    newErrors.email = "Email is required";
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-    newErrors.email = "Please enter a valid email";
-  }
+    // Email validation (unchanged)
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email";
+    }
 
-  // Subject validation
-  if (!formData.subject.trim()) {
-    newErrors.subject = "Subject is required";
-  } else if (formData.subject.trim().length < 5) {
-    newErrors.subject = "Subject must be at least 5 characters";
-  } else if (!/[a-zA-Z]{2,}/.test(formData.subject)) {
-    newErrors.subject = "Please enter a meaningful subject";
-  }
+    // Subject validation
+    if (!formData.subject.trim()) {
+      newErrors.subject = "Subject is required";
+    } else if (formData.subject.trim().length < 5) {
+      newErrors.subject = "Subject must be at least 5 characters";
+    } else if (!/[a-zA-Z]{2,}/.test(formData.subject)) {
+      newErrors.subject = "Please enter a meaningful subject";
+    }
 
-  // Message validation
-  if (!formData.message.trim()) {
-    newErrors.message = "Message is required";
-  } else if (formData.message.trim().length < 10) {
-    newErrors.message = "Message must be at least 10 characters";
-  }
+    // Message validation
+    if (!formData.message.trim()) {
+      newErrors.message = "Message is required";
+    } else if (formData.message.trim().length < 10) {
+      newErrors.message = "Message must be at least 10 characters";
+    }
 
-  setErrors(newErrors);
-  return Object.keys(newErrors).length === 0;
-};
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -230,11 +165,7 @@ const ContactUs = () => {
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
       // Show success toast
-      setToast({
-        message:
-          "Your message has been sent successfully! We'll get back to you soon.",
-        type: "success",
-      });
+      toast.success("Your message has been sent successfully! We'll get back to you soon.");
 
       // Reset form
       setFormData({
@@ -244,22 +175,14 @@ const ContactUs = () => {
         message: "",
       });
     } catch (error) {
-      setToast({
-        message: "There was an error sending your message. Please try again.",
-        type: "error",
-      });
+      toast.error("There was an error sending your message. Please try again.");
     } finally {
       setIsSubmitting(false);
-
-      // Auto-close toast after 5 seconds
-      setTimeout(() => {
-        setToast(null);
-      }, 5000);
     }
   };
   const [isFocused, setIsFocused] = useState(false);
   return (
-    <div className="pastel-grid-bg min-h-screen bg-white dark:bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="pastel-grid-bg min-h-screen bg-white bg-gradient-to-r from-slate-900 to-black hover:from-black hover:to-slate-800 shadow-xl shadow-black/20 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       <div className="max-w-4xl w-full mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -274,7 +197,7 @@ const ContactUs = () => {
         >
           <div className="md:flex gap-0">
             <div
-              className="md:w-3/5 lg:w-2/5 bg-black text-white p-12 flex flex-col justify-between rounded-3xl shadow-xl backdrop-blur-lg"
+              className="md:w-3/5 lg:w-2/5 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white p-12 flex flex-col justify-between rounded-3xl shadow-xl backdrop-blur-lg"
               data-aos="fade-right"
               data-aos-duration="1000"
               data-aos-anchor=".ContactUs"
@@ -413,13 +336,11 @@ const ContactUs = () => {
                   <MessageSquare className="absolute left-3 top-4 text-gray-400 w-5 h-5 pointer-events-none" />
                   <motion.label
                     htmlFor="message"
-                    className={`absolute left-10 transition-all duration-300 ${
-                      isFocused || formData.message
-                        ? "top-0 text-xs text-black dark:text-white font-medium"
-                        : "top-4 text-sm text-gray-500 dark:text-gray-400"
-                    } ${
-                      errors.message ? "text-red-500 dark:text-red-400" : ""
-                    }`}
+                    className={`absolute left-10 transition-all duration-300 ${isFocused || formData.message
+                      ? "top-0 text-xs text-black dark:text-white font-medium"
+                      : "top-4 text-sm text-gray-500 dark:text-gray-400"
+                      } ${errors.message ? "text-red-500 dark:text-red-400" : ""
+                      }`}
                     initial={false}
                     animate={{
                       y: isFocused || formData.message ? -20 : 0,
@@ -439,11 +360,10 @@ const ContactUs = () => {
                     onChange={handleChange}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
-                    className={`w-full py-3 pl-10 pr-4 border rounded-lg focus:ring-2 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
-                      errors.message
-                        ? "border-red-500 focus:ring-red-200"
-                        : "border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-200 dark:focus:ring-indigo-900/50"
-                    }`}
+                    className={`w-full py-3 pl-10 pr-4 border rounded-lg focus:ring-2 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${errors.message
+                      ? "border-red-500 focus:ring-red-200"
+                      : "border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-200 dark:focus:ring-indigo-900/50"
+                      }`}
                   ></textarea>
                   {errors.message && (
                     <motion.p
@@ -495,41 +415,8 @@ const ContactUs = () => {
         </motion.div>
       </div>
 
-      <AnimatePresence>
-        {toast && (
-          <Toast
-            message={toast.message}
-            type={toast.type}
-            onClose={() => setToast(null)}
-          />
-        )}
-      </AnimatePresence>
 
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes shake {
-          0%,
-          100% {
-            transform: translateX(0);
-          }
-          10%,
-          30%,
-          50%,
-          70%,
-          90% {
-            transform: translateX(-5px);
-          }
-          20%,
-          40%,
-          60%,
-          80% {
-            transform: translateX(5px);
-          }
-        }
 
-        .animate-shake {
-          animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-        }
-      ` }} />
     </div>
   );
 };

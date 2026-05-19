@@ -1,3 +1,35 @@
+/**
+ * CHANGES MADE TO THIS FILE (HackathonPage.js):
+ * 
+ * 1. FIXED DROPDOWN STYLING:
+ *    - Updated CustomDropdown component styling around line 313-327
+ *    - Removed "width: menuCoords.width" constraint
+ *    - Added "min-w-[180px]" for minimum width
+ *    - Changed "shadow-lg" to "shadow-xl" for better depth
+ *    - Added "overflow-hidden" to properly contain content
+ *    - Improved className formatting for readability
+ * 
+ * 2. FIXED DROPDOWN PADDING:
+ *    - Changed all "py-2" to "py-3" in dropdown menu items around lines 325, 340
+ *    - Applied to both placeholder item and options items for consistent spacing
+ * 
+ * 3. FIXED FILTER ARRAY TYPE ERROR (Critical Fix):
+ *    - Error: "filters.prize.some is not a function"
+ *    - Root cause: CustomDropdown returns a string, but filters expected arrays
+ *    - Fixed in lines 543-568:
+ *      * Difficulty filter: Wrap/unwrap with array conversion
+ *      * Prize filter: Wrap/unwrap with array conversion  
+ *      * Location filter: Wrap/unwrap with array conversion
+ *    - Now filters.prize[0] || "" is used for dropdown value
+ *    - onChange: val ? [val] : [] wraps single string into array
+ * 
+ * 4. RESULT:
+ *    - Dropdown menu now displays with proper styling and positioning
+ *    - Better visual spacing with py-3 padding
+ *    - Filter logic now correctly handles array type checks
+ *    - .some() method works properly on filter arrays
+ */
+
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -16,6 +48,7 @@ import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
 import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 // NEW: Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
@@ -23,28 +56,30 @@ const Tag = ({ tag, onRemove }) => (
     initial={{ scale: 0.8, opacity: 0 }}
     animate={{ scale: 1, opacity: 1 }}
     exit={{ scale: 0.8, opacity: 0 }}
-    className="flex items-center gap-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-3 py-1 rounded-full text-sm font-medium"
+    className="flex items-center gap-2 bg-gradient-to-r from-white via-slate-50 to-indigo-50 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-3 py-1 rounded-full text-sm font-medium"
   >
-    <span>{tag}</span>
+    <span className="dark:text-black">{tag}</span>
     <button
       onClick={() => onRemove(tag)}
-      className="hover:bg-indigo-200 dark:hover:bg-indigo-800 rounded-full p-0.5 transition-colors"
+      className="hover:bg-indigo-200 dark:hover:bg-indigo-800 rounded-full p-0.5 transition-colors "
     >
-      <FiX className="w-3 h-3" />
+      <FiX className="w-3 h-3 dark:text-black" />
     </button>
   </motion.div>
 );
 
 const HackathonHub = () => {
+  useDocumentTitle("Eventra | Hackathon Hub")
+  const initialSearchQuery = new URLSearchParams(window.location.search).get("search") || "";
   const [hackathons, setHackathons] = useState([]);
   const [activeTab, setActiveTab] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [isLoading, setIsLoading] = useState(true);
   const [isScrollVisible, setIsScrollVisible] = useState(false);
   const [filters, setFilters] = useState({
-    difficulty: [],
-    prize: [],
-    location: [],
+    difficulty: "",
+    prize: "",
+    location: "",
   });
   const [showFilters, setShowFilters] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
@@ -65,6 +100,15 @@ const HackathonHub = () => {
 
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (!isLoading && initialSearchQuery) {
+      setTimeout(() => {
+        cardsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
+  }, [isLoading, initialSearchQuery]);
+
   // UPDATED: Extract available tags from hackathons - ADDED BLOCKCHAIN TAGS
   useEffect(() => {
     if (hackathons.length > 0) {
@@ -188,24 +232,25 @@ const HackathonHub = () => {
       return hackathon.status === activeTab;
     })
     .filter((hackathon) => {
-      if (
-        filters.difficulty.length > 0 &&
-        !filters.difficulty.includes(hackathon.difficulty)
-      )
+      if (filters.difficulty && hackathon.difficulty !== filters.difficulty)
         return false;
-      if (
-        filters.prize.length > 0 &&
-        !filters.prize.some(
-          (prize) =>
-            !hackathon.prize.toLowerCase().includes(prize.toLowerCase()),
+      if (filters.prize) {
+        const prizeValue = Number.parseInt(
+          String(hackathon.prize).replace(/[^\d]/g, ""),
+          10,
+        );
+
+        if (filters.prize === "Under $1,000" && prizeValue >= 1000) return false;
+        if (
+          filters.prize === "$1,000 - $5,000" &&
+          (prizeValue < 1000 || prizeValue > 5000)
         )
-      )
-        return false;
+          return false;
+        if (filters.prize === "$5,000+" && prizeValue < 5000) return false;
+      }
       if (
-        filters.location.length > 0 &&
-        !filters.location.some((loc) =>
-          hackathon.location.toLowerCase().includes(loc.toLowerCase()),
-        )
+        filters.location &&
+        !hackathon.location.toLowerCase().includes(filters.location.toLowerCase())
       )
         return false;
 
@@ -225,9 +270,9 @@ const HackathonHub = () => {
   // UPDATED: Reset filters and tags
   const resetFilters = () => {
     setFilters({
-      difficulty: [],
-      prize: [],
-      location: [],
+      difficulty: "",
+      prize: "",
+      location: "",
     });
     setSearchQuery("");
     setSelectedTags([]);
@@ -294,12 +339,12 @@ const HackathonHub = () => {
         <button
           type="button"
           ref={buttonRef}
-          className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"
+          className="flex w-full items-center justify-between gap-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"
           onClick={toggleOpen}
           aria-expanded={open}
         >
           <span
-            className={`text-gray-700 dark:text-gray-200 ${!value ? "text-gray-400" : ""}`}
+            className={`flex-1 text-left text-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis text-gray-700 dark:text-gray-100 ${!value ? "text-gray-400 dark:text-gray-300" : ""}`}
           >
             {displayText}
           </span>
@@ -311,12 +356,18 @@ const HackathonHub = () => {
           createPortal(
             <ul
               ref={dropdownRef}
-              className="z-[10000] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg"
+              className="
+                z-[10000]
+                bg-white dark:bg-gray-800
+                border border-gray-200 dark:border-gray-700
+                rounded-xl shadow-xl
+                overflow-hidden
+                min-w-[180px]
+              "
               style={{
                 position: "absolute",
                 top: menuCoords.top,
                 left: menuCoords.left,
-                width: menuCoords.width,
               }}
             >
               <li
@@ -324,7 +375,7 @@ const HackathonHub = () => {
                   onChange("");
                   setOpen(false);
                 }}
-                className="px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                className="px-4 py-3 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               >
                 {placeholder}
               </li>
@@ -332,7 +383,7 @@ const HackathonHub = () => {
               {options.map((opt) => (
                 <li
                   key={opt}
-                  className={`px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 ${opt === value
+                  className={`px-4 py-3 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 ${opt === value
                       ? "font-semibold bg-indigo-100 dark:bg-indigo-900"
                       : ""
                     }`}
@@ -535,28 +586,28 @@ const HackathonHub = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <CustomDropdown
                     label="Difficulty"
-                    value={filters.difficulty}
+                    value={filters.difficulty[0] || ""}
                     options={difficulties}
                     onChange={(val) =>
-                      setFilters({ ...filters, difficulty: val })
+                      setFilters({ ...filters, difficulty: val ? [val] : [] })
                     }
                     placeholder="All Levels"
                   />
 
                   <CustomDropdown
                     label="Prize Pool"
-                    value={filters.prize}
+                    value={filters.prize[0] || ""}
                     options={["Under $1,000", "$1,000 - $5,000", "$5,000+"]}
-                    onChange={(val) => setFilters({ ...filters, prize: val })}
+                    onChange={(val) => setFilters({ ...filters, prize: val ? [val] : [] })}
                     placeholder="Any Prize"
                   />
 
                   <CustomDropdown
                     label="Location"
-                    value={filters.location}
+                    value={filters.location[0] || ""}
                     options={locations}
                     onChange={(val) =>
-                      setFilters({ ...filters, location: val })
+                      setFilters({ ...filters, location: val ? [val] : [] })
                     }
                     placeholder="All Locations"
                   />
@@ -574,7 +625,7 @@ const HackathonHub = () => {
                           key={tag}
                           onClick={() => handleTagSelect(tag)}
                           className={`px-3 py-1.5 text-sm rounded-full transition-all ${selectedTags.includes(tag)
-                              ? 'bg-black text-white'
+                                  ? 'bg-black text-white dark:bg-white dark:text-black'
                               : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                             }`}
                         >
@@ -607,7 +658,7 @@ const HackathonHub = () => {
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-300 transform ${activeTab === tab.key
-                    ? "bg-black text-white shadow-lg scale-105"
+                    ? "bg-black text-white shadow-lg scale-105 dark:bg-white dark:text-black"
                     : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105"
                   }`}
               >

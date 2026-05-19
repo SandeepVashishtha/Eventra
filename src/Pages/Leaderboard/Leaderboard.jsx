@@ -14,12 +14,25 @@ import StyledDropdown from "../../components/StyledDropdown";
 const GITHUB_REPO = "SandeepVashishtha/Eventra";
 // Token read from env for higher rate limits (optional)
 const TOKEN = process.env.REACT_APP_GITHUB_TOKEN || "";
+const LEADERBOARD_CACHE_KEY = "leaderboardData:v2";
 
 // Points mapping for PR labels (keeps scoring logic centralized)
 const POINTS = {
-  "level-1": 3,
-  "level-2": 7,
-  "level-3": 10,
+  level1: 3,
+  level2: 7,
+  level3: 10,
+};
+const DEFAULT_MERGED_PR_POINTS = 1;
+
+const normalizeLabel = (label = "") => label.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+const calculatePrPoints = (labels) => {
+  const levelPoints = labels.reduce((total, label) => {
+    const normalized = normalizeLabel(label);
+    return total + (POINTS[normalized] || 0);
+  }, 0);
+
+  return levelPoints || DEFAULT_MERGED_PR_POINTS;
 };
 
 export default function LeaderBoard() {
@@ -50,7 +63,7 @@ export default function LeaderBoard() {
   // Load data from cache or network
   const loadLeaderboardData = async () => {
     setLoading(true);
-    const cachedData = localStorage.getItem("leaderboardData");
+    const cachedData = localStorage.getItem(LEADERBOARD_CACHE_KEY);
     const now = Date.now();
 
     // If cached data exists and is fresh (1 hour), use it to avoid rate limits
@@ -107,9 +120,17 @@ export default function LeaderBoard() {
           `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`,
           { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} }
         );
+
+        if (!res.ok) {
+          console.warn(`GitHub API request failed with status: ${res.status}`);
+          hasMore = false;
+          break;
+        }
+
         const prs = await res.json();
-        // If no PRs returned, stop paginating
-        if (prs.length === 0) {
+        
+        // Ensure standard array shape to avoid runtime TypeError crash
+        if (!Array.isArray(prs) || prs.length === 0) {
           hasMore = false;
           break;
         }
@@ -127,12 +148,7 @@ export default function LeaderBoard() {
           if (!hasGsocLabel) return;
 
           const author = pr.user.login;
-          let points = 0;
-          // Sum points for all matching labels on the PR
-          labels.forEach((label) => {
-            const normalized = label.replace(/\s+/g, "").toLowerCase();
-            if (POINTS[normalized]) points += POINTS[normalized];
-          });
+          const points = calculatePrPoints(labels);
 
           // Initialize contributor entry if needed
           if (!contributorsMap[author]) {
@@ -169,7 +185,7 @@ export default function LeaderBoard() {
       setContributors(sortedContributors);
       setLastUpdated(new Date().toLocaleString());
       localStorage.setItem(
-        "leaderboardData",
+        LEADERBOARD_CACHE_KEY,
         JSON.stringify({ data: sortedContributors, timestamp: Date.now() })
       );
     } catch (err) {
@@ -236,7 +252,7 @@ export default function LeaderBoard() {
   ];
 
   return (
-    <div className="bg-white dark:bg-black py-12 sm:py-16">
+    <div className="bg-white dark:bg-black pt-20 md:pt-24 py-12 sm:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           {/* UPDATED: Header text */}
@@ -382,7 +398,7 @@ export default function LeaderBoard() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
-                              <img
+                              <img loading="lazy"
                                 className="h-10 w-10 rounded-full border-2 border-indigo-200 dark:border-gray-600"
                                 src={c.avatar}
                                 alt={c.username}

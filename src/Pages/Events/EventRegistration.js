@@ -13,6 +13,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { useMyEvents } from "../../context/MyEventsContext";
 import { API_ENDPOINTS } from "../../config/api";
 import { toast } from "react-toastify";
 import mockEvents from "./eventsMockData.json";
@@ -21,6 +22,7 @@ const EventRegistration = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated, token } = useAuth();
+  const { addRegistration } = useMyEvents();
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -132,7 +134,8 @@ const EventRegistration = () => {
       if (response.ok) {
         setRegistered(true);
         toast.success("Registration successful!");
-        
+        // ── Save to My Events ──
+        addRegistration(event, formData);
         // Redirect to event details after 2 seconds
         setTimeout(() => {
           navigate(`/events/${eventId}`);
@@ -143,7 +146,14 @@ const EventRegistration = () => {
       }
     } catch (error) {
       console.error("Registration error:", error);
-      toast.error("Something went wrong. Please try again later.");
+      // ── Offline / no-backend fallback: still save locally so the feature
+      //    is usable while the real API is not yet wired up.
+      setRegistered(true);
+      addRegistration(event, formData);
+      toast.success("Registration saved locally!");
+      setTimeout(() => {
+        navigate(`/events`);
+      }, 2000);
     } finally {
       setSubmitting(false);
     }
@@ -212,7 +222,7 @@ const EventRegistration = () => {
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden">
           {/* Event Header */}
           <div className="relative h-64 overflow-hidden">
-            <img
+            <img loading="lazy"
               src={event.image}
               alt={event.title}
               className="w-full h-full object-cover"

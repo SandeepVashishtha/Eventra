@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 import {
   User as UserIcon,
@@ -78,7 +79,7 @@ const allSkillSuggestions = [
   /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-._~:/?#[\]@!$&'()*+,;=]*)?$/i;
 
 const EditProfile = () => {
-
+   const navigate = useNavigate();
    const { user, setUser } = useAuth();
   const [form, setForm] = useState(user || initialFormState);
   const [errors, setErrors] = useState({});
@@ -172,6 +173,11 @@ const performSave = () => {
     setUser(form);
     localStorage.setItem("user", JSON.stringify(form));
 
+    // ✅ Navigate away after a short delay to let user see success message
+    setTimeout(() => {
+      navigate("/dashboard");
+    }, 1000);
+
   }, 1500);
 };
 
@@ -215,7 +221,7 @@ const performSave = () => {
             <div className="relative">
               <div className="h-20 w-20 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center ring-2 ring-indigo-200/60 dark:ring-indigo-900/40">
                 {form.avatarBase64 ? (
-                  <img
+                  <img loading="lazy"
                     src={form.avatarBase64}
                     alt="Avatar preview"
                     className="h-full w-full object-cover"

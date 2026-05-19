@@ -8,6 +8,7 @@ import AdminDashboard from "../admin/AdminDashboard";
 import HostHackathon from "../../Pages/Hackathons/HostHackathon";
 import Dashboard from "../Dashboard";
 import EditProfile from "../user/EditProfile";
+import Settings from "../../Pages/Settings";
 import Login from "../auth/Login";
 import Signup from "../auth/Signup";
 import Unauthorized from "../auth/Unauthorized";
@@ -57,6 +58,15 @@ export const getProtectedRoutes = () => [
     element={
       <ProtectedRoute>
         <EditProfile />
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/settings"
+    path="/settings"
+    element={
+      <ProtectedRoute>
+        <Settings />
       </ProtectedRoute>
     }
   />,

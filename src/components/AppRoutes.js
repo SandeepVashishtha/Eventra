@@ -1,7 +1,8 @@
 import React from 'react';
-import { Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { getPublicRoutes } from './routes/PublicRoutes';
 import { getProtectedRoutes, getAuthRoutes } from './routes/ProtectedRoutes';
+import UserAchievements from '../Pages/UserAchievements';
 
 const AppRoutes = () => {
   return (
@@ -9,6 +10,7 @@ const AppRoutes = () => {
       {getPublicRoutes()}
       {getProtectedRoutes()}
       {getAuthRoutes()}
+      <Route path="/dashboard/achievements" element={<UserAchievements />} />
     </Routes>
   );
 };

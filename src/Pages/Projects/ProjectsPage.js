@@ -1,13 +1,17 @@
 import React, { useState, useEffect, useRef } from "react"; // React hooks for state and lifecycle
 import { motion, AnimatePresence } from "framer-motion"; // Framer Motion for animations
 import { FiAlertCircle, FiSearch, FiX } from "react-icons/fi"; // Feather icons
-import ModernSearchInput from "../../components/common/ModernSearchInput";
+
 import ProjectHero from "./ProjectHero"; // Hero section component
 import ProjectCard from "./ProjectCard"; // Individual project card component
 import FeedbackButton from "../../components/FeedbackButton"; // Feedback floating button
 import ProjectCTA from "./ProjectCTA";
 // Import mock data directly (assuming it's named mockProjectsData.json in the same folder as ProjectsPage.js)
 import mockProjects from "./mockProjectsData.json";
+
+import ModernSearchInput from "../../components/common/ModernSearchInput";
+import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 // Skeleton loader for project cards while data is loading
 const SkeletonCard = () => (
@@ -40,12 +44,14 @@ const SkeletonCard = () => (
 
 // Main ProjectGallery component
 const ProjectGallery = () => {
+  useDocumentTitle("Eventra | Projects")
+  const initialSearchQuery = new URLSearchParams(window.location.search).get("search") || "";
   // State variables
   const [projects, setProjects] = useState([]); // Stores all fetched projects
   const [isLoading, setIsLoading] = useState(true); // Loading state
   const [filterCategory, setFilterCategory] = useState("all"); // Current category filter
   const [sortBy, setSortBy] = useState("recent"); // Sorting option
-  const [searchQuery, setSearchQuery] = useState(""); // Search input
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery); // Search input
   const [categories, setCategories] = useState(["all"]); // Categories available
   const [error, setError] = useState(""); // Error message
   const [categoryOpen, setCategoryOpen] = useState(false); // Category dropdown state
@@ -107,6 +113,14 @@ const ProjectGallery = () => {
     fetchProjects(); // Trigger data fetch
   }, []);
 
+  useEffect(() => {
+    if (!isLoading && initialSearchQuery) {
+      setTimeout(() => {
+        cardSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
+  }, [isLoading, initialSearchQuery]);
+
   // Filter, search, and sort projects dynamically
   const filteredAndSortedProjects = projects
     .filter((project) => {
@@ -147,12 +161,12 @@ const ProjectGallery = () => {
     });
 
   const scrollToCard = () => {
-    cardSectionRef.current?.scrollIntoView({ behaviour: 'smooth' })
+    cardSectionRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
   return (
     // UPDATED: Main page background
-    <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-indigo-950 dark:to-black">
+    <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
       {/* Hero Section with CTA */}
       <ProjectHero scrollToCard={scrollToCard} />
       {/* Main Container */}
@@ -161,7 +175,7 @@ const ProjectGallery = () => {
         <motion.div
           // UPDATED: Panel background and border
           className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8"
-          style={{ boxShadow: "0 10px 25px rgba(59, 130, 246, 0.08)" }}
+          style={{ boxShadow: "0 10px 25px rgba(59, 130, 246, 0.08)", fontFamily: '"Big Shoulders Display", sans-seri'}}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -279,7 +293,7 @@ const ProjectGallery = () => {
               {/* Clear Filters Button */}
               <motion.button
                 whileHover={{ scale: 1.05 }}
-                className="px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm font-semibold rounded-xl flex items-center gap-2 hover:from-blue-500 hover:to-cyan-500 transition-all shadow-lg"
+                className="px-4 py-3 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white text-sm font-semibold rounded-xl flex items-center gap-2 hover:from-blue-500 hover:to-cyan-500 transition-all shadow-lg"
                 onClick={() => {
                   setFilterCategory("all"); // Reset category
                   setSearchQuery(""); // Clear search

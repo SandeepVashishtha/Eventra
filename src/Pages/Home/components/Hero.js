@@ -1,8 +1,8 @@
 import { motion, useAnimation, AnimatePresence, MotionConfig } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
-import { Search, X, Calendar, Trophy, Code, ExternalLink } from "lucide-react";
+import { Search, Calendar, Trophy, Code, ExternalLink } from "lucide-react";
 
 // Import mock data
 import eventsData from "../../Events/eventsMockData.json";
@@ -10,9 +10,12 @@ import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
 import RespawningText from "../../../jhalak/RespawningText";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
+import useDocumentTitle from "../../../hooks/useDocumentTitle";
+
+const MotionLink = motion(Link);
 
 const Hero = () => {
-  const navigate = useNavigate();
+  useDocumentTitle("Eventra | Home")
   const phrases = [
     "Amazing Tech Events",
     "Exciting Hackathons Today",
@@ -24,7 +27,6 @@ const Hero = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
 
   // Change phrase every 3 seconds
   useEffect(() => {
@@ -42,22 +44,28 @@ const Hero = () => {
   }, [controls]);
 
   // Global search functionality
+  const createSearchItem = (item, type, searchType) => ({
+    id: item.id,
+    title: item.title,
+    description: item.description,
+    location: item.location,
+    tags: item.tags,
+    techStack: item.techStack,
+    category: item.category,
+    author: item.author,
+    organizer: item.organizer,
+    type,
+    searchType,
+  });
+
   const allData = [
-    ...eventsData.map((item) => ({
-      ...item,
-      type: "event",
-      searchType: "Events",
-    })),
-    ...hackathonsData.map((item) => ({
-      ...item,
-      type: "hackathon",
-      searchType: "Hackathons",
-    })),
-    ...projectsData.map((item) => ({
-      ...item,
-      type: "project",
-      searchType: "Projects",
-    })),
+    ...eventsData.map((item) => createSearchItem(item, "event", "Events")),
+    ...hackathonsData.map((item) =>
+      createSearchItem(item, "hackathon", "Hackathons")
+    ),
+    ...projectsData.map((item) =>
+      createSearchItem(item, "project", "Projects")
+    ),
   ];
 
   const fuse = new Fuse(allData, {
@@ -88,16 +96,18 @@ const Hero = () => {
     }
   };
 
-  const handleResultClick = (result, type) => {
+  const clearSearch = () => {
     setShowResults(false);
     setSearchQuery("");
-    if (type === "event") {
-      navigate("/events");
-    } else if (type === "hackathon") {
-      navigate("/hackathons");
-    } else if (type === "project") {
-      navigate("/projects");
-    }
+  };
+
+  const getResultHref = (item) => {
+    const query = encodeURIComponent(item.title || searchQuery);
+
+    if (item.type === "event") return `/events?search=${query}`;
+    if (item.type === "hackathon") return `/hackathons?search=${query}`;
+    if (item.type === "project") return `/projects?search=${query}`;
+    return "/";
   };
 
   const getResultIcon = (type) => {
@@ -161,7 +171,7 @@ const Hero = () => {
   ];
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 py-16 sm:py-20 md:py-24">
+    <section className="relative overflow-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 pb-16 sm:pb-20 md:pb-24 pt-6 sm:pt-10">
       {/* Floating pastel shapes */}
       {shapes.map((shape, i) => (
         <motion.div
@@ -173,14 +183,14 @@ const Hero = () => {
             height: `${shape.size}px`,
             ...shape.pos,
             backgroundColor: shape.color,
-            opacity: 0.5, // Increased from 0.2 for better visibility
-            filter: "blur(2px)", // Added a slight blur for a premium look
+            opacity: 0.5,
+            filter: "blur(2px)",
           }}
         />
       ))}
 
       {/* Hero Content */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10 pt-20">
         <motion.div
           className="text-center"
           variants={container}
@@ -194,7 +204,7 @@ const Hero = () => {
           <MotionConfig reducedMotion="never">
             {/* Headline */}
             <motion.h1
-              className="mx-auto max-w-[92vw] text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 sm:mb-6 leading-[0.95] sm:leading-tight text-black dark:text-white break-words px-2 sm:px-0"
+              className="mx-auto max-w-[92vw] text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-5 sm:mb-6 leading-tight sm:leading-tight text-black dark:text-white break-words px-2 sm:px-0"
               style={{ fontFamily: '"Anton", sans-serif' }}
             >
               <motion.span
@@ -239,8 +249,8 @@ const Hero = () => {
             the best tech events, hackathons, and workshops in your area.
           </motion.p>
 
-          {/* Global Search Bar */}
-          <div className="w-full max-w-2xl mx-auto mb-10 sm:mb-12 min-h-[72px] relative ">
+          {/* Global Search Bar — below heading & subtitle for breathing room */}
+          <div className="w-full max-w-2xl mx-auto mb-8 sm:mb-10">
             <ModernSearchInput
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
@@ -269,17 +279,19 @@ const Hero = () => {
                           </div>
                           <div className="space-y-2">
                             {searchResults.map((result, index) => (
-                              <motion.div
+                              <MotionLink
                                 key={`${result.item.type}-${result.item.id}`}
+                                to={getResultHref(result.item)}
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.05 }}
-                                onClick={() =>
-                                  handleResultClick(result.item, result.item.type)
-                                }
+                                onClick={clearSearch}
                                 className="flex items-center gap-3 p-3 rounded-2xl 
                                  hover:bg-gray-50 
-                                 cursor-pointer transition-colors group"
+                                 cursor-pointer transition-colors group text-left no-underline"
+                                aria-label={`Open ${result.item.title} in ${
+                                  result.item.searchType || result.item.type || "page"
+                                }`}
                               >
                                 <div
                                   className="flex-shrink-0 p-2 bg-blue-100 rounded-xl text-blue-600 
@@ -306,7 +318,7 @@ const Hero = () => {
                                 <ExternalLink
                                   className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors"
                                 />
-                              </motion.div>
+                              </MotionLink>
                             ))}
                           </div>
                         </>
@@ -318,11 +330,11 @@ const Hero = () => {
                           transition={{ duration: 0.25, ease: "easeOut" }}
                           className="text-center text-gray-500 py-10 text-base"
                         >
-                          No results match “
+                          No results match "
                           <span className="font-medium text-gray-700">
                             {searchQuery}
                           </span>
-                          ”
+                          "
                         </motion.div>
                       )}
                     </div>
@@ -360,7 +372,7 @@ const Hero = () => {
               </Link>
             </motion.div>
 
-            {/* Secondary Button - Join Hackathons - FIXED */}
+            {/* Secondary Button - Join Hackathons */}
             <motion.div variants={fadeUp}>
               <Link
                 to="/hackathons"
@@ -370,7 +382,7 @@ const Hero = () => {
               </Link>
             </motion.div>
 
-            {/* Optional Tertiary Button - Learn More */}
+            {/* Tertiary Button - Learn More */}
             <motion.div variants={fadeUp}>
               <Link
                 to="/about"
@@ -393,31 +405,29 @@ const Hero = () => {
           </motion.div>
 
           {/* Animated Stats Cards */}
-          {/* Animated Stats Cards */}
-{!searchQuery.trim() && (
-  <motion.div
-    variants={fadeUp}
-    className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
-  >
-    {stats.map((stat, i) => (
-      <motion.div
-        key={i}
-        variants={fadeUp}
-        whileHover={{ scale: 1.05 }}
-        transition={{ type: "spring", stiffness: 300 }}
-        className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-lg border border-gray-100 dark:border-gray-700"
-      >
-        <p className="text-3xl font-bold mb-2 text-black dark:text-white">
-          {stat.value}
-        </p>
-        <p className="text-black dark:text-gray-300 text-sm">
-          {stat.label}
-        </p>
-      </motion.div>
-    ))}
-  </motion.div>
-)}
-          
+          {!searchQuery.trim() && (
+            <motion.div
+              variants={fadeUp}
+              className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
+            >
+              {stats.map((stat, i) => (
+                <motion.div
+                  key={i}
+                  variants={fadeUp}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-lg border border-gray-100 dark:border-gray-700"
+                >
+                  <p className="text-3xl font-bold mb-2 text-black dark:text-white">
+                    {stat.value}
+                  </p>
+                  <p className="text-black dark:text-gray-300 text-sm">
+                    {stat.label}
+                  </p>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
         </motion.div>
       </div>
     </section>
