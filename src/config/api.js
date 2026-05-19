@@ -6,11 +6,23 @@ const AUTH_API_BASE_PATH = process.env.REACT_APP_API_URL
   ? `${process.env.REACT_APP_API_URL}/api/auth`
   : '/api/auth'; // ← goes through CRA proxy in dev
 
-// API endpoints — only login and signup are active
+const API_BASE_PATH = process.env.REACT_APP_API_URL || '';
+
+// API endpoints — auth, events, and projects are active
 export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: `${AUTH_API_BASE_PATH}/login`,
     REGISTER: `${AUTH_API_BASE_PATH}/signup`,
+  },
+  EVENTS: {
+    CREATE: `${API_BASE_PATH}/api/events`,
+    REGISTER: (id) => `${API_BASE_PATH}/api/events/${id}/register`,
+    LIST: `${API_BASE_PATH}/api/events`,
+  },
+  PROJECTS: {
+    SUBMIT: `${API_BASE_PATH}/api/projects`,
+    LIST: `${API_BASE_PATH}/api/projects`,
+    CATEGORIES: `${API_BASE_PATH}/api/projects/categories`,
   },
 };
 
@@ -54,6 +66,19 @@ const handleUnauthorized = (response) => {
 
 // API utility functions
 export const apiUtils = {
+  get: async (url, token = null) => {
+    try {
+      console.log('Making GET request to:', url);
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: getAuthHeaders(token),
+      });
+      return response;
+    } catch (error) {
+      console.error('API GET Error:', error);
+      throw error;
+    }
+  },
   post: async (url, data, token = null) => {
     try {
       console.log('Making POST request to:', url);
