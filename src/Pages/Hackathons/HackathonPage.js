@@ -39,14 +39,13 @@ import HackathonCard from "./HackathonCard";
 import FeedbackButton from "../../components/FeedbackButton";
 import {
   FiCode,
-  FiRotateCw,
-  FiCompass,
   FiChevronDown,
   FiX,
 } from "react-icons/fi";
 import HackathonCTA from "./HackathonCTA";
 import { createPortal } from "react-dom";
 import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
+import SearchEmptyState from "../../components/common/SearchEmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { getRouteSearchResults } from "../../utils/searchUtils";
 
@@ -783,37 +782,14 @@ const HackathonHub = () => {
                   No Hackathons Found
                 </h3>
 
-                <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                  {searchQuery ||
-                  filters.difficulty ||
-                  filters.prize ||
-                  filters.location ||
-                  selectedTags.length > 0
-                    ? "No hackathons match your current filters. Try adjusting your search or filters."
-                    : "Check back later for exciting new hackathons!"}
-                </p>
-
-                <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={resetFilters}
-                    className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-white bg-black hover:bg-zinc-800 shadow-lg transition-all"
-                  >
-                    <FiRotateCw className="w-4 h-4" />
-                    Reset Filters
-                  </motion.button>
-
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => { }}
-                    className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-black dark:text-white border border-black/15 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 shadow-md transition-all"
-                  >
-                    Explore Hackathons
-                    <FiCompass className="w-4 h-4" />
-                  </motion.button>
-                </div>
+                <SearchEmptyState
+                  query={searchQuery}
+                  itemLabel="hackathons"
+                  browseLabel="Browse All Hackathons"
+                  browsePath="/hackathons"
+                  onClear={resetFilters}
+                  popularTags={availableTags}
+                />
               </div>
             </motion.div>
           )}
