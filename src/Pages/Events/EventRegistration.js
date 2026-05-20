@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { getEventStatus } from "../../utils/eventUtils";
 import { useAuth } from "../../context/AuthContext";
+import { useMyEvents } from "../../context/MyEventsContext";
 import { API_ENDPOINTS } from "../../config/api";
 import { toast } from "react-toastify";
 import mockEvents from "./eventsMockData.json";
@@ -22,6 +23,7 @@ const EventRegistration = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated, token } = useAuth();
+  const { addRegistration } = useMyEvents();
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -133,7 +135,8 @@ const EventRegistration = () => {
       if (response.ok) {
         setRegistered(true);
         toast.success("Registration successful!");
-        
+        // ── Save to My Events ──
+        addRegistration(event, formData);
         // Redirect to event details after 2 seconds
         setTimeout(() => {
           navigate(`/events/${eventId}`);
@@ -144,7 +147,32 @@ const EventRegistration = () => {
       }
     } catch (error) {
       console.error("Registration error:", error);
-      toast.error("Something went wrong. Please try again later.");
+      
+      // ── Offline Sync Queue Fallback ──
+      const payload = {
+        ...formData,
+        eventId: parseInt(eventId),
+        userId: user?.id || null,
+      };
+      
+      const QUEUE_KEY = 'eventra_offline_queue';
+      let queue = [];
+      try {
+        const queueStr = localStorage.getItem(QUEUE_KEY);
+        if (queueStr) queue = JSON.parse(queueStr);
+      } catch (e) {
+        queue = [];
+      }
+      
+      queue.push({ eventId: parseInt(eventId), payload });
+      localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+
+      setRegistered(true);
+      addRegistration(event, formData);
+      toast.warning("Network error. Registration queued and will sync when you are online.", { autoClose: 4000 });
+      setTimeout(() => {
+        navigate(`/events/${eventId}`);
+      }, 3000);
     } finally {
       setSubmitting(false);
     }

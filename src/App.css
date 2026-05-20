@@ -3,9 +3,12 @@
 
 main {
   position: relative;
-  z-index: 1;
+  z-index: 10;
 }
 
+/* ==========================================================================
+   GLOBAL COMPONENT & SOCIAL LINKS
+   ========================================================================== */
 .social-links a {
   color: white;
   display: flex;
@@ -24,7 +27,59 @@ main {
   transform: scale(1.1);
 }
 
-/* Events Section Styles */
+/* ==========================================================================
+   PRODUCTION FOOTER STYLES (With Enhanced Hover States & Theme Fixes)
+   ========================================================================== */
+.site-footer {
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Social link rounded container polish and elevation rules */
+.footer-social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem; /* 40px */
+  height: 2.5rem; /* 40px */
+  border-radius: 9999px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* FIX: Smooth background, text, and border color shifts on hover */
+.footer-social-btn:hover {
+  transform: translateY(-4px) !important;
+  background-color: #74b9ff !important; /* Elegant brand blue background */
+  color: #ffffff !important;            /* Changes the internal icon color to white */
+  border-color: #74b9ff !important;     /* Changes border color to match */
+  box-shadow: 0 10px 15px -3px rgba(116, 185, 255, 0.4) !important; /* Soft glowing blue shadow */
+}
+
+/* Accessible focus rings to optimize for Lighthouse audit compliance */
+.footer-nav-link:focus-visible,
+.footer-social-btn:focus-visible {
+  outline: 2px solid #74b9ff;
+  outline-offset: 4px;
+}
+
+/* Newsletter processing state variations */
+.footer-newsletter-input:disabled,
+.footer-newsletter-btn:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+}
+
+.footer-newsletter-input:disabled {
+  background-color: rgba(243, 244, 246, 1); /* Light mode disabled gray */
+}
+
+.dark .footer-newsletter-input:disabled {
+  background-color: rgba(39, 39, 42, 1); /* Dark mode zinc disabled gray */
+}
+
+/* ==========================================================================
+   EVENTS SECTION STYLES
+   ========================================================================== */
 .events-section {
   padding: 4rem 0;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -44,7 +99,6 @@ main {
 }
 
 .section-header h1 {
-  /* Fix: replaced hardcoded 3rem with CSS variable for consistency */
   font-size: var(--font-h1);
   margin-bottom: 1rem;
   background: linear-gradient(45deg, #fff, #f0f0f0);
@@ -53,7 +107,6 @@ main {
 }
 
 .section-header p {
-  /* Fix: replaced hardcoded 1.2rem with CSS variable */
   font-size: var(--font-h5);
   opacity: 0.9;
 }
@@ -83,7 +136,6 @@ main {
   cursor: pointer;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
-  /* Fix: standardized button font size */
   font-size: var(--font-body);
 }
 
@@ -153,7 +205,6 @@ main {
 .status-badge {
   padding: 0.25rem 0.75rem;
   border-radius: 15px;
-  /* Fix: replaced hardcoded 0.8rem with CSS variable reference */
   font-size: var(--font-h6);
   font-weight: bold;
   text-transform: uppercase;
@@ -181,7 +232,6 @@ main {
 }
 
 .event-header h3 {
-  /* Fix: replaced hardcoded 1.5rem with CSS variable */
   font-size: var(--font-h3);
   margin: 0;
 }
@@ -248,7 +298,6 @@ main {
   text-decoration: none;
   display: inline-block;
   text-align: center;
-  /* Fix: standardized button font size */
   font-size: var(--font-body);
 }
 
@@ -289,7 +338,9 @@ main {
   padding: 3rem;
 }
 
-/* Hackathon Hub Styles */
+/* ==========================================================================
+   HACKATHON HUB STYLES
+   ========================================================================== */
 .hackathon-hub {
   padding: 4rem 0;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -313,7 +364,6 @@ main {
   cursor: pointer;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
-  /* Fix: standardized font size */
   font-size: var(--font-body);
 }
 
@@ -332,10 +382,12 @@ main {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 2rem;
 }
-@media(max-width: 768px){
+
+@media(max-width: 768px) {
   .hackathon-grid {
     gap: 1rem;
   }
+
   .hackathon-card {
     padding: 1rem;
   }
@@ -390,8 +442,15 @@ main {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .hackathon-prize {
@@ -403,7 +462,6 @@ main {
 }
 
 .hackathon-title {
-  /* Fix: replaced hardcoded 1.8rem with CSS variable */
   font-size: var(--font-h3);
   margin-bottom: 1rem;
 }
@@ -422,7 +480,6 @@ main {
   display: flex;
   justify-content: space-between;
   margin-bottom: 0.5rem;
-  /* Fix: standardized meta text size */
   font-size: var(--font-body);
 }
 
@@ -468,14 +525,12 @@ main {
 
 .stat-number {
   display: block;
-  /* Fix: replaced hardcoded 1.5rem with CSS variable */
   font-size: var(--font-h3);
   font-weight: bold;
   color: #4ade80;
 }
 
 .stat-label {
-  /* Fix: replaced hardcoded 0.8rem with CSS variable */
   font-size: var(--font-h6);
   opacity: 0.8;
 }
@@ -489,7 +544,6 @@ main {
 }
 
 .time-value {
-  /* Fix: replaced hardcoded 1.2rem with CSS variable */
   font-size: var(--font-h5);
   font-weight: bold;
   color: #fbbf24;
@@ -572,7 +626,6 @@ main {
 
 .cta-card h3 {
   margin-bottom: 1rem;
-  /* Fix: replaced hardcoded 1.8rem with CSS variable */
   font-size: var(--font-h3);
 }
 
@@ -582,7 +635,9 @@ main {
   font-size: var(--font-body);
 }
 
-/* Project Gallery Styles */
+/* ==========================================================================
+   PROJECT GALLERY STYLES
+   ========================================================================= */
 .project-gallery {
   padding: 4rem 0;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -673,7 +728,6 @@ main {
 }
 
 .project-header h3 {
-  /* Fix: replaced hardcoded 1.5rem with CSS variable */
   font-size: var(--font-h3);
   margin: 0;
 }
@@ -781,7 +835,6 @@ main {
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.25rem;
-  /* Fix: replaced hardcoded 0.9rem with CSS variable */
   font-size: var(--font-body);
   opacity: 0.8;
 }
@@ -802,8 +855,11 @@ main {
   justify-content: center;
 }
 
-/* Responsive Design */
+/* ==========================================================================
+   RESPONSIVE LAYOUT MEDIA QUERIES
+   ========================================================================== */
 @media (max-width: 768px) {
+
   .events-grid,
   .hackathon-grid,
   .projects-grid {
@@ -830,8 +886,6 @@ main {
     order: unset !important;
   }
 
-  /* Fix: Removed redundant hardcoded override — index.css CSS variables handle mobile sizes */
-
   .hackathon-card,
   .project-card,
   .contributor-card {
@@ -848,6 +902,7 @@ main {
 }
 
 @media (max-width: 480px) {
+
   .events-grid,
   .hackathon-grid,
   .projects-grid,
@@ -885,4 +940,248 @@ main {
   }
 }
 
-/* Fix: Removed duplicate scrollbar styles — already defined in index.css */
+.mission-section-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 50px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.mission-text-column {
+  flex: 1;
+  max-width: 500px;
+}
+
+.mission-text-column .sub-heading {
+  color: #9ca3af;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.mission-text-column .main-heading {
+  color: #000000;
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+:is(.dark) .mission-text-column .main-heading {
+  color: #ffffff;
+}
+
+.mission-text-column .desc-text {
+  color: #4b5563;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+:is(.dark) .mission-text-column .desc-text {
+  color: #8a99ad;
+}
+
+.eventra-animation-container {
+  position: relative;
+  flex: 1;
+  height: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Central Anchor Card */
+.eventra-brand-card {
+  position: relative;
+  width: 260px;
+  height: 150px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(248, 250, 252, 0.4));
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+:is(.dark) .eventra-brand-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.eventra-brand-card h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #000000;
+}
+
+:is(.dark) .eventra-brand-card h1 {
+  color: #ffffff;
+}
+
+.eventra-brand-card span {
+  font-size: 0.65rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-top: 4px;
+}
+
+/* Sub-Cards base stacking configuration */
+.eventra-sub-card {
+  position: absolute;
+  width: 240px;
+  height: 140px;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  opacity: 0;
+  transform: translate(0, 0) scale(0.6);
+  transition: transform 0.75s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.6s ease;
+}
+
+:is(.dark) .eventra-sub-card {
+  background: #1f2937;
+}
+
+.card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+.card-emoji {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.eventra-sub-card p {
+  color: #4b5563;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  font-weight: 500;
+  text-align: left;
+}
+
+:is(.dark) .eventra-sub-card p {
+  color: #9ca3af;
+}
+
+/* ==========================================================================
+   FANOUT VECTOR COORDINATES WITH CUSTOM COLORED GLOW ACCENTS
+   ========================================================================== */
+
+/* Top Left Card - Blue/Grey Glow Profile */
+.card-tl {
+  border-bottom: 3px solid #3b82f6;
+}
+
+.eventra-animation-container.open .card-tl {
+  transform: translate(-140px, -90px) scale(1);
+  opacity: 1;
+  box-shadow: 0 15px 35px rgba(59, 130, 246, 0.2);
+  transition-delay: 0.0s;
+}
+
+/* Top Right Card - Mint/Green Glow Profile */
+.card-tr {
+  border-bottom: 3px solid #10b981;
+}
+
+.eventra-animation-container.open .card-tr {
+  transform: translate(140px, -90px) scale(1);
+  opacity: 1;
+  box-shadow: 0 15px 35px rgba(16, 185, 129, 0.2);
+  transition-delay: 0.1s;
+}
+
+/* Bottom Left Card - Soft Lavender/Purple Glow Profile */
+.card-bl {
+  border-bottom: 3px solid #8b5cf6;
+}
+
+.eventra-animation-container.open .card-bl {
+  transform: translate(-140px, 90px) scale(1);
+  opacity: 1;
+  box-shadow: 0 15px 35px rgba(139, 92, 246, 0.2);
+  transition-delay: 0.2s;
+}
+
+/* Bottom Right Card - Warm Tan/Orange Glow Profile */
+.card-br {
+  border-bottom: 3px solid #f97316;
+}
+
+.eventra-animation-container.open .card-br {
+  transform: translate(140px, 90px) scale(1);
+  opacity: 1;
+  box-shadow: 0 15px 35px rgba(249, 115, 22, 0.2);
+  transition-delay: 0.3s;
+}
+
+/* Mobile responsive fallback adjustments */
+@media (max-width: 991px) {
+  .mission-section-wrapper {
+    flex-direction: column;
+    text-align: center;
+    gap: 30px;
+  }
+
+  .mission-text-column {
+    max-width: 100%;
+  }
+
+  .eventra-animation-container {
+    height: auto;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    width: 100%;
+  }
+
+  .eventra-brand-card {
+    display: none;
+  }
+
+  .eventra-sub-card {
+    position: relative;
+    width: 100%;
+    height: auto;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .card-content {
+    align-items: center;
+    text-align: center;
+  }
+
+  .eventra-sub-card p {
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .eventra-animation-container {
+    grid-template-columns: 1fr;
+  }
+}

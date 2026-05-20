@@ -1,14 +1,19 @@
 import StatusBadge from "../common/StatusBadge";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, Calendar, Activity, Shield, LogOut, Plus,
   Search, ChevronRight, BarChart2,
-  Trash2, Edit2, CheckCircle, AlertCircle,
+  Trash2, Edit2, AlertCircle,
   TrendingUp
 } from 'lucide-react';
+import {
+  AdminListCardSkeleton,
+  AdminStatCardSkeleton,
+  AdminTableSkeleton,
+} from '../common/SkeletonLoaders';
 import './AdminDashboard.css';
 import { toast } from 'react-toastify';
 
@@ -41,12 +46,6 @@ const MOCK_EVENTS = [
   { id: 4, title: 'Hack for Sustainability',date: '2025-07-20', participantCount: 80,  status: 'Completed', type: 'Hackathon' },
   { id: 5, title: 'Global AI Hackathon',    date: '2025-10-10', participantCount: 200, status: 'Upcoming',  type: 'Hackathon' },
 ];
-
-const STATUS_COLORS = {
-  Active: 'ad-badge-green', Inactive: 'ad-badge-gray',
-  Upcoming: 'ad-badge-blue', Completed: 'ad-badge-green',
-  USER: 'ad-badge-gray', EVENT_MANAGER: 'ad-badge-blue', ADMIN: 'ad-badge-purple',
-};
 
 /* ─── Confirmation Modal ─── */
 function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
@@ -83,8 +82,14 @@ const AdminDashboard = () => {
   const [searchUser,  setSearchUser]  = useState('');
   const [searchEvent, setSearchEvent] = useState('');
   const [confirmModal, setConfirmModal] = useState({ open: false, type: '', id: null });
+  const [loading, setLoading] = useState(true);
 
   const firstName = user?.firstName || user?.username || 'Admin';
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setLoading(false), 700);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   /* Stats */
   const totalUsers  = users.length;
@@ -191,7 +196,9 @@ const AdminDashboard = () => {
 
                 {/* Stat Cards */}
                 <motion.div variants={stagger} className="ad-stats-grid">
-                  {[
+                  {loading
+                    ? [...Array(4)].map((_, i) => <AdminStatCardSkeleton key={i} />)
+                    : [
                     { label: 'Total Users',     value: totalUsers,        sub: `${activeUsers} active`,      icon: <Users size={20} />,    color: '#6366f1' },
                     { label: 'Total Events',    value: totalEvents,       sub: `${upcoming} upcoming`,       icon: <Calendar size={20} />, color: '#ec4899' },
                     { label: 'Participants',    value: totalParticipants, sub: 'across all events',          icon: <TrendingUp size={20}/>, color: '#10b981' },
@@ -210,6 +217,13 @@ const AdminDashboard = () => {
 
                 {/* Recent Users + Recent Events */}
                 <div className="ad-two-col">
+                  {loading ? (
+                    <>
+                      <AdminListCardSkeleton />
+                      <AdminListCardSkeleton />
+                    </>
+                  ) : (
+                  <>
                   <motion.section custom={1} variants={fadeUp} className="ad-card">
                     <div className="ad-card-head">
                       <span className="ad-card-icon" style={{ background: '#6366f118', color: '#6366f1' }}><Users size={15} /></span>
@@ -245,6 +259,8 @@ const AdminDashboard = () => {
                       </div>
                     ))}
                   </motion.section>
+                  </>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -266,6 +282,9 @@ const AdminDashboard = () => {
                 </div>
 
                 <div className="ad-table-wrap">
+                  {loading ? (
+                    <AdminTableSkeleton rows={5} />
+                  ) : (
                   <table className="ad-table">
                     <thead>
                       <tr>
@@ -314,6 +333,7 @@ const AdminDashboard = () => {
                         ))}
                     </tbody>
                   </table>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -335,6 +355,9 @@ const AdminDashboard = () => {
                 </div>
 
                 <div className="ad-table-wrap">
+                  {loading ? (
+                    <AdminTableSkeleton rows={5} />
+                  ) : (
                   <table className="ad-table">
                     <thead>
                       <tr>
@@ -378,6 +401,7 @@ const AdminDashboard = () => {
                         ))}
                     </tbody>
                   </table>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -386,7 +410,9 @@ const AdminDashboard = () => {
             {activeTab === 'analytics' && (
               <motion.div key="analytics" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="ad-section">
                 <motion.div variants={stagger} initial="hidden" animate="visible" className="ad-stats-grid">
-                  {[
+                  {loading
+                    ? [...Array(4)].map((_, i) => <AdminStatCardSkeleton key={i} />)
+                    : [
                     { label: 'Total Users',        value: totalUsers,        sub: `${activeUsers} active · ${totalUsers - activeUsers} inactive`,    color: '#6366f1', icon: <Users size={20} /> },
                     { label: 'Events Hosted',       value: totalEvents,       sub: `${upcoming} upcoming · ${totalEvents - upcoming} completed`,      color: '#ec4899', icon: <Calendar size={20} /> },
                     { label: 'Total Participants',  value: totalParticipants, sub: 'across all events',                                              color: '#10b981', icon: <TrendingUp size={20} /> },

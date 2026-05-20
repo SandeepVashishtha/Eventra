@@ -22,8 +22,10 @@ import HelpCenter from "../../Pages/HelpCenter";
 import ContactUs from "../../Pages/Contact/ContactUs";
 import FeedbackPage from "../../Pages/Feedback/FeedbackPage";
 import EventAnalyticsDashboard from "../../Pages/Events/EventAnalyticsDashboard";
+import FloorPlanDesignerPage from "../../Pages/Events/FloorPlanDesignerPage";
 import DocumentationPage from "../../Pages/About/DocumentationPage";
 import SubmitProject from "../../Pages/Projects/SubmitProject";
+import MockApiResponse from "../MockApiResponse";
 
 export const getPublicRoutes = () => [
   <Route key="/" path="/" element={<HomePage />} />,
@@ -32,6 +34,10 @@ export const getPublicRoutes = () => [
   <Route key="/register" path="/events/:eventId/register" element={<EventRegistration />} />,
   <Route key="/hackathons" path="/hackathons" element={<HackathonPage />} />,
   <Route key="/projects" path="/projects" element={<ProjectsPage />} />,
+  <Route key="/api/hackathons" path="/api/hackathons" element={<MockApiResponse />} />,
+  <Route key="/api/projects" path="/api/projects" element={<MockApiResponse />} />,
+  <Route key="/api/contributors" path="/api/contributors" element={<MockApiResponse />} />,
+  <Route key="/api/leaderboard" path="/api/leaderboard" element={<MockApiResponse />} />,
   <Route key="page-layout" element={<PageLayout />}>
     <Route key="/contributors" path="/contributors" element={<Contributors />} />
     <Route key="/communityEvent" path="/communityEvent" element={<CommunityEvent />} />
@@ -46,6 +52,7 @@ export const getPublicRoutes = () => [
     <Route key="/contact" path="/contact" element={<ContactUs />} />
     <Route key="/feedback" path="/feedback" element={<FeedbackPage />} />
     <Route key="/analytics" path="/analytics" element={<EventAnalyticsDashboard />} />
+    <Route key="/events/:eventId/floor-plan" path="/events/:eventId/floor-plan" element={<FloorPlanDesignerPage />} />
     <Route key="/documentation" path="/documentation" element={<DocumentationPage />} />
     <Route key="/submit-project" path="/submit-project" element={<SubmitProject />} />
   </Route>

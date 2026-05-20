@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 import {
   User as UserIcon,
@@ -78,7 +79,7 @@ const allSkillSuggestions = [
   /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-._~:/?#[\]@!$&'()*+,;=]*)?$/i;
 
 const EditProfile = () => {
-
+   const navigate = useNavigate();
    const { user, setUser } = useAuth();
   const [form, setForm] = useState(user || initialFormState);
   const [errors, setErrors] = useState({});
@@ -153,6 +154,7 @@ const performSave = () => {
   const resolvedForm = {
     ...form,
     fullName: form.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim(),
+    profilePicture: form.avatarBase64 || form.profilePicture || "",
   };
   const validation = validate(resolvedForm);
   setErrors(validation);
@@ -167,10 +169,13 @@ const performSave = () => {
     setLoading(false);
     setSuccessMessage("Profile updated successfully");
     setConfirmOpen(false);
+    setUser(resolvedForm);                              
+    localStorage.setItem("user", JSON.stringify(resolvedForm)); 
 
-    // ✅ Persist updates to both context and localStorage
-    setUser(form);
-    localStorage.setItem("user", JSON.stringify(form));
+    // ✅ Navigate away after a short delay to let user see success message
+    setTimeout(() => {
+      navigate("/dashboard");
+    }, 1000);
 
   }, 1500);
 };

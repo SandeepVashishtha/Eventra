@@ -32,7 +32,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import mockHackathons from "./hackathonMockData.json";
 import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
@@ -45,9 +45,10 @@ import {
   FiX,
 } from "react-icons/fi";
 import HackathonCTA from "./HackathonCTA";
-import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
 import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { getRouteSearchResults } from "../../utils/searchUtils";
 
 // NEW: Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
@@ -68,9 +69,12 @@ const Tag = ({ tag, onRemove }) => (
 );
 
 const HackathonHub = () => {
+  useDocumentTitle("Eventra | Hackathon Hub")
+  const location = useLocation();
+  const routeSearchQuery = new URLSearchParams(location.search).get("search") || "";
   const [hackathons, setHackathons] = useState([]);
   const [activeTab, setActiveTab] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(routeSearchQuery);
   const [isLoading, setIsLoading] = useState(true);
   const [isScrollVisible, setIsScrollVisible] = useState(false);
   const [filters, setFilters] = useState({
@@ -97,6 +101,19 @@ const HackathonHub = () => {
 
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    setSearchQuery(routeSearchQuery);
+  }, [routeSearchQuery]);
+
+  useEffect(() => {
+    if (!isLoading && routeSearchQuery) {
+      setTimeout(() => {
+        cardsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
+  }, [isLoading, routeSearchQuery]);
+
   // UPDATED: Extract available tags from hackathons - ADDED BLOCKCHAIN TAGS
   useEffect(() => {
     if (hackathons.length > 0) {
@@ -204,13 +221,20 @@ const HackathonHub = () => {
     }
   };
 
-  const fuse = new Fuse(hackathons, {
-    keys: ["title", "description", "location", "techStack"],
-    threshold: 0.4,
-  });
+  const searchKeys = [
+    "title",
+    "description",
+    "location",
+    "techStack",
+    "organizer",
+    "difficulty",
+    "status",
+    "startDate",
+    "endDate",
+  ];
 
   const searchedHackathons = searchQuery
-    ? fuse.search(searchQuery).map((result) => result.item)
+    ? getRouteSearchResults(hackathons, searchQuery, searchKeys)
     : hackathons;
 
   // UPDATED: Filter hackathons based on selected tags

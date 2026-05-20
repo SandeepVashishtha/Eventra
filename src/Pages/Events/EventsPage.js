@@ -1,19 +1,31 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import mockEvents from "./eventsMockData.json";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
 import { getEventStatus } from "../../utils/eventUtils";
 import { Grid, List } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
-import Fuse from "fuse.js";
 import StyledDropdown from "../../components/StyledDropdown";
 import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { getRouteSearchResults } from "../../utils/searchUtils";
+
+const EVENT_SEARCH_KEYS = [
+  "title",
+  "description",
+  "location",
+  "tags",
+  "type",
+  "date",
+  "status",
+];
 
 const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
   if (isLoading) {
     return (
-      <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <EventCardSkeleton key={`skeleton-${i}`} />
         ))}
@@ -32,10 +44,10 @@ const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
     <div
       key={filterType + viewMode}
       className={`grid gap-6 ${
-        viewMode === "grid"
-          ? "grid-cols-1 md:grid-cols-3"
-          : "grid-cols-1 max-w-4xl mx-auto"
-      }`}
+  viewMode === "grid"
+    ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+    : "grid-cols-1 max-w-4xl mx-auto"
+}`}
     >
       {filteredEvents.map((event) => (
         <EventCard key={event.id} event={event} />
@@ -45,10 +57,13 @@ const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
 };
 
 const EventsPage = () => {
+  useDocumentTitle("Eventra | Events")
+  const location = useLocation();
+  const routeSearchQuery = new URLSearchParams(location.search).get("search") || "";
   const [events, setEvents] = useState([]);
   const [filterType, setFilterType] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(routeSearchQuery);
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [sortType, setSortType] = useState("Newest");
   const [isLoading, setIsLoading] = useState(true);
@@ -65,18 +80,18 @@ const EventsPage = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Fuse.js setup
-  const fuse = new Fuse(events, {
-    keys: ["title", "description", "location", "tags", "type"],
-    threshold: 0.35,
-  });
+  useEffect(() => {
+    setSearchQuery(routeSearchQuery);
+  }, [routeSearchQuery]);
 
-  const handleSearch = (query = "") => {
+  const handleSearch = useCallback((query = "") => {
     setSearchQuery(query);
 
     let results = events;
     if (query.trim()) {
-      results = fuse.search(query).map((res) => res.item);
+      results = getRouteSearchResults(events, query, EVENT_SEARCH_KEYS, {
+        threshold: 0.35,
+      });
     }
 
     const final = results.filter((event) => {
@@ -89,11 +104,19 @@ const EventsPage = () => {
     });
 
     setFilteredEvents(final);
-  };
+  }, [events, filterType]);
 
   useEffect(() => {
     handleSearch(searchQuery);
-  }, [events, filterType]);
+  }, [handleSearch, searchQuery]);
+
+  useEffect(() => {
+    if (!isLoading && routeSearchQuery) {
+      setTimeout(() => {
+        cardSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
+  }, [isLoading, routeSearchQuery]);
 
   const handleSortChange = (type) => {
     setSortType(type);
@@ -107,9 +130,16 @@ const EventsPage = () => {
   };
 
   useEffect(() => {
-    handleSortChange(sortType);
-    // eslint-disable-next-line
-  }, [filterType, searchQuery]);
+    setFilteredEvents((currentEvents) => {
+      const sorted = [...currentEvents];
+      if (sortType === "Newest") {
+        sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
+      } else if (sortType === "Upcoming" || sortType === "upcoming") {
+        sorted.sort((a, b) => new Date(a.date) - new Date(b.date));
+      }
+      return sorted;
+    });
+  }, [filterType, searchQuery, sortType]);
 
   const scrollToCard = () => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -156,9 +186,9 @@ const EventsPage = () => {
           </div>
 
           {/* Sort Dropdown and View Toggle */}
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
             {/* Sort Dropdown */}
-            <div className="w-full sm:w-auto">
+            <div className="w-full sm:w-48">
               <label htmlFor="sort-events" className="sr-only">
                 Sort events
               </label>

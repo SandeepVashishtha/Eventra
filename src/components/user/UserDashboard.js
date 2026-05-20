@@ -2,12 +2,23 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar, Trophy, FolderOpen, Users, Settings,
   Clock, MapPin, Zap, Activity, Bell, ChevronRight,
-  LogOut, User, Plus, Search, X
+  LogOut, User, Plus, Search, X, Ticket
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useMyEvents } from "../../context/MyEventsContext";
 import StatusBadge from "../common/StatusBadge";
+import MyEventsTab from "./MyEventsTab";
+import {
+  DashboardItemCardSkeleton,
+  DashboardListCardSkeleton,
+  DashboardProfileSkeleton,
+  DashboardQuickActionSkeleton,
+  DashboardSectionTitleSkeleton,
+  DashboardStatCardSkeleton,
+  DashboardTableSkeleton,
+} from "../common/SkeletonLoaders";
 import "./UserDashboard.css";
 
 const fadeUp = {
@@ -53,6 +64,7 @@ const QUICK_ACTIONS = [
 
 export default function UserDashboard() {
   const { user, logout } = useAuth();
+  const { myEvents } = useMyEvents();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState("overview");
@@ -61,6 +73,7 @@ export default function UserDashboard() {
   const [filterStatus, setFilterStatus] = useState("All");
   const [greeting, setGreeting] = useState("");
   const [notifOpen, setNotifOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const firstName = user?.firstName || user?.username || "there";
 
@@ -69,6 +82,11 @@ export default function UserDashboard() {
     if (h < 12) setGreeting("Good morning");
     else if (h < 17) setGreeting("Good afternoon");
     else setGreeting("Good evening");
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setLoading(false), 700);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const stats = {
@@ -120,6 +138,7 @@ export default function UserDashboard() {
         <nav className="ud-nav">
           {[
             { id: "overview", icon: <Activity size={18} />, label: "Overview" },
+            { id: "my-events", icon: <Ticket size={18} />, label: "My Events", badge: myEvents.length || null },
             { id: "events", icon: <Calendar size={18} />, label: "Events" },
             { id: "hackathons", icon: <Trophy size={18} />, label: "Hackathons" },
             { id: "projects", icon: <FolderOpen size={18} />, label: "Projects" },
@@ -132,6 +151,9 @@ export default function UserDashboard() {
             >
               {item.icon}
               <span>{item.label}</span>
+              {item.badge > 0 && (
+                <span className="ud-nav-badge">{item.badge}</span>
+              )}
             </button>
           ))}
         </nav>
@@ -149,17 +171,21 @@ export default function UserDashboard() {
       {/* Main */}
       <main className="ud-main">
         <header className="ud-topbar">
-          <div>
-            <p className="ud-greeting">{greeting},</p>
-            <h1 className="ud-username">{firstName} 👋</h1>
-          </div>
+          {loading ? (
+            <DashboardProfileSkeleton />
+          ) : (
+            <div>
+              <p className="ud-greeting">{greeting},</p>
+              <h1 className="ud-username">{firstName} 👋</h1>
+            </div>
+          )}
 
           <div className="ud-topbar-right">
             <div className="ud-search-wrap">
               <Search size={15} className="ud-search-icon" />
               <input className="ud-search" placeholder="Search…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
               {searchQuery && (
-                <button className="ud-search-clear" onClick={() => setSearchQuery("")}><X size={13} /></button>
+                <button className="ud-search-clear" onClick={() => setSearchQuery("")} aria-label="Clear search query"><X size={13} /></button>
               )}
             </div>
 
@@ -180,7 +206,7 @@ export default function UserDashboard() {
                   >
                     <div className="ud-notif-header">
                       <span>Notifications</span>
-                      <button onClick={() => setNotifOpen(false)}><X size={14} /></button>
+                      <button onClick={() => setNotifOpen(false)} aria-label="Close notification panel"><X size={14} /></button>
                     </div>
                     {notifications.map(n => (
                       <div key={n.id} className={`ud-notif-item ${n.unread ? "ud-notif-unread" : ""}`}>
@@ -199,6 +225,31 @@ export default function UserDashboard() {
           {/* Overview */}
           {activeTab === "overview" && (
             <motion.div key="overview" variants={stagger} initial="hidden" animate="visible" exit={{ opacity: 0 }} className="ud-content">
+              {loading ? (
+                <>
+                  <div className="ud-stats-grid">
+                    {[...Array(4)].map((_, i) => (
+                      <DashboardStatCardSkeleton key={i} />
+                    ))}
+                  </div>
+
+                  <section>
+                    <DashboardSectionTitleSkeleton />
+                    <div className="ud-quick-grid">
+                      {[...Array(6)].map((_, i) => (
+                        <DashboardQuickActionSkeleton key={i} />
+                      ))}
+                    </div>
+                  </section>
+
+                  <div className="ud-three-col">
+                    {[...Array(3)].map((_, i) => (
+                      <DashboardListCardSkeleton key={i} />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
               <motion.div variants={stagger} className="ud-stats-grid">
                 {[
                   { label: "Events", value: stats.eventsTotal, sub: `${stats.eventsCreated} hosted · ${stats.eventsJoined} joined`, icon: <Calendar size={20} />, accent: "#6366f1" },
@@ -300,8 +351,13 @@ export default function UserDashboard() {
                   }
                 </motion.section>
               </div>
+                </>
+              )}
             </motion.div>
           )}
+
+          {/* My Events tab */}
+          {activeTab === "my-events" && <MyEventsTab />}
 
           {/* Events tab */}
           {activeTab === "events" && (
@@ -311,7 +367,9 @@ export default function UserDashboard() {
                 <Link to="/events" className="ud-btn-primary"><Plus size={15} /> Explore Events</Link>
               </div>
               <div className="ud-items-grid">
-                {MOCK_DATA.filter(d => d.type === "Event").map((ev, i) => (
+                {loading
+                  ? [...Array(3)].map((_, i) => <DashboardItemCardSkeleton key={i} />)
+                  : MOCK_DATA.filter(d => d.type === "Event").map((ev, i) => (
                   <motion.div key={ev.id} custom={i} variants={fadeUp} initial="hidden" animate="visible" className="ud-item-card">
                     <div className="ud-item-top">
                       <span className="ud-item-type" style={{ background: "#6366f118", color: "#6366f1" }}><Calendar size={13} /> Event</span>
@@ -339,7 +397,9 @@ export default function UserDashboard() {
                 <Link to="/hackathons" className="ud-btn-primary"><Plus size={15} /> Explore Hackathons</Link>
               </div>
               <div className="ud-items-grid">
-                {MOCK_DATA.filter(d => d.type === "Hackathon").map((h, i) => (
+                {loading
+                  ? [...Array(3)].map((_, i) => <DashboardItemCardSkeleton key={i} />)
+                  : MOCK_DATA.filter(d => d.type === "Hackathon").map((h, i) => (
                   <motion.div key={h.id} custom={i} variants={fadeUp} initial="hidden" animate="visible" className="ud-item-card">
                     <div className="ud-item-top">
                       <span className="ud-item-type" style={{ background: "#ec489918", color: "#ec4899" }}><Trophy size={13} /> Hackathon</span>
@@ -367,7 +427,9 @@ export default function UserDashboard() {
                 <Link to="/submit-project" className="ud-btn-primary"><Plus size={15} /> Submit Project</Link>
               </div>
               <div className="ud-items-grid">
-                {MOCK_DATA.filter(d => d.type === "Project").map((p, i) => (
+                {loading
+                  ? [...Array(2)].map((_, i) => <DashboardItemCardSkeleton key={i} />)
+                  : MOCK_DATA.filter(d => d.type === "Project").map((p, i) => (
                   <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" animate="visible" className="ud-item-card">
                     <div className="ud-item-top">
                       <span className="ud-item-type" style={{ background: "#8b5cf618", color: "#8b5cf6" }}><FolderOpen size={13} /> Project</span>
@@ -401,6 +463,9 @@ export default function UserDashboard() {
                 </div>
               </div>
 
+              {loading ? (
+                <DashboardTableSkeleton rows={6} />
+              ) : (
               <div className="ud-table-wrap">
                 <table className="ud-table">
                   <thead>
@@ -429,6 +494,7 @@ export default function UserDashboard() {
                   </tbody>
                 </table>
               </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
