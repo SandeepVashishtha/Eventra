@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { apiUtils, API_ENDPOINTS } from '../config/api';
 
 const NotificationContext = createContext();
@@ -15,7 +15,7 @@ export const NotificationProvider = ({ children }) => {
   // Helper to get JWT token from storage
   const getAuthToken = () => localStorage.getItem('token');
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     const token = getAuthToken();
     if (!token) return;
     
@@ -29,9 +29,9 @@ export const NotificationProvider = ({ children }) => {
     } catch (error) {
       console.error("Error fetching notifications:", error);
     }
-  };
+  }, []);
 
-  const fetchAchievements = async () => {
+  const fetchAchievements = useCallback(async () => {
     const token = getAuthToken();
     if (!token) return;
     
@@ -44,7 +44,7 @@ export const NotificationProvider = ({ children }) => {
     } catch (error) {
       console.error("Error fetching achievements:", error);
     }
-  };
+  }, []);
 
   const markAsRead = async (notificationId) => {
     const token = getAuthToken();
@@ -69,8 +69,7 @@ export const NotificationProvider = ({ children }) => {
       fetchNotifications();
       fetchAchievements();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchNotifications, fetchAchievements]);
 
   return (
     <NotificationContext.Provider value={{ 
