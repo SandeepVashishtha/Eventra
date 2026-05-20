@@ -45,6 +45,9 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           <MobileNavbar
             isOpen={isMobileMenuOpen}
             setIsOpen={setIsMobileMenuOpen}
+            isAuthenticated={isAuthenticated()}
+            user={user}
+            logout={logout}
           />
         </div>
       </nav>
