@@ -141,7 +141,7 @@ export default function Chatbot() {
         {isOpen && isMinimized && (
           <div
             className="
-              fixed bottom-6 right-6 z-50
+              fixed bottom-6 right-6 z-[100]
               hidden sm:flex               /* hide strip on mobile, show FAB instead */
               items-center justify-between gap-3
               w-72 rounded-2xl
@@ -190,7 +190,7 @@ export default function Chatbot() {
           type="button"
           onClick={handleOpen}
           className={`
-            fixed bottom-6 right-6 z-50
+            fixed bottom-6 right-6 z-[100]
             flex h-14 w-14 items-center justify-center
             rounded-full bg-indigo-600 text-white
             shadow-2xl shadow-indigo-500/30
@@ -213,7 +213,7 @@ export default function Chatbot() {
       data-chatbot-open
       aria-label="Eventra assistant"
       className="
-        fixed bottom-6 right-6 z-50
+        fixed bottom-6 right-6 z-[100]
         flex flex-col                        /* KEY FIX: flex column layout */
         w-[calc(100vw-2rem)] max-w-sm
         rounded-2xl
