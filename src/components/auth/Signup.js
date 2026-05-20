@@ -267,13 +267,16 @@ const Signup = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-gray-700 dark:text-gray-300">
+                <label htmlFor="firstName" className="block text-sm text-gray-700 dark:text-gray-300">
                   First name <sup className="text-red-500">*</sup>
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
+                    id="firstName"
                     name="firstName"
+                    type="text"
+                    autoComplete="given-name"
                     value={formData.firstName}
                     onChange={handleChange}
                     placeholder="First name"
@@ -286,13 +289,16 @@ const Signup = () => {
                 )}
               </div>
               <div>
-                <label className="block text-sm text-gray-700 dark:text-gray-300">
+                <label htmlFor="lastName" className="block text-sm text-gray-700 dark:text-gray-300">
                   Last name <sup className="text-red-500">*</sup>
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
+                    id="lastName"
                     name="lastName"
+                    type="text"
+                    autoComplete="family-name"
                     value={formData.lastName}
                     onChange={handleChange}
                     placeholder="Last name"
@@ -307,7 +313,7 @@ const Signup = () => {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-700 dark:text-gray-300">
+              <label htmlFor="email" className="block text-sm text-gray-700 dark:text-gray-300">
                 Email address <sup className="text-red-500">*</sup>
               </label>
 
@@ -318,8 +324,10 @@ const Signup = () => {
                 />
 
                 <input
+                  id="email"
                   name="email"
                   type="email"
+                  autoComplete="email"
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="Enter your email address"
@@ -333,7 +341,7 @@ const Signup = () => {
               )}
             </div>
             <div>
-              <label className="block text-sm text-gray-700 dark:text-gray-300">
+              <label htmlFor="password" className="block text-sm text-gray-700 dark:text-gray-300">
                 Password <sup className="text-red-500">*</sup>
               </label>
               <div className="relative">
@@ -351,8 +359,10 @@ const Signup = () => {
                   />
                 </svg>
                 <input
+                  id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Enter your password"
@@ -407,7 +417,7 @@ const Signup = () => {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-700 dark:text-gray-300">
+              <label htmlFor="confirmPassword" className="block text-sm text-gray-700 dark:text-gray-300">
                 Confirm Password <sup className="text-red-500">*</sup>
               </label>
               <div className="relative">
@@ -425,8 +435,10 @@ const Signup = () => {
                   />
                 </svg>
                 <input
+                  id="confirmPassword"
                   name="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
+                  autoComplete="new-password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   placeholder="Confirm your password"
