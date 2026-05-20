@@ -1,20 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { lazy, useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 
 // Layout & Components
 import Navbar from "./components/Layout/Navbar";
-// Lazy load heavy components
-const Footer = lazy(() => import("./components/Layout/Footer"));
-const Chatbot = lazy(() => import("./components/Chatbot"));
-const AppRoutes = lazy(() => import("./components/AppRoutes")); // This is Heaviestt
-
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
 import FluidCursor from "./jhalak/FluidCursor";
 import PageTransition from "./components/common/PageTransition";
-// Ensure this path matches the exact location of your file
-import RegistrationPage from "./Pages/RegistrationPage"; 
+import RegistrationPage from "./Pages/RegistrationPage";
 
 // Context & Hooks
 import NotificationProvider from "./components/common/NotificationProvider";
@@ -23,6 +17,11 @@ import { MyEventsProvider } from "./context/MyEventsContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { useModelContext } from "./hooks/useModelContext";
 import useOfflineSync from "./hooks/useOfflineSync";
+
+// Lazy load heavy components
+const Footer = lazy(() => import("./components/Layout/Footer"));
+const Chatbot = lazy(() => import("./components/Chatbot"));
+const AppRoutes = lazy(() => import("./components/AppRoutes"));
 
 const OfflineSyncManager = () => {
   useOfflineSync();

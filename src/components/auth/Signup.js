@@ -53,6 +53,11 @@ const Signup = () => {
   const [passwordMatchMessage, setPasswordMatchMessage] = useState("");
   const navigate = useNavigate();
   const { setAuthSession } = useAuth();
+  const introPoints = [
+    "Create your account to post events, join hackathons, and submit projects.",
+    "Track your activity, registrations, and community engagement from one profile.",
+    "Get quick access to the tools you need to start contributing immediately.",
+  ];
 
 
 
@@ -216,6 +221,17 @@ const Signup = () => {
               <p className="mb-8 text-lg opacity-90 leading-relaxed">
                 Create your free account and start building amazing events.
               </p>
+              <div className="space-y-3">
+                {introPoints.map((point) => (
+                  <div
+                    key={point}
+                    className="flex items-start gap-3 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-gray-800 dark:text-gray-100 backdrop-blur-sm"
+                  >
+                    <span className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-500 shrink-0" />
+                    <span className="leading-relaxed">{point}</span>
+                  </div>
+                ))}
+              </div>
             </div>
        
             {/* <div className="mt-8 flex items-center p-4 bg-white/10 rounded-2xl hover:bg-white/20 transition duration-300 ease-in-out">
