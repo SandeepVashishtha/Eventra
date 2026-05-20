@@ -44,6 +44,7 @@ export const getPublicRoutes = () => [
     <Route key="/leaderBoard" path="/leaderBoard" element={<LeaderBoard />} />
     <Route key="/contributorguide" path="/contributorguide" element={<ContributorGuide />} />
     <Route key="/about" path="/about" element={<AboutPage />} />
+    <Route key="/about-fallback" path="/about/*" element={<AboutPage />} />
     <Route key="/faq" path="/faq" element={<FAQPage />} />
     <Route key="/terms" path="/terms" element={<Terms />} />
     <Route key="/privacy" path="/privacy" element={<Privacy />} />
