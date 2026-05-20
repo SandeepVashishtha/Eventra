@@ -73,7 +73,7 @@ main {
   background-color: rgba(243, 244, 246, 1); /* Light mode disabled gray */
 }
 
-:dark .footer-newsletter-input:disabled {
+.dark .footer-newsletter-input:disabled {
   background-color: rgba(39, 39, 42, 1); /* Dark mode zinc disabled gray */
 }
 
