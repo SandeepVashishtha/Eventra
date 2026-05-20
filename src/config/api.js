@@ -82,26 +82,158 @@ const handleUnauthorized = (response) => {
  */
 const isDev = process.env.NODE_ENV === 'development';
 
-// API utility functions
+// ---------------------------------------------------------------------------
+// Network Resilience Configuration
+// ---------------------------------------------------------------------------
+
+/** Default request timeout in milliseconds. */
+const DEFAULT_TIMEOUT_MS = 15_000;
+
+/** HTTP status codes that are safe to retry (transient server errors). */
+const RETRYABLE_STATUS_CODES = [502, 503, 504];
+
+/** Maximum number of automatic retries for retryable errors. */
+const MAX_RETRIES = 1;
+
+/** Base delay between retries in milliseconds (doubles on each attempt). */
+const RETRY_BASE_DELAY_MS = 1_000;
+
+// ---------------------------------------------------------------------------
+// Normalized API Error
+// ---------------------------------------------------------------------------
+
+/**
+ * A structured error thrown by the API utility layer.
+ * Gives callers a consistent shape to handle errors — status code, parsed
+ * response body, and boolean flags for timeout and network errors.
+ */
+export class ApiError extends Error {
+  /**
+   * @param {string} message       - Human-readable error message.
+   * @param {object} options
+   * @param {number|null} options.status       - HTTP status code, or null for network/timeout errors.
+   * @param {*}           options.data         - Parsed response body (if available).
+   * @param {boolean}     options.isTimeout    - True when the request was aborted due to timeout.
+   * @param {boolean}     options.isNetworkError - True for connectivity failures (offline, DNS, etc.).
+   */
+  constructor(message, { status = null, data = null, isTimeout = false, isNetworkError = false } = {}) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.data = data;
+    this.isTimeout = isTimeout;
+    this.isNetworkError = isNetworkError;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Internal: Resilient fetch wrapper
+// ---------------------------------------------------------------------------
+
+/**
+ * Wraps native `fetch` with timeout and optional retry logic.
+ *
+ * - **Timeout**: Uses `AbortController` to abort requests that exceed
+ *   `DEFAULT_TIMEOUT_MS`. Throws an `ApiError` with `isTimeout: true`.
+ *
+ * - **Retry**: Automatically retries on 502/503/504 responses up to
+ *   `MAX_RETRIES` times with exponential backoff. Callers can opt out
+ *   by passing `retryable: false` (used for auth endpoints to avoid
+ *   duplicate side-effects).
+ *
+ * - **401 handling**: Delegates to the existing `handleUnauthorized`
+ *   callback on every response, preserving the global session-cleanup
+ *   behaviour registered by AuthContext.
+ *
+ * @param {string} method     - HTTP method (GET, POST, …).
+ * @param {string} url        - Fully-qualified request URL.
+ * @param {object} [options]
+ * @param {object|null} options.body    - Request body (will be JSON-stringified).
+ * @param {string|null} options.token   - JWT bearer token.
+ * @param {boolean}     options.retryable - Whether 5xx retries are enabled (default: true).
+ * @returns {Promise<Response>} The raw `Response` object (same contract as before).
+ */
+const resilientFetch = async (method, url, { body = null, token = null, retryable = true } = {}) => {
+  let lastError = null;
+  const attempts = retryable ? MAX_RETRIES + 1 : 1;
+
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    // Set up per-attempt timeout via AbortController
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+
+    try {
+      if (isDev) console.debug(`[API ${method}]`, url, attempt > 0 ? `(retry ${attempt})` : '');
+
+      const fetchOptions = {
+        method,
+        headers: getAuthHeaders(token),
+        signal: controller.signal,
+      };
+
+      if (body !== null) {
+        fetchOptions.body = JSON.stringify(body);
+      }
+
+      const response = await fetch(url, fetchOptions);
+      clearTimeout(timeoutId);
+
+      // Delegate 401 handling to AuthContext's registered callback
+      handleUnauthorized(response);
+
+      // If the response is a retryable server error and we have retries left, back off and retry
+      if (retryable && RETRYABLE_STATUS_CODES.includes(response.status) && attempt < MAX_RETRIES) {
+        const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
+        if (isDev) console.debug(`[API ${method}] ${url} returned ${response.status}, retrying in ${delay}ms…`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      lastError = error;
+
+      // Timeout — AbortController fires an AbortError
+      if (error.name === 'AbortError') {
+        throw new ApiError(
+          `Request timed out after ${DEFAULT_TIMEOUT_MS / 1000}s: ${method} ${url}`,
+          { isTimeout: true }
+        );
+      }
+
+      // Network error (offline, DNS failure, CORS, etc.) — retry if allowed
+      if (retryable && attempt < MAX_RETRIES) {
+        const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
+        if (isDev) console.debug(`[API ${method}] Network error for ${url}, retrying in ${delay}ms…`, error.message);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+    }
+  }
+
+  // All attempts exhausted — wrap in ApiError for consistent handling
+  console.error(`[API ${method} Error]`, url, lastError);
+  throw new ApiError(
+    lastError?.message || `Network error: ${method} ${url}`,
+    { isNetworkError: true }
+  );
+};
+
+// ---------------------------------------------------------------------------
+// Public API utility functions
+// ---------------------------------------------------------------------------
+// Method signatures are 100% backwards-compatible. Existing callers continue
+// to receive the raw `Response` object and handle it as before.
+
 export const apiUtils = {
   /**
    * HTTP GET
    * @param {string} url
    * @param {string|null} token - JWT bearer token
    */
-  get: async (url, token = null) => {
-    try {
-      if (isDev) console.debug('[API GET]', url);
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: getAuthHeaders(token),
-      });
-      return handleUnauthorized(response);
-    } catch (error) {
-      console.error('[API GET Error]', url, error);
-      throw error;
-    }
-  },
+  get: (url, token = null) =>
+    resilientFetch('GET', url, { token }),
 
   /**
    * HTTP POST
@@ -109,20 +241,8 @@ export const apiUtils = {
    * @param {object} data - Request body
    * @param {string|null} token - JWT bearer token
    */
-  post: async (url, data, token = null) => {
-    try {
-      if (isDev) console.debug('[API POST]', url);
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: getAuthHeaders(token),
-        body: JSON.stringify(data),
-      });
-      return handleUnauthorized(response);
-    } catch (error) {
-      console.error('[API POST Error]', url, error);
-      throw error;
-    }
-  },
+  post: (url, data, token = null) =>
+    resilientFetch('POST', url, { body: data, token }),
 
   /**
    * HTTP PUT — full resource replacement
@@ -130,20 +250,8 @@ export const apiUtils = {
    * @param {object} data - Request body
    * @param {string|null} token - JWT bearer token
    */
-  put: async (url, data = {}, token = null) => {
-    try {
-      if (isDev) console.debug('[API PUT]', url);
-      const response = await fetch(url, {
-        method: 'PUT',
-        headers: getAuthHeaders(token),
-        body: JSON.stringify(data),
-      });
-      return handleUnauthorized(response);
-    } catch (error) {
-      console.error('[API PUT Error]', url, error);
-      throw error;
-    }
-  },
+  put: (url, data = {}, token = null) =>
+    resilientFetch('PUT', url, { body: data, token }),
 
   /**
    * HTTP PATCH — partial resource update
@@ -151,37 +259,15 @@ export const apiUtils = {
    * @param {object} data - Partial update body
    * @param {string|null} token - JWT bearer token
    */
-  patch: async (url, data = {}, token = null) => {
-    try {
-      if (isDev) console.debug('[API PATCH]', url);
-      const response = await fetch(url, {
-        method: 'PATCH',
-        headers: getAuthHeaders(token),
-        body: JSON.stringify(data),
-      });
-      return handleUnauthorized(response);
-    } catch (error) {
-      console.error('[API PATCH Error]', url, error);
-      throw error;
-    }
-  },
+  patch: (url, data = {}, token = null) =>
+    resilientFetch('PATCH', url, { body: data, token }),
 
   /**
    * HTTP DELETE
    * @param {string} url
    * @param {string|null} token - JWT bearer token
    */
-  delete: async (url, token = null) => {
-    try {
-      if (isDev) console.debug('[API DELETE]', url);
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers: getAuthHeaders(token),
-      });
-      return handleUnauthorized(response);
-    } catch (error) {
-      console.error('[API DELETE Error]', url, error);
-      throw error;
-    }
-  },
+  delete: (url, token = null) =>
+    resilientFetch('DELETE', url, { token }),
 };
+
