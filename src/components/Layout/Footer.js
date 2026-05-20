@@ -1,32 +1,26 @@
 import { useState } from "react";
-import { SiX } from "react-icons/si";
 import {
+  FaBook,
+  FaBookOpen,
+  FaCalendarAlt,
+  FaComments,
+  FaDiscord,
+  FaEnvelope,
+  FaFolder,
+  FaGithub,
+  FaHome,
   FaInfoCircle,
   FaInstagram,
-  FaDiscord,
-  FaTelegram,
-  FaGithub,
-  FaQuestionCircle,
-  FaEnvelope,
-  FaBookOpen,
-  FaPlus,
-  // FaClipboardList,  //can be reactivated later
-  FaUsers,
-  FaBook,
-  // FaServer,   //can be reactivated later
-  FaHome,
-  FaCalendarAlt,
-  FaStar,
-  FaFolder,
-  FaTrophy,
-  FaComments,
   FaLinkedin,
+  FaPlus,
+  FaQuestionCircle,
+  FaStar,
+  FaTelegram,
+  FaTrophy,
+  FaUsers,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
-
-
-
 
 const footerLinks = {
   quick_links: [
@@ -68,7 +62,6 @@ const socialLinks = [
       />
     ),
   },
-
   {
     name: "LinkedIn",
     href: "https://www.linkedin.com/in/sandeepvashishtha/",
@@ -79,7 +72,6 @@ const socialLinks = [
       />
     ),
   },
-
   {
     name: "Discord",
     href: "https://www.discord.com/",
@@ -90,7 +82,6 @@ const socialLinks = [
       />
     ),
   },
-
   {
     name: "Telegram",
     href: "https://www.telegram.com/",
@@ -101,7 +92,6 @@ const socialLinks = [
       />
     ),
   },
-
   {
     name: "Instagram",
     href: "https://www.instagram.com/",
@@ -114,34 +104,8 @@ const socialLinks = [
   },
 ];
 
-const Newsletter = () => {
-  const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!email) {
-      toast.error("Please enter your email address");
-      return;
-    }
-
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      toast.error("Please enter a valid email address");
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Submitting email:", email);
-      toast.success("Thank you for subscribing to our newsletter!");
-      setEmail("");
-    } catch (error) {
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
+// Cleaned up sub-components
+const Newsletter = ({ email, setEmail, isSubmitting, handleSubmit }) => {
   return (
     <div className="mt-4">
       <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-2">
@@ -173,7 +137,6 @@ const Newsletter = () => {
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
         We respect your privacy. Unsubscribe at any time.
       </p>
-
     </div>
   );
 };
@@ -259,107 +222,76 @@ const FooterBottom = () => {
 };
 
 const Footer = () => {
+  const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!email) {
+      toast.error("Please enter your email address");
+      return;
+    }
+
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      console.log("Submitting email:", email);
+      toast.success("Thank you for subscribing to our newsletter!");
+      setEmail("");
+    } catch (error) {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <>
-      <footer 
-        className="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
-        data-aos="fade-up"
-        data-aos-duration="1000"
-        data-aos-offset="100"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-            <div 
-              className="space-y-4 lg:col-span-2"
-              data-aos="fade-up"
-              data-aos-delay="0"
+    <footer 
+      className="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
+      data-aos="fade-up"
+      data-aos-duration="1000"
+      data-aos-offset="100"
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div 
+            className="space-y-4 lg:col-span-2"
+            data-aos="fade-up"
+            data-aos-delay="0"
+          >
+            <h2
+              className="text-2xl sm:text-3xl font-bold text-black dark:text-white"
+              style={{ fontFamily: "Anton, sans-serif" }}
             >
-              <h2
-                className="text-2xl sm:text-3xl font-bold text-black"
-                style={{ fontFamily: "Anton, sans-serif" }}
-              >
-                Eventra
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">
-                Open-source event management for communities worldwide.
-              </p>
+              Eventra
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Open-source event management for communities worldwide.
+            </p>
 
-              {/* Newsletter Subscription Form */}
-              <div className="mt-4">
-                {/* UPDATED: Added dark mode text color */}
-                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-2">
-                  Subscribe to our newsletter
-                </h4>
-                {/* UPDATED: Added dark mode text color */}
-                <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
-                  Get the latest updates, event tips, and community news.
-                </p>
-                <form
-                  onSubmit={handleSubmit}
-                  className="flex flex-col sm:flex-row gap-3"
-                >
-                  <div className="relative flex-grow">
-                    <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Enter your email"
-                      className="pl-10 pr-4 py-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full"
-                      disabled={isSubmitting}
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSubmitting ? "Subscribing..." : "Subscribe"}
-                  </button>
-                </form>
-                {/* UPDATED: Added dark mode text color */}
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  We respect your privacy. Unsubscribe at any time.
-                </p>
-              </div>
-              {/* Social Media Icons - Below Newsletter */}
-              <div className="mt-6">
-                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-3">
-                  Follow Us
-                </h4>
-                <div className="flex flex-wrap gap-3">
-                  {socialLinks.map((link) => (
-                    <a
-                      key={link.name}
-                      href={link.href}
-                      className="text-gray-400 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={link.name}
-                      title={link.name}
-                    >
-                      <span className="sr-only">{link.name}</span>
-                      {link.icon}
-                    </a>
-                  ))}
-                </div>
-              </div>
-              <Newsletter />
-              <SocialLinksRender />
-            </div>
-            <FooterLinksRender />
+            {/* Newsletter Subscription Component */}
+            <Newsletter
+              email={email}
+              setEmail={setEmail}
+              isSubmitting={isSubmitting}
+              handleSubmit={handleSubmit}
+            />
+
+            {/* Social Media Links Component */}
+            <SocialLinksRender />
           </div>
-          <FooterBottom />
+          
+          {/* Mapping Grid Columns for Links */}
+          <FooterLinksRender />
         </div>
-      </footer>
-
-    </>
+        <FooterBottom />
+      </div>
+    </footer>
   );
 };
 
 export default Footer;
-
-
-
-
-

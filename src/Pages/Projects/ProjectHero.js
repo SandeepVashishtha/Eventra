@@ -13,6 +13,8 @@ import { HiArrowRight, HiPlus } from "react-icons/hi";
 import { SiHackaday } from "react-icons/si";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+// ADDED: Import the newly created EventCountdown component
+import EventCountdown from "./EventCountdown";
 
 const floatingShapes = [
   { size: 34, x: 50, y: 200, color: "#dbeafe", delay: 0 },
@@ -136,11 +138,21 @@ dark:from-[#020617] dark:via-[#0f172a] dark:to-black"
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 0.3 }}
           // UPDATED: Subtitle text color
-          className="text-base sm:text-lg text-white dark:white max-w-2xl mx-auto mb-12"
+          className="text-base sm:text-lg text-white dark:white max-w-2xl mx-auto mb-6"
         >
           Explore, contribute to, and showcase innovative open-source creations
           from developers worldwide.
         </motion.p>
+
+        {/* ADDED: Event Countdown Component integrated smoothly with animation */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, delay: 0.5 }}
+          className="mb-8"
+        >
+          <EventCountdown eventDate="2026-10-31T23:59:59" />
+        </motion.div>
 
         {/* Buttons */}
         <div className="flex justify-center gap-6 mb-16">
