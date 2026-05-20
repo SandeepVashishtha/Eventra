@@ -12,6 +12,7 @@ import {
   CheckCircle,
   Loader2,
 } from "lucide-react";
+import { getEventStatus } from "../../utils/eventUtils";
 import { useAuth } from "../../context/AuthContext";
 import { API_ENDPOINTS } from "../../config/api";
 import { toast } from "react-toastify";
@@ -46,7 +47,7 @@ const EventRegistration = () => {
       const foundEvent = mockEvents.find((e) => e.id === parseInt(eventId));
       
       if (foundEvent) {
-        setEvent(foundEvent);
+        setEvent({ ...foundEvent, status: getEventStatus(foundEvent) });
         
         // Pre-fill form if user is authenticated
         if (isAuthenticated() && user) {

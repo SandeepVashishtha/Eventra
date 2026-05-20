@@ -44,7 +44,7 @@ const repeatedIcons = [...iconList, ...iconList, ...iconList];
 
 export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
   const navigate = useNavigate();
-  const { user, token } = useAuth();
+  const { user } = useAuth();
 
   return (
     // UPDATED: Main background gradient

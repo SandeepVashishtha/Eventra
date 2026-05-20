@@ -24,7 +24,6 @@ const Hero = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
 
   // Change phrase every 3 seconds
   useEffect(() => {
@@ -32,7 +31,7 @@ const Hero = () => {
       setIndex((prev) => (prev + 1) % phrases.length);
     }, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [phrases.length]);
 
   const controls = useAnimation();
 

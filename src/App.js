@@ -1,5 +1,5 @@
 import { BrowserRouter as Router } from "react-router-dom";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 
 // --------------- LAYOUT
@@ -29,7 +29,7 @@ function App() {
     localStorage.setItem("cursor", newValue ? "on" : "off");
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleCursorPreference = (event) => {
       if (event?.detail?.cursorEnabled !== undefined) {
         setCursorEnabled(event.detail.cursorEnabled);

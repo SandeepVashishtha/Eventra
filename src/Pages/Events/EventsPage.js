@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import mockEvents from "./eventsMockData.json";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
+import { getEventStatus } from "../../utils/eventUtils";
 import { Grid, List } from "lucide-react";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
@@ -55,7 +56,10 @@ const EventsPage = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setEvents(mockEvents);
+      setEvents(mockEvents.map((event) => ({
+        ...event,
+        status: getEventStatus(event),
+      })));
       setIsLoading(false);
     }, 800);
     return () => clearTimeout(timer);
