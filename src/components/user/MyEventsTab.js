@@ -393,7 +393,7 @@ export default function MyEventsTab() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             {searchQuery && (
-              <button className="ud-search-clear" onClick={() => setSearchQuery('')}>
+              <button className="ud-search-clear" onClick={() => setSearchQuery('')} aria-label="Clear search query">
                 <X size={13} />
               </button>
             )}

@@ -7,6 +7,7 @@ const MobileNavbar = ({ isOpen, setIsOpen, isAuthenticated, user, logout }) => {
       <button
         onClick={() => setIsOpen(true)}
         className="lg:hidden"
+        aria-label="Open navigation menu"
       >
         ☰
       </button>
