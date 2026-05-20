@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import Fuse from "fuse.js";
 import mockEvents from "./eventsMockData.json";
+import { getRouteSearchResults } from "../../utils/searchUtils";
 import {
   DEFAULT_EVENTS_PER_PAGE,
   clampPage,
@@ -15,12 +15,14 @@ const getSearchResults = (events, searchQuery) => {
     return events;
   }
 
-  const fuse = new Fuse(events, {
-    keys: ["title", "description", "location", "tags", "type"],
-    threshold: 0.35,
-  });
-
-  return fuse.search(searchQuery).map((res) => res.item);
+  return getRouteSearchResults(
+    events,
+    searchQuery,
+    ["title", "description", "location", "tags", "type", "date", "status"],
+    {
+      threshold: 0.35,
+    }
+  );
 };
 
 const useEventListing = () => {

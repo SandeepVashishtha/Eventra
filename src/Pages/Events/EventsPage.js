@@ -1,14 +1,25 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import mockEvents from "./eventsMockData.json";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
 import { Grid, List } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
-import Fuse from "fuse.js";
 import StyledDropdown from "../../components/StyledDropdown";
 import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { getRouteSearchResults } from "../../utils/searchUtils";
+
+const EVENT_SEARCH_KEYS = [
+  "title",
+  "description",
+  "location",
+  "tags",
+  "type",
+  "date",
+  "status",
+];
 
 const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
   if (isLoading) {
@@ -46,11 +57,12 @@ const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
 
 const EventsPage = () => {
   useDocumentTitle("Eventra | Events")
-  const initialSearchQuery = new URLSearchParams(window.location.search).get("search") || "";
+  const location = useLocation();
+  const routeSearchQuery = new URLSearchParams(location.search).get("search") || "";
   const [events, setEvents] = useState([]);
   const [filterType, setFilterType] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
-  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
+  const [searchQuery, setSearchQuery] = useState(routeSearchQuery);
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [sortType, setSortType] = useState("Newest");
   const [isLoading, setIsLoading] = useState(true);
@@ -64,18 +76,18 @@ const EventsPage = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Fuse.js setup
-  const fuse = new Fuse(events, {
-    keys: ["title", "description", "location", "tags", "type"],
-    threshold: 0.35,
-  });
+  useEffect(() => {
+    setSearchQuery(routeSearchQuery);
+  }, [routeSearchQuery]);
 
-  const handleSearch = (query = "") => {
+  const handleSearch = useCallback((query = "") => {
     setSearchQuery(query);
 
     let results = events;
     if (query.trim()) {
-      results = fuse.search(query).map((res) => res.item);
+      results = getRouteSearchResults(events, query, EVENT_SEARCH_KEYS, {
+        threshold: 0.35,
+      });
     }
 
     const final = results.filter((event) => {
@@ -88,19 +100,19 @@ const EventsPage = () => {
     });
 
     setFilteredEvents(final);
-  };
-
-  useEffect(() => {
-    handleSearch(searchQuery);
   }, [events, filterType]);
 
   useEffect(() => {
-    if (!isLoading && initialSearchQuery) {
+    handleSearch(searchQuery);
+  }, [handleSearch, searchQuery]);
+
+  useEffect(() => {
+    if (!isLoading && routeSearchQuery) {
       setTimeout(() => {
         cardSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
     }
-  }, [isLoading, initialSearchQuery]);
+  }, [isLoading, routeSearchQuery]);
 
   const handleSortChange = (type) => {
     setSortType(type);
