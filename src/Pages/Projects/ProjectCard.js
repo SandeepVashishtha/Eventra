@@ -215,30 +215,53 @@ const ProjectCard = ({ project }) => {
       {/* Buttons */}
       <div className="px-5 py-4 flex gap-3 mt-auto">
 
-        <a
-          href={project.githubUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="
-            flex-1
-            flex
-            items-center
-            justify-center
-            gap-2
-            px-4
-            py-2.5
-            rounded-xl
-            bg-black
-            text-white
-            font-medium
-            hover:bg-zinc-800
-            transition-all
-            duration-300
-          "
-        >
-          <FiGithub />
-          GitHub
-        </a>
+        {/* fix: guard githubUrl — show disabled "No Repo" if null/undefined/empty */}
+        {project.githubUrl ? (
+          <a
+            href={project.githubUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="
+              flex-1
+              flex
+              items-center
+              justify-center
+              gap-2
+              px-4
+              py-2.5
+              rounded-xl
+              bg-black
+              text-white
+              font-medium
+              hover:bg-zinc-800
+              transition-all
+              duration-300
+            "
+          >
+            <FiGithub />
+            GitHub
+          </a>
+        ) : (
+          <div
+            className="
+              flex-1
+              flex
+              items-center
+              justify-center
+              px-4
+              py-2.5
+              rounded-xl
+              bg-gray-100
+              dark:bg-gray-800
+              text-gray-400
+              text-sm
+              font-medium
+              cursor-not-allowed
+            "
+          >
+            No Repo
+          </div>
+        )}
 
         {project.liveDemo ? (
           <a

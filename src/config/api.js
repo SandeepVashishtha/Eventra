@@ -6,6 +6,7 @@ const AUTH_API_BASE_PATH = process.env.REACT_APP_API_URL
   ? `${process.env.REACT_APP_API_URL}/api/auth`
   : '/api/auth'; // ← goes through CRA proxy in dev
 
+// fix: shared base URL for all non-auth API routes
 const API_BASE_PATH = process.env.REACT_APP_API_URL || '';
 
 // API endpoints — auth, events, projects, notifications, and users
@@ -20,9 +21,9 @@ export const API_ENDPOINTS = {
     LIST: `${API_BASE_PATH}/api/events`,
   },
   PROJECTS: {
-    SUBMIT: `${API_BASE_PATH}/api/projects`,
     LIST: `${API_BASE_PATH}/api/projects`,
     CATEGORIES: `${API_BASE_PATH}/api/projects/categories`,
+    SUBMIT: `${API_BASE_PATH}/api/projects`,
   },
   NOTIFICATIONS: {
     BASE: `${API_BASE_PATH}/api/notifications`,

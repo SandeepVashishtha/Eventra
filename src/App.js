@@ -4,12 +4,14 @@ import "./App.css";
 
 // Layout & Components
 import Navbar from "./components/Layout/Navbar";
-import Footer from "./components/Layout/Footer";
+// Lazy load heavy components
+const Footer = lazy(() => import("./components/Layout/Footer"));
+const Chatbot = lazy(() => import("./components/Chatbot"));
+const AppRoutes = lazy(() => import("./components/AppRoutes")); // This is Heaviestt
+
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
-import Chatbot from "./components/Chatbot";
 import FluidCursor from "./jhalak/FluidCursor";
-import AppRoutes from "./components/AppRoutes";
 import PageTransition from "./components/common/PageTransition";
 // Ensure this path matches the exact location of your file
 import RegistrationPage from "./Pages/RegistrationPage"; 
@@ -29,7 +31,7 @@ const OfflineSyncManager = () => {
 
 function App() {
   const [cursorEnabled, setCursorEnabled] = useState(
-    localStorage.getItem("cursor") !== "off"
+    localStorage.getItem("cursor") !== "off",
   );
 
   useModelContext();
@@ -47,7 +49,11 @@ function App() {
       }
     };
     window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
-    return () => window.removeEventListener("cursorPreferenceChanged", handleCursorPreference);
+    return () =>
+      window.removeEventListener(
+        "cursorPreferenceChanged",
+        handleCursorPreference,
+      );
   }, []);
 
   return (

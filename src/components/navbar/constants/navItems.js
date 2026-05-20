@@ -1,7 +1,6 @@
 import {
   Home,
   Calendar,
-  Sparkles,
   FolderKanban,
   Users,
   Trophy,

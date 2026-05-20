@@ -32,6 +32,8 @@ import {
   Plus,
 } from "lucide-react";
 
+const DRAFT_KEY = "eventra_create_event_draft";
+
 const EventCreation = () => {
   const [currentStep, setCurrentStep] = useState("form");
   const [loading, setLoading] = useState(false);
@@ -403,6 +405,16 @@ const EventCreation = () => {
   };
 
   useEffect(() => {
+    const saved = localStorage.getItem(DRAFT_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setFormData(prev => ({ ...prev, ...parsed, banner: null, bannerPreview: null }));
+      } catch (e) {}
+    }
+  }, []);
+  
+  useEffect(() => {
     if (successMessage || generalError) {
       const timer = setTimeout(() => {
         setSuccessMessage("");
@@ -412,6 +424,11 @@ const EventCreation = () => {
     }
   }, [successMessage, generalError]);
 
+  useEffect(() => {
+    const { banner, bannerPreview, ...saveable } = formData;
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
+  }, [formData]);
+  
   const resetForm = () => {
     setFormData({
       title: "",
@@ -446,6 +463,7 @@ const EventCreation = () => {
       bannerPreview: null,
     });
     setErrors({});
+    localStorage.removeItem(DRAFT_KEY);
     setNewTag("");
     setCurrentStep("form");
   };
