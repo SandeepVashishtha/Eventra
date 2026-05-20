@@ -146,35 +146,31 @@ function App() {
                   dark:bg-slate-950
                   text-black
                   dark:text-white
-
                   transition-colors
                   duration-300
                 "
               >
-                <Suspense
-                  fallback={
-                    <div
-                      className="
-                        flex
-                        items-center
-                        justify-center
-                        min-h-screen
-
-                        text-xl
-                        font-semibold
-
-                        bg-white
-                        dark:bg-slate-950
-
-                        text-black
-                        dark:text-white
-                      "
-                    >
-                      Loading...
-                    </div>
-                  }
-                >
-                  <PageTransition>
+                <PageTransition>
+                  <Suspense
+                    fallback={
+                      <div
+                        className="
+                          flex
+                          min-h-screen
+                          items-center
+                          justify-center
+                          bg-white
+                          dark:bg-slate-950
+                          text-black
+                          dark:text-white
+                          text-xl
+                          font-semibold
+                        "
+                      >
+                        Loading...
+                      </div>
+                    }
+                  >
                     <Routes>
                       <Route
                         path="/register/:id"
@@ -190,19 +186,19 @@ function App() {
                         }
                       />
                     </Routes>
-                  </PageTransition>
 
-                  {/* Global Components */}
-                  <Chatbot />
+                    {/* Global Components */}
+                    <Chatbot />
 
-                  <FeedbackButton />
-
-                  <Footer />
-                </Suspense>
+                    <Footer />
+                  </Suspense>
+                </PageTransition>
               </main>
 
-              {/* Scroll Restore */}
+              {/* Utilities */}
               <ScrollToTop />
+
+              <FeedbackButton />
 
               {/* Cursor Effect */}
               <FluidCursor

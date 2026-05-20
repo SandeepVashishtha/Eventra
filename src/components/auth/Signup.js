@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
@@ -53,6 +53,11 @@ const Signup = () => {
   const [passwordMatchMessage, setPasswordMatchMessage] = useState("");
   const navigate = useNavigate();
   const { setAuthSession } = useAuth();
+  const introPoints = [
+    "Create your account to post events, join hackathons, and submit projects.",
+    "Track your activity, registrations, and community engagement from one profile.",
+    "Get quick access to the tools you need to start contributing immediately.",
+  ];
 
 
 
@@ -62,26 +67,6 @@ const Signup = () => {
   const handleChange = (e) => {
     const newData = { ...formData, [e.target.name]: e.target.value };
     setFormData(newData);
-
-    if (e.target.name === "confirmPassword" || e.target.name === "password") {
-      const password = e.target.name === "password" ? e.target.value : newData.password;
-      const confirmPassword = e.target.name === "confirmPassword" ? e.target.value : newData.confirmPassword;
-
-      if (password && confirmPassword) {
-        if (password === confirmPassword) {
-          setError("");
-          setPasswordMatchMessage("Passwords match!");
-        } else {
-          setError("Passwords do not match");
-          setPasswordMatchMessage("");
-        }
-      } else {
-        setPasswordMatchMessage("");
-        if (e.target.name === "confirmPassword" && e.target.value) {
-          setError("Passwords do not match");
-        }
-      }
-    }
 
     if (e.target.name === "email") {
       setEmailError(validateEmail(e.target.value) ? "" : "Invalid email");
@@ -112,6 +97,28 @@ const Signup = () => {
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
   const toggleConfirmPasswordVisibility = () => setShowConfirmPassword(!showConfirmPassword);
+
+  useEffect(() => {
+  const timer = setTimeout(() => {
+    const { password, confirmPassword } = formData;
+
+    if (!password || !confirmPassword) {
+      setError("");
+      setPasswordMatchMessage("");
+      return;
+    }
+
+    if (password === confirmPassword) {
+      setError("");
+      setPasswordMatchMessage("Passwords match!");
+    } else {
+      setError("Passwords do not match");
+      setPasswordMatchMessage("");
+    }
+  }, 1000);
+
+  return () => clearTimeout(timer);
+}, [formData.password, formData.confirmPassword]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -216,6 +223,17 @@ const Signup = () => {
               <p className="mb-8 text-lg opacity-90 leading-relaxed">
                 Create your free account and start building amazing events.
               </p>
+              <div className="space-y-3">
+                {introPoints.map((point) => (
+                  <div
+                    key={point}
+                    className="flex items-start gap-3 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-gray-800 dark:text-gray-100 backdrop-blur-sm"
+                  >
+                    <span className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-500 shrink-0" />
+                    <span className="leading-relaxed">{point}</span>
+                  </div>
+                ))}
+              </div>
             </div>
        
             {/* <div className="mt-8 flex items-center p-4 bg-white/10 rounded-2xl hover:bg-white/20 transition duration-300 ease-in-out">
