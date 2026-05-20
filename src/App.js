@@ -1,8 +1,8 @@
-import { BrowserRouter as Router } from "react-router-dom";
-import React, { useEffect, useState, lazy, Suspense } from "react";
+import React, { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 
-// --------------- LAYOUT
+// Layout & Components
 import Navbar from "./components/Layout/Navbar";
 // Lazy load heavy components
 const Footer = lazy(() => import("./components/Layout/Footer"));
@@ -13,8 +13,10 @@ import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
 import FluidCursor from "./jhalak/FluidCursor";
 import PageTransition from "./components/common/PageTransition";
+// Ensure this path matches the exact location of your file
+import RegistrationPage from "./Pages/RegistrationPage"; 
 
-// --------------- CONTEXT & HOOKS
+// Context & Hooks
 import NotificationProvider from "./components/common/NotificationProvider";
 import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
@@ -26,13 +28,6 @@ const OfflineSyncManager = () => {
   useOfflineSync();
   return null;
 };
-
-// Simple Loading Spinner component...
-const LoadingFallback = () => (
-  <div className="flex justify-center items-center h-screen">
-    <div className="spinner">Loading Eventra...</div>
-  </div>
-);
 
 function App() {
   const [cursorEnabled, setCursorEnabled] = useState(
@@ -53,7 +48,6 @@ function App() {
         setCursorEnabled(event.detail.cursorEnabled);
       }
     };
-
     window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
     return () =>
       window.removeEventListener(
@@ -70,29 +64,19 @@ function App() {
           <OfflineSyncManager />
           <Router>
             <div className="App">
-              <Navbar
-                cursorEnabled={cursorEnabled}
-                toggleCursor={toggleCursor}
-              />
-
+              <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
               <main className="relative z-10 min-h-screen bg-white dark:bg-black">
-                {/* Suspense wrap ... */}
-                <Suspense fallback={<LoadingFallback />}>
-                  <PageTransition>
-                    <AppRoutes />
-                  </PageTransition>
-                </Suspense>
+                <PageTransition>
+                  <Routes>
+                    <Route path="/register/:id" element={<RegistrationPage />} />
+                    <Route path="*" element={<AppRoutes />} />
+                  </Routes>
+                </PageTransition>
               </main>
-
               <ScrollToTop />
-
-              {/* Chatbot and footer load... */}
-              <Suspense fallback={null}>
-                <Chatbot />
-                <Footer />
-              </Suspense>
-
+              <Chatbot />
               <FeedbackButton />
+              <Footer />
               <FluidCursor enabled={cursorEnabled} />
             </div>
           </Router>
