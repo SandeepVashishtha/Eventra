@@ -2,6 +2,7 @@ import { Link, useParams } from "react-router-dom";
 import { Calendar, MapPin, Clock, Tag } from "lucide-react";
 import { getEventStatus } from "../../utils/eventUtils";
 import mockEvents from "./eventsMockData.json";
+import CertificateDownload from "../../components/CertificateDownload";
 
 const EventDetails = () => {
   const { eventId } = useParams();
@@ -46,12 +47,20 @@ const EventDetails = () => {
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <Link
-              to={`/events/${event.id}/register`}
-              className="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 transition"
-            >
-              Register Now
-            </Link>
+  {event.status === 'past' ? (
+    <CertificateDownload
+      eventName={event.title}
+      eventDate={event.date}
+      eventType={event.type}
+    />
+  ) : (
+    <Link
+      to={`/events/${event.id}/register`}
+      className="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 transition"
+    >
+      Register Now
+    </Link>
+  )}
             <Link
               to="/events"
               className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"

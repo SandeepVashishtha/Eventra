@@ -13,6 +13,7 @@ import {
 import eventsMockData from "./eventsMockData.json";
 import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
 import ShareMenu from "../../components/common/ShareMenu";
+import CertificateDownload from "../../components/CertificateDownload";
 import { generateEventSharingData } from "../../utils/shareUtils";
 
 const EventDetailsPage = () => {
@@ -270,9 +271,18 @@ const EventDetailsPage = () => {
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 sticky top-32">
               <div className="mb-6">
                 {isPastEvent ? (
-                  <div className="w-full py-3 px-4 bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg font-semibold text-center cursor-not-allowed">
-                    Event Ended
-                  </div>
+  <>
+    <div className="w-full py-3 px-4 bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg font-semibold text-center cursor-not-allowed">
+      Event Ended
+    </div>
+    <div className="mt-3">
+      <CertificateDownload
+        eventName={event.title}
+        eventDate={event.date}
+        eventType={event.type}
+      />
+    </div>
+  </>
                 ) : event.attendees >= event.maxAttendees ? (
                   <div className="w-full py-3 px-4 bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg font-semibold text-center cursor-not-allowed">
                     Event Full
