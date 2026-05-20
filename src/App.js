@@ -1,172 +1,176 @@
-import axios from "axios";
+import React, {
+  useState,
+  useEffect,
+  lazy,
+  Suspense,
+} from "react";
 
-// Base API URL
-const BASE_URL =
-  process.env.REACT_APP_API_URL ||
-  "http://localhost:5000/api";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+} from "react-router-dom";
 
-// Axios Instance
-const API = axios.create({
-  baseURL: BASE_URL,
+import "./App.css";
 
-  headers: {
-    "Content-Type":
-      "application/json",
-  },
+// Layout & Components
+import Navbar from "./components/Layout/Navbar";
+import ScrollToTop from "./components/ScrollToTop";
+import FeedbackButton from "./components/FeedbackButton";
+import FluidCursor from "./jhalak/FluidCursor";
+import PageTransition from "./components/common/PageTransition";
 
-  withCredentials: true,
-});
+// Pages
+import RegistrationPage from "./Pages/RegistrationPage";
 
-// ---------------------------------------------------------------------------
-// Global 401 Unauthorized Handler
-// ---------------------------------------------------------------------------
+// Context & Hooks
+import NotificationProvider from "./components/common/NotificationProvider";
+import { AuthProvider } from "./context/AuthContext";
+import { MyEventsProvider } from "./context/MyEventsContext";
+import { ThemeProvider } from "./context/ThemeContext";
+import useOfflineSync from "./hooks/useOfflineSync";
 
-let onUnauthorized = null;
-
-/**
- * Register callback for handling 401 Unauthorized responses.
- * Usually set inside AuthContext.
- */
-export const setOnUnauthorizedHandler =
-  (callback) => {
-    onUnauthorized = callback;
-  };
-
-// ---------------------------------------------------------------------------
-// Axios Response Interceptor
-// ---------------------------------------------------------------------------
-
-API.interceptors.response.use(
-  (response) => response,
-
-  (error) => {
-    if (
-      error?.response
-        ?.status === 401
-    ) {
-      if (onUnauthorized) {
-        onUnauthorized();
-      }
-    }
-
-    return Promise.reject(
-      error
-    );
-  }
+// Lazy Loaded Components
+const Footer = lazy(() =>
+  import("./components/Layout/Footer")
 );
 
-// ---------------------------------------------------------------------------
-// API Endpoints
-// ---------------------------------------------------------------------------
+const Chatbot = lazy(() =>
+  import("./components/Chatbot")
+);
 
-export const API_ENDPOINTS = {
-  AUTH: {
-    LOGIN: "/auth/login",
+const AppRoutes = lazy(() =>
+  import("./components/AppRoutes")
+);
 
-    SIGNUP: "/auth/signup",
-
-    LOGOUT: "/auth/logout",
-
-    RESET_PASSWORD:
-      "/auth/reset-password",
-  },
-
-  EVENTS: {
-    CREATE: "/events/create",
-
-    ALL: "/events",
-
-    DETAIL: (id) =>
-      `/events/${id}`,
-
-    REGISTER: (id) =>
-      `/events/${id}/register`,
-  },
-
-  PROJECTS: {
-    ALL: "/projects",
-
-    DETAIL: (id) =>
-      `/projects/${id}`,
-
-    CATEGORIES:
-      "/projects/categories",
-  },
-
-  NOTIFICATIONS: {
-    ALL: "/notifications",
-
-    READ: (id) =>
-      `/notifications/${id}/read`,
-
-    READ_ALL:
-      "/notifications/read-all",
-  },
-
-  USERS: {
-    PROFILE: "/users/profile",
-
-    ACHIEVEMENTS:
-      "/users/achievements",
-  },
+// Offline Sync
+const OfflineSyncManager = () => {
+  useOfflineSync();
+  return null;
 };
 
-// ---------------------------------------------------------------------------
-// API Utility Methods
-// ---------------------------------------------------------------------------
+function App() {
+  const [cursorEnabled, setCursorEnabled] =
+    useState(
+      localStorage.getItem("cursor") !== "off"
+    );
 
-export const apiUtils = {
-  get: (
-    url,
-    config = {}
-  ) =>
-    API.get(
-      url,
-      config
-    ),
+  // Toggle Cursor
+  const toggleCursor = () => {
+    const newValue = !cursorEnabled;
 
-  post: (
-    url,
-    data = {},
-    config = {}
-  ) =>
-    API.post(
-      url,
-      data,
-      config
-    ),
+    setCursorEnabled(newValue);
 
-  put: (
-    url,
-    data = {},
-    config = {}
-  ) =>
-    API.put(
-      url,
-      data,
-      config
-    ),
+    localStorage.setItem(
+      "cursor",
+      newValue ? "on" : "off"
+    );
+  };
 
-  patch: (
-    url,
-    data = {},
-    config = {}
-  ) =>
-    API.patch(
-      url,
-      data,
-      config
-    ),
+  // Listen For Cursor Preference Changes
+  useEffect(() => {
+    const handleCursorPreference = (event) => {
+      if (
+        event?.detail?.cursorEnabled !== undefined
+      ) {
+        setCursorEnabled(
+          event.detail.cursorEnabled
+        );
+      }
+    };
 
-  delete: (
-    url,
-    config = {}
-  ) =>
-    API.delete(
-      url,
-      config
-    ),
-};
+    window.addEventListener(
+      "cursorPreferenceChanged",
+      handleCursorPreference
+    );
 
-// Default Export
-export default API;
+    return () => {
+      window.removeEventListener(
+        "cursorPreferenceChanged",
+        handleCursorPreference
+      );
+    };
+  }, []);
+
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <MyEventsProvider>
+          <NotificationProvider />
+
+          <OfflineSyncManager />
+
+          <Router>
+            <div className="App">
+              <Navbar
+                cursorEnabled={cursorEnabled}
+                toggleCursor={toggleCursor}
+              />
+
+              <main
+                className="
+                  relative
+                  z-10
+                  min-h-screen
+                  bg-white
+                  dark:bg-slate-950
+                  text-black
+                  dark:text-white
+                  transition-colors
+                  duration-300
+                "
+              >
+                <PageTransition>
+                  <Suspense
+                    fallback={
+                      <div
+                        className="
+                          flex
+                          min-h-screen
+                          items-center
+                          justify-center
+                          bg-white
+                          dark:bg-slate-950
+                          text-black
+                          dark:text-white
+                          text-xl
+                          font-semibold
+                        "
+                      >
+                        Loading...
+                      </div>
+                    }
+                  >
+                    <Routes>
+                      <Route
+                        path="/register/:id"
+                        element={<RegistrationPage />}
+                      />
+
+                      <Route
+                        path="*"
+                        element={<AppRoutes />}
+                      />
+                    </Routes>
+
+                    <Chatbot />
+                    <Footer />
+                  </Suspense>
+                </PageTransition>
+              </main>
+
+              <ScrollToTop />
+              <FeedbackButton />
+
+              <FluidCursor
+                enabled={cursorEnabled}
+              />
+            </div>
+          </Router>
+        </MyEventsProvider>
+      </AuthProvider>
+    </ThemeProvider>
+  );
+}
+
+export default App;
