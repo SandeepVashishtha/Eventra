@@ -14,6 +14,11 @@ const Login = () => {
 
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
+  const introPoints = [
+    "Pick up where you left off with your dashboard and event tools.",
+    "Stay in sync with registrations, submissions, and community updates.",
+    "Keep your drafts, favorites, and notifications in one place.",
+  ];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -101,6 +106,17 @@ text-gray-900 dark:text-white p-12 flex flex-col justify-between rounded-3xl">
                 <p className="mb-8 text-lg opacity-90 leading-relaxed">
                   Sign in to your Eventra account and pick up where you left off.
                 </p>
+                <div className="space-y-3">
+                  {introPoints.map((point) => (
+                    <div
+                      key={point}
+                      className="flex items-start gap-3 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-gray-800 dark:text-gray-100 backdrop-blur-sm"
+                    >
+                      <span className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-500 shrink-0" />
+                      <span className="leading-relaxed">{point}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -283,7 +299,7 @@ text-gray-900 dark:text-white"
                   disabled={loading}
                   className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 dark:bg-blue-600 
 hover:bg-blue-600 dark:hover:bg-blue-500 
-text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
+focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
                 >
                   {loading ? (
                     <div className="flex items-center gap-2">
