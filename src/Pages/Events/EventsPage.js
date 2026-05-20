@@ -2,15 +2,28 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import mockEvents from "./eventsMockData.json";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
+import { getEventStatus } from "../../utils/eventUtils";
 import { Grid, List } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
-import Fuse from "fuse.js";
 import StyledDropdown from "../../components/StyledDropdown";
 import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
+import SearchEmptyState from "../../components/common/SearchEmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { getRouteSearchResults } from "../../utils/searchUtils";
 
-const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
+const EVENT_SEARCH_KEYS = [
+  "title",
+  "description",
+  "location",
+  "tags",
+  "type",
+  "date",
+  "status",
+];
+
+const renderCardSection = (isLoading, filteredEvents, viewMode, filterType, searchQuery, onClearSearch) => {
   if (isLoading) {
     return (
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -24,6 +37,14 @@ const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
   if (filteredEvents.length === 0) {
     return (
       <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
+        <SearchEmptyState
+          query={searchQuery}
+          itemLabel="events"
+          browseLabel="Browse All Events"
+          browsePath="/events"
+          onClear={onClearSearch}
+          popularTags={["AI", "Blockchain", "Web", "DevOps", "React", "UX"]}
+        />
       </div>
     );
   }
@@ -46,11 +67,12 @@ const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
 
 const EventsPage = () => {
   useDocumentTitle("Eventra | Events")
-  const initialSearchQuery = new URLSearchParams(window.location.search).get("search") || "";
+  const location = useLocation();
+  const routeSearchQuery = new URLSearchParams(location.search).get("search") || "";
   const [events, setEvents] = useState([]);
   const [filterType, setFilterType] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
-  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
+  const [searchQuery, setSearchQuery] = useState(routeSearchQuery);
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [sortType, setSortType] = useState("Newest");
   const [isLoading, setIsLoading] = useState(true);
@@ -58,23 +80,27 @@ const EventsPage = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setEvents(mockEvents);
+      setEvents(mockEvents.map((event) => ({
+        ...event,
+        status: getEventStatus(event),
+      })));
       setIsLoading(false);
     }, 800);
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    setSearchQuery(routeSearchQuery);
+  }, [routeSearchQuery]);
+
   const handleSearch = useCallback((query = "") => {
     setSearchQuery(query);
 
-    const fuse = new Fuse(events, {
-      keys: ["title", "description", "location", "tags", "type"],
-      threshold: 0.35,
-    });
-
     let results = events;
     if (query.trim()) {
-      results = fuse.search(query).map((res) => res.item);
+      results = getRouteSearchResults(events, query, EVENT_SEARCH_KEYS, {
+        threshold: 0.35,
+      });
     }
 
     const final = results.filter((event) => {
@@ -91,15 +117,15 @@ const EventsPage = () => {
 
   useEffect(() => {
     handleSearch(searchQuery);
-  }, [events, filterType, handleSearch, searchQuery]);
+  }, [handleSearch, searchQuery]);
 
   useEffect(() => {
-    if (!isLoading && initialSearchQuery) {
+    if (!isLoading && routeSearchQuery) {
       setTimeout(() => {
         cardSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
     }
-  }, [isLoading, initialSearchQuery]);
+  }, [isLoading, routeSearchQuery]);
 
   const handleSortChange = (type) => {
     setSortType(type);
@@ -126,6 +152,13 @@ const EventsPage = () => {
 
   const scrollToCard = () => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const clearSearchAndFilters = () => {
+    setSearchQuery("");
+    setFilterType("all");
+    setSortType("Newest");
+    handleSearch("");
   };
 
   return (
@@ -215,7 +248,14 @@ const EventsPage = () => {
           </div>
         </div>
 
-        {renderCardSection(isLoading, filteredEvents, viewMode, filterType)}
+        {renderCardSection(
+          isLoading,
+          filteredEvents,
+          viewMode,
+          filterType,
+          searchQuery,
+          clearSearchAndFilters
+        )}
       </div>
 
       <EventCTA />

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { 
-  Plus, Minus, RotateCw, Trash2, Save, RotateCcw, 
-  Move, Check, Grid, Users, Layout, MapPin, Minimize2 
+  Plus, Minus, Trash2, Save, RotateCcw, 
+  Move, Grid, Users, Layout, MapPin, Minimize2 
 } from "lucide-react";
 import "./FloorPlanDesigner.css";
 

@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   CalendarIcon,
   MapPinIcon,
@@ -159,6 +160,7 @@ const HackathonCard = ({
   isFeatured = false,
   ...props
 }) => {
+  const navigate = useNavigate();
   // FIX 3: Use computed status everywhere instead of hackathon.status
   const status = computeStatus(hackathon.startDate, hackathon.endDate);
 
@@ -478,9 +480,13 @@ const HackathonCard = ({
             </div>
           ) : status === "upcoming" ? (
             <div className="grid grid-cols-2 gap-3">
-              <button className="px-4 py-2 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white text-sm font-medium rounded-lg">
-                Register
-              </button>
+             <button 
+  onClick={() => navigate(`/register/${hackathon.id}`)}
+  className="..."
+>
+  Register
+</button>
+    
 
               <a
                 href={addHackathonToGoogleCalendar(hackathon)}

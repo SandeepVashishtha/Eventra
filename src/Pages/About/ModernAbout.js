@@ -1,5 +1,7 @@
+
 import { motion, useInView } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
+
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import CountUp from "react-countup";
 
