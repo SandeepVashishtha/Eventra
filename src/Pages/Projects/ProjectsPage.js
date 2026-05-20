@@ -10,6 +10,7 @@ import ProjectCTA from "./ProjectCTA";
 import mockProjects from "./mockProjectsData.json";
 
 import ModernSearchInput from "../../components/common/ModernSearchInput";
+import SearchEmptyState from "../../components/common/SearchEmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 // Skeleton loader for project cards while data is loading
@@ -467,45 +468,18 @@ const ProjectGallery = () => {
                 >
                   <FiSearch className="h-10 w-10 text-black dark:text-white" />
                 </motion.div>
-
-                {/* UPDATED: Text colors */}
-                <h3 className="mt-6 text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
-                  No Projects Found
-                </h3>
-                <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                  {searchQuery || selectedCategories.length > 0
-                    ? "We couldn’t find any projects with your filters. Try exploring all projects!"
-                    : "Looks like there are no projects yet. Stay tuned for exciting updates!"}
-                </p>
-
-                {/* Action Buttons */}
-                <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      setSelectedCategories([]);
-                      setSearchQuery("");
-                      setSortBy("recent");
-                    }}
-                    className="px-6 py-2.5 text-sm font-medium rounded-lg text-white bg-black hover:bg-zinc-800 shadow-lg transition-all"
-                  >
-                    Clear Filters
-                  </motion.button>
-
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      setSelectedCategories([]);
-                      setSearchQuery("");
-                      setSortBy("recent");
-                    }}
-                    className="px-6 py-2.5 text-sm font-medium rounded-lg text-black dark:text-white border border-black/15 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 shadow-md transition-all"
-                  >
-                    Explore Projects
-                  </motion.button>
-                </div>
+                <SearchEmptyState
+                  query={searchQuery}
+                  itemLabel="projects"
+                  browseLabel="Browse All Projects"
+                  browsePath="/projects"
+                  onClear={() => {
+                    setSelectedCategories([]);
+                    setSearchQuery("");
+                    setSortBy("recent");
+                  }}
+                  popularTags={categories.filter((category) => category !== "all")}
+                />
               </div>
             </motion.div>
           )}
@@ -522,3 +496,4 @@ const ProjectGallery = () => {
 };
 
 export default ProjectGallery;
+

@@ -8,9 +8,10 @@ import EventCTA from "./EventCTA";
 import Fuse from "fuse.js";
 import StyledDropdown from "../../components/StyledDropdown";
 import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
+import SearchEmptyState from "../../components/common/SearchEmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 
-const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
+const renderCardSection = (isLoading, filteredEvents, viewMode, filterType, searchQuery, onClearSearch) => {
   if (isLoading) {
     return (
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -24,6 +25,14 @@ const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
   if (filteredEvents.length === 0) {
     return (
       <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
+        <SearchEmptyState
+          query={searchQuery}
+          itemLabel="events"
+          browseLabel="Browse All Events"
+          browsePath="/events"
+          onClear={onClearSearch}
+          popularTags={["AI", "Blockchain", "Web", "DevOps", "React", "UX"]}
+        />
       </div>
     );
   }
@@ -128,6 +137,13 @@ const EventsPage = () => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const clearSearchAndFilters = () => {
+    setSearchQuery("");
+    setFilterType("all");
+    setSortType("Newest");
+    handleSearch("");
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 overflow-x-hidden">
       <EventHero
@@ -215,7 +231,14 @@ const EventsPage = () => {
           </div>
         </div>
 
-        {renderCardSection(isLoading, filteredEvents, viewMode, filterType)}
+        {renderCardSection(
+          isLoading,
+          filteredEvents,
+          viewMode,
+          filterType,
+          searchQuery,
+          clearSearchAndFilters
+        )}
       </div>
 
       <EventCTA />
