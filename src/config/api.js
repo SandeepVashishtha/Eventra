@@ -1,9 +1,11 @@
 import axios from "axios";
 
+// ---------------------------------------------------------------------------
 // Base API URL
+// ---------------------------------------------------------------------------
+
 const BASE_URL =
-  process.env
-    .REACT_APP_API_URL ||
+  process.env.REACT_APP_API_URL ||
   "http://localhost:5000/api";
 
 // Axios Instance
@@ -18,18 +20,24 @@ const API = axios.create({
   withCredentials: true,
 });
 
-// Unauthorized Handler
-let onUnauthorized =
-  null;
+// ---------------------------------------------------------------------------
+// Global 401 Unauthorized Handler
+// ---------------------------------------------------------------------------
 
-// Setter
+let onUnauthorized = null;
+
+/**
+ * Register unauthorized callback
+ */
 export const setOnUnauthorizedHandler =
   (handler) => {
-    onUnauthorized =
-      handler;
+    onUnauthorized = handler;
   };
 
-// Response Interceptor
+// ---------------------------------------------------------------------------
+// Axios Response Interceptor
+// ---------------------------------------------------------------------------
+
 API.interceptors.response.use(
   (response) => response,
 
@@ -38,9 +46,7 @@ API.interceptors.response.use(
       error?.response
         ?.status === 401
     ) {
-      if (
-        onUnauthorized
-      ) {
+      if (onUnauthorized) {
         onUnauthorized();
       }
     }
@@ -51,41 +57,68 @@ API.interceptors.response.use(
   }
 );
 
+// ---------------------------------------------------------------------------
 // API Endpoints
-export const API_ENDPOINTS =
-  {
-    AUTH: {
-      LOGIN:
-        "/auth/login",
+// ---------------------------------------------------------------------------
 
-      SIGNUP:
-        "/auth/signup",
+export const API_ENDPOINTS = {
+  AUTH: {
+    LOGIN: "/auth/login",
 
-      LOGOUT:
-        "/auth/logout",
+    SIGNUP: "/auth/signup",
 
-      RESET_PASSWORD:
-        "/auth/reset-password",
-    },
+    LOGOUT: "/auth/logout",
 
-    EVENTS: {
-      CREATE:
-        "/events/create",
+    RESET_PASSWORD:
+      "/auth/reset-password",
+  },
 
-      ALL: "/events",
-    },
+  EVENTS: {
+    CREATE: "/events/create",
 
-    PROJECTS: {
-      ALL: "/projects",
-    },
+    ALL: "/events",
 
-    NOTIFICATIONS: {
-      ALL:
-        "/notifications",
-    },
-  };
+    DETAIL: (id) =>
+      `/events/${id}`,
 
+    REGISTER: (id) =>
+      `/events/${id}/register`,
+  },
+
+  PROJECTS: {
+    ALL: "/projects",
+
+    DETAIL: (id) =>
+      `/projects/${id}`,
+
+    CATEGORIES:
+      "/projects/categories",
+
+    SUBMIT: "/projects",
+  },
+
+  NOTIFICATIONS: {
+    ALL: "/notifications",
+
+    READ: (id) =>
+      `/notifications/${id}/read`,
+
+    READ_ALL:
+      "/notifications/read-all",
+  },
+
+  USERS: {
+    PROFILE: "/users/profile",
+
+    ACHIEVEMENTS:
+      "/users/achievements",
+  },
+};
+
+// ---------------------------------------------------------------------------
 // API Utility Methods
+// ---------------------------------------------------------------------------
+
 export const apiUtils = {
   get: (
     url,
@@ -118,6 +151,17 @@ export const apiUtils = {
       config
     ),
 
+  patch: (
+    url,
+    data = {},
+    config = {}
+  ) =>
+    API.patch(
+      url,
+      data,
+      config
+    ),
+
   delete: (
     url,
     config = {}
@@ -128,5 +172,8 @@ export const apiUtils = {
     ),
 };
 
+// ---------------------------------------------------------------------------
 // Default Export
+// ---------------------------------------------------------------------------
+
 export default API;

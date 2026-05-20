@@ -1,227 +1,172 @@
-import React, {
-  useState,
-  useEffect,
-  lazy,
-  Suspense,
-} from "react";
+import axios from "axios";
 
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-} from "react-router-dom";
+// Base API URL
+const BASE_URL =
+  process.env.REACT_APP_API_URL ||
+  "http://localhost:5000/api";
 
-import "./App.css";
+// Axios Instance
+const API = axios.create({
+  baseURL: BASE_URL,
 
-// Layout & Components
-import Navbar from "./components/Layout/Navbar";
+  headers: {
+    "Content-Type":
+      "application/json",
+  },
 
-import ScrollToTop from "./components/ScrollToTop";
+  withCredentials: true,
+});
 
-import FeedbackButton from "./components/FeedbackButton";
+// ---------------------------------------------------------------------------
+// Global 401 Unauthorized Handler
+// ---------------------------------------------------------------------------
 
-import FluidCursor from "./jhalak/FluidCursor";
+let onUnauthorized = null;
 
-import PageTransition from "./components/common/PageTransition";
-
-import GlobalErrorBoundary from "./components/common/ErrorBoundary";
-
-// Pages
-import RegistrationPage from "./Pages/RegistrationPage";
-
-// Context & Hooks
-import NotificationProvider from "./components/common/NotificationProvider";
-
-import { AuthProvider } from "./context/AuthContext";
-
-import { MyEventsProvider } from "./context/MyEventsContext";
-
-import { ThemeProvider } from "./context/ThemeContext";
-
-import { useModelContext } from "./hooks/useModelContext";
-
-import useOfflineSync from "./hooks/useOfflineSync";
-
-// Lazy Loaded Components
-const Footer = lazy(() =>
-  import("./components/Layout/Footer")
-);
-
-const Chatbot = lazy(() =>
-  import("./components/Chatbot")
-);
-
-const AppRoutes = lazy(() =>
-  import("./components/AppRoutes")
-);
-
-// Offline Sync Manager
-const OfflineSyncManager = () => {
-  useOfflineSync();
-
-  return null;
-};
-
-function App() {
-  const [cursorEnabled, setCursorEnabled] =
-    useState(
-      localStorage.getItem(
-        "cursor"
-      ) !== "off"
-    );
-
-  useModelContext();
-
-  // Toggle Cursor
-  const toggleCursor = () => {
-    const newValue =
-      !cursorEnabled;
-
-    setCursorEnabled(
-      newValue
-    );
-
-    localStorage.setItem(
-      "cursor",
-      newValue
-        ? "on"
-        : "off"
-    );
+/**
+ * Register callback for handling 401 Unauthorized responses.
+ * Usually set inside AuthContext.
+ */
+export const setOnUnauthorizedHandler =
+  (callback) => {
+    onUnauthorized = callback;
   };
 
-  // Listen For Cursor Changes
-  useEffect(() => {
-    const handleCursorPreference =
-      (event) => {
-        if (
-          event?.detail
-            ?.cursorEnabled !==
-          undefined
-        ) {
-          setCursorEnabled(
-            event.detail
-              .cursorEnabled
-          );
-        }
-      };
+// ---------------------------------------------------------------------------
+// Axios Response Interceptor
+// ---------------------------------------------------------------------------
 
-    window.addEventListener(
-      "cursorPreferenceChanged",
-      handleCursorPreference
+API.interceptors.response.use(
+  (response) => response,
+
+  (error) => {
+    if (
+      error?.response
+        ?.status === 401
+    ) {
+      if (onUnauthorized) {
+        onUnauthorized();
+      }
+    }
+
+    return Promise.reject(
+      error
     );
+  }
+);
 
-    return () =>
-      window.removeEventListener(
-        "cursorPreferenceChanged",
-        handleCursorPreference
-      );
-  }, []);
+// ---------------------------------------------------------------------------
+// API Endpoints
+// ---------------------------------------------------------------------------
 
-  return (
-    <ThemeProvider>
-      <AuthProvider>
-        <MyEventsProvider>
-          <NotificationProvider />
+export const API_ENDPOINTS = {
+  AUTH: {
+    LOGIN: "/auth/login",
 
-          <OfflineSyncManager />
+    SIGNUP: "/auth/signup",
 
-          <Router>
-            <div className="App">
-              {/* Navbar */}
-              <Navbar
-                cursorEnabled={
-                  cursorEnabled
-                }
-                toggleCursor={
-                  toggleCursor
-                }
-              />
+    LOGOUT: "/auth/logout",
 
-              {/* Main Content */}
-              <main
-                className="
-                  relative
-                  z-10
-                  min-h-screen
+    RESET_PASSWORD:
+      "/auth/reset-password",
+  },
 
-                  bg-white
-                  dark:bg-slate-950
+  EVENTS: {
+    CREATE: "/events/create",
 
-                  text-black
-                  dark:text-white
+    ALL: "/events",
 
-                  transition-colors
-                  duration-300
-                "
-              >
-                <Suspense
-                  fallback={
-                    <div
-                      className="
-                        flex
-                        items-center
-                        justify-center
+    DETAIL: (id) =>
+      `/events/${id}`,
 
-                        min-h-screen
+    REGISTER: (id) =>
+      `/events/${id}/register`,
+  },
 
-                        text-xl
-                        font-semibold
+  PROJECTS: {
+    ALL: "/projects",
 
-                        bg-white
-                        dark:bg-slate-950
+    DETAIL: (id) =>
+      `/projects/${id}`,
 
-                        text-black
-                        dark:text-white
-                      "
-                    >
-                      Loading...
-                    </div>
-                  }
-                >
-                  <PageTransition>
-                    <GlobalErrorBoundary variant="card">
-                      <Routes>
-                        <Route
-                          path="/register/:id"
-                          element={
-                            <RegistrationPage />
-                          }
-                        />
+    CATEGORIES:
+      "/projects/categories",
+  },
 
-                        <Route
-                          path="*"
-                          element={
-                            <AppRoutes />
-                          }
-                        />
-                      </Routes>
-                    </GlobalErrorBoundary>
-                  </PageTransition>
+  NOTIFICATIONS: {
+    ALL: "/notifications",
 
-                  {/* Global Components */}
-                  <Chatbot />
+    READ: (id) =>
+      `/notifications/${id}/read`,
 
-                  <FeedbackButton />
+    READ_ALL:
+      "/notifications/read-all",
+  },
 
-                  <Footer />
-                </Suspense>
-              </main>
+  USERS: {
+    PROFILE: "/users/profile",
 
-              {/* Scroll Restore */}
-              <ScrollToTop />
+    ACHIEVEMENTS:
+      "/users/achievements",
+  },
+};
 
-              {/* Cursor Effect */}
-              <FluidCursor
-                enabled={
-                  cursorEnabled
-                }
-              />
-            </div>
-          </Router>
-        </MyEventsProvider>
-      </AuthProvider>
-    </ThemeProvider>
-  );
-}
+// ---------------------------------------------------------------------------
+// API Utility Methods
+// ---------------------------------------------------------------------------
 
-export default App;
+export const apiUtils = {
+  get: (
+    url,
+    config = {}
+  ) =>
+    API.get(
+      url,
+      config
+    ),
+
+  post: (
+    url,
+    data = {},
+    config = {}
+  ) =>
+    API.post(
+      url,
+      data,
+      config
+    ),
+
+  put: (
+    url,
+    data = {},
+    config = {}
+  ) =>
+    API.put(
+      url,
+      data,
+      config
+    ),
+
+  patch: (
+    url,
+    data = {},
+    config = {}
+  ) =>
+    API.patch(
+      url,
+      data,
+      config
+    ),
+
+  delete: (
+    url,
+    config = {}
+  ) =>
+    API.delete(
+      url,
+      config
+    ),
+};
+
+// Default Export
+export default API;
