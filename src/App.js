@@ -18,7 +18,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 import { useModelContext } from "./hooks/useModelContext";
 import useOfflineSync from "./hooks/useOfflineSync";
 
-// Lazy load heavy components
+// Lazy-loaded components
 const Footer = lazy(() => import("./components/Layout/Footer"));
 const Chatbot = lazy(() => import("./components/Chatbot"));
 const AppRoutes = lazy(() => import("./components/AppRoutes"));
@@ -47,12 +47,18 @@ function App() {
         setCursorEnabled(event.detail.cursorEnabled);
       }
     };
-    window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
-    return () =>
+
+    window.addEventListener(
+      "cursorPreferenceChanged",
+      handleCursorPreference,
+    );
+
+    return () => {
       window.removeEventListener(
         "cursorPreferenceChanged",
         handleCursorPreference,
       );
+    };
   }, []);
 
   return (
@@ -61,24 +67,42 @@ function App() {
         <MyEventsProvider>
           <NotificationProvider />
           <OfflineSyncManager />
+
           <Router>
             <div className="App">
-              <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+              <Navbar
+                cursorEnabled={cursorEnabled}
+                toggleCursor={toggleCursor}
+              />
+
               <main className="relative z-10 min-h-screen bg-white dark:bg-black">
                 <PageTransition>
-                  <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+                  <Suspense
+                    fallback={
+                      <div className="flex min-h-screen items-center justify-center">
+                        Loading...
+                      </div>
+                    }
+                  >
                     <Routes>
-                      <Route path="/register/:id" element={<RegistrationPage />} />
+                      <Route
+                        path="/register/:id"
+                        element={<RegistrationPage />}
+                      />
+
                       <Route path="*" element={<AppRoutes />} />
                     </Routes>
                   </Suspense>
                 </PageTransition>
               </main>
+
               <ScrollToTop />
+
               <Suspense fallback={null}>
                 <Chatbot />
                 <Footer />
               </Suspense>
+
               <FeedbackButton />
               <FluidCursor enabled={cursorEnabled} />
             </div>
