@@ -402,7 +402,7 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
 const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   const location = useLocation();
   return (
-    <div className="hidden lg:flex flex-1 justify-center items-center gap-8 lg:gap-12 xl:gap-16 z-10">
+    <div className="hidden lg:flex items-center justify-center gap-8 xl:gap-10 flex-1">
       <NavList 
         location={location} 
         openDropdown={openDropdown} 
@@ -616,16 +616,16 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         data-aos-duration="1000"
         className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white dark:bg-gray-900 border-b border-black/10 dark:border-white/10"
       >
-        <div className="w-full flex items-center h-20 px-6 md:px-12 relative">
+        <div className="max-w-7xl mx-auto flex items-center justify-between h-[72px] px-6 lg:px-8 relative">
           {/* Logo on the left */}
-          <Link to="/" className="flex-shrink-0 z-20">
+          <Link to="/" className="flex items-center min-w-[160px] z-20">
             <h2 className="text-3xl font-semibold tracking-tight text-black dark:text-white" style={{ fontFamily: '"Anton", sans-serif' }}>
               Eventra
             </h2>
           </Link>
 
           {/* Centered nav links */}
-          <div className="hidden lg:flex flex-1 justify-center items-center gap-8 lg:gap-12 xl:gap-16 z-10">
+          <div className="hidden lg:flex flex-1 justify-center items-center gap-8 xl:gap-10 z-10">
             {navItems.map((item) => {
               const isActive = item.href
                 ? location.pathname === item.href
@@ -700,13 +700,13 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           </div>
 
           {/* Right Group: Auth Controls and Mobile Toggle - FIXED VERSION */}
-          <div className="hidden lg:flex items-center ml-auto z-20">
+          <div className="hidden lg:flex items-center gap-3 min-w-[220px] justify-end">
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
               aria-label={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
               title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-              className="text-xl text-gray-700 dark:text-white hover:opacity-70 transition-opacity mr-2"
+              className="text-xl text-gray-700 dark:text-white hover:opacity-70 transition-opacity mr-4"
             >
               {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
@@ -740,7 +740,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-900 rounded-lg shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-800"
+                      className="absolute right-0 top-full mt-2 w-64 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-lg shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-800"
                     >
                       <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
                         <div className="flex items-center gap-3">
@@ -757,7 +757,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                            <p className="text-sm font-black tracking-tight text-gray-900 dark:text-white truncate">
                               {primaryLine}
                             </p>
                             {secondaryLine && (
@@ -820,7 +820,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                 </Link>
                 <Link
                   to="/signup"
-                  className="px-5 py-2 text-sm font-semibold text-white transition-all duration-300 bg-black hover:bg-zinc-800 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 dark:bg-white dark:text-black dark:hover:bg-zinc-200 focus:outline-none focus:ring-4 focus:ring-black/20 dark:focus:ring-white/20"
+                  className="px-6 py-2.5 text-sm font-semibold text-white transition-all duration-300 bg-black hover:bg-zinc-800 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 dark:bg-white dark:text-black dark:hover:bg-zinc-200 focus:outline-none focus:ring-4 focus:ring-black/20 dark:focus:ring-white/20"
                 >
                   Get Started
                 </Link>
