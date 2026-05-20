@@ -1,8 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-
-// Adjust the base API import according to Eventra's actual Axios configuration file if available
-// For now, we fetch using standard fetch or an explicit URL structure
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+import { apiUtils, API_ENDPOINTS } from '../config/api';
 
 const NotificationContext = createContext();
 
@@ -15,14 +12,15 @@ export const NotificationProvider = ({ children }) => {
   });
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Helper to get JWT token from storage (verify if Eventra uses localStorage or cookies)
+  // Helper to get JWT token from storage
   const getAuthToken = () => localStorage.getItem('token');
 
   const fetchNotifications = async () => {
+    const token = getAuthToken();
+    if (!token) return;
+    
     try {
-      const response = await fetch(`${API_URL}/notifications`, {
-        headers: { 'Authorization': `Bearer ${getAuthToken()}` }
-      });
+      const response = await apiUtils.get(API_ENDPOINTS.NOTIFICATIONS.BASE, token);
       if (response.ok) {
         const data = await response.json();
         setNotifications(data);
@@ -34,10 +32,11 @@ export const NotificationProvider = ({ children }) => {
   };
 
   const fetchAchievements = async () => {
+    const token = getAuthToken();
+    if (!token) return;
+    
     try {
-      const response = await fetch(`${API_URL}/users/achievements`, {
-        headers: { 'Authorization': `Bearer ${getAuthToken()}` }
-      });
+      const response = await apiUtils.get(API_ENDPOINTS.USERS.ACHIEVEMENTS, token);
       if (response.ok) {
         const data = await response.json();
         setAchievements(data);
@@ -48,15 +47,17 @@ export const NotificationProvider = ({ children }) => {
   };
 
   const markAsRead = async (notificationId) => {
+    const token = getAuthToken();
+    if (!token) return;
+    
     try {
-      await fetch(`${API_URL}/notifications/${notificationId}/read`, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${getAuthToken()}` }
-      });
-      setNotifications(prev =>
-        prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n)
-      );
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      const response = await apiUtils.put(API_ENDPOINTS.NOTIFICATIONS.READ(notificationId), {}, token);
+      if (response.ok) {
+        setNotifications(prev =>
+          prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n)
+        );
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }
@@ -68,6 +69,7 @@ export const NotificationProvider = ({ children }) => {
       fetchNotifications();
       fetchAchievements();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

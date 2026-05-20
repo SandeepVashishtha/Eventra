@@ -27,6 +27,7 @@ const ProfileMenu = ({ user, logout }) => {
     <div className="relative" ref={menuRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
+        aria-label="Open profile menu"
         className="flex items-center justify-center rounded-full transition-transform hover:scale-105 focus:outline-none"
       >
         {user?.profilePicture ? (

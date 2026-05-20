@@ -21,6 +21,7 @@ const ThemeToggleButton = () => {
     <button
       className="flex items-center cursor-pointer select-none"
       onClick={() => setDarkMode((prev) => !prev)}
+      aria-label={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
     >
       <div
         className={`w-12 h-6 rounded-full p-1 bg-gray-300 dark:bg-gray-700 relative`} // reduced size

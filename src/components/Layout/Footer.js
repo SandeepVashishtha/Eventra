@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { toast } from "react-toastify";
 import {
   FaGithub,
   FaQuestionCircle,
@@ -45,11 +44,6 @@ const footerLinks = {
     { name: "API Docs", href: "/apiDocs", icon: <FaBookOpen size={14} /> },
   ],
 };
-
-const legalLinks = [
-  { name: "Privacy Policy", href: "/privacy" },
-  { name: "Terms of Service", href: "/terms" },
-];
 
 const socialLinks = [
   {
@@ -104,33 +98,49 @@ const socialLinks = [
   },
 ];
 
+const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
 const Newsletter = () => {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState({ type: "", message: "" });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!email) {
-      toast.error("Please enter your email address");
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setFeedback({ type: "error", message: "Please enter your email address." });
       return;
     }
 
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      toast.error("Please enter a valid email address");
+    if (!isValidEmail(trimmedEmail)) {
+      setFeedback({ type: "error", message: "Please enter a valid email address." });
       return;
     }
+
     setIsSubmitting(true);
+    setFeedback({ type: "", message: "" });
+
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Submitting email:", email);
-      toast.success("Thank you for subscribing to our newsletter!");
+      setFeedback({ type: "success", message: "Thanks for subscribing!" });
       setEmail("");
     } catch (error) {
-      toast.error("Something went wrong. Please try again.");
+      setFeedback({
+        type: "error",
+        message: "Something went wrong. Please try again.",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const feedbackId = "footer-newsletter-feedback";
+  const feedbackColor =
+    feedback.type === "success"
+      ? "text-green-600 dark:text-green-400"
+      : "text-red-600 dark:text-red-400";
 
   return (
     <div className="mt-4">
@@ -146,11 +156,17 @@ const Newsletter = () => {
           <input
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              if (feedback.message) {
+                setFeedback({ type: "", message: "" });
+              }
+            }}
             placeholder="Enter your email"
             className="pl-10 pr-4 py-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full"
             disabled={isSubmitting}
-            required
+            aria-describedby={feedback.message ? feedbackId : undefined}
+            aria-invalid={feedback.type === "error"}
           />
         </div>
         <button
@@ -161,9 +177,17 @@ const Newsletter = () => {
           {isSubmitting ? "Subscribing..." : "Subscribe"}
         </button>
       </form>
-      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-        We respect your privacy. Unsubscribe at any time.
-      </p>
+      <div className="mt-1 min-h-[1rem]" aria-live="polite">
+        {feedback.message ? (
+          <p id={feedbackId} className={`text-xs font-medium ${feedbackColor}`}>
+            {feedback.message}
+          </p>
+        ) : (
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            We respect your privacy. Unsubscribe at any time.
+          </p>
+        )}
+      </div>
     </div>
   );
 };

@@ -270,6 +270,7 @@ const MobileDrawerFooter = ({
   </div>
 );
 
+// eslint-disable-next-line no-unused-vars
 const UserProfileDropdown = ({ 
   user, primaryLine, secondaryLine, showProfileDropdown, setShowProfileDropdown, 
   location, handleLogoutClick 
@@ -397,6 +398,7 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
   </>
 );
 
+// eslint-disable-next-line no-unused-vars
 const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   const location = useLocation();
   return (
@@ -411,6 +413,7 @@ const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   );
 };
 
+// eslint-disable-next-line no-unused-vars
 const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeAllMenus, handleTouchStart, handleTouchMove, handleTouchEnd, closeBtnRef, toggleCursor, cursorEnabled, handleLogoutClick, primaryLine, secondaryLine }) => {
   const location = useLocation();
   const { isDarkMode, toggleTheme } = useTheme();
@@ -461,7 +464,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [navHeight, setNavHeight] = useState(0);
+  const [navHeight] = useState(0);
 
   const drawerRef = useRef(null);
   const closeBtnRef = useRef(null);
@@ -701,6 +704,8 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
+              aria-label={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
               className="text-xl text-gray-700 dark:text-white hover:opacity-70 transition-opacity mr-2"
             >
               {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -711,6 +716,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               <div className="relative profile-container ml-2">
                 <button
                   onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                  aria-label="Open profile menu"
                   className="flex items-center gap-2 text-sm font-medium text-black/90 dark:text-white/90 hover:text-black dark:hover:text-white transition-colors"
                 >
                   {user?.profilePicture ? (
@@ -855,12 +861,17 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             Eventra
           </h2>
           <div className="flex items-center gap-3">
-            <button onClick={toggleTheme} className="p-2 rounded-full text-text-light bg-gray-100 dark:bg-white/10 hover:bg-gray-200">
+            <button
+              onClick={toggleTheme}
+              aria-label={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              className="p-2 rounded-full text-text-light bg-gray-100 dark:bg-white/10 hover:bg-gray-200"
+            >
               {isDarkMode ? '☀️' : '🌙'}
             </button>
             <button
               ref={closeBtnRef}
               onClick={closeAllMenus}
+              aria-label="Close navigation menu"
               className="p-2 rounded-full text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

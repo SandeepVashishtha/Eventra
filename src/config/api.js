@@ -8,7 +8,7 @@ const AUTH_API_BASE_PATH = process.env.REACT_APP_API_URL
 
 const API_BASE_PATH = process.env.REACT_APP_API_URL || '';
 
-// API endpoints — auth, events, and projects are active
+// API endpoints — auth, events, projects, notifications, and users
 export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: `${AUTH_API_BASE_PATH}/login`,
@@ -23,6 +23,13 @@ export const API_ENDPOINTS = {
     SUBMIT: `${API_BASE_PATH}/api/projects`,
     LIST: `${API_BASE_PATH}/api/projects`,
     CATEGORIES: `${API_BASE_PATH}/api/projects/categories`,
+  },
+  NOTIFICATIONS: {
+    BASE: `${API_BASE_PATH}/api/notifications`,
+    READ: (id) => `${API_BASE_PATH}/api/notifications/${id}/read`,
+  },
+  USERS: {
+    ACHIEVEMENTS: `${API_BASE_PATH}/api/users/achievements`,
   },
 };
 
@@ -73,12 +80,13 @@ export const apiUtils = {
         method: 'GET',
         headers: getAuthHeaders(token),
       });
-      return response;
+      return handleUnauthorized(response);
     } catch (error) {
       console.error('API GET Error:', error);
       throw error;
     }
   },
+
   post: async (url, data, token = null) => {
     try {
       console.log('Making POST request to:', url);
@@ -94,20 +102,7 @@ export const apiUtils = {
     }
   },
 
-  get: async (url, token = null) => {
-    try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: getAuthHeaders(token),
-      });
-      return handleUnauthorized(response);
-    } catch (error) {
-      console.error('API GET Error:', error);
-      throw error;
-    }
-  },
-
-  put: async (url, data, token = null) => {
+  put: async (url, data = {}, token = null) => {
     try {
       const response = await fetch(url, {
         method: 'PUT',
