@@ -38,7 +38,7 @@ const Login = () => {
     if (isAuthenticated()) {
       navigate('/dashboard', { replace: true });
     }
-  }, [navigate]);
+  }, [navigate, isAuthenticated]);
 
 
   const handleSubmit = async (e) => {

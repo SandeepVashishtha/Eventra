@@ -34,7 +34,7 @@ const Hero = () => {
       setIndex((prev) => (prev + 1) % phrases.length);
     }, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [phrases.length]);
 
   const controls = useAnimation();
 

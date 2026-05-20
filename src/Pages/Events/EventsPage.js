@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import mockEvents from "./eventsMockData.json";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
@@ -64,14 +64,13 @@ const EventsPage = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Fuse.js setup
-  const fuse = new Fuse(events, {
-    keys: ["title", "description", "location", "tags", "type"],
-    threshold: 0.35,
-  });
-
-  const handleSearch = (query = "") => {
+  const handleSearch = useCallback((query = "") => {
     setSearchQuery(query);
+
+    const fuse = new Fuse(events, {
+      keys: ["title", "description", "location", "tags", "type"],
+      threshold: 0.35,
+    });
 
     let results = events;
     if (query.trim()) {
@@ -88,11 +87,11 @@ const EventsPage = () => {
     });
 
     setFilteredEvents(final);
-  };
+  }, [events, filterType]);
 
   useEffect(() => {
     handleSearch(searchQuery);
-  }, [events, filterType]);
+  }, [events, filterType, handleSearch, searchQuery]);
 
   useEffect(() => {
     if (!isLoading && initialSearchQuery) {

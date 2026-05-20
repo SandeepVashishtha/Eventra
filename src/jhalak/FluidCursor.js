@@ -142,7 +142,7 @@ const FluidCursor = ({ enabled = true }) => {
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
 
       const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-      return status == gl.FRAMEBUFFER_COMPLETE;
+      return status === gl.FRAMEBUFFER_COMPLETE;
     }
 
     class Material {
@@ -159,13 +159,13 @@ const FluidCursor = ({ enabled = true }) => {
         for (let i = 0; i < keywords.length; i++) hash += hashCode(keywords[i]);
 
         let program = this.programs[hash];
-        if (program == null) {
+        if (program === null || program === undefined) {
           let fragmentShader = compileShader(gl.FRAGMENT_SHADER, this.fragmentShaderSource, keywords);
           program = createProgram(this.vertexShader, fragmentShader);
           this.programs[hash] = program;
         }
 
-        if (program == this.activeProgram) return;
+        if (program === this.activeProgram) return;
 
         this.uniforms = getUniforms(program);
         this.activeProgram = program;
@@ -224,7 +224,7 @@ const FluidCursor = ({ enabled = true }) => {
     }
 
     function addKeywords(source, keywords) {
-      if (keywords == null) return source;
+      if (keywords === null || keywords === undefined) return source;
       let keywordsString = '';
       keywords.forEach((keyword) => {
         keywordsString += '#define ' + keyword + '\n';
@@ -542,7 +542,7 @@ const FluidCursor = ({ enabled = true }) => {
       gl.enableVertexAttribArray(0);
 
       return (target, clear = false) => {
-        if (target == null) {
+        if (target === null || target === undefined) {
           gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
           gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         } else {
@@ -587,12 +587,12 @@ const FluidCursor = ({ enabled = true }) => {
 
       gl.disable(gl.BLEND);
 
-      if (dye == null)
+      if (dye === null || dye === undefined)
         dye = createDoubleFBO(dyeRes.width, dyeRes.height, rgba.internalFormat, rgba.format, texType, filtering);
       else
         dye = resizeDoubleFBO(dye, dyeRes.width, dyeRes.height, rgba.internalFormat, rgba.format, texType, filtering);
 
-      if (velocity == null)
+      if (velocity === null || velocity === undefined)
         velocity = createDoubleFBO(simRes.width, simRes.height, rg.internalFormat, rg.format, texType, filtering);
       else
         velocity = resizeDoubleFBO(velocity, simRes.width, simRes.height, rg.internalFormat, rg.format, texType, filtering);
@@ -674,7 +674,7 @@ const FluidCursor = ({ enabled = true }) => {
     }
 
     function resizeDoubleFBO(target, w, h, internalFormat, format, type, param) {
-      if (target.width == w && target.height == h) return target;
+      if (target.width === w && target.height === h) return target;
       target.read = resizeFBO(target.read, w, h, internalFormat, format, type, param);
       target.write = createFBO(w, h, internalFormat, format, type, param);
       target.width = w;
@@ -717,7 +717,7 @@ const FluidCursor = ({ enabled = true }) => {
     function resizeCanvas() {
       let width = scaleByPixelRatio(canvas.clientWidth);
       let height = scaleByPixelRatio(canvas.clientHeight);
-      if (canvas.width != width || canvas.height != height) {
+      if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width;
         canvas.height = height;
         return true;
@@ -816,8 +816,8 @@ const FluidCursor = ({ enabled = true }) => {
     }
 
     function drawDisplay(target) {
-      let width = target == null ? gl.drawingBufferWidth : target.width;
-      let height = target == null ? gl.drawingBufferHeight : target.height;
+      let width = (target === null || target === undefined) ? gl.drawingBufferWidth : target.width;
+      let height = (target === null || target === undefined) ? gl.drawingBufferHeight : target.height;
 
       displayMaterial.bind();
       if (config.SHADING)
@@ -865,7 +865,7 @@ const FluidCursor = ({ enabled = true }) => {
     }
 
     function hashCode(s) {
-      if (s.length == 0) return 0;
+      if (s.length === 0) return 0;
       let hash = 0;
       for (let i = 0; i < s.length; i++) {
         hash = (hash << 5) - hash + s.charCodeAt(i);
@@ -876,7 +876,7 @@ const FluidCursor = ({ enabled = true }) => {
 
     function wrap(value, min, max) {
       const range = max - min;
-      if (range == 0) return min;
+      if (range === 0) return min;
       return ((value - min) % range) + min;
     }
 

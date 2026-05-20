@@ -6,6 +6,7 @@ export default function UserAchievements() {
 
   useEffect(() => {
     fetchAchievements();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // System fallback badges if the array returns empty during database synchronization

@@ -69,6 +69,7 @@ export const NotificationProvider = ({ children }) => {
       fetchNotifications();
       fetchAchievements();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

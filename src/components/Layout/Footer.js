@@ -46,11 +46,6 @@ const footerLinks = {
   ],
 };
 
-const legalLinks = [
-  { name: "Privacy Policy", href: "/privacy" },
-  { name: "Terms of Service", href: "/terms" },
-];
-
 const socialLinks = [
   {
     name: "GitHub",

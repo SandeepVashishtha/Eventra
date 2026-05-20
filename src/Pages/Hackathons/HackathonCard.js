@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   CalendarIcon,
   MapPinIcon,
@@ -17,7 +17,7 @@ import { generateEventSharingData } from "../../utils/shareUtils";
 
 // Countdown Hook
 const useCountdown = (targetDate) => {
-  const calculateTimeLeft = () => {
+  const calculateTimeLeft = useCallback(() => {
     const difference = new Date(targetDate) - new Date();
 
     if (difference <= 0) return null;
@@ -28,7 +28,7 @@ const useCountdown = (targetDate) => {
       minutes: Math.floor((difference / 1000 / 60) % 60),
       seconds: Math.floor((difference / 1000) % 60),
     };
-  };
+  }, [targetDate]);
 
   const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
 
@@ -38,7 +38,7 @@ const useCountdown = (targetDate) => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [targetDate]);
+  }, [calculateTimeLeft]);
 
   return timeLeft;
 };
