@@ -1,5 +1,7 @@
+
 import { motion, useInView } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
+
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import CountUp from "react-countup";
 
@@ -181,7 +183,7 @@ export default function ModernAbout() {
 function MissionSection({ anim, prefersReducedMotion }) {
   const containerRef = useRef(null);
   const isContainerInView = useInView(containerRef, { once: false, amount: 0.2 });
-  const [, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     setIsOpen(isContainerInView);
