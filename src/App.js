@@ -1,9 +1,8 @@
-import { BrowserRouter as Router } from "react-router-dom";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 
-// --------------- LAYOUT
-//import Navbar from "./components/Layout/Navbar";
+// Layout & Components
 import Navbar from "./components/Layout/Navbar";
 import Footer from "./components/Layout/Footer";
 import ScrollToTop from "./components/ScrollToTop";
@@ -12,8 +11,10 @@ import Chatbot from "./components/Chatbot";
 import FluidCursor from "./jhalak/FluidCursor";
 import AppRoutes from "./components/AppRoutes";
 import PageTransition from "./components/common/PageTransition";
+// Ensure this path matches the exact location of your file
+import RegistrationPage from "./Pages/RegistrationPage"; 
 
-// --------------- CONTEXT & HOOKS
+// Context & Hooks
 import NotificationProvider from "./components/common/NotificationProvider";
 import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
@@ -25,7 +26,6 @@ const OfflineSyncManager = () => {
   useOfflineSync();
   return null;
 };
-
 
 function App() {
   const [cursorEnabled, setCursorEnabled] = useState(
@@ -40,13 +40,12 @@ function App() {
     localStorage.setItem("cursor", newValue ? "on" : "off");
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleCursorPreference = (event) => {
       if (event?.detail?.cursorEnabled !== undefined) {
         setCursorEnabled(event.detail.cursorEnabled);
       }
     };
-
     window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
     return () => window.removeEventListener("cursorPreferenceChanged", handleCursorPreference);
   }, []);
@@ -55,29 +54,26 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <MyEventsProvider>
-        <NotificationProvider />
-        <OfflineSyncManager />
-        <Router>
-          <div className="App">
-            <Navbar
-              cursorEnabled={cursorEnabled}
-              toggleCursor={toggleCursor}
-            />
-
-            <main className="relative z-10 min-h-screen bg-white dark:bg-black">
-              <PageTransition>
-                <AppRoutes />
-              </PageTransition>
-            </main>
-
-            <ScrollToTop />
-            <Chatbot />
-            <FeedbackButton />
-            <Footer />
-
-            <FluidCursor enabled={cursorEnabled} />
-          </div>
-        </Router>
+          <NotificationProvider />
+          <OfflineSyncManager />
+          <Router>
+            <div className="App">
+              <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+              <main className="relative z-10 min-h-screen bg-white dark:bg-black">
+                <PageTransition>
+                  <Routes>
+                    <Route path="/register/:id" element={<RegistrationPage />} />
+                    <Route path="*" element={<AppRoutes />} />
+                  </Routes>
+                </PageTransition>
+              </main>
+              <ScrollToTop />
+              <Chatbot />
+              <FeedbackButton />
+              <Footer />
+              <FluidCursor enabled={cursorEnabled} />
+            </div>
+          </Router>
         </MyEventsProvider>
       </AuthProvider>
     </ThemeProvider>
