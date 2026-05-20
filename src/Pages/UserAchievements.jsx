@@ -1,7 +1,9 @@
 import React, { useEffect } from 'react';
 import { useNotification } from '../context/NotificationContext';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 export default function UserAchievements() {
+  useDocumentTitle("Eventra | Achievements");
   const { achievements, fetchAchievements } = useNotification();
 
   useEffect(() => {

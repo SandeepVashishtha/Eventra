@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   Sparkles,
   Calendar,
@@ -10,18 +10,7 @@ import {
   Globe,
 } from "lucide-react";
 import FAQCTA from "./FaqCTA";
-
-function useDocumentTitle(title) {
-  useEffect(() => {
-    const previousTitle = document.title;
-
-    document.title = title;
-
-    return () => {
-      document.title = previousTitle;
-    };
-  }, [title]);
-}
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 const faqs = [
   {

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { Link } from "react-router-dom";
+import useDocumentTitle from "../hooks/useDocumentTitle";
 import {
   FaLock,
   FaUserShield,
@@ -13,6 +14,7 @@ import {
 } from "react-icons/fa";
 
 export const Privacy = () => {
+  useDocumentTitle("Eventra | Privacy Policy");
   const controls = useAnimation();
   const [openSections, setOpenSections] = useState({});
 
