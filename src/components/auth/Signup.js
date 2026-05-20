@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
@@ -68,26 +68,6 @@ const Signup = () => {
     const newData = { ...formData, [e.target.name]: e.target.value };
     setFormData(newData);
 
-    if (e.target.name === "confirmPassword" || e.target.name === "password") {
-      const password = e.target.name === "password" ? e.target.value : newData.password;
-      const confirmPassword = e.target.name === "confirmPassword" ? e.target.value : newData.confirmPassword;
-
-      if (password && confirmPassword) {
-        if (password === confirmPassword) {
-          setError("");
-          setPasswordMatchMessage("Passwords match!");
-        } else {
-          setError("Passwords do not match");
-          setPasswordMatchMessage("");
-        }
-      } else {
-        setPasswordMatchMessage("");
-        if (e.target.name === "confirmPassword" && e.target.value) {
-          setError("Passwords do not match");
-        }
-      }
-    }
-
     if (e.target.name === "email") {
       setEmailError(validateEmail(e.target.value) ? "" : "Invalid email");
     }
@@ -117,6 +97,28 @@ const Signup = () => {
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
   const toggleConfirmPasswordVisibility = () => setShowConfirmPassword(!showConfirmPassword);
+
+  useEffect(() => {
+  const timer = setTimeout(() => {
+    const { password, confirmPassword } = formData;
+
+    if (!password || !confirmPassword) {
+      setError("");
+      setPasswordMatchMessage("");
+      return;
+    }
+
+    if (password === confirmPassword) {
+      setError("");
+      setPasswordMatchMessage("Passwords match!");
+    } else {
+      setError("Passwords do not match");
+      setPasswordMatchMessage("");
+    }
+  }, 1000);
+
+  return () => clearTimeout(timer);
+}, [formData.password, formData.confirmPassword]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

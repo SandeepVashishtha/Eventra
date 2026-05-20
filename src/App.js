@@ -1,4 +1,4 @@
-import React, { lazy, useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 
@@ -47,12 +47,18 @@ function App() {
         setCursorEnabled(event.detail.cursorEnabled);
       }
     };
-    window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
-    return () =>
+
+    window.addEventListener(
+      "cursorPreferenceChanged",
+      handleCursorPreference,
+    );
+
+    return () => {
       window.removeEventListener(
         "cursorPreferenceChanged",
         handleCursorPreference,
       );
+    };
   }, []);
 
   return (
@@ -61,21 +67,43 @@ function App() {
         <MyEventsProvider>
           <NotificationProvider />
           <OfflineSyncManager />
+
           <Router>
             <div className="App">
-              <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+              <Navbar
+                cursorEnabled={cursorEnabled}
+                toggleCursor={toggleCursor}
+              />
+
               <main className="relative z-10 min-h-screen bg-white dark:bg-black">
                 <PageTransition>
-                  <Routes>
-                    <Route path="/register/:id" element={<RegistrationPage />} />
-                    <Route path="*" element={<AppRoutes />} />
-                  </Routes>
+                  <Suspense
+                    fallback={
+                      <div className="flex min-h-screen items-center justify-center">
+                        Loading...
+                      </div>
+                    }
+                  >
+                    <Routes>
+                      <Route
+                        path="/register/:id"
+                        element={<RegistrationPage />}
+                      />
+
+                      <Route path="*" element={<AppRoutes />} />
+                    </Routes>
+                  </Suspense>
                 </PageTransition>
               </main>
+
               <ScrollToTop />
-              <Chatbot />
+
+              <Suspense fallback={null}>
+                <Chatbot />
+                <Footer />
+              </Suspense>
+
               <FeedbackButton />
-              <Footer />
               <FluidCursor enabled={cursorEnabled} />
             </div>
           </Router>
