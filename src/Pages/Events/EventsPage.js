@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import mockEvents from "./eventsMockData.json";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
+import { getEventStatus } from "../../utils/eventUtils";
 import { Grid, List } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import FeedbackButton from "../../components/FeedbackButton";
@@ -79,7 +80,10 @@ const EventsPage = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setEvents(mockEvents);
+      setEvents(mockEvents.map((event) => ({
+        ...event,
+        status: getEventStatus(event),
+      })));
       setIsLoading(false);
     }, 800);
     return () => clearTimeout(timer);

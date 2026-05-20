@@ -17,7 +17,7 @@ import {
 const events = [
   {
     title: "Open Source Meetup",
-    date: "September 28, 2025",
+    date: "28-09-2025",
     location: "Delhi, India",
     description:
       "A meetup for open-source enthusiasts to share, collaborate, and network.",
@@ -25,7 +25,7 @@ const events = [
   },
   {
     title: "Hackathon 2025",
-    date: "October 12, 2025",
+    date: "12-10-2025",
     location: "Bangalore, India",
     description:
       "48 hours of coding, collaboration, and innovation. Team up and build something great!",
@@ -33,7 +33,7 @@ const events = [
   },
   {
     title: "Community Webinar",
-    date: "October 20, 2025",
+    date: "20-10-2025",
     location: "Online",
     description:
       "Interactive session with industry experts on web development trends.",
@@ -41,14 +41,14 @@ const events = [
   },
   {
     title: "Tech Talk: AI Future",
-    date: "November 5, 2025",
+    date: "05-11-2025",
     location: "Mumbai, India",
     description: "A keynote session on AI trends and innovations.",
     icon: <Mic size={20} />,
   },
   {
     title: "Remote Dev Summit",
-    date: "November 20, 2025",
+    date: "20-10-2025",
     location: "Online",
     description:
       "Conference about remote work, productivity, and building scalable products.",
@@ -56,7 +56,7 @@ const events = [
   },
   {
     title: "Startup Networking",
-    date: "December 2, 2025",
+    date: "02-12-2025",
     location: "Hyderabad, India",
     description:
       "Connect with startup founders, investors, and tech innovators.",
@@ -64,14 +64,14 @@ const events = [
   },
   {
     title: "Open Source Bootcamp",
-    date: "December 10, 2025",
+    date: "10-12-2025",
     location: "Pune, India",
     description: "Hands-on training on Git, GitHub, and contributing to OSS.",
     icon: <BookOpen size={20} />,
   },
   {
     title: "Coding Challenge 2026",
-    date: "January 8, 2026",
+    date: "08-01-2026",
     location: "Chennai, India",
     description:
       "Competitive programming contest to test your problem-solving skills.",
@@ -79,7 +79,7 @@ const events = [
   },
   {
     title: "Global Dev Conference",
-    date: "February 15, 2026",
+    date: "15-02-2026",
     location: "Singapore",
     description:
       "An international event bringing developers and leaders together.",

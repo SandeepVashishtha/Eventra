@@ -1,5 +1,5 @@
 import { BrowserRouter as Router } from "react-router-dom";
-import React, { useState, lazy, Suspense } from "react"; // Import Lazy & Suspense
+import React, { useEffect, useState, lazy, Suspense } from "react";
 import "./App.css";
 
 // --------------- LAYOUT
@@ -47,7 +47,7 @@ function App() {
     localStorage.setItem("cursor", newValue ? "on" : "off");
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleCursorPreference = (event) => {
       if (event?.detail?.cursorEnabled !== undefined) {
         setCursorEnabled(event.detail.cursorEnabled);

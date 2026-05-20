@@ -15,6 +15,7 @@ import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
 import ShareMenu from "../../components/common/ShareMenu";
 import { generateEventSharingData } from "../../utils/shareUtils";
 import StatusBadge from "../../components/common/StatusBadge";
+import { getEventStatus } from "../../utils/eventUtils";
 
 const EventCard = ({ event }) => {
   const icons = [
@@ -51,6 +52,8 @@ const EventCard = ({ event }) => {
         console.error("Failed to copy: ", err);
       });
   };
+
+  const computedStatus = getEventStatus(event);
 
   return (
     <div
@@ -116,9 +119,8 @@ const EventCard = ({ event }) => {
         <h3 className="text-gray-900 dark:text-white font-bold text-lg tracking-tight truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300 flex-1">
           {event.title}
         </h3>
-
-        <div className="ml-auto flex-shrink-0">
-          {event.status && <StatusBadge status={event.status} />}
+        <div className="ml-auto">
+          <StatusBadge status={computedStatus} />
         </div>
       </div>
 
