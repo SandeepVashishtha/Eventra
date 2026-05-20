@@ -55,7 +55,7 @@ const Tag = ({ tag, onRemove }) => (
     initial={{ scale: 0.8, opacity: 0 }}
     animate={{ scale: 1, opacity: 1 }}
     exit={{ scale: 0.8, opacity: 0 }}
-    className="flex items-center gap-2 bg-gradient-to-r from-white via-slate-50 to-indigo-50 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-3 py-1 rounded-full text-sm font-medium"
+    className="flex items-center gap-2 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-lg text-sm font-medium border border-gray-200 dark:border-slate-700"
   >
     <span className="dark:text-black">{tag}</span>
     <button
@@ -395,8 +395,8 @@ const HackathonHub = () => {
                 <li
                   key={opt}
                   className={`px-4 py-3 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 ${opt === value
-                      ? "font-semibold bg-indigo-100 dark:bg-indigo-900"
-                      : ""
+                    ? "font-semibold bg-indigo-100 dark:bg-indigo-900"
+                    : ""
                     }`}
                   onClick={() => {
                     onChange(opt);
@@ -414,7 +414,7 @@ const HackathonHub = () => {
   };
 
   return (
-    <div className="overflow-x-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 py-6">
+    <div className="overflow-x-hidden bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 py-6">
       {/* Floating Action Button */}
       <motion.div
         className={`fixed z-50  ${positionClass}`}
@@ -424,7 +424,7 @@ const HackathonHub = () => {
       >
         <Link
           to="/host-hackathon"
-          className="flex items-center justify-center w-14 h-14 bg-black text-white rounded-full shadow-lg hover:bg-zinc-800 transition-colors border-2 border-white"
+          className="flex items-center justify-center w-14 h-14 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 transition-colors border border-blue-500"
           title="Host a Hackathon"
         >
           <svg
@@ -548,13 +548,13 @@ const HackathonHub = () => {
                 filters.prize ||
                 filters.location ||
                 selectedTags.length > 0) && (
-                <button
-                  onClick={resetFilters}
-                  className="text-sm text-black dark:text-white hover:text-gray-700 dark:hover:text-gray-200 font-medium"
-                >
-                  Clear all filters
-                </button>
-              )}
+                  <button
+                    onClick={resetFilters}
+                    className="text-sm text-black dark:text-white hover:text-gray-700 dark:hover:text-gray-200 font-medium"
+                  >
+                    Clear all filters
+                  </button>
+                )}
             </div>
           </div>
 
@@ -635,9 +635,9 @@ const HackathonHub = () => {
                         <button
                           key={tag}
                           onClick={() => handleTagSelect(tag)}
-                          className={`px-3 py-1.5 text-sm rounded-full transition-all ${selectedTags.includes(tag)
-                                  ? 'bg-black text-white dark:bg-white dark:text-black'
-                              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          className={`px-3 py-1.5 text-sm rounded-lg transition-all ${selectedTags.includes(tag)
+                            ? 'bg-blue-600 text-white'
+                            : 'border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:text-gray-300 dark:border-slate-700 dark:hover:bg-slate-800'
                             }`}
                         >
                           {tag}
@@ -668,9 +668,9 @@ const HackathonHub = () => {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-300 transform ${activeTab === tab.key
-                    ? "bg-black text-white shadow-lg scale-105 dark:bg-white dark:text-black"
-                    : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105"
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-300 transform ${activeTab === tab.key
+                  ? "bg-blue-600 text-white shadow-lg scale-105"
+                  : "border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:text-gray-300 dark:border-slate-700 dark:hover:bg-slate-800 hover:scale-105"
                   }`}
               >
                 {tab.label}

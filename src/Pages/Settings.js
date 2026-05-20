@@ -100,7 +100,9 @@ const Settings = () => {
               <button
                 type="button"
                 onClick={() => setNotificationsEnabled((prev) => !prev)}
-                aria-label={notificationsEnabled ? "Pause notifications" : "Enable notifications"}
+                aria-label={
+                  notificationsEnabled ? "Pause notifications" : "Enable notifications"
+                }
                 aria-pressed={!!notificationsEnabled}
                 className="w-full inline-flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-left text-sm font-medium text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition"
               >
@@ -142,7 +144,7 @@ const Settings = () => {
                 <ArrowRight className="w-4 h-4 text-slate-500" aria-hidden="true" />
               </button>
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                Privacy mode keeps your experience secure by limiting extra tracking and personalization features.
+                Privacy mode keeps your experience secure by limiting extra tracking and personalization.
               </p>
             </div>
           </article>

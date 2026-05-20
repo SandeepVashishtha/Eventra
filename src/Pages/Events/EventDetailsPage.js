@@ -24,7 +24,7 @@ const EventDetailsPage = () => {
 
   if (!event) {
     return (
-      <div className="min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black flex items-center justify-center px-4">
+      <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center px-4">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
             Event Not Found
@@ -272,6 +272,10 @@ const EventDetailsPage = () => {
                 {isPastEvent ? (
                   <div className="w-full py-3 px-4 bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg font-semibold text-center cursor-not-allowed">
                     Event Ended
+                  </div>
+                ) : event.attendees >= event.maxAttendees ? (
+                  <div className="w-full py-3 px-4 bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg font-semibold text-center cursor-not-allowed">
+                    Event Full
                   </div>
                 ) : (
                   <Link to={`/events/${event.id}/register`} className="block">
