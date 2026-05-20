@@ -19,18 +19,22 @@ export const API_ENDPOINTS = {
     CREATE: `${API_BASE_PATH}/api/events`,
     REGISTER: (id) => `${API_BASE_PATH}/api/events/${id}/register`,
     LIST: `${API_BASE_PATH}/api/events`,
+    DETAIL: (id) => `${API_BASE_PATH}/api/events/${id}`,
   },
   PROJECTS: {
     LIST: `${API_BASE_PATH}/api/projects`,
     CATEGORIES: `${API_BASE_PATH}/api/projects/categories`,
     SUBMIT: `${API_BASE_PATH}/api/projects`,
+    DETAIL: (id) => `${API_BASE_PATH}/api/projects/${id}`,
   },
   NOTIFICATIONS: {
     BASE: `${API_BASE_PATH}/api/notifications`,
     READ: (id) => `${API_BASE_PATH}/api/notifications/${id}/read`,
+    READ_ALL: `${API_BASE_PATH}/api/notifications/read-all`,
   },
   USERS: {
     ACHIEVEMENTS: `${API_BASE_PATH}/api/users/achievements`,
+    PROFILE: `${API_BASE_PATH}/api/users/profile`,
   },
 };
 
@@ -52,7 +56,7 @@ let _onUnauthorized = null;
  * Register a callback that will be invoked whenever an API response returns
  * HTTP 401 Unauthorized. AuthContext sets this during initialization.
  *
- * @param {Function} callback - A function to call on 401 responses.
+ * @param {Function|null} callback - A function to call on 401 responses, or null to deregister.
  */
 export const setOnUnauthorizedHandler = (callback) => {
   _onUnauthorized = callback;
@@ -72,39 +76,63 @@ const handleUnauthorized = (response) => {
   return response;
 };
 
+/**
+ * isDev — true only in local development.
+ * Used to gate verbose console.debug statements so they don't appear in production builds.
+ */
+const isDev = process.env.NODE_ENV === 'development';
+
 // API utility functions
 export const apiUtils = {
+  /**
+   * HTTP GET
+   * @param {string} url
+   * @param {string|null} token - JWT bearer token
+   */
   get: async (url, token = null) => {
     try {
-      console.log('Making GET request to:', url);
+      if (isDev) console.debug('[API GET]', url);
       const response = await fetch(url, {
         method: 'GET',
         headers: getAuthHeaders(token),
       });
       return handleUnauthorized(response);
     } catch (error) {
-      console.error('API GET Error:', error);
+      console.error('[API GET Error]', url, error);
       throw error;
     }
   },
 
+  /**
+   * HTTP POST
+   * @param {string} url
+   * @param {object} data - Request body
+   * @param {string|null} token - JWT bearer token
+   */
   post: async (url, data, token = null) => {
     try {
-      console.log('Making POST request to:', url);
+      if (isDev) console.debug('[API POST]', url);
       const response = await fetch(url, {
         method: 'POST',
         headers: getAuthHeaders(token),
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       });
       return handleUnauthorized(response);
     } catch (error) {
-      console.error('API POST Error:', error);
+      console.error('[API POST Error]', url, error);
       throw error;
     }
   },
 
+  /**
+   * HTTP PUT — full resource replacement
+   * @param {string} url
+   * @param {object} data - Request body
+   * @param {string|null} token - JWT bearer token
+   */
   put: async (url, data = {}, token = null) => {
     try {
+      if (isDev) console.debug('[API PUT]', url);
       const response = await fetch(url, {
         method: 'PUT',
         headers: getAuthHeaders(token),
@@ -112,20 +140,47 @@ export const apiUtils = {
       });
       return handleUnauthorized(response);
     } catch (error) {
-      console.error('API PUT Error:', error);
+      console.error('[API PUT Error]', url, error);
       throw error;
     }
   },
 
+  /**
+   * HTTP PATCH — partial resource update
+   * @param {string} url
+   * @param {object} data - Partial update body
+   * @param {string|null} token - JWT bearer token
+   */
+  patch: async (url, data = {}, token = null) => {
+    try {
+      if (isDev) console.debug('[API PATCH]', url);
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers: getAuthHeaders(token),
+        body: JSON.stringify(data),
+      });
+      return handleUnauthorized(response);
+    } catch (error) {
+      console.error('[API PATCH Error]', url, error);
+      throw error;
+    }
+  },
+
+  /**
+   * HTTP DELETE
+   * @param {string} url
+   * @param {string|null} token - JWT bearer token
+   */
   delete: async (url, token = null) => {
     try {
+      if (isDev) console.debug('[API DELETE]', url);
       const response = await fetch(url, {
         method: 'DELETE',
         headers: getAuthHeaders(token),
       });
       return handleUnauthorized(response);
     } catch (error) {
-      console.error('API DELETE Error:', error);
+      console.error('[API DELETE Error]', url, error);
       throw error;
     }
   },
