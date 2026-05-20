@@ -22,7 +22,7 @@ const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
 
 // Role assignment
 const getRoleByGitHubActivity = (contributor) => {
-  const { contributions, followers = 0, public_repos = 0, login } = contributor;
+  const { contributions, followers = 0, login } = contributor;
   if (login === "sandeepvashishtha") return "Project Lead";
 
   if (contributions > 100 && followers > 50) return "Core Maintainer";

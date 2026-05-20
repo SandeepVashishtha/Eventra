@@ -1,18 +1,13 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import {
-  FaInfoCircle,
-  FaInstagram,
-  FaDiscord,
-  FaTelegram,
   FaGithub,
   FaQuestionCircle,
   FaEnvelope,
   FaBookOpen,
   FaPlus,
-  // FaClipboardList,  //can be reactivated later
   FaUsers,
   FaBook,
-  // FaServer,   //can be reactivated later
   FaHome,
   FaCalendarAlt,
   FaStar,
@@ -20,12 +15,11 @@ import {
   FaTrophy,
   FaComments,
   FaLinkedin,
+  FaDiscord,
+  FaTelegram,
+  FaInstagram,
+  FaInfoCircle,
 } from "react-icons/fa";
-import { Link } from "react-router-dom";
-import { toast } from "react-toastify";
-
-
-
 
 const footerLinks = {
   quick_links: [
@@ -51,11 +45,6 @@ const footerLinks = {
   ],
 };
 
-const legalLinks = [
-  { name: "Privacy Policy", href: "/privacy" },
-  { name: "Terms of Service", href: "/terms" },
-];
-
 const socialLinks = [
   {
     name: "GitHub",
@@ -67,7 +56,6 @@ const socialLinks = [
       />
     ),
   },
-
   {
     name: "LinkedIn",
     href: "https://www.linkedin.com/in/sandeepvashishtha/",
@@ -78,7 +66,6 @@ const socialLinks = [
       />
     ),
   },
-
   {
     name: "Discord",
     href: "https://www.discord.com/",
@@ -89,7 +76,6 @@ const socialLinks = [
       />
     ),
   },
-
   {
     name: "Telegram",
     href: "https://www.telegram.com/",
@@ -100,7 +86,6 @@ const socialLinks = [
       />
     ),
   },
-
   {
     name: "Instagram",
     href: "https://www.instagram.com/",
@@ -113,33 +98,49 @@ const socialLinks = [
   },
 ];
 
+const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
 const Newsletter = () => {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState({ type: "", message: "" });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!email) {
-      toast.error("Please enter your email address");
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setFeedback({ type: "error", message: "Please enter your email address." });
       return;
     }
 
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      toast.error("Please enter a valid email address");
+    if (!isValidEmail(trimmedEmail)) {
+      setFeedback({ type: "error", message: "Please enter a valid email address." });
       return;
     }
+
     setIsSubmitting(true);
+    setFeedback({ type: "", message: "" });
+
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Submitting email:", email);
-      toast.success("Thank you for subscribing to our newsletter!");
+      setFeedback({ type: "success", message: "Thanks for subscribing!" });
       setEmail("");
     } catch (error) {
-      toast.error("Something went wrong. Please try again.");
+      setFeedback({
+        type: "error",
+        message: "Something went wrong. Please try again.",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const feedbackId = "footer-newsletter-feedback";
+  const feedbackColor =
+    feedback.type === "success"
+      ? "text-green-600 dark:text-green-400"
+      : "text-red-600 dark:text-red-400";
 
   return (
     <div className="mt-4">
@@ -155,10 +156,17 @@ const Newsletter = () => {
           <input
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              if (feedback.message) {
+                setFeedback({ type: "", message: "" });
+              }
+            }}
             placeholder="Enter your email"
             className="pl-10 pr-4 py-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full"
             disabled={isSubmitting}
+            aria-describedby={feedback.message ? feedbackId : undefined}
+            aria-invalid={feedback.type === "error"}
           />
         </div>
         <button
@@ -169,10 +177,17 @@ const Newsletter = () => {
           {isSubmitting ? "Subscribing..." : "Subscribe"}
         </button>
       </form>
-      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-        We respect your privacy. Unsubscribe at any time.
-      </p>
-
+      <div className="mt-1 min-h-[1rem]" aria-live="polite">
+        {feedback.message ? (
+          <p id={feedbackId} className={`text-xs font-medium ${feedbackColor}`}>
+            {feedback.message}
+          </p>
+        ) : (
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            We respect your privacy. Unsubscribe at any time.
+          </p>
+        )}
+      </div>
     </div>
   );
 };
@@ -235,160 +250,42 @@ const FooterLinksRender = () => (
   </>
 );
 
-const FooterBottom = () => {
-  const currentYear = new Date().getFullYear();
-  return (
-    <div className="border-t border-gray-200 dark:border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
-      <p className="text-sm text-gray-500 dark:text-gray-400 text-center md:text-left">
-        © {currentYear} Eventra. All rights reserved. Created with ❤️ by Sandeep Vashishtha, Rhythm and the amazing open-source community.
-      </p>
-      <div className="flex gap-6">
-        {legalLinks.map((link) => (
-          <Link
-            key={link.name}
-            to={link.href}
-            className="text-xs text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-          >
-            {link.name}
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-};
-
 const Footer = () => {
-  const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!email) {
-      toast.error("Please enter your email address");
-      return;
-    }
-
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      toast.error("Please enter a valid email address");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Submitting email:", email);
-      toast.success("Thank you for subscribing to our newsletter!");
-      setEmail("");
-    } catch (error) {
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
-    <>
-      <footer 
-        className="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
-        data-aos="fade-up"
-        data-aos-duration="1000"
-        data-aos-offset="100"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-            <div 
-              className="space-y-4 lg:col-span-2"
-              data-aos="fade-up"
-              data-aos-delay="0"
+    <footer 
+      className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
+      data-aos="fade-up"
+      data-aos-duration="1000"
+      data-aos-offset="100"
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div 
+            className="space-y-4 lg:col-span-2"
+            data-aos="fade-up"
+            data-aos-delay="0"
+          >
+            <h2
+              className="text-2xl sm:text-3xl font-bold text-black dark:text-white"
+              style={{ fontFamily: "Anton, sans-serif" }}
             >
-              <h2
-                className="text-2xl sm:text-3xl font-bold text-black"
-                style={{ fontFamily: "Anton, sans-serif" }}
-              >
-                Eventra
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">
-                Open-source event management for communities worldwide.
-              </p>
+              Eventra
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Open-source event management for communities worldwide.
+            </p>
 
-              {/* Newsletter Subscription Form */}
-              <div className="mt-4">
-                {/* UPDATED: Added dark mode text color */}
-                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-2">
-                  Subscribe to our newsletter
-                </h4>
-                {/* UPDATED: Added dark mode text color */}
-                <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
-                  Get the latest updates, event tips, and community news.
-                </p>
-                <form
-                  onSubmit={handleSubmit}
-                  className="flex flex-col sm:flex-row gap-3"
-                >
-                  <div className="relative flex-grow">
-                    <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Enter your email"
-                      className="pl-10 pr-4 py-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full"
-                      disabled={isSubmitting}
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSubmitting ? "Subscribing..." : "Subscribe"}
-                  </button>
-                </form>
-                {/* UPDATED: Added dark mode text color */}
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  We respect your privacy. Unsubscribe at any time.
-                </p>
-              </div>
-              {/* Social Media Icons - Below Newsletter */}
-              <div className="mt-6">
-                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-3">
-                  Follow Us
-                </h4>
-                <div className="flex flex-wrap gap-3">
-                  {socialLinks.map((link) => (
-                    <a
-                      key={link.name}
-                      href={link.href}
-                      className="text-gray-400 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={link.name}
-                      title={link.name}
-                    >
-                      <span className="sr-only">{link.name}</span>
-                      {link.icon}
-                    </a>
-                  ))}
-                </div>
-              </div>
-              <Newsletter />
-              <SocialLinksRender />
-            </div>
-            <FooterLinksRender />
+            {/* Newsletter Component */}
+            <Newsletter />
+            
+            {/* Social Links */}
+            <SocialLinksRender />
           </div>
-          <FooterBottom />
+          <FooterLinksRender />
         </div>
-      </footer>
-
-    </>
+      </div>
+    </footer>
   );
 };
 
 export default Footer;
-
-
-
-
-

@@ -45,7 +45,7 @@ export default function CTASection() {
         {/* ------------------------------
             CTA Content Wrapper
         ------------------------------ */}
-        <div className="relative max-w-7xl mx-auto text-center px-6">
+        <div className="relative z-[50] max-w-7xl mx-auto text-center px-6">
           {/* ------------------------------
               Tag-style subheading
               Shows event tagline with icon
@@ -86,7 +86,7 @@ export default function CTASection() {
             -------------------------- */}
             <a
               href="#hackathons"
-              className="inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-900 text-black dark:text-white px-8 py-3 rounded-full font-semibold shadow-lg border border-blue-200 dark:border-blue-700 hover:bg-blue-200 dark:hover:bg-blue-800 hover:scale-105 transition-all duration-300 ease-out"
+              className="inline-flex items-center gap-2 z-[50] bg-blue-100 dark:bg-blue-900 text-black dark:text-white px-8 py-3 rounded-full font-semibold shadow-lg border border-blue-200 dark:border-blue-700 hover:bg-blue-200 dark:hover:bg-blue-800 hover:scale-105 transition-all duration-300 ease-out"
             >
               Explore Hackathons
               <ArrowRight className="w-5 h-5" />
@@ -98,7 +98,7 @@ export default function CTASection() {
             -------------------------- */}
             <a
               href="about"
-              className="inline-flex items-center gap-2 bg-yellow-100 dark:bg-yellow-900 text-black dark:text-white px-8 py-3 rounded-full font-semibold shadow-lg border border-yellow-200 dark:border-yellow-700 hover:bg-yellow-200 dark:hover:bg-yellow-800 hover:scale-105 transition-all duration-300 ease-out"
+              className="inline-flex items-center z-[50] gap-2 bg-yellow-100 dark:bg-yellow-900 text-black dark:text-white px-8 py-3 rounded-full font-semibold shadow-lg border border-yellow-200 dark:border-yellow-700 hover:bg-yellow-200 dark:hover:bg-yellow-800 hover:scale-105 transition-all duration-300 ease-out"
             >
               Know us better
               <Sparkles className="w-5 h-5" />

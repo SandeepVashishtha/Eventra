@@ -6,8 +6,12 @@ import { Sun, Moon, MousePointer, Bell, ShieldCheck, ArrowRight } from "lucide-r
 const Settings = () => {
   const { isDarkMode, toggleTheme } = useTheme();
   const [cursorEnabled, setCursorEnabled] = useState(true);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [privacyMode, setPrivacyMode] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(
+    () => localStorage.getItem("notifications") !== "false"
+  );
+  const [privacyMode, setPrivacyMode] = useState(
+    () => localStorage.getItem("privacyMode") === "true"
+  );
 
   useEffect(() => {
     const storedCursor = localStorage.getItem("cursor");
@@ -78,7 +82,11 @@ const Settings = () => {
             <div className="space-y-3">
               <button
                 type="button"
-                onClick={() => setNotificationsEnabled((prev) => !prev)}
+                onClick={() => {
+                const next = !notificationsEnabled;
+                setNotificationsEnabled(next);
+                localStorage.setItem("notifications", next.toString());
+              }}
                 className="w-full inline-flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-left text-sm font-medium text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition"
               >
                 <span className="flex items-center gap-3">
@@ -104,7 +112,11 @@ const Settings = () => {
             <div className="space-y-3">
               <button
                 type="button"
-                onClick={() => setPrivacyMode((prev) => !prev)}
+                onClick={() => {
+                const next = !privacyMode;
+                setPrivacyMode(next);
+                localStorage.setItem("privacyMode", next.toString());
+              }}
                 className="w-full inline-flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-left text-sm font-medium text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition"
               >
                 <span className="flex items-center gap-3">

@@ -60,7 +60,7 @@ export const Terms = () => {
         </div>
 
         {/* Table of Contents for larger screens */}
-        <div className="hidden lg:block bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-10 border border-gray-100 dark:border-gray-700 sticky top-6">
+        <div className="hidden lg:block bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-10 border border-gray-100 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
             Table of Contents
           </h3>

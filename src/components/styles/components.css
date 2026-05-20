@@ -43,6 +43,7 @@
   border-color: #6366f1;
   background-color: #ffffff;
   box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15), 0 12px 20px -5px rgba(0, 0, 0, 0.1);
+}
 .search-input-wrapper {
   display: flex;
   align-items: center;

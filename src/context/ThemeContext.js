@@ -1,32 +1,110 @@
-import { createContext, useContext,useEffect,useState} from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
-export const ThemeContext = createContext();
+export const ThemeContext =
+  createContext();
 
-export const ThemeProvider = ({ children }) => {
+export const ThemeProvider = ({
+  children,
+}) => {
+  // Get Initial Theme
+  const getInitialTheme = () => {
+    const savedTheme =
+      localStorage.getItem("theme");
 
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    return localStorage.getItem('theme') === 'dark';
-  });
-
-  useEffect(() => {
-   const body = document.body; 
-    if (isDarkMode) {
-      body.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      body.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
+    if (savedTheme) {
+      return savedTheme;
     }
-  }, [isDarkMode]);
 
+    return window.matchMedia(
+      "(prefers-color-scheme: dark)"
+    ).matches
+      ? "dark"
+      : "light";
+  };
+
+  const [theme, setTheme] =
+    useState(getInitialTheme);
+
+  // Apply Theme
+  useEffect(() => {
+    const root =
+      document.documentElement;
+
+    root.classList.remove(
+      "light",
+      "dark"
+    );
+
+    root.classList.add(theme);
+
+    localStorage.setItem(
+      "theme",
+      theme
+    );
+  }, [theme]);
+
+  // Detect System Theme Changes
+  useEffect(() => {
+    const mediaQuery =
+      window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      );
+
+    const handleChange = (e) => {
+      const savedTheme =
+        localStorage.getItem("theme");
+
+      if (!savedTheme) {
+        setTheme(
+          e.matches
+            ? "dark"
+            : "light"
+        );
+      }
+    };
+
+    mediaQuery.addEventListener(
+      "change",
+      handleChange
+    );
+
+    return () => {
+      mediaQuery.removeEventListener(
+        "change",
+        handleChange
+      );
+    };
+  }, []);
+
+  // Toggle Theme
   const toggleTheme = () => {
-    setIsDarkMode(prev => !prev);
+    setTheme((prevTheme) =>
+      prevTheme === "dark"
+        ? "light"
+        : "dark"
+    );
   };
 
   return (
-    <ThemeContext.Provider value={{ theme: isDarkMode ? 'dark' : 'light', toggleTheme, isDarkMode }}>
+    <ThemeContext.Provider
+      value={{
+        theme,
+        isDarkMode:
+          theme === "dark",
+        setTheme,
+        toggleTheme,
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   );
 };
-export const useTheme = () => useContext(ThemeContext);
+
+// Custom Hook
+export const useTheme = () =>
+  useContext(ThemeContext);

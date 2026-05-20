@@ -6,7 +6,6 @@ const SearchFilter = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedLocation, setSelectedLocation] = useState('all');
-  const [dateFilter, setDateFilter] = useState('all');
   const [priceFilter, setPriceFilter] = useState('all');
 
   const categories = [
@@ -127,7 +126,7 @@ const SearchFilter = () => {
 >
   {"Discover Amazing Events 🎯"}
 </motion.h1>
-        <p className="search-subtitle">Find the perfect event for your interests</p>
+        <p className="search-subtitle ">Find the perfect event for your interests</p>
       </div>
 
       {/* Search Bar */}
@@ -144,7 +143,7 @@ const SearchFilter = () => {
             placeholder="Search events, topics, or keywords..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"+655544
+            className="search-input"
           />
         </div>
       </motion.div>
