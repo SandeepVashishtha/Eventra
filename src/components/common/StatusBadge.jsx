@@ -3,8 +3,8 @@ import "./StatusBadge.css";
 const STATUS_CONFIG = {
   // Event/Hackathon statuses
   upcoming:      { label: "Upcoming",    className: "sb-upcoming" },
-  completed:     { label: "Completed",   className: "sb-completed" },
-  "in progress": { label: "In Progress", className: "sb-inprogress" },
+  completed: {label: "Ended",className: "bg-gray-500 text-white",},  past:          { label: "Past",        className: "sb-past" },
+  ended:         { label: "Ended",       className: "sb-ended" },  "in progress": { label: "In Progress", className: "sb-inprogress" },
   live:          { label: "Live",        className: "sb-live" },
   done:          { label: "Done",        className: "sb-completed" },
 
