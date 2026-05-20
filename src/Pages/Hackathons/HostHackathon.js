@@ -223,7 +223,7 @@ const HostHackathon = () => {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-sky-50 via-white to-white dark:from-gray-900 dark:to-black flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
+    <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
       {/* Heading Section */}
       <motion.div
         initial={{ opacity: 0, y: -30 }}

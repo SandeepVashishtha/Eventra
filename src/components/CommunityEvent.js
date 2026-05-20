@@ -92,7 +92,7 @@ const CommunityEvent = () => {
 
   return (
     // UPDATED: Main page background
-    <div className="bg-white dark:bg-black pt-20 md:pt-24">
+    <div className="bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 pt-20 md:pt-24 text-slate-900 dark:text-gray-100 min-h-screen">
       <div className="max-w-7xl mx-auto px-6 py-16">
         {/* Intro Section */}
         <motion.div
@@ -152,7 +152,7 @@ const CommunityEvent = () => {
                 type="button"
                 whileHover={{ scale: 1.05 }}
                 onClick={() => setSelectedEvent(event)}
-                className="mt-6 px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-md bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 transition-all"
+                className="mt-6 px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-md bg-blue-600 hover:bg-blue-700 transition-all"
                 aria-label={`Learn more about ${event.title}`}
               >
                 Learn More -&gt;
