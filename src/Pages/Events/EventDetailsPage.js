@@ -272,6 +272,10 @@ const EventDetailsPage = () => {
                   <div className="w-full py-3 px-4 bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg font-semibold text-center cursor-not-allowed">
                     Event Ended
                   </div>
+                ) : event.attendees >= event.maxAttendees ? (
+                  <div className="w-full py-3 px-4 bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg font-semibold text-center cursor-not-allowed">
+                    Event Full
+                  </div>
                 ) : (
                   <Link to={`/events/${event.id}/register`} className="block">
                     <div className="w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg font-semibold text-center cursor-pointer transition-all">
