@@ -270,6 +270,7 @@ const MobileDrawerFooter = ({
   </div>
 );
 
+// eslint-disable-next-line no-unused-vars
 const UserProfileDropdown = ({ 
   user, primaryLine, secondaryLine, showProfileDropdown, setShowProfileDropdown, 
   location, handleLogoutClick 
@@ -397,6 +398,7 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
   </>
 );
 
+// eslint-disable-next-line no-unused-vars
 const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   const location = useLocation();
   return (
@@ -411,6 +413,7 @@ const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   );
 };
 
+// eslint-disable-next-line no-unused-vars
 const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeAllMenus, handleTouchStart, handleTouchMove, handleTouchEnd, closeBtnRef, toggleCursor, cursorEnabled, handleLogoutClick, primaryLine, secondaryLine }) => {
   const location = useLocation();
   const { isDarkMode, toggleTheme } = useTheme();
@@ -461,7 +464,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [navHeight, setNavHeight] = useState(0);
+  const [navHeight] = useState(0);
 
   const drawerRef = useRef(null);
   const closeBtnRef = useRef(null);
