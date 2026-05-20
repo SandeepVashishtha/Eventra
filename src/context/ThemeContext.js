@@ -2,33 +2,40 @@ import {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
 export const ThemeContext =
-  createContext();
+  createContext(null);
 
 export const ThemeProvider = ({
   children,
 }) => {
+  // Get System Theme
+  const getSystemTheme = () =>
+    window.matchMedia(
+      "(prefers-color-scheme: dark)"
+    ).matches
+      ? "dark"
+      : "light";
+
   // Get Initial Theme
   const getInitialTheme = () => {
     const savedTheme =
       localStorage.getItem("theme");
 
-    if (savedTheme) {
-      return savedTheme;
-    }
-
-    return window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches
-      ? "dark"
-      : "light";
+    return savedTheme || "system";
   };
 
   const [theme, setTheme] =
     useState(getInitialTheme);
+
+  // Resolve Actual Theme
+  const resolvedTheme =
+    theme === "system"
+      ? getSystemTheme()
+      : theme;
 
   // Apply Theme
   useEffect(() => {
@@ -40,13 +47,37 @@ export const ThemeProvider = ({
       "dark"
     );
 
-    root.classList.add(theme);
-
-    localStorage.setItem(
-      "theme",
-      theme
+    root.classList.add(
+      resolvedTheme
     );
-  }, [theme]);
+
+    // Save Theme
+    if (theme === "system") {
+      localStorage.removeItem(
+        "theme"
+      );
+    } else {
+      localStorage.setItem(
+        "theme",
+        theme
+      );
+    }
+
+    // Update Browser Theme Color
+    const metaTheme =
+      document.querySelector(
+        'meta[name="theme-color"]'
+      );
+
+    if (metaTheme) {
+      metaTheme.setAttribute(
+        "content",
+        resolvedTheme === "dark"
+          ? "#0f172a"
+          : "#ffffff"
+      );
+    }
+  }, [theme, resolvedTheme]);
 
   // Detect System Theme Changes
   useEffect(() => {
@@ -55,16 +86,13 @@ export const ThemeProvider = ({
         "(prefers-color-scheme: dark)"
       );
 
-    const handleChange = (e) => {
-      const savedTheme =
-        localStorage.getItem("theme");
-
-      if (!savedTheme) {
-        setTheme(
-          e.matches
-            ? "dark"
-            : "light"
-        );
+    const handleChange = () => {
+      if (
+        !localStorage.getItem(
+          "theme"
+        )
+      ) {
+        setTheme("system");
       }
     };
 
@@ -83,22 +111,34 @@ export const ThemeProvider = ({
 
   // Toggle Theme
   const toggleTheme = () => {
-    setTheme((prevTheme) =>
-      prevTheme === "dark"
-        ? "light"
-        : "dark"
-    );
+    if (
+      resolvedTheme === "dark"
+    ) {
+      setTheme("light");
+    } else {
+      setTheme("dark");
+    }
   };
+
+  const value = useMemo(
+    () => ({
+      theme,
+      resolvedTheme,
+      isDarkMode:
+        resolvedTheme ===
+        "dark",
+      setTheme,
+      toggleTheme,
+    }),
+    [
+      theme,
+      resolvedTheme,
+    ]
+  );
 
   return (
     <ThemeContext.Provider
-      value={{
-        theme,
-        isDarkMode:
-          theme === "dark",
-        setTheme,
-        toggleTheme,
-      }}
+      value={value}
     >
       {children}
     </ThemeContext.Provider>
@@ -106,5 +146,15 @@ export const ThemeProvider = ({
 };
 
 // Custom Hook
-export const useTheme = () =>
-  useContext(ThemeContext);
+export const useTheme = () => {
+  const context =
+    useContext(ThemeContext);
+
+  if (!context) {
+    throw new Error(
+      "useTheme must be used within ThemeProvider"
+    );
+  }
+
+  return context;
+};

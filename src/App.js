@@ -1,62 +1,117 @@
-import React, { useState, useEffect, lazy, Suspense } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import React, {
+  useState,
+  useEffect,
+  lazy,
+  Suspense,
+} from "react";
+
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+} from "react-router-dom";
+
 import "./App.css";
 
 // Layout & Components
 import Navbar from "./components/Layout/Navbar";
+
 import ScrollToTop from "./components/ScrollToTop";
+
 import FeedbackButton from "./components/FeedbackButton";
+
 import FluidCursor from "./jhalak/FluidCursor";
+
 import PageTransition from "./components/common/PageTransition";
+
+// Pages
 import RegistrationPage from "./Pages/RegistrationPage";
 
 // Context & Hooks
 import NotificationProvider from "./components/common/NotificationProvider";
+
 import { AuthProvider } from "./context/AuthContext";
+
 import { MyEventsProvider } from "./context/MyEventsContext";
+
 import { ThemeProvider } from "./context/ThemeContext";
+
 import { useModelContext } from "./hooks/useModelContext";
+
 import useOfflineSync from "./hooks/useOfflineSync";
 
-// Lazy load heavy components
-const Footer = lazy(() => import("./components/Layout/Footer"));
-const Chatbot = lazy(() => import("./components/Chatbot"));
-const AppRoutes = lazy(() => import("./components/AppRoutes"));
+// Lazy Loaded Components
+const Footer = lazy(() =>
+  import("./components/Layout/Footer")
+);
 
+const Chatbot = lazy(() =>
+  import("./components/Chatbot")
+);
+
+const AppRoutes = lazy(() =>
+  import("./components/AppRoutes")
+);
+
+// Offline Sync
 const OfflineSyncManager = () => {
   useOfflineSync();
+
   return null;
 };
 
 function App() {
-  const [cursorEnabled, setCursorEnabled] = useState(
-    localStorage.getItem("cursor") !== "off",
-  );
+  const [cursorEnabled, setCursorEnabled] =
+    useState(
+      localStorage.getItem(
+        "cursor"
+      ) !== "off"
+    );
 
   useModelContext();
 
+  // Toggle Cursor
   const toggleCursor = () => {
-    const newValue = !cursorEnabled;
-    setCursorEnabled(newValue);
-    localStorage.setItem("cursor", newValue ? "on" : "off");
+    const newValue =
+      !cursorEnabled;
+
+    setCursorEnabled(
+      newValue
+    );
+
+    localStorage.setItem(
+      "cursor",
+      newValue
+        ? "on"
+        : "off"
+    );
   };
 
+  // Listen For Cursor Preference Changes
   useEffect(() => {
-    const handleCursorPreference = (event) => {
-      if (event?.detail?.cursorEnabled !== undefined) {
-        setCursorEnabled(event.detail.cursorEnabled);
-      }
-    };
+    const handleCursorPreference =
+      (event) => {
+        if (
+          event?.detail
+            ?.cursorEnabled !==
+          undefined
+        ) {
+          setCursorEnabled(
+            event.detail
+              .cursorEnabled
+          );
+        }
+      };
 
     window.addEventListener(
       "cursorPreferenceChanged",
-      handleCursorPreference,
+      handleCursorPreference
     );
 
     return () => {
       window.removeEventListener(
         "cursorPreferenceChanged",
-        handleCursorPreference,
+        handleCursorPreference
       );
     };
   }, []);
@@ -66,20 +121,52 @@ function App() {
       <AuthProvider>
         <MyEventsProvider>
           <NotificationProvider />
+
           <OfflineSyncManager />
 
           <Router>
             <div className="App">
+              {/* Navbar */}
               <Navbar
-                cursorEnabled={cursorEnabled}
-                toggleCursor={toggleCursor}
+                cursorEnabled={
+                  cursorEnabled
+                }
+                toggleCursor={
+                  toggleCursor
+                }
               />
 
-              <main className="relative z-10 min-h-screen bg-white dark:bg-black">
+              {/* Main Content */}
+              <main
+                className="
+                  relative
+                  z-10
+                  min-h-screen
+                  bg-white
+                  dark:bg-slate-950
+                  text-black
+                  dark:text-white
+                  transition-colors
+                  duration-300
+                "
+              >
                 <PageTransition>
                   <Suspense
                     fallback={
-                      <div className="flex min-h-screen items-center justify-center">
+                      <div
+                        className="
+                          flex
+                          min-h-screen
+                          items-center
+                          justify-center
+                          bg-white
+                          dark:bg-slate-950
+                          text-black
+                          dark:text-white
+                          text-xl
+                          font-semibold
+                        "
+                      >
                         Loading...
                       </div>
                     }
@@ -87,24 +174,38 @@ function App() {
                     <Routes>
                       <Route
                         path="/register/:id"
-                        element={<RegistrationPage />}
+                        element={
+                          <RegistrationPage />
+                        }
                       />
 
-                      <Route path="*" element={<AppRoutes />} />
+                      <Route
+                        path="*"
+                        element={
+                          <AppRoutes />
+                        }
+                      />
                     </Routes>
+
+                    {/* Global Components */}
+                    <Chatbot />
+
+                    <Footer />
                   </Suspense>
                 </PageTransition>
               </main>
 
+              {/* Utilities */}
               <ScrollToTop />
 
-              <Suspense fallback={null}>
-                <Chatbot />
-                <Footer />
-              </Suspense>
-
               <FeedbackButton />
-              <FluidCursor enabled={cursorEnabled} />
+
+              {/* Cursor Effect */}
+              <FluidCursor
+                enabled={
+                  cursorEnabled
+                }
+              />
             </div>
           </Router>
         </MyEventsProvider>
