@@ -8,6 +8,7 @@ import {
   Tag,
   Share2,
   ArrowLeft,
+  LayoutTemplate,
 } from "lucide-react";
 import eventsMockData from "./eventsMockData.json";
 import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
@@ -46,6 +47,10 @@ const EventDetailsPage = () => {
   const eventDateTime = new Date(`${event.date} ${event.time}`);
   const isPastEvent = eventDateTime < new Date();
   const attendeePercentage = (event.attendees / event.maxAttendees) * 100;
+  const popularEvents = eventsMockData
+    .filter((e) => e.id !== event.id)
+    .sort((a, b) => b.attendees - a.attendees)
+    .slice(0, 4);
 
   const eventSharingData = generateEventSharingData({
     ...event,
@@ -64,7 +69,7 @@ const EventDetailsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
+    <div className="min-h-screen mt-16 bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
       {/* Back Button */}
       <div className="sticky top-20 md:top-24 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -234,6 +239,29 @@ const EventDetailsPage = () => {
                 </div>
               </div>
             )}
+
+            {/* Popular Events */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 mt-8 shadow-sm border border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                Popular Events
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {popularEvents.map((popularEvent) => (
+                  <Link
+                    key={popularEvent.id}
+                    to={`/events/${popularEvent.id}`}
+                    className="block rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/60 transition-colors"
+                  >
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-1">
+                      {popularEvent.title}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
+                      {popularEvent.location} • {popularEvent.attendees} attendees
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Sidebar */}
@@ -256,6 +284,14 @@ const EventDetailsPage = () => {
 
               {/* Share & Actions */}
               <div className="space-y-3 border-t border-gray-200 dark:border-gray-700 pt-6">
+                <Link
+                  to={`/events/${event.id}/floor-plan`}
+                  className="w-full py-2.5 px-4 flex items-center justify-center gap-2 border border-indigo-500/30 hover:border-indigo-500 hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg font-semibold text-center cursor-pointer transition-all duration-300"
+                >
+                  <LayoutTemplate size={18} />
+                  Floor Plan Designer
+                </Link>
+
                 <ShareMenu
                   shareData={eventSharingData}
                   position="above"

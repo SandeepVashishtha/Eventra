@@ -154,6 +154,7 @@ const performSave = () => {
   const resolvedForm = {
     ...form,
     fullName: form.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim(),
+    profilePicture: form.avatarBase64 || form.profilePicture || "",
   };
   const validation = validate(resolvedForm);
   setErrors(validation);
@@ -168,10 +169,8 @@ const performSave = () => {
     setLoading(false);
     setSuccessMessage("Profile updated successfully");
     setConfirmOpen(false);
-
-    // ✅ Persist updates to both context and localStorage
-    setUser(form);
-    localStorage.setItem("user", JSON.stringify(form));
+    setUser(resolvedForm);                              
+    localStorage.setItem("user", JSON.stringify(resolvedForm)); 
 
     // ✅ Navigate away after a short delay to let user see success message
     setTimeout(() => {

@@ -44,22 +44,28 @@ const Hero = () => {
   }, [controls]);
 
   // Global search functionality
+  const createSearchItem = (item, type, searchType) => ({
+    id: item.id,
+    title: item.title,
+    description: item.description,
+    location: item.location,
+    tags: item.tags,
+    techStack: item.techStack,
+    category: item.category,
+    author: item.author,
+    organizer: item.organizer,
+    type,
+    searchType,
+  });
+
   const allData = [
-    ...eventsData.map((item) => ({
-      ...item,
-      type: "event",
-      searchType: "Events",
-    })),
-    ...hackathonsData.map((item) => ({
-      ...item,
-      type: "hackathon",
-      searchType: "Hackathons",
-    })),
-    ...projectsData.map((item) => ({
-      ...item,
-      type: "project",
-      searchType: "Projects",
-    })),
+    ...eventsData.map((item) => createSearchItem(item, "event", "Events")),
+    ...hackathonsData.map((item) =>
+      createSearchItem(item, "hackathon", "Hackathons")
+    ),
+    ...projectsData.map((item) =>
+      createSearchItem(item, "project", "Projects")
+    ),
   ];
 
   const fuse = new Fuse(allData, {
@@ -165,7 +171,7 @@ const Hero = () => {
   ];
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 py-16 sm:py-20 md:py-24">
+    <section className="relative overflow-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 pb-16 sm:pb-20 md:pb-24 pt-6 sm:pt-10">
       {/* Floating pastel shapes */}
       {shapes.map((shape, i) => (
         <motion.div
@@ -184,7 +190,7 @@ const Hero = () => {
       ))}
 
       {/* Hero Content */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10 pt-20">
         <motion.div
           className="text-center"
           variants={container}
@@ -198,7 +204,7 @@ const Hero = () => {
           <MotionConfig reducedMotion="never">
             {/* Headline */}
             <motion.h1
-              className="mx-auto max-w-[92vw] text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 sm:mb-6 leading-[0.95] sm:leading-tight text-black dark:text-white break-words px-2 sm:px-0"
+              className="mx-auto max-w-[92vw] mt-6 text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-5 sm:mb-6 leading-tight sm:leading-tight text-black dark:text-white break-words px-2 sm:px-0"
               style={{ fontFamily: '"Anton", sans-serif' }}
             >
               <motion.span
@@ -210,7 +216,7 @@ const Hero = () => {
                 <RespawningText texts={["Discover & Join", "Innovate & Create", "Learn & Grow"]} />
               </motion.span>
 
-              <div className="relative mx-auto mt-2 sm:mt-3 h-14 sm:h-24 md:h-28 lg:h-32 overflow-hidden flex justify-center items-center max-w-full">
+              <div className="relative mx-auto h-14 sm:h-24 md:h-28 lg:h-32 overflow-hidden flex justify-center items-center max-w-full">
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={index}
@@ -283,7 +289,9 @@ const Hero = () => {
                                 className="flex items-center gap-3 p-3 rounded-2xl 
                                  hover:bg-gray-50 
                                  cursor-pointer transition-colors group text-left no-underline"
-                                aria-label={`Open ${result.item.title} in ${result.item.searchType}`}
+                                aria-label={`Open ${result.item.title} in ${
+                                  result.item.searchType || result.item.type || "page"
+                                }`}
                               >
                                 <div
                                   className="flex-shrink-0 p-2 bg-blue-100 rounded-xl text-blue-600 

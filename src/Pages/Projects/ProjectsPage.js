@@ -12,7 +12,7 @@ import mockProjects from "./mockProjectsData.json";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 
 import ModernSearchInput from "../../components/common/ModernSearchInput";
-import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
+import SearchEmptyState from "../../components/common/SearchEmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 // Skeleton loader for project cards while data is loading
@@ -51,7 +51,7 @@ const ProjectGallery = () => {
   // State variables
   const [projects, setProjects] = useState([]); // Stores all fetched projects
   const [isLoading, setIsLoading] = useState(true); // Loading state
-  const [filterCategory, setFilterCategory] = useState("all"); // Current category filter
+  const [selectedCategories, setSelectedCategories] = useState([]); // Current category filter
   const [sortBy, setSortBy] = useState("recent"); // Sorting option
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery); // Search input
   const [categories, setCategories] = useState(["all"]); // Categories available
@@ -59,7 +59,14 @@ const ProjectGallery = () => {
   const [categoryOpen, setCategoryOpen] = useState(false); // Category dropdown state
   const [sortOpen, setSortOpen] = useState(false); // Sort dropdown state
   const cardSectionRef = useRef() // Refer to card section
-
+  const toggleCategory = (category) => {
+    setSelectedCategories((prev) => {
+      if (prev.includes(category)) {
+        return prev.filter((c) => c !== category);
+      }
+      return [...prev, category];
+    });
+  };
   // Labels for sorting options
   const sortByLabels = {
     recent: "Recently Updated",
@@ -147,9 +154,13 @@ const ProjectGallery = () => {
   // Filter, search, and sort projects dynamically
   const filteredAndSortedProjects = projects
     .filter((project) => {
-      // Filter by selected category
-      if (filterCategory !== "all" && project.category !== filterCategory)
+      // Filter by selected category 
+      if (
+        selectedCategories.length > 0 &&
+        !selectedCategories.includes(project.category)
+      ) {
         return false;
+      }
 
       // Filter by search query
       if (searchQuery) {
@@ -198,7 +209,7 @@ const ProjectGallery = () => {
         <motion.div
           // UPDATED: Panel background and border
           className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8"
-          style={{ boxShadow: "0 10px 25px rgba(59, 130, 246, 0.08)" }}
+          style={{ boxShadow: "0 10px 25px rgba(59, 130, 246, 0.08)", fontFamily: '"Big Shoulders Display", sans-seri'}}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -217,9 +228,9 @@ const ProjectGallery = () => {
             </div>
 
             {/* Filters and Sort Controls */}
-            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 w-full md:w-auto">
+            <div className="flex flex-row flex-wrap items-center gap-3 md:gap-4 w-full">
               {/* Category Dropdown */}
-              <div className="relative flex-1 sm:flex-none">
+              <div className="relative flex-1  min-w-[140px] sm:flex-none">
                 <motion.div
                   className="cursor-pointer relative"
                   initial={{ opacity: 0, y: 10 }}
@@ -234,7 +245,7 @@ const ProjectGallery = () => {
                     aria-expanded={categoryOpen}
                   >
                     <span className="text-gray-700 dark:text-gray-200">
-                      {filterCategory === "all" ? "All Categories" : filterCategory}
+                     {selectedCategories.length === 0 ? "All Categories" : `${selectedCategories.length} Selected`}
                     </span>
                     <FiX className="ml-2 text-gray-400 dark:text-gray-500" />
                   </button>
@@ -244,18 +255,18 @@ const ProjectGallery = () => {
                         // UPDATED: Dropdown menu styles
                         className="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
                       >
-                        {categories.map((cat) => (
-                          <li
-                            key={cat}
-                            onClick={() => {
-                              setFilterCategory(cat);
-                              setCategoryOpen(false); // Close dropdown on selection
-                            }}
-                            // UPDATED: Dropdown item styles
-                            className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-gray-700 dark:text-gray-300"
-                          >
-                            {cat === "all" ? "All Categories" : cat}
-                          </li>
+                        {categories.filter((cat) => cat !== "all").map((cat) => (
+                        <li
+                          key={cat}
+                          onClick={() => toggleCategory(cat)}
+                          className={`px-4 py-2 cursor-pointer text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                            selectedCategories.includes(cat)
+                              ? "bg-blue-100 dark:bg-blue-900"
+                              : ""
+                          }`}
+                        >
+                          {cat}
+                        </li>
                         ))}
                       </motion.ul>
                     )}
@@ -264,7 +275,7 @@ const ProjectGallery = () => {
               </div>
 
               {/* Sort Dropdown */}
-              <div className="relative flex-1 sm:flex-none">
+              <div className="relative flex-1  min-w-[140px] sm:flex-none">
                 <motion.div
                   className="cursor-pointer relative"
                   initial={{ opacity: 0, y: 10 }}
@@ -294,14 +305,14 @@ const ProjectGallery = () => {
                         // UPDATED: Dropdown menu styles
                         className="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
                       >
+                      
                         {Object.entries(sortByLabels).map(([key, label]) => (
                           <li
                             key={key}
                             onClick={() => {
                               setSortBy(key);
-                              setSortOpen(false); // Close dropdown on selection
+                              setSortOpen(false);
                             }}
-                            // UPDATED: Dropdown item styles
                             className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-gray-700 dark:text-gray-300"
                           >
                             {label}
@@ -316,9 +327,9 @@ const ProjectGallery = () => {
               {/* Clear Filters Button */}
               <motion.button
                 whileHover={{ scale: 1.05 }}
-                className="px-4 py-3 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white text-sm font-semibold rounded-xl flex items-center gap-2 hover:from-blue-500 hover:to-cyan-500 transition-all shadow-lg"
+                className="whitespace-nowrap flex-shrink-0 px-4 py-3 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white text-sm font-semibold rounded-xl flex items-center gap-2 hover:from-blue-500 hover:to-cyan-500 transition-all shadow-lg"
                 onClick={() => {
-                  setFilterCategory("all"); // Reset category
+                  setSelectedCategories([]);// Reset category
                   setSearchQuery(""); // Clear search
                   setSortBy("recent"); // Reset sort
                 }}
@@ -331,7 +342,20 @@ const ProjectGallery = () => {
             </div>
           </div>
         </motion.div>
+        <div className="flex flex-wrap gap-2 mt-3 mb-3 ">
+          {selectedCategories.map((cat) => (
+            <div
+              key={cat}
+              className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-sm rounded-full flex items-center gap-2"
+            >
+              {cat}
 
+              <button onClick={() => toggleCategory(cat)}>
+                <FiX size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
         {/* Projects Grid Section */}
         <AnimatePresence mode="wait">
           {isLoading ? (
@@ -467,45 +491,18 @@ const ProjectGallery = () => {
                 >
                   <FiSearch className="h-10 w-10 text-black dark:text-white" />
                 </motion.div>
-
-                {/* UPDATED: Text colors */}
-                <h3 className="mt-6 text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
-                  No Projects Found
-                </h3>
-                <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                  {searchQuery || filterCategory !== "all"
-                    ? "We couldn’t find any projects with your filters. Try exploring all projects!"
-                    : "Looks like there are no projects yet. Stay tuned for exciting updates!"}
-                </p>
-
-                {/* Action Buttons */}
-                <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      setFilterCategory("all");
-                      setSearchQuery("");
-                      setSortBy("recent");
-                    }}
-                    className="px-6 py-2.5 text-sm font-medium rounded-lg text-white bg-black hover:bg-zinc-800 shadow-lg transition-all"
-                  >
-                    Clear Filters
-                  </motion.button>
-
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      setFilterCategory("all");
-                      setSearchQuery("");
-                      setSortBy("recent");
-                    }}
-                    className="px-6 py-2.5 text-sm font-medium rounded-lg text-black dark:text-white border border-black/15 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 shadow-md transition-all"
-                  >
-                    Explore Projects
-                  </motion.button>
-                </div>
+                <SearchEmptyState
+                  query={searchQuery}
+                  itemLabel="projects"
+                  browseLabel="Browse All Projects"
+                  browsePath="/projects"
+                  onClear={() => {
+                    setSelectedCategories([]);
+                    setSearchQuery("");
+                    setSortBy("recent");
+                  }}
+                  popularTags={categories.filter((category) => category !== "all")}
+                />
               </div>
             </motion.div>
           )}
@@ -522,3 +519,4 @@ const ProjectGallery = () => {
 };
 
 export default ProjectGallery;
+

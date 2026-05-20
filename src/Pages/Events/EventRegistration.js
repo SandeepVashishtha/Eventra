@@ -12,6 +12,7 @@ import {
   CheckCircle,
   Loader2,
 } from "lucide-react";
+import { getEventStatus } from "../../utils/eventUtils";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { API_ENDPOINTS } from "../../config/api";
@@ -48,7 +49,7 @@ const EventRegistration = () => {
       const foundEvent = mockEvents.find((e) => e.id === parseInt(eventId));
       
       if (foundEvent) {
-        setEvent(foundEvent);
+        setEvent({ ...foundEvent, status: getEventStatus(foundEvent) });
         
         // Pre-fill form if user is authenticated
         if (isAuthenticated() && user) {
@@ -146,14 +147,32 @@ const EventRegistration = () => {
       }
     } catch (error) {
       console.error("Registration error:", error);
-      // ── Offline / no-backend fallback: still save locally so the feature
-      //    is usable while the real API is not yet wired up.
+      
+      // ── Offline Sync Queue Fallback ──
+      const payload = {
+        ...formData,
+        eventId: parseInt(eventId),
+        userId: user?.id || null,
+      };
+      
+      const QUEUE_KEY = 'eventra_offline_queue';
+      let queue = [];
+      try {
+        const queueStr = localStorage.getItem(QUEUE_KEY);
+        if (queueStr) queue = JSON.parse(queueStr);
+      } catch (e) {
+        queue = [];
+      }
+      
+      queue.push({ eventId: parseInt(eventId), payload });
+      localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+
       setRegistered(true);
       addRegistration(event, formData);
-      toast.success("Registration saved locally!");
+      toast.warning("Network error. Registration queued and will sync when you are online.", { autoClose: 4000 });
       setTimeout(() => {
-        navigate(`/events`);
-      }, 2000);
+        navigate(`/events/${eventId}`);
+      }, 3000);
     } finally {
       setSubmitting(false);
     }

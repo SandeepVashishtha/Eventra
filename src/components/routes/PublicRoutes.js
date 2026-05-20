@@ -5,7 +5,7 @@ import PageLayout from '../Layout/PageLayout';
 // --------------- PAGES
 import HomePage from "../../Pages/Home/HomePage";
 import EventsPage from "../../Pages/Events/EventsPage";
-import EventDetailsPage from "../../Pages/Events/EventDetailsPage";
+import EventDetails from "../../Pages/Events/EventDetails";
 import EventRegistration from "../../Pages/Events/EventRegistration";
 import HackathonPage from "../../Pages/Hackathons/HackathonPage";
 import ProjectsPage from "../../Pages/Projects/ProjectsPage";
@@ -22,6 +22,7 @@ import HelpCenter from "../../Pages/HelpCenter";
 import ContactUs from "../../Pages/Contact/ContactUs";
 import FeedbackPage from "../../Pages/Feedback/FeedbackPage";
 import EventAnalyticsDashboard from "../../Pages/Events/EventAnalyticsDashboard";
+import FloorPlanDesignerPage from "../../Pages/Events/FloorPlanDesignerPage";
 import DocumentationPage from "../../Pages/About/DocumentationPage";
 import SubmitProject from "../../Pages/Projects/SubmitProject";
 import MockApiResponse from "../MockApiResponse";
@@ -29,7 +30,7 @@ import MockApiResponse from "../MockApiResponse";
 export const getPublicRoutes = () => [
   <Route key="/" path="/" element={<HomePage />} />,
   <Route key="/events" path="/events" element={<EventsPage />} />,
-  <Route key="/event-details" path="/events/:eventId" element={<EventDetailsPage />} />,
+  <Route key="/event-details" path="/events/:eventId" element={<EventDetails />} />,
   <Route key="/register" path="/events/:eventId/register" element={<EventRegistration />} />,
   <Route key="/hackathons" path="/hackathons" element={<HackathonPage />} />,
   <Route key="/projects" path="/projects" element={<ProjectsPage />} />,
@@ -51,6 +52,7 @@ export const getPublicRoutes = () => [
     <Route key="/contact" path="/contact" element={<ContactUs />} />
     <Route key="/feedback" path="/feedback" element={<FeedbackPage />} />
     <Route key="/analytics" path="/analytics" element={<EventAnalyticsDashboard />} />
+    <Route key="/events/:eventId/floor-plan" path="/events/:eventId/floor-plan" element={<FloorPlanDesignerPage />} />
     <Route key="/documentation" path="/documentation" element={<DocumentationPage />} />
     <Route key="/submit-project" path="/submit-project" element={<SubmitProject />} />
   </Route>
