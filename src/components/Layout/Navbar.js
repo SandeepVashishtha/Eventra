@@ -417,42 +417,50 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
   const { user, isAuthenticated } = useAuth();
 
   return (
-    <div
-      id="mobile-drawer"
-      ref={drawerRef}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      className={`fixed top-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-sm shadow-2xl z-50 flex flex-col transform transition-transform duration-300 ease-in-out bg-white backdrop-blur-lg dark:bg-gray-900/95 ${isOpen ? "translate-x-0" : "translate-x-full"}`}
-      role="dialog"
-      aria-modal={isOpen}
-    >
-      <MobileDrawerHeader closeBtnRef={closeBtnRef} closeAllMenus={closeAllMenus} />
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          id="mobile-drawer"
+          ref={drawerRef}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          className="fixed top-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-sm shadow-2xl z-50 flex flex-col bg-white backdrop-blur-lg dark:bg-gray-900/95"
+          role="dialog"
+          aria-modal="true"
+          initial={{ x: "100%" }}
+          animate={{ x: 0 }}
+          exit={{ x: "100%" }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+        >
+          <MobileDrawerHeader closeBtnRef={closeBtnRef} closeAllMenus={closeAllMenus} />
 
-      <div className="flex-grow p-3.5 sm:p-4 space-y-2 overflow-y-auto">
-        <NavList 
-          location={location} 
-          openDropdown={openDropdown} 
-          onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)} 
-          onLinkClick={closeAllMenus} 
-          isMobile={true} 
-        />
-      </div>
+          <div className="flex-grow p-3.5 sm:p-4 space-y-2 overflow-y-auto">
+            <NavList 
+              location={location} 
+              openDropdown={openDropdown} 
+              onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)} 
+              onLinkClick={closeAllMenus} 
+              isMobile={true} 
+            />
+          </div>
 
-      <MobileDrawerFooter 
-        isAuthenticated={isAuthenticated} 
-        user={user} 
-        primaryLine={primaryLine} 
-        secondaryLine={secondaryLine} 
-        closeAllMenus={closeAllMenus} 
-        location={location} 
-        handleLogoutClick={handleLogoutClick} 
-        isDarkMode={isDarkMode} 
-        toggleTheme={toggleTheme} 
-        cursorEnabled={cursorEnabled} 
-        toggleCursor={toggleCursor} 
-      />
-    </div>
+          <MobileDrawerFooter 
+            isAuthenticated={isAuthenticated} 
+            user={user} 
+            primaryLine={primaryLine} 
+            secondaryLine={secondaryLine} 
+            closeAllMenus={closeAllMenus} 
+            location={location} 
+            handleLogoutClick={handleLogoutClick} 
+            isDarkMode={isDarkMode} 
+            toggleTheme={toggleTheme} 
+            cursorEnabled={cursorEnabled} 
+            toggleCursor={toggleCursor} 
+          />
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
@@ -606,7 +614,8 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               ref={toggleBtnRef} 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
               aria-expanded={isMobileMenuOpen} 
-              aria-label="Open navigation" 
+              aria-controls="mobile-drawer"
+              aria-label={isMobileMenuOpen ? "Close navigation" : "Open navigation"} 
               className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10"
             >
               <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -633,6 +642,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         primaryLine={primaryLine}
         secondaryLine={secondaryLine}
       />
+
 
       {/* Confirmation Modal */}
       <ConfirmationModal
