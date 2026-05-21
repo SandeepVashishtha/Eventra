@@ -21,7 +21,7 @@ const endpoints = [
     method: "GET",
     url: "/api/hackathons",
     example: `fetch("/api/hackathons")
-  .then(res => res.json())
+  .then(res => res.json())`,
     response: `[
   {
     "id": 1,
@@ -38,7 +38,7 @@ const endpoints = [
     desc: "Retrieve projects submitted to hackathons.",
     method: "GET",
     url: "/api/projects?hackathonId=<id>",
-    example: `curl -X GET https://example.com/api/projects?hackathonId=1`,
+    example: "curl -X GET https://example.com/api/projects?hackathonId=1",
     response: `[
   {
     "id": 42,

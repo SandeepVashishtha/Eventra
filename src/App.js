@@ -159,8 +159,8 @@ function App() {
                       />
                     </Routes>
 
-                    <Chatbot />
                     <Footer />
+                    <Chatbot />
                   </Suspense>
                 </PageTransition>
               </main>
