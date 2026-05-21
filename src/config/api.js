@@ -1,80 +1,38 @@
-// API Configuration
-// Uses relative paths in development so the CRA proxy (package.json "proxy" field)
-// forwards requests to the backend — no CORS issues.
-// In production, REACT_APP_API_URL should be set to the backend base URL.
-const AUTH_API_BASE_PATH = process.env.REACT_APP_API_URL
-  ? `${process.env.REACT_APP_API_URL}/api/auth`
-  : '/api/auth'; // ← goes through CRA proxy in dev
-
-// fix: shared base URL for all non-auth API routes
-const API_BASE_PATH = process.env.REACT_APP_API_URL || '';
-
-// API endpoints — auth, events, projects, notifications, and users
-export const API_ENDPOINTS = {
-  AUTH: {
-    LOGIN: `${AUTH_API_BASE_PATH}/login`,
-    REGISTER: `${AUTH_API_BASE_PATH}/signup`,
-  },
-  EVENTS: {
-    CREATE: `${API_BASE_PATH}/api/events`,
-    REGISTER: (id) => `${API_BASE_PATH}/api/events/${id}/register`,
-    LIST: `${API_BASE_PATH}/api/events`,
-    DETAIL: (id) => `${API_BASE_PATH}/api/events/${id}`,
-  },
-  PROJECTS: {
-    LIST: `${API_BASE_PATH}/api/projects`,
-    CATEGORIES: `${API_BASE_PATH}/api/projects/categories`,
-    SUBMIT: `${API_BASE_PATH}/api/projects`,
-    DETAIL: (id) => `${API_BASE_PATH}/api/projects/${id}`,
-  },
-  NOTIFICATIONS: {
-    BASE: `${API_BASE_PATH}/api/notifications`,
-    READ: (id) => `${API_BASE_PATH}/api/notifications/${id}/read`,
-    READ_ALL: `${API_BASE_PATH}/api/notifications/read-all`,
-  },
-  USERS: {
-    ACHIEVEMENTS: `${API_BASE_PATH}/api/users/achievements`,
-    PROFILE: `${API_BASE_PATH}/api/users/profile`,
-  },
-};
-
-// Helper function to get authorization headers
-export const getAuthHeaders = (token) => {
-  const headers = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  return headers;
-};
+import axios from "axios";
 
 // ---------------------------------------------------------------------------
-// Global 401 Unauthorized handler
+// Base API URL
 // ---------------------------------------------------------------------------
-// AuthContext registers a callback here so that any API call receiving a 401
-// can trigger a centralized logout + redirect without circular imports.
-let _onUnauthorized = null;
+
+const BASE_URL =
+  process.env.REACT_APP_API_URL ||
+  "http://localhost:5000/api";
+
+// Axios Instance
+const API = axios.create({
+  baseURL: BASE_URL,
+
+  headers: {
+    "Content-Type":
+      "application/json",
+  },
+
+  withCredentials: true,
+});
+
+// ---------------------------------------------------------------------------
+// Global 401 Unauthorized Handler
+// ---------------------------------------------------------------------------
+
+let onUnauthorized = null;
 
 /**
- * Register a callback that will be invoked whenever an API response returns
- * HTTP 401 Unauthorized. AuthContext sets this during initialization.
- *
- * @param {Function|null} callback - A function to call on 401 responses, or null to deregister.
+ * Register unauthorized callback
  */
-export const setOnUnauthorizedHandler = (callback) => {
-  _onUnauthorized = callback;
-};
-
-/**
- * Process an API response and trigger the unauthorized handler if the
- * server responds with 401, indicating an expired or invalid token.
- *
- * @param {Response} response - The fetch Response object.
- * @returns {Response} The same response (pass-through for chaining).
- */
-const handleUnauthorized = (response) => {
-  if (response.status === 401 && typeof _onUnauthorized === 'function') {
-    _onUnauthorized();
-  }
-  return response;
-};
+export const setOnUnauthorizedHandler =
+  (handler) => {
+    onUnauthorized = handler;
+  };
 
 /**
  * isDev — true only in local development.
@@ -82,106 +40,142 @@ const handleUnauthorized = (response) => {
  */
 const isDev = process.env.NODE_ENV === 'development';
 
-// API utility functions
-export const apiUtils = {
-  /**
-   * HTTP GET
-   * @param {string} url
-   * @param {string|null} token - JWT bearer token
-   */
-  get: async (url, token = null) => {
-    try {
-      if (isDev) console.debug('[API GET]', url);
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: getAuthHeaders(token),
-      });
-      return handleUnauthorized(response);
-    } catch (error) {
-      console.error('[API GET Error]', url, error);
-      throw error;
+API.interceptors.response.use(
+  (response) => response,
+
+  (error) => {
+    if (
+      error?.response
+        ?.status === 401
+    ) {
+      if (onUnauthorized) {
+        onUnauthorized();
+      }
     }
+
+    return Promise.reject(
+      error
+    );
+  }
+);
+
+// ---------------------------------------------------------------------------
+// API Endpoints
+// ---------------------------------------------------------------------------
+
+export const API_ENDPOINTS = {
+  AUTH: {
+    LOGIN: "/auth/login",
+
+    SIGNUP: "/auth/signup",
+
+    LOGOUT: "/auth/logout",
+
+    RESET_PASSWORD:
+      "/auth/reset-password",
   },
 
-  /**
-   * HTTP POST
-   * @param {string} url
-   * @param {object} data - Request body
-   * @param {string|null} token - JWT bearer token
-   */
-  post: async (url, data, token = null) => {
-    try {
-      if (isDev) console.debug('[API POST]', url);
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: getAuthHeaders(token),
-        body: JSON.stringify(data),
-      });
-      return handleUnauthorized(response);
-    } catch (error) {
-      console.error('[API POST Error]', url, error);
-      throw error;
-    }
+  EVENTS: {
+    CREATE: "/events/create",
+
+    ALL: "/events",
+
+    DETAIL: (id) =>
+      `/events/${id}`,
+
+    REGISTER: (id) =>
+      `/events/${id}/register`,
   },
 
-  /**
-   * HTTP PUT — full resource replacement
-   * @param {string} url
-   * @param {object} data - Request body
-   * @param {string|null} token - JWT bearer token
-   */
-  put: async (url, data = {}, token = null) => {
-    try {
-      if (isDev) console.debug('[API PUT]', url);
-      const response = await fetch(url, {
-        method: 'PUT',
-        headers: getAuthHeaders(token),
-        body: JSON.stringify(data),
-      });
-      return handleUnauthorized(response);
-    } catch (error) {
-      console.error('[API PUT Error]', url, error);
-      throw error;
-    }
+  PROJECTS: {
+    ALL: "/projects",
+
+    DETAIL: (id) =>
+      `/projects/${id}`,
+
+    CATEGORIES:
+      "/projects/categories",
+
+    SUBMIT: "/projects",
   },
 
-  /**
-   * HTTP PATCH — partial resource update
-   * @param {string} url
-   * @param {object} data - Partial update body
-   * @param {string|null} token - JWT bearer token
-   */
-  patch: async (url, data = {}, token = null) => {
-    try {
-      if (isDev) console.debug('[API PATCH]', url);
-      const response = await fetch(url, {
-        method: 'PATCH',
-        headers: getAuthHeaders(token),
-        body: JSON.stringify(data),
-      });
-      return handleUnauthorized(response);
-    } catch (error) {
-      console.error('[API PATCH Error]', url, error);
-      throw error;
-    }
+  NOTIFICATIONS: {
+    ALL: "/notifications",
+
+    READ: (id) =>
+      `/notifications/${id}/read`,
+
+    READ_ALL:
+      "/notifications/read-all",
   },
 
-  /**
-   * HTTP DELETE
-   * @param {string} url
-   * @param {string|null} token - JWT bearer token
-   */
-  delete: async (url, token = null) => {
-    try {
-      if (isDev) console.debug('[API DELETE]', url);
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers: getAuthHeaders(token),
-      });
-      return handleUnauthorized(response);
-    } catch (error) {
-      console.error('[API DELETE Error]', url, error);
-      throw error;
-    }
+  USERS: {
+    PROFILE: "/users/profile",
+
+    ACHIEVEMENTS:
+      "/users/achievements",
   },
 };
+
+// ---------------------------------------------------------------------------
+// API Utility Methods
+// ---------------------------------------------------------------------------
+
+export const apiUtils = {
+  get: (
+    url,
+    config = {}
+  ) =>
+    API.get(
+      url,
+      config
+    ),
+
+  post: (
+    url,
+    data = {},
+    config = {}
+  ) =>
+    API.post(
+      url,
+      data,
+      config
+    ),
+
+  put: (
+    url,
+    data = {},
+    config = {}
+  ) =>
+    API.put(
+      url,
+      data,
+      config
+    ),
+
+  patch: (
+    url,
+    data = {},
+    config = {}
+  ) =>
+    API.patch(
+      url,
+      data,
+      config
+    ),
+
+  delete: (
+    url,
+    config = {}
+  ) =>
+    API.delete(
+      url,
+      config
+    ),
+};
+
+// ---------------------------------------------------------------------------
+// Default Export
+// ---------------------------------------------------------------------------
+
+export default API;
