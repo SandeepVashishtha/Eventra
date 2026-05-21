@@ -11,6 +11,7 @@ import {
   Gift,
   Share2,
 } from "lucide-react";
+import { toast } from "react-toastify";
 import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
 import ShareMenu from "../../components/common/ShareMenu";
 import { generateEventSharingData } from "../../utils/shareUtils";
@@ -46,10 +47,15 @@ const EventCard = ({ event }) => {
     navigator.clipboard
       .writeText(shareUrl)
       .then(() => {
-        alert("Event link copied to clipboard!");
+        toast.success("Event link copied to clipboard!", {
+          autoClose: 2000,
+        });
       })
       .catch((err) => {
         console.error("Failed to copy: ", err);
+        toast.error("Could not copy link. Please try again.", {
+          autoClose: 2500,
+        });
       });
   };
 
