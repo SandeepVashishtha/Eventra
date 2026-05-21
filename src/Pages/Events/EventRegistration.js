@@ -19,6 +19,22 @@ import { API_ENDPOINTS } from "../../config/api";
 import { toast } from "react-toastify";
 import mockEvents from "./eventsMockData.json";
 
+const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
+const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
+const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
+
+function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
+  if (EMAILJS_PUBLIC_KEY && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && window.emailjs) {
+    window.emailjs.init(EMAILJS_PUBLIC_KEY);
+    window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email: userEmail,
+      to_name: userName,
+      event_name: eventName,
+      event_date: eventDate,
+    }).catch(() => {});
+  }
+}
+
 const EventRegistration = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
@@ -135,6 +151,7 @@ const EventRegistration = () => {
       if (response.ok) {
         setRegistered(true);
         toast.success("Registration successful!");
+        sendConfirmationEmail(formData.email, formData.name, event?.title, event?.date);
         // ── Save to My Events ──
         addRegistration(event, formData);
         // Redirect to event details after 2 seconds
