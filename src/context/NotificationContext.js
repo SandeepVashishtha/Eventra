@@ -88,10 +88,10 @@ export const NotificationProvider = ({ children }) => {
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       setUnreadCount(0);
 
-      await Promise.allSettled(
-        unread.map((n) =>
-          apiUtils.put(API_ENDPOINTS.NOTIFICATIONS.READ(n.id), {}, token)
-        )
+      await apiUtils.put(
+        API_ENDPOINTS.NOTIFICATIONS.READ_ALL,
+        {},
+        token
       );
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
