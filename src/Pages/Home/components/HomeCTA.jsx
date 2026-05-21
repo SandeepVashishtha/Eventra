@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function CTASection() {
   return (
@@ -30,23 +31,29 @@ export default function CTASection() {
 
           {/* Buttons container */}
           <motion.div className="flex flex-col sm:flex-row justify-center gap-6 mb-10">
-            {/* Explore Events Button */}
-            <a
-              href="#hackathons"
-              className="inline-flex items-center gap-2 z-[50] bg-blue-600 hover:bg-blue-700 text-white px-8 py-3.5 rounded-lg font-semibold shadow-sm transition-all duration-200 ease-out"
+            {/* --------------------------
+                Explore Events Button
+                Uses ArrowRight icon
+            -------------------------- */}
+            <Link
+              to="/hackathons"
+              className="inline-flex items-center gap-2 z-[50] bg-blue-100 dark:bg-blue-900 text-black dark:text-white px-8 py-3 rounded-full font-semibold shadow-lg border border-blue-200 dark:border-blue-700 hover:bg-blue-200 dark:hover:bg-blue-800 hover:scale-105 transition-all duration-300 ease-out"
             >
               Explore Hackathons
               <ArrowRight className="w-5 h-5" />
-            </a>
+            </Link>
 
-            {/* Host Your Event Button */}
-            <a
-              href="about"
-              className="inline-flex items-center z-[50] gap-2 bg-transparent border border-gray-300 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300 px-8 py-3.5 rounded-lg font-semibold shadow-sm transition-all duration-200 ease-out"
+            {/* --------------------------
+                Host Your Event Button
+              Uses Sparkles icon
+            -------------------------- */}
+            <Link
+              to="/about"
+              className="inline-flex items-center z-[50] gap-2 bg-yellow-100 dark:bg-yellow-900 text-black dark:text-white px-8 py-3 rounded-full font-semibold shadow-lg border border-yellow-200 dark:border-yellow-700 hover:bg-yellow-200 dark:hover:bg-yellow-800 hover:scale-105 transition-all duration-300 ease-out"
             >
               Know us better
               <Sparkles className="w-5 h-5" />
-            </a>
+            </Link>
           </motion.div>
 
           {/* Last line */}
