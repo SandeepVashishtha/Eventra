@@ -726,7 +726,7 @@ const EventCreation = () => {
                 </div>
               </motion.div>
 
-              {/* Description */}
+                            {/* Description */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -743,16 +743,42 @@ const EventCreation = () => {
                   onChange={handleInputChange}
                   placeholder="Describe your event"
                   rows={4}
+                  maxLength={500}
                   className={`w-full border ${errors.description
                       ? "border-red-500"
                       : "border-gray-300 dark:border-gray-600"
                     } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
                 />
-                {errors.description && (
-                  <span className="text-red-500 text-sm mt-1">
-                    {errors.description}
-                  </span>
-                )}
+
+                {/* Character counter + error row */}
+                <div className="flex justify-between items-start mt-1">
+                  <div className="flex-1">
+                    {errors.description && (
+                      <span className="text-red-500 text-sm">
+                        {errors.description}
+                      </span>
+                    )}
+                  </div>
+                  {(() => {
+                    const len = formData.description.length;
+                    const max = 500;
+                    const ratio = len / max;
+                    const counterColor =
+                      ratio >= 0.95
+                        ? "text-red-500"
+                        : ratio >= 0.8
+                        ? "text-amber-500"
+                        : "text-gray-500 dark:text-gray-400";
+                    return (
+                      <span
+                        className={`text-xs font-medium ml-2 tabular-nums ${counterColor}`}
+                        aria-live="polite"
+                      >
+                        {len} / {max}
+                      </span>
+                    );
+                  })()}
+                </div>
               </motion.div>
 
               {/* Category */}
