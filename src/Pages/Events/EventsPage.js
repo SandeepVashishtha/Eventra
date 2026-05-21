@@ -197,6 +197,20 @@ const EventsPage = () => {
                 {filter.label}
               </button>
             ))}
+            
+            {/* Clear Filters Button */}
+            {(filterType !== "all" || sortType !== "Newest" || searchQuery !== "") && (
+              <button
+                onClick={() => {
+                  setFilterType("all");
+                  setSortType("Newest");
+                  setSearchQuery("");
+                }}
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-full transition bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 dark:bg-red-900/30 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/50 font-semibold"
+              >
+                Clear Filters
+              </button>
+            )}
           </div>
 
           {/* Sort Dropdown and View Toggle */}
