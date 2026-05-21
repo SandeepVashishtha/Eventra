@@ -72,6 +72,8 @@ const EventCreation = () => {
   });
   const [errors, setErrors] = useState("");
   const [newTag, setNewTag] = useState("");
+  // Track whether draft has been loaded to avoid overwriting on initial mount
+  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
 
   const categories = [
     { label: "Conference", value: "CONFERENCE" },
@@ -424,6 +426,8 @@ const EventCreation = () => {
       try {
         const parsed = JSON.parse(saved);
         setFormData(prev => ({ ...prev, ...parsed, banner: null, bannerPreview: null }));
+        // Mark draft as loaded after initializing form data
+        setIsDraftLoaded(true);
       } catch (e) { }
     }
   }, []);
@@ -439,9 +443,11 @@ const EventCreation = () => {
   }, [successMessage, generalError]);
 
   useEffect(() => {
-    const { banner, bannerPreview, ...saveable } = formData;
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
-  }, [formData]);
++    // Prevent saving before draft is loaded to avoid overwriting existing draft
++    if (!isDraftLoaded) return;
++    const { banner, bannerPreview, ...saveable } = formData;
++    localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
++  }, [formData, isDraftLoaded]);
 
   const resetForm = () => {
     setFormData({
