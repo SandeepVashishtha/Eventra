@@ -9,6 +9,7 @@ import Fuse from "fuse.js";
 import StyledDropdown from "../../components/StyledDropdown";
 import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import ActiveFilters from "./ActiveFilters";
 
 const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
   if (isLoading) {
@@ -23,8 +24,7 @@ const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
 
   if (filteredEvents.length === 0) {
     return (
-      <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
-      </div>
+      <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]"></div>
     );
   }
 
@@ -32,10 +32,10 @@ const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
     <div
       key={filterType + viewMode}
       className={`grid gap-6 ${
-  viewMode === "grid"
-    ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-    : "grid-cols-1 max-w-4xl mx-auto"
-}`}
+        viewMode === "grid"
+          ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+          : "grid-cols-1 max-w-4xl mx-auto"
+      }`}
     >
       {filteredEvents.map((event) => (
         <EventCard key={event.id} event={event} />
@@ -45,8 +45,9 @@ const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
 };
 
 const EventsPage = () => {
-  useDocumentTitle("Eventra | Events")
-  const initialSearchQuery = new URLSearchParams(window.location.search).get("search") || "";
+  useDocumentTitle("Eventra | Events");
+  const initialSearchQuery =
+    new URLSearchParams(window.location.search).get("search") || "";
   const [events, setEvents] = useState([]);
   const [filterType, setFilterType] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
@@ -64,30 +65,33 @@ const EventsPage = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleSearch = useCallback((query = "") => {
-    setSearchQuery(query);
+  const handleSearch = useCallback(
+    (query = "") => {
+      setSearchQuery(query);
 
-    const fuse = new Fuse(events, {
-      keys: ["title", "description", "location", "tags", "type"],
-      threshold: 0.35,
-    });
+      const fuse = new Fuse(events, {
+        keys: ["title", "description", "location", "tags", "type"],
+        threshold: 0.35,
+      });
 
-    let results = events;
-    if (query.trim()) {
-      results = fuse.search(query).map((res) => res.item);
-    }
+      let results = events;
+      if (query.trim()) {
+        results = fuse.search(query).map((res) => res.item);
+      }
 
-    const final = results.filter((event) => {
-      return (
-        filterType === "all" ||
-        (filterType === "upcoming" && event.status === "upcoming") ||
-        (filterType === "past" && event.status === "past") ||
-        event.type === filterType
-      );
-    });
+      const final = results.filter((event) => {
+        return (
+          filterType === "all" ||
+          (filterType === "upcoming" && event.status === "upcoming") ||
+          (filterType === "past" && event.status === "past") ||
+          event.type === filterType
+        );
+      });
 
-    setFilteredEvents(final);
-  }, [events, filterType]);
+      setFilteredEvents(final);
+    },
+    [events, filterType],
+  );
 
   useEffect(() => {
     handleSearch(searchQuery);
@@ -96,7 +100,10 @@ const EventsPage = () => {
   useEffect(() => {
     if (!isLoading && initialSearchQuery) {
       setTimeout(() => {
-        cardSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        cardSectionRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
       }, 100);
     }
   }, [isLoading, initialSearchQuery]);
@@ -142,9 +149,7 @@ const EventsPage = () => {
         ref={cardSectionRef}
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
       >
-        <div
-          className="mb-5 sm:mb-6 flex flex-col gap-3"
-        >
+        <div className="mb-5 sm:mb-6 flex flex-col gap-3">
           <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center sm:justify-start">
             {[
               { key: "all", label: "All" },
@@ -184,9 +189,7 @@ const EventsPage = () => {
               />
             </div>
 
-            <div
-              className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm"
-            >
+            <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
               <button
                 onClick={() => setViewMode("grid")}
                 className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
@@ -214,6 +217,17 @@ const EventsPage = () => {
             </div>
           </div>
         </div>
+
+        <ActiveFilters
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          filterType={filterType}
+          setFilterType={setFilterType}
+          sortType={sortType}
+          setSortType={setSortType}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+        />
 
         {renderCardSection(isLoading, filteredEvents, viewMode, filterType)}
       </div>
