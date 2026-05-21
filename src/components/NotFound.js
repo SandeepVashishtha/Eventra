@@ -99,7 +99,7 @@ const NotFoundPage = () => {
         <motion.h2
           variants={itemVariants}
           // UPDATED: Text colors
-          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight px-4 text-white"
+                    className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight px-4 text-gray-900 dark:text-white"
         >
           Lost in the <span className="text-indigo-600 dark:text-blue-400">Eventra</span> Space
         </motion.h2>
