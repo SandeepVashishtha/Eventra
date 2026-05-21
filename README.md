@@ -20,7 +20,7 @@ Eventra is a comprehensive, open-source platform designed to empower organizers 
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
-- [Google OAuth Setup](#google-oauth-setup)
+
 - [Environment Variables](#environment-variables)
 - [Project Structure](#project-structure)
 - [Deployment](#deployment)
@@ -135,36 +135,6 @@ Follow these steps to set up and run the frontend application on your local mach
     ```
     The application will be available at `http://localhost:3000`.
 
-## Google OAuth Setup
-
-Follow these steps to enable Google Sign-In for the project:
-
-1. **Create Google Client ID**
-   - Go to [Google Cloud Console](https://console.cloud.google.com/).
-   - Create a new project (or use existing one).
-   - Navigate to **APIs & Services > Credentials**.
-   - Click **Create Credentials > OAuth 2.0 Client IDs**.
-   - Select **Web application**.
-   - Add your frontend URL in **Authorized JavaScript origins** (e.g., http://localhost:3000).
-   - Add redirect URI if using redirect flow (optional).
-   - Copy the **Client ID**.
-
-2. **Add Client ID to Environment**
-   - Open `.env` or create `.env` in the root of the project.
-   - Add the following line:
-     ```env
-     REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id_here
-     ```
-
-3. **Run the App**
-   - Install dependencies: `npm install`  
-   - Start frontend: `npm start`
-   - Go to Signup/Login page and you should see **Sign in with Google** button.
-   - Test signing in with your Google account.
-
-4. **Notes**
-   - Ensure your Google account allows OAuth for the given project.
-   - For production, add your deployed domain in **Authorized JavaScript origins**.
 
 
 ## Environment Variables
@@ -173,7 +143,7 @@ Create a `.env` file in the project root and add the variables below.
 
 ```env
 REACT_APP_API_URL=http://localhost:8080/api
-REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id_here
+
 ```
 
 ## Project Structure
@@ -249,6 +219,17 @@ We welcome contributions from the community! To get started, please follow these
 ## License
 
 This project is licensed under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for details.
+
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=sandeepvashishtha%2Feventra&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=sandeepvashishtha/eventra&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=sandeepvashishtha/eventra&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=sandeepvashishtha/eventra&type=date&legend=top-left" />
+ </picture>
+</a>
 
 ## Contributors
 

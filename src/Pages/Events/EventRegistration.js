@@ -12,7 +12,9 @@ import {
   CheckCircle,
   Loader2,
 } from "lucide-react";
+import { getEventStatus } from "../../utils/eventUtils";
 import { useAuth } from "../../context/AuthContext";
+import { useMyEvents } from "../../context/MyEventsContext";
 import { API_ENDPOINTS } from "../../config/api";
 import { toast } from "react-toastify";
 import mockEvents from "./eventsMockData.json";
@@ -21,6 +23,7 @@ const EventRegistration = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated, token } = useAuth();
+  const { addRegistration } = useMyEvents();
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -46,7 +49,7 @@ const EventRegistration = () => {
       const foundEvent = mockEvents.find((e) => e.id === parseInt(eventId));
       
       if (foundEvent) {
-        setEvent(foundEvent);
+        setEvent({ ...foundEvent, status: getEventStatus(foundEvent) });
         
         // Pre-fill form if user is authenticated
         if (isAuthenticated() && user) {
@@ -132,7 +135,8 @@ const EventRegistration = () => {
       if (response.ok) {
         setRegistered(true);
         toast.success("Registration successful!");
-        
+        // ── Save to My Events ──
+        addRegistration(event, formData);
         // Redirect to event details after 2 seconds
         setTimeout(() => {
           navigate(`/events/${eventId}`);
@@ -143,7 +147,32 @@ const EventRegistration = () => {
       }
     } catch (error) {
       console.error("Registration error:", error);
-      toast.error("Something went wrong. Please try again later.");
+      
+      // ── Offline Sync Queue Fallback ──
+      const payload = {
+        ...formData,
+        eventId: parseInt(eventId),
+        userId: user?.id || null,
+      };
+      
+      const QUEUE_KEY = 'eventra_offline_queue';
+      let queue = [];
+      try {
+        const queueStr = localStorage.getItem(QUEUE_KEY);
+        if (queueStr) queue = JSON.parse(queueStr);
+      } catch (e) {
+        queue = [];
+      }
+      
+      queue.push({ eventId: parseInt(eventId), payload });
+      localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+
+      setRegistered(true);
+      addRegistration(event, formData);
+      toast.warning("Network error. Registration queued and will sync when you are online.", { autoClose: 4000 });
+      setTimeout(() => {
+        navigate(`/events/${eventId}`);
+      }, 3000);
     } finally {
       setSubmitting(false);
     }
@@ -169,6 +198,31 @@ const EventRegistration = () => {
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Events
+        </Link>
+      </div>
+    );
+  }
+
+  const isPastEvent = new Date(`${event.date} ${event.time}`) < new Date();
+  const isEventFull = event.attendees >= event.maxAttendees;
+
+  if (isPastEvent || isEventFull) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+          Registration Unavailable
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
+          {isPastEvent 
+            ? "This event has already ended." 
+            : "This event has reached maximum capacity."}
+        </p>
+        <Link
+          to={`/events/${eventId}`}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-colors font-medium"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Event Details
         </Link>
       </div>
     );

@@ -65,7 +65,7 @@ const HackathonCTA = () => {
       <div className="flex flex-col md:flex-row justify-center gap-4 relative z-10">
         <motion.a
           href="/hackathons"
-          className="inline-flex items-center justify-center gap-2 bg-blue-100 hover:bg-blue-200 text-black font-semibold px-8 py-4 rounded-full shadow-lg transition-transform duration-300"
+          className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-lg shadow-lg transition-transform duration-300"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           data-aos="zoom-in"
@@ -77,7 +77,7 @@ const HackathonCTA = () => {
         <motion.button
           onClick={() => setShowModal(true)}
           // UPDATED: The secondary button needs a subtle dark mode style
-          className="inline-flex items-center justify-center gap-2 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:dark:bg-gray-700 hover:dark:text-white font-semibold px-8 py-4 rounded-full shadow-lg hover:scale-105 transition-transform duration-300"
+          className="inline-flex items-center justify-center gap-2 border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-300 dark:hover:bg-slate-800 font-semibold px-8 py-4 rounded-lg shadow-lg hover:scale-105 transition-transform duration-300"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           data-aos="zoom-in"
@@ -99,7 +99,7 @@ const HackathonCTA = () => {
             </p>
             {/* The close button works well in both themes. */}
             <button
-              className="mt-6 px-6 py-2 rounded-lg bg-blue-100 text-black hover:bg-blue-200 transition"
+              className="mt-6 px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
               onClick={() => setShowModal(false)}
             >
               Close
