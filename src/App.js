@@ -4,10 +4,6 @@ import "./App.css";
 
 // --------------- LAYOUT
 import Navbar from "./components/Layout/Navbar";
-// Lazy load heavy components
-const Footer = lazy(() => import("./components/Layout/Footer"));
-const Chatbot = lazy(() => import("./components/Chatbot"));
-const AppRoutes = lazy(() => import("./components/AppRoutes")); // This is Heaviestt
 
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
@@ -21,6 +17,10 @@ import { MyEventsProvider } from "./context/MyEventsContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { useModelContext } from "./hooks/useModelContext";
 import useOfflineSync from "./hooks/useOfflineSync";
+// Lazy load heavy components
+const Footer = lazy(() => import("./components/Layout/Footer"));
+const Chatbot = lazy(() => import("./components/Chatbot"));
+const AppRoutes = lazy(() => import("./components/AppRoutes")); // This is Heaviestt
 
 const OfflineSyncManager = () => {
   useOfflineSync();

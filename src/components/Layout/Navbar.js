@@ -229,9 +229,23 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
 
 const MobileDrawerHeader = ({ closeBtnRef, closeAllMenus }) => (
   <div className="flex items-center justify-between p-3.5 sm:p-4 border-b border-gray-200 dark:border-white/20">
-    <h2 className="text-xl sm:text-2xl font-bold text-black dark:text-white" style={{ fontFamily: '"Anton", sans-serif' }}>
-      Eventra
-    </h2>
+   <h2
+  style={{
+    fontFamily: "'Oxanium', monospace",
+    fontSize: "1.4rem",
+    fontWeight: 800,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    background: "linear-gradient(135deg, #ffffff 0%, #a5b4fc 50%, #6366f1 100%)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    backgroundClip: "text",
+    margin: 0,
+    lineHeight: 1,
+  }}
+>
+  Eventra
+</h2>
     <div className="flex items-center gap-3">
       <button
         ref={closeBtnRef}
@@ -567,9 +581,24 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         <div className="max-w-7xl mx-auto flex items-center justify-between h-[72px] px-6 lg:px-8 relative">
           {/* Logo on the left */}
           <Link to="/" className="flex items-center min-w-[160px] z-20">
-            <h2 className="text-3xl font-semibold tracking-tight text-black dark:text-white" style={{ fontFamily: '"Anton", sans-serif' }}>
-              Eventra
-            </h2>
+            <h2
+  style={{
+    fontFamily: "'Oxanium', monospace",
+    fontSize: "1.4rem",
+    fontWeight: 800,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: "transparent",
+    background: "linear-gradient(135deg, #ffffff 0%, #a5b4fc 50%, #6366f1 100%)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    backgroundClip: "text",
+    margin: 0,
+    lineHeight: 1,
+  }}
+>
+  Eventra
+</h2>
           </Link>
 
           {/* Centered nav links */}
