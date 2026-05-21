@@ -75,7 +75,7 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center relative z-10">
+      <div className="relative px-4 min-h-[75vh] flex flex-col items-center justify-center text-center z-10">
         <motion.h1
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
