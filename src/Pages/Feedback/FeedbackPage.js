@@ -397,7 +397,6 @@ const FeedbackPage = () => {
 
     // Log for debugging
     if (Object.keys(newErrors).length > 0) {
-      console.log("Validation errors:", newErrors);
     }
 
     return Object.keys(newErrors).length === 0;
@@ -469,8 +468,6 @@ const FeedbackPage = () => {
       setSubmittedFeedback((prev) => [...prev, payload]);
 
       // Log submission (for debugging)
-      console.log("Feedback submitted:", payload);
-      console.log("All feedback:", [...submittedFeedback, payload]);
 
       toast.success(
           "Thank you for your feedback! We've received your submission and will review it shortly"

@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import useDocumentTitle from "../hooks/useDocumentTitle";
 import {
   Server,
   AlertCircle,
@@ -20,8 +21,7 @@ const endpoints = [
     method: "GET",
     url: "/api/hackathons",
     example: `fetch("/api/hackathons")
-  .then(res => res.json())
-  .then(data => console.log(data));`,
+  .then(res => res.json())`,
     response: `[
   {
     "id": 1,
@@ -32,6 +32,7 @@ const endpoints = [
   }
 ]`,
   },
+];
   {
     icon: <BookOpen className="w-7 h-7 text-emerald-300" />,
     title: "Projects",
@@ -84,6 +85,7 @@ const endpoints = [
 ];
 
 const ApiDocs = () => {
+  useDocumentTitle("Eventra | API Docs");
   return (
     <div className="pastel-grid-bg min-h-screen bg-white dark:bg-[#121212] text-gray-900 dark:text-gray-100 px-6 py-16">
       {/* Hero Section */}
