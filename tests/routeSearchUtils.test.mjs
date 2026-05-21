@@ -39,5 +39,6 @@ assert.deepEqual(
   events.map((event) => event.id),
   "empty route search returns the full listing"
 );
-
-console.log("route search query matching passed");
+if (process.env.NODE_ENV === "development") {
+ console.log("route search query matching passed");
+}

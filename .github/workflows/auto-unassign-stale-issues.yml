@@ -29,8 +29,10 @@ jobs:
             const daysThreshold = parseInt(process.env.DAYS_THRESHOLD || '${{ inputs.days_threshold || '7' }}');
             const millisecondsThreshold = daysThreshold * 24 * 60 * 60 * 1000;
             
-            console.log(`🔍 Checking for issues assigned more than ${daysThreshold} days ago without PRs...`);
-            
+            if (process.env.NODE_ENV === "development") {
+               console.log(`🔍 Checking for issues assigned more than ${daysThreshold} days ago without PRs...`);
+              }
+
             // Get all open issues with assignees
             const { data: issues } = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
@@ -40,7 +42,9 @@ jobs:
               per_page: 100
             });
             
-            console.log(`📋 Found ${issues.length} assigned open issues to check`);
+            if (process.env.NODE_ENV === "development") {
+             console.log(`📋 Found ${issues.length} assigned open issues to check`);
+            }
             
             let processedCount = 0;
             let unassignedCount = 0;
@@ -52,7 +56,9 @@ jobs:
               }
               
               processedCount++;
-              console.log(`\n📝 Processing issue #${issue.number}: "${issue.title}"`);
+              if (process.env.NODE_ENV === "development") {
+               console.log(`\n📝 Processing issue #${issue.number}: "${issue.title}"`);
+              }
               
               // Get assignment events to find when the issue was assigned
               const { data: events } = await github.rest.issues.listEvents({
@@ -68,8 +74,10 @@ jobs:
                 .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
               
               if (assignmentEvents.length === 0) {
-                console.log(`⚠️  No assignment events found for issue #${issue.number}`);
-                continue;
+                   if (process.env.NODE_ENV === "development") {
+                     console.log(`⚠️ No assignment events found for issue #${issue.number}`);
+                    }               
+                    continue;
               }
               
               const latestAssignment = assignmentEvents[0];
@@ -77,11 +85,14 @@ jobs:
               const now = new Date();
               const timeDiff = now - assignedDate;
               
-              console.log(`📅 Issue #${issue.number} assigned ${Math.floor(timeDiff / (24 * 60 * 60 * 1000))} days ago to @${latestAssignment.assignee?.login || 'unknown'}`);
-              
+              if (process.env.NODE_ENV === "development") {
+               console.log(`📅 Issue #${issue.number} assigned ${Math.floor(timeDiff / (24 * 60 * 60 * 1000))} days ago to @${latestAssignment.assignee?.login || 'unknown'}`);
+              }               
               // Check if issue was assigned more than threshold days ago
               if (timeDiff < millisecondsThreshold) {
-                console.log(`✅ Issue #${issue.number} is within the ${daysThreshold}-day threshold`);
+                if (process.env.NODE_ENV === "development") {
+                 console.log(`✅ Issue #${issue.number} is within the ${daysThreshold}-day threshold`);
+                }
                 continue;
               }
               
@@ -104,22 +115,27 @@ jobs:
                   
                   if (searchResults.total_count > 0) {
                     hasPR = true;
-                    console.log(`🔗 Found ${searchResults.total_count} PR(s) referencing issue #${issue.number}`);
+                    if (process.env.NODE_ENV === "development") {
+                     console.log(`🔗 Found ${searchResults.total_count} PR(s) referencing issue #${issue.number}`);
+                    }
                     break;
                   }
                 } catch (error) {
-                  console.log(`⚠️  Search error for "${query}": ${error.message}`);
+                  console.error(`⚠️  Search error for "${query}": ${error.message}`);
                 }
               }
               
               if (hasPR) {
-                console.log(`✅ Issue #${issue.number} has associated PR(s), keeping assignment`);
+                if (process.env.NODE_ENV === "development") {
+                 console.log(`✅ Issue #${issue.number} has associated PR(s), keeping assignment`);
+                }
                 continue;
               }
               
               // No PR found and issue is stale - unassign
-              console.log(`🚨 Issue #${issue.number} has no associated PRs and is stale - proceeding with unassignment`);
-              
+              if (process.env.NODE_ENV === "development") {
+               console.log(`🚨 Issue #${issue.number} has no associated PRs and is stale - proceeding with unassignment`);
+              }
               try {
                 // Get current assignees
                 const assignees = issue.assignees.map(assignee => assignee.login);
@@ -159,18 +175,19 @@ jobs:
                 });
                 
                 unassignedCount++;
-                console.log(`✅ Successfully unassigned and commented on issue #${issue.number}`);
-                
+                if (process.env.NODE_ENV === "development") {
+                 console.log(`✅ Successfully unassigned and commented on issue #${issue.number}`);
+                }
               } catch (error) {
-                console.log(`❌ Failed to unassign issue #${issue.number}: ${error.message}`);
+                console.error(`❌ Failed to unassign issue #${issue.number}: ${error.message}`);
               }
               
               // Add a small delay to avoid rate limiting
               await new Promise(resolve => setTimeout(resolve, 1000));
             }
-            
-            console.log(`\n📊 Summary: Processed ${processedCount} issues, unassigned ${unassignedCount} stale issues`);
-            
+            if (process.env.NODE_ENV === "development") {
+             console.log(`\n📊 Summary: Processed ${processedCount} issues, unassigned ${unassignedCount} stale issues`);
+            }
             // Create a summary comment if any issues were unassigned
             if (unassignedCount > 0) {
               const summaryBody = [
@@ -202,8 +219,9 @@ jobs:
                 body: summaryBody,
                 labels: ['automation', 'maintenance']
               });
-              
-              console.log(`📋 Created summary issue #${summaryIssue.data.number}`);
+              if (process.env.NODE_ENV === "development") {
+               console.log(`📋 Created summary issue #${summaryIssue.data.number}`);
+              }
             }
         env:
           DAYS_THRESHOLD: ${{ inputs.days_threshold || '7' }}

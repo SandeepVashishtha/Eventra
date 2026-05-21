@@ -15,13 +15,9 @@ import "./App.css";
 
 // Layout & Components
 import Navbar from "./components/Layout/Navbar";
-
 import ScrollToTop from "./components/ScrollToTop";
-
 import FeedbackButton from "./components/FeedbackButton";
-
 import FluidCursor from "./jhalak/FluidCursor";
-
 import PageTransition from "./components/common/PageTransition";
 
 // Pages
@@ -29,15 +25,10 @@ import RegistrationPage from "./Pages/RegistrationPage";
 
 // Context & Hooks
 import NotificationProvider from "./components/common/NotificationProvider";
-
 import { AuthProvider } from "./context/AuthContext";
-
 import { MyEventsProvider } from "./context/MyEventsContext";
-
 import { ThemeProvider } from "./context/ThemeContext";
-
-import { useModelContext } from "./hooks/useModelContext";
-
+import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
 import useOfflineSync from "./hooks/useOfflineSync";
 
 // Lazy Loaded Components
@@ -49,6 +40,10 @@ const Chatbot = lazy(() =>
   import("./components/Chatbot")
 );
 
+const SessionRecovery = lazy(() =>
+  import("./components/SessionRecovery")
+);
+
 const AppRoutes = lazy(() =>
   import("./components/AppRoutes")
 );
@@ -56,52 +51,38 @@ const AppRoutes = lazy(() =>
 // Offline Sync
 const OfflineSyncManager = () => {
   useOfflineSync();
-
   return null;
 };
 
 function App() {
   const [cursorEnabled, setCursorEnabled] =
     useState(
-      localStorage.getItem(
-        "cursor"
-      ) !== "off"
+      localStorage.getItem("cursor") !== "off"
     );
-
-  useModelContext();
 
   // Toggle Cursor
   const toggleCursor = () => {
-    const newValue =
-      !cursorEnabled;
+    const newValue = !cursorEnabled;
 
-    setCursorEnabled(
-      newValue
-    );
+    setCursorEnabled(newValue);
 
     localStorage.setItem(
       "cursor",
-      newValue
-        ? "on"
-        : "off"
+      newValue ? "on" : "off"
     );
   };
 
   // Listen For Cursor Preference Changes
   useEffect(() => {
-    const handleCursorPreference =
-      (event) => {
-        if (
-          event?.detail
-            ?.cursorEnabled !==
-          undefined
-        ) {
-          setCursorEnabled(
-            event.detail
-              .cursorEnabled
-          );
-        }
-      };
+    const handleCursorPreference = (event) => {
+      if (
+        event?.detail?.cursorEnabled !== undefined
+      ) {
+        setCursorEnabled(
+          event.detail.cursorEnabled
+        );
+      }
+    };
 
     window.addEventListener(
       "cursorPreferenceChanged",
@@ -120,23 +101,18 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <MyEventsProvider>
-          <NotificationProvider />
+          <SessionRecoveryProvider>
+            <NotificationProvider />
 
-          <OfflineSyncManager />
+            <OfflineSyncManager />
 
-          <Router>
+            <Router>
             <div className="App">
-              {/* Navbar */}
               <Navbar
-                cursorEnabled={
-                  cursorEnabled
-                }
-                toggleCursor={
-                  toggleCursor
-                }
+                cursorEnabled={cursorEnabled}
+                toggleCursor={toggleCursor}
               />
 
-              {/* Main Content */}
               <main
                 className="
                   relative
@@ -174,40 +150,32 @@ function App() {
                     <Routes>
                       <Route
                         path="/register/:id"
-                        element={
-                          <RegistrationPage />
-                        }
+                        element={<RegistrationPage />}
                       />
 
                       <Route
                         path="*"
-                        element={
-                          <AppRoutes />
-                        }
+                        element={<AppRoutes />}
                       />
                     </Routes>
 
-                    {/* Global Components */}
                     <Chatbot />
-
                     <Footer />
                   </Suspense>
                 </PageTransition>
               </main>
 
-              {/* Utilities */}
               <ScrollToTop />
-
               <FeedbackButton />
 
-              {/* Cursor Effect */}
+              <SessionRecovery />
+
               <FluidCursor
-                enabled={
-                  cursorEnabled
-                }
+                enabled={cursorEnabled}
               />
             </div>
           </Router>
+          </SessionRecoveryProvider>
         </MyEventsProvider>
       </AuthProvider>
     </ThemeProvider>

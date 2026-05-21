@@ -11,7 +11,9 @@
 
 const { execSync } = require("child_process");
 
-console.log("🔧  Registering package-lock.json merge driver...");
+if (process.env.NODE_ENV === "development") {
+  console.log("🔧  Registering package-lock.json merge driver...");
+}
 
 try {
   // 1. Register the name of the driver
@@ -27,7 +29,9 @@ try {
     { stdio: "inherit" }
   );
 
-  console.log("✅  Done. Git will now resolve package-lock.json conflicts automatically.");
+  if (process.env.NODE_ENV === "development") {
+   console.log("✅  Done. Git will now resolve package-lock.json conflicts automatically.");
+  }
 } catch (error) {
   console.error("❌  Failed to register git merge driver:", error.message);
   process.exit(1);
