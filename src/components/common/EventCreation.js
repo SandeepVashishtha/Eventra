@@ -153,6 +153,18 @@ const EventCreation = () => {
       }
     }
 
+    formData.ticketTiers.forEach((tier, index) => {
+      if (!tier.name.trim()) {
+        newErrors[`ticketTier_${index}_name`] = "Ticket name is required";
+      }
+      if (Number(tier.price) < 0) {
+        newErrors[`ticketTier_${index}_price`] = "Price cannot be negative";
+      }
+      if (tier.capacity !== "" && tier.capacity !== null && Number(tier.capacity) < 1) {
+        newErrors[`ticketTier_${index}_capacity`] = "Capacity must be at least 1";
+      }
+    });
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -198,6 +210,10 @@ const EventCreation = () => {
         i === index ? { ...tier, [field]: value } : tier
       ),
     }));
+    const errorKey = `ticketTier_${index}_${field}`;
+    if (errors[errorKey]) {
+      setErrors((prev) => ({ ...prev, [errorKey]: "" }));
+    }
   };
 
   const addTicketTier = () => {
@@ -1321,45 +1337,66 @@ const EventCreation = () => {
                       )}
                     </div>
                     <div className="space-y-3">
-                      <input
-                        type="text"
-                        placeholder="Tier name"
-                        value={tier.name}
-                        onChange={(e) =>
-                          handleTicketTierChange(index, "name", e.target.value)
-                        }
-                        className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                      />
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="Tier name"
+                          value={tier.name}
+                          onChange={(e) =>
+                            handleTicketTierChange(index, "name", e.target.value)
+                          }
+                          className={`w-full border ${errors[`ticketTier_${index}_name`] ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500`}
+                        />
+                        {errors[`ticketTier_${index}_name`] && (
+                          <span className="text-red-500 text-sm mt-1 block">
+                            {errors[`ticketTier_${index}_name`]}
+                          </span>
+                        )}
+                      </div>
                       <div className="grid grid-cols-2 gap-3">
-                        <input
-                          type="number"
-                          placeholder="Price"
-                          min="0"
-                          step="0.01"
-                          value={tier.price}
-                          onChange={(e) =>
-                            handleTicketTierChange(
-                              index,
-                              "price",
-                              e.target.value
-                            )
-                          }
-                          className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                        />
-                        <input
-                          type="number"
-                          placeholder="Capacity (optional)"
-                          min="1"
-                          value={tier.capacity}
-                          onChange={(e) =>
-                            handleTicketTierChange(
-                              index,
-                              "capacity",
-                              e.target.value
-                            )
-                          }
-                          className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                        />
+                        <div>
+                          <input
+                            type="number"
+                            placeholder="Price"
+                            min="0"
+                            step="0.01"
+                            value={tier.price}
+                            onChange={(e) =>
+                              handleTicketTierChange(
+                                index,
+                                "price",
+                                e.target.value
+                              )
+                            }
+                            className={`w-full border ${errors[`ticketTier_${index}_price`] ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500`}
+                          />
+                          {errors[`ticketTier_${index}_price`] && (
+                            <span className="text-red-500 text-sm mt-1 block">
+                              {errors[`ticketTier_${index}_price`]}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <input
+                            type="number"
+                            placeholder="Capacity (optional)"
+                            min="1"
+                            value={tier.capacity}
+                            onChange={(e) =>
+                              handleTicketTierChange(
+                                index,
+                                "capacity",
+                                e.target.value
+                              )
+                            }
+                            className={`w-full border ${errors[`ticketTier_${index}_capacity`] ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500`}
+                          />
+                          {errors[`ticketTier_${index}_capacity`] && (
+                            <span className="text-red-500 text-sm mt-1 block">
+                              {errors[`ticketTier_${index}_capacity`]}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <textarea
                         placeholder="Description"
