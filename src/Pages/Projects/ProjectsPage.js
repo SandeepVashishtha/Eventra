@@ -8,8 +8,11 @@ import FeedbackButton from "../../components/FeedbackButton"; // Feedback floati
 import ProjectCTA from "./ProjectCTA";
 // Import mock data directly (assuming it's named mockProjectsData.json in the same folder as ProjectsPage.js)
 import mockProjects from "./mockProjectsData.json";
+// fix: import API config for real backend calls with mock fallback
+import { API_ENDPOINTS, apiUtils } from "../../config/api";
 
 import ModernSearchInput from "../../components/common/ModernSearchInput";
+import SearchEmptyState from "../../components/common/SearchEmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 // Skeleton loader for project cards while data is loading
@@ -72,33 +75,49 @@ const ProjectGallery = () => {
     issues: "Most Issues",
   };
 
-  // Fetch projects and categories from API (or mock data)
+  // fix: try real API first; fall back to mock data if API is unavailable or returns empty
   useEffect(() => {
     const fetchProjects = async () => {
       try {
         setIsLoading(true); // Set loading before fetching
         setError(""); // Reset error
 
-        // --- PRODUCTION LOGIC (Commented out for reliable local run) ---
-        /*
+        // --- PRODUCTION LOGIC: attempt real API call to Spring Boot backend ---
         const response = await apiUtils.get(API_ENDPOINTS.PROJECTS.LIST);
+
         if (response.ok) {
           const projectsData = await response.json();
-          setProjects(projectsData);
-          const categoriesResponse = await apiUtils.get(
-            API_ENDPOINTS.PROJECTS.CATEGORIES
-          );
-          if (categoriesResponse.ok) {
-            const categoriesData = await categoriesResponse.json();
-            setCategories(["all", ...categoriesData]);
-          }
-        } else {
-          throw new Error("Failed to fetch projects from API");
-        }
-        */
 
-        // --- MOCK DATA FALLBACK/REPLACEMENT ---
-        // Load mock data and simulate network delay
+          // fix: only use API data if it is non-empty; otherwise fall back to mock
+          if (projectsData && projectsData.length > 0) {
+            setProjects(projectsData);
+
+            // Attempt to fetch categories from API
+            try {
+              const categoriesResponse = await apiUtils.get(
+                API_ENDPOINTS.PROJECTS.CATEGORIES
+              );
+              if (categoriesResponse.ok) {
+                const categoriesData = await categoriesResponse.json();
+                setCategories(["all", ...categoriesData]);
+              } else {
+                // fix: derive categories from API project data if categories endpoint fails
+                const uniqueCategories = [...new Set(projectsData.map(p => p.category))];
+                setCategories(["all", ...uniqueCategories]);
+              }
+            } catch {
+              // fix: derive categories from API project data if categories endpoint throws
+              const uniqueCategories = [...new Set(projectsData.map(p => p.category))];
+              setCategories(["all", ...uniqueCategories]);
+            }
+
+            setIsLoading(false);
+            return; // exit — API data loaded successfully
+          }
+        }
+
+        // --- MOCK DATA FALLBACK: API unavailable, not ok, or returned empty array ---
+        console.warn("Projects API unavailable or empty — loading mock data.");
         setTimeout(() => {
           const projectsData = mockProjects;
           setProjects(projectsData);
@@ -110,9 +129,14 @@ const ProjectGallery = () => {
         }, 500);
 
       } catch (error) {
-        console.error("Error fetching projects:", error);
-        setError("Failed to load projects. Please try again later.");
-        setIsLoading(false);
+        // fix: on any network error fall back to mock instead of showing error
+        console.warn("Projects API error — falling back to mock data:", error.message);
+        setTimeout(() => {
+          setProjects(mockProjects);
+          const uniqueCategories = [...new Set(mockProjects.map(p => p.category))];
+          setCategories(["all", ...uniqueCategories]);
+          setIsLoading(false);
+        }, 500);
       }
     };
 
@@ -176,7 +200,7 @@ const ProjectGallery = () => {
 
   return (
     // UPDATED: Main page background
-    <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
+    <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100">
       {/* Hero Section with CTA */}
       <ProjectHero scrollToCard={scrollToCard} />
       {/* Main Container */}
@@ -185,7 +209,7 @@ const ProjectGallery = () => {
         <motion.div
           // UPDATED: Panel background and border
           className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8"
-          style={{ boxShadow: "0 10px 25px rgba(59, 130, 246, 0.08)", fontFamily: '"Big Shoulders Display", sans-seri'}}
+          style={{ boxShadow: "0 10px 25px rgba(59, 130, 246, 0.08)", fontFamily: '"Big Shoulders Display", sans-seri' }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -221,7 +245,7 @@ const ProjectGallery = () => {
                     aria-expanded={categoryOpen}
                   >
                     <span className="text-gray-700 dark:text-gray-200">
-                     {selectedCategories.length === 0 ? "All Categories" : `${selectedCategories.length} Selected`}
+                      {selectedCategories.length === 0 ? "All Categories" : `${selectedCategories.length} Selected`}
                     </span>
                     <FiX className="ml-2 text-gray-400 dark:text-gray-500" />
                   </button>
@@ -232,17 +256,16 @@ const ProjectGallery = () => {
                         className="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
                       >
                         {categories.filter((cat) => cat !== "all").map((cat) => (
-                        <li
-                          key={cat}
-                          onClick={() => toggleCategory(cat)}
-                          className={`px-4 py-2 cursor-pointer text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                            selectedCategories.includes(cat)
-                              ? "bg-blue-100 dark:bg-blue-900"
-                              : ""
-                          }`}
-                        >
-                          {cat}
-                        </li>
+                          <li
+                            key={cat}
+                            onClick={() => toggleCategory(cat)}
+                            className={`px-4 py-2 cursor-pointer text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 ${selectedCategories.includes(cat)
+                                ? "bg-blue-100 dark:bg-blue-900"
+                                : ""
+                              }`}
+                          >
+                            {cat}
+                          </li>
                         ))}
                       </motion.ul>
                     )}
@@ -281,7 +304,7 @@ const ProjectGallery = () => {
                         // UPDATED: Dropdown menu styles
                         className="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
                       >
-                      
+
                         {Object.entries(sortByLabels).map(([key, label]) => (
                           <li
                             key={key}
@@ -303,7 +326,7 @@ const ProjectGallery = () => {
               {/* Clear Filters Button */}
               <motion.button
                 whileHover={{ scale: 1.05 }}
-                className="whitespace-nowrap flex-shrink-0 px-4 py-3 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white text-sm font-semibold rounded-xl flex items-center gap-2 hover:from-blue-500 hover:to-cyan-500 transition-all shadow-lg"
+                className="whitespace-nowrap flex-shrink-0 px-4 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold rounded-lg flex items-center gap-2 hover:bg-gray-700 dark:hover:bg-gray-100 transition-all shadow-sm"
                 onClick={() => {
                   setSelectedCategories([]);// Reset category
                   setSearchQuery(""); // Clear search
@@ -414,45 +437,7 @@ const ProjectGallery = () => {
                 }}
               />
 
-              {/* Floating bubbles */}
-              <div className="absolute inset-0 z-0 overflow-hidden">
-                {[...Array(6)].map((_, i) => {
-                  const positions = [
-                    { left: "10%", top: "20%" },
-                    { left: "70%", top: "15%" },
-                    { left: "30%", top: "70%" },
-                    { left: "80%", top: "60%" },
-                    { left: "50%", top: "40%" },
-                    { left: "20%", top: "50%" },
-                  ];
-                  const size = 30 + Math.random() * 40;
-                  return (
-                    <motion.div
-                      key={i}
-                      className="absolute rounded-full bg-sky-200 dark:bg-sky-500/40"
-                      style={{
-                        width: size,
-                        height: size,
-                        left: positions[i].left,
-                        top: positions[i].top,
-                        opacity: 0.6, // Increased from 0.3
-                        filter: "blur(2px)",
-                      }}
-                      animate={{
-                        y: [0, -30, 0],
-                        x: [0, 10, -10, 0],
-                        scale: [1, 1.2, 1],
-                      }}
-                      transition={{
-                        duration: 6 + i,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        delay: i * 0.5,
-                      }}
-                    />
-                  );
-                })}
-              </div>
+
 
               {/* No projects icon */}
               <div className="mx-auto max-w-sm relative z-10">
@@ -467,45 +452,18 @@ const ProjectGallery = () => {
                 >
                   <FiSearch className="h-10 w-10 text-black dark:text-white" />
                 </motion.div>
-
-                {/* UPDATED: Text colors */}
-                <h3 className="mt-6 text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
-                  No Projects Found
-                </h3>
-                <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                  {searchQuery || selectedCategories.length > 0
-                    ? "We couldn’t find any projects with your filters. Try exploring all projects!"
-                    : "Looks like there are no projects yet. Stay tuned for exciting updates!"}
-                </p>
-
-                {/* Action Buttons */}
-                <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      setSelectedCategories([]);
-                      setSearchQuery("");
-                      setSortBy("recent");
-                    }}
-                    className="px-6 py-2.5 text-sm font-medium rounded-lg text-white bg-black hover:bg-zinc-800 shadow-lg transition-all"
-                  >
-                    Clear Filters
-                  </motion.button>
-
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      setSelectedCategories([]);
-                      setSearchQuery("");
-                      setSortBy("recent");
-                    }}
-                    className="px-6 py-2.5 text-sm font-medium rounded-lg text-black dark:text-white border border-black/15 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 shadow-md transition-all"
-                  >
-                    Explore Projects
-                  </motion.button>
-                </div>
+                <SearchEmptyState
+                  query={searchQuery}
+                  itemLabel="projects"
+                  browseLabel="Browse All Projects"
+                  browsePath="/projects"
+                  onClear={() => {
+                    setSelectedCategories([]);
+                    setSearchQuery("");
+                    setSortBy("recent");
+                  }}
+                  popularTags={categories.filter((category) => category !== "all")}
+                />
               </div>
             </motion.div>
           )}
@@ -522,3 +480,4 @@ const ProjectGallery = () => {
 };
 
 export default ProjectGallery;
+

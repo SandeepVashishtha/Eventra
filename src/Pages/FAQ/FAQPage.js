@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   Sparkles,
   Calendar,
@@ -10,18 +10,7 @@ import {
   Globe,
 } from "lucide-react";
 import FAQCTA from "./FaqCTA";
-
-function useDocumentTitle(title) {
-  useEffect(() => {
-    const previousTitle = document.title;
-
-    document.title = title;
-
-    return () => {
-      document.title = previousTitle;
-    };
-  }, [title]);
-}
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 const faqs = [
   {
@@ -108,7 +97,7 @@ export default function FAQSection() {
   );
 
   const wrapperRefs = useRef([]);
-  
+
 
   const sectionRef = useRef(null);
   const headerRef = useRef(null);
@@ -201,11 +190,11 @@ export default function FAQSection() {
   }, [headerHeight]);
 
 
-const cardStickyTop = NAVBAR_HEIGHT + headerHeight;
+  const cardStickyTop = NAVBAR_HEIGHT + headerHeight;
 
-return (
-  <>
-    <style>{`
+  return (
+    <>
+      <style>{`
         /* ── CSS variables (light mode defaults) ── */
         .faq-section-root {
           --bg-primary: #f9fafb;
@@ -359,58 +348,58 @@ return (
         }
       `}</style>
 
-    <div className="faq-section-root" ref={sectionRef}>
+      <div className="faq-section-root bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100" ref={sectionRef}>
 
-      
-      {/* ── Heading — becomes fixed once section reaches the navbar ── */}
-      <div
-        ref={headerRef}
-        className={`faq-heading-block${isHeaderFixed ? " is-fixed" : ""}`}
-        style={isHeaderFixed ? { top: headerTop } : {}}
-      >
-        <h2>Frequently Asked Questions</h2>
-        <p>
-          Everything you need to know about using Eventra, from getting
-          started to hosting your own events.
-        </p>
-      </div>
 
-      {/* Spacer holds layout space when heading is fixed */}
-      {isHeaderFixed && (
+        {/* ── Heading — becomes fixed once section reaches the navbar ── */}
         <div
-          className="faq-heading-spacer"
-          style={{ height: headerHeight }}
-        />
-      )}
+          ref={headerRef}
+          className={`faq-heading-block${isHeaderFixed ? " is-fixed" : ""}`}
+          style={isHeaderFixed ? { top: headerTop } : {}}
+        >
+          <h2>Frequently Asked Questions</h2>
+          <p>
+            Everything you need to know about using Eventra, from getting
+            started to hosting your own events.
+          </p>
+        </div>
 
-      {/* ── Stacking Cards ── */}
-      <div className="faq-cards-container">
-        {faqs.map((faq, index) => (
+        {/* Spacer holds layout space when heading is fixed */}
+        {isHeaderFixed && (
           <div
-            key={index}
-            className="card-pin-wrapper"
-            // FIX 5: Ref callback that appends without overwriting
-            ref={(el) => {
-              if (el) wrapperRefs.current[index] = el;
-            }}
-            style={{ top: cardStickyTop + 16 }}
-          >
-            {/* FIX 3: Style applied via React state, not direct DOM write */}
-            <div className="faq-card-inner" style={cardStyles[index]}>
-              {/* FIX 4: Icons re-added with category label */}
-              <div className="faq-card-header">
-                <span className="faq-icon">{faq.icon}</span>
-                <span className="faq-cat">{faq.category}</span>
+            className="faq-heading-spacer"
+            style={{ height: headerHeight }}
+          />
+        )}
+
+        {/* ── Stacking Cards ── */}
+        <div className="faq-cards-container">
+          {faqs.map((faq, index) => (
+            <div
+              key={index}
+              className="card-pin-wrapper"
+              // FIX 5: Ref callback that appends without overwriting
+              ref={(el) => {
+                if (el) wrapperRefs.current[index] = el;
+              }}
+              style={{ top: cardStickyTop + 16 }}
+            >
+              {/* FIX 3: Style applied via React state, not direct DOM write */}
+              <div className="faq-card-inner" style={cardStyles[index]}>
+                {/* FIX 4: Icons re-added with category label */}
+                <div className="faq-card-header">
+                  <span className="faq-icon">{faq.icon}</span>
+                  <span className="faq-cat">{faq.category}</span>
+                </div>
+                <h3>{faq.question}</h3>
+                <p>{faq.answer}</p>
               </div>
-              <h3>{faq.question}</h3>
-              <p>{faq.answer}</p>
             </div>
-          </div>
-        ))}
-        <div className="scroll-spacer" />
+          ))}
+          <div className="scroll-spacer" />
+        </div>
+        <FAQCTA />
       </div>
-      <FAQCTA />
-    </div>
-  </>
-);
+    </>
+  );
 } 

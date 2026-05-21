@@ -5,7 +5,7 @@ import PageLayout from '../Layout/PageLayout';
 // --------------- PAGES
 import HomePage from "../../Pages/Home/HomePage";
 import EventsPage from "../../Pages/Events/EventsPage";
-import EventDetailsPage from "../../Pages/Events/EventDetailsPage";
+import EventDetails from "../../Pages/Events/EventDetails";
 import EventRegistration from "../../Pages/Events/EventRegistration";
 import HackathonPage from "../../Pages/Hackathons/HackathonPage";
 import ProjectsPage from "../../Pages/Projects/ProjectsPage";
@@ -30,7 +30,7 @@ import MockApiResponse from "../MockApiResponse";
 export const getPublicRoutes = () => [
   <Route key="/" path="/" element={<HomePage />} />,
   <Route key="/events" path="/events" element={<EventsPage />} />,
-  <Route key="/event-details" path="/events/:eventId" element={<EventDetailsPage />} />,
+  <Route key="/event-details" path="/events/:eventId" element={<EventDetails />} />,
   <Route key="/register" path="/events/:eventId/register" element={<EventRegistration />} />,
   <Route key="/hackathons" path="/hackathons" element={<HackathonPage />} />,
   <Route key="/projects" path="/projects" element={<ProjectsPage />} />,
@@ -44,6 +44,7 @@ export const getPublicRoutes = () => [
     <Route key="/leaderBoard" path="/leaderBoard" element={<LeaderBoard />} />
     <Route key="/contributorguide" path="/contributorguide" element={<ContributorGuide />} />
     <Route key="/about" path="/about" element={<AboutPage />} />
+    <Route key="/about-fallback" path="/about/*" element={<AboutPage />} />
     <Route key="/faq" path="/faq" element={<FAQPage />} />
     <Route key="/terms" path="/terms" element={<Terms />} />
     <Route key="/privacy" path="/privacy" element={<Privacy />} />

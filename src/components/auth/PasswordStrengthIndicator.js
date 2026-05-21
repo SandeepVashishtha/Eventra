@@ -3,65 +3,35 @@ import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 const assessStrength = (password) => {
-  if (!password) {
-    return { score: 0, feedback: 'Start typing your password.', criteriaMet: 0 };
-  }
+  const criteria = [
+    { label: "At least 8 characters", met: password ? password.length >= 8 : false },
+    { label: "One uppercase letter (A-Z)", met: password ? /[A-Z]/.test(password) : false },
+    { label: "One lowercase letter (a-z)", met: password ? /[a-z]/.test(password) : false },
+    { label: "One number (0-9)", met: password ? /\d/.test(password) : false },
+    { label: "One special symbol (!@#$%^&*)", met: password ? /[!@#$%^&*(),.?":{}|<>]/.test(password) : false }
+  ];
 
-  let criteriaMet = 0;
-  let feedback = [];
+  const criteriaMet = criteria.filter(c => c.met).length;
+  
+  let score;
+  let feedback;
 
-  if (password.length >= 8) {
-      criteriaMet++;
+  if (criteriaMet === 5) {
+    score = 3;
+    feedback = 'Excellent! Your password meets all security criteria.';
+  } else if (criteriaMet >= 3) {
+    score = 2;
+    feedback = 'Moderate strength. Add more complexity to meet all criteria.';
   } else {
-      feedback.push('Password must be at least 8 characters long.');
-  }
-
-  if (/[A-Z]/.test(password)) {
-    criteriaMet++;
-  } else {
-    feedback.push('Add an uppercase letter.');
-  }
-
-  if (/[a-z]/.test(password)) {
-    criteriaMet++;
-  } else {
-    feedback.push('Add a lowercase letter.');
-  }
-
-  if (/\d/.test(password)) {
-    criteriaMet++;
-  } else {
-    feedback.push('Add a number.');
-  }
-
-  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-    criteriaMet++;
-  } else {
-    feedback.push('Add a special symbol.');
+    score = 1;
+    feedback = 'Weak. Make sure your password meets the requirements.';
   }
   
-  const rawScore = criteriaMet; 
-  let strengthScore;
-  let strengthFeedback;
-
-  if (rawScore === 5) {
-    strengthScore = 3;
-    strengthFeedback = 'Excellent! Your password meets all security criteria.';
-  } else if (rawScore >= 3) {
-    strengthScore = 2;
-    strengthFeedback = 'Moderate strength. You still need to ' + feedback[0].toLowerCase();
-  } else {
-    strengthScore = 1;
-    strengthFeedback = 'Weak, ' + feedback[0].toLowerCase();
-  }
-  
-  return { score: strengthScore, feedback: strengthFeedback, criteriaMet };
+  return { score, feedback, criteriaMet, criteria };
 };
 
-
 const PasswordStrengthIndicator = ({ password }) => {
-  const strengthResult = assessStrength(password);
-  const { score, feedback, criteriaMet } = strengthResult;
+  const { score, feedback, criteriaMet, criteria } = assessStrength(password);
 
   const getBarColorClass = (currentScore) => {
     switch (currentScore) {
@@ -82,43 +52,57 @@ const PasswordStrengthIndicator = ({ password }) => {
       ? "text-yellow-600 dark:text-yellow-400" 
       : "text-red-600 dark:text-red-400";
 
-
   return (
     <AnimatePresence>
       {password && (
         <motion.div
-          className="mt-1"
+          className="mt-2 p-3 bg-gray-50/50 dark:bg-gray-800/30 rounded-2xl border border-gray-100 dark:border-gray-700/50"
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
           transition={{ duration: 0.3 }}
         >
           <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
-            <span>Password criteria met:</span>
-            <span className={strengthColorClass.replace('dark:', '').replace('text-', '').replace('400', '600')}>
+            <span className="font-medium">Password strength:</span>
+            <span className={`font-semibold ${strengthColorClass}`}>
               {criteriaMet}/5
             </span>
           </div>
 
-          <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5 mt-1">
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-1.5 overflow-hidden">
             <motion.div
-              className={`h-1.5 rounded-full ${getBarColorClass(score)}`}
+              className={`h-full rounded-full ${getBarColorClass(score)}`}
               initial={{ width: "0%" }}
               animate={{
                 width: `${(criteriaMet / 5) * 100}%`,
               }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
             />
           </div>
 
           <motion.p
-            className={`text-xs mt-1 ${strengthColorClass}`}
+            className={`text-xs mt-2 font-medium ${strengthColorClass}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.15 }}
           >
             {feedback}
           </motion.p>
+
+          <ul className="mt-2.5 space-y-1 border-t border-gray-100 dark:border-gray-700/50 pt-2">
+            {criteria.map((c, index) => (
+              <li key={index} className="flex items-center gap-2 text-xs">
+                {c.met ? (
+                  <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 font-bold text-[10px]">✓</span>
+                ) : (
+                  <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 font-bold text-[10px]">•</span>
+                )}
+                <span className={c.met ? "text-green-600/90 dark:text-green-400/90" : "text-gray-500 dark:text-gray-400"}>
+                  {c.label}
+                </span>
+              </li>
+            ))}
+          </ul>
         </motion.div>
       )}
     </AnimatePresence>

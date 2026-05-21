@@ -13,6 +13,7 @@ import {
 import eventsMockData from "./eventsMockData.json";
 import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
 import ShareMenu from "../../components/common/ShareMenu";
+import CertificateDownload from "../../components/CertificateDownload";
 import { generateEventSharingData } from "../../utils/shareUtils";
 
 const EventDetailsPage = () => {
@@ -24,7 +25,7 @@ const EventDetailsPage = () => {
 
   if (!event) {
     return (
-      <div className="min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black flex items-center justify-center px-4">
+      <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center px-4">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
             Event Not Found
@@ -69,7 +70,7 @@ const EventDetailsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
+    <div className="min-h-screen mt-16 bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
       {/* Back Button */}
       <div className="sticky top-20 md:top-24 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -270,8 +271,21 @@ const EventDetailsPage = () => {
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 sticky top-32">
               <div className="mb-6">
                 {isPastEvent ? (
+  <>
+    <div className="w-full py-3 px-4 bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg font-semibold text-center cursor-not-allowed">
+      Event Ended
+    </div>
+    <div className="mt-3">
+      <CertificateDownload
+        eventName={event.title}
+        eventDate={event.date}
+        eventType={event.type}
+      />
+    </div>
+  </>
+                ) : event.attendees >= event.maxAttendees ? (
                   <div className="w-full py-3 px-4 bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg font-semibold text-center cursor-not-allowed">
-                    Event Ended
+                    Event Full
                   </div>
                 ) : (
                   <Link to={`/events/${event.id}/register`} className="block">
