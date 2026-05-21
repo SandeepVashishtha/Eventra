@@ -36,7 +36,7 @@ const MobileDrawer = ({
         </button>
       </div>
 
-      <div className="p-4 overflow-x-auto space-y-6">
+      <div className="p-4 overflow-y-auto h-[calc(100vh-72px)] pb-12 space-y-6">
         <NavbarLinks vertical={true} onClick={closeMenu} />
 
         {isAuthenticated ? (
