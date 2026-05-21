@@ -17,6 +17,7 @@ import { MyEventsProvider } from "./context/MyEventsContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
 import useOfflineSync from "./hooks/useOfflineSync";
+import useLenis from "./hooks/useLenis";
 
 // Lazy load heavy components
 const Footer = lazy(() => import("./components/Layout/Footer"));
@@ -33,6 +34,9 @@ function App() {
     useState(
       localStorage.getItem("cursor") !== "off"
     );
+
+  // Initialize Lenis smooth scrolling
+  useLenis();
 
   // Toggle Cursor
   const toggleCursor = () => {
