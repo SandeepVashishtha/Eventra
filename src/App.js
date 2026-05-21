@@ -28,6 +28,7 @@ import NotificationProvider from "./components/common/NotificationProvider";
 import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
 import useOfflineSync from "./hooks/useOfflineSync";
 
 // Lazy Loaded Components
@@ -37,6 +38,10 @@ const Footer = lazy(() =>
 
 const Chatbot = lazy(() =>
   import("./components/Chatbot")
+);
+
+const SessionRecovery = lazy(() =>
+  import("./components/SessionRecovery")
 );
 
 const AppRoutes = lazy(() =>
@@ -96,11 +101,12 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <MyEventsProvider>
-          <NotificationProvider />
+          <SessionRecoveryProvider>
+            <NotificationProvider />
 
-          <OfflineSyncManager />
+            <OfflineSyncManager />
 
-          <Router>
+            <Router>
             <div className="App">
               <Navbar
                 cursorEnabled={cursorEnabled}
@@ -162,11 +168,14 @@ function App() {
               <ScrollToTop />
               <FeedbackButton />
 
+              <SessionRecovery />
+
               <FluidCursor
                 enabled={cursorEnabled}
               />
             </div>
           </Router>
+          </SessionRecoveryProvider>
         </MyEventsProvider>
       </AuthProvider>
     </ThemeProvider>
