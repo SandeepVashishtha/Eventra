@@ -78,7 +78,7 @@ const handleUnauthorized = (response) => {
 
 /**
  * isDev — true only in local development.
- * Used to gate verbose console.log statements so they don't appear in production builds.
+ * Used to gate verbose console.debug statements so they don't appear in production builds.
  */
 const isDev = process.env.NODE_ENV === 'development';
 
