@@ -157,6 +157,11 @@ const EventDetails = () => {
           </aside>
 
         </div>
+
+        {/* PERSONALIZED RECOMMENDATIONS SECTION */}
+        <div className="mt-12">
+          <EventRecommendations currentEventId={event.id} currentCategory={event.category} />
+        </div>
       </div>
     </div>
   );
