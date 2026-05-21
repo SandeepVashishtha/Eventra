@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSessionRecovery } from '../context/SessionRecoveryContext';
 import { Wifi, WifiOff, RefreshCw, X, CheckCircle, AlertCircle } from 'lucide-react';
 
@@ -20,7 +20,6 @@ const SessionRecovery = () => {
     try {
       const session = restoreSession();
       if (session) {
-        // Trigger a custom event that components can listen to
         window.dispatchEvent(new CustomEvent('sessionRestored', { detail: session }));
         dismissRecoveryPrompt();
       }
@@ -36,7 +35,6 @@ const SessionRecovery = () => {
     dismissRecoveryPrompt();
   };
 
-  // Network status indicator
   if (!isOnline && !showRecoveryPrompt) {
     return (
       <div className="fixed bottom-4 right-4 z-50 animate-slide-up">
@@ -51,7 +49,6 @@ const SessionRecovery = () => {
     );
   }
 
-  // Reconnecting indicator
   if (isReconnecting && !showRecoveryPrompt) {
     return (
       <div className="fixed bottom-4 right-4 z-50 animate-slide-up">
@@ -66,7 +63,6 @@ const SessionRecovery = () => {
     );
   }
 
-  // Back online notification
   if (isOnline && !showRecoveryPrompt && !isReconnecting) {
     return (
       <div className="fixed bottom-4 right-4 z-50 animate-slide-up">
@@ -81,9 +77,18 @@ const SessionRecovery = () => {
     );
   }
 
-  // Session recovery prompt
   if (showRecoveryPrompt && sessionData) {
-    const timeSinceSession = Math.floor((Date.now() - sessionData.timestamp) / 1000 / 60); // minutes
+    const isValidTimestamp =
+      sessionData &&
+      sessionData.timestamp &&
+      typeof sessionData.timestamp === 'number' &&
+      !isNaN(sessionData.timestamp);
+
+    if (!isValidTimestamp) return null;
+
+    const timeSinceSession = Math.floor(
+      (Date.now() - sessionData.timestamp) / 1000 / 60
+    );
 
     return (
       <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-slide-down">
@@ -99,7 +104,7 @@ const SessionRecovery = () => {
                 Resume where you left off?
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                We found a session from {timeSinceSession === 0 ? 'just now' : `${timeSinceSession} minute${timeSinceSession > 1 ? 's' : ''} ago`}. 
+                We found a session from {timeSinceSession === 0 ? 'just now' : `${timeSinceSession} minute${timeSinceSession > 1 ? 's' : ''} ago`}.
                 Would you like to restore your previous activity?
               </p>
               <div className="flex gap-3">

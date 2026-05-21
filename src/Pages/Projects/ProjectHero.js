@@ -13,6 +13,8 @@ import { HiArrowRight, HiPlus } from "react-icons/hi";
 import { SiHackaday } from "react-icons/si";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+// ADDED: Import the newly created EventCountdown component
+import EventCountdown from "./EventCountdown";
 
 const iconList = [
   { icon: <FaGithub />, color: "#333" },
@@ -75,7 +77,7 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center relative z-10">
+      <div className="relative px-4 min-h-[75vh] flex flex-col items-center justify-center text-center z-10">
         <motion.h1
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
@@ -90,11 +92,25 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 0.3 }}
-          className="text-base sm:text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto mb-12"
+ feature/event-countdown-timer
+          // UPDATED: Subtitle text color
+          className="text-base sm:text-lg text-white dark:white max-w-2xl mx-auto mb-6"
+className="text-base sm:text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto mb-12"
+master
         >
           Explore, contribute to, and showcase innovative open-source creations
           from developers worldwide.
         </motion.p>
+
+        {/* ADDED: Event Countdown Component integrated smoothly with animation */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, delay: 0.5 }}
+          className="mb-8"
+        >
+          <EventCountdown eventDate="2026-10-31T23:59:59" />
+        </motion.div>
 
         {/* Buttons */}
         <div className="flex justify-center gap-6 mb-16">

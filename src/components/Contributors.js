@@ -9,6 +9,7 @@ import {
   FaMedal,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
+import { ContributorCardSkeleton } from "./common/SkeletonLoaders";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
@@ -69,7 +70,7 @@ const cacheContributors = (data) => {
   try {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ data, timestamp: Date.now() })
+      JSON.stringify({ data, timestamp: Date.now() }),
     );
   } catch {}
 };
@@ -95,7 +96,7 @@ const Contributors = () => {
 
     try {
       const profile = await fetchJsonWithTimeout(
-        `https://api.github.com/users/${username}`
+        `https://api.github.com/users/${username}`,
       );
       return {
         followers: profile.followers || 0,
@@ -134,11 +135,13 @@ const Contributors = () => {
       let hasMore = true;
       while (hasMore && page <= MAX_CONTRIBUTOR_PAGES) {
         const data = await fetchJsonWithTimeout(
-          `https://api.github.com/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`
+          `https://api.github.com/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`,
         );
 
         if (!Array.isArray(data)) {
-          throw new Error("GitHub returned an unexpected contributors response");
+          throw new Error(
+            "GitHub returned an unexpected contributors response",
+          );
         }
 
         const validContributors = data.filter((c) => c && c.login);
@@ -164,7 +167,7 @@ const Contributors = () => {
             ...profile,
             role: getRoleByGitHubActivity({ ...c, ...profile }),
           };
-        })
+        }),
       );
 
       enhanced.sort((a, b) => b.contributions - a.contributions);
@@ -174,7 +177,7 @@ const Contributors = () => {
       setError(
         err?.name === "AbortError"
           ? "GitHub took too long to respond. Please try again."
-          : "Unable to load contributors from GitHub right now. Please try again."
+          : "Unable to load contributors from GitHub right now. Please try again.",
       );
       setContributors([]);
     } finally {
@@ -187,18 +190,29 @@ const Contributors = () => {
   }, [fetchContributors]);
 
   // Filter contributors based on search term
-  const filteredContributors = contributors.filter((c) =>
-    c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.login?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.role?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.company?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredContributors = contributors.filter(
+    (c) =>
+      c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.login?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.role?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.company?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
-  
 
-  // UPDATED: Loading text color
-  if (loading)
-    return <p className="text-center py-20 text-gray-600 dark:text-gray-400">Loading contributors...</p>;
+  // UPDATED: Loading skeleton grid
+  if (loading) {
+    return (
+      <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12 mt-16">
+            {[...Array(8)].map((_, i) => (
+              <ContributorCardSkeleton key={i} />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (error)
     return (
@@ -216,15 +230,53 @@ const Contributors = () => {
             Retry
           </button>
         </div>
-      </section>
-    );
-
+        {/* Title skeleton */}
+        <div className="flex justify-center mb-16">
+          <div className="h-12 w-80 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+        </div>
+        {/* Cards grid skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div
+              key={i}
+              className="relative bg-white dark:bg-gray-800/90 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 pt-14 flex flex-col items-center animate-pulse"
+            >
+              {/* Avatar */}
+              <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-700" />
+              {/* Name */}
+              <div className="h-5 w-32 rounded-full bg-gray-200 dark:bg-gray-700 mt-4" />
+              {/* Role */}
+              <div className="h-4 w-24 rounded-full bg-gray-200 dark:bg-gray-700 mt-2" />
+              {/* Badge */}
+              <div className="h-6 w-28 rounded-full bg-gray-200 dark:bg-gray-700 mt-2" />
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-3 w-full mt-5">
+                {[...Array(3)].map((_, j) => (
+                  <div key={j} className="flex flex-col items-center gap-1 bg-gray-100 dark:bg-gray-700/50 p-2 rounded-lg">
+                    <div className="w-5 h-5 rounded bg-gray-200 dark:bg-gray-600" />
+                    <div className="h-4 w-8 rounded bg-gray-200 dark:bg-gray-600" />
+                    <div className="h-3 w-10 rounded bg-gray-200 dark:bg-gray-600" />
+                  </div>
+                ))}
+              </div>
+              {/* Progress bar */}
+              <div className="w-full h-2 rounded-full bg-gray-200 dark:bg-gray-700 mt-4 mb-4" />
+              {/* Extra lines */}
+              <div className="h-3 w-24 rounded bg-gray-200 dark:bg-gray-700 mb-1" />
+              <div className="h-3 w-20 rounded bg-gray-200 dark:bg-gray-700 mb-4" />
+              {/* Button */}
+              <div className="h-9 w-28 rounded-full bg-gray-200 dark:bg-gray-700 mt-auto" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
   return (
     // UPDATED: Section background
     <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
       <div className="max-w-7xl mx-auto px-6">
-
-      {/* Added The Search Bar */}
+        {/* Added The Search Bar */}
         <div className="flex justify-center mb-8">
           <input
             type="text"
@@ -243,11 +295,8 @@ const Contributors = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          🌟 Our Amazing{" "}
-          {/* UPDATED: Gradient text for dark mode */}
-          <span
-            className="text-black dark:text-white animate-pulse"
-          >
+          🌟 Our Amazing {/* UPDATED: Gradient text for dark mode */}
+          <span className="text-black dark:text-white animate-pulse">
             Contributors
           </span>
         </motion.h2>
@@ -272,123 +321,135 @@ const Contributors = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12">
             {filteredContributors.map((c, i) => (
-            <motion.div
-              key={c.id}
-              // UPDATED: Card background and border
-              className="relative bg-white/95 dark:bg-gray-800/90 backdrop-blur-xl p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 flex flex-col items-center text-center transition-all duration-300 ease-out"
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              whileHover={{
-                scale: 1.02,
-                y: -4,
-                boxShadow: "0px 8px 25px rgba(99,102,241,0.25)",
-              }}
-            >
-              {/* Avatar with Glow */}
-              <div className="absolute -top-8 left-1/2 -translate-x-1/2">
-                <div className="relative">
-                  <img loading="lazy"
-                    src={c.avatar_url}
-                    alt={c.login}
-                    className="w-20 h-20 rounded-full border-4 border-black shadow-xl"
-                  />
-                  <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 blur-md"></div>
+              <motion.div
+                key={c.id}
+                // UPDATED: Card background and border
+                className="relative bg-white/95 dark:bg-gray-800/90 backdrop-blur-xl p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 flex flex-col items-center text-center transition-all duration-300 ease-out"
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                whileHover={{
+                  scale: 1.02,
+                  y: -4,
+                  boxShadow: "0px 8px 25px rgba(99,102,241,0.25)",
+                }}
+              >
+                {/* Avatar with Glow */}
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2">
+                  <div className="relative">
+                    <img
+                      loading="lazy"
+                      src={c.avatar_url}
+                      alt={c.login}
+                      className="w-20 h-20 rounded-full border-4 border-black shadow-xl"
+                    />
+                    <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 blur-md"></div>
+                  </div>
                 </div>
-              </div>
 
-              {/* Name + Role + Badge */}
-              <div className="mt-16">
-                {/* UPDATED: Name and role text */}
-                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">{c.name}</h3>
-                <p className="text-black dark:text-white text-sm font-medium mb-3 flex items-center justify-center gap-1">
-                  <FaMedal className="text-amber-300 animate-bounce" /> {c.role}
-                </p>
-                {/* UPDATED: Contribution Badges */}
-                {i === 0 && (
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/50 text-black dark:text-white">
-                    🥇 Top Contributor
-                  </span>
-                )}
-                {i === 1 && (
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 dark:bg-gray-600 text-black dark:text-white">
-                    🥈 Silver Contributor
-                  </span>
-                )}
-                {i === 2 && (
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 dark:bg-orange-900/50 text-black dark:text-white">
-                    🥉 Bronze Contributor
-                  </span>
-                )}
-              </div>
-
-              {/* Stats Section (Glass style) */}
-              <div className="grid grid-cols-3 gap-3 text-sm text-gray-700 dark:text-gray-300 my-5 w-full">
-                <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                  <FaCodeBranch className="text-black dark:text-white mb-1" />
-                  <span className="font-semibold">{c.public_repos}</span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Repos</span>
+                {/* Name + Role + Badge */}
+                <div className="mt-16">
+                  {/* UPDATED: Name and role text */}
+                  <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
+                    {c.name}
+                  </h3>
+                  <p className="text-black dark:text-white text-sm font-medium mb-3 flex items-center justify-center gap-1">
+                    <FaMedal className="text-amber-300 animate-bounce" />{" "}
+                    {c.role}
+                  </p>
+                  {/* UPDATED: Contribution Badges */}
+                  {i === 0 && (
+                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/50 text-black dark:text-white">
+                      🥇 Top Contributor
+                    </span>
+                  )}
+                  {i === 1 && (
+                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 dark:bg-gray-600 text-black dark:text-white">
+                      🥈 Silver Contributor
+                    </span>
+                  )}
+                  {i === 2 && (
+                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 dark:bg-orange-900/50 text-black dark:text-white">
+                      🥉 Bronze Contributor
+                    </span>
+                  )}
                 </div>
-                <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                  <FaUserFriends className="text-black dark:text-white mb-1" />
-                  <span className="font-semibold">{c.followers}</span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Followers</span>
+
+                {/* Stats Section (Glass style) */}
+                <div className="grid grid-cols-3 gap-3 text-sm text-gray-700 dark:text-gray-300 my-5 w-full">
+                  <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
+                    <FaCodeBranch className="text-black dark:text-white mb-1" />
+                    <span className="font-semibold">{c.public_repos}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      Repos
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
+                    <FaUserFriends className="text-black dark:text-white mb-1" />
+                    <span className="font-semibold">{c.followers}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      Followers
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
+                    <span className="text-black dark:text-white font-bold">
+                      🔥
+                    </span>
+                    <span className="font-semibold">{c.contributions}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      Contribs
+                    </span>
+                  </div>
                 </div>
-                <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                  <span className="text-black dark:text-white font-bold">🔥</span>
-                  <span className="font-semibold">{c.contributions}</span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Contribs</span>
+
+                {/* Contribution Progress Bar */}
+                <div className="w-full bg-gray-200 dark:bg-gray-600 h-2 rounded-full overflow-hidden mb-4">
+                  <div
+                    className="h-2 bg-black"
+                    style={{
+                      width: `${
+                        (c.contributions / contributors[0].contributions) * 100
+                      }%`,
+                    }}
+                  ></div>
                 </div>
-              </div>
 
-              {/* Contribution Progress Bar */}
-              <div className="w-full bg-gray-200 dark:bg-gray-600 h-2 rounded-full overflow-hidden mb-4">
-                <div
-                  className="h-2 bg-black"
-                  style={{
-                    width: `${
-                      (c.contributions / contributors[0].contributions) * 100
-                    }%`,
-                  }}
-                ></div>
-              </div>
+                {/* Extra Info */}
+                <div className="flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400 mb-4">
+                  {c.company && (
+                    <span className="flex items-center gap-1 justify-center">
+                      <FaBuilding /> {c.company}
+                    </span>
+                  )}
+                  {c.location && (
+                    <span className="flex items-center gap-1 justify-center">
+                      <FaMapMarkerAlt /> {c.location}
+                    </span>
+                  )}
+                </div>
 
-              {/* Extra Info */}
-              <div className="flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400 mb-4">
-                {c.company && (
-                  <span className="flex items-center gap-1 justify-center">
-                    <FaBuilding /> {c.company}
-                  </span>
-                )}
-                {c.location && (
-                  <span className="flex items-center gap-1 justify-center">
-                    <FaMapMarkerAlt /> {c.location}
-                  </span>
-                )}
-              </div>
-
-              {/* Profile Button */}
-              <div className="mt-auto w-full">
-                <a
-                  href={c.html_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group inline-flex items-center justify-center gap-2 
-                    bg-black text-white 
-                    px-5 py-2.5 rounded-full text-sm font-semibold shadow 
-                    hover:bg-zinc-800 
+                {/* Profile Button */}
+                <div className="mt-auto w-full">
+                  <a
+                    href={c.html_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group inline-flex items-center justify-center gap-2
+                    bg-black text-white
+                    px-5 py-2.5 rounded-full text-sm font-semibold shadow
+                    hover:bg-zinc-800
                     transition-all duration-300 ease-out transform hover:scale-105 relative overflow-hidden"
-                >
-                  {/* GitHub Icon with animation */}
-                  <FaGithub className="text-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:text-blue-200" />
+                  >
+                    {/* GitHub Icon with animation */}
+                    <FaGithub className="text-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:text-blue-200" />
 
-                  <span>Profile</span>
+                    <span>Profile</span>
 
-                  <FaExternalLinkAlt className="text-xs opacity-80 transition-transform duration-300 group-hover:translate-x-1" />
-                </a>
-              </div>
-            </motion.div>
-          ))}
+                    <FaExternalLinkAlt className="text-xs opacity-80 transition-transform duration-300 group-hover:translate-x-1" />
+                  </a>
+                </div>
+              </motion.div>
+            ))}
           </div>
         )}
       </div>

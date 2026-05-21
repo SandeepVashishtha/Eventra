@@ -1,3 +1,15 @@
+feature/event-countdown-timer
+import { useState } from "react";
+import {
+  FaBook,
+  FaBookOpen,
+  FaCalendarAlt,
+  FaComments,
+  FaDiscord,
+  FaEnvelope,
+  FaFolder,
+  FaGithub,
+
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -8,11 +20,21 @@ import {
   FaPlus,
   FaUsers,
   FaBook,
+ master
   FaHome,
-  FaCalendarAlt,
+  FaInfoCircle,
+  FaInstagram,
+  FaLinkedin,
+  FaPlus,
+  FaQuestionCircle,
   FaStar,
-  FaFolder,
+  FaTelegram,
   FaTrophy,
+ feature/event-countdown-timer
+  FaUsers,
+} from "react-icons/fa";
+import { Link } from "react-router-dom";
+
   FaComments,
   FaLinkedin,
   FaDiscord,
@@ -20,6 +42,7 @@ import {
   FaInstagram,
   FaInfoCircle,
 } from "react-icons/fa";
+master
 
 const footerLinks = {
   quick_links: [
@@ -99,6 +122,10 @@ const socialLinks = [
 ];
 
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+feature/event-countdown-timer
+
+const Newsletter = ({ email, setEmail, isSubmitting, handleSubmit, feedback, setFeedback, feedbackId, feedbackColor }) => {
+
 
 const Newsletter = () => {
   const [email, setEmail] = useState("");
@@ -142,6 +169,7 @@ const Newsletter = () => {
       ? "text-green-600 dark:text-green-400"
       : "text-red-600 dark:text-red-400";
 
+ master
   return (
     <div className="mt-4">
       <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-2">
@@ -251,6 +279,96 @@ const FooterLinksRender = () => (
 );
 
 const Footer = () => {
+ feature/event-countdown-timer
+  const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState({ type: "", message: "" });
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setFeedback({ type: "error", message: "Please enter your email address." });
+      return;
+    }
+
+    if (!isValidEmail(trimmedEmail)) {
+      setFeedback({ type: "error", message: "Please enter a valid email address." });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setFeedback({ type: "", message: "" });
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      setFeedback({ type: "success", message: "Thanks for subscribing!" });
+      setEmail("");
+    } catch (error) {
+      setFeedback({
+        type: "error",
+        message: "Something went wrong. Please try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const feedbackId = "footer-newsletter-feedback";
+  const feedbackColor =
+    feedback.type === "success"
+      ? "text-green-600 dark:text-green-400"
+      : "text-red-600 dark:text-red-400";
+
+  return (
+    <footer 
+      className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
+      data-aos="fade-up"
+      data-aos-duration="1000"
+      data-aos-offset="100"
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div 
+            className="space-y-4 lg:col-span-2"
+            data-aos="fade-up"
+            data-aos-delay="0"
+          >
+            <h2
+              className="text-2xl sm:text-3xl font-bold text-black dark:text-white"
+              style={{ fontFamily: "Anton, sans-serif" }}
+            >
+              Eventra
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Open-source event management for communities worldwide.
+            </p>
+
+            {/* Newsletter Component */}
+            <Newsletter 
+              email={email}
+              setEmail={setEmail}
+              isSubmitting={isSubmitting}
+              handleSubmit={handleSubmit}
+              feedback={feedback}
+              setFeedback={setFeedback}
+              feedbackId={feedbackId}
+              feedbackColor={feedbackColor}
+            />
+            
+            {/* Social Links */}
+            <SocialLinksRender />
+          </div>
+          <FooterLinksRender />
+        </div>
+      </div>
+    </footer>
+  );
+};
+
+export default Footer;
+
   return (
     <footer 
       className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
@@ -289,3 +407,4 @@ const Footer = () => {
 };
 
 export default Footer;
+master

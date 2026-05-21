@@ -59,14 +59,34 @@ const Signup = () => {
     "Get quick access to the tools you need to start contributing immediately.",
   ];
 
-
-
-
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleChange = (e) => {
     const newData = { ...formData, [e.target.name]: e.target.value };
     setFormData(newData);
+
+    if (e.target.name === "confirmPassword" || e.target.name === "password") {
+      const password = e.target.name === "password" ? e.target.value : newData.password;
+      const confirmPassword = e.target.name === "confirmPassword" ? e.target.value : newData.confirmPassword;
+
+      if (password && confirmPassword) {
+        if (password === confirmPassword) {
+          setError("");
+          setPasswordMatchMessage("Passwords match!");
+        } else {
+          setError("Passwords do not match");
+          setPasswordMatchMessage("");
+        }
+      } else {
+        setPasswordMatchMessage("");
+        if (e.target.name === "confirmPassword" && e.target.value) {
+          setError("Passwords do not match");
+        } else {
+          // password field was cleared, reset error too
+          setError("");
+        }
+      }
+    }
 
     if (e.target.name === "email") {
       setEmailError(validateEmail(e.target.value) ? "" : "Invalid email");
@@ -92,7 +112,11 @@ const Signup = () => {
       else setLastNameError("");
     }
 
-    if (error) setError("");
+    // FIX: Only clear the error when changing non-password fields,
+    // so the "Passwords do not match" error persists correctly.
+    if (error && e.target.name !== "password" && e.target.name !== "confirmPassword") {
+      setError("");
+    }
   };
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
@@ -140,7 +164,6 @@ const Signup = () => {
     }
 
     setLoading(true);
-    
     setError("");
 
     try {
@@ -235,20 +258,6 @@ const Signup = () => {
                 ))}
               </div>
             </div>
-       
-            {/* <div className="mt-8 flex items-center p-4 bg-white/10 rounded-2xl hover:bg-white/20 transition duration-300 ease-in-out">
-              <div className="bg-white/20 p-3 rounded-full mr-4 flex items-center justify-center flex-shrink-0">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                </svg>
-              </div>
-              <p className="text-sm text-white/80">
-                Already have an account?{" "}
-                <Link to="/login" className="font-semibold text-white hover:text-white/80 transition-colors" style={{ color: 'white' }}>
-                  Sign in
-                </Link>
-              </p>
-            </div> */}
           </div>
           
            {/* RIGHT PANEL */}
@@ -336,11 +345,9 @@ const Signup = () => {
               </label>
 
               <div className="relative">
-                {/* @ Icon */}
                 <AtSign
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-300 w-5 h-5 pointer-events-none"
                 />
-
                 <input
                   id="email"
                   name="email"
@@ -358,6 +365,7 @@ const Signup = () => {
                 <p className="text-red-500 text-xs mt-1">{emailError}</p>
               )}
             </div>
+
             <div>
               <label htmlFor="password" className="block text-sm text-gray-700 dark:text-gray-300">
                 Password <sup className="text-red-500">*</sup>
@@ -384,7 +392,14 @@ const Signup = () => {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Enter your password"
-                  className="w-full pl-10 pr-4 py-3 bg-white/60 dark:bg-gray-700/70 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                  // FIX: Border turns green when passwords match, red when they don't
+                  className={`w-full pl-10 pr-10 py-3 bg-white/60 dark:bg-gray-700/70 border rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white ${
+                    formData.password && formData.confirmPassword
+                      ? passwordMatchMessage
+                        ? "border-green-500"
+                        : "border-red-400"
+                      : "border-gray-200 dark:border-gray-600"
+                  }`}
                   required
                 />
                 <button
@@ -460,7 +475,14 @@ const Signup = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   placeholder="Confirm your password"
-                  className="w-full pl-10 pr-4 py-3 bg-white/60 dark:bg-gray-700/70 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                  // FIX: Border turns green when passwords match, red when they don't
+                  className={`w-full pl-10 pr-10 py-3 bg-white/60 dark:bg-gray-700/70 border rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white ${
+                    formData.confirmPassword
+                      ? passwordMatchMessage
+                        ? "border-green-500"
+                        : "border-red-400"
+                      : "border-gray-200 dark:border-gray-600"
+                  }`}
                   required
                 />
                 <button
@@ -580,8 +602,6 @@ const Signup = () => {
         </motion.div>
       </div>
     </motion.div>
-
-    
   );
 };
 

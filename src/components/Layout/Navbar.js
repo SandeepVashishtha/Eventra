@@ -23,8 +23,13 @@ import {
   HelpCircle,
   ChevronDown,
   MousePointer,
+<<<<<<< feature/event-countdown-timer
+  Moon,
+  Sun
+=======
   Sun,
   Moon
+>>>>>>> master
 } from "lucide-react";
 
 // --- Helpers to reduce complexity ---
@@ -55,43 +60,32 @@ const setBodyScrollStyles = (top) => {
 const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => (
   <button
     onClick={toggleTheme}
-    aria-label={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
     title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-    className={isMobile
-      ? "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 font-medium text-sm"
-      : "flex items-center gap-1.5 px-2.5 py-1 mr-2 text-xs font-medium border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
+    className={isMobile 
+      ? "flex-1 flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg bg-black dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors font-medium"
+      : "flex items-center gap-1 px-2 py-1 mr-2 text-xs font-normal bg-black text-white dark:bg-white dark:text-black rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all"
     }
   >
     {isDarkMode ? (
-      <Sun className={isMobile ? "w-5 h-5 text-amber-500" : "w-4 h-4 text-amber-500"} />
+      <Sun className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
     ) : (
-      <Moon className={isMobile ? "w-5 h-5 text-indigo-500" : "w-4 h-4 text-indigo-500"} />
+      <Moon className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
     )}
-    {isMobile
-      ? (isDarkMode ? "Light Mode" : "Dark Mode")
-      : (isDarkMode ? "LIGHT" : "DARK")
-    }
+    {isMobile ? (isDarkMode ? "Dark OFF" : "Dark ON") : (isDarkMode ? "DARK" : "LIGHT")}
   </button>
 );
 
 const CursorToggleButton = ({ cursorEnabled, toggleCursor, isMobile }) => (
   <button
     onClick={toggleCursor}
-    aria-label={cursorEnabled ? "Disable Fluid Cursor" : "Enable Fluid Cursor"}
     title={cursorEnabled ? "Disable Fluid Cursor" : "Enable Fluid Cursor"}
-    className={isMobile
-      ? "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 font-medium text-sm"
-      : "flex items-center gap-1.5 px-2.5 py-1 mr-3 text-xs font-medium border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
+    className={isMobile 
+      ? "flex-1 flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg bg-black dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors font-medium"
+      : "flex items-center gap-1 px-2 py-1 mr-3 text-xs font-normal bg-black text-white dark:bg-white dark:text-black rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all"
     }
   >
-    <MousePointer className={isMobile
-      ? `w-5 h-5 ${cursorEnabled ? "text-emerald-500" : "text-gray-400"}`
-      : `w-4 h-4 ${cursorEnabled ? "text-emerald-500" : "text-gray-400"}`
-    } />
-    {isMobile
-      ? (cursorEnabled ? "Cursor On" : "Cursor Off")
-      : (cursorEnabled ? "ON" : "OFF")
-    }
+    <MousePointer className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
+    {isMobile ? (cursorEnabled ? "Cursor OFF" : "Cursor ON") : (cursorEnabled ? "CURSOR" : "STATIC")}
   </button>
 );
 
@@ -102,7 +96,7 @@ const AuthButtons = ({ isMobile, closeAllMenus }) => (
       onClick={isMobile ? closeAllMenus : undefined} 
       className={isMobile 
         ? "flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-semibold text-white bg-black hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 border border-transparent"
-        : "px-4 py-2 text-sm font-medium text-black/75 hover:text-black dark:text-white/75 dark:hover:text-white transition-colors"
+        : "flex items-center px-4 py-2 text-sm font-medium text-black/75 hover:text-black dark:text-white/75 dark:hover:text-white transition-colors whitespace-nowrap"
       }
     >
       {isMobile && <LogIn className="w-5 h-5" />}Sign In
@@ -112,7 +106,7 @@ const AuthButtons = ({ isMobile, closeAllMenus }) => (
       onClick={isMobile ? closeAllMenus : undefined} 
       className={isMobile
         ? "flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-semibold text-black dark:text-white bg-white dark:bg-black/50 hover:bg-gray-100 dark:hover:bg-white/10 border-2 border-black/15 dark:border-white/20 hover:border-black/25 dark:hover:border-white/30 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
-        : "px-5 py-2 text-sm font-semibold text-white transition-all duration-300 bg-black hover:bg-zinc-800 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 dark:bg-white dark:text-black dark:hover:bg-zinc-200 focus:outline-none focus:ring-4 focus:ring-black/20 dark:focus:ring-white/20"
+        : "flex items-center justify-center px-5 py-2 text-sm font-semibold text-white transition-all duration-300 bg-black hover:bg-zinc-800 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 dark:bg-white dark:text-black dark:hover:bg-zinc-200 focus:outline-none focus:ring-4 focus:ring-black/20 dark:focus:ring-white/20 whitespace-nowrap"
       }
     >
       {isMobile && <Sparkles className="w-5 h-5" />}Get Started
@@ -149,23 +143,20 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
     </button>
     {isOpen && (
       <div className="mt-2 ml-3 pl-3 border-l-2 border-gray-200 dark:border-white/20 space-y-1">
-        {item.subItems.map((sub) => {
-          const darkActiveBg = item.name === 'Community' ? 'dark:bg-black/60' : 'dark:bg-white/15';
-          return (
-            <Link
-              key={sub.name}
-              to={sub.href}
-              onClick={closeAllMenus}
-              className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium ${
-                location.pathname === sub.href
-                  ? `bg-black/10 ${darkActiveBg} border border-black/10 dark:border-white/20 text-black dark:text-white`
-                  : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white"
-              }`}
-            >
-              {sub.icon}{sub.name}
-            </Link>
-          );
-        })}
+        {item.subItems.map((sub) => (
+          <Link
+            key={sub.name}
+            to={sub.href}
+            onClick={closeAllMenus}
+            className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium ${
+              location.pathname === sub.href
+                ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
+                : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white"
+            }`}
+          >
+            {sub.icon}{sub.name}
+          </Link>
+        ))}
       </div>
     )}
   </div>
@@ -204,24 +195,21 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
         exit={{ opacity: 0, y: 10 }}
         className="absolute left-1/2 -translate-x-1/2 mt-4 w-56 bg-white/90 dark:bg-black/80 backdrop-blur-md shadow-xl rounded-lg z-50 border border-black/10 dark:border-white/20 p-2"
       >
-        {item.subItems.map((sub) => {
-          const darkActiveBg = item.name === 'Community' ? 'dark:bg-black/60' : 'dark:bg-white/15';
-          return (
-            <Link
-              key={sub.name}
-              to={sub.href}
-              onClick={() => setOpenDropdown(null)}
-              className={`group flex items-center gap-3 w-full px-3 py-2 text-base font-medium rounded-md transition-colors ${
-                location.pathname === sub.href
-                  ? `bg-black/10 ${darkActiveBg} text-black dark:text-white`
-                  : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
-              }`}
-            >
-              {React.cloneElement(sub.icon, { className: "w-5 h-5 text-gray-500 dark:text-gray-400" })}
-              {sub.name}
-            </Link>
-          );
-        })}
+        {item.subItems.map((sub) => (
+          <Link
+            key={sub.name}
+            to={sub.href}
+            onClick={() => setOpenDropdown(null)}
+            className={`group flex items-center gap-3 w-full px-3 py-2 text-base font-medium rounded-md transition-colors ${
+              location.pathname === sub.href
+                ? "bg-black/10 dark:bg-white/15 text-black dark:text-white"
+                : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
+            }`}
+          >
+            {React.cloneElement(sub.icon, { className: "w-5 h-5 text-gray-500 dark:text-gray-400" })}
+            {sub.name}
+          </Link>
+        ))}
       </motion.div>
     )}
   </div>
@@ -282,9 +270,9 @@ const UserProfileDropdown = ({
       {user?.profilePicture ? (
         <img src={user.profilePicture} alt="Profile" className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20" onError={(e) => (e.currentTarget.style.display = "none")} />
       ) : (
-       <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold text-sm">
-        {primaryLine?.charAt(0).toUpperCase()}
-      </div>
+        <div className="w-8 h-8 rounded-full dark:bg-white/20 bg-gray-300 flex items-center justify-center">
+          <UserIcon className="w-4 h-4 text-gray-600 dark:text-white" />
+        </div>
       )}
     </button>
     <AnimatePresence>
@@ -518,14 +506,20 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isMobileMenuOpen]);
 
-  const handleTouchStart = (e) => {
-    touchStartXRef.current = e.touches[0].clientX;
-    touchCurrentXRef.current = e.touches[0].clientX;
-  };
-  const handleTouchMove = (e) => {
-    touchCurrentXRef.current = e.touches[0].clientX;
-  };
+  useEffect(() => {
+    if (navRef.current) setNavHeight(navRef.current.offsetHeight);
+    const handleResize = () => { if (navRef.current) setNavHeight(navRef.current.offsetHeight); };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const handleTouchStart = (e) => { touchStartXRef.current = e.touches[0].clientX; touchCurrentXRef.current = e.touches[0].clientX; };
+  const handleTouchMove = (e) => { touchCurrentXRef.current = e.touches[0].clientX; };
   const handleTouchEnd = () => {
+<<<<<<< feature/event-countdown-timer
+    const delta = (touchCurrentXRef.current ?? 0) - (touchStartXRef.current ?? 0);
+    if (delta > 50) closeAllMenus();
+=======
     const start = touchStartXRef.current;
     const end = touchCurrentXRef.current;
     if (typeof start !== "number" || typeof end !== "number") return;
@@ -533,15 +527,20 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
     if (deltaX > 50) {
       closeAllMenus();
     }
+>>>>>>> master
     touchStartXRef.current = null;
     touchCurrentXRef.current = null;
   };
 
+<<<<<<< feature/event-countdown-timer
+  const handleLogoutClick = () => { setShowLogoutModal(true); setShowProfileDropdown(false); };
+=======
   const handleLogoutClick = () => {
     setShowLogoutModal(true);
     setShowProfileDropdown(false);
   };
 
+>>>>>>> master
   const handleConfirmLogout = () => {
     setShowLogoutModal(false);
     logout();
@@ -563,6 +562,12 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         onClick={closeAllMenus}
       />
 
+<<<<<<< feature/event-countdown-timer
+      <nav ref={navRef} data-aos="fade-down" data-aos-once="true" data-aos-duration="1000"
+        className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white dark:bg-gray-900 border-b border-black/10 dark:border-white/10">
+        <div className="w-full flex items-center h-20 px-6 md:px-12 relative">
+          <Link to="/" className="flex-shrink-0 z-20">
+=======
       <nav
         ref={navRef}
         data-aos="fade-down"
@@ -573,11 +578,35 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         <div className="max-w-7xl mx-auto flex items-center justify-between h-[72px] px-6 lg:px-8 relative">
           {/* Logo on the left */}
           <Link to="/" className="flex items-center min-w-[160px] z-20">
+>>>>>>> master
             <h2 className="text-3xl font-semibold tracking-tight text-black dark:text-white" style={{ fontFamily: '"Anton", sans-serif' }}>
               Eventra
             </h2>
           </Link>
 
+<<<<<<< feature/event-countdown-timer
+          <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
+
+          <div className="hidden lg:flex items-center ml-auto z-20">
+            <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={false} />
+            <CursorToggleButton cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} isMobile={false} />
+
+            <div className="flex items-center space-x-2 ml-2">
+              {isAuthenticated() ? (
+                <UserProfileDropdown 
+                  user={user} 
+                  primaryLine={primaryLine} 
+                  secondaryLine={secondaryLine} 
+                  showProfileDropdown={showProfileDropdown} 
+                  setShowProfileDropdown={setShowProfileDropdown} 
+                  location={location} 
+                  handleLogoutClick={handleLogoutClick} 
+                />
+              ) : (
+                <AuthButtons isMobile={false} />
+              )}
+            </div>
+=======
           {/* Centered nav links */}
           <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
 
@@ -598,6 +627,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             ) : (
               <AuthButtons isMobile={false} />
             )}
+>>>>>>> master
           </div>
 
           {/* Mobile menu button */}
@@ -634,7 +664,10 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         secondaryLine={secondaryLine}
       />
 
+<<<<<<< feature/event-countdown-timer
+=======
       {/* Confirmation Modal */}
+>>>>>>> master
       <ConfirmationModal
         isOpen={showLogoutModal}
         onClose={handleCancelLogout}
