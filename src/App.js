@@ -11,7 +11,8 @@ import PageTransition from "./components/common/PageTransition";
 import RegistrationPage from "./Pages/RegistrationPage";
 
 // Context & Hooks
-import NotificationProvider from "./components/common/NotificationProvider";
+import NotificationToastContainer from "./components/common/NotificationProvider";
+import { NotificationProvider } from "./context/NotificationContext";
 import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -78,53 +79,55 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <MyEventsProvider>
-          <SessionRecoveryProvider>
-            <NotificationProvider />
+        <NotificationProvider>
+          <MyEventsProvider>
+            <SessionRecoveryProvider>
+              <NotificationToastContainer />
 
-            <OfflineSyncManager />
+              <OfflineSyncManager />
 
-            <Router>
-            <div className="App">
-              <Navbar
-                cursorEnabled={cursorEnabled}
-                toggleCursor={toggleCursor}
-              />
+              <Router>
+              <div className="App">
+                <Navbar
+                  cursorEnabled={cursorEnabled}
+                  toggleCursor={toggleCursor}
+                />
 
-              <main
-                className="
-                  relative
-                  z-10
-                  min-h-screen
-                  bg-white
-                  dark:bg-slate-950
-                  text-black
-                  dark:text-white
-                  transition-colors
-                  duration-300
-                "
-              >
-                <PageTransition>
-                  <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
-                    <Routes>
-                      <Route path="/register/:id" element={<RegistrationPage />} />
-                      <Route path="*" element={<AppRoutes />} />
-                    </Routes>
-                  </Suspense>
-                </PageTransition>
-              </main>
+                <main
+                  className="
+                    relative
+                    z-10
+                    min-h-screen
+                    bg-white
+                    dark:bg-slate-950
+                    text-black
+                    dark:text-white
+                    transition-colors
+                    duration-300
+                  "
+                >
+                  <PageTransition>
+                    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+                      <Routes>
+                        <Route path="/register/:id" element={<RegistrationPage />} />
+                        <Route path="*" element={<AppRoutes />} />
+                      </Routes>
+                    </Suspense>
+                  </PageTransition>
+                </main>
 
-              <ScrollToTop />
-              <Suspense fallback={null}>
-                <Chatbot />
-                <Footer />
-              </Suspense>
-              <FeedbackButton />
-              <FluidCursor enabled={cursorEnabled} />
-            </div>
-          </Router>
-          </SessionRecoveryProvider>
-        </MyEventsProvider>
+                <ScrollToTop />
+                <Suspense fallback={null}>
+                  <Chatbot />
+                  <Footer />
+                </Suspense>
+                <FeedbackButton />
+                <FluidCursor enabled={cursorEnabled} />
+              </div>
+            </Router>
+            </SessionRecoveryProvider>
+          </MyEventsProvider>
+        </NotificationProvider>
       </AuthProvider>
     </ThemeProvider>
   );
