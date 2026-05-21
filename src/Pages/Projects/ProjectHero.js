@@ -13,6 +13,7 @@ import { HiArrowRight, HiPlus } from "react-icons/hi";
 import { SiHackaday } from "react-icons/si";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import CountUp from "react-countup";
 
 const iconList = [
   { icon: <FaGithub />, color: "#333" },
@@ -132,9 +133,9 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
         {/* Stats Section */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 max-w-3xl mx-auto">
           {[
-            { number: "200+", label: "Active Users" },
-            { number: "4890+", label: "Projects Hosted" },
-            { number: "120+", label: "Contributors" },
+            { number: 200, suffix: "+", label: "Active Users" },
+            { number: 4890, suffix: "+", label: "Projects Hosted" },
+            { number: 120, suffix: "+", label: "Contributors" },
           ].map((stat, idx) => (
             <motion.div
               key={idx}
@@ -152,7 +153,14 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
               className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm rounded-lg p-6 flex flex-col items-center justify-center transition-all duration-200"
             >
               <span className="text-3xl font-bold text-gray-900 dark:text-white">
-                {stat.number}
+                <CountUp
+                  start={0}
+                  end={stat.number}
+                  duration={2.5}
+                  suffix={stat.suffix}
+                  enableScrollSpy
+                  scrollSpyOnce
+                />
               </span>
               <span className="text-gray-500 dark:text-gray-400 mt-1 text-sm sm:text-base">
                 {stat.label}
