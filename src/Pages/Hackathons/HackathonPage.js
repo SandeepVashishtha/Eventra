@@ -5,6 +5,8 @@ import mockHackathons from "./hackathonMockData.json";
 import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
 import FeedbackButton from "../../components/FeedbackButton";
+import ModernSearchInput from "../../components/common/ModernSearchInput";
+import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 import {
   FiCode,
   FiRotateCw,
@@ -15,7 +17,7 @@ import {
 import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
-import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
+
 
 // NEW: Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
