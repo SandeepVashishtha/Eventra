@@ -68,7 +68,13 @@ export const SessionRecoveryProvider = ({ children }) => {
         const parsed = JSON.parse(saved);
         const now = Date.now();
 
-        if (now - parsed.timestamp < SESSION_TIMEOUT) {
+        const isValidTimestamp =
+          parsed &&
+          parsed.timestamp &&
+          typeof parsed.timestamp === 'number' &&
+          !isNaN(parsed.timestamp);
+
+        if (isValidTimestamp && now - parsed.timestamp < SESSION_TIMEOUT) {
           setSessionData(parsed);
           setHasSession(true);
           setShowRecoveryPrompt(true);
