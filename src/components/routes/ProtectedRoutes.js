@@ -1,19 +1,20 @@
 import React from 'react';
 import { Route } from 'react-router-dom';
 
-// --------------- COMPONENTS
 import ProtectedRoute from "../auth/ProtectedRoute";
-import EventCreation from "../common/EventCreation";
-import AdminDashboard from "../admin/AdminDashboard";
-import HostHackathon from "../../Pages/Hackathons/HostHackathon";
-import Dashboard from "../Dashboard";
-import EditProfile from "../user/EditProfile";
-import Settings from "../../Pages/Settings";
-import Login from "../auth/Login";
-import Signup from "../auth/Signup";
-import Unauthorized from "../auth/Unauthorized";
-import PasswordReset from "../auth/PasswordReset";
-import NotFound from "../NotFound";
+
+// --------------- COMPONENTS
+const EventCreation = React.lazy(() => import("../common/EventCreation"));
+const AdminDashboard = React.lazy(() => import("../admin/AdminDashboard"));
+const HostHackathon = React.lazy(() => import("../../Pages/Hackathons/HostHackathon"));
+const Dashboard = React.lazy(() => import("../Dashboard"));
+const EditProfile = React.lazy(() => import("../user/EditProfile"));
+const Settings = React.lazy(() => import("../../Pages/Settings"));
+const Login = React.lazy(() => import("../auth/Login"));
+const Signup = React.lazy(() => import("../auth/Signup"));
+const Unauthorized = React.lazy(() => import("../auth/Unauthorized"));
+const PasswordReset = React.lazy(() => import("../auth/PasswordReset"));
+const NotFound = React.lazy(() => import("../NotFound"));
 
 export const getProtectedRoutes = () => [
   <Route

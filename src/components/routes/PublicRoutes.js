@@ -3,26 +3,26 @@ import { Route } from 'react-router-dom';
 import PageLayout from '../Layout/PageLayout';
 
 // --------------- PAGES
-import HomePage from "../../Pages/Home/HomePage";
-import EventsPage from "../../Pages/Events/EventsPage";
-import EventRegistration from "../../Pages/Events/EventRegistration";
-import HackathonPage from "../../Pages/Hackathons/HackathonPage";
-import ProjectsPage from "../../Pages/Projects/ProjectsPage";
-import Contributors from "../Contributors";
-import CommunityEvent from "../CommunityEvent";
-import LeaderBoard from "../../Pages/Leaderboard/Leaderboard";
-import ContributorGuide from "../../Pages/Leaderboard/ContributorGuide";
-import AboutPage from "../../Pages/About/AboutPage";
-import FAQPage from "../../Pages/FAQ/FAQPage";
-import Terms from "../../Pages/Terms";
-import { Privacy } from "../../Pages/Privacy";
-import ApiDocs from "../../Pages/ApiDocs";
-import HelpCenter from "../../Pages/HelpCenter";
-import ContactUs from "../../Pages/Contact/ContactUs";
-import FeedbackPage from "../../Pages/Feedback/FeedbackPage";
-import EventAnalyticsDashboard from "../../Pages/Events/EventAnalyticsDashboard";
-import DocumentationPage from "../../Pages/About/DocumentationPage";
-import SubmitProject from "../../Pages/Projects/SubmitProject";
+const HomePage = React.lazy(() => import("../../Pages/Home/HomePage"));
+const EventsPage = React.lazy(() => import("../../Pages/Events/EventsPage"));
+const EventRegistration = React.lazy(() => import("../../Pages/Events/EventRegistration"));
+const HackathonPage = React.lazy(() => import("../../Pages/Hackathons/HackathonPage"));
+const ProjectsPage = React.lazy(() => import("../../Pages/Projects/ProjectsPage"));
+const Contributors = React.lazy(() => import("../Contributors"));
+const CommunityEvent = React.lazy(() => import("../CommunityEvent"));
+const LeaderBoard = React.lazy(() => import("../../Pages/Leaderboard/Leaderboard"));
+const ContributorGuide = React.lazy(() => import("../../Pages/Leaderboard/ContributorGuide"));
+const AboutPage = React.lazy(() => import("../../Pages/About/AboutPage"));
+const FAQPage = React.lazy(() => import("../../Pages/FAQ/FAQPage"));
+const Terms = React.lazy(() => import("../../Pages/Terms"));
+const Privacy = React.lazy(() => import("../../Pages/Privacy").then(module => ({ default: module.Privacy })));
+const ApiDocs = React.lazy(() => import("../../Pages/ApiDocs"));
+const HelpCenter = React.lazy(() => import("../../Pages/HelpCenter"));
+const ContactUs = React.lazy(() => import("../../Pages/Contact/ContactUs"));
+const FeedbackPage = React.lazy(() => import("../../Pages/Feedback/FeedbackPage"));
+const EventAnalyticsDashboard = React.lazy(() => import("../../Pages/Events/EventAnalyticsDashboard"));
+const DocumentationPage = React.lazy(() => import("../../Pages/About/DocumentationPage"));
+const SubmitProject = React.lazy(() => import("../../Pages/Projects/SubmitProject"));
 
 export const getPublicRoutes = () => [
   <Route key="/" path="/" element={<HomePage />} />,
