@@ -553,7 +553,13 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   return (
     <>
       <div
-        className={`fixed inset-0 bg-black/60 z-30 transition-opacity duration-300 ${isMobileMenuOpen || showProfileDropdown || openDropdown || showLogoutModal ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        className={`fixed inset-0 z-30 transition-opacity duration-300 ${
+          isMobileMenuOpen || showLogoutModal
+            ? "bg-black/60 opacity-100"
+            : (showProfileDropdown || openDropdown)
+            ? "bg-transparent opacity-100"
+            : "opacity-0 pointer-events-none"
+        }`}
         onClick={closeAllMenus}
       />
 

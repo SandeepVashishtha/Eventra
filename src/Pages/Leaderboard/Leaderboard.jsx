@@ -9,6 +9,7 @@ import {
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
 import StyledDropdown from "../../components/StyledDropdown";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 // Repository constant — update if the leaderboard should point to another repo
 const GITHUB_REPO = "SandeepVashishtha/Eventra";
@@ -36,6 +37,7 @@ const calculatePrPoints = (labels) => {
 };
 
 export default function LeaderBoard() {
+  useDocumentTitle("Eventra | Leaderboard");
   // Local state: contributors list and UI state
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
