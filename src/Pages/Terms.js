@@ -1,6 +1,8 @@
 import React, { useState } from "react";
+import useDocumentTitle from "../hooks/useDocumentTitle";
 
 export const Terms = () => {
+  useDocumentTitle("Eventra | Terms of Service");
   const [openDropdown, setOpenDropdown] = useState(null);
 
   const toggleDropdown = (section) => {

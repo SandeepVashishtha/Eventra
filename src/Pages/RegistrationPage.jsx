@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const RegistrationPage = () => {
+  useDocumentTitle("Eventra | Registration");
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
