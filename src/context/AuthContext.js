@@ -131,7 +131,7 @@ const login = async (usernameOrEmail, password) => {
     clearSession();
   };
 
-  const isAuthenticated = () => {
+  const isAuthenticated = useCallback(() => {
     // Also verify the current token hasn't expired since it was stored.
     if (!user || !token) return false;
     if (!isTokenValid(token)) {
@@ -140,7 +140,7 @@ const login = async (usernameOrEmail, password) => {
       return false;
     }
     return true;
-  };
+  }, [user, token, clearSession]);
 
   const hasRole = (roleName) => {
     return user?.roles?.includes(roleName) || false;
