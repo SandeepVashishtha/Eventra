@@ -18,12 +18,13 @@ import Loading from "./components/common/Loading";
 import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
 import { ThemeProvider } from "./context/ThemeContext";
-import { useModelContext } from "./hooks/useModelContext";
+import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
 import useOfflineSync from "./hooks/useOfflineSync";
 
 // Lazy Loaded Components
 const Footer = lazy(() => import("./components/Layout/Footer"));
 const Chatbot = lazy(() => import("./components/Chatbot"));
+const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
 const AppRoutes = lazy(() => import("./components/AppRoutes"));
 
 // Offline Sync
@@ -36,8 +37,6 @@ function App() {
   const [cursorEnabled, setCursorEnabled] = useState(
     localStorage.getItem("cursor") !== "off"
   );
-
-  useModelContext();
 
   // Toggle Cursor
   const toggleCursor = () => {
@@ -68,60 +67,58 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <MyEventsProvider>
-          <NotificationProvider />
-          <OfflineSyncManager />
+          <SessionRecoveryProvider>
+            <NotificationProvider />
+            <OfflineSyncManager />
 
-          <Router>
-            <div className="App">
-              {/* Navbar */}
-              <Navbar
-                cursorEnabled={cursorEnabled}
-                toggleCursor={toggleCursor}
-              />
+            <Router>
+              <div className="App">
+                <Navbar
+                  cursorEnabled={cursorEnabled}
+                  toggleCursor={toggleCursor}
+                />
 
-              {/* Main Content */}
-              <main
-                className="
-                  relative
-                  z-10
-                  min-h-screen
-                  bg-white
-                  dark:bg-slate-950
-                  text-black
-                  dark:text-white
-                  transition-colors
-                  duration-300
-                "
-              >
-                <PageTransition>
-                  <Suspense fallback={<Loading text="Loading page..." />}>
-                    <Routes>
-                      <Route
-                        path="/register/:id"
-                        element={<RegistrationPage />}
-                      />
+                <main
+                  className="
+                    relative
+                    z-10
+                    min-h-screen
+                    bg-white
+                    dark:bg-slate-950
+                    text-black
+                    dark:text-white
+                    transition-colors
+                    duration-300
+                  "
+                >
+                  <PageTransition>
+                    <Suspense fallback={<Loading text="Loading page..." />}>
+                      <Routes>
+                        <Route
+                          path="/register/:id"
+                          element={<RegistrationPage />}
+                        />
 
-                      <Route
-                        path="*"
-                        element={<AppRoutes />}
-                      />
-                    </Routes>
+                        <Route
+                          path="*"
+                          element={<AppRoutes />}
+                        />
+                      </Routes>
 
-                    {/* Global Components */}
-                    <Chatbot />
-                    <Footer />
-                  </Suspense>
-                </PageTransition>
-              </main>
+                      <Chatbot />
+                      <Footer />
+                    </Suspense>
+                  </PageTransition>
+                </main>
 
-              {/* Utilities */}
-              <ScrollToTop />
-              <FeedbackButton />
+                <ScrollToTop />
+                <FeedbackButton />
 
-              {/* Cursor Effect */}
-              <FluidCursor enabled={cursorEnabled} />
-            </div>
-          </Router>
+                <SessionRecovery />
+                <FluidCursor enabled={cursorEnabled} />
+              </div>
+            </Router>
+          </SessionRecoveryProvider>
         </MyEventsProvider>
       </AuthProvider>
     </ThemeProvider>

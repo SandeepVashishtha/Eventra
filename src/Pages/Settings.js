@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import { Sun, Moon, MousePointer, Bell, ShieldCheck, ArrowRight } from "lucide-react";
 import useLocalStorage from "../hooks/useLocalStorage";
+import useDocumentTitle from "../hooks/useDocumentTitle";
 
 const Settings = () => {
+  useDocumentTitle("Eventra | Settings");
   const { isDarkMode, toggleTheme } = useTheme();
 
   // Replace scattered localStorage.getItem / setItem calls with the hook
