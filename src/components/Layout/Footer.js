@@ -20,7 +20,6 @@ import {
   FaUsers,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import { toast } from "react-toastify";
 
 const footerLinks = {
   quick_links: [
@@ -45,11 +44,6 @@ const footerLinks = {
     { name: "API Docs", href: "/apiDocs", icon: <FaBookOpen size={14} /> },
   ],
 };
-
-const legalLinks = [
-  { name: "Privacy Policy", href: "/privacy" },
-  { name: "Terms of Service", href: "/terms" },
-];
 
 const socialLinks = [
   {
@@ -104,8 +98,9 @@ const socialLinks = [
   },
 ];
 
-// Cleaned up sub-components
-const Newsletter = ({ email, setEmail, isSubmitting, handleSubmit }) => {
+const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
+const Newsletter = ({ email, setEmail, isSubmitting, handleSubmit, feedback, setFeedback, feedbackId, feedbackColor }) => {
   return (
     <div className="mt-4">
       <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-2">
@@ -120,10 +115,17 @@ const Newsletter = ({ email, setEmail, isSubmitting, handleSubmit }) => {
           <input
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              if (feedback.message) {
+                setFeedback({ type: "", message: "" });
+              }
+            }}
             placeholder="Enter your email"
             className="pl-10 pr-4 py-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full"
             disabled={isSubmitting}
+            aria-describedby={feedback.message ? feedbackId : undefined}
+            aria-invalid={feedback.type === "error"}
           />
         </div>
         <button
@@ -134,9 +136,17 @@ const Newsletter = ({ email, setEmail, isSubmitting, handleSubmit }) => {
           {isSubmitting ? "Subscribing..." : "Subscribe"}
         </button>
       </form>
-      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-        We respect your privacy. Unsubscribe at any time.
-      </p>
+      <div className="mt-1 min-h-[1rem]" aria-live="polite">
+        {feedback.message ? (
+          <p id={feedbackId} className={`text-xs font-medium ${feedbackColor}`}>
+            {feedback.message}
+          </p>
+        ) : (
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            We respect your privacy. Unsubscribe at any time.
+          </p>
+        )}
+      </div>
     </div>
   );
 };
@@ -199,59 +209,51 @@ const FooterLinksRender = () => (
   </>
 );
 
-const FooterBottom = () => {
-  const currentYear = new Date().getFullYear();
-  return (
-    <div className="border-t border-gray-200 dark:border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
-      <p className="text-sm text-gray-500 dark:text-gray-400 text-center md:text-left">
-        © {currentYear} Eventra. All rights reserved. Created with ❤️ by Sandeep Vashishtha, Rhythm and the amazing open-source community.
-      </p>
-      <div className="flex gap-6">
-        {legalLinks.map((link) => (
-          <Link
-            key={link.name}
-            to={link.href}
-            className="text-xs text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-          >
-            {link.name}
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-};
-
 const Footer = () => {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState({ type: "", message: "" });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!email) {
-      toast.error("Please enter your email address");
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setFeedback({ type: "error", message: "Please enter your email address." });
       return;
     }
 
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      toast.error("Please enter a valid email address");
+    if (!isValidEmail(trimmedEmail)) {
+      setFeedback({ type: "error", message: "Please enter a valid email address." });
       return;
     }
+
     setIsSubmitting(true);
+    setFeedback({ type: "", message: "" });
+
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Submitting email:", email);
-      toast.success("Thank you for subscribing to our newsletter!");
+      setFeedback({ type: "success", message: "Thanks for subscribing!" });
       setEmail("");
     } catch (error) {
-      toast.error("Something went wrong. Please try again.");
+      setFeedback({
+        type: "error",
+        message: "Something went wrong. Please try again.",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const feedbackId = "footer-newsletter-feedback";
+  const feedbackColor =
+    feedback.type === "success"
+      ? "text-green-600 dark:text-green-400"
+      : "text-red-600 dark:text-red-400";
+
   return (
     <footer 
-      className="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
+      className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
       data-aos="fade-up"
       data-aos-duration="1000"
       data-aos-offset="100"
@@ -273,22 +275,23 @@ const Footer = () => {
               Open-source event management for communities worldwide.
             </p>
 
-            {/* Newsletter Subscription Component */}
-            <Newsletter
+            {/* Newsletter Component */}
+            <Newsletter 
               email={email}
               setEmail={setEmail}
               isSubmitting={isSubmitting}
               handleSubmit={handleSubmit}
+              feedback={feedback}
+              setFeedback={setFeedback}
+              feedbackId={feedbackId}
+              feedbackColor={feedbackColor}
             />
-
-            {/* Social Media Links Component */}
+            
+            {/* Social Links */}
             <SocialLinksRender />
           </div>
-          
-          {/* Mapping Grid Columns for Links */}
           <FooterLinksRender />
         </div>
-        <FooterBottom />
       </div>
     </footer>
   );
