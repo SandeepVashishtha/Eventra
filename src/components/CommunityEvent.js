@@ -17,7 +17,7 @@ import {
 const events = [
   {
     title: "Open Source Meetup",
-    date: "September 28, 2025",
+    date: "28-09-2025",
     location: "Delhi, India",
     description:
       "A meetup for open-source enthusiasts to share, collaborate, and network.",
@@ -25,7 +25,7 @@ const events = [
   },
   {
     title: "Hackathon 2025",
-    date: "October 12, 2025",
+    date: "12-10-2025",
     location: "Bangalore, India",
     description:
       "48 hours of coding, collaboration, and innovation. Team up and build something great!",
@@ -33,7 +33,7 @@ const events = [
   },
   {
     title: "Community Webinar",
-    date: "October 20, 2025",
+    date: "20-10-2025",
     location: "Online",
     description:
       "Interactive session with industry experts on web development trends.",
@@ -41,14 +41,14 @@ const events = [
   },
   {
     title: "Tech Talk: AI Future",
-    date: "November 5, 2025",
+    date: "05-11-2025",
     location: "Mumbai, India",
     description: "A keynote session on AI trends and innovations.",
     icon: <Mic size={20} />,
   },
   {
     title: "Remote Dev Summit",
-    date: "November 20, 2025",
+    date: "20-10-2025",
     location: "Online",
     description:
       "Conference about remote work, productivity, and building scalable products.",
@@ -56,7 +56,7 @@ const events = [
   },
   {
     title: "Startup Networking",
-    date: "December 2, 2025",
+    date: "02-12-2025",
     location: "Hyderabad, India",
     description:
       "Connect with startup founders, investors, and tech innovators.",
@@ -64,14 +64,14 @@ const events = [
   },
   {
     title: "Open Source Bootcamp",
-    date: "December 10, 2025",
+    date: "10-12-2025",
     location: "Pune, India",
     description: "Hands-on training on Git, GitHub, and contributing to OSS.",
     icon: <BookOpen size={20} />,
   },
   {
     title: "Coding Challenge 2026",
-    date: "January 8, 2026",
+    date: "08-01-2026",
     location: "Chennai, India",
     description:
       "Competitive programming contest to test your problem-solving skills.",
@@ -79,7 +79,7 @@ const events = [
   },
   {
     title: "Global Dev Conference",
-    date: "February 15, 2026",
+    date: "15-02-2026",
     location: "Singapore",
     description:
       "An international event bringing developers and leaders together.",
@@ -92,7 +92,7 @@ const CommunityEvent = () => {
 
   return (
     // UPDATED: Main page background
-    <div className="bg-white dark:bg-black pt-20 md:pt-24">
+    <div className="bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 pt-20 md:pt-24 text-slate-900 dark:text-gray-100 min-h-screen">
       <div className="max-w-7xl mx-auto px-6 py-16">
         {/* Intro Section */}
         <motion.div
@@ -152,7 +152,7 @@ const CommunityEvent = () => {
                 type="button"
                 whileHover={{ scale: 1.05 }}
                 onClick={() => setSelectedEvent(event)}
-                className="mt-6 px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-md bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 transition-all"
+                className="mt-6 px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-md bg-blue-600 hover:bg-blue-700 transition-all"
                 aria-label={`Learn more about ${event.title}`}
               >
                 Learn More -&gt;

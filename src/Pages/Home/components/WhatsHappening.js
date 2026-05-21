@@ -28,6 +28,7 @@ const WhatsHappening = () => {
           day: "numeric",
           year: "numeric",
         }),
+        rawDate: event.date,
         type: event.type.charAt(0).toUpperCase() + event.type.slice(1),
         status:
           event.status === "upcoming" ? "Registration Open" : "Live Event",
@@ -53,6 +54,7 @@ const WhatsHappening = () => {
           day: "numeric",
           year: "numeric",
         })}`,
+        rawDate: hackathon.startDate,
         type: "Hackathon",
         status: hackathon.status === "live" ? "Live Now" : "Registration Open",
         link: "/hackathons",
@@ -68,7 +70,7 @@ const WhatsHappening = () => {
   const upcomingEvents = [
     ...formatEventsData(eventsData),
     ...formatHackathonsData(hackathonsData),
-  ].sort((a, b) => new Date(a.date) - new Date(b.date));
+  ].sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate));
 
   const statusColors = {
     "Registration Open":
@@ -150,13 +152,9 @@ const WhatsHappening = () => {
   return (
     <section
       ref={ref}
-      className="py-12 sm:py-16 bg-gradient-to-t from-sky-50 via-pink-50 to-amber-50 dark:from-gray-900 dark:via-gray-800 dark:to-black"
-      data-aos="fade-up"
-      data-aos-duration="1000"
-      data-aos-offset="150"
+      className="py-12 sm:py-16 bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-900 text-slate-900 dark:text-gray-100 border-t border-gray-100 dark:border-slate-800/80"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
+      <div className="relative z-[50] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Heading */}
         <motion.div
           className="text-center mb-8 sm:mb-12"
@@ -233,7 +231,7 @@ const WhatsHappening = () => {
                 animate="center"
                 exit="exit"
                 transition={{ duration: 0.4, ease: "easeInOut" }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pointer-events-auto"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pointer-events-auto relative z-[50]"
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.2}
@@ -259,15 +257,14 @@ const WhatsHappening = () => {
                     // FIX 4: min-h-[360px] → min-h-[300px] sm:min-h-[360px]
                     <div
                       key={event.id}
-                      className="flex flex-col rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 bg-white dark:bg-black/60 transform hover:scale-105 min-h-[300px] sm:min-h-[360px] ring-2 ring-sky-200 dark:ring-sky-700/60"
+                      className="flex flex-col rounded-lg overflow-hidden border border-gray-200 dark:border-slate-800 transition-shadow duration-200 bg-white dark:bg-slate-950 hover:shadow-md min-h-[300px] sm:min-h-[360px]"
                     >
                       <div className="p-4 sm:p-6 flex-1 flex flex-col">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
                           <span
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs sm:text-sm font-medium ${
-                              statusColors[event.status] ||
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs sm:text-sm font-medium ${statusColors[event.status] ||
                               "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300"
-                            }`}
+                              }`}
                           >
                             {event.status}
                           </span>
@@ -316,14 +313,13 @@ const WhatsHappening = () => {
                         </div>
                       </div>
 
-                      <div className="bg-gray-50 dark:bg-gray-700/50 px-4 sm:px-6 py-3 sm:py-4">
+                      <div className="bg-gray-50 dark:bg-slate-900/50 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-100 dark:border-slate-800/80">
                         <a
                           href={event.link}
-                          className={`w-full inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 border border-transparent rounded-md shadow-sm text-xs sm:text-sm font-medium transition-colors ${
-                            event.featured
-                              ? "bg-black text-white hover:bg-sky-100 hover:text-black"
-                              : "bg-black text-white hover:bg-emerald-100 hover:text-black"
-                          }`}
+                          className={`w-full inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 rounded-md shadow-sm text-xs sm:text-sm font-medium transition-colors ${event.featured
+                              ? "bg-blue-600 text-white hover:bg-blue-700"
+                              : "bg-gray-900 text-white dark:bg-slate-800 dark:hover:bg-slate-700 hover:bg-black"
+                            }`}
                           target={event.link.startsWith("http") ? "_blank" : "_self"}
                           rel={event.link.startsWith("http") ? "noopener noreferrer" : ""}
                         >
@@ -355,11 +351,10 @@ const WhatsHappening = () => {
                 className="relative group"
               >
                 <div
-                  className={`w-5 h-2.5 sm:w-8 sm:h-2.5 rounded-full transition-colors duration-300 ${
-                    activeDotIndex === index
-                      ? "bg-gradient-to-r from-sky-300 via-emerald-300 to-rose-300 dark:from-sky-500 dark:via-emerald-500 dark:to-rose-500"
-                      : "bg-gray-300 dark:bg-gray-600 group-hover:bg-sky-200 dark:group-hover:bg-sky-500"
-                  }`}
+                  className={`w-5 h-2 sm:w-8 sm:h-2 rounded-full transition-colors duration-300 ${activeDotIndex === index
+                      ? "bg-blue-600 dark:bg-blue-500"
+                      : "bg-gray-300 dark:bg-slate-700 group-hover:bg-gray-400 dark:group-hover:bg-slate-600"
+                    }`}
                 />
                 {activeDotIndex === index && isAutoPlaying && (
                   <div className="absolute inset-0 rounded-full border-2 border-sky-300 dark:border-sky-400">

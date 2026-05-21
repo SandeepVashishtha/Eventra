@@ -6,7 +6,6 @@ const SearchFilter = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedLocation, setSelectedLocation] = useState('all');
-  const [dateFilter, setDateFilter] = useState('all');
   const [priceFilter, setPriceFilter] = useState('all');
 
   const categories = [

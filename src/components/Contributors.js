@@ -16,6 +16,31 @@ const TOKEN = process.env.REACT_APP_GITHUB_TOKEN || "";
 
 const STORAGE_KEY = "github_contributors";
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
+const REQUEST_TIMEOUT = 10000;
+const MAX_CONTRIBUTOR_PAGES = 10;
+
+const getGithubHeaders = () =>
+  TOKEN ? { Authorization: `token ${TOKEN}` } : undefined;
+
+const fetchJsonWithTimeout = async (url) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+
+  try {
+    const res = await fetch(url, {
+      headers: getGithubHeaders(),
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      throw new Error(`GitHub request failed with status ${res.status}`);
+    }
+
+    return await res.json();
+  } finally {
+    clearTimeout(timeout);
+  }
+};
 
 // Role assignment
 const getRoleByGitHubActivity = (contributor) => {
@@ -52,16 +77,26 @@ const cacheContributors = (data) => {
 const Contributors = () => {
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch GitHub profile details
   const fetchGitHubProfile = useCallback(async (username) => {
+    if (!username) {
+      return {
+        followers: 0,
+        public_repos: 0,
+        name: "Anonymous Contributor",
+        bio: "Open source contributor",
+        company: null,
+        location: null,
+      };
+    }
+
     try {
-      const res = await fetch(`https://api.github.com/users/${username}`, {
-        headers: TOKEN ? { Authorization: `token ${TOKEN}` } : undefined,
-      });
-      if (!res.ok) throw new Error("Profile fetch failed");
-      const profile = await res.json();
+      const profile = await fetchJsonWithTimeout(
+        `https://api.github.com/users/${username}`
+      );
       return {
         followers: profile.followers || 0,
         public_repos: profile.public_repos || 0,
@@ -85,6 +120,7 @@ const Contributors = () => {
   // Fetch contributors
   const fetchContributors = useCallback(async () => {
     setLoading(true);
+    setError("");
     const cached = getCachedContributors();
     if (cached) {
       setContributors(cached);
@@ -96,19 +132,28 @@ const Contributors = () => {
       let allContributors = [];
       let page = 1;
       let hasMore = true;
-      while (hasMore) {
-        const res = await fetch(
-          `https://api.github.com/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`,
-          {
-            headers: TOKEN ? { Authorization: `token ${TOKEN}` } : undefined,
-          }
+      while (hasMore && page <= MAX_CONTRIBUTOR_PAGES) {
+        const data = await fetchJsonWithTimeout(
+          `https://api.github.com/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`
         );
-        const data = await res.json();
-        if (!Array.isArray(data) || data.length === 0) hasMore = false;
+
+        if (!Array.isArray(data)) {
+          throw new Error("GitHub returned an unexpected contributors response");
+        }
+
+        const validContributors = data.filter((c) => c && c.login);
+
+        if (validContributors.length === 0) hasMore = false;
         else {
-          allContributors = [...allContributors, ...data];
+          allContributors = [...allContributors, ...validContributors];
+          hasMore = data.length === 100;
           page++;
         }
+      }
+
+      if (allContributors.length === 0) {
+        setContributors([]);
+        return;
       }
 
       const enhanced = await Promise.all(
@@ -125,7 +170,12 @@ const Contributors = () => {
       enhanced.sort((a, b) => b.contributions - a.contributions);
       setContributors(enhanced);
       cacheContributors(enhanced);
-    } catch {
+    } catch (err) {
+      setError(
+        err?.name === "AbortError"
+          ? "GitHub took too long to respond. Please try again."
+          : "Unable to load contributors from GitHub right now. Please try again."
+      );
       setContributors([]);
     } finally {
       setLoading(false);
@@ -234,9 +284,22 @@ if (loading)
         </motion.h2>
 
         {filteredContributors.length === 0 ? (
-          <p className="text-center text-gray-600 dark:text-gray-400 text-lg">
-            No contributors found matching "{searchTerm}"
-          </p>
+          <div className="text-center text-gray-600 dark:text-gray-400 text-lg">
+            <p>
+              {searchTerm
+                ? `No contributors found matching "${searchTerm}"`
+                : "No contributors are available yet."}
+            </p>
+            {!searchTerm && (
+              <button
+                type="button"
+                onClick={fetchContributors}
+                className="mt-5 inline-flex items-center justify-center bg-black text-white px-6 py-3 rounded-full text-sm font-semibold shadow hover:bg-zinc-800 transition-colors"
+              >
+                Retry
+              </button>
+            )}
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12">
             {filteredContributors.map((c, i) => (

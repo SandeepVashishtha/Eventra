@@ -1,6 +1,8 @@
 import React, { useState } from "react";
+import useDocumentTitle from "../hooks/useDocumentTitle";
 
 export const Terms = () => {
+  useDocumentTitle("Eventra | Terms of Service");
   const [openDropdown, setOpenDropdown] = useState(null);
 
   const toggleDropdown = (section) => {
@@ -8,7 +10,7 @@ export const Terms = () => {
   };
 
   return (
-    <div className="pastel-grid-bg min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-12">
+    <div className="min-h-screen bg-white dark:bg-slate-950 py-12">
       <div className="max-w-5xl mx-auto px-6">
         {/* Header */}
         <div className="text-center mb-12 pt-4">
@@ -60,7 +62,7 @@ export const Terms = () => {
         </div>
 
         {/* Table of Contents for larger screens */}
-        <div className="hidden lg:block bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-10 border border-gray-100 dark:border-gray-700 sticky top-6">
+        <div className="hidden lg:block bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-10 border border-gray-100 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
             Table of Contents
           </h3>

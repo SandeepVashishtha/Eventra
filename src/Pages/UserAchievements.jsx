@@ -1,12 +1,14 @@
 import React, { useEffect } from 'react';
 import { useNotification } from '../context/NotificationContext';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 export default function UserAchievements() {
+  useDocumentTitle("Eventra | Achievements");
   const { achievements, fetchAchievements } = useNotification();
 
   useEffect(() => {
     fetchAchievements();
-  }, []);
+  }, [fetchAchievements]);
 
   // System fallback badges if the array returns empty during database synchronization
   const fallbackBadges = [

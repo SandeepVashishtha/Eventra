@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
@@ -53,6 +53,11 @@ const Signup = () => {
   const [passwordMatchMessage, setPasswordMatchMessage] = useState("");
   const navigate = useNavigate();
   const { setAuthSession } = useAuth();
+  const introPoints = [
+    "Create your account to post events, join hackathons, and submit projects.",
+    "Track your activity, registrations, and community engagement from one profile.",
+    "Get quick access to the tools you need to start contributing immediately.",
+  ];
 
 
 
@@ -62,26 +67,6 @@ const Signup = () => {
   const handleChange = (e) => {
     const newData = { ...formData, [e.target.name]: e.target.value };
     setFormData(newData);
-
-    if (e.target.name === "confirmPassword" || e.target.name === "password") {
-      const password = e.target.name === "password" ? e.target.value : newData.password;
-      const confirmPassword = e.target.name === "confirmPassword" ? e.target.value : newData.confirmPassword;
-
-      if (password && confirmPassword) {
-        if (password === confirmPassword) {
-          setError("");
-          setPasswordMatchMessage("Passwords match!");
-        } else {
-          setError("Passwords do not match");
-          setPasswordMatchMessage("");
-        }
-      } else {
-        setPasswordMatchMessage("");
-        if (e.target.name === "confirmPassword" && e.target.value) {
-          setError("Passwords do not match");
-        }
-      }
-    }
 
     if (e.target.name === "email") {
       setEmailError(validateEmail(e.target.value) ? "" : "Invalid email");
@@ -112,6 +97,28 @@ const Signup = () => {
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
   const toggleConfirmPasswordVisibility = () => setShowConfirmPassword(!showConfirmPassword);
+
+  useEffect(() => {
+  const timer = setTimeout(() => {
+    const { password, confirmPassword } = formData;
+
+    if (!password || !confirmPassword) {
+      setError("");
+      setPasswordMatchMessage("");
+      return;
+    }
+
+    if (password === confirmPassword) {
+      setError("");
+      setPasswordMatchMessage("Passwords match!");
+    } else {
+      setError("Passwords do not match");
+      setPasswordMatchMessage("");
+    }
+  }, 1000);
+
+  return () => clearTimeout(timer);
+}, [formData.password, formData.confirmPassword]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -197,25 +204,36 @@ const Signup = () => {
       transition={{ duration: 0.6 }}
       className="pastel-grid-bg  min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8"
     >
-       <div className="max-w-5xl w-full mx-auto">
+       <div className="max-w-4xl w-full mx-auto">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6 }}
-          className="bg-white dark:bg-gray-800 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700"
+          className="w-full pl-3 pr-4 py-3 my-14 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
         >
         <div className="md:flex">  
 
           {/* LEFT PANEL */}
           <div className="relative z-10 md:w-[38%] bg-gradient-to-br from-blue-100 via-yellow-50 to-pink-100 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900 text-gray-900 dark:text-white p-12 flex flex-col justify-between rounded-3xl">
             <div>
-              <h2 className="text-4xl font-extrabold mb-4" style={{ fontFamily: '"Anton", sans-serif' }}>
+              <h2 className="text-4xl text-center font-extrabold mb-5" style={{ fontFamily: '"Anton", sans-serif' }}>
                 Join Eventra
               </h2>
               
               <p className="mb-8 text-lg opacity-90 leading-relaxed">
                 Create your free account and start building amazing events.
               </p>
+              <div className="space-y-3">
+                {introPoints.map((point) => (
+                  <div
+                    key={point}
+                    className="flex items-start gap-3 rounded-xl border border-white/20 bg-white/10 py-3 text-sm text-gray-800 dark:text-gray-100 backdrop-blur-sm"
+                  >
+                    <span className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-500 shrink-0" />
+                    <span className="leading-relaxed">{point}</span>
+                  </div>
+                ))}
+              </div>
             </div>
        
             {/* <div className="mt-8 flex items-center p-4 bg-white/10 rounded-2xl hover:bg-white/20 transition duration-300 ease-in-out">
@@ -259,7 +277,7 @@ const Signup = () => {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
               Create Your Account
             </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400 p-2">
+            <p className="text-sm text-gray-600 dark:text-gray-400 pt-2 pb-5">
               Join Eventra and start building amazing events
             </p>
           </div>
@@ -267,13 +285,16 @@ const Signup = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-gray-700 dark:text-gray-300">
+                <label htmlFor="firstName" className="block text-sm text-gray-700 dark:text-gray-300">
                   First name <sup className="text-red-500">*</sup>
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
+                    id="firstName"
                     name="firstName"
+                    type="text"
+                    autoComplete="given-name"
                     value={formData.firstName}
                     onChange={handleChange}
                     placeholder="First name"
@@ -286,13 +307,16 @@ const Signup = () => {
                 )}
               </div>
               <div>
-                <label className="block text-sm text-gray-700 dark:text-gray-300">
+                <label htmlFor="lastName" className="block text-sm text-gray-700 dark:text-gray-300">
                   Last name <sup className="text-red-500">*</sup>
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
+                    id="lastName"
                     name="lastName"
+                    type="text"
+                    autoComplete="family-name"
                     value={formData.lastName}
                     onChange={handleChange}
                     placeholder="Last name"
@@ -307,7 +331,7 @@ const Signup = () => {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-700 dark:text-gray-300">
+              <label htmlFor="email" className="block text-sm text-gray-700 dark:text-gray-300">
                 Email address <sup className="text-red-500">*</sup>
               </label>
 
@@ -318,8 +342,10 @@ const Signup = () => {
                 />
 
                 <input
+                  id="email"
                   name="email"
                   type="email"
+                  autoComplete="email"
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="Enter your email address"
@@ -333,7 +359,7 @@ const Signup = () => {
               )}
             </div>
             <div>
-              <label className="block text-sm text-gray-700 dark:text-gray-300">
+              <label htmlFor="password" className="block text-sm text-gray-700 dark:text-gray-300">
                 Password <sup className="text-red-500">*</sup>
               </label>
               <div className="relative">
@@ -351,8 +377,10 @@ const Signup = () => {
                   />
                 </svg>
                 <input
+                  id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Enter your password"
@@ -407,7 +435,7 @@ const Signup = () => {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-700 dark:text-gray-300">
+              <label htmlFor="confirmPassword" className="block text-sm text-gray-700 dark:text-gray-300">
                 Confirm Password <sup className="text-red-500">*</sup>
               </label>
               <div className="relative">
@@ -425,8 +453,10 @@ const Signup = () => {
                   />
                 </svg>
                 <input
+                  id="confirmPassword"
                   name="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
+                  autoComplete="new-password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   placeholder="Confirm your password"

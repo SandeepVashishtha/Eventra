@@ -45,15 +45,6 @@ const stagger = {
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  if (isNaN(d)) return dateStr;
-  return d.toLocaleDateString('en-US', {
-    weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
-  });
-};
-
 const getEventStatus = (event) => {
   if (!event?.date) return 'Unknown';
   const eventDate = new Date(event.date);
@@ -402,7 +393,7 @@ export default function MyEventsTab() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             {searchQuery && (
-              <button className="ud-search-clear" onClick={() => setSearchQuery('')}>
+              <button className="ud-search-clear" onClick={() => setSearchQuery('')} aria-label="Clear search query">
                 <X size={13} />
               </button>
             )}

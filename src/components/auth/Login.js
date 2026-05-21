@@ -14,6 +14,11 @@ const Login = () => {
 
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
+  const introPoints = [
+    "Pick up where you left off with your dashboard and event tools.",
+    "Stay in sync with registrations, submissions, and community updates.",
+    "Keep your drafts, favorites, and notifications in one place.",
+  ];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -38,7 +43,7 @@ const Login = () => {
     if (isAuthenticated()) {
       navigate('/dashboard', { replace: true });
     }
-  }, [navigate]);
+  }, [navigate, isAuthenticated]);
 
 
   const handleSubmit = async (e) => {
@@ -72,18 +77,12 @@ const Login = () => {
       className="pastel-grid-bg min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-pink-50 dark:from-gray-950 dark:via-gray-900 dark:to-black py-12 px-4 sm:px-6 lg:px-8"
     >
 
-      <div className="max-w-5xl w-full mx-auto">
+      <div className="max-w-4xl w-full mx-auto">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="w-full pl-3 pr-4 py-3 
-bg-white dark:bg-gray-800 
-border border-gray-200 dark:border-gray-600 
-rounded-xl placeholder:text-gray-400 
-focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 
-transition-all duration-200 hover:shadow-md 
-text-gray-900 dark:text-white"
+          className="w-full pl-3 pr-4 py-3 my-14 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
         >
           <div className="absolute top-8 left-10 w-16 h-16 bg-blue-100 rounded-full blur-sm opacity-60"></div>
           <div className="absolute bottom-10 left-32 w-20 h-20 bg-pink-100 rounded-full blur-sm opacity-60"></div>
@@ -91,23 +90,30 @@ text-gray-900 dark:text-white"
           <div className="md:flex">
 
             {/* LEFT PANEL */}
-            <div className="relative z-10 md:w-[38%] bg-gradient-to-br from-blue-100 via-yellow-50 to-pink-100 
-dark:from-gray-800 dark:via-gray-900 dark:to-black 
-text-gray-900 dark:text-white p-12 flex flex-col justify-between rounded-3xl">
+            <div className="relative z-10 md:w-[38%] bg-gradient-to-br from-blue-100 via-yellow-50 to-pink-100 dark:from-gray-800 dark:via-gray-900 dark:to-black text-gray-900 dark:text-white p-12 flex flex-col justify-between rounded-3xl">
               <div>
-                <h2 className="text-4xl font-extrabold mb-4" style={{ fontFamily: '"Anton", sans-serif' }}>
+                <h2 className="text-4xl text-center font-extrabold mb-5" style={{ fontFamily: '"Anton", sans-serif' }}>
                   Welcome Back
                 </h2>
                 <p className="mb-8 text-lg opacity-90 leading-relaxed">
                   Sign in to your Eventra account and pick up where you left off.
                 </p>
+                <div>
+                  {introPoints.map((point) => (
+                    <div
+                      key={point}
+                      className="flex items-start gap-3 rounded-xl border border-white/20 bg-white/10 py-3 text-sm text-gray-800 dark:text-gray-100 backdrop-blur-sm"
+                    >
+                      <span className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-500 shrink-0" />
+                      <span className="leading-relaxed">{point}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
             {/* RIGHT PANEL */}
-            <div className="md:w-3/5 p-10 space-y-6 
-bg-white/70 dark:bg-gray-900/90 
-backdrop-blur-xl">
+            <div className="md:w-3/5 p-10 space-y-6 bg-white/70 dark:bg-gray-900/90 backdrop-blur-xl">
               {/* Logo / Title */}
               <motion.div
                 initial={{ scale: 0 }}
@@ -230,6 +236,7 @@ text-gray-900 dark:text-white"
                     <button
                       type="button"
                       onClick={() => setShowPassword((s) => !s)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
                       className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                     >
                       {showPassword ? (
@@ -283,7 +290,7 @@ text-gray-900 dark:text-white"
                   disabled={loading}
                   className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 dark:bg-blue-600 
 hover:bg-blue-600 dark:hover:bg-blue-500 
-text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
+focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
                 >
                   {loading ? (
                     <div className="flex items-center gap-2">

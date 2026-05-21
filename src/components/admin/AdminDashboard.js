@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Users, Calendar, Activity, Shield, LogOut, Plus,
   Search, ChevronRight, BarChart2,
-  Trash2, Edit2, CheckCircle, AlertCircle,
+  Trash2, Edit2, AlertCircle,
   TrendingUp
 } from 'lucide-react';
 import {
@@ -46,12 +46,6 @@ const MOCK_EVENTS = [
   { id: 4, title: 'Hack for Sustainability',date: '2025-07-20', participantCount: 80,  status: 'Completed', type: 'Hackathon' },
   { id: 5, title: 'Global AI Hackathon',    date: '2025-10-10', participantCount: 200, status: 'Upcoming',  type: 'Hackathon' },
 ];
-
-const STATUS_COLORS = {
-  Active: 'ad-badge-green', Inactive: 'ad-badge-gray',
-  Upcoming: 'ad-badge-blue', Completed: 'ad-badge-green',
-  USER: 'ad-badge-gray', EVENT_MANAGER: 'ad-badge-blue', ADMIN: 'ad-badge-purple',
-};
 
 /* ─── Confirmation Modal ─── */
 function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
