@@ -1,6 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
+import { toast } from "react-toastify";
 
 // Layout & Components
 import Navbar from "./components/Layout/Navbar";
@@ -75,6 +76,36 @@ function App() {
         "cursorPreferenceChanged",
         handleCursorPreference
       );
+    };
+  }, []);
+
+  // Handle Online/Offline Status Notification
+  useEffect(() => {
+    const handleOnline = () => {
+      toast.success("Back online! Your connections have been restored and sync is complete.", {
+        position: "bottom-right",
+        autoClose: 4000,
+      });
+    };
+
+    const handleOffline = () => {
+      toast.warning("You are currently offline. Running in secure local offline caching mode.", {
+        position: "bottom-right",
+        autoClose: 5000,
+      });
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    // Initial check on mount
+    if (!navigator.onLine) {
+      handleOffline();
+    }
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
