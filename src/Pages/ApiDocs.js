@@ -21,7 +21,7 @@ const endpoints = [
     method: "GET",
     url: "/api/hackathons",
     example: `fetch("/api/hackathons")
-  .then(res => res.json())
+  .then(res => res.json())`,
     response: `[
   {
     "id": 1,
