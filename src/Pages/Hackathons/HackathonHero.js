@@ -45,7 +45,7 @@ export default function HackathonHero({
     <div className="bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 relative py-16 sm:py-20 md:py-24 border-b border-gray-200 dark:border-slate-900">
 
       {/* ======================= HERO SECTION ======================= */}
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 md:px-8 text-center">
+      <div className="relative px-4 min-h-[75vh] flex flex-col items-center justify-center text-center z-10">
         <motion.h1
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -95,11 +95,10 @@ export default function HackathonHero({
                   key={idx}
                   whileHover={{ scale: 1.05 }}
                   onClick={() => onTagSelect(tag)}
-                  className={`px-3 py-1 text-xs font-medium rounded-lg cursor-pointer transition ${
-                    selectedTags.includes(tag)
+                  className={`px-3 py-1 text-xs font-medium rounded-lg cursor-pointer transition ${selectedTags.includes(tag)
                       ? 'bg-blue-600 text-white shadow-sm'
                       : 'text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700'
-                  }`}
+                    }`}
                 >
                   {tag}
                 </motion.span>
