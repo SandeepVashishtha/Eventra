@@ -2,6 +2,7 @@ import { Link, useParams } from "react-router-dom";
 import { Calendar, MapPin, Clock, Tag } from "lucide-react";
 import { getEventStatus } from "../../utils/eventUtils";
 import mockEvents from "./eventsMockData.json";
+import CertificateDownload from "../../components/CertificateDownload";
 
 const EventDetails = () => {
   const { eventId } = useParams();
@@ -12,7 +13,7 @@ const EventDetails = () => {
 
   if (!event) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black text-gray-900 dark:text-gray-100 py-24">
+      <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 py-24">
         <div className="mx-auto max-w-3xl rounded-3xl bg-white dark:bg-gray-900 shadow-xl p-10 text-center">
           <h1 className="text-5xl font-extrabold mb-4">Event Not Found</h1>
           <p className="text-gray-600 dark:text-gray-300 mb-8">
@@ -30,7 +31,7 @@ const EventDetails = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-black text-gray-900 dark:text-gray-100 py-16 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 py-16 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -46,12 +47,20 @@ const EventDetails = () => {
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <Link
-              to={`/events/${event.id}/register`}
-              className="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 transition"
-            >
-              Register Now
-            </Link>
+  {event.status === 'past' ? (
+    <CertificateDownload
+      eventName={event.title}
+      eventDate={event.date}
+      eventType={event.type}
+    />
+  ) : (
+    <Link
+      to={`/events/${event.id}/register`}
+      className="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 transition"
+    >
+      Register Now
+    </Link>
+  )}
             <Link
               to="/events"
               className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"

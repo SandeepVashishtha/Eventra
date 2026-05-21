@@ -15,7 +15,6 @@ import NotificationProvider from "./components/common/NotificationProvider";
 import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
 import { ThemeProvider } from "./context/ThemeContext";
-import { useModelContext } from "./hooks/useModelContext";
 import useOfflineSync from "./hooks/useOfflineSync";
 
 // Lazy load heavy components
@@ -29,30 +28,46 @@ const OfflineSyncManager = () => {
 };
 
 function App() {
-  const [cursorEnabled, setCursorEnabled] = useState(
-    localStorage.getItem("cursor") !== "off",
-  );
+  const [cursorEnabled, setCursorEnabled] =
+    useState(
+      localStorage.getItem("cursor") !== "off"
+    );
 
-  useModelContext();
-
+  // Toggle Cursor
   const toggleCursor = () => {
     const newValue = !cursorEnabled;
+
     setCursorEnabled(newValue);
-    localStorage.setItem("cursor", newValue ? "on" : "off");
+
+    localStorage.setItem(
+      "cursor",
+      newValue ? "on" : "off"
+    );
   };
 
+  // Listen For Cursor Preference Changes
   useEffect(() => {
     const handleCursorPreference = (event) => {
-      if (event?.detail?.cursorEnabled !== undefined) {
-        setCursorEnabled(event.detail.cursorEnabled);
+      if (
+        event?.detail?.cursorEnabled !== undefined
+      ) {
+        setCursorEnabled(
+          event.detail.cursorEnabled
+        );
       }
     };
-    window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
-    return () =>
+
+    window.addEventListener(
+      "cursorPreferenceChanged",
+      handleCursorPreference
+    );
+
+    return () => {
       window.removeEventListener(
         "cursorPreferenceChanged",
-        handleCursorPreference,
+        handleCursorPreference
       );
+    };
   }, []);
 
   return (
@@ -60,11 +75,29 @@ function App() {
       <AuthProvider>
         <MyEventsProvider>
           <NotificationProvider />
+
           <OfflineSyncManager />
+
           <Router>
             <div className="App">
-              <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
-              <main className="relative z-10 min-h-screen bg-white dark:bg-black">
+              <Navbar
+                cursorEnabled={cursorEnabled}
+                toggleCursor={toggleCursor}
+              />
+
+              <main
+                className="
+                  relative
+                  z-10
+                  min-h-screen
+                  bg-white
+                  dark:bg-slate-950
+                  text-black
+                  dark:text-white
+                  transition-colors
+                  duration-300
+                "
+              >
                 <PageTransition>
                   <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
                     <Routes>
@@ -74,6 +107,7 @@ function App() {
                   </Suspense>
                 </PageTransition>
               </main>
+
               <ScrollToTop />
               <Suspense fallback={null}>
                 <Chatbot />

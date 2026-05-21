@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const RegistrationPage = () => {
+  useDocumentTitle("Eventra | Registration");
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -12,7 +14,6 @@ const RegistrationPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Registration Data:", formData);
     alert("Registration Successful!");
   };
 
