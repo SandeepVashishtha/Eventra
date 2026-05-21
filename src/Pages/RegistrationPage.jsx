@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'react-toastify';
 
 const RegistrationPage = () => {
   const [formData, setFormData] = useState({
@@ -13,7 +14,7 @@ const RegistrationPage = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log("Registration Data:", formData);
-    alert("Registration Successful!");
+    toast.success("Registration Successful!");
   };
 
   const handleChange = (e) => {
