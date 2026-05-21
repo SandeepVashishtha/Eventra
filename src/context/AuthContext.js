@@ -125,6 +125,37 @@ const login = async (usernameOrEmail, password) => {
   return true;
 };
 
+const signInWithGoogle = async (credentialOrToken) => {
+  const idToken = typeof credentialOrToken === 'string'
+    ? credentialOrToken
+    : credentialOrToken?.credential || credentialOrToken?.token || credentialOrToken?.idToken;
+
+  if (!idToken) {
+    throw new Error('Google Sign-In failed: No credential or token provided');
+  }
+
+  const res = await apiUtils.post(API_ENDPOINTS.AUTH.GOOGLE, {
+    token: idToken,
+    idToken: idToken,
+    credential: idToken
+  });
+
+  const data = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    throw new Error(data?.message || data?.error || 'Google Sign-In failed');
+  }
+
+  const { sessionToken, sessionUser } = extractSession(res, data || {}, data?.email || 'google-user@eventra.com');
+
+  if (!sessionToken) {
+    throw new Error('Google Sign-In failed: token missing from response');
+  }
+
+  persistSession(sessionToken, sessionUser);
+  return true;
+};
+
 
 
   const logout = () => {
@@ -172,6 +203,7 @@ const value = {
   loading,
   login,
   logout,
+  signInWithGoogle,
   setAuthSession,
   setUser,
   isAuthenticated,
