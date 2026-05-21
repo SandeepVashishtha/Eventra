@@ -52,11 +52,10 @@ const renderCardSection = (isLoading, filteredEvents, viewMode, filterType, sear
   return (
     <div
       key={filterType + viewMode}
-      className={`grid gap-6 ${
-  viewMode === "grid"
-    ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-    : "grid-cols-1 max-w-4xl mx-auto"
-}`}
+      className={`grid gap-6 ${viewMode === "grid"
+          ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+          : "grid-cols-1 max-w-4xl mx-auto"
+        }`}
     >
       {filteredEvents.map((event) => (
         <EventCard key={event.id} event={event} />
@@ -162,7 +161,7 @@ const EventsPage = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 overflow-x-hidden">
       <EventHero
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -189,11 +188,10 @@ const EventsPage = () => {
               <button
                 key={filter.key}
                 onClick={() => setFilterType(filter.key)}
-                className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-full transition ${
-                  filterType === filter.key
-                    ? "bg-black text-white dark:bg-white dark:text-black"
-                    : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-700"
-                }`}
+                className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-lg transition ${filterType === filter.key
+                    ? "bg-blue-600 text-white dark:bg-blue-600 dark:text-white"
+                    : "border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:text-gray-300 dark:border-slate-700 dark:hover:bg-slate-800"
+                  }`}
                 aria-pressed={filterType === filter.key}
               >
                 {filter.label}
@@ -222,11 +220,10 @@ const EventsPage = () => {
             >
               <button
                 onClick={() => setViewMode("grid")}
-                className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
-                  viewMode === "grid"
+                className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${viewMode === "grid"
                     ? "bg-black text-white shadow-md dark:bg-white dark:text-black"
                     : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                }`}
+                  }`}
                 aria-label="Grid view"
                 aria-pressed={viewMode === "grid"}
               >
@@ -234,11 +231,10 @@ const EventsPage = () => {
               </button>
               <button
                 onClick={() => setViewMode("list")}
-                className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
-                  viewMode === "list"
+                className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${viewMode === "list"
                     ? "bg-black text-white shadow-md dark:bg-white dark:text-black"
                     : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                }`}
+                  }`}
                 aria-label="List view"
                 aria-pressed={viewMode === "list"}
               >

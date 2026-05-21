@@ -24,7 +24,7 @@ const EventDetailsPage = () => {
 
   if (!event) {
     return (
-      <div className="min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black flex items-center justify-center px-4">
+      <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center px-4">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
             Event Not Found
