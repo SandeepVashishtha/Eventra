@@ -14,7 +14,6 @@ const RegistrationPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Registration Data:", formData);
     alert("Registration Successful!");
   };
 

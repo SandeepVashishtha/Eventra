@@ -153,7 +153,6 @@ const SubmitProject = () => {
       return;
     }
 
-    console.log("Project Submitted:", formData);
     toast.success("Project submitted successfully!");
     setFormData({
       projectName: "",
