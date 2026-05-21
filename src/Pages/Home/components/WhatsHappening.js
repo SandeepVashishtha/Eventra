@@ -28,6 +28,7 @@ const WhatsHappening = () => {
           day: "numeric",
           year: "numeric",
         }),
+        rawDate: event.date,
         type: event.type.charAt(0).toUpperCase() + event.type.slice(1),
         status:
           event.status === "upcoming" ? "Registration Open" : "Live Event",
@@ -53,6 +54,7 @@ const WhatsHappening = () => {
           day: "numeric",
           year: "numeric",
         })}`,
+        rawDate: hackathon.startDate,
         type: "Hackathon",
         status: hackathon.status === "live" ? "Live Now" : "Registration Open",
         link: "/hackathons",
@@ -68,7 +70,7 @@ const WhatsHappening = () => {
   const upcomingEvents = [
     ...formatEventsData(eventsData),
     ...formatHackathonsData(hackathonsData),
-  ].sort((a, b) => new Date(a.date) - new Date(b.date));
+  ].sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate));
 
   const statusColors = {
     "Registration Open":

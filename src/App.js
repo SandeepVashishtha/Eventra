@@ -15,6 +15,7 @@ import NotificationProvider from "./components/common/NotificationProvider";
 import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
 import useOfflineSync from "./hooks/useOfflineSync";
 
 // Lazy load heavy components
@@ -74,11 +75,12 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <MyEventsProvider>
-          <NotificationProvider />
+          <SessionRecoveryProvider>
+            <NotificationProvider />
 
-          <OfflineSyncManager />
+            <OfflineSyncManager />
 
-          <Router>
+            <Router>
             <div className="App">
               <Navbar
                 cursorEnabled={cursorEnabled}
@@ -117,6 +119,7 @@ function App() {
               <FluidCursor enabled={cursorEnabled} />
             </div>
           </Router>
+          </SessionRecoveryProvider>
         </MyEventsProvider>
       </AuthProvider>
     </ThemeProvider>

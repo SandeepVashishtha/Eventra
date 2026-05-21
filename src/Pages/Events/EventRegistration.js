@@ -15,6 +15,7 @@ import {
 import { getEventStatus } from "../../utils/eventUtils";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
+import { useSessionRecovery } from "../../context/SessionRecoveryContext";
 import { API_ENDPOINTS } from "../../config/api";
 import { toast } from "react-toastify";
 import mockEvents from "./eventsMockData.json";
@@ -24,6 +25,7 @@ const EventRegistration = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, token } = useAuth();
   const { addRegistration } = useMyEvents();
+  const { saveSession, clearSession } = useSessionRecovery();
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -65,6 +67,32 @@ const EventRegistration = () => {
 
     loadEvent();
   }, [eventId, user, isAuthenticated]);
+
+  // Save session state when form data changes
+  useEffect(() => {
+    if (event && formData) {
+      saveSession({
+        page: 'event-registration',
+        eventId,
+        formData,
+        eventTitle: event.title,
+      });
+    }
+  }, [formData, event, eventId, saveSession]);
+
+  // Listen for session restoration
+  useEffect(() => {
+    const handleSessionRestored = (event) => {
+      const restoredData = event.detail;
+      if (restoredData?.page === 'event-registration' && restoredData?.eventId === eventId) {
+        setFormData(restoredData.formData || {});
+        toast.info('Your registration form has been restored');
+      }
+    };
+
+    window.addEventListener('sessionRestored', handleSessionRestored);
+    return () => window.removeEventListener('sessionRestored', handleSessionRestored);
+  }, [eventId]);
 
   // Validate form
   const validateForm = () => {
@@ -137,6 +165,8 @@ const EventRegistration = () => {
         toast.success("Registration successful!");
         // ── Save to My Events ──
         addRegistration(event, formData);
+        // Clear session after successful registration
+        clearSession();
         // Redirect to event details after 2 seconds
         setTimeout(() => {
           navigate(`/events/${eventId}`);
