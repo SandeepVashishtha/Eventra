@@ -23,8 +23,13 @@ import {
   HelpCircle,
   ChevronDown,
   MousePointer,
+<<<<<<< feature/event-countdown-timer
   Moon,
   Sun
+=======
+  Sun,
+  Moon
+>>>>>>> master
 } from "lucide-react";
 
 // --- Helpers to reduce complexity ---
@@ -85,13 +90,13 @@ const CursorToggleButton = ({ cursorEnabled, toggleCursor, isMobile }) => (
 );
 
 const AuthButtons = ({ isMobile, closeAllMenus }) => (
-  <div className={isMobile ? "space-y-3" : "flex items-center space-x-1"}>
+  <div className={isMobile ? "space-y-3" : "flex items-center space-x-3"}>
     <Link 
       to="/login" 
       onClick={isMobile ? closeAllMenus : undefined} 
       className={isMobile 
         ? "flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-semibold text-white bg-black hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 border border-transparent"
-        : "px-4 py-2 text-base font-medium text-black/75 hover:text-black dark:text-white/75 dark:hover:text-white transition-colors"
+        : "px-4 py-2 text-sm font-medium text-black/75 hover:text-black dark:text-white/75 dark:hover:text-white transition-colors"
       }
     >
       {isMobile && <LogIn className="w-5 h-5" />}Sign In
@@ -246,7 +251,7 @@ const MobileDrawerFooter = ({
     ) : (
       <AuthButtons isMobile={true} closeAllMenus={closeAllMenus} />
     )}
-    <div className="flex gap-2 mb-2">
+    <div className="flex gap-2 mt-3">
       <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={true} />
       <CursorToggleButton cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} isMobile={true} />
     </div>
@@ -336,10 +341,11 @@ const MobileUserSection = ({
     </button>
   </div>
 );
+
 const NAV_ITEMS = [
   { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
   { name: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
-  { name: "Hackathons", href: "/hackathons", icon: <Sparkles className="w-5 h-5" /> },
+  { name: "Hackathons", href: "/hackathons", icon: <Trophy className="w-5 h-5" /> },
   { name: "Projects", href: "/projects", icon: <FolderKanban className="w-5 h-5" /> },
   {
     name: "Community",
@@ -382,7 +388,7 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
 const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   const location = useLocation();
   return (
-    <div className="hidden lg:flex absolute left-[48%] transform -translate-x-1/2 space-x-5 z-10">
+    <div className="hidden lg:flex items-center justify-center gap-8 xl:gap-10 flex-1">
       <NavList 
         location={location} 
         openDropdown={openDropdown} 
@@ -437,13 +443,12 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
     </div>
   );
 };
-
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [navHeight, setNavHeight] = useState(0);
+  const [navHeight] = useState(0);
 
   const drawerRef = useRef(null);
   const closeBtnRef = useRef(null);
@@ -511,13 +516,31 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const handleTouchStart = (e) => { touchStartXRef.current = e.touches[0].clientX; touchCurrentXRef.current = e.touches[0].clientX; };
   const handleTouchMove = (e) => { touchCurrentXRef.current = e.touches[0].clientX; };
   const handleTouchEnd = () => {
+<<<<<<< feature/event-countdown-timer
     const delta = (touchCurrentXRef.current ?? 0) - (touchStartXRef.current ?? 0);
     if (delta > 50) closeAllMenus();
+=======
+    const start = touchStartXRef.current;
+    const end = touchCurrentXRef.current;
+    if (typeof start !== "number" || typeof end !== "number") return;
+    const deltaX = end - start;
+    if (deltaX > 50) {
+      closeAllMenus();
+    }
+>>>>>>> master
     touchStartXRef.current = null;
     touchCurrentXRef.current = null;
   };
 
+<<<<<<< feature/event-countdown-timer
   const handleLogoutClick = () => { setShowLogoutModal(true); setShowProfileDropdown(false); };
+=======
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
+    setShowProfileDropdown(false);
+  };
+
+>>>>>>> master
   const handleConfirmLogout = () => {
     setShowLogoutModal(false);
     logout();
@@ -529,19 +552,39 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   return (
     <>
       <div
-        className={`fixed inset-0 bg-black/60 z-30 transition-opacity duration-300 ${isMobileMenuOpen || showProfileDropdown || openDropdown || showLogoutModal ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        className={`fixed inset-0 z-30 transition-opacity duration-300 ${
+          isMobileMenuOpen || showLogoutModal
+            ? "bg-black/60 opacity-100"
+            : (showProfileDropdown || openDropdown)
+            ? "bg-transparent opacity-100"
+            : "opacity-0 pointer-events-none"
+        }`}
         onClick={closeAllMenus}
       />
 
+<<<<<<< feature/event-countdown-timer
       <nav ref={navRef} data-aos="fade-down" data-aos-once="true" data-aos-duration="1000"
         className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white dark:bg-gray-900 border-b border-black/10 dark:border-white/10">
         <div className="w-full flex items-center h-20 px-6 md:px-12 relative">
           <Link to="/" className="flex-shrink-0 z-20">
+=======
+      <nav
+        ref={navRef}
+        data-aos="fade-down"
+        data-aos-once="true"
+        data-aos-duration="1000"
+        className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white dark:bg-gray-900 border-b border-black/10 dark:border-white/10"
+      >
+        <div className="max-w-7xl mx-auto flex items-center justify-between h-[72px] px-6 lg:px-8 relative">
+          {/* Logo on the left */}
+          <Link to="/" className="flex items-center min-w-[160px] z-20">
+>>>>>>> master
             <h2 className="text-3xl font-semibold tracking-tight text-black dark:text-white" style={{ fontFamily: '"Anton", sans-serif' }}>
               Eventra
             </h2>
           </Link>
 
+<<<<<<< feature/event-countdown-timer
           <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
 
           <div className="hidden lg:flex items-center ml-auto z-20">
@@ -563,10 +606,39 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                 <AuthButtons isMobile={false} />
               )}
             </div>
+=======
+          {/* Centered nav links */}
+          <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
+
+          {/* Right Group: Auth Controls and Mobile Toggle - FIXED VERSION */}
+          <div className="hidden lg:flex items-center gap-3 min-w-[220px] justify-end">
+            <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={false} />
+            <CursorToggleButton cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} isMobile={false} />
+            {isAuthenticated() ? (
+              <UserProfileDropdown
+                user={user}
+                primaryLine={primaryLine}
+                secondaryLine={secondaryLine}
+                showProfileDropdown={showProfileDropdown}
+                setShowProfileDropdown={setShowProfileDropdown}
+                location={location}
+                handleLogoutClick={handleLogoutClick}
+              />
+            ) : (
+              <AuthButtons isMobile={false} />
+            )}
+>>>>>>> master
           </div>
 
+          {/* Mobile menu button */}
           <div className="lg:hidden ml-auto">
-            <button ref={toggleBtnRef} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} aria-expanded={isMobileMenuOpen} aria-label="Open navigation" className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10">
+            <button 
+              ref={toggleBtnRef} 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+              aria-expanded={isMobileMenuOpen} 
+              aria-label="Open navigation" 
+              className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10"
+            >
               <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
@@ -592,6 +664,10 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         secondaryLine={secondaryLine}
       />
 
+<<<<<<< feature/event-countdown-timer
+=======
+      {/* Confirmation Modal */}
+>>>>>>> master
       <ConfirmationModal
         isOpen={showLogoutModal}
         onClose={handleCancelLogout}

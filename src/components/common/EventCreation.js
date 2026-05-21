@@ -32,6 +32,8 @@ import {
   Plus,
 } from "lucide-react";
 
+const DRAFT_KEY = "eventra_create_event_draft";
+
 const EventCreation = () => {
   const [currentStep, setCurrentStep] = useState("form");
   const [loading, setLoading] = useState(false);
@@ -296,13 +298,11 @@ const EventCreation = () => {
       }
 
       const eventStartDate = new Date(
-        `${formData.isMultiDay ? formData.startDate : formData.date}T${
-          formData.startTime
+        `${formData.isMultiDay ? formData.startDate : formData.date}T${formData.startTime
         }`
       );
       const eventEndDate = new Date(
-        `${formData.isMultiDay ? formData.endDate : formData.date}T${
-          formData.endTime
+        `${formData.isMultiDay ? formData.endDate : formData.date}T${formData.endTime
         }`
       );
 
@@ -319,10 +319,10 @@ const EventCreation = () => {
         location: formData.isVirtual
           ? null
           : {
-              name: formData.location.name.trim(),
-              address: formData.location.address?.trim() || "",
-              coordinates: coordinates,
-            },
+            name: formData.location.name.trim(),
+            address: formData.location.address?.trim() || "",
+            coordinates: coordinates,
+          },
         isVirtual: formData.isVirtual,
         virtualLink: formData.isVirtual ? formData.virtualLink.trim() : null,
         capacity: formData.capacity ? Number(formData.capacity) : null,
@@ -403,6 +403,16 @@ const EventCreation = () => {
   };
 
   useEffect(() => {
+    const saved = localStorage.getItem(DRAFT_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setFormData(prev => ({ ...prev, ...parsed, banner: null, bannerPreview: null }));
+      } catch (e) { }
+    }
+  }, []);
+
+  useEffect(() => {
     if (successMessage || generalError) {
       const timer = setTimeout(() => {
         setSuccessMessage("");
@@ -411,6 +421,11 @@ const EventCreation = () => {
       return () => clearTimeout(timer);
     }
   }, [successMessage, generalError]);
+
+  useEffect(() => {
+    const { banner, bannerPreview, ...saveable } = formData;
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
+  }, [formData]);
 
   const resetForm = () => {
     setFormData({
@@ -446,6 +461,7 @@ const EventCreation = () => {
       bannerPreview: null,
     });
     setErrors({});
+    localStorage.removeItem(DRAFT_KEY);
     setNewTag("");
     setCurrentStep("form");
   };
@@ -589,11 +605,10 @@ const EventCreation = () => {
                   onChange={handleInputChange}
                   placeholder="Enter event title (3-200 characters)"
                   maxLength={200}
-                  className={`w-full border ${
-                    errors.title
+                  className={`w-full border ${errors.title
                       ? "border-red-500"
                       : "border-gray-300 dark:border-gray-600"
-                  } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
+                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
                 />
                 {errors.title && (
                   <span className="text-red-500 text-sm mt-1">
@@ -701,7 +716,7 @@ const EventCreation = () => {
                   {/* Preview Section */}
                   {formData.bannerPreview && (
                     <div className="rounded-lg overflow-hidden border border-indigo-200 dark:border-gray-700 shadow-md">
-                      <img
+                      <img loading="lazy"
                         src={formData.bannerPreview}
                         alt="Banner preview"
                         className="w-full h-48 object-cover hover:scale-[1.02] transition-transform duration-300"
@@ -728,11 +743,10 @@ const EventCreation = () => {
                   onChange={handleInputChange}
                   placeholder="Describe your event"
                   rows={4}
-                  className={`w-full border ${
-                    errors.description
+                  className={`w-full border ${errors.description
                       ? "border-red-500"
                       : "border-gray-300 dark:border-gray-600"
-                  } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
+                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
                 />
                 {errors.description && (
                   <span className="text-red-500 text-sm mt-1">
@@ -756,11 +770,10 @@ const EventCreation = () => {
                   name="category"
                   value={formData.category}
                   onChange={handleInputChange}
-                  className={`w-full border ${
-                    errors.category
+                  className={`w-full border ${errors.category
                       ? "border-red-500"
                       : "border-gray-300 dark:border-gray-600"
-                  } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
+                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
                 >
                   <option value="">Select a category</option>
                   {categories.map((cat) => (
@@ -855,11 +868,10 @@ const EventCreation = () => {
                       value={formData.startDate}
                       onChange={handleInputChange}
                       min={todayString}
-                      className={`w-full border ${
-                        errors.startDate
+                      className={`w-full border ${errors.startDate
                           ? "border-red-500"
                           : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                        } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.startDate && (
                       <span className="text-red-500 text-sm mt-1 block">
@@ -879,11 +891,10 @@ const EventCreation = () => {
                       value={formData.endDate}
                       onChange={handleInputChange}
                       min={formData.startDate || todayString}
-                      className={`w-full border ${
-                        errors.endDate
+                      className={`w-full border ${errors.endDate
                           ? "border-red-500"
                           : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                        } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.endDate && (
                       <span className="text-red-500 text-sm mt-1 block">
@@ -902,11 +913,10 @@ const EventCreation = () => {
                       name="startTime"
                       value={formData.startTime}
                       onChange={handleInputChange}
-                      className={`w-full border ${
-                        errors.startTime
+                      className={`w-full border ${errors.startTime
                           ? "border-red-500"
                           : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                        } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.startTime && (
                       <span className="text-red-500 text-sm mt-1 block">
@@ -925,11 +935,10 @@ const EventCreation = () => {
                       name="endTime"
                       value={formData.endTime}
                       onChange={handleInputChange}
-                      className={`w-full border ${
-                        errors.endTime
+                      className={`w-full border ${errors.endTime
                           ? "border-red-500"
                           : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                        } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.endTime && (
                       <span className="text-red-500 text-sm mt-1 block">
@@ -958,11 +967,10 @@ const EventCreation = () => {
                       value={formData.date}
                       onChange={handleInputChange}
                       min={todayString}
-                      className={`w-full border ${
-                        errors.date
+                      className={`w-full border ${errors.date
                           ? "border-red-500"
                           : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                        } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.date && (
                       <span className="text-red-500 text-sm mt-1 block">
@@ -981,11 +989,10 @@ const EventCreation = () => {
                       name="startTime"
                       value={formData.startTime}
                       onChange={handleInputChange}
-                      className={`w-full border ${
-                        errors.startTime
+                      className={`w-full border ${errors.startTime
                           ? "border-red-500"
                           : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                        } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.startTime && (
                       <span className="text-red-500 text-sm mt-1 block">
@@ -1004,11 +1011,10 @@ const EventCreation = () => {
                       name="endTime"
                       value={formData.endTime}
                       onChange={handleInputChange}
-                      className={`w-full border ${
-                        errors.endTime
+                      className={`w-full border ${errors.endTime
                           ? "border-red-500"
                           : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                        } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.endTime && (
                       <span className="text-red-500 text-sm mt-1 block">
@@ -1057,11 +1063,10 @@ const EventCreation = () => {
                     value={formData.virtualLink}
                     onChange={handleInputChange}
                     placeholder="https://zoom.us/j/..."
-                    className={`w-full border ${
-                      errors.virtualLink
+                    className={`w-full border ${errors.virtualLink
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
-                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
+                      } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
                   />
                   {errors.virtualLink && (
                     <span className="text-red-500 text-sm mt-1">
@@ -1087,11 +1092,10 @@ const EventCreation = () => {
                       value={formData.location.name}
                       onChange={handleInputChange}
                       placeholder="Convention Center, Community Hall, etc."
-                      className={`w-full border ${
-                        errors.location
+                      className={`w-full border ${errors.location
                           ? "border-red-500"
                           : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
+                        } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
                     />
                     {errors.location && (
                       <span className="text-red-500 text-sm mt-1">
@@ -1181,11 +1185,10 @@ const EventCreation = () => {
                   placeholder="Leave empty for unlimited (max: 100,000)"
                   min="1"
                   max="100000"
-                  className={`w-full border ${
-                    errors.capacity
+                  className={`w-full border ${errors.capacity
                       ? "border-red-500"
                       : "border-gray-300 dark:border-gray-600"
-                  } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
+                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
                 />
                 {errors.capacity && (
                   <span className="text-red-500 text-sm mt-1">
@@ -1226,11 +1229,10 @@ const EventCreation = () => {
                     name="registrationEnd"
                     value={formData.registrationEnd}
                     onChange={handleInputChange}
-                    className={`w-full border ${
-                      errors.registrationEnd
+                    className={`w-full border ${errors.registrationEnd
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
-                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
+                      } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
                   />
                   {errors.registrationEnd && (
                     <span className="text-red-500 text-sm mt-1">
@@ -1505,7 +1507,7 @@ const EventCreation = () => {
           <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl overflow-hidden border border-indigo-300 dark:border-gray-700">
             {formData.bannerPreview && (
               <div className="w-full h-64 overflow-hidden">
-                <img
+                <img loading="lazy"
                   src={formData.bannerPreview}
                   alt="Event banner"
                   className="w-full h-full object-cover"
@@ -1547,8 +1549,8 @@ const EventCreation = () => {
                     <p className="text-gray-600 dark:text-gray-400">
                       {formData.isMultiDay
                         ? `${formatDate(formData.startDate)} - ${formatDate(
-                            formData.endDate
-                          )}`
+                          formData.endDate
+                        )}`
                         : formatDate(formData.date)}
                     </p>
 

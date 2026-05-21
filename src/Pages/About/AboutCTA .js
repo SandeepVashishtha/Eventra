@@ -5,67 +5,11 @@ import { BookOpen, Mail, Users, Star, Globe } from "lucide-react";
 
 const AboutCTA = () => {
   // Bubbles with random delays for popping animation
-  const bubbles = [
-    { size: 14, top: "15%", left: "20%", color: "bg-pink-200/50", delay: 0 },
-    {
-      size: 16,
-      top: "50%",
-      left: "10%",
-      color: "bg-yellow-200/45",
-      delay: 0.3,
-    },
-    {
-      size: 12,
-      top: "35%",
-      left: "70%",
-      color: "bg-blue-200/45",
-      delay: 0.6,
-    },
-    { size: 18, top: "65%", left: "50%", color: "bg-green-200/40", delay: 0.9 },
-    {
-      size: 14,
-      top: "80%",
-      left: "80%",
-      color: "bg-pink-200/40",
-      delay: 1.2,
-    },
-    {
-      size: 10,
-      top: "25%",
-      left: "40%",
-      color: "bg-blue-200/40",
-      delay: 0.5,
-    },
-    { size: 12, top: "60%", left: "30%", color: "bg-yellow-200/40", delay: 1.0 },
-    {
-      size: 15,
-      top: "10%",
-      left: "60%",
-      color: "bg-green-200/40",
-      delay: 0.2,
-    },
-    {
-      size: 13,
-      top: "45%",
-      left: "75%",
-      color: "bg-blue-200/40",
-      delay: 0.7,
-    },
-    { size: 11, top: "70%", left: "20%", color: "bg-pink-200/35", delay: 1.1 },
-    {
-      size: 16,
-      top: "30%",
-      left: "85%",
-      color: "bg-yellow-200/35",
-      delay: 0.4,
-    },
-  ];
+  const bubbles = [];
 
   return (
     <section 
-      className="relative py-12 px-12 mt-2 mb-8 mx-8 rounded-3xl bg-gradient-to-br from-white via-slate-50 to-zinc-100
-border border-slate-200
-shadow-2xl shadow-slate-200/50 text-center overflow-hidden shadow-2xl border border-gray-200"
+      className="relative py-12 px-12 mt-2 mb-8 mx-8 rounded-3xl bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl text-center overflow-hidden"
       // AOS Implementation
       data-aos="zoom-in-up"
       data-aos-duration="1000"
@@ -117,7 +61,7 @@ shadow-2xl shadow-slate-200/50 text-center overflow-hidden shadow-2xl border bor
       <div className="flex flex-col md:flex-row justify-center gap-6 relative z-10">
         <Link
           to="/signup"
-          className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-medium text-white bg-black shadow-lg hover:shadow-xl hover:scale-105 hover:bg-zinc-800 transition-all duration-300"
+          className="inline-flex items-center gap-2 px-8 py-3 rounded-lg font-medium text-white bg-blue-600 shadow-lg hover:shadow-xl hover:scale-105 hover:bg-blue-700 transition-all duration-300"
           data-aos="zoom-in"
           data-aos-delay="200"
         >
@@ -126,7 +70,7 @@ shadow-2xl shadow-slate-200/50 text-center overflow-hidden shadow-2xl border bor
 
         <Link
           to="/documentation"
-          className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-medium border border-black/20 text-black hover:bg-gray-100 hover:border-black/30 transition-all duration-300"
+          className="inline-flex items-center gap-2 px-8 py-3 rounded-lg font-medium border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-300 dark:hover:bg-slate-800 transition-all duration-300"
           data-aos="zoom-in"
           data-aos-delay="400"
         >
@@ -135,7 +79,7 @@ shadow-2xl shadow-slate-200/50 text-center overflow-hidden shadow-2xl border bor
 
         <Link
           to="/contact"
-          className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-medium border border-black/20 text-black hover:bg-gray-100 hover:border-black/30 transition-all duration-300"
+          className="inline-flex items-center gap-2 px-8 py-3 rounded-lg font-medium border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-300 dark:hover:bg-slate-800 transition-all duration-300"
           data-aos="zoom-in"
           data-aos-delay="600"
         >

@@ -1,18 +1,21 @@
-import { AnimatePresence, motion, MotionConfig, useAnimation } from "framer-motion";
-import Fuse from "fuse.js";
-import { Calendar, Code, ExternalLink, Search, Trophy } from "lucide-react";
+import { motion, useAnimation, AnimatePresence, MotionConfig } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import Fuse from "fuse.js";
+import { Search, Calendar, Trophy, Code, ExternalLink } from "lucide-react";
 
 // Import mock data
-import ModernSearchInput from "../../../components/common/ModernSearchInput";
-import RespawningText from "../../../jhalak/RespawningText";
 import eventsData from "../../Events/eventsMockData.json";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
+import RespawningText from "../../../jhalak/RespawningText";
+import ModernSearchInput from "../../../components/common/ModernSearchInput";
+import useDocumentTitle from "../../../hooks/useDocumentTitle";
+
+const MotionLink = motion(Link);
 
 const Hero = () => {
-  const navigate = useNavigate();
+  useDocumentTitle("Eventra | Home")
   const phrases = [
     "Amazing Tech Events",
     "Exciting Hackathons Today",
@@ -24,7 +27,6 @@ const Hero = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
 
   // Change phrase every 3 seconds
   useEffect(() => {
@@ -32,7 +34,7 @@ const Hero = () => {
       setIndex((prev) => (prev + 1) % phrases.length);
     }, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [phrases.length]);
 
   const controls = useAnimation();
 
@@ -42,22 +44,28 @@ const Hero = () => {
   }, [controls]);
 
   // Global search functionality
+  const createSearchItem = (item, type, searchType) => ({
+    id: item.id,
+    title: item.title,
+    description: item.description,
+    location: item.location,
+    tags: item.tags,
+    techStack: item.techStack,
+    category: item.category,
+    author: item.author,
+    organizer: item.organizer,
+    type,
+    searchType,
+  });
+
   const allData = [
-    ...eventsData.map((item) => ({
-      ...item,
-      type: "event",
-      searchType: "Events",
-    })),
-    ...hackathonsData.map((item) => ({
-      ...item,
-      type: "hackathon",
-      searchType: "Hackathons",
-    })),
-    ...projectsData.map((item) => ({
-      ...item,
-      type: "project",
-      searchType: "Projects",
-    })),
+    ...eventsData.map((item) => createSearchItem(item, "event", "Events")),
+    ...hackathonsData.map((item) =>
+      createSearchItem(item, "hackathon", "Hackathons")
+    ),
+    ...projectsData.map((item) =>
+      createSearchItem(item, "project", "Projects")
+    ),
   ];
 
   const fuse = new Fuse(allData, {
@@ -88,16 +96,18 @@ const Hero = () => {
     }
   };
 
-  const handleResultClick = (result, type) => {
+  const clearSearch = () => {
     setShowResults(false);
     setSearchQuery("");
-    if (type === "event") {
-      navigate("/events");
-    } else if (type === "hackathon") {
-      navigate("/hackathons");
-    } else if (type === "project") {
-      navigate("/projects");
-    }
+  };
+
+  const getResultHref = (item) => {
+    const query = encodeURIComponent(item.title || searchQuery);
+
+    if (item.type === "event") return `/events?search=${query}`;
+    if (item.type === "hackathon") return `/hackathons?search=${query}`;
+    if (item.type === "project") return `/projects?search=${query}`;
+    return "/";
   };
 
   const getResultIcon = (type) => {
@@ -146,47 +156,26 @@ const Hero = () => {
     {
       value: "1500+",
       label: "Developers Joined",
-      color: "text-black",
     },
     {
       value: "75",
       label: "Events Organized",
-      color: "text-black",
     },
     {
       value: "30+",
       label: "Partners & Sponsors",
-      color: "text-black",
     },
   ];
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 py-16 sm:py-20 md:py-24">
-      {/* Floating pastel shapes */}
-      {shapes.map((shape, i) => (
-        <motion.div
-          key={i}
-          animate={floatShape(i)}
-          className="absolute rounded-full"
-          style={{
-            width: `${shape.size}px`,
-            height: `${shape.size}px`,
-            ...shape.pos,
-            backgroundColor: shape.color,
-            opacity: 0.5, // Increased from 0.2 for better visibility
-            filter: "blur(2px)", // Added a slight blur for a premium look
-          }}
-        />
-      ))}
-
+    <section className="relative overflow-hidden bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 pb-16 sm:pb-20 md:pb-24 pt-6 sm:pt-10 border-b border-gray-100 dark:border-slate-900">
       {/* Hero Content */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10 pt-20">
         <motion.div
           className="text-center"
           variants={container}
           initial="hidden"
           animate={controls}
-          // AOS Implementation (Fallback/Enhancement)
           data-aos="zoom-in"
           data-aos-once="true"
           data-aos-duration="1000"
@@ -194,11 +183,11 @@ const Hero = () => {
           <MotionConfig reducedMotion="never">
             {/* Headline */}
             <motion.h1
-              className="mx-auto max-w-[92vw] text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 sm:mb-6 leading-[0.95] sm:leading-tight text-text break-words px-2 sm:px-0"
+              className="mx-auto max-w-[92vw] mt-6 text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-5 sm:mb-6 leading-tight sm:leading-tight text-gray-900 dark:text-white break-words px-2 sm:px-0"
               style={{ fontFamily: '"Anton", sans-serif' }}
             >
               <motion.span
-                className="block text-black dark:text-white mb-2 md:mb-0"
+                className="block text-gray-900 dark:text-white mb-2 md:mb-0"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
@@ -206,11 +195,11 @@ const Hero = () => {
                 <RespawningText texts={["Discover & Join", "Innovate & Create", "Learn & Grow"]} />
               </motion.span>
 
-              <div className="relative mx-auto mt-2 sm:mt-3 h-14 sm:h-24 md:h-28 lg:h-32 overflow-hidden flex justify-center items-center max-w-full">
+              <div className="relative mx-auto h-14 sm:h-24 md:h-28 lg:h-32 overflow-hidden flex justify-center items-center max-w-full">
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={index}
-                    className="block mt-2 text-black dark:text-white mb-4 pb-2 whitespace-normal text-center px-1 text-black dark:text-white"
+                    className="block mt-2 text-gray-900 dark:text-white mb-4 pb-2 whitespace-normal text-center px-1"
                     initial={{ opacity: 0, y: 40 }}
                     animate={{
                       opacity: 1,
@@ -233,14 +222,14 @@ const Hero = () => {
           {/* Subtext */}
           <motion.p
             variants={fadeUp}
-            className="text-sm sm:text-base md:text-lg text-black dark:text-gray-300 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0 text-black dark:text-white"
+            className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
           >
             Connect with developers, learn new skills, and grow your network at
             the best tech events, hackathons, and workshops in your area.
           </motion.p>
 
           {/* Global Search Bar */}
-          <div className="w-full max-w-2xl mx-auto mb-10 sm:mb-12 text-black dark:text-white">
+          <div className="w-full max-w-2xl mx-auto mb-8 sm:mb-10">
             <ModernSearchInput
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
@@ -257,7 +246,7 @@ const Hero = () => {
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
                     className="absolute top-full left-0 right-0 mt-3 
-                     bg-white rounded-3xl 
+                     bg-white rounded-xl 
                      shadow-2xl border border-gray-200 
                      max-h-96 overflow-y-auto z-50"
                   >
@@ -269,21 +258,22 @@ const Hero = () => {
                           </div>
                           <div className="space-y-2">
                             {searchResults.map((result, index) => (
-                              <motion.div
+                              <MotionLink
                                 key={`${result.item.type}-${result.item.id}`}
+                                to={getResultHref(result.item)}
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.05 }}
-                                onClick={() =>
-                                  handleResultClick(result.item, result.item.type)
-                                }
-                                className="flex items-center gap-3 p-3 rounded-2xl 
+                                onClick={clearSearch}
+                                className="flex items-center gap-3 p-3 rounded-lg 
                                  hover:bg-gray-50 
-                                 cursor-pointer transition-colors group"
+                                 cursor-pointer transition-colors group text-left no-underline"
+                                aria-label={`Open ${result.item.title} in ${result.item.searchType || result.item.type || "page"
+                                  }`}
                               >
                                 <div
-                                  className="flex-shrink-0 p-2 bg-blue-100 rounded-xl text-blue-600 
-                                      group-hover:bg-blue-200 transition-colors"
+                                  className="flex-shrink-0 p-2 bg-blue-50 rounded-lg text-blue-600 
+                                      group-hover:bg-blue-100 transition-colors"
                                 >
                                   {getResultIcon(result.item.type)}
                                 </div>
@@ -306,7 +296,7 @@ const Hero = () => {
                                 <ExternalLink
                                   className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors"
                                 />
-                              </motion.div>
+                              </MotionLink>
                             ))}
                           </div>
                         </>
@@ -318,11 +308,11 @@ const Hero = () => {
                           transition={{ duration: 0.25, ease: "easeOut" }}
                           className="text-center text-gray-500 py-10 text-base"
                         >
-                          No results match “
+                          No results match "
                           <span className="font-medium text-gray-700">
                             {searchQuery}
                           </span>
-                          ”
+                          "
                         </motion.div>
                       )}
                     </div>
@@ -341,12 +331,12 @@ const Hero = () => {
             <motion.div variants={fadeUp}>
               <Link
                 to="/events"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-100 dark:bg-blue-900 text-black dark:text-white font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-200 dark:hover:bg-blue-800"
+                className="relative inline-flex items-center px-6 sm:px-8 py-3.5 rounded-lg bg-blue-600 text-white font-semibold shadow-sm overflow-hidden group transition-all duration-200 hover:bg-blue-700"
               >
                 <span className="relative z-10 flex items-center">
                   Explore Events
                   <svg
-                    className="ml-3 w-5 h-5 text-black dark:text-white transition-transform duration-300 group-hover:translate-x-2"
+                    className="ml-3 w-5 h-5 text-white transition-transform duration-200 group-hover:translate-x-1"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -360,25 +350,25 @@ const Hero = () => {
               </Link>
             </motion.div>
 
-            {/* Secondary Button - Join Hackathons - FIXED */}
+            {/* Secondary Button - Join Hackathons */}
             <motion.div variants={fadeUp}>
               <Link
                 to="/hackathons"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full border border-yellow-200 dark:border-yellow-700 bg-yellow-100 dark:bg-yellow-900 text-black dark:text-white font-semibold shadow-sm hover:shadow-md hover:bg-yellow-200 dark:hover:bg-yellow-800 hover:scale-105 transition-all duration-300"
+                className="relative inline-flex items-center px-6 sm:px-8 py-3.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-gray-300 font-semibold shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-200"
               >
                 Join Hackathons
               </Link>
             </motion.div>
 
-            {/* Optional Tertiary Button - Learn More */}
+            {/* Tertiary Button - Learn More */}
             <motion.div variants={fadeUp}>
               <Link
                 to="/about"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-pink-100 dark:bg-pink-900 text-black dark:text-white font-semibold shadow-sm transform transition-all duration-300 hover:scale-105 hover:bg-pink-200 dark:hover:bg-pink-800"
+                className="relative inline-flex items-center px-6 sm:px-8 py-3.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-gray-300 font-semibold shadow-sm transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-800"
               >
                 Learn More
                 <svg
-                  className="ml-3 w-5 h-5 text-black dark:text-white transition-transform duration-300 group-hover:translate-x-2"
+                  className="ml-3 w-5 h-5 text-gray-900 dark:text-white transition-transform duration-200 group-hover:translate-x-1"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -393,31 +383,29 @@ const Hero = () => {
           </motion.div>
 
           {/* Animated Stats Cards */}
-          {/* Animated Stats Cards */}
-{!searchQuery.trim() && (
-  <motion.div
-    variants={fadeUp}
-    className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
-  >
-    {stats.map((stat, i) => (
-      <motion.div
-        key={i}
-        variants={fadeUp}
-        whileHover={{ scale: 1.05 }}
-        transition={{ type: "spring", stiffness: 300 }}
-        className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-lg border border-gray-100 dark:border-gray-700"
-      >
-        <p className="text-3xl font-bold mb-2 text-black dark:text-white">
-          {stat.value}
-        </p>
-        <p className="text-black dark:text-gray-300 text-sm">
-          {stat.label}
-        </p>
-      </motion.div>
-    ))}
-  </motion.div>
-)}
-          
+          {!searchQuery.trim() && (
+            <motion.div
+              variants={fadeUp}
+              className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
+            >
+              {stats.map((stat, i) => (
+                <motion.div
+                  key={i}
+                  variants={fadeUp}
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  className="bg-white dark:bg-slate-900 rounded-lg p-5 sm:p-6 text-center shadow-sm border border-gray-200 dark:border-slate-800"
+                >
+                  <p className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
+                    {stat.value}
+                  </p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
+                    {stat.label}
+                  </p>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
         </motion.div>
       </div>
     </section>

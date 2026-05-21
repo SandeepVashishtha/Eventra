@@ -17,7 +17,7 @@ const FilterButton = ({ filter, filterType, onFilterChange }) => {
       onClick={() => onFilterChange(filter.key)}
       className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-full transition ${
         isActive
-          ? "bg-black text-white"
+          ? "bg-black text-white dark:bg-white dark:text-black"
           : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-700"
       }`}
       aria-pressed={isActive}
@@ -35,7 +35,7 @@ const ViewModeButton = ({ mode, activeMode, onViewModeChange, icon: Icon }) => {
       onClick={() => onViewModeChange(mode)}
       className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
         isActive
-          ? "bg-black text-white shadow-md"
+          ? "bg-black text-white shadow-md dark:bg-white dark:text-black"
           : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
       }`}
       aria-label={`${mode === "grid" ? "Grid" : "List"} view`}

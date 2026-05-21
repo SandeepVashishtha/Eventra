@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 import {
   User as UserIcon,
@@ -78,7 +79,7 @@ const allSkillSuggestions = [
   /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-._~:/?#[\]@!$&'()*+,;=]*)?$/i;
 
 const EditProfile = () => {
-
+   const navigate = useNavigate();
    const { user, setUser } = useAuth();
   const [form, setForm] = useState(user || initialFormState);
   const [errors, setErrors] = useState({});
@@ -119,6 +120,24 @@ const EditProfile = () => {
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: undefined }));
   };
 
+  const calculateCompletion = () => {
+    const fields = ['username', 'email', 'phone', 'bio', 'github', 'linkedin', 'portfolio', 'avatarBase64'];
+    let filled = 0;
+    
+    fields.forEach(f => {
+      if (form[f] && typeof form[f] === 'string' && form[f].trim() !== '') filled++;
+    });
+    
+    const resolvedFullName = form.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+    if (resolvedFullName !== '') filled++;
+    
+    if (form.skills && form.skills.length > 0) filled++;
+    
+    return Math.round((filled / 10) * 100);
+  };
+  
+  const completionPercentage = calculateCompletion();
+
   const addSkill = (skill) => {
     const trimmedSkill = skill.trim();
     if (trimmedSkill && !form.skills.includes(trimmedSkill)) {
@@ -153,6 +172,7 @@ const performSave = () => {
   const resolvedForm = {
     ...form,
     fullName: form.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim(),
+    profilePicture: form.avatarBase64 || form.profilePicture || "",
   };
   const validation = validate(resolvedForm);
   setErrors(validation);
@@ -167,10 +187,13 @@ const performSave = () => {
     setLoading(false);
     setSuccessMessage("Profile updated successfully");
     setConfirmOpen(false);
+    setUser(resolvedForm);                              
+    localStorage.setItem("user", JSON.stringify(resolvedForm)); 
 
-    // ✅ Persist updates to both context and localStorage
-    setUser(form);
-    localStorage.setItem("user", JSON.stringify(form));
+    // ✅ Navigate away after a short delay to let user see success message
+    setTimeout(() => {
+      navigate("/dashboard");
+    }, 1000);
 
   }, 1500);
 };
@@ -208,6 +231,20 @@ const performSave = () => {
           </p>
         </div>
 
+        {/* Profile Completion Progress Bar */}
+        <div className="mb-8 bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Profile Completion</span>
+            <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{completionPercentage}%</span>
+          </div>
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
+            <div 
+              className="bg-indigo-600 h-2.5 rounded-full transition-all duration-500 ease-out" 
+              style={{ width: `${completionPercentage}%` }}
+            ></div>
+          </div>
+        </div>
+
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden">
           {/* Top Bar with Avatar */}
           {/* Top Bar with Avatar */}
@@ -215,7 +252,7 @@ const performSave = () => {
             <div className="relative">
               <div className="h-20 w-20 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center ring-2 ring-indigo-200/60 dark:ring-indigo-900/40">
                 {form.avatarBase64 ? (
-                  <img
+                  <img loading="lazy"
                     src={form.avatarBase64}
                     alt="Avatar preview"
                     className="h-full w-full object-cover"
