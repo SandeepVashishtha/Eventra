@@ -120,6 +120,24 @@ const EditProfile = () => {
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: undefined }));
   };
 
+  const calculateCompletion = () => {
+    const fields = ['username', 'email', 'phone', 'bio', 'github', 'linkedin', 'portfolio', 'avatarBase64'];
+    let filled = 0;
+    
+    fields.forEach(f => {
+      if (form[f] && typeof form[f] === 'string' && form[f].trim() !== '') filled++;
+    });
+    
+    const resolvedFullName = form.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+    if (resolvedFullName !== '') filled++;
+    
+    if (form.skills && form.skills.length > 0) filled++;
+    
+    return Math.round((filled / 10) * 100);
+  };
+  
+  const completionPercentage = calculateCompletion();
+
   const addSkill = (skill) => {
     const trimmedSkill = skill.trim();
     if (trimmedSkill && !form.skills.includes(trimmedSkill)) {
@@ -212,6 +230,20 @@ const performSave = () => {
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Manage your personal information and how others see you on Eventra.
           </p>
+        </div>
+
+        {/* Profile Completion Progress Bar */}
+        <div className="mb-8 bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Profile Completion</span>
+            <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{completionPercentage}%</span>
+          </div>
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
+            <div 
+              className="bg-indigo-600 h-2.5 rounded-full transition-all duration-500 ease-out" 
+              style={{ width: `${completionPercentage}%` }}
+            ></div>
+          </div>
         </div>
 
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden">
