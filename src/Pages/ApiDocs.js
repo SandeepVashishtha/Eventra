@@ -15,23 +15,23 @@ import {
 
 const endpoints = [
   {
-    icon: <Server className="w-7 h-7 text-sky-300" />,
-    title: "Hackathons",
-    desc: "Fetch upcoming and ongoing hackathons.",
-    method: "GET",
-    url: "/api/hackathons",
-    example: `fetch("/api/hackathons")
-  .then(res => res.json())
-    response: `[
-  {
-    "id": 1,
-    "title": "CodeFest 2025",
-    "startDate": "2025-09-20",
-    "endDate": "2025-09-25",
-    "participants": 150
-  }
+  icon: <Server className="w-7 h-7 text-sky-300" />,
+  title: "Hackathons",
+  desc: "Fetch upcoming and ongoing hackathons.",
+  method: "GET",
+  url: "/api/hackathons",
+  example: `fetch("/api/hackathons")
+.then(res => res.json())`,
+  response: `[
+{
+  "id": 1,
+  "title": "CodeFest 2025",
+  "startDate": "2025-09-20",
+  "endDate": "2025-09-25",
+  "participants": 150
+}
 ]`,
-  },
+},
   {
     icon: <BookOpen className="w-7 h-7 text-emerald-300" />,
     title: "Projects",

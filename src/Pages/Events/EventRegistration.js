@@ -19,6 +19,7 @@ import { useSessionRecovery } from "../../context/SessionRecoveryContext";
 import { API_ENDPOINTS } from "../../config/api";
 import { toast } from "react-toastify";
 import mockEvents from "./eventsMockData.json";
+import { pushToQueue } from "../../utils/offlineQueue";
 
 const EventRegistration = () => {
   const { eventId } = useParams();
@@ -185,17 +186,7 @@ const EventRegistration = () => {
         userId: user?.id || null,
       };
       
-      const QUEUE_KEY = 'eventra_offline_queue';
-      let queue = [];
-      try {
-        const queueStr = localStorage.getItem(QUEUE_KEY);
-        if (queueStr) queue = JSON.parse(queueStr);
-      } catch (e) {
-        queue = [];
-      }
-      
-      queue.push({ eventId: parseInt(eventId), payload });
-      localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+      pushToQueue({ eventId: parseInt(eventId), payload });
 
       setRegistered(true);
       addRegistration(event, formData);
