@@ -10,6 +10,7 @@ import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
 import RespawningText from "../../../jhalak/RespawningText";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
+import CountUp from "react-countup";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
 
 const MotionLink = motion(Link);
@@ -49,7 +50,7 @@ const Hero = () => {
       setIndex((prev) => (prev + 1) % phrases.length);
     }, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [phrases.length]);
 
   const controls = useAnimation();
 
@@ -206,11 +207,11 @@ const Hero = () => {
           <MotionConfig reducedMotion="never">
             {/* Headline */}
             <motion.h1
-              className="mx-auto max-w-[92vw] mt-6 text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-5 sm:mb-6 leading-tight sm:leading-tight text-black dark:text-white break-words px-2 sm:px-0"
+              className="mx-auto max-w-[92vw] mt-6 text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-5 sm:mb-6 leading-tight sm:leading-tight text-gray-900 dark:text-white break-words px-2 sm:px-0"
               style={{ fontFamily: '"Anton", sans-serif' }}
             >
               <motion.span
-                className="block text-black dark:text-white mb-2 md:mb-0"
+                className="block text-gray-900 dark:text-white mb-2 md:mb-0"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
@@ -222,7 +223,7 @@ const Hero = () => {
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={index}
-                    className="block mt-2 text-black dark:text-white mb-4 pb-2 whitespace-normal text-center px-1"
+                    className="block mt-2 text-gray-900 dark:text-white mb-4 pb-2 whitespace-normal text-center px-1"
                     initial={{ opacity: 0, y: 40 }}
                     animate={{
                       opacity: 1,
@@ -291,9 +292,8 @@ const Hero = () => {
                                 className="flex items-center gap-3 p-3 rounded-2xl
                                  hover:bg-gray-50
                                  cursor-pointer transition-colors group text-left no-underline"
-                                aria-label={`Open ${result.item.title} in ${
-                                  result.item.searchType || result.item.type || "page"
-                                }`}
+                                aria-label={`Open ${result.item.title} in ${result.item.searchType || result.item.type || "page"
+                                  }`}
                               >
                                 <div className="flex-shrink-0 p-2 bg-blue-100 rounded-xl text-blue-600 group-hover:bg-blue-200 transition-colors">
                                   {getResultIcon(result.item.type)}
@@ -408,12 +408,19 @@ const Hero = () => {
                 <motion.div
                   key={i}
                   variants={fadeUp}
-                  whileHover={{ scale: 1.05 }}
+                  whileHover={{ scale: 1.02 }}
                   transition={{ type: "spring", stiffness: 300 }}
                   className="bg-white/90 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-xl shadow-blue-100/50 dark:shadow-none border border-blue-100 dark:border-gray-700 hover:shadow-blue-200/60 transition-shadow duration-300"
                 >
-                  <p className="text-3xl font-bold mb-2 text-black dark:text-white">
-                    {stat.value}
+                  <p className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
+                    <CountUp
+                      start={0}
+                      end={stat.value}
+                      duration={2.5}
+                      suffix={stat.suffix}
+                      enableScrollSpy
+                      scrollSpyOnce
+                    />
                   </p>
                   <p className="text-gray-500 dark:text-gray-300 text-sm">
                     {stat.label}

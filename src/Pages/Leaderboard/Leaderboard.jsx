@@ -9,6 +9,8 @@ import {
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
 import StyledDropdown from "../../components/StyledDropdown";
+import { LeaderboardTableSkeleton } from "../../components/common/SkeletonLoaders";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 // Repository constant — update if the leaderboard should point to another repo
 const GITHUB_REPO = "SandeepVashishtha/Eventra";
@@ -24,7 +26,8 @@ const POINTS = {
 };
 const DEFAULT_MERGED_PR_POINTS = 1;
 
-const normalizeLabel = (label = "") => label.toLowerCase().replace(/[^a-z0-9]/g, "");
+const normalizeLabel = (label = "") =>
+  label.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 const calculatePrPoints = (labels) => {
   const levelPoints = labels.reduce((total, label) => {
@@ -36,6 +39,7 @@ const calculatePrPoints = (labels) => {
 };
 
 export default function LeaderBoard() {
+  useDocumentTitle("Eventra | Leaderboard");
   // Local state: contributors list and UI state
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -73,7 +77,7 @@ export default function LeaderBoard() {
         if (now - timestamp < 60 * 60 * 1000) {
           setContributors(data);
           setLastUpdated(
-            `Last updated: ${new Date(timestamp).toLocaleString()} (cached)`
+            `Last updated: ${new Date(timestamp).toLocaleString()} (cached)`,
           );
           setLoading(false);
           return;
@@ -97,7 +101,7 @@ export default function LeaderBoard() {
       // Fetch contributor metadata (avatar, profile)
       const contributorsRes = await fetch(
         `https://api.github.com/repos/${GITHUB_REPO}/contributors`,
-        { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} }
+        { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} },
       );
 
       if (!contributorsRes.ok) throw new Error("Failed to fetch contributors");
@@ -118,7 +122,7 @@ export default function LeaderBoard() {
       while (hasMore) {
         const res = await fetch(
           `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`,
-          { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} }
+          { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} },
         );
 
         if (!res.ok) {
@@ -128,7 +132,7 @@ export default function LeaderBoard() {
         }
 
         const prs = await res.json();
-        
+
         // Ensure standard array shape to avoid runtime TypeError crash
         if (!Array.isArray(prs) || prs.length === 0) {
           hasMore = false;
@@ -142,7 +146,7 @@ export default function LeaderBoard() {
           // Normalize labels for matching against POINTS map
           const labels = pr.labels.map((l) => l.name.toLowerCase());
           const hasGsocLabel = labels.some(
-            (label) => label.includes("gssoc") || label.includes("gsoc")
+            (label) => label.includes("gssoc") || label.includes("gsoc"),
           );
           // Skip PRs that are not GSoc-related
           if (!hasGsocLabel) return;
@@ -178,7 +182,7 @@ export default function LeaderBoard() {
 
       // Convert map to array and sort by points descending
       const sortedContributors = Object.values(contributorsMap).sort(
-        (a, b) => b.points - a.points
+        (a, b) => b.points - a.points,
       );
 
       // Update UI state and cache the results for future loads
@@ -186,7 +190,7 @@ export default function LeaderBoard() {
       setLastUpdated(new Date().toLocaleString());
       localStorage.setItem(
         LEADERBOARD_CACHE_KEY,
-        JSON.stringify({ data: sortedContributors, timestamp: Date.now() })
+        JSON.stringify({ data: sortedContributors, timestamp: Date.now() }),
       );
     } catch (err) {
       // Log errors but keep the app functional (shows empty state)
@@ -226,10 +230,10 @@ export default function LeaderBoard() {
   const indexOfFirst = indexOfLast - CONTRIBUTORS_PER_PAGE;
   const currentContributors = sortedContributors.slice(
     indexOfFirst,
-    indexOfLast
+    indexOfLast,
   );
   const totalPages = Math.ceil(
-    sortedContributors.length / CONTRIBUTORS_PER_PAGE
+    sortedContributors.length / CONTRIBUTORS_PER_PAGE,
   );
 
   // Build a quick lookup for ranks based on the original sorted list
@@ -284,11 +288,14 @@ export default function LeaderBoard() {
           />
           <StyledDropdown
             label="Sort by"
-            value={sortOptions.find((opt) => opt.value === sortBy)?.label || "Select Sort"}
+            value={
+              sortOptions.find((opt) => opt.value === sortBy)?.label ||
+              "Select Sort"
+            }
             options={sortOptions.map((opt) => opt.label)}
             onChange={(value) => {
               const selectedOption = sortOptions.find(
-                (opt) => opt.label === value
+                (opt) => opt.label === value,
               );
               if (selectedOption) setSortBy(selectedOption.value);
             }}
@@ -351,7 +358,7 @@ export default function LeaderBoard() {
         {/* UPDATED: Table container */}
         <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl shadow-lg overflow-hidden">
           {loading ? (
-            <div className="overflow-x-auto">{/* Skeleton loader */}</div>
+            <LeaderboardTableSkeleton rows={CONTRIBUTORS_PER_PAGE} />
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-500">
@@ -386,10 +393,10 @@ export default function LeaderBoard() {
                               rank === 1
                                 ? "bg-yellow-500 text-white"
                                 : rank === 2
-                                ? "bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200"
-                                : rank === 3
-                                ? "bg-amber-800 text-white"
-                                : "bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300"
+                                  ? "bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200"
+                                  : rank === 3
+                                    ? "bg-amber-800 text-white"
+                                    : "bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300"
                             }`}
                           >
                             {rank}
@@ -398,7 +405,8 @@ export default function LeaderBoard() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
-                              <img loading="lazy"
+                              <img
+                                loading="lazy"
                                 className="h-10 w-10 rounded-full border-2 border-indigo-200 dark:border-gray-600"
                                 src={c.avatar}
                                 alt={c.username}

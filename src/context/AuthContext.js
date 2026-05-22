@@ -84,15 +84,21 @@ export const AuthProvider = ({ children }) => {
     }
 
     const rawUser = data?.user ?? data?.data ?? data ?? null;
+    const resolvedRoles = rawUser?.roles ?? (rawUser?.role ? [rawUser.role] : []);
     const sessionUser = {
       ...(rawUser || {}),
       firstName: rawUser?.firstName ?? '',
       lastName: rawUser?.lastName ?? '',
       email: rawUser?.email ?? fallbackEmail ?? '',
       username: rawUser?.username ?? fallbackEmail ?? '',
-      role: rawUser?.role ?? rawUser?.roles?.[0] ?? '',
-      roles: rawUser?.roles ?? (rawUser?.role ? [rawUser.role] : []),
+      role: rawUser?.role ?? resolvedRoles[0] ?? '',
+      roles: resolvedRoles,
       permissions: rawUser?.permissions ?? [],
+      scopes: rawUser?.scopes ?? (
+        resolvedRoles.includes('ADMIN') ? ["admin:all", "event:write", "event:read", "hackathon:write", "hackathon:read"] :
+        resolvedRoles.includes('EVENT_MANAGER') ? ["event:write", "event:read", "hackathon:write", "hackathon:read"] :
+        ["event:read", "hackathon:read"]
+      ),
     };
 
     return { sessionToken, sessionUser };
@@ -131,7 +137,7 @@ const login = async (usernameOrEmail, password) => {
     clearSession();
   };
 
-  const isAuthenticated = () => {
+  const isAuthenticated = useCallback(() => {
     // Also verify the current token hasn't expired since it was stored.
     if (!user || !token) return false;
     if (!isTokenValid(token)) {
@@ -140,7 +146,7 @@ const login = async (usernameOrEmail, password) => {
       return false;
     }
     return true;
-  };
+  }, [user, token, clearSession]);
 
   const hasRole = (roleName) => {
     return user?.roles?.includes(roleName) || false;
@@ -162,9 +168,11 @@ const login = async (usernameOrEmail, password) => {
     return hasRole('ADMIN');
   };
 
-  const isEventManager = () => {
-    return hasRole('EVENT_MANAGER');
-  };
+  const isEventManager = () => hasRole('EVENT_MANAGER');
+  const isSuperAdmin = () => hasRole('SUPER_ADMIN');
+  const isOrganizer = () => hasRole('ORGANIZER');
+  const isVolunteer = () => hasRole('VOLUNTEER');
+  const isAttendee = () => hasRole('ATTENDEE');
 
 const value = {
   user,
@@ -180,9 +188,12 @@ const value = {
   hasAnyRole,
   hasAnyPermission,
   isAdmin,
-  isEventManager
+  isEventManager,
+  isSuperAdmin,
+  isOrganizer,
+  isVolunteer,
+  isAttendee,
 };
-
 
   return (
     <AuthContext.Provider value={value}>

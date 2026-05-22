@@ -1,5 +1,6 @@
 /* Fix: Removed 'Anton' decorative font — only 'Inter' is used for professionalism */
 /* Issue #828: Standardize and Professionalize Font Text and Size */
+@import url("https://fonts.googleapis.com/css2?family=Oxanium:wght@800&family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 
 @tailwind base;
@@ -96,6 +97,27 @@
 html {
   scroll-behavior: auto;
   font-size: 16px; /* Explicit root size for reliable rem calculations */
+}
+
+/* Lenis smooth scrolling styles */
+html.lenis {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
 }
 
 body {
@@ -387,21 +409,32 @@ table {
    Advanced Theme Enhancements
 ========================================= */
 
-/* Smooth Global Theme Transitions */
+/* Disable transitions during initial load */
+
+.no-transition *,
+.no-transition *::before,
+.no-transition *::after {
+  transition: none !important;
+}
+
+/* Smooth Scrolling */
 
 html {
   scroll-behavior: smooth;
 }
 
-body {
-  transition:
-    background-color 0.3s ease,
-    color 0.3s ease,
-    border-color 0.3s ease,
-    box-shadow 0.3s ease;
-}
+/* Optimized Theme Transitions */
 
-* {
+body,
+button,
+input,
+textarea,
+select,
+.card-theme,
+.navbar-theme,
+.modal-theme,
+.section-theme,
+.input-theme {
   transition:
     background-color 0.3s ease,
     color 0.3s ease,
@@ -412,62 +445,80 @@ body {
 /* Reusable Theme Utility Classes */
 
 .card-theme {
-  background-color: var(--card-bg-color);
-  color: var(--text-color);
+  background-color: var(
+    --card-bg-color
+  );
 
-  border: 1px solid var(--border-color);
+  color: var(
+    --text-color
+  );
 
-  transition: all 0.3s ease;
+  border: 1px solid
+    var(--border-color);
 }
 
 .input-theme {
-  background-color: var(--input-bg);
+  background-color: var(
+    --input-bg
+  );
 
-  color: var(--input-text);
+  color: var(
+    --input-text
+  );
 
-  border: 1px solid var(--border-color);
-
-  transition: all 0.3s ease;
+  border: 1px solid
+    var(--border-color);
 }
 
 .section-theme {
-  background-color: var(--bg-color);
+  background-color: var(
+    --bg-color
+  );
 
-  color: var(--text-color);
-
-  transition: all 0.3s ease;
+  color: var(
+    --text-color
+  );
 }
 
 .navbar-theme {
-  background-color: var(--navbar-bg);
+  background-color: var(
+    --navbar-bg
+  );
 
-  color: var(--text-color);
-
-  transition: all 0.3s ease;
+  color: var(
+    --text-color
+  );
 }
 
 .modal-theme {
-  background-color: var(--modal-bg);
+  background-color: var(
+    --modal-bg
+  );
 
-  color: var(--text-color);
-
-  transition: all 0.3s ease;
+  color: var(
+    --text-color
+  );
 }
 
 /* Better Hover Effects */
 
 .hover-theme:hover {
-  transform: translateY(-2px);
-
-  transition: all 0.3s ease;
+  transform: translateY(
+    -2px
+  );
 }
 
-/* Better Shadows */
+/* Better Dark Shadows */
 
 .dark .shadow-theme {
   box-shadow:
     0 4px 20px
-    rgba(0, 0, 0, 0.4);
+    rgba(
+      0,
+      0,
+      0,
+      0.4
+    );
 }
 
 /* Better Focus States */
@@ -477,5 +528,10 @@ body {
 
   box-shadow:
     0 0 0 3px
-    rgba(59, 130, 246, 0.5);
+    rgba(
+      59,
+      130,
+      246,
+      0.5
+    );
 }

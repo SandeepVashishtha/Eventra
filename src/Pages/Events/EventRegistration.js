@@ -15,15 +15,34 @@ import {
 import { getEventStatus } from "../../utils/eventUtils";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
+import { useSessionRecovery } from "../../context/SessionRecoveryContext";
 import { API_ENDPOINTS } from "../../config/api";
 import { toast } from "react-toastify";
 import mockEvents from "./eventsMockData.json";
+import { pushToQueue } from "../../utils/offlineQueue";
+
+const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
+const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
+const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
+
+function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
+  if (EMAILJS_PUBLIC_KEY && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && window.emailjs) {
+    window.emailjs.init(EMAILJS_PUBLIC_KEY);
+    window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email: userEmail,
+      to_name: userName,
+      event_name: eventName,
+      event_date: eventDate,
+    }).catch(() => {});
+  }
+}
 
 const EventRegistration = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated, token } = useAuth();
   const { addRegistration } = useMyEvents();
+  const { saveSession, clearSession } = useSessionRecovery();
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -65,6 +84,32 @@ const EventRegistration = () => {
 
     loadEvent();
   }, [eventId, user, isAuthenticated]);
+
+  // Save session state when form data changes
+  useEffect(() => {
+    if (event && formData) {
+      saveSession({
+        page: 'event-registration',
+        eventId,
+        formData,
+        eventTitle: event.title,
+      });
+    }
+  }, [formData, event, eventId, saveSession]);
+
+  // Listen for session restoration
+  useEffect(() => {
+    const handleSessionRestored = (event) => {
+      const restoredData = event.detail;
+      if (restoredData?.page === 'event-registration' && restoredData?.eventId === eventId) {
+        setFormData(restoredData.formData || {});
+        toast.info('Your registration form has been restored');
+      }
+    };
+
+    window.addEventListener('sessionRestored', handleSessionRestored);
+    return () => window.removeEventListener('sessionRestored', handleSessionRestored);
+  }, [eventId]);
 
   // Validate form
   const validateForm = () => {
@@ -135,8 +180,11 @@ const EventRegistration = () => {
       if (response.ok) {
         setRegistered(true);
         toast.success("Registration successful!");
+        sendConfirmationEmail(formData.email, formData.name, event?.title, event?.date);
         // ── Save to My Events ──
         addRegistration(event, formData);
+        // Clear session after successful registration
+        clearSession();
         // Redirect to event details after 2 seconds
         setTimeout(() => {
           navigate(`/events/${eventId}`);
@@ -155,17 +203,7 @@ const EventRegistration = () => {
         userId: user?.id || null,
       };
       
-      const QUEUE_KEY = 'eventra_offline_queue';
-      let queue = [];
-      try {
-        const queueStr = localStorage.getItem(QUEUE_KEY);
-        if (queueStr) queue = JSON.parse(queueStr);
-      } catch (e) {
-        queue = [];
-      }
-      
-      queue.push({ eventId: parseInt(eventId), payload });
-      localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+      pushToQueue({ eventId: parseInt(eventId), payload });
 
       setRegistered(true);
       addRegistration(event, formData);
@@ -198,6 +236,31 @@ const EventRegistration = () => {
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Events
+        </Link>
+      </div>
+    );
+  }
+
+  const isPastEvent = new Date(`${event.date} ${event.time}`) < new Date();
+  const isEventFull = event.attendees >= event.maxAttendees;
+
+  if (isPastEvent || isEventFull) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+          Registration Unavailable
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
+          {isPastEvent 
+            ? "This event has already ended." 
+            : "This event has reached maximum capacity."}
+        </p>
+        <Link
+          to={`/events/${eventId}`}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-colors font-medium"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Event Details
         </Link>
       </div>
     );

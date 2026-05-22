@@ -13,21 +13,9 @@ import { HiArrowRight, HiPlus } from "react-icons/hi";
 import { SiHackaday } from "react-icons/si";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-
-const floatingShapes = [
-  { size: 34, x: 50, y: 200, color: "#dbeafe", delay: 0 },
-  { size: 48, x: 300, y: 500, color: "#bfdbfe", delay: 1 },
-  { size: 24, x: 700, y: 350, color: "#dcfce7", delay: 0.5 },
-  { size: 38, x: 1100, y: 600, color: "#fde68a", delay: 1.5 },
-  { size: 40, x: 1100, y: 1000, color: "#fecdd3", delay: 1.5 },
-  { size: 64, x: 1000, y: 100, color: "#fed7aa", delay: 0.8 },
-  { size: 28, x: 150, y: 80, color: "#c7d2fe", delay: 0.2 },
-  { size: 30, x: 520, y: 160, color: "#bbf7d0", delay: 0.7 },
-  { size: 22, x: 880, y: 260, color: "#fde68a", delay: 1.1 },
-  { size: 26, x: 220, y: 760, color: "#fbcfe8", delay: 0.4 },
-  { size: 24, x: 620, y: 860, color: "#bae6fd", delay: 1.2 },
-  { size: 20, x: 980, y: 720, color: "#fed7aa", delay: 1.4 },
-];
+import CountUp from "react-countup";
+// ADDED: Import the newly created EventCountdown component
+import EventCountdown from "./EventCountdown";
 
 const iconList = [
   { icon: <FaGithub />, color: "#333" },
@@ -47,45 +35,17 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
   const { user } = useAuth();
 
   return (
-    // UPDATED: Main background gradient
     <div
-      className="relative py-24 overflow-hidden bg-gradient-to-br 
-from-sky-50 via-white to-white 
-dark:from-[#020617] dark:via-[#0f172a] dark:to-black"
-      // AOS Implementation
+      className="relative py-24 overflow-hidden bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 border-b border-gray-200 dark:border-slate-900"
       data-aos="fade-down"
       data-aos-once="true"
       data-aos-duration="1000"
     >
-      {/* Floating Shapes */}
-      {floatingShapes.map((shape, idx) => (
-        <motion.div
-          key={idx}
-          initial={{ y: 800, x: shape.x, opacity: 0 }}
-          animate={{
-            y: [shape.y, shape.y - 30, shape.y],
-            opacity: [0.35, 0.7, 0.45],
-            rotate: [0, 15, -15, 0],
-            scale: [0.8, 1.1, 0.9, 1],
-          }}
-          transition={{ duration: 5.8, delay: shape.delay, repeat: Infinity }}
-          className="absolute rounded-full dark:opacity-20"
-          style={{
-            width: shape.size,
-            height: shape.size,
-            backgroundColor: shape.color,
-            filter: "blur(2px)",
-          }}
-        />
-      ))}
-
-      {/* Continuous Zigzag Icon Train */}
+      {/* Continuous Zigzag Icon Train — kept as a tasteful decorative element */}
       <div
         className="absolute right-8 top-0 h-full flex-col items-center justify-start overflow-hidden z-0
                 hidden lg:flex"
       >
-        {" "}
-        {/* hide on small screens, show on large screens */}
         <motion.div
           animate={{ y: ["0%", "-100%"] }}
           transition={{
@@ -98,8 +58,7 @@ dark:from-[#020617] dark:via-[#0f172a] dark:to-black"
           {repeatedIcons.map((item, idx) => (
             <motion.div
               key={idx}
-              // UPDATED: Icon wrapper background
-              className="rounded-full p-3 shadow-lg flex items-center justify-center bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-700"
+              className="rounded-full p-3 shadow-sm flex items-center justify-center bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800"
               animate={{
                 x: [0, 8, -8, 0],
                 rotate: [0, 15, -15, 0],
@@ -119,28 +78,36 @@ dark:from-[#020617] dark:via-[#0f172a] dark:to-black"
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center relative z-10">
+      <div className="relative px-4 min-h-[75vh] flex flex-col items-center justify-center text-center z-10">
         <motion.h1
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
-          // UPDATED: Title text color and gradient
-          className="text-4xl sm:text-6xl font-extrabold mb-6 mt-6 text-black dark:text-white leading-tight"
+          className="text-4xl sm:text-6xl font-extrabold mb-6 mt-6 text-gray-900 dark:text-white leading-tight"
           style={{ fontFamily: '"Big Shoulders Display", sans-seri' }}
         >
-          Discover <span className="text-indigo-600">Amazing Projects</span>
+          Discover <span className="text-blue-600 dark:text-blue-500">Projects</span>
         </motion.h1>
 
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 0.3 }}
-          // UPDATED: Subtitle text color
-          className="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-12"
+          className="text-base sm:text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto mb-6"
         >
           Explore, contribute to, and showcase innovative open-source creations
           from developers worldwide.
         </motion.p>
+
+        {/* ADDED: Event Countdown Component integrated smoothly with animation */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, delay: 0.5 }}
+          className="mb-8"
+        >
+          <EventCountdown eventDate="2026-10-31T23:59:59" />
+        </motion.div>
 
         {/* Buttons */}
         <div className="flex justify-center gap-6 mb-16">
@@ -153,50 +120,34 @@ dark:from-[#020617] dark:via-[#0f172a] dark:to-black"
                 navigate("/submit-project");
               }
             }}
-            className="bg-pink-100 text-black dark:bg-pink-500/20 dark:text-pink-200 dark:border dark:border-pink-500/30 px-7 py-3 rounded-2xl font-semibold flex items-center gap-3 shadow-md hover:bg-pink-200 dark:hover:bg-pink-500/30 hover:shadow-lg transition-all duration-300"
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ scale: 1.05 }}
-            initial="rest"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-7 py-3 rounded-lg font-semibold flex items-center gap-3 shadow-sm transition-all duration-200"
+            whileTap={{ scale: 0.97 }}
             data-aos="zoom-in"
             data-aos-delay="400"
           >
-            <motion.span
-              variants={{
-                rest: { y: 0, scale: 1 },
-                hover: { y: -3, scale: 1.2 },
-              }}
-              transition={{ type: "spring", stiffness: 300 }}
-              className="flex items-center"
-            >
-              <HiPlus className="text-xl" />
-            </motion.span>
+            <HiPlus className="text-xl" />
             Submit Project
           </motion.button>
+
           {/* Explore Projects Button */}
           <motion.button
-          className="bg-yellow-100 text-black dark:bg-yellow-500/20 dark:text-yellow-200 dark:border dark:border-yellow-500/30 px-6 py-3 rounded-2xl font-semibold flex items-center gap-2 shadow-md hover:bg-yellow-200 dark:hover:bg-yellow-500/30 hover:shadow-lg transition-all duration-300"
-          whileTap={{ scale: 0.95}}
-          whileHover={{ scale: 1.05 }}
-          onClick={scrollToCard}
-          data-aos="zoom-in"
-          data-aos-delay="600"
+            className="border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-gray-300 px-6 py-3 rounded-lg font-semibold flex items-center gap-2 shadow-sm transition-all duration-200"
+            whileTap={{ scale: 0.97 }}
+            onClick={scrollToCard}
+            data-aos="zoom-in"
+            data-aos-delay="600"
           >
             Explore Projects
-            <motion.span
-              whileHover={{ x: 5, scale: 1.2 }}
-              className="flex items-center"
-            >
-              <HiArrowRight className="text-lg" />
-            </motion.span>
+            <HiArrowRight className="text-lg" />
           </motion.button>
         </div>
 
         {/* Stats Section */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 max-w-3xl mx-auto">
           {[
-            { number: "200+", label: "Active Users" },
-            { number: "4890+", label: "Projects Hosted" },
-            { number: "120+", label: "Contributors" },
+            { number: 200, suffix: "+", label: "Active Users" },
+            { number: 4890, suffix: "+", label: "Projects Hosted" },
+            { number: 120, suffix: "+", label: "Contributors" },
           ].map((stat, idx) => (
             <motion.div
               key={idx}
@@ -208,18 +159,22 @@ dark:from-[#020617] dark:via-[#0f172a] dark:to-black"
                 type: "spring",
                 stiffness: 120,
               }}
-              whileHover={{ scale: 1.05 }}
-              // AOS Implementation on individual stats
+              whileHover={{ scale: 1.02 }}
               data-aos="zoom-in"
               data-aos-delay={700 + idx * 150}
-              // UPDATED: Stat card background
-              className="bg-gradient-to-br from-sky-50 via-white to-white dark:from-[#111827] dark:via-[#0f172a] dark:to-[#020617] border border-gray-100 dark:border-gray-800 shadow-md hover:shadow-xl rounded-3xl p-6 flex flex-col items-center justify-center transition-all duration-300"
+              className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm rounded-lg p-6 flex flex-col items-center justify-center transition-all duration-200"
             >
-              {/* UPDATED: Text colors */}
-              <span className="text-3xl font-extrabold text-black dark:text-white">
-                {stat.number}
+              <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                <CountUp
+                  start={0}
+                  end={stat.number}
+                  duration={2.5}
+                  suffix={stat.suffix}
+                  enableScrollSpy
+                  scrollSpyOnce
+                />
               </span>
-              <span className="text-gray-700 dark:text-gray-300 mt-1 text-sm sm:text-base">
+              <span className="text-gray-500 dark:text-gray-400 mt-1 text-sm sm:text-base">
                 {stat.label}
               </span>
             </motion.div>

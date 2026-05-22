@@ -11,12 +11,13 @@ import PageTransition from "./components/common/PageTransition";
 import RegistrationPage from "./Pages/RegistrationPage";
 
 // Context & Hooks
-import NotificationProvider from "./components/common/NotificationProvider";
+import NotificationToastContainer from "./components/common/NotificationProvider";
+import { NotificationProvider } from "./context/NotificationContext";
 import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
-import { ThemeProvider } from "./context/ThemeContext";
-import { useModelContext } from "./hooks/useModelContext";
+import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
 import useOfflineSync from "./hooks/useOfflineSync";
+import useLenis from "./hooks/useLenis";
 
 // Lazy load heavy components
 const Footer = lazy(() => import("./components/Layout/Footer"));
@@ -29,42 +30,80 @@ const OfflineSyncManager = () => {
 };
 
 function App() {
-  const [cursorEnabled, setCursorEnabled] = useState(
-    localStorage.getItem("cursor") !== "off",
-  );
+  const [cursorEnabled, setCursorEnabled] =
+    useState(
+      localStorage.getItem("cursor") !== "off"
+    );
 
-  useModelContext();
+  // Initialize Lenis smooth scrolling
+  useLenis();
 
+  // Toggle Cursor
   const toggleCursor = () => {
     const newValue = !cursorEnabled;
+
     setCursorEnabled(newValue);
-    localStorage.setItem("cursor", newValue ? "on" : "off");
+
+    localStorage.setItem(
+      "cursor",
+      newValue ? "on" : "off"
+    );
   };
 
+  // Listen For Cursor Preference Changes
   useEffect(() => {
     const handleCursorPreference = (event) => {
-      if (event?.detail?.cursorEnabled !== undefined) {
-        setCursorEnabled(event.detail.cursorEnabled);
+      if (
+        event?.detail?.cursorEnabled !== undefined
+      ) {
+        setCursorEnabled(
+          event.detail.cursorEnabled
+        );
       }
     };
-    window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
-    return () =>
+
+    window.addEventListener(
+      "cursorPreferenceChanged",
+      handleCursorPreference
+    );
+
+    return () => {
       window.removeEventListener(
         "cursorPreferenceChanged",
-        handleCursorPreference,
+        handleCursorPreference
       );
+    };
   }, []);
 
   return (
-    <ThemeProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <NotificationProvider>
         <MyEventsProvider>
-          <NotificationProvider />
-          <OfflineSyncManager />
-          <Router>
+          <SessionRecoveryProvider>
+            <NotificationToastContainer />
+
+            <OfflineSyncManager />
+
+            <Router>
             <div className="App">
-              <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
-              <main className="relative z-10 min-h-screen bg-white dark:bg-black">
+              <Navbar
+                cursorEnabled={cursorEnabled}
+                toggleCursor={toggleCursor}
+              />
+
+              <main
+                className="
+                  relative
+                  z-10
+                  min-h-screen
+                  bg-white
+                  dark:bg-slate-950
+                  text-black
+                  dark:text-white
+                  transition-colors
+                  duration-300
+                "
+              >
                 <PageTransition>
                   <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
                     <Routes>
@@ -74,6 +113,7 @@ function App() {
                   </Suspense>
                 </PageTransition>
               </main>
+
               <ScrollToTop />
               <Suspense fallback={null}>
                 <Chatbot />
@@ -83,9 +123,10 @@ function App() {
               <FluidCursor enabled={cursorEnabled} />
             </div>
           </Router>
+          </SessionRecoveryProvider>
         </MyEventsProvider>
-      </AuthProvider>
-    </ThemeProvider>
+      </NotificationProvider>
+    </AuthProvider>
   );
 }
 

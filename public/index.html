@@ -63,30 +63,42 @@
       as="image"
     />
 
-   <!-- Prevent Theme Flickering -->
+  <!-- Prevent Theme Flickering -->
 <script>
+  document.documentElement.classList.add(
+    "no-transition"
+  );
+
   (() => {
     const savedTheme =
-      localStorage.getItem("theme");
+      localStorage.getItem(
+        "theme"
+      );
 
     const systemDark =
       window.matchMedia(
         "(prefers-color-scheme: dark)"
       ).matches;
 
-    if (
-      savedTheme === "dark" ||
-      (!savedTheme && systemDark)
-    ) {
-      document.documentElement.classList.add(
-        "dark"
-      );
-    } else {
+    const theme =
+      savedTheme ||
+      (systemDark
+        ? "dark"
+        : "light");
+
+    document.documentElement.classList.add(
+      theme
+    );
+  })();
+
+  window.addEventListener(
+    "load",
+    () => {
       document.documentElement.classList.remove(
-        "dark"
+        "no-transition"
       );
     }
-  })();
+  );
 </script>
 
     <title>
@@ -103,6 +115,12 @@
       src="https://accounts.google.com/gsi/client"
       async
       defer
+    ></script>
+
+    <!-- EmailJS for RSVP confirmation emails -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"
+      async
     ></script>
   </head>
 

@@ -20,11 +20,12 @@ import {
   LogIn,
   MessageSquare,
   Book,
+  Bookmark,
   HelpCircle,
   ChevronDown,
   MousePointer,
-  Sun,
-  Moon
+  Moon,
+  Sun
 } from "lucide-react";
 
 // --- Helpers to reduce complexity ---
@@ -55,43 +56,32 @@ const setBodyScrollStyles = (top) => {
 const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => (
   <button
     onClick={toggleTheme}
-    aria-label={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
     title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-    className={isMobile
-      ? "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 font-medium text-sm"
-      : "flex items-center gap-1.5 px-2.5 py-1 mr-2 text-xs font-medium border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
+    className={isMobile 
+      ? "flex-1 flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg bg-black dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors font-medium"
+      : "flex items-center gap-1 px-2 py-1 mr-2 text-xs font-normal bg-black text-white dark:bg-white dark:text-black rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all"
     }
   >
     {isDarkMode ? (
-      <Sun className={isMobile ? "w-5 h-5 text-amber-500" : "w-4 h-4 text-amber-500"} />
+      <Sun className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
     ) : (
-      <Moon className={isMobile ? "w-5 h-5 text-indigo-500" : "w-4 h-4 text-indigo-500"} />
+      <Moon className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
     )}
-    {isMobile
-      ? (isDarkMode ? "Light Mode" : "Dark Mode")
-      : (isDarkMode ? "LIGHT" : "DARK")
-    }
+    {isMobile ? (isDarkMode ? "Dark OFF" : "Dark ON") : (isDarkMode ? "DARK" : "LIGHT")}
   </button>
 );
 
 const CursorToggleButton = ({ cursorEnabled, toggleCursor, isMobile }) => (
   <button
     onClick={toggleCursor}
-    aria-label={cursorEnabled ? "Disable Fluid Cursor" : "Enable Fluid Cursor"}
     title={cursorEnabled ? "Disable Fluid Cursor" : "Enable Fluid Cursor"}
-    className={isMobile
-      ? "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 font-medium text-sm"
-      : "flex items-center gap-1.5 px-2.5 py-1 mr-3 text-xs font-medium border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
+    className={isMobile 
+      ? "flex-1 flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg bg-black dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors font-medium"
+      : "flex items-center gap-1 px-2 py-1 mr-3 text-xs font-normal bg-black text-white dark:bg-white dark:text-black rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all"
     }
   >
-    <MousePointer className={isMobile
-      ? `w-5 h-5 ${cursorEnabled ? "text-emerald-500" : "text-gray-400"}`
-      : `w-4 h-4 ${cursorEnabled ? "text-emerald-500" : "text-gray-400"}`
-    } />
-    {isMobile
-      ? (cursorEnabled ? "Cursor On" : "Cursor Off")
-      : (cursorEnabled ? "ON" : "OFF")
-    }
+    <MousePointer className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
+    {isMobile ? (cursorEnabled ? "Cursor OFF" : "Cursor ON") : (cursorEnabled ? "CURSOR" : "STATIC")}
   </button>
 );
 
@@ -102,7 +92,7 @@ const AuthButtons = ({ isMobile, closeAllMenus }) => (
       onClick={isMobile ? closeAllMenus : undefined} 
       className={isMobile 
         ? "flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-semibold text-white bg-black hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 border border-transparent"
-        : "px-4 py-2 text-sm font-medium text-black/75 hover:text-black dark:text-white/75 dark:hover:text-white transition-colors"
+        : "flex items-center px-4 py-2 text-sm font-medium text-black/75 hover:text-black dark:text-white/75 dark:hover:text-white transition-colors whitespace-nowrap"
       }
     >
       {isMobile && <LogIn className="w-5 h-5" />}Sign In
@@ -112,7 +102,7 @@ const AuthButtons = ({ isMobile, closeAllMenus }) => (
       onClick={isMobile ? closeAllMenus : undefined} 
       className={isMobile
         ? "flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-semibold text-black dark:text-white bg-white dark:bg-black/50 hover:bg-gray-100 dark:hover:bg-white/10 border-2 border-black/15 dark:border-white/20 hover:border-black/25 dark:hover:border-white/30 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
-        : "px-5 py-2 text-sm font-semibold text-white transition-all duration-300 bg-black hover:bg-zinc-800 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 dark:bg-white dark:text-black dark:hover:bg-zinc-200 focus:outline-none focus:ring-4 focus:ring-black/20 dark:focus:ring-white/20"
+        : "flex items-center justify-center px-5 py-2 text-sm font-semibold text-white transition-all duration-300 bg-black hover:bg-zinc-800 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 dark:bg-white dark:text-black dark:hover:bg-zinc-200 focus:outline-none focus:ring-4 focus:ring-black/20 dark:focus:ring-white/20 whitespace-nowrap"
       }
     >
       {isMobile && <Sparkles className="w-5 h-5" />}Get Started
@@ -149,23 +139,20 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
     </button>
     {isOpen && (
       <div className="mt-2 ml-3 pl-3 border-l-2 border-gray-200 dark:border-white/20 space-y-1">
-        {item.subItems.map((sub) => {
-          const darkActiveBg = item.name === 'Community' ? 'dark:bg-black/60' : 'dark:bg-white/15';
-          return (
-            <Link
-              key={sub.name}
-              to={sub.href}
-              onClick={closeAllMenus}
-              className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium ${
-                location.pathname === sub.href
-                  ? `bg-black/10 ${darkActiveBg} border border-black/10 dark:border-white/20 text-black dark:text-white`
-                  : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white"
-              }`}
-            >
-              {sub.icon}{sub.name}
-            </Link>
-          );
-        })}
+        {item.subItems.map((sub) => (
+          <Link
+            key={sub.name}
+            to={sub.href}
+            onClick={closeAllMenus}
+            className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium ${
+              location.pathname === sub.href
+                ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
+                : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white"
+            }`}
+          >
+            {sub.icon}{sub.name}
+          </Link>
+        ))}
       </div>
     )}
   </div>
@@ -204,24 +191,21 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
         exit={{ opacity: 0, y: 10 }}
         className="absolute left-1/2 -translate-x-1/2 mt-4 w-56 bg-white/90 dark:bg-black/80 backdrop-blur-md shadow-xl rounded-lg z-50 border border-black/10 dark:border-white/20 p-2"
       >
-        {item.subItems.map((sub) => {
-          const darkActiveBg = item.name === 'Community' ? 'dark:bg-black/60' : 'dark:bg-white/15';
-          return (
-            <Link
-              key={sub.name}
-              to={sub.href}
-              onClick={() => setOpenDropdown(null)}
-              className={`group flex items-center gap-3 w-full px-3 py-2 text-base font-medium rounded-md transition-colors ${
-                location.pathname === sub.href
-                  ? `bg-black/10 ${darkActiveBg} text-black dark:text-white`
-                  : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
-              }`}
-            >
-              {React.cloneElement(sub.icon, { className: "w-5 h-5 text-gray-500 dark:text-gray-400" })}
-              {sub.name}
-            </Link>
-          );
-        })}
+        {item.subItems.map((sub) => (
+          <Link
+            key={sub.name}
+            to={sub.href}
+            onClick={() => setOpenDropdown(null)}
+            className={`group flex items-center gap-3 w-full px-3 py-2 text-base font-medium rounded-md transition-colors ${
+              location.pathname === sub.href
+                ? "bg-black/10 dark:bg-white/15 text-black dark:text-white"
+                : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
+            }`}
+          >
+            {React.cloneElement(sub.icon, { className: "w-5 h-5 text-gray-500 dark:text-gray-400" })}
+            {sub.name}
+          </Link>
+        ))}
       </motion.div>
     )}
   </div>
@@ -229,9 +213,23 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
 
 const MobileDrawerHeader = ({ closeBtnRef, closeAllMenus }) => (
   <div className="flex items-center justify-between p-3.5 sm:p-4 border-b border-gray-200 dark:border-white/20">
-    <h2 className="text-xl sm:text-2xl font-bold text-black dark:text-white" style={{ fontFamily: '"Anton", sans-serif' }}>
-      Eventra
-    </h2>
+    <h2
+  style={{
+    fontFamily: "'Oxanium', monospace",
+    fontSize: "1.4rem",
+    fontWeight: 800,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    background: "linear-gradient(135deg, #ffffff 0%, #a5b4fc 50%, #6366f1 100%)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    backgroundClip: "text",
+    margin: 0,
+    lineHeight: 1,
+  }}
+>
+  Eventra
+</h2>
     <div className="flex items-center gap-3">
       <button
         ref={closeBtnRef}
@@ -282,9 +280,9 @@ const UserProfileDropdown = ({
       {user?.profilePicture ? (
         <img src={user.profilePicture} alt="Profile" className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20" onError={(e) => (e.currentTarget.style.display = "none")} />
       ) : (
-       <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold text-sm">
-        {primaryLine?.charAt(0).toUpperCase()}
-      </div>
+        <div className="w-8 h-8 rounded-full dark:bg-white/20 bg-gray-300 flex items-center justify-center">
+          <UserIcon className="w-4 h-4 text-gray-600 dark:text-white" />
+        </div>
       )}
     </button>
     <AnimatePresence>
@@ -357,6 +355,7 @@ const MobileUserSection = ({
 const NAV_ITEMS = [
   { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
   { name: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
+  { name: "Bookmarks", href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
   { name: "Hackathons", href: "/hackathons", icon: <Trophy className="w-5 h-5" /> },
   { name: "Projects", href: "/projects", icon: <FolderKanban className="w-5 h-5" /> },
   {
@@ -417,42 +416,50 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
   const { user, isAuthenticated } = useAuth();
 
   return (
-    <div
-      id="mobile-drawer"
-      ref={drawerRef}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      className={`fixed top-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-sm shadow-2xl z-50 flex flex-col transform transition-transform duration-300 ease-in-out bg-white backdrop-blur-lg dark:bg-gray-900/95 ${isOpen ? "translate-x-0" : "translate-x-full"}`}
-      role="dialog"
-      aria-modal={isOpen}
-    >
-      <MobileDrawerHeader closeBtnRef={closeBtnRef} closeAllMenus={closeAllMenus} />
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          id="mobile-drawer"
+          ref={drawerRef}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          className="fixed top-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-sm shadow-2xl z-50 flex flex-col bg-white backdrop-blur-lg dark:bg-gray-900/95"
+          role="dialog"
+          aria-modal="true"
+          initial={{ x: "100%" }}
+          animate={{ x: 0 }}
+          exit={{ x: "100%" }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+        >
+          <MobileDrawerHeader closeBtnRef={closeBtnRef} closeAllMenus={closeAllMenus} />
 
-      <div className="flex-grow p-3.5 sm:p-4 space-y-2 overflow-y-auto">
-        <NavList 
-          location={location} 
-          openDropdown={openDropdown} 
-          onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)} 
-          onLinkClick={closeAllMenus} 
-          isMobile={true} 
-        />
-      </div>
+          <div className="flex-grow p-3.5 sm:p-4 space-y-2 overflow-y-auto">
+            <NavList 
+              location={location} 
+              openDropdown={openDropdown} 
+              onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)} 
+              onLinkClick={closeAllMenus} 
+              isMobile={true} 
+            />
+          </div>
 
-      <MobileDrawerFooter 
-        isAuthenticated={isAuthenticated} 
-        user={user} 
-        primaryLine={primaryLine} 
-        secondaryLine={secondaryLine} 
-        closeAllMenus={closeAllMenus} 
-        location={location} 
-        handleLogoutClick={handleLogoutClick} 
-        isDarkMode={isDarkMode} 
-        toggleTheme={toggleTheme} 
-        cursorEnabled={cursorEnabled} 
-        toggleCursor={toggleCursor} 
-      />
-    </div>
+          <MobileDrawerFooter 
+            isAuthenticated={isAuthenticated} 
+            user={user} 
+            primaryLine={primaryLine} 
+            secondaryLine={secondaryLine} 
+            closeAllMenus={closeAllMenus} 
+            location={location} 
+            handleLogoutClick={handleLogoutClick} 
+            isDarkMode={isDarkMode} 
+            toggleTheme={toggleTheme} 
+            cursorEnabled={cursorEnabled} 
+            toggleCursor={toggleCursor} 
+          />
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
@@ -460,7 +467,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [navHeight] = useState(0);
+  const [navHeight, setNavHeight] = useState(0);
 
   const drawerRef = useRef(null);
   const closeBtnRef = useRef(null);
@@ -518,21 +525,18 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isMobileMenuOpen]);
 
-  const handleTouchStart = (e) => {
-    touchStartXRef.current = e.touches[0].clientX;
-    touchCurrentXRef.current = e.touches[0].clientX;
-  };
-  const handleTouchMove = (e) => {
-    touchCurrentXRef.current = e.touches[0].clientX;
-  };
+  useEffect(() => {
+    if (navRef.current) setNavHeight(navRef.current.offsetHeight);
+    const handleResize = () => { if (navRef.current) setNavHeight(navRef.current.offsetHeight); };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const handleTouchStart = (e) => { touchStartXRef.current = e.touches[0].clientX; touchCurrentXRef.current = e.touches[0].clientX; };
+  const handleTouchMove = (e) => { touchCurrentXRef.current = e.touches[0].clientX; };
   const handleTouchEnd = () => {
-    const start = touchStartXRef.current;
-    const end = touchCurrentXRef.current;
-    if (typeof start !== "number" || typeof end !== "number") return;
-    const deltaX = end - start;
-    if (deltaX > 50) {
-      closeAllMenus();
-    }
+    const delta = (touchCurrentXRef.current ?? 0) - (touchStartXRef.current ?? 0);
+    if (delta > 50) closeAllMenus();
     touchStartXRef.current = null;
     touchCurrentXRef.current = null;
   };
@@ -541,7 +545,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
     setShowLogoutModal(true);
     setShowProfileDropdown(false);
   };
-
   const handleConfirmLogout = () => {
     setShowLogoutModal(false);
     logout();
@@ -553,7 +556,13 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   return (
     <>
       <div
-        className={`fixed inset-0 bg-black/60 z-30 transition-opacity duration-300 ${isMobileMenuOpen || showProfileDropdown || openDropdown || showLogoutModal ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        className={`fixed inset-0 z-30 transition-opacity duration-300 ${
+          isMobileMenuOpen || showLogoutModal
+            ? "bg-black/60 opacity-100"
+            : (showProfileDropdown || openDropdown)
+            ? "bg-transparent opacity-100"
+            : "opacity-0 pointer-events-none"
+        }`}
         onClick={closeAllMenus}
       />
 
@@ -567,9 +576,24 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         <div className="max-w-7xl mx-auto flex items-center justify-between h-[72px] px-6 lg:px-8 relative">
           {/* Logo on the left */}
           <Link to="/" className="flex items-center min-w-[160px] z-20">
-            <h2 className="text-3xl font-semibold tracking-tight text-black dark:text-white" style={{ fontFamily: '"Anton", sans-serif' }}>
-              Eventra
-            </h2>
+            <h2
+  style={{
+    fontFamily: "'Oxanium', monospace",
+    fontSize: "1.44rem",
+    fontWeight: 800,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: "transparent",
+    background: "linear-gradient(135deg, #ffffff 0%, #a5b4fc 50%, #6366f1 100%)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    backgroundClip: "text",
+    margin: 0,
+    lineHeight: 1,
+  }}
+>
+  Eventra
+</h2>
           </Link>
 
           {/* Centered nav links */}
@@ -600,7 +624,8 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               ref={toggleBtnRef} 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
               aria-expanded={isMobileMenuOpen} 
-              aria-label="Open navigation" 
+              aria-controls="mobile-drawer"
+              aria-label={isMobileMenuOpen ? "Close navigation" : "Open navigation"} 
               className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10"
             >
               <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -627,6 +652,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         primaryLine={primaryLine}
         secondaryLine={secondaryLine}
       />
+
 
       {/* Confirmation Modal */}
       <ConfirmationModal
