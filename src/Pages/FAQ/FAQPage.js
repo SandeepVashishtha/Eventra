@@ -253,6 +253,11 @@ const blur = factor * 2;
           z-index: 90;
           width: 100%;
           box-sizing: border-box;
+          transition:
+          transform 0.5s ease,
+          opacity 0.5s ease,
+          padding 0.5s ease,
+          background 0.5s ease;
         }
 
         .faq-heading-block.is-fixed {
@@ -290,7 +295,7 @@ const blur = factor * 2;
         }
 
         .card-pin-wrapper {
-          position: sticky;
+          position: relative;
           width: 100%;
           max-width: 820px;
           margin-bottom: 90px;
@@ -409,7 +414,7 @@ line-height: 1.8;
               ref={(el) => {
                 if (el) wrapperRefs.current[index] = el;
               }}
-              style={{ top: cardStickyTop + 16 }}
+              style={{}}
             >
               {/* FIX 3: Style applied via React state, not direct DOM write */}
               <div className="faq-card-inner" style={cardStyles[index]}>
