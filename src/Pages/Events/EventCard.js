@@ -195,13 +195,14 @@ const EventCard = ({ event }) => {
       </div>
 
       {/* Image */}
-      <div className="relative h-40 overflow-hidden">
+<div className="relative h-40 overflow-hidden">
         <img
+          loading="lazy"
+          decoding="async"
           src={event.image}
           alt={event.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
       </div>
 
