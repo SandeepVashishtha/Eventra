@@ -21,7 +21,9 @@ const endpoints = [
     method: "GET",
     url: "/api/hackathons",
     example: `fetch("/api/hackathons")
-  .then(res => res.json())`,
+  .then(res => res.json())
+  .then(data => console.log(data))
+  .catch(err => console.error(err))`,
     response: `[
   {
     "id": 1,
@@ -38,7 +40,7 @@ const endpoints = [
     desc: "Retrieve projects submitted to hackathons.",
     method: "GET",
     url: "/api/projects?hackathonId=<id>",
-    example: `curl -X GET https://example.com/api/projects?hackathonId=1`,
+    example: `curl -X GET \${process.env.REACT_APP_API_URL}/projects?hackathonId=1`,
     response: `[
   {
     "id": 42,
@@ -54,7 +56,7 @@ const endpoints = [
     desc: "Get a list of top contributors and GSOC participants.",
     method: "GET",
     url: "/api/contributors",
-    example: `fetch("/api/contributors", {
+    example: `fetch("\${process.env.REACT_APP_API_URL}/contributors", {
   headers: { Authorization: "Bearer <API_KEY>" }
 })`,
     response: `[
@@ -72,7 +74,7 @@ const endpoints = [
     desc: "Fetch leaderboard rankings of participants.",
     method: "GET",
     url: "/api/leaderboard?limit=10",
-    example: `curl -X GET https://example.com/api/leaderboard?limit=10`,
+    example: `curl -X GET \${process.env.REACT_APP_API_URL}/leaderboard?limit=10`,
     response: `[
   {
     "rank": 1,
