@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Award, Calendar, Code2, Sparkles, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
+import CountUp from "react-countup";
 
 export default function EventHero({
   searchQuery,
@@ -83,22 +84,27 @@ export default function EventHero({
           {[
             {
               label: "Events Hosted",
-              value: "120+",
+              value: 120,
+              suffix: "+",
               icon: Calendar,
             },
             {
               label: "Active Participants",
-              value: "50k+",
+              value: 50,
+              suffix: "k+",
               icon: Users,
             },
             {
               label: "Projects Created",
-              value: "8k+",
+              value: 8,
+              suffix: "k+",
               icon: Code2,
             },
             {
               label: "Total Prizes",
-              value: "$1M+",
+              value: 1,
+              prefix: "$",
+              suffix: "M+",
               icon: Award,
             },
           ].map((stat) => (
@@ -111,7 +117,15 @@ export default function EventHero({
               </div>
 
               <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
-                {stat.value}
+                <CountUp
+                  start={0}
+                  end={stat.value}
+                  duration={2.5}
+                  prefix={stat.prefix}
+                  suffix={stat.suffix}
+                  enableScrollSpy
+                  scrollSpyOnce
+                />
               </p>
               <p className="mt-1 text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                 {stat.label}
