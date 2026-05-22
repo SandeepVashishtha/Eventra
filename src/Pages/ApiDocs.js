@@ -58,7 +58,7 @@ const endpoints = [
     method: "GET",
     url: "/api/contributors",
     example: `fetch("\${process.env.REACT_APP_API_URL}/contributors", {
-    example: `fetch("${process.env.REACT_APP_API_URL}/contributors", {
+   
   headers: { Authorization: "Bearer <API_KEY>" }
 })`,
     response: `[
