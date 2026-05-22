@@ -302,21 +302,24 @@ const blur = factor * 2;
         }
 
         .faq-card-inner {
-        transition:
-  transform 0.35s ease,
-  box-shadow 0.35s ease,
-  border-color 0.35s ease,
-  background 0.35s ease;
+          transition:
+            transform 0.35s ease,
+            box-shadow 0.35s ease,
+            border-color 0.35s ease,
+            background 0.35s ease;
           width: 100%;
-          background: rgba(15, 23, 42, 0.75);
-border: 1px solid rgba(255,255,255,0.08);
-backdrop-filter: blur(14px);
--webkit-backdrop-filter: blur(14px);
+          background: var(--card-bg);
+          border: 1px solid var(--card-border);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
           border-radius: 16px;
           padding: 36px;
-          box-shadow:
-  0 10px 40px rgba(0,0,0,0.25);
+          box-shadow: 0 10px 40px rgba(0,0,0,0.06);
           box-sizing: border-box;
+        }
+
+        .dark .faq-card-inner {
+          box-shadow: 0 10px 40px rgba(0,0,0,0.3);
         }
 
 
