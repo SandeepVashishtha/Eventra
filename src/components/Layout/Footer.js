@@ -1,24 +1,24 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  FaGithub,
-  FaQuestionCircle,
-  FaEnvelope,
-  FaBookOpen,
-  FaPlus,
-  FaUsers,
   FaBook,
-  FaHome,
+  FaBookOpen,
   FaCalendarAlt,
-  FaStar,
-  FaFolder,
-  FaTrophy,
   FaComments,
-  FaLinkedin,
   FaDiscord,
-  FaTelegram,
-  FaInstagram,
+  FaEnvelope,
+  FaFolder,
+  FaGithub,
+  FaHome,
   FaInfoCircle,
+  FaInstagram,
+  FaLinkedin,
+  FaPlus,
+  FaQuestionCircle,
+  FaStar,
+  FaTelegram,
+  FaTrophy,
+  FaUsers,
 } from "react-icons/fa";
 
 const footerLinks = {
@@ -141,7 +141,6 @@ const Newsletter = () => {
     feedback.type === "success"
       ? "text-green-600 dark:text-green-400"
       : "text-red-600 dark:text-red-400";
-
   return (
     <div className="mt-4">
       <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-2">

@@ -1,6 +1,8 @@
 import jsPDF from 'jspdf';
+import { useAuth } from '../context/AuthContext';
 
 const CertificateDownload = ({ eventName, eventDate, eventType }) => {
+  const { user } = useAuth();
 
   const generateCertificate = () => {
     const doc = new jsPDF('landscape', 'mm', 'a4');
@@ -17,28 +19,41 @@ const CertificateDownload = ({ eventName, eventDate, eventType }) => {
     // Title
     doc.setTextColor(99, 102, 241);
     doc.setFontSize(28);
-    doc.text('Certificate of Participation', 148, 50, { align: 'center' });
+    doc.text('Certificate of Participation', 148, 45, { align: 'center' });
 
-    // Subtitle
+    // Subtitle 1
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
-    doc.text('This certifies participation in', 148, 80, { align: 'center' });
+    doc.setFontSize(15);
+    doc.text('This is proudly presented to', 148, 70, { align: 'center' });
 
-    // Event Name
+    // Participant Name
+    const firstName = user?.firstName || '';
+    const lastName = user?.lastName || '';
+    const participantName = `${firstName} ${lastName}`.trim() || 'Guest Participant';
     doc.setFontSize(26);
     doc.setTextColor(99, 102, 241);
-    doc.text(eventName, 148, 105, { align: 'center' });
+    doc.text(participantName, 148, 90, { align: 'center' });
+
+    // Subtitle 2
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(15);
+    doc.text('for active participation in the event', 148, 112, { align: 'center' });
+
+    // Event Name
+    doc.setFontSize(24);
+    doc.setTextColor(99, 102, 241);
+    doc.text(eventName, 148, 130, { align: 'center' });
 
     // Event Type & Date
-    doc.setFontSize(14);
+    doc.setFontSize(12);
     doc.setTextColor(255, 255, 255);
-    doc.text(`Event Type: ${eventType}`, 148, 130, { align: 'center' });
-    doc.text(`Date: ${eventDate}`, 148, 148, { align: 'center' });
+    doc.text(`Event Type: ${eventType}`, 148, 150, { align: 'center' });
+    doc.text(`Date: ${eventDate}`, 148, 164, { align: 'center' });
 
     // Footer
-    doc.setFontSize(12);
+    doc.setFontSize(11);
     doc.setTextColor(150, 150, 150);
-    doc.text('Eventra - Event Management Platform', 148, 185, { align: 'center' });
+    doc.text('Eventra - Event Management Platform', 148, 190, { align: 'center' });
 
     doc.save(`${eventName}_Certificate.pdf`);
   };
