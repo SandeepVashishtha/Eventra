@@ -22,6 +22,7 @@ const endpoints = [
     url: "/api/hackathons",
     example: `fetch("/api/hackathons")
   .then(res => res.json())
+  .then(data => console.log(data))`,
     response: `[
   {
     "id": 1,
