@@ -73,7 +73,7 @@ function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
 
 /* ─── Main Component ─── */
 const AdminDashboard = () => {
-  const { user, logout, hasPermission } = useAuth();
+  const { user, logout, hasPermission, hasRole } = useAuth();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('overview');

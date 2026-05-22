@@ -20,17 +20,8 @@ const endpoints = [
     desc: "Fetch upcoming and ongoing hackathons.",
     method: "GET",
     url: "/api/hackathons",
-    example: `fetch("/api/hackathons")
-  .then(res => res.json())
-    response: `[
-  {
-    "id": 1,
-    "title": "CodeFest 2025",
-    "startDate": "2025-09-20",
-    "endDate": "2025-09-25",
-    "participants": 150
-  }
-]`,
+    example: "fetch(\"/api/hackathons\")\n  .then(res => res.json())",
+    response: "[\n  {\n    \"id\": 1,\n    \"title\": \"CodeFest 2025\",\n    \"startDate\": \"2025-09-20\",\n    \"endDate\": \"2025-09-25\",\n    \"participants\": 150\n  }\n]",
   },
   {
     icon: <BookOpen className="w-7 h-7 text-emerald-300" />,
@@ -38,15 +29,8 @@ const endpoints = [
     desc: "Retrieve projects submitted to hackathons.",
     method: "GET",
     url: "/api/projects?hackathonId=<id>",
-    example: `curl -X GET https://example.com/api/projects?hackathonId=1`,
-    response: `[
-  {
-    "id": 42,
-    "title": "AI-Powered Chatbot",
-    "author": "Jane Doe",
-    "votes": 120
-  }
-]`,
+    example: "curl -X GET https://example.com/api/projects?hackathonId=1",
+    response: "[\n  {\n    \"id\": 42,\n    \"title\": \"AI-Powered Chatbot\",\n    \"author\": \"Jane Doe\",\n    \"votes\": 120\n  }\n]",
   },
   {
     icon: <Users className="w-7 h-7 text-violet-300" />,
@@ -54,17 +38,8 @@ const endpoints = [
     desc: "Get a list of top contributors and GSOC participants.",
     method: "GET",
     url: "/api/contributors",
-    example: `fetch("/api/contributors", {
-  headers: { Authorization: "Bearer <API_KEY>" }
-})`,
-    response: `[
-  {
-    "id": 7,
-    "username": "dev_ankita",
-    "points": 230,
-    "rank": 2
-  }
-]`,
+    example: "fetch(\"/api/contributors\", {\n  headers: { Authorization: \"Bearer <API_KEY>\" }\n})",
+    response: "[\n  {\n    \"id\": 7,\n    \"username\": \"dev_ankita\",\n    \"points\": 230,\n    \"rank\": 2\n  }\n]",
   },
   {
     icon: <Trophy className="w-7 h-7 text-amber-300" />,
@@ -72,14 +47,8 @@ const endpoints = [
     desc: "Fetch leaderboard rankings of participants.",
     method: "GET",
     url: "/api/leaderboard?limit=10",
-    example: `curl -X GET https://example.com/api/leaderboard?limit=10`,
-    response: `[
-  {
-    "rank": 1,
-    "username": "coder123",
-    "points": 500
-  }
-]`,
+    example: "curl -X GET https://example.com/api/leaderboard?limit=10",
+    response: "[\n  {\n    \"rank\": 1,\n    \"username\": \"coder123\",\n    \"points\": 500\n  }\n]",
   },
 ];
 

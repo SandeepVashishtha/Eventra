@@ -41,24 +41,6 @@ const EventCreation = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState("form");
   const [loading, setLoading] = useState(false);
-
-  // Role-based access control
-  if (!user || (!hasRole('ADMIN') && !hasRole('EVENT_MANAGER') && !hasPermission('CREATE_EVENT'))) {
-    return (
-      <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold mb-4">Unauthorized Access</h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">You don't have permission to create events.</p>
-          <button
-            onClick={() => navigate('/')}
-            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-          >
-            Go to Home
-          </button>
-        </div>
-      </div>
-    );
-  }
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -94,6 +76,51 @@ const EventCreation = () => {
   });
   const [errors, setErrors] = useState("");
   const [newTag, setNewTag] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [generalError, setGeneralError] = useState("");
+
+  useEffect(() => {
+    const saved = localStorage.getItem(DRAFT_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setFormData(prev => ({ ...prev, ...parsed, banner: null, bannerPreview: null }));
+      } catch (e) { }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (successMessage || generalError) {
+      const timer = setTimeout(() => {
+        setSuccessMessage("");
+        setGeneralError("");
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage, generalError]);
+
+  useEffect(() => {
+    const { banner, bannerPreview, ...saveable } = formData;
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
+  }, [formData]);
+
+  // Role-based access control (must be after all hooks)
+  if (!user || (!hasRole('ADMIN') && !hasRole('EVENT_MANAGER') && !hasPermission('CREATE_EVENT'))) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold mb-4">Unauthorized Access</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">You don't have permission to create events.</p>
+          <button
+            onClick={() => navigate('/')}
+            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+          >
+            Go to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const categories = [
     { label: "Conference", value: "CONFERENCE" },
@@ -298,9 +325,6 @@ const EventCreation = () => {
     }
   };
 
-  const [successMessage, setSuccessMessage] = useState("");
-  const [generalError, setGeneralError] = useState("");
-
   const createEvent = async () => {
     // API call protection - check role before making the call
     if (!user || (!hasRole('ADMIN') && !hasRole('EVENT_MANAGER') && !hasPermission('CREATE_EVENT'))) {
@@ -429,31 +453,6 @@ const EventCreation = () => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    const saved = localStorage.getItem(DRAFT_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setFormData(prev => ({ ...prev, ...parsed, banner: null, bannerPreview: null }));
-      } catch (e) { }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (successMessage || generalError) {
-      const timer = setTimeout(() => {
-        setSuccessMessage("");
-        setGeneralError("");
-      }, 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [successMessage, generalError]);
-
-  useEffect(() => {
-    const { banner, bannerPreview, ...saveable } = formData;
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
-  }, [formData]);
 
   const resetForm = () => {
     setFormData({
