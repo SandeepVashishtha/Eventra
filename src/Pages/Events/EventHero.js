@@ -25,7 +25,7 @@ export default function EventHero({
           Discover <span className="text-blue-600 dark:text-blue-500">Events</span>
         </h1>
 
-        <p className="mt-4 text-sm sm:text-base md:text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto px-4 sm:px-0">
+        <p className="mt-4 text-sm sm:text-base md:text-lg text-gray-500 dark:text-white max-w-2xl mx-auto px-4 sm:px-0">
           Discover exciting events, compete with talented participants, learn
           new skills, and <span className="font-semibold text-gray-900 dark:text-white">win rewards</span>.
         </p>
