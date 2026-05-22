@@ -13,9 +13,16 @@ import {
   Terminal,
 } from "lucide-react";
 
+const iconMap = {
+  Server: <Server className="w-7 h-7 text-sky-300" />,
+  BookOpen: <BookOpen className="w-7 h-7 text-emerald-300" />,
+  Users: <Users className="w-7 h-7 text-violet-300" />,
+  Trophy: <Trophy className="w-7 h-7 text-amber-300" />,
+};
+
 const endpoints = [
   {
-    icon: <Server className="w-7 h-7 text-sky-300" />,
+    icon: "Server",
     title: "Hackathons",
     desc: "Fetch upcoming and ongoing hackathons.",
     method: "GET",
@@ -24,7 +31,7 @@ const endpoints = [
     response: "[\n  {\n    \"id\": 1,\n    \"title\": \"CodeFest 2025\",\n    \"startDate\": \"2025-09-20\",\n    \"endDate\": \"2025-09-25\",\n    \"participants\": 150\n  }\n]",
   },
   {
-    icon: <BookOpen className="w-7 h-7 text-emerald-300" />,
+    icon: "BookOpen",
     title: "Projects",
     desc: "Retrieve projects submitted to hackathons.",
     method: "GET",
@@ -33,7 +40,7 @@ const endpoints = [
     response: "[\n  {\n    \"id\": 42,\n    \"title\": \"AI-Powered Chatbot\",\n    \"author\": \"Jane Doe\",\n    \"votes\": 120\n  }\n]",
   },
   {
-    icon: <Users className="w-7 h-7 text-violet-300" />,
+    icon: "Users",
     title: "Contributors",
     desc: "Get a list of top contributors and GSOC participants.",
     method: "GET",
@@ -42,7 +49,7 @@ const endpoints = [
     response: "[\n  {\n    \"id\": 7,\n    \"username\": \"dev_ankita\",\n    \"points\": 230,\n    \"rank\": 2\n  }\n]",
   },
   {
-    icon: <Trophy className="w-7 h-7 text-amber-300" />,
+    icon: "Trophy",
     title: "Leaderboard",
     desc: "Fetch leaderboard rankings of participants.",
     method: "GET",
@@ -103,7 +110,7 @@ const ApiDocs = () => {
                   className="border-t border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition"
                 >
                   <td className="p-4 flex items-center gap-3">
-                    {ep.icon}
+                    {iconMap[ep.icon]}
                     <span className="font-medium">{ep.title}</span>
                   </td>
                   <td className="p-4">
@@ -135,7 +142,7 @@ const ApiDocs = () => {
               className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl p-6 shadow-lg"
             >
               <div className="flex items-center gap-3 mb-4">
-                {ep.icon}
+                {iconMap[ep.icon]}
                 <h3 className="text-xl font-semibold">{ep.title}</h3>
               </div>
               <p className="text-gray-600 dark:text-gray-400 mb-3">{ep.desc}</p>
