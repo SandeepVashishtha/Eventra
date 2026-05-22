@@ -14,7 +14,7 @@ import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import SearchEmptyState from "../../components/common/SearchEmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-
+import PageLoader from "../../components/common/PageLoader";
 import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
 
 // Main ProjectGallery component
@@ -357,11 +357,7 @@ const ProjectGallery = () => {
         <AnimatePresence mode="wait">
           {isLoading ? (
             // Show skeleton loaders while fetching
-            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <ProjectCardSkeleton key={`skeleton-${i}`} />
-              ))}
-            </div>
+            <PageLoader text="Loading Projects..." />
           ) : error ? (
             // Show error message if fetch fails
             <motion.div
