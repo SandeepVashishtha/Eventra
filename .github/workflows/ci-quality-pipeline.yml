@@ -25,7 +25,7 @@ jobs:
         run: npm ci
 
       - name: Run lint checks
-        run: npx eslint src --ext .js,.jsx,.tsx --max-warnings=0 || true
+        run: npx eslint src --ext .js,.jsx,.tsx --max-warnings=10
 
       - name: Run tests
         run: npm test -- --watchAll=false --passWithNoTests
@@ -33,7 +33,7 @@ jobs:
           CI: true
 
       - name: Production build verification
-        run: npm run build
+        run: CI=false npm run build
         env:
           CI: false
           GENERATE_SOURCEMAP: false
