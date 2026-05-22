@@ -262,7 +262,7 @@ export default function LeaderBoard() {
           {/* UPDATED: Header text */}
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             <span className="block text-indigo-700 dark:text-indigo-400">
-              GSSoC'25
+              GSSoC'26
             </span>
             <span className="text-gray-800 dark:text-gray-200">
               Contributor Leaderboard
