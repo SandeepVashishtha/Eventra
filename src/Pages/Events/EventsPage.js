@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import mockEvents from "./eventsMockData.json";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
 import { getEventStatus } from "../../utils/eventUtils";
@@ -13,6 +12,9 @@ import SearchEmptyState from "../../components/common/SearchEmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import ActiveFilters from "./ActiveFilters";
 import { getRouteSearchResults } from "../../utils/searchUtils";
+import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const EVENT_SEARCH_KEYS = [
   "title",
@@ -88,16 +90,24 @@ const EventsPage = () => {
   const cardSectionRef = useRef();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setEvents(
-        mockEvents.map((event) => ({
-          ...event,
-          status: getEventStatus(event),
-        })),
-      );
-      setIsLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
+    const fetchEvents = async () => {
+      setIsLoading(true);
+      try {
+        const res = await apiUtils.get(API_ENDPOINTS.EVENTS.ALL);
+        setEvents(
+          res.data.map((event) => ({
+            ...event,
+            status: getEventStatus(event),
+          })),
+        );
+      } catch (err) {
+        toast.error("Failed to load events. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEvents();
   }, []);
 
   useEffect(() => {
@@ -301,6 +311,7 @@ const EventsPage = () => {
       <EventCTA />
 
       <FeedbackButton />
+      <ToastContainer position="bottom-right" />
     </div>
   );
 };
