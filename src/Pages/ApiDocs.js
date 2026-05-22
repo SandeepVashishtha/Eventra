@@ -35,7 +35,6 @@ const endpoints = [
   }
 ]`,
   },
-];
   {
     icon: <BookOpen className="w-7 h-7 text-emerald-300" />,
     title: "Projects",
