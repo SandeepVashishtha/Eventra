@@ -13,6 +13,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { getEventStatus } from "../../utils/eventUtils";
+import { checkRegistrationConflict, suggestAlternativeEvents } from "../../utils/conflictDetection";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { useSessionRecovery } from "../../context/SessionRecoveryContext";
@@ -20,6 +21,7 @@ import { API_ENDPOINTS } from "../../config/api";
 import { toast } from "react-toastify";
 import mockEvents from "./eventsMockData.json";
 import { pushToQueue } from "../../utils/offlineQueue";
+import EventConflictModal from "../../components/EventConflictModal";
 
 const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
 const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
@@ -44,7 +46,7 @@ const EventRegistration = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated, token } = useAuth();
-  const { addRegistration } = useMyEvents();
+  const { addRegistration, myEvents } = useMyEvents();
   const { saveSession, clearSession } = useSessionRecovery();
 
   const [event, setEvent] = useState(null);
@@ -52,6 +54,13 @@ const EventRegistration = () => {
   const [submitting, setSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);
   const isSubmittingRef = useRef(false);
+
+  // Conflict detection state
+  const [showConflictModal, setShowConflictModal] = useState(false);
+  const [conflictData, setConflictData] = useState({
+    conflicts: [],
+    suggestions: [],
+  });
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -182,6 +191,29 @@ const EventRegistration = () => {
       return;
     }
 
+    // Check for scheduling conflicts
+    const conflictCheck = checkRegistrationConflict(event, myEvents);
+    
+    if (conflictCheck.hasConflict) {
+      // Get alternative suggestions
+      const suggestions = suggestAlternativeEvents(event, mockEvents, myEvents);
+      setConflictData({
+        conflicts: conflictCheck.conflicts,
+        suggestions,
+      });
+      setShowConflictModal(true);
+      return;
+    }
+
+    // Proceed with registration if no conflicts
+    proceedWithRegistration();
+  };
+
+  // Proceed with registration after conflict check or user confirmation
+  const proceedWithRegistration = async () => {
+    // Close modal if open
+    setShowConflictModal(false);
+    
     // Set lock and submission state
     registrationLocks.set(eventId, true);
     isSubmittingRef.current = true;
@@ -252,6 +284,22 @@ const EventRegistration = () => {
       isSubmittingRef.current = false;
       setSubmitting(false);
     }
+  };
+
+  // Handle conflict modal actions
+  const handleConflictCancel = () => {
+    setShowConflictModal(false);
+    toast.info("Registration cancelled due to scheduling conflict.");
+  };
+
+  const handleConflictProceed = () => {
+    proceedWithRegistration();
+  };
+
+  const handleSelectAlternative = (alternativeEvent) => {
+    setShowConflictModal(false);
+    navigate(`/events/${alternativeEvent.id}/register`);
+    toast.info(`Redirecting to ${alternativeEvent.title}`);
   };
 
   if (loading) {
@@ -554,6 +602,18 @@ const EventRegistration = () => {
           </div>
         </div>
       </div>
+
+      {/* Conflict Detection Modal */}
+      <EventConflictModal
+        isOpen={showConflictModal}
+        newEvent={event}
+        conflictingEvents={conflictData.conflicts}
+        suggestedEvents={conflictData.suggestions}
+        onCancel={handleConflictCancel}
+        onProceed={handleConflictProceed}
+        onSelectAlternative={handleSelectAlternative}
+        strictMode={false}
+      />
     </div>
   );
 };
