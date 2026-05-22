@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
 
 const Login = () => {
+  useDocumentTitle("Login | Eventra");
   const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState({});
