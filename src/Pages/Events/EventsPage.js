@@ -13,6 +13,7 @@ import SearchEmptyState from "../../components/common/SearchEmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import ActiveFilters from "./ActiveFilters";
 import { getRouteSearchResults } from "../../utils/searchUtils";
+import PageLoader from "../../components/common/PageLoader";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -35,15 +36,11 @@ const renderCardSection = (
   searchQuery,
   onClearSearch,
 ) => {
-  if (isLoading) {
-    return (
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
-          <EventCardSkeleton key={`skeleton-${i}`} />
-        ))}
-      </div>
-    );
-  }
+ if (isLoading) {
+  return (
+    <PageLoader text="Loading events..." />
+  );
+}
 
   if (filteredEvents.length === 0) {
     return (
