@@ -102,9 +102,27 @@ const AdminDashboard = () => {
   const confirmDelete = (type, id) => setConfirmModal({ open: true, type, id });
 
   const handleConfirmDelete = () => {
+    // API call protection - check role before deleting
+    if (!user || (!hasRole('ADMIN') && !hasPermission('DELETE_USER') && !hasPermission('DELETE_EVENT'))) {
+      toast.error("Unauthorized access");
+      return;
+    }
+
     const { type, id } = confirmModal;
-    if (type === 'user')  setUsers(prev  => prev.filter(u => u.id !== id));
-    if (type === 'event') setEvents(prev => prev.filter(e => e.id !== id));
+    if (type === 'user') {
+      if (!hasPermission('DELETE_USER')) {
+        toast.error("Unauthorized access");
+        return;
+      }
+      setUsers(prev  => prev.filter(u => u.id !== id));
+    }
+    if (type === 'event') {
+      if (!hasPermission('DELETE_EVENT')) {
+        toast.error("Unauthorized access");
+        return;
+      }
+      setEvents(prev => prev.filter(e => e.id !== id));
+    }
     setConfirmModal({ open: false, type: '', id: null });
     toast.success(`${type === 'user' ? 'User' : 'Event'} deleted successfully.`);
   };
@@ -174,7 +192,7 @@ const AdminDashboard = () => {
             </h1>
           </div>
           <div className="ad-topbar-right">
-            {activeTab === 'events' && hasPermission('CREATE_EVENT') && (
+            {user?.role === 'admin' && activeTab === 'events' && hasPermission('CREATE_EVENT') && (
               <button className="ad-btn-primary" onClick={() => navigate('/create-event')}>
                 <Plus size={15} /> New Event
               </button>
@@ -317,12 +335,12 @@ const AdminDashboard = () => {
                             <td><StatusBadge status={u.status} /></td>
                             <td>
                               <div className="ad-action-btns">
-                                {hasPermission('EDIT_USER') && (
+                                {user?.role === 'admin' && hasPermission('EDIT_USER') && (
                                   <button className="ad-icon-action" title="Edit" onClick={() => toast.info('Edit coming soon')}>
                                     <Edit2 size={14} />
                                   </button>
                                 )}
-                                {hasPermission('DELETE_USER') && (
+                                {user?.role === 'admin' && hasPermission('DELETE_USER') && (
                                   <button className="ad-icon-action ad-icon-danger" title="Delete" onClick={() => confirmDelete('user', u.id)}>
                                     <Trash2 size={14} />
                                   </button>
@@ -385,12 +403,12 @@ const AdminDashboard = () => {
                             <td><StatusBadge status={ev.status} /></td>
                             <td>
                               <div className="ad-action-btns">
-                                {hasPermission('EDIT_EVENT') && (
+                                {user?.role === 'admin' && hasPermission('EDIT_EVENT') && (
                                   <button className="ad-icon-action" title="Edit" onClick={() => toast.info('Edit coming soon')}>
                                     <Edit2 size={14} />
                                   </button>
                                 )}
-                                {hasPermission('DELETE_EVENT') && (
+                                {user?.role === 'admin' && hasPermission('DELETE_EVENT') && (
                                   <button className="ad-icon-action ad-icon-danger" title="Delete" onClick={() => confirmDelete('event', ev.id)}>
                                     <Trash2 size={14} />
                                   </button>

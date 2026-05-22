@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 import {
   ArrowRightIcon,
   CalendarIcon,
@@ -13,6 +14,7 @@ import {
   PencilIcon,
 } from "@heroicons/react/24/solid";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { useAuth } from "../../context/AuthContext";
 import {
   Calendar,
   MapPin,
@@ -35,8 +37,28 @@ import {
 const DRAFT_KEY = "eventra_create_event_draft";
 
 const EventCreation = () => {
+  const { user, hasRole, hasPermission } = useAuth();
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState("form");
   const [loading, setLoading] = useState(false);
+
+  // Role-based access control
+  if (!user || (!hasRole('ADMIN') && !hasRole('EVENT_MANAGER') && !hasPermission('CREATE_EVENT'))) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold mb-4">Unauthorized Access</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">You don't have permission to create events.</p>
+          <button
+            onClick={() => navigate('/')}
+            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+          >
+            Go to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -280,6 +302,12 @@ const EventCreation = () => {
   const [generalError, setGeneralError] = useState("");
 
   const createEvent = async () => {
+    // API call protection - check role before making the call
+    if (!user || (!hasRole('ADMIN') && !hasRole('EVENT_MANAGER') && !hasPermission('CREATE_EVENT'))) {
+      toast.error("Unauthorized access");
+      return;
+    }
+
     setLoading(true);
     setSuccessMessage("");
     setGeneralError("");
