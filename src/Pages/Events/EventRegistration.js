@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   Calendar,
@@ -20,6 +20,9 @@ import { API_ENDPOINTS } from "../../config/api";
 import { toast } from "react-toastify";
 import mockEvents from "./eventsMockData.json";
 
+// Registration lock map to prevent concurrent registrations for the same event
+const registrationLocks = new Map();
+
 const EventRegistration = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
@@ -31,6 +34,7 @@ const EventRegistration = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -143,6 +147,27 @@ const EventRegistration = () => {
       return;
     }
 
+    // Prevent concurrent submissions for the same event
+    if (isSubmittingRef.current) {
+      toast.error("Registration already in progress. Please wait.");
+      return;
+    }
+
+    // Check if another registration is in progress for this event
+    if (registrationLocks.has(eventId)) {
+      toast.error("Another registration is in progress for this event. Please wait.");
+      return;
+    }
+
+    // Atomic capacity check - re-check immediately before submission
+    if (event.attendees >= event.maxAttendees) {
+      toast.error("This event has reached maximum capacity.");
+      return;
+    }
+
+    // Set lock and submission state
+    registrationLocks.set(eventId, true);
+    isSubmittingRef.current = true;
     setSubmitting(true);
 
     try {
@@ -173,7 +198,17 @@ const EventRegistration = () => {
         }, 2000);
       } else {
         const errorData = await response.json();
-        toast.error(errorData.message || "Registration failed. Please try again.");
+        // Handle capacity exceeded error specifically
+        if (response.status === 409 || errorData.message?.toLowerCase().includes('capacity') || errorData.message?.toLowerCase().includes('full')) {
+          toast.error("This event has reached maximum capacity.");
+          // Refresh event data to get updated capacity
+          const updatedEvent = mockEvents.find((e) => e.id === parseInt(eventId));
+          if (updatedEvent) {
+            setEvent({ ...updatedEvent, status: getEventStatus(updatedEvent) });
+          }
+        } else {
+          toast.error(errorData.message || "Registration failed. Please try again.");
+        }
       }
     } catch (error) {
       console.error("Registration error:", error);
@@ -204,6 +239,9 @@ const EventRegistration = () => {
         navigate(`/events/${eventId}`);
       }, 3000);
     } finally {
+      // Release lock and reset submission state
+      registrationLocks.delete(eventId);
+      isSubmittingRef.current = false;
       setSubmitting(false);
     }
   };

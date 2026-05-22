@@ -109,7 +109,10 @@ const login = async (usernameOrEmail, password) => {
     password,
   });
 
-  const data = await res.json().catch(() => null);
+  const data = await res.json().catch((error) => {
+    console.error('Failed to parse login response JSON:', error);
+    return null;
+  });
 
   if (!res.ok) {
     throw new Error(data?.message || data?.error || 'Invalid credentials');
