@@ -772,7 +772,7 @@ const HackathonHub = () => {
                 })}
               </div>
 
-              <div className="mx-auto max-w-md relative z-10">
+              <div className="mx-auto max-w-md relative ">
                 <motion.div
                   animate={{ y: [0, -8, 0] }}
                   transition={{

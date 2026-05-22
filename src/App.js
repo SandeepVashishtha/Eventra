@@ -85,7 +85,9 @@ function App() {
             <OfflineSyncManager />
 
             <Router>
-            <div className="App">
+            <div className="App relative">
+              <FluidCursor enabled={cursorEnabled} />
+              <div className="fixed inset-0 -z-10 bg-white dark:bg-slate-950" aria-hidden="true" />
               <Navbar
                 cursorEnabled={cursorEnabled}
                 toggleCursor={toggleCursor}
@@ -94,15 +96,13 @@ function App() {
               <main
                 className="
                   relative
-                  z-10
                   min-h-screen
-                  bg-white
-                  dark:bg-slate-950
                   text-black
                   dark:text-white
                   transition-colors
                   duration-300
                 "
+                aria-live="polite"
               >
                 <PageTransition>
                   <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
@@ -120,7 +120,7 @@ function App() {
                 <Footer />
               </Suspense>
               <FeedbackButton />
-              <FluidCursor enabled={cursorEnabled} />
+              
             </div>
           </Router>
           </SessionRecoveryProvider>

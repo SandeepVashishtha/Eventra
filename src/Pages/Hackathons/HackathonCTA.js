@@ -44,7 +44,7 @@ const HackathonCTA = () => {
       ))}
 
       <motion.h2
-        className="text-4xl md:text-5xl font-bold text-white mb-4 relative z-10"
+        className="text-4xl md:text-5xl font-bold text-white mb-4 relative "
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
@@ -53,7 +53,7 @@ const HackathonCTA = () => {
       </motion.h2>
 
       <motion.p
-        className="text-white text-lg md:text-xl mb-8 max-w-2xl mx-auto relative z-10"
+        className="text-white text-lg md:text-xl mb-8 max-w-2xl mx-auto relative "
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
@@ -62,7 +62,7 @@ const HackathonCTA = () => {
         with innovators around the world.
       </motion.p>
 
-      <div className="flex flex-col md:flex-row justify-center gap-4 relative z-10">
+      <div className="flex flex-col md:flex-row justify-center gap-4 relative">
         <motion.a
           href="/hackathons"
           className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-lg shadow-lg transition-transform duration-300"
@@ -89,7 +89,7 @@ const HackathonCTA = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center ">
           {/* UPDATED: Modal card background, border, and text */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-md relative text-center dark:border dark:border-gray-700">
             <h3 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Register for Hackathon</h3>

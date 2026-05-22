@@ -210,11 +210,9 @@ const HackathonCard = ({
       }}
       className={`
         h-full
-        bg-gradient-to-br
-        from-white
-        to-white
-        dark:from-gray-800
-        dark:to-black
+        bg-white/80
+        dark:bg-gray-800/80
+        backdrop-blur-sm
         rounded-xl
         shadow-sm
         hover:shadow-md
@@ -243,11 +241,11 @@ const HackathonCard = ({
       )}
 
       {/* Share Button */}
-      <div className="absolute -top-4 -right-4 z-[200]">
+      <div className="absolute -top-4 -right-4 ">
         <ShareMenu
           shareData={hackathonSharingData}
           position="bottom-right"
-          menuClassName="!z-[999] shadow-2xl"
+          menuClassName=" shadow-2xl"
           buttonClassName=""
         >
           <motion.div

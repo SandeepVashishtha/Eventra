@@ -46,7 +46,7 @@ export default function HackathonHero({
     <div className="bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 relative py-16 sm:py-20 md:py-24 border-b border-gray-200 dark:border-slate-900">
 
       {/* ======================= HERO SECTION ======================= */}
-      <div className="relative px-4 min-h-[75vh] flex flex-col items-center justify-center text-center z-10">
+      <div className="relative px-4 min-h-[75vh] flex flex-col items-center justify-center text-center ">
         <motion.h1
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}

@@ -1226,9 +1226,23 @@ const FluidCursor = ({ enabled = true }) => {
   }
 
   return (
-    <div className="fixed top-0 left-0 z-[40] pointer-events-none">
-      <canvas ref={canvasRef} id="fluid" className="w-screen h-screen" />
-    </div>
+    <div className="fluid-cursor-container">
+    <canvas
+      ref={canvasRef}
+      id="fluid"
+      className="fluid-cursor"
+    />
+  </div>
+  //   <div className="fluid-cursor-container">
+  //   <canvas
+  //     ref={canvasRef}
+  //     id="fluid"
+  //     className="fluid-cursor"
+  //   />
+  // </div>
+    // <div className="fixed inset-0 z-0 pointer-events-none">
+    //   <canvas ref={canvasRef} id="fluid" className="w-screen h-screen" />
+    // </div>
   );
 };
 

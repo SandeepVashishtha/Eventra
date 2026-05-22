@@ -1,10 +1,33 @@
 /* Fix: Removed 'Dancing Script' decorative font import — Issue #828 */
 /* Only Inter (from index.css) is used for professional, consistent typography */
 
-main {
-  position: relative;
-  z-index: 10;
+
+
+.fluid-cursor-container {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
 }
+
+.fluid-cursor {
+  width: 100vw;
+  height: 100vh;
+  display: block;
+}
+
+.App {
+  position: relative;
+}
+
+main,
+nav,
+footer {
+  position: relative;
+  z-index: 1;
+}
+
+
 
 /* ==========================================================================
    GLOBAL COMPONENT & SOCIAL LINKS
@@ -168,6 +191,8 @@ main {
 }
 
 .event-card {
+  position: relative;
+  z-index: 2;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
   border-radius: 20px;
@@ -391,10 +416,14 @@ main {
 
   .hackathon-card {
     padding: 1rem;
+    position: relative;
+    z-index: 2;
   }
 }
 
 .hackathon-card {
+  position: relative;
+  z-index: 2;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
   border-radius: 20px;
@@ -616,6 +645,8 @@ main {
 }
 
 .cta-card {
+  position: relative;
+  z-index: 2;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
   border-radius: 20px;
@@ -691,6 +722,8 @@ main {
 }
 
 .project-card {
+  position: relative;
+  z-index: 2;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
   border-radius: 20px;
