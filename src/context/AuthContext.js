@@ -84,15 +84,21 @@ export const AuthProvider = ({ children }) => {
     }
 
     const rawUser = data?.user ?? data?.data ?? data ?? null;
+    const resolvedRoles = rawUser?.roles ?? (rawUser?.role ? [rawUser.role] : []);
     const sessionUser = {
       ...(rawUser || {}),
       firstName: rawUser?.firstName ?? '',
       lastName: rawUser?.lastName ?? '',
       email: rawUser?.email ?? fallbackEmail ?? '',
       username: rawUser?.username ?? fallbackEmail ?? '',
-      role: rawUser?.role ?? rawUser?.roles?.[0] ?? '',
-      roles: rawUser?.roles ?? (rawUser?.role ? [rawUser.role] : []),
+      role: rawUser?.role ?? resolvedRoles[0] ?? '',
+      roles: resolvedRoles,
       permissions: rawUser?.permissions ?? [],
+      scopes: rawUser?.scopes ?? (
+        resolvedRoles.includes('ADMIN') ? ["admin:all", "event:write", "event:read", "hackathon:write", "hackathon:read"] :
+        resolvedRoles.includes('EVENT_MANAGER') ? ["event:write", "event:read", "hackathon:write", "hackathon:read"] :
+        ["event:read", "hackathon:read"]
+      ),
     };
 
     return { sessionToken, sessionUser };
@@ -109,7 +115,10 @@ const login = async (usernameOrEmail, password) => {
     password,
   });
 
-  const data = await res.json().catch(() => null);
+  const data = await res.json().catch((error) => {
+    console.error('Failed to parse login response JSON:', error);
+    return null;
+  });
 
   if (!res.ok) {
     throw new Error(data?.message || data?.error || 'Invalid credentials');

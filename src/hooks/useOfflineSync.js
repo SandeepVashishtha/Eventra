@@ -52,7 +52,10 @@ const useOfflineSync = () => {
       if (response.status >= 400 && response.status < 500) {
         console.warn(
           `Offline queue: server rejected item with ${response.status} — dropping.`,
-          await response.text().catch(() => '')
+          await response.text().catch((error) => {
+            console.error('Failed to parse error response text:', error);
+            return '';
+          })
         );
         return true; // Treat as "handled" — bad data won't succeed on retry
       }

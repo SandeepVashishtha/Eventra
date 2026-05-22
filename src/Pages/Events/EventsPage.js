@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import mockEvents from "./eventsMockData.json";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
 import { getEventStatus } from "../../utils/eventUtils";
@@ -110,9 +111,10 @@ const EventsPage = () => {
     fetchEvents();
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
     setSearchQuery(routeSearchQuery);
   }, [routeSearchQuery]);
+
 
   const handleSearch = useCallback(
     (query = "") => {
@@ -134,7 +136,7 @@ const EventsPage = () => {
         );
       });
 
-      setFilteredEvents(final);
+setFilteredEvents(final);
     },
     [events, filterType],
   );
