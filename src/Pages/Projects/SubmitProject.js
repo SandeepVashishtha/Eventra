@@ -496,14 +496,15 @@ const SubmitProject = () => {
           progress easily.
         </p>
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-6">
-          <motion.a
-            href="#"
+          <motion.button
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="inline-flex items-center justify-center gap-2 bg-white text-black px-8 py-3 rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300"
           >
             <ArrowUpTrayIcon className="w-5 h-5" /> Submit Another Project
-          </motion.a>
+          </motion.button>
+          
           <motion.a
             href="/projects"
             whileHover={{ scale: 1.05 }}
