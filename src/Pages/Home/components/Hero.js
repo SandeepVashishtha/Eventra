@@ -366,7 +366,7 @@ text-gray-600 dark:text-gray-300"
             <motion.div variants={fadeUp}>
               <Link
                 to="/hackathons"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:bg-slate-900 text-slate-700 dark:text-gray-300 font-semibold shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-200"
+                className="relative inline-flex items-center px-6 sm:px-8 py-3.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-gray-300 font-semibold shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-200"
               >
                 Join Hackathons
               </Link>
