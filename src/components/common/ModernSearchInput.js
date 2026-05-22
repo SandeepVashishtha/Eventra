@@ -11,6 +11,7 @@ const ModernSearchInput = ({
   onChange,
   placeholder = "Search...",
   onFocus,
+  autoFocus,
   onBlur,
   onKeyDown,
   containerClassName = "",
@@ -36,22 +37,13 @@ const ModernSearchInput = ({
   return (
     <div className={`w-full relative ${containerClassName}`}>
       <motion.div
-        
         animate={{
-          y: isFocused ? -2 : 0,
-          scale: isFocused ? 1.05 : 1,
-          
+          y: isFocused ? -8 : 0,
+          scale: isFocused ? 1.02 : 1,
         }}
-        transition={{
-          type: "spring",
-          stiffness: 400,
-          damping: 20,
-          mass:0.8,
-        }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
         className="relative group"
-        
       >
-        
         <div
           className={`absolute inset-y-0 left-0 pl-4 flex items-center z-20 pointer-events-none transition-colors duration-300 ${
             isFocused ? "text-indigo-500" : "text-gray-400 dark:text-gray-500"
@@ -61,9 +53,10 @@ const ModernSearchInput = ({
         </div>
 
         <div
-          className={`flex flex-wrap items-center gap-2 w-full pl-12 pr-12 py-3.5 sm:py-4 text-base text-gray-900 dark:text-gray-100 bg-white/60 dark:bg-gray-800/60 backdrop-blur-md border border-gray-400 dark:border-gray-700 rounded-2xl transition-all duration-300 shadow-lg overflow-hidden ${inputClassName}`}
+          className={`flex flex-wrap items-center gap-2 w-full pl-12 pr-12 py-3.5 sm:py-4 text-base text-gray-900 dark:text-gray-100 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl transition-all duration-300 shadow-lg ${inputClassName}`}
           style={{
-            borderColor: isFocused ? "#6366f1" : "rgba(229,231,235,1)",
+            borderColor: isFocused ? "#6366f1" : "",
+            borderWidth: isFocused ? "2px" : "1px",
             boxShadow: isFocused
               ? "0 20px 25px -5px rgba(99, 102, 241, 0.3), 0 10px 10px -5px rgba(99, 102, 241, 0.2)"
               : "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
@@ -78,6 +71,7 @@ const ModernSearchInput = ({
             value={value}
             onChange={onChange}
             onFocus={handleFocus}
+            autoFocus={autoFocus}
             onBlur={handleBlur}
             onKeyDown={onKeyDown}
           />
@@ -92,6 +86,7 @@ const ModernSearchInput = ({
             whileTap={{ scale: 0.9 }}
             onClick={() => onChange({ target: { value: "" } })}
             className="absolute inset-y-0 right-4 flex items-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors z-20"
+            aria-label="Clear search input"
           >
             <X className="h-5 w-5" />
           </motion.button>

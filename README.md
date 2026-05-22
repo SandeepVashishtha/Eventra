@@ -20,7 +20,7 @@ Eventra is a comprehensive, open-source platform designed to empower organizers 
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
-- [Google OAuth Setup](#google-oauth-setup)
+
 - [Environment Variables](#environment-variables)
 - [Project Structure](#project-structure)
 - [Deployment](#deployment)
@@ -30,7 +30,9 @@ Eventra is a comprehensive, open-source platform designed to empower organizers 
 
 ## Overview
 
-Eventra helps communities and organizers run events end-to-end, including registrations, dashboards, hackathon workflows, and feedback collection. The frontend is a React single-page app, and the backend is a Spring Boot REST API documented with Swagger.
+Eventra helps communities and organizers run events end-to-end, including registrations, dashboards, hackathon workflows, and feedback collection.
+
+This repository contains the React frontend application for Eventra. The backend services are maintained separately in the Eventra-Backend repository using Spring Boot and Java.
 
 ## Live Demo
 
@@ -97,6 +99,9 @@ Eventra helps communities and organizers run events end-to-end, including regist
 | **Tailwind CSS** (or CSS) for Styling | **MySQL & H2** Databases | **OpenAPI 3.0** for API Docs |
 | **Create React App** | **Spring Data JPA** | **Azure App Service** for Backend Hosting |
 
+> **Note:** This repository mainly contains the frontend implementation. Backend APIs and services are maintained separately in the [Eventra-Backend](https://github.com/SandeepVashishtha/Eventra-Backend) repository.
+
+
 ## Getting Started
 
 Follow these steps to set up and run the frontend application on your local machine.
@@ -130,36 +135,6 @@ Follow these steps to set up and run the frontend application on your local mach
     ```
     The application will be available at `http://localhost:3000`.
 
-## Google OAuth Setup
-
-Follow these steps to enable Google Sign-In for the project:
-
-1. **Create Google Client ID**
-   - Go to [Google Cloud Console](https://console.cloud.google.com/).
-   - Create a new project (or use existing one).
-   - Navigate to **APIs & Services > Credentials**.
-   - Click **Create Credentials > OAuth 2.0 Client IDs**.
-   - Select **Web application**.
-   - Add your frontend URL in **Authorized JavaScript origins** (e.g., http://localhost:3000).
-   - Add redirect URI if using redirect flow (optional).
-   - Copy the **Client ID**.
-
-2. **Add Client ID to Environment**
-   - Open `.env` or create `.env` in the root of the project.
-   - Add the following line:
-     ```env
-     REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id_here
-     ```
-
-3. **Run the App**
-   - Install dependencies: `npm install`  
-   - Start frontend: `npm start`
-   - Go to Signup/Login page and you should see **Sign in with Google** button.
-   - Test signing in with your Google account.
-
-4. **Notes**
-   - Ensure your Google account allows OAuth for the given project.
-   - For production, add your deployed domain in **Authorized JavaScript origins**.
 
 
 ## Environment Variables
@@ -168,30 +143,40 @@ Create a `.env` file in the project root and add the variables below.
 
 ```env
 REACT_APP_API_URL=http://localhost:8080/api
-REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id_here
+
 ```
 
 ## Project Structure
 
-The frontend codebase is organized to be scalable and maintainable.
+The repository is organized into modular frontend components, contexts, configuration files, and utility helpers.
 
-```
+```text
 Eventra/
-├── public/                  # Static assets and index.html
-└── src/
-├── assets/              # Images, fonts, etc.
-├── components/          # Reusable UI components (common, layout, etc.)
-│   ├── auth/            # Login, Signup, ProtectedRoute
-│   ├── common/          # Buttons, Modals, Loading spinners
-│   └── layout/          # Navbar, Footer
-├── context/             # React Context providers (AuthContext, ThemeContext)
-├── hooks/               # Custom React hooks
-├── pages/               # Top-level page components (HomePage, EventsPage, etc.)
-├── services/            # API calls and external service integrations
-├── styles/              # Global CSS files
-├── utils/               # Utility functions
-├── App.js               # Main application component with routing
-└── index.js             # Entry point of the React application
+├── public/
+├── src/
+│   ├── assets/
+│   ├── components/
+│   │   ├── admin/
+│   │   ├── auth/
+│   │   ├── common/
+│   │   ├── Layout/
+│   │   ├── routes/
+│   │   ├── styles/
+│   │   └── user/
+│   ├── config/
+│   ├── context/
+│   ├── jhalak/
+│   ├── Pages/
+│   ├── utils/
+│   ├── App.js
+│   ├── App.css
+│   ├── index.js
+│   └── index.css
+├── tests/
+├── .env.example
+├── package.json
+├── tailwind.config.js
+└── README.md
 ```
 
 ## Deployment
@@ -224,7 +209,7 @@ We welcome contributions from the community! To get started, please follow these
     ```bash
     git push origin feature/your-amazing-feature
     ```
-5.  **Open a Pull Request** to the `main` branch of the original repository.
+5.  **Open a Pull Request** to the `master` branch of the original repository.
 
 ### Issue Assignment Policy
 - To ensure active development, issues are **automatically unassigned after 7 days** of inactivity.
@@ -234,6 +219,17 @@ We welcome contributions from the community! To get started, please follow these
 ## License
 
 This project is licensed under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for details.
+
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=sandeepvashishtha%2Feventra&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=sandeepvashishtha/eventra&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=sandeepvashishtha/eventra&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=sandeepvashishtha/eventra&type=date&legend=top-left" />
+ </picture>
+</a>
 
 ## Contributors
 
@@ -273,20 +269,5 @@ A huge thank you to everyone who has contributed to Eventra! Your efforts make t
 
 ---
 Built with care by the Eventra Team
-## 🚀 Local Setup (Windows)
 
-## Frontend Setup Instructions
-
-Follow these steps to run the Eventra frontend locally:
-
-### Prerequisites
-- Node.js (v18 or later recommended)
-- npm (comes with Node.js)
-- Git
-
-### Steps to Run Locally
-
-1. Clone the repository
-```bash
-git clone https://github.com/SandeepVashishtha/Eventra.git
 

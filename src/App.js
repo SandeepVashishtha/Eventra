@@ -1,90 +1,132 @@
-import { BrowserRouter as Router } from "react-router-dom";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
-import ToastProvider from "./components/Toastprovider";
 
-// --------------- LAYOUT
+// Layout & Components
 import Navbar from "./components/Layout/Navbar";
-import Footer from "./components/Layout/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
-import Chatbot from "./components/Chatbot";
 import FluidCursor from "./jhalak/FluidCursor";
-import AppRoutes from "./components/AppRoutes";
+import PageTransition from "./components/common/PageTransition";
+import RegistrationPage from "./Pages/RegistrationPage";
 
-// --------------- CONTEXT
+// Context & Hooks
+import NotificationToastContainer from "./components/common/NotificationProvider";
+import { NotificationProvider } from "./context/NotificationContext";
 import { AuthProvider } from "./context/AuthContext";
-import { ThemeProvider } from "./context/ThemeContext";
+import { MyEventsProvider } from "./context/MyEventsContext";
+import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
+import useOfflineSync from "./hooks/useOfflineSync";
+import useLenis from "./hooks/useLenis";
+
+// Lazy load heavy components
+const Footer = lazy(() => import("./components/Layout/Footer"));
+const Chatbot = lazy(() => import("./components/Chatbot"));
+const AppRoutes = lazy(() => import("./components/AppRoutes"));
+
+const OfflineSyncManager = () => {
+  useOfflineSync();
+  return null;
+};
 
 function App() {
-  const [cursorEnabled, setCursorEnabled] = useState(
-    localStorage.getItem("cursor") !== "off"
-  );
+  const [cursorEnabled, setCursorEnabled] =
+    useState(
+      localStorage.getItem("cursor") !== "off"
+    );
 
+  // Initialize Lenis smooth scrolling
+  useLenis();
+
+  // Toggle Cursor
   const toggleCursor = () => {
     const newValue = !cursorEnabled;
+
     setCursorEnabled(newValue);
-    localStorage.setItem("cursor", newValue ? "on" : "off");
+
+    localStorage.setItem(
+      "cursor",
+      newValue ? "on" : "off"
+    );
   };
 
+  // Listen For Cursor Preference Changes
   useEffect(() => {
-    if (typeof window !== "undefined" && navigator.modelContext) {
-      navigator.modelContext.provideContext({
-        tools: [
-          {
-            name: "search_events",
-            description: "Search for events on Eventra",
-            inputSchema: {
-              type: "object",
-              properties: {
-                query: { type: "string", description: "Search term for events" }
-              }
-            },
-            execute: async ({ query }) => {
-              window.location.href = `/events?search=${encodeURIComponent(query)}`;
-              return { success: true, message: `Searching for ${query}` };
-            }
-          },
-          {
-            name: "get_api_docs",
-            description: "Get information about Eventra APIs",
-            inputSchema: { type: "object", properties: {} },
-            execute: async () => {
-              window.location.href = "/apiDocs";
-              return { success: true, message: "Navigating to API documentation" };
-            }
-          }
-        ]
-      });
-    }
+    const handleCursorPreference = (event) => {
+      if (
+        event?.detail?.cursorEnabled !== undefined
+      ) {
+        setCursorEnabled(
+          event.detail.cursorEnabled
+        );
+      }
+    };
+
+    window.addEventListener(
+      "cursorPreferenceChanged",
+      handleCursorPreference
+    );
+
+    return () => {
+      window.removeEventListener(
+        "cursorPreferenceChanged",
+        handleCursorPreference
+      );
+    };
   }, []);
 
   return (
-    <ThemeProvider>
-      <ToastProvider />
-      <AuthProvider>
-        <Router>
-          <div className="App">
-            <Navbar
-              cursorEnabled={cursorEnabled}
-              toggleCursor={toggleCursor}
-            />
+    <AuthProvider>
+      <NotificationProvider>
+        <MyEventsProvider>
+          <SessionRecoveryProvider>
+            <NotificationToastContainer />
 
-            <main className="min-h-screen bg-white dark:bg-black">
-              <AppRoutes />
-            </main>
+            <OfflineSyncManager />
 
-            <ScrollToTop />
-            <Chatbot />
-            <FeedbackButton />
-            <Footer />
+            <Router>
+            <div className="App">
+              <Navbar
+                cursorEnabled={cursorEnabled}
+                toggleCursor={toggleCursor}
+              />
 
-            {/* KEEP CURSOR MOUNTED BUT TOGGLE VIA PROP */}
-            <FluidCursor enabled={cursorEnabled} />
-          </div>
-        </Router>
-      </AuthProvider>
-    </ThemeProvider>
+              <main
+                className="
+                  relative
+                  z-10
+                  min-h-screen
+                  bg-white
+                  dark:bg-slate-950
+                  text-black
+                  dark:text-white
+                  transition-colors
+                  duration-300
+                "
+              >
+                <PageTransition>
+                  <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+                    <Routes>
+                      <Route path="/register/:id" element={<RegistrationPage />} />
+                      <Route path="*" element={<AppRoutes />} />
+                    </Routes>
+                  </Suspense>
+                </PageTransition>
+              </main>
+
+              <ScrollToTop />
+              <Suspense fallback={null}>
+                <Chatbot />
+                <Footer />
+              </Suspense>
+              <FeedbackButton />
+              <FluidCursor enabled={cursorEnabled} />
+            </div>
+          </Router>
+          </SessionRecoveryProvider>
+        </MyEventsProvider>
+      </NotificationProvider>
+    </AuthProvider>
   );
 }
 

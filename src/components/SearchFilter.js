@@ -6,7 +6,6 @@ const SearchFilter = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedLocation, setSelectedLocation] = useState('all');
-  const [dateFilter, setDateFilter] = useState('all');
   const [priceFilter, setPriceFilter] = useState('all');
 
   const categories = [
@@ -118,15 +117,16 @@ const SearchFilter = () => {
   return (
     <div className="search-filter-container bg-gray-50 dark:bg-black">
       <div className="search-header">
-        <motion.h1
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="search-title"
-        >
-          Discover Amazing Events 🎯
-        </motion.h1>
-        <p className="search-subtitle">Find the perfect event for your interests</p>
+       <motion.h1
+  initial={{ opacity: 0, y: -20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.6 }}
+  className="text-5xl font-bold"
+  style={{ color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
+>
+  {"Discover Amazing Events 🎯"}
+</motion.h1>
+        <p className="search-subtitle ">Find the perfect event for your interests</p>
       </div>
 
       {/* Search Bar */}

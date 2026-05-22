@@ -98,7 +98,7 @@ const ShareMenu = ({
         url: shareData.url || window.location.href,
       })
       .then(()=>setIsOpen(false))
-      .catch((err)=>console.log('Error sharing:', err));
+      .catch((err)=>console.error('Error sharing:', err));
       return;
     }
     if (platform === 'copy') {
