@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import { useAuth } from "../../context/AuthContext";
+import CountUp from "react-countup";
 
 // Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
@@ -45,7 +46,7 @@ export default function HackathonHero({
     <div className="bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 relative py-16 sm:py-20 md:py-24 border-b border-gray-200 dark:border-slate-900">
 
       {/* ======================= HERO SECTION ======================= */}
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 md:px-8 text-center">
+      <div className="relative px-4 min-h-[75vh] flex flex-col items-center justify-center text-center z-10">
         <motion.h1
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -95,11 +96,10 @@ export default function HackathonHero({
                   key={idx}
                   whileHover={{ scale: 1.05 }}
                   onClick={() => onTagSelect(tag)}
-                  className={`px-3 py-1 text-xs font-medium rounded-lg cursor-pointer transition ${
-                    selectedTags.includes(tag)
+                  className={`px-3 py-1 text-xs font-medium rounded-lg cursor-pointer transition ${selectedTags.includes(tag)
                       ? 'bg-blue-600 text-white shadow-sm'
                       : 'text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700'
-                  }`}
+                    }`}
                 >
                   {tag}
                 </motion.span>
@@ -145,10 +145,10 @@ export default function HackathonHero({
       {searchQuery.trim() === "" && selectedTags.length === 0 && (
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 mt-12 sm:mt-16 md:mt-20 mb-12 sm:mb-16 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
           {[
-            { label: "Hackathons Hosted", value: "120+", icon: Calendar },
-            { label: "Participants", value: "50k+", icon: Users },
-            { label: "Projects Built", value: "8k+", icon: Code2 },
-            { label: "Prizes Awarded", value: "$1M+", icon: Award },
+            { label: "Hackathons Hosted", value: 120, suffix: "+", icon: Calendar },
+            { label: "Participants", value: 50, suffix: "k+", icon: Users },
+            { label: "Projects Built", value: 8, suffix: "k+", icon: Code2 },
+            { label: "Prizes Awarded", value: 1, prefix: "$", suffix: "M+", icon: Award },
           ].map((stat, idx) => (
             <motion.div
               key={idx}
@@ -163,7 +163,15 @@ export default function HackathonHero({
                 <stat.icon className="h-6 w-6 text-gray-600 dark:text-gray-400" />
               </div>
               <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
-                {stat.value}
+                <CountUp
+                  start={0}
+                  end={stat.value}
+                  duration={2.5}
+                  prefix={stat.prefix}
+                  suffix={stat.suffix}
+                  enableScrollSpy
+                  scrollSpyOnce
+                />
               </p>
               <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">
                 {stat.label}

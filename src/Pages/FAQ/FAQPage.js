@@ -153,13 +153,14 @@ export default function FAQSection() {
               1
             );
 
-            const scale = 1 - factor * 0.02;
-            const blur = factor * 1;
+            const scale = 1 - factor * 0.04;
+const blur = factor * 2;
 
             return {
-              transform: `scale(${scale})`,
-              filter: `blur(${blur}px) brightness(${1 - factor * 0.05})`,
-            };
+  transform: `scale(${scale}) translateY(${factor * -10}px)`,
+  filter: `blur(${blur}px) brightness(${1 - factor * 0.05})`,
+  opacity: 1 - factor * 0.15,
+};
           }
 
           return {
@@ -197,6 +198,7 @@ export default function FAQSection() {
       <style>{`
         /* ── CSS variables (light mode defaults) ── */
         .faq-section-root {
+        transition: background-color 0.3s ease, color 0.3s ease;
           --bg-primary: #f9fafb;
           --text-primary: #111827;
           --card-bg: #ffffff;
@@ -222,15 +224,20 @@ export default function FAQSection() {
          * instead of the OS media query so the toggle is respected immediately.
          */
         .dark .faq-section-root {
-          --bg-primary: #111827;
+          --bg-primary: linear-gradient(
+  to bottom,
+  #020617,
+  #0f172a,
+  #111827
+);
           --text-primary: #f9fafb;
-          --card-bg: #1f2937;
-          --card-border: #374151;
+          --card-bg: #0f172a;
+          --card-border: rgba(255,255,255,0.08);
           --cat-color: #818cf8;
           --heading-color: #f3f4f6;
           --subtext-color: #9ca3af;
           --answer-color: #d1d5db;
-          --heading-bg: rgba(17, 24, 39, 0.95);
+          --heading-bg: rgba(2, 6, 23, 0.92);
           --heading-border: rgba(255, 255, 255, 0.07);
           --icon-bg: #312e81;
           --icon-color: #818cf8;
@@ -285,21 +292,35 @@ export default function FAQSection() {
         .card-pin-wrapper {
           position: sticky;
           width: 100%;
-          max-width: 760px;
-          margin-bottom: 60px;
+          max-width: 820px;
+          margin-bottom: 90px;
         }
 
         .faq-card-inner {
+        transition:
+  transform 0.35s ease,
+  box-shadow 0.35s ease,
+  border-color 0.35s ease,
+  background 0.35s ease;
           width: 100%;
-          background: var(--card-bg);
-          border: 1px solid var(--card-border);
+          background: rgba(15, 23, 42, 0.75);
+border: 1px solid rgba(255,255,255,0.08);
+backdrop-filter: blur(14px);
+-webkit-backdrop-filter: blur(14px);
           border-radius: 16px;
-          padding: 32px;
+          padding: 36px;
           box-shadow:
-            0 10px 25px -5px rgba(0, 0, 0, 0.05),
-            0 8px 10px -6px rgba(0, 0, 0, 0.03);
+  0 10px 40px rgba(0,0,0,0.25);
           box-sizing: border-box;
         }
+
+
+        .faq-card-inner:hover {
+  transform: translateY(-6px);
+  border-color: rgba(99,102,241,0.4);
+  box-shadow:
+    0 20px 60px rgba(79,70,229,0.18);
+}
 
         .faq-card-header {
           display: flex;
@@ -329,7 +350,9 @@ export default function FAQSection() {
         }
 
         .faq-card-inner h3 {
-          font-size: 1.25rem;
+          font-size: 1.45rem;
+line-height: 1.4;
+letter-spacing: -0.02em;
           color: var(--heading-color);
           margin: 0 0 10px;
           font-weight: 600;
@@ -338,7 +361,8 @@ export default function FAQSection() {
         .faq-card-inner p {
           color: var(--answer-color);
           line-height: 1.6;
-          font-size: 0.95rem;
+          font-size: 1rem;
+line-height: 1.8;
           margin: 0;
         }
 
@@ -348,7 +372,10 @@ export default function FAQSection() {
         }
       `}</style>
 
-      <div className="faq-section-root bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100" ref={sectionRef}>
+      <div
+  className="faq-section-root text-slate-900 dark:text-gray-100"
+  ref={sectionRef}
+>
 
 
         {/* ── Heading — becomes fixed once section reaches the navbar ── */}
