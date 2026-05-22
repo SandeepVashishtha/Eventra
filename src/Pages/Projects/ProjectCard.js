@@ -118,11 +118,11 @@ const ProjectCard = ({ project }) => {
             isLoaded ? "opacity-0" : "opacity-100"
           }`}
         />
-
-        <img
+<img
           src={project.image}
           alt={project.title}
           loading="lazy"
+          decoding="async"
           onLoad={() => setIsLoaded(true)}
           className="relative w-full h-full object-cover hover:scale-105 transition-transform duration-500"
         />

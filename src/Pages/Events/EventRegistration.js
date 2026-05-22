@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   Calendar,
@@ -16,19 +16,43 @@ import { getEventStatus } from "../../utils/eventUtils";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { useSessionRecovery } from "../../context/SessionRecoveryContext";
+import { API_ENDPOINTS } from "../../config/api";
 import { toast } from "react-toastify";
 import mockEvents from "./eventsMockData.json";
+import { pushToQueue } from "../../utils/offlineQueue";
+
+const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
+const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
+const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
+
+function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
+  if (EMAILJS_PUBLIC_KEY && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && window.emailjs) {
+    window.emailjs.init(EMAILJS_PUBLIC_KEY);
+    window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email: userEmail,
+      to_name: userName,
+      event_name: eventName,
+      event_date: eventDate,
+    }).catch(() => {});
+  }
+}
+
+// Registration lock map to prevent concurrent registrations for the same event
+const registrationLocks = new Map();
 
 const EventRegistration = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated, token } = useAuth();
   const { addRegistration } = useMyEvents();
+  const { saveSession, clearSession } = useSessionRecovery();
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -65,6 +89,32 @@ const EventRegistration = () => {
 
     loadEvent();
   }, [eventId, user, isAuthenticated]);
+
+  // Save session state when form data changes
+  useEffect(() => {
+    if (event && formData) {
+      saveSession({
+        page: 'event-registration',
+        eventId,
+        formData,
+        eventTitle: event.title,
+      });
+    }
+  }, [formData, event, eventId, saveSession]);
+
+  // Listen for session restoration
+  useEffect(() => {
+    const handleSessionRestored = (event) => {
+      const restoredData = event.detail;
+      if (restoredData?.page === 'event-registration' && restoredData?.eventId === eventId) {
+        setFormData(restoredData.formData || {});
+        toast.info('Your registration form has been restored');
+      }
+    };
+
+    window.addEventListener('sessionRestored', handleSessionRestored);
+    return () => window.removeEventListener('sessionRestored', handleSessionRestored);
+  }, [eventId]);
 
   // Validate form
   const validateForm = () => {
@@ -115,6 +165,27 @@ const EventRegistration = () => {
       return;
     }
 
+    // Prevent concurrent submissions for the same event
+    if (isSubmittingRef.current) {
+      toast.error("Registration already in progress. Please wait.");
+      return;
+    }
+
+    // Check if another registration is in progress for this event
+    if (registrationLocks.has(eventId)) {
+      toast.error("Another registration is in progress for this event. Please wait.");
+      return;
+    }
+
+    // Atomic capacity check - re-check immediately before submission
+    if (event.attendees >= event.maxAttendees) {
+      toast.error("This event has reached maximum capacity.");
+      return;
+    }
+
+    // Set lock and submission state
+    registrationLocks.set(eventId, true);
+    isSubmittingRef.current = true;
     setSubmitting(true);
 
     try {
@@ -136,6 +207,35 @@ const EventRegistration = () => {
       setTimeout(() => {
         navigate(`/events/${eventId}`);
       }, 2000);
+        }),
+      });
+
+      if (response.ok) {
+        setRegistered(true);
+        toast.success("Registration successful!");
+        sendConfirmationEmail(formData.email, formData.name, event?.title, event?.date);
+        // ── Save to My Events ──
+        addRegistration(event, formData);
+        // Clear session after successful registration
+        clearSession();
+        // Redirect to event details after 2 seconds
+        setTimeout(() => {
+          navigate(`/events/${eventId}`);
+        }, 2000);
+      } else {
+        const errorData = await response.json();
+        // Handle capacity exceeded error specifically
+        if (response.status === 409 || errorData.message?.toLowerCase().includes('capacity') || errorData.message?.toLowerCase().includes('full')) {
+          toast.error("This event has reached maximum capacity.");
+          // Refresh event data to get updated capacity
+          const updatedEvent = mockEvents.find((e) => e.id === parseInt(eventId));
+          if (updatedEvent) {
+            setEvent({ ...updatedEvent, status: getEventStatus(updatedEvent) });
+          }
+        } else {
+          toast.error(errorData.message || "Registration failed. Please try again.");
+        }
+      }
     } catch (error) {
       console.error("Registration error:", error);
       
@@ -146,17 +246,7 @@ const EventRegistration = () => {
         userId: user?.id || null,
       };
       
-      const QUEUE_KEY = 'eventra_offline_queue';
-      let queue = [];
-      try {
-        const queueStr = localStorage.getItem(QUEUE_KEY);
-        if (queueStr) queue = JSON.parse(queueStr);
-      } catch (e) {
-        queue = [];
-      }
-      
-      queue.push({ eventId: parseInt(eventId), payload });
-      localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+      pushToQueue({ eventId: parseInt(eventId), payload });
 
       setRegistered(true);
       addRegistration(event, formData);
@@ -165,6 +255,9 @@ const EventRegistration = () => {
         navigate(`/events/${eventId}`);
       }, 3000);
     } finally {
+      // Release lock and reset submission state
+      registrationLocks.delete(eventId);
+      isSubmittingRef.current = false;
       setSubmitting(false);
     }
   };

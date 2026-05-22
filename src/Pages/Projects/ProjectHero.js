@@ -13,6 +13,9 @@ import { HiArrowRight, HiPlus } from "react-icons/hi";
 import { SiHackaday } from "react-icons/si";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import CountUp from "react-countup";
+// ADDED: Import the newly created EventCountdown component
+import EventCountdown from "./EventCountdown";
 
 const iconList = [
   { icon: <FaGithub />, color: "#333" },
@@ -75,7 +78,7 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center relative z-10">
+      <div className="relative px-4 min-h-[75vh] flex flex-col items-center justify-center text-center z-10">
         <motion.h1
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
@@ -90,11 +93,21 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 0.3 }}
-          className="text-base sm:text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto mb-12"
+          className="text-base sm:text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto mb-6"
         >
           Explore, contribute to, and showcase innovative open-source creations
           from developers worldwide.
         </motion.p>
+
+        {/* ADDED: Event Countdown Component integrated smoothly with animation */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, delay: 0.5 }}
+          className="mb-8"
+        >
+          <EventCountdown eventDate="2026-10-31T23:59:59" />
+        </motion.div>
 
         {/* Buttons */}
         <div className="flex justify-center gap-6 mb-16">
@@ -132,9 +145,9 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
         {/* Stats Section */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 max-w-3xl mx-auto">
           {[
-            { number: "200+", label: "Active Users" },
-            { number: "4890+", label: "Projects Hosted" },
-            { number: "120+", label: "Contributors" },
+            { number: 200, suffix: "+", label: "Active Users" },
+            { number: 4890, suffix: "+", label: "Projects Hosted" },
+            { number: 120, suffix: "+", label: "Contributors" },
           ].map((stat, idx) => (
             <motion.div
               key={idx}
@@ -152,7 +165,14 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
               className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-sm rounded-lg p-6 flex flex-col items-center justify-center transition-all duration-200"
             >
               <span className="text-3xl font-bold text-gray-900 dark:text-white">
-                {stat.number}
+                <CountUp
+                  start={0}
+                  end={stat.number}
+                  duration={2.5}
+                  suffix={stat.suffix}
+                  enableScrollSpy
+                  scrollSpyOnce
+                />
               </span>
               <span className="text-gray-500 dark:text-gray-400 mt-1 text-sm sm:text-base">
                 {stat.label}
