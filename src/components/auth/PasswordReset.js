@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiUtils } from '../../config/api';
 import { motion } from "framer-motion";
-
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 const PasswordReset = () => {
+  useDocumentTitle("Reset Password | Eventra");
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
