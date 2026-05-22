@@ -162,9 +162,11 @@ const login = async (usernameOrEmail, password) => {
     return hasRole('ADMIN');
   };
 
-  const isEventManager = () => {
-    return hasRole('EVENT_MANAGER');
-  };
+  const isEventManager = () => hasRole('EVENT_MANAGER');
+  const isSuperAdmin = () => hasRole('SUPER_ADMIN');
+  const isOrganizer = () => hasRole('ORGANIZER');
+  const isVolunteer = () => hasRole('VOLUNTEER');
+  const isAttendee = () => hasRole('ATTENDEE');
 
 const value = {
   user,
@@ -180,9 +182,12 @@ const value = {
   hasAnyRole,
   hasAnyPermission,
   isAdmin,
-  isEventManager
+  isEventManager,
+  isSuperAdmin,
+  isOrganizer,
+  isVolunteer,
+  isAttendee,
 };
-
 
   return (
     <AuthContext.Provider value={value}>
