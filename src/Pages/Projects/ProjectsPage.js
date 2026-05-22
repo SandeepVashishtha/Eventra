@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react"; // React hooks for state and lifecycle
 import { motion, AnimatePresence } from "framer-motion"; // Framer Motion for animations
-import { FiAlertCircle, FiSearch, FiX } from "react-icons/fi"; // Feather icons
+import { FiAlertCircle, FiSearch, FiX, FiChevronDown } from "react-icons/fi"; // Feather icons
 
 import ProjectHero from "./ProjectHero"; // Hero section component
 import ProjectCard from "./ProjectCard"; // Individual project card component
@@ -243,7 +243,7 @@ const ProjectGallery = () => {
                         ? "All Categories"
                         : `${selectedCategories.length} Selected`}
                     </span>
-                    <FiX className="ml-2 text-gray-400 dark:text-gray-500" />
+                    <FiChevronDown className={`ml-2 text-gray-400 dark:text-gray-500 transition-transform duration-200 ${categoryOpen ? "rotate-180" : ""}`} />
                   </button>
                   <AnimatePresence>
                     {categoryOpen && (
@@ -290,7 +290,7 @@ const ProjectGallery = () => {
                     <span className="text-gray-700 dark:text-gray-300">
                       {sortByLabels[sortBy]}
                     </span>
-                    <FiX className="ml-2 text-gray-400 dark:text-gray-500" />
+                    <FiChevronDown className={`ml-2 text-gray-400 dark:text-gray-500 transition-transform duration-200 ${sortOpen ? "rotate-180" : ""}`} />
                   </button>
 
                   {/* Sort Dropdown Menu */}
