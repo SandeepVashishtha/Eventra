@@ -19,6 +19,23 @@ import { useSessionRecovery } from "../../context/SessionRecoveryContext";
 import { API_ENDPOINTS } from "../../config/api";
 import { toast } from "react-toastify";
 import mockEvents from "./eventsMockData.json";
+import { pushToQueue } from "../../utils/offlineQueue";
+
+const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
+const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
+const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
+
+function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
+  if (EMAILJS_PUBLIC_KEY && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && window.emailjs) {
+    window.emailjs.init(EMAILJS_PUBLIC_KEY);
+    window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email: userEmail,
+      to_name: userName,
+      event_name: eventName,
+      event_date: eventDate,
+    }).catch(() => {});
+  }
+}
 
 // Registration lock map to prevent concurrent registrations for the same event
 const registrationLocks = new Map();
@@ -188,6 +205,7 @@ const EventRegistration = () => {
       if (response.ok) {
         setRegistered(true);
         toast.success("Registration successful!");
+        sendConfirmationEmail(formData.email, formData.name, event?.title, event?.date);
         // ── Save to My Events ──
         addRegistration(event, formData);
         // Clear session after successful registration
@@ -220,17 +238,7 @@ const EventRegistration = () => {
         userId: user?.id || null,
       };
       
-      const QUEUE_KEY = 'eventra_offline_queue';
-      let queue = [];
-      try {
-        const queueStr = localStorage.getItem(QUEUE_KEY);
-        if (queueStr) queue = JSON.parse(queueStr);
-      } catch (e) {
-        queue = [];
-      }
-      
-      queue.push({ eventId: parseInt(eventId), payload });
-      localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+      pushToQueue({ eventId: parseInt(eventId), payload });
 
       setRegistered(true);
       addRegistration(event, formData);

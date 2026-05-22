@@ -10,6 +10,7 @@ import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
 import RespawningText from "../../../jhalak/RespawningText";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
+import CountUp from "react-countup";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
 
 const MotionLink = motion(Link);
@@ -154,15 +155,18 @@ const Hero = () => {
 
   const stats = [
     {
-      value: "1500+",
+      value: 1500,
+      suffix: "+",
       label: "Developers Joined",
     },
     {
-      value: "75",
+      value: 75,
+      suffix: "",
       label: "Events Organized",
     },
     {
-      value: "30+",
+      value: 30,
+      suffix: "+",
       label: "Partners & Sponsors",
     },
   ];
@@ -397,7 +401,14 @@ const Hero = () => {
                   className="bg-white dark:bg-slate-900 rounded-lg p-5 sm:p-6 text-center shadow-sm border border-gray-200 dark:border-slate-800"
                 >
                   <p className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
-                    {stat.value}
+                    <CountUp
+                      start={0}
+                      end={stat.value}
+                      duration={2.5}
+                      suffix={stat.suffix}
+                      enableScrollSpy
+                      scrollSpyOnce
+                    />
                   </p>
                   <p className="text-gray-500 dark:text-gray-400 text-sm">
                     {stat.label}
