@@ -26,17 +26,34 @@ const Login = () => {
     setError((prev) => ({ ...prev, [name]: "" }));
   };
 
-  const validate = () => {
-    const newErrors = {};
-    if (!formData.usernameOrEmail) newErrors.usernameOrEmail = "Email or username is required";
+ const validate = () => {
+  const newErrors = {};
 
-    if (!formData.password) newErrors.password = "Password is required";
-    else if (formData.password.length < 8)
-      newErrors.password = "Password must be at least 8 characters";
+  if (!formData.usernameOrEmail.trim()) {
+    newErrors.usernameOrEmail =
+      "Email or username is required";
+  } else if (
+    formData.usernameOrEmail.includes("@") &&
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+      formData.usernameOrEmail
+    )
+  ) {
+    newErrors.usernameOrEmail =
+      "Invalid email format";
+  }
 
-    setError(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  if (!formData.password.trim()) {
+    newErrors.password =
+      "Password is required";
+  } else if (formData.password.length < 8) {
+    newErrors.password =
+      "Password must be at least 8 characters long";
+  }
+
+  setError(newErrors);
+
+  return Object.keys(newErrors).length === 0;
+};
 
 
   useEffect(() => {
