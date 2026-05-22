@@ -1,5 +1,8 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  Bookmark,
+  BookmarkCheck,
   Calendar,
   MapPin,
   Clock,
@@ -17,17 +20,26 @@ import ShareMenu from "../../components/common/ShareMenu";
 import { generateEventSharingData } from "../../utils/shareUtils";
 import StatusBadge from "../../components/common/StatusBadge";
 import { getEventStatus } from "../../utils/eventUtils";
+import {
+  addBookmarkedEvent,
+  isEventBookmarked,
+  removeBookmarkedEvent,
+  subscribeToBookmarkChanges,
+} from "../../utils/bookmarkUtils";
 
 const EventCard = ({ event }) => {
-  const icons = [
-    <Star size={16} className="text-yellow-500" />,
-    <Heart size={16} className="text-red-500" />,
-    <Zap size={16} className="text-pink-500" />,
-    <BookOpen size={16} className="text-indigo-500" />,
-    <Gift size={16} className="text-pink-500" />,
-  ];
+  const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
+  const [randomIcon] = useState(() => {
+    const icons = [
+      <Star size={16} className="text-yellow-500" />,
+      <Heart size={16} className="text-red-500" />,
+      <Zap size={16} className="text-pink-500" />,
+      <BookOpen size={16} className="text-indigo-500" />,
+      <Gift size={16} className="text-pink-500" />,
+    ];
 
-  const randomIcon = icons[Math.floor(Math.random() * icons.length)];
+    return icons[Math.floor(Math.random() * icons.length)];
+  });
 
   const eventDateTime = new Date(`${event.date} ${event.time}`);
   const isPastEvent = eventDateTime < new Date();
@@ -61,6 +73,39 @@ const EventCard = ({ event }) => {
 
   const computedStatus = getEventStatus(event);
 
+  useEffect(() => {
+    setIsBookmarked(isEventBookmarked(event.id));
+
+    return subscribeToBookmarkChanges(() => {
+      setIsBookmarked(isEventBookmarked(event.id));
+    });
+  }, [event.id]);
+
+  const handleBookmarkToggle = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isBookmarked) {
+      removeBookmarkedEvent(event.id);
+      toast.info("Removed from bookmarked events.", {
+        toastId: `bookmark-${event.id}`,
+        autoClose: 1800,
+        className: "custom-toast",
+      });
+      return;
+    }
+
+    addBookmarkedEvent({
+      ...event,
+      status: computedStatus,
+    });
+    toast.success("Event bookmarked.", {
+      toastId: `bookmark-${event.id}`,
+      autoClose: 1800,
+      className: "custom-toast",
+    });
+  };
+
   return (
     <div
       data-aos="zoom-in"
@@ -69,6 +114,25 @@ const EventCard = ({ event }) => {
     >
       {/* Action buttons */}
       <div className="absolute top-[5.5rem] right-3 z-[200] flex space-x-1.5">
+        <button
+          type="button"
+          onClick={handleBookmarkToggle}
+          aria-label={isBookmarked ? "Remove event bookmark" : "Bookmark event"}
+          aria-pressed={isBookmarked}
+          title={isBookmarked ? "Remove bookmark" : "Bookmark event"}
+          className={`bg-white/90 backdrop-blur-sm rounded-full p-2 shadow cursor-pointer hover:shadow-md border transition-all duration-200 ${
+            isBookmarked
+              ? "border-indigo-200 text-indigo-600 bg-indigo-50/95"
+              : "border-gray-200 text-gray-600 hover:text-indigo-600 hover:border-indigo-200"
+          }`}
+        >
+          {isBookmarked ? (
+            <BookmarkCheck size={14} fill="currentColor" />
+          ) : (
+            <Bookmark size={14} />
+          )}
+        </button>
+
         <ShareMenu
           shareData={eventSharingData}
           position="above"
