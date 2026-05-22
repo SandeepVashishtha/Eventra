@@ -15,10 +15,10 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
   const [recommendedEvents, setRecommendedEvents] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Personalized Interest preferences (mocked or loaded from user settings)
-  const userInterests = JSON.parse(localStorage.getItem("user_interests")) || ["Coding", "Tech", "AI", "Development"];
-
   useEffect(() => {
+    // Personalized Interest preferences (mocked or loaded from user settings)
+    const userInterests = JSON.parse(localStorage.getItem("user_interests")) || ["Coding", "Tech", "AI", "Development"];
+
     // 1. Gather all events except the one currently active
     let pool = mockEvents.filter((e) => e.id !== currentEventId);
 

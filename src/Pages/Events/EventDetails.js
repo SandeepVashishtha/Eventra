@@ -4,6 +4,7 @@ import { getEventStatus } from "../../utils/eventUtils";
 import mockEvents from "./eventsMockData.json";
 import CertificateDownload from "../../components/CertificateDownload";
 import EventMaterials from "../../components/common/EventMaterials";
+import EventRecommendations from "../../components/events/EventRecommendations";
 
 const EventDetails = () => {
   const { eventId } = useParams();
