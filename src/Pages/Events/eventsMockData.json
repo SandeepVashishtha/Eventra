@@ -28,19 +28,42 @@
     "tags": ["AI", "ML", "Python"]
   },
   {
-    "id": 3,
-    "title": "DevOps Summit 2026",
-    "date": "2026-12-10",
-    "time": "9:00 AM",
-    "location": "New York, NY",
-    "type": "summit",
-    "status": "past",
-    "description": "Comprehensive summit on modern DevOps practices and cloud technologies.",
-    "attendees": 400,
-    "maxAttendees": 400,
-    "image": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400&h=200&fit=crop",
-    "tags": ["DevOps", "Cloud", "Infrastructure"]
-  },
+  "id": 3,
+  "title": "DevOps Summit 2026",
+  "date": "2026-12-10",
+  "time": "9:00 AM",
+  "location": "New York, NY",
+  "type": "summit",
+  "status": "past",
+  "description": "Comprehensive summit on modern DevOps practices and cloud technologies.",
+  "attendees": 400,
+  "maxAttendees": 400,
+  "image": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400&h=200&fit=crop",
+  "tags": ["DevOps", "Cloud", "Infrastructure"],
+  "materials": [
+    {
+      "id": 1,
+      "title": "DevOps Best Practices 2026",
+      "type": "pdf",
+      "size": "2.4 MB",
+      "url": "https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF1"
+    },
+    {
+      "id": 2,
+      "title": "Cloud Infrastructure slides",
+      "type": "ppt",
+      "size": "5.1 MB",
+      "url": "https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF1"
+    },
+    {
+      "id": 3,
+      "title": "CI/CD Pipeline Workshop Notes",
+      "type": "doc",
+      "size": "1.2 MB",
+      "url": "https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF1"
+    }
+  ]
+},
   {
     "id": 4,
     "title": "Blockchain Intensive",
@@ -112,19 +135,35 @@
     "tags": ["Data Science", "AI", "Hackathon"]
   },
   {
-    "id": 9,
-    "title": "Android Development Workshop",
-    "date": "2026-11-15",
-    "time": "1:30 PM",
-    "location": "Online",
-    "type": "workshop",
-    "status": "past",
-    "description": "Learn to build cross-platform mobile apps with React Native and Flutter.",
-    "attendees": 95,
-    "maxAttendees": 100,
-    "image": "https://images.unsplash.com/photo-1555774698-0b77e0d5fac6?w=400&h=200&fit=crop",
-    "tags": ["Mobile", "React Native", "Flutter"]
-  },
+  "id": 9,
+  "title": "Android Development Workshop",
+  "date": "2026-11-15",
+  "time": "1:30 PM",
+  "location": "Online",
+  "type": "workshop",
+  "status": "past",
+  "description": "Learn to build cross-platform mobile apps with React Native and Flutter.",
+  "attendees": 95,
+  "maxAttendees": 100,
+  "image": "https://images.unsplash.com/photo-1555774698-0b77e0d5fac6?w=400&h=200&fit=crop",
+  "tags": ["Mobile", "React Native", "Flutter"],
+  "materials": [
+    {
+      "id": 1,
+      "title": "React Native Setup Guide",
+      "type": "pdf",
+      "size": "1.8 MB",
+      "url": "https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF1"
+    },
+    {
+      "id": 2,
+      "title": "Flutter Basics Slides",
+      "type": "ppt",
+      "size": "3.2 MB",
+      "url": "https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF1"
+    }
+  ]
+},
   {
     "id": 10,
     "title": "Tech Leadership Summit",
@@ -168,19 +207,35 @@
     "tags": ["AI", "Healthcare", "Innovation"]
   },
   {
-    "id": 13,
-    "title": "Web3 & DeFi Workshop",
-    "date": "2026-10-05",
-    "time": "2:00 PM",
-    "location": "Miami, FL",
-    "type": "workshop",
-    "status": "past",
-    "description": "Hands-on workshop on building decentralized applications and DeFi protocols.",
-    "attendees": 75,
-    "maxAttendees": 80,
-    "image": "https://images.unsplash.com/photo-1639762681057-408e52192e55?w=400&h=200&fit=crop",
-    "tags": ["Web3", "DeFi", "Blockchain"]
-  },
+  "id": 13,
+  "title": "Web3 & DeFi Workshop",
+  "date": "2026-10-05",
+  "time": "2:00 PM",
+  "location": "Miami, FL",
+  "type": "workshop",
+  "status": "past",
+  "description": "Hands-on workshop on building decentralized applications and DeFi protocols.",
+  "attendees": 75,
+  "maxAttendees": 80,
+  "image": "https://images.unsplash.com/photo-1639762681057-408e52192e55?w=400&h=200&fit=crop",
+  "tags": ["Web3", "DeFi", "Blockchain"],
+  "materials": [
+    {
+      "id": 1,
+      "title": "Introduction to Web3",
+      "type": "pdf",
+      "size": "2.1 MB",
+      "url": "https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF1"
+    },
+    {
+      "id": 2,
+      "title": "DeFi Protocols Explained",
+      "type": "ppt",
+      "size": "4.5 MB",
+      "url": "https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF1"
+    }
+  ]
+},
   {
     "id": 14,
     "title": "DevOps Days",

@@ -6,6 +6,7 @@
   "dependencies": {
     "@headlessui/react": "^2.2.8",
     "@heroicons/react": "^2.0.16",
+    "@studio-freight/lenis": "^1.0.42",
     "aos": "^2.3.4",
     "axios": "^1.16.1",
     "canvas-confetti": "^1.9.3",

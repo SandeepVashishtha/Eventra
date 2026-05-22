@@ -1,0 +1,55 @@
+// ---------------------------------------------------------------------------
+// Shared Offline Queue Utility
+// ---------------------------------------------------------------------------
+// Single source of truth for the offline registration queue stored in
+// localStorage. Both EventRegistration (producer) and useOfflineSync
+// (consumer) import from here instead of defining their own logic.
+
+const QUEUE_KEY = 'eventra_offline_queue';
+
+/**
+ * Read the current offline queue from localStorage.
+ * Returns an empty array if the key is missing or the JSON is malformed.
+ *
+ * @returns {Array} The current queue entries.
+ */
+export const getQueue = () => {
+  try {
+    const raw = localStorage.getItem(QUEUE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
+
+/**
+ * Append a single item to the offline queue.
+ *
+ * @param {object} item - The queue entry to store (e.g. { eventId, payload }).
+ */
+export const pushToQueue = (item) => {
+  const queue = getQueue();
+  queue.push(item);
+  localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+};
+
+/**
+ * Overwrite the queue with a new array (used after partial sync to keep
+ * only the items that failed).
+ *
+ * @param {Array} queue - The replacement queue.
+ */
+export const setQueue = (queue) => {
+  if (queue.length === 0) {
+    localStorage.removeItem(QUEUE_KEY);
+  } else {
+    localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+  }
+};
+
+/**
+ * Remove the offline queue entirely from localStorage.
+ */
+export const clearQueue = () => {
+  localStorage.removeItem(QUEUE_KEY);
+};

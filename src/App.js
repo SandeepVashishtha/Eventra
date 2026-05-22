@@ -1,16 +1,5 @@
-import React, {
-  useState,
-  useEffect,
-  lazy,
-  Suspense,
-} from "react";
-
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-} from "react-router-dom";
-
+import React, { useState, useEffect, lazy, Suspense } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 
 // Layout & Components
@@ -19,36 +8,23 @@ import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
 import FluidCursor from "./jhalak/FluidCursor";
 import PageTransition from "./components/common/PageTransition";
-
-// Pages
 import RegistrationPage from "./Pages/RegistrationPage";
 
 // Context & Hooks
-import NotificationProvider from "./components/common/NotificationProvider";
+import NotificationToastContainer from "./components/common/NotificationProvider";
+import { NotificationProvider } from "./context/NotificationContext";
 import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
 import useOfflineSync from "./hooks/useOfflineSync";
+import useLenis from "./hooks/useLenis";
 
-// Lazy Loaded Components
-const Footer = lazy(() =>
-  import("./components/Layout/Footer")
-);
+// Lazy load heavy components
+const Footer = lazy(() => import("./components/Layout/Footer"));
+const Chatbot = lazy(() => import("./components/Chatbot"));
+const AppRoutes = lazy(() => import("./components/AppRoutes"));
 
-const Chatbot = lazy(() =>
-  import("./components/Chatbot")
-);
-
-const SessionRecovery = lazy(() =>
-  import("./components/SessionRecovery")
-);
-
-const AppRoutes = lazy(() =>
-  import("./components/AppRoutes")
-);
-
-// Offline Sync
 const OfflineSyncManager = () => {
   useOfflineSync();
   return null;
@@ -59,6 +35,9 @@ function App() {
     useState(
       localStorage.getItem("cursor") !== "off"
     );
+
+  // Initialize Lenis smooth scrolling
+  useLenis();
 
   // Toggle Cursor
   const toggleCursor = () => {
@@ -100,83 +79,55 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <MyEventsProvider>
-          <SessionRecoveryProvider>
-            <NotificationProvider />
+        <NotificationProvider>
+          <MyEventsProvider>
+            <SessionRecoveryProvider>
+              <NotificationToastContainer />
 
-            <OfflineSyncManager />
+              <OfflineSyncManager />
 
-            <Router>
-            <div className="App">
-              <Navbar
-                cursorEnabled={cursorEnabled}
-                toggleCursor={toggleCursor}
-              />
+              <Router>
+              <div className="App">
+                <Navbar
+                  cursorEnabled={cursorEnabled}
+                  toggleCursor={toggleCursor}
+                />
 
-              <main
-                className="
-                  relative
-                  z-10
-                  min-h-screen
-                  bg-white
-                  dark:bg-slate-950
-                  text-black
-                  dark:text-white
-                  transition-colors
-                  duration-300
-                "
-              >
-                <PageTransition>
-                  <Suspense
-                    fallback={
-                      <div
-                        className="
-                          flex
-                          min-h-screen
-                          items-center
-                          justify-center
-                          bg-white
-                          dark:bg-slate-950
-                          text-black
-                          dark:text-white
-                          text-xl
-                          font-semibold
-                        "
-                      >
-                        Loading...
-                      </div>
-                    }
-                  >
-                    <Routes>
-                      <Route
-                        path="/register/:id"
-                        element={<RegistrationPage />}
-                      />
+                <main
+                  className="
+                    relative
+                    z-10
+                    min-h-screen
+                    bg-white
+                    dark:bg-slate-950
+                    text-black
+                    dark:text-white
+                    transition-colors
+                    duration-300
+                  "
+                >
+                  <PageTransition>
+                    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+                      <Routes>
+                        <Route path="/register/:id" element={<RegistrationPage />} />
+                        <Route path="*" element={<AppRoutes />} />
+                      </Routes>
+                    </Suspense>
+                  </PageTransition>
+                </main>
 
-                      <Route
-                        path="*"
-                        element={<AppRoutes />}
-                      />
-                    </Routes>
-
-                    <Chatbot />
-                    <Footer />
-                  </Suspense>
-                </PageTransition>
-              </main>
-
-              <ScrollToTop />
-              <FeedbackButton />
-
-              <SessionRecovery />
-
-              <FluidCursor
-                enabled={cursorEnabled}
-              />
-            </div>
-          </Router>
-          </SessionRecoveryProvider>
-        </MyEventsProvider>
+                <ScrollToTop />
+                <Suspense fallback={null}>
+                  <Chatbot />
+                  <Footer />
+                </Suspense>
+                <FeedbackButton />
+                <FluidCursor enabled={cursorEnabled} />
+              </div>
+            </Router>
+            </SessionRecoveryProvider>
+          </MyEventsProvider>
+        </NotificationProvider>
       </AuthProvider>
     </ThemeProvider>
   );

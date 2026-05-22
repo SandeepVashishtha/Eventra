@@ -24,6 +24,7 @@ const endpoints = [
   .then(res => res.json())
   .then(data => console.log(data))
   .catch(err => console.error(err))`,
+  .then(res => res.json())`,
     response: `[
   {
     "id": 1,
@@ -34,6 +35,7 @@ const endpoints = [
   }
 ]`,
   },
+];
   {
     icon: <BookOpen className="w-7 h-7 text-emerald-300" />,
     title: "Projects",
