@@ -24,7 +24,6 @@ const endpoints = [
   .then(res => res.json())
   .then(data => console.log(data))
   .catch(err => console.error(err))`,
-  .then(res => res.json())`,
     response: `[
   {
     "id": 1,
