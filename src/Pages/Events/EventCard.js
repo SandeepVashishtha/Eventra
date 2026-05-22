@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
 import { Link } from "react-router-dom";
 import {
   Bookmark,
@@ -266,4 +266,4 @@ const EventCard = ({ event }) => {
   );
 };
 
-export default EventCard;
+export default memo(EventCard);
