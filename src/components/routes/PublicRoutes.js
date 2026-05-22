@@ -7,6 +7,7 @@ import HomePage from "../../Pages/Home/HomePage";
 import EventsPage from "../../Pages/Events/EventsPage";
 import EventDetails from "../../Pages/Events/EventDetails";
 import EventRegistration from "../../Pages/Events/EventRegistration";
+import BookmarkedEvents from "../../Pages/Events/BookmarkedEvents";
 import HackathonPage from "../../Pages/Hackathons/HackathonPage";
 import ProjectsPage from "../../Pages/Projects/ProjectsPage";
 import Contributors from "../Contributors";
@@ -30,6 +31,7 @@ import MockApiResponse from "../MockApiResponse";
 export const getPublicRoutes = () => [
   <Route key="/" path="/" element={<HomePage />} />,
   <Route key="/events" path="/events" element={<EventsPage />} />,
+  <Route key="/bookmarks" path="/bookmarks" element={<BookmarkedEvents />} />,
   <Route key="/event-details" path="/events/:eventId" element={<EventDetails />} />,
   <Route key="/register" path="/events/:eventId/register" element={<EventRegistration />} />,
   <Route key="/hackathons" path="/hackathons" element={<HackathonPage />} />,
