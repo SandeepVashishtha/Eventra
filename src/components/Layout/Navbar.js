@@ -23,13 +23,8 @@ import {
   HelpCircle,
   ChevronDown,
   MousePointer,
-<<<<<<< feature/event-countdown-timer
   Moon,
   Sun
-=======
-  Sun,
-  Moon
->>>>>>> master
 } from "lucide-react";
 
 // --- Helpers to reduce complexity ---
@@ -448,7 +443,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [navHeight] = useState(0);
+  const [navHeight, setNavHeight] = useState(0);
 
   const drawerRef = useRef(null);
   const closeBtnRef = useRef(null);
@@ -516,31 +511,16 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const handleTouchStart = (e) => { touchStartXRef.current = e.touches[0].clientX; touchCurrentXRef.current = e.touches[0].clientX; };
   const handleTouchMove = (e) => { touchCurrentXRef.current = e.touches[0].clientX; };
   const handleTouchEnd = () => {
-<<<<<<< feature/event-countdown-timer
     const delta = (touchCurrentXRef.current ?? 0) - (touchStartXRef.current ?? 0);
     if (delta > 50) closeAllMenus();
-=======
-    const start = touchStartXRef.current;
-    const end = touchCurrentXRef.current;
-    if (typeof start !== "number" || typeof end !== "number") return;
-    const deltaX = end - start;
-    if (deltaX > 50) {
-      closeAllMenus();
-    }
->>>>>>> master
     touchStartXRef.current = null;
     touchCurrentXRef.current = null;
   };
 
-<<<<<<< feature/event-countdown-timer
-  const handleLogoutClick = () => { setShowLogoutModal(true); setShowProfileDropdown(false); };
-=======
   const handleLogoutClick = () => {
     setShowLogoutModal(true);
     setShowProfileDropdown(false);
   };
-
->>>>>>> master
   const handleConfirmLogout = () => {
     setShowLogoutModal(false);
     logout();
@@ -562,12 +542,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         onClick={closeAllMenus}
       />
 
-<<<<<<< feature/event-countdown-timer
-      <nav ref={navRef} data-aos="fade-down" data-aos-once="true" data-aos-duration="1000"
-        className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white dark:bg-gray-900 border-b border-black/10 dark:border-white/10">
-        <div className="w-full flex items-center h-20 px-6 md:px-12 relative">
-          <Link to="/" className="flex-shrink-0 z-20">
-=======
       <nav
         ref={navRef}
         data-aos="fade-down"
@@ -578,35 +552,11 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         <div className="max-w-7xl mx-auto flex items-center justify-between h-[72px] px-6 lg:px-8 relative">
           {/* Logo on the left */}
           <Link to="/" className="flex items-center min-w-[160px] z-20">
->>>>>>> master
             <h2 className="text-3xl font-semibold tracking-tight text-black dark:text-white" style={{ fontFamily: '"Anton", sans-serif' }}>
               Eventra
             </h2>
           </Link>
 
-<<<<<<< feature/event-countdown-timer
-          <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
-
-          <div className="hidden lg:flex items-center ml-auto z-20">
-            <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={false} />
-            <CursorToggleButton cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} isMobile={false} />
-
-            <div className="flex items-center space-x-2 ml-2">
-              {isAuthenticated() ? (
-                <UserProfileDropdown 
-                  user={user} 
-                  primaryLine={primaryLine} 
-                  secondaryLine={secondaryLine} 
-                  showProfileDropdown={showProfileDropdown} 
-                  setShowProfileDropdown={setShowProfileDropdown} 
-                  location={location} 
-                  handleLogoutClick={handleLogoutClick} 
-                />
-              ) : (
-                <AuthButtons isMobile={false} />
-              )}
-            </div>
-=======
           {/* Centered nav links */}
           <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
 
@@ -627,7 +577,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             ) : (
               <AuthButtons isMobile={false} />
             )}
->>>>>>> master
           </div>
 
           {/* Mobile menu button */}
@@ -664,10 +613,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         secondaryLine={secondaryLine}
       />
 
-<<<<<<< feature/event-countdown-timer
-=======
       {/* Confirmation Modal */}
->>>>>>> master
       <ConfirmationModal
         isOpen={showLogoutModal}
         onClose={handleCancelLogout}

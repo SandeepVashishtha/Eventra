@@ -92,11 +92,7 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 0.3 }}
- feature/event-countdown-timer
-          // UPDATED: Subtitle text color
-          className="text-base sm:text-lg text-white dark:white max-w-2xl mx-auto mb-6"
-className="text-base sm:text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto mb-12"
-master
+          className="text-base sm:text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto mb-6"
         >
           Explore, contribute to, and showcase innovative open-source creations
           from developers worldwide.

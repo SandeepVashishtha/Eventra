@@ -443,11 +443,11 @@ const EventCreation = () => {
   }, [successMessage, generalError]);
 
   useEffect(() => {
-+    // Prevent saving before draft is loaded to avoid overwriting existing draft
-+    if (!isDraftLoaded) return;
-+    const { banner, bannerPreview, ...saveable } = formData;
-+    localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
-+  }, [formData, isDraftLoaded]);
+    // Prevent saving before draft is loaded to avoid overwriting existing draft
+    if (!isDraftLoaded) return;
+    const { banner, bannerPreview, ...saveable } = formData;
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
+  }, [formData, isDraftLoaded]);
 
   const resetForm = () => {
     setFormData({

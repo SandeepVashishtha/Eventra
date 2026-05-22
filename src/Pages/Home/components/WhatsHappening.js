@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useCallback } from "react";
 import { useInView } from "react-intersection-observer";
-import { HomeCardSkeleton } from "../../common/SkeletonLoaders";
+import { HomeCardSkeleton } from "../../../components/common/SkeletonLoaders";
 
 // Import mock data
 import eventsData from "../../Events/eventsMockData.json";
