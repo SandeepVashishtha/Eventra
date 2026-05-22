@@ -172,7 +172,12 @@ const Hero = () => {
   ];
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 pb-16 sm:pb-20 md:pb-24 pt-6 sm:pt-10 border-b border-gray-100 dark:border-slate-900">
+    <section className="relative overflow-hidden 
+bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white 
+dark:from-slate-950 dark:via-slate-900 dark:to-black
+text-slate-900 dark:text-gray-100 
+pb-16 sm:pb-20 md:pb-24 pt-6 sm:pt-10 
+border-b border-gray-100 dark:border-slate-900">
       {/* Hero Content */}
       <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10 pt-20">
         <motion.div
@@ -250,8 +255,10 @@ const Hero = () => {
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
                     className="absolute top-full left-0 right-0 mt-3 
-                     bg-white rounded-xl 
-                     shadow-2xl border border-gray-200 
+                     bg-white dark:bg-slate-900
+rounded-xl
+shadow-2xl
+border border-gray-200 dark:border-slate-700
                      max-h-96 overflow-y-auto z-50"
                   >
                     <div className="p-4">
@@ -270,7 +277,7 @@ const Hero = () => {
                                 transition={{ delay: index * 0.05 }}
                                 onClick={clearSearch}
                                 className="flex items-center gap-3 p-3 rounded-lg 
-                                 hover:bg-gray-50 
+                                 hover:bg-gray-50 dark:hover:bg-slate-800
                                  cursor-pointer transition-colors group text-left no-underline"
                                 aria-label={`Open ${result.item.title} in ${result.item.searchType || result.item.type || "page"
                                   }`}
@@ -283,17 +290,18 @@ const Hero = () => {
                                 </div>
                                 <div className="flex-1 min-w-0 relative">
                                   <div className="flex items-center gap-2 mb-1">
-                                    <h4 className="text-sm font-semibold text-gray-900 truncate">
+                                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                                       {result.item.title}
                                     </h4>
                                     <span
                                       className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium 
-                                           bg-gray-100 text-gray-600"
+                                           bg-gray-100 dark:bg-slate-800
+text-gray-600 dark:text-gray-300"
                                     >
                                       {result.item.searchType}
                                     </span>
                                   </div>
-                                  <p className="text-xs text-gray-500 line-clamp-2 absolute left-0">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 absolute left-0">
                                     {result.item.description?.substring(0, 80)}...
                                   </p>
                                 </div>
@@ -310,10 +318,10 @@ const Hero = () => {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 10 }}
                           transition={{ duration: 0.25, ease: "easeOut" }}
-                          className="text-center text-gray-500 py-10 text-base"
+                          className="text-center text-gray-500 dark:text-gray-400 py-10 text-base"
                         >
                           No results match "
-                          <span className="font-medium text-gray-700">
+                          <span className="font-medium text-gray-700 dark:text-white">
                             {searchQuery}
                           </span>
                           "
@@ -358,7 +366,7 @@ const Hero = () => {
             <motion.div variants={fadeUp}>
               <Link
                 to="/hackathons"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-gray-300 font-semibold shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-200"
+                className="relative inline-flex items-center px-6 sm:px-8 py-3.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:bg-slate-900 text-slate-700 dark:text-gray-300 font-semibold shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-200"
               >
                 Join Hackathons
               </Link>

@@ -160,7 +160,11 @@ const WhatsHappening = () => {
   return (
     <section
       ref={ref}
-      className="py-12 sm:py-16 bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-900 text-slate-900 dark:text-gray-100 border-t border-gray-100 dark:border-slate-800/80"
+      className="py-12 sm:py-16 
+bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white
+dark:from-slate-950 dark:via-slate-900 dark:to-black
+text-slate-900 dark:text-gray-100 
+border-t border-gray-100 dark:border-slate-800/80"
     >
       <div className="relative z-[50] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Heading */}
