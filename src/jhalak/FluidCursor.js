@@ -1143,7 +1143,10 @@ const FluidCursor = ({ enabled = true }) => {
     // Returns true if the real element under the cursor belongs to a nav or footer.
     // Uses document.elementFromPoint to see through the pointer-events-none canvas
     // and detect the actual DOM element beneath it.
-    function isExcludedZone(clientX, clientY) {
+    function isExcludedZone(clientX, clientY, target) {
+      if (target && (target.closest("nav") !== null || target.closest("footer") !== null || target.closest("a") !== null || target.closest("button") !== null)) {
+        return true;
+      }
       const el = document.elementFromPoint(clientX, clientY);
       if (!el) return false;
       return el.closest("nav") !== null || el.closest("footer") !== null;
@@ -1151,7 +1154,7 @@ const FluidCursor = ({ enabled = true }) => {
 
     // Skip click splat when mouse is over navbar or footer
     const handleMouseDown = (e) => {
-      if (isExcludedZone(e.clientX, e.clientY)) return;
+      if (isExcludedZone(e.clientX, e.clientY, e.target)) return;
       let pointer = pointers[0];
       let posX = e.clientX * (canvas.width / canvas.clientWidth);
       let posY = e.clientY * (canvas.height / canvas.clientHeight);
@@ -1161,7 +1164,7 @@ const FluidCursor = ({ enabled = true }) => {
 
     // Skip fluid trail generation when mouse is over navbar or footer
     const handleMouseMove = (e) => {
-      if (isExcludedZone(e.clientX, e.clientY)) return;
+      if (isExcludedZone(e.clientX, e.clientY, e.target)) return;
       let pointer = pointers[0];
       let posX = e.clientX * (canvas.width / canvas.clientWidth);
       let posY = e.clientY * (canvas.height / canvas.clientHeight);
@@ -1174,7 +1177,7 @@ const FluidCursor = ({ enabled = true }) => {
       const touches = e.targetTouches;
       let pointer = pointers[0];
       for (let i = 0; i < touches.length; i++) {
-        if (isExcludedZone(touches[i].clientX, touches[i].clientY)) continue;
+        if (isExcludedZone(touches[i].clientX, touches[i].clientY, e.target)) continue;
         let posX = scaleByPixelRatio(touches[i].clientX);
         let posY = scaleByPixelRatio(touches[i].clientY);
         updatePointerDownData(pointer, touches[i].identifier, posX, posY);
@@ -1186,7 +1189,7 @@ const FluidCursor = ({ enabled = true }) => {
       const touches = e.targetTouches;
       let pointer = pointers[0];
       for (let i = 0; i < touches.length; i++) {
-        if (isExcludedZone(touches[i].clientX, touches[i].clientY)) continue;
+        if (isExcludedZone(touches[i].clientX, touches[i].clientY, e.target)) continue;
         let posX = scaleByPixelRatio(touches[i].clientX);
         let posY = scaleByPixelRatio(touches[i].clientY);
         updatePointerMoveData(pointer, posX, posY, pointer.color);
