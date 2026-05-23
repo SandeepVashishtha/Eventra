@@ -1,8 +1,21 @@
+import React from 'react';
 import jsPDF from 'jspdf';
 import { useAuth } from '../context/AuthContext';
 
 const CertificateDownload = ({ eventName, eventDate, eventType }) => {
   const { user } = useAuth();
+
+  // Guard Clause: Prevent execution and handle null/undefined user safely
+  if (!user) {
+    return (
+      <button
+        disabled
+        className="w-full py-2 px-4 flex items-center justify-center gap-2 border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 rounded-lg font-semibold text-center cursor-not-allowed"
+      >
+        🔒 Login to Download Certificate
+      </button>
+    );
+  }
 
   const generateCertificate = () => {
     const doc = new jsPDF('landscape', 'mm', 'a4');
@@ -26,9 +39,9 @@ const CertificateDownload = ({ eventName, eventDate, eventType }) => {
     doc.setFontSize(15);
     doc.text('This is proudly presented to', 148, 70, { align: 'center' });
 
-    // Participant Name
-    const firstName = user?.firstName || '';
-    const lastName = user?.lastName || '';
+    // Participant Name (Safe from crashes due to the guard clause above)
+    const firstName = user.firstName || '';
+    const lastName = user.lastName || '';
     const participantName = `${firstName} ${lastName}`.trim() || 'Guest Participant';
     doc.setFontSize(26);
     doc.setTextColor(99, 102, 241);
