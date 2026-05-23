@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiUser, FiMail, FiPhone, FiBriefcase, FiAward, FiMessageSquare, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
+import useDocumentTitle from "../hooks/useDocumentTitle";
 
 const RegistrationPage = () => {
+  useDocumentTitle("Eventra | Registration");
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: "",
