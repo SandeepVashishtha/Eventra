@@ -155,6 +155,24 @@ const EventCreation = () => {
       }
     }
 
+    // Validate ticket tiers
+    if (formData.ticketTiers && formData.ticketTiers.length > 0) {
+      formData.ticketTiers.forEach((tier, index) => {
+        if (tier.name && tier.name.trim()) {
+          const price = Number(tier.price);
+          if (price < 0) {
+            newErrors[`ticketPrice_${index}`] = "Ticket price cannot be negative";
+          }
+          if (tier.capacity) {
+            const capacity = Number(tier.capacity);
+            if (capacity <= 0) {
+              newErrors[`ticketCapacity_${index}`] = "Ticket capacity must be greater than 0";
+            }
+          }
+        }
+      });
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
