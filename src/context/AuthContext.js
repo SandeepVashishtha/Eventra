@@ -129,32 +129,79 @@ export const AuthProvider = ({ children }) => {
     return true;
   };
 
-const login = async (usernameOrEmail, password) => {
-  const res = await apiUtils.post(API_ENDPOINTS.AUTH.LOGIN, {
-    usernameOrEmail,
-    password,
-  });
+  const login = async (usernameOrEmail, password) => {
+    const res = await apiUtils.post(API_ENDPOINTS.AUTH.LOGIN, {
+      usernameOrEmail,
+      password,
+    });
 
   const data = await res.json().catch((error) => {
     console.error('Failed to parse login response JSON:', error);
     return null;
   });
 
-  if (!res.ok) {
-    throw new Error(data?.message || data?.error || 'Invalid credentials');
-  }
+    if (!res.ok) {
+      throw new Error(data?.message || data?.error || 'Invalid credentials');
+    }
 
-  const { sessionToken, sessionUser } = extractSession(res, data || {}, usernameOrEmail);
+    const { sessionToken, sessionUser } = extractSession(res, data || {}, usernameOrEmail);
 
-  if (!sessionToken) {
-    throw new Error('Login failed: token missing from response');
-  }
+    if (!sessionToken) {
+      throw new Error('Login failed: token missing from response');
+    }
 
-  persistSession(sessionToken, sessionUser);
-  return true;
-};
+    persistSession(sessionToken, sessionUser);
+    return true;
+  };
 
+  // Decode a JWT payload (base64url) without external libraries
+  const decodeJwtPayload = (jwt) => {
+    try {
+      const base64Url = jwt.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const json = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      return JSON.parse(json);
+    } catch (err) {
+      console.error('Failed to decode Google credential:', err);
+      return null;
+    }
+  };
 
+  // Sign in with Google using the credential returned by Google Identity Services.
+  // TODO: Send `credential` to backend (e.g. /api/auth/google) for server-side
+  // verification and to receive a backend-issued session token. For now we decode
+  // the Google ID token on the client so the UI flow works end-to-end.
+  const signInWithGoogle = async (credential) => {
+    if (!credential) {
+      throw new Error('Google Sign-In failed: missing credential');
+    }
+
+    const payload = decodeJwtPayload(credential);
+    if (!payload || !payload.email) {
+      throw new Error('Google Sign-In failed: invalid credential');
+    }
+
+    const sessionUser = {
+      firstName: payload.given_name || '',
+      lastName: payload.family_name || '',
+      email: payload.email,
+      username: payload.email,
+      picture: payload.picture || '',
+      role: '',
+      roles: [],
+      permissions: [],
+      provider: 'google',
+    };
+
+    // Using the Google credential as the session token until backend support is added.
+    persistSession(credential, sessionUser);
+    return true;
+  };
 
   const logout = () => {
     clearSession();
@@ -196,26 +243,23 @@ const login = async (usernameOrEmail, password) => {
   const isVolunteer = () => hasRole('VOLUNTEER');
   const isAttendee = () => hasRole('ATTENDEE');
 
-const value = {
-  user,
-  token,
-  loading,
-  login,
-  logout,
-  setAuthSession,
-  setUser,
-  isAuthenticated,
-  hasRole,
-  hasPermission,
-  hasAnyRole,
-  hasAnyPermission,
-  isAdmin,
-  isEventManager,
-  isSuperAdmin,
-  isOrganizer,
-  isVolunteer,
-  isAttendee,
-};
+  const value = {
+    user,
+    token,
+    loading,
+    login,
+    logout,
+    signInWithGoogle,
+    setAuthSession,
+    setUser,
+    isAuthenticated,
+    hasRole,
+    hasPermission,
+    hasAnyRole,
+    hasAnyPermission,
+    isAdmin,
+    isEventManager,
+  };
 
   return (
     <AuthContext.Provider value={value}>
