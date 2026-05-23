@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
-
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
 import { User, AtSign } from 'lucide-react'
 
@@ -34,6 +34,7 @@ const assessStrength = (password) => {
 };
 
 const Signup = () => {
+  useDocumentTitle("Sign Up | Eventra");
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -144,81 +145,182 @@ const Signup = () => {
   return () => clearTimeout(timer);
 }, [formData.password, formData.confirmPassword]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (!validateEmail(formData.email)) {
-      setEmailError("Invalid email format");
-      return;
-    }
+  if (!formData.firstName.trim()) {
+    setError("First name is required");
+    return;
+  }
 
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
+  if (formData.firstName.trim().length < 2) {
+    setError("First name must be at least 2 characters");
+    return;
+  }
 
-    const { criteriaMet } = assessStrength(formData.password);
-    if (criteriaMet < 5) {
-      setError("Password doesn't meet the security criteria (must meet all 5 requirements).");
-      return;
-    }
+  if (!formData.lastName.trim()) {
+    setError("Last name is required");
+    return;
+  }
 
-    setLoading(true);
-    setError("");
+  if (formData.lastName.trim().length < 2) {
+    setError("Last name must be at least 2 characters");
+    return;
+  }
 
-    try {
-      const response = await apiUtils.post(API_ENDPOINTS.AUTH.REGISTER, {
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
+  if (!formData.email.trim()) {
+    setError("Email is required");
+    return;
+  }
+
+  if (!validateEmail(formData.email)) {
+    setEmailError("Invalid email format");
+    return;
+  }
+
+  if (!formData.password.trim()) {
+    setError("Password is required");
+    return;
+  }
+
+  if (formData.password.length < 8) {
+    setError(
+      "Password must be at least 8 characters long"
+    );
+    return;
+  }
+
+  if (!formData.confirmPassword.trim()) {
+    setError("Confirm password is required");
+    return;
+  }
+
+  if (
+    formData.password !==
+    formData.confirmPassword
+  ) {
+    setError("Passwords do not match");
+    return;
+  }
+
+  const { criteriaMet } = assessStrength(
+    formData.password
+  );
+
+  if (criteriaMet < 5) {
+    setError(
+      "Password doesn't meet the security criteria (must meet all 5 requirements)."
+    );
+    return;
+  }
+
+  setLoading(true);
+  setError("");
+
+  try {
+    const response = await apiUtils.post(
+      API_ENDPOINTS.AUTH.SIGNUP,
+      {
+        firstName:
+          formData.firstName.trim(),
+        lastName:
+          formData.lastName.trim(),
         email: formData.email.trim(),
         password: formData.password,
-        confirmPassword: formData.confirmPassword,
-      });
-
-      const responseText = await response.text();
-      let data = null;
-      try {
-        data = responseText ? JSON.parse(responseText) : null;
-      } catch {
-        data = null;
+        confirmPassword:
+          formData.confirmPassword,
       }
+    );
 
-      if (!response.ok) {
-        const backendMessage = data?.message || data?.error || '';
-        if (backendMessage) {
-          setError(`${backendMessage} (${response.status})`);
-        } else {
-          setError(`Registration failed (${response.status})`);
-        }
-        return;
-      }
+    const responseText =
+      await response.text();
 
-      const sessionToken = data?.token;
-      const sessionUser = {
-        id: data?.id,
-        firstName: data?.firstName ?? formData.firstName.trim(),
-        lastName: data?.lastName ?? formData.lastName.trim(),
-        email: data?.email ?? formData.email.trim(),
-        username: data?.username ?? formData.email.trim(),
-        role: data?.role ?? "USER",
-        roles: data?.role ? [data.role] : ["USER"],
-        permissions: data?.permissions ?? [],
-      };
+    let data = null;
 
-      if (!sessionToken) {
-        throw new Error("Token missing from signup response");
-      }
-
-      setAuthSession(sessionToken, sessionUser);
-      setSuccess("Account created successfully! Redirecting to dashboard...");
-      setTimeout(() => navigate("/dashboard", { replace: true }), 1200);
-    } catch (err) {
-      setError(err.message || "Network error. Please try again.");
-      console.error(err);
-    } finally {
-      setLoading(false);
+    try {
+      data = responseText
+        ? JSON.parse(responseText)
+        : null;
+    } catch {
+      data = null;
     }
-  };
+
+    if (!response.ok) {
+      const backendMessage =
+        data?.message ||
+        data?.error ||
+        "";
+
+      if (backendMessage) {
+        setError(
+          `${backendMessage} (${response.status})`
+        );
+      } else {
+        setError(
+          `Registration failed (${response.status})`
+        );
+      }
+
+      return;
+    }
+
+    const sessionToken = data?.token;
+
+    const sessionUser = {
+      id: data?.id,
+      firstName:
+        data?.firstName ??
+        formData.firstName.trim(),
+      lastName:
+        data?.lastName ??
+        formData.lastName.trim(),
+      email:
+        data?.email ??
+        formData.email.trim(),
+      username:
+        data?.username ??
+        formData.email.trim(),
+      role: data?.role ?? "USER",
+      roles: data?.role
+        ? [data.role]
+        : ["USER"],
+      permissions:
+        data?.permissions ?? [],
+    };
+
+    if (!sessionToken) {
+      throw new Error(
+        "Token missing from signup response"
+      );
+    }
+
+    setAuthSession(
+      sessionToken,
+      sessionUser
+    );
+
+    setSuccess(
+      "Account created successfully! Redirecting to dashboard..."
+    );
+
+    setTimeout(
+      () =>
+        navigate("/dashboard", {
+          replace: true,
+        }),
+      1200
+    );
+  } catch (err) {
+    setError(
+      err.message ||
+        "Network error. Please try again."
+    );
+
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <motion.div

@@ -230,48 +230,8 @@ const Contributors = () => {
             Retry
           </button>
         </div>
-        {/* Title skeleton */}
-        <div className="flex justify-center mb-16">
-          <div className="h-12 w-80 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
-        </div>
-        {/* Cards grid skeleton */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div
-              key={i}
-              className="relative bg-white dark:bg-gray-800/90 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 pt-14 flex flex-col items-center animate-pulse"
-            >
-              {/* Avatar */}
-              <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-700" />
-              {/* Name */}
-              <div className="h-5 w-32 rounded-full bg-gray-200 dark:bg-gray-700 mt-4" />
-              {/* Role */}
-              <div className="h-4 w-24 rounded-full bg-gray-200 dark:bg-gray-700 mt-2" />
-              {/* Badge */}
-              <div className="h-6 w-28 rounded-full bg-gray-200 dark:bg-gray-700 mt-2" />
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-3 w-full mt-5">
-                {[...Array(3)].map((_, j) => (
-                  <div key={j} className="flex flex-col items-center gap-1 bg-gray-100 dark:bg-gray-700/50 p-2 rounded-lg">
-                    <div className="w-5 h-5 rounded bg-gray-200 dark:bg-gray-600" />
-                    <div className="h-4 w-8 rounded bg-gray-200 dark:bg-gray-600" />
-                    <div className="h-3 w-10 rounded bg-gray-200 dark:bg-gray-600" />
-                  </div>
-                ))}
-              </div>
-              {/* Progress bar */}
-              <div className="w-full h-2 rounded-full bg-gray-200 dark:bg-gray-700 mt-4 mb-4" />
-              {/* Extra lines */}
-              <div className="h-3 w-24 rounded bg-gray-200 dark:bg-gray-700 mb-1" />
-              <div className="h-3 w-20 rounded bg-gray-200 dark:bg-gray-700 mb-4" />
-              {/* Button */}
-              <div className="h-9 w-28 rounded-full bg-gray-200 dark:bg-gray-700 mt-auto" />
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
+      </section>
+    );
   return (
     // UPDATED: Section background
     <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
@@ -321,9 +281,8 @@ const Contributors = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12">
             {filteredContributors.map((c, i) => (
-              <motion.div
+<motion.div
                 key={c.id}
-                // UPDATED: Card background and border
                 className="relative bg-white/95 dark:bg-gray-800/90 backdrop-blur-xl p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 flex flex-col items-center text-center transition-all duration-300 ease-out"
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -339,6 +298,9 @@ const Contributors = () => {
                   <div className="relative">
                     <img
                       loading="lazy"
+                      decoding="async"
+                      width="80"
+                      height="80"
                       src={c.avatar_url}
                       alt={c.login}
                       className="w-20 h-20 rounded-full border-4 border-black shadow-xl"

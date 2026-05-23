@@ -1,9 +1,9 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Award, Calendar, Code2, Sparkles, Users, X } from "lucide-react";
-import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import { useAuth } from "../../context/AuthContext";
+import CountUp from "react-countup";
 
 // Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
@@ -60,7 +60,7 @@ export default function HackathonHero({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.7 }}
-          className="mt-4 text-base sm:text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto"
+          className="text-base sm:text-lg text-gray-600 dark:text-gray-200 max-w-2xl mx-auto mb-6 leading-relaxed"
         >
           Find and join the most exciting hackathons, compete with the best,
           and win prizes.
@@ -144,10 +144,10 @@ export default function HackathonHero({
       {searchQuery.trim() === "" && selectedTags.length === 0 && (
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 mt-12 sm:mt-16 md:mt-20 mb-12 sm:mb-16 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
           {[
-            { label: "Hackathons Hosted", value: "120+", icon: Calendar },
-            { label: "Participants", value: "50k+", icon: Users },
-            { label: "Projects Built", value: "8k+", icon: Code2 },
-            { label: "Prizes Awarded", value: "$1M+", icon: Award },
+            { label: "Hackathons Hosted", value: 120, suffix: "+", icon: Calendar },
+            { label: "Participants", value: 50, suffix: "k+", icon: Users },
+            { label: "Projects Built", value: 8, suffix: "k+", icon: Code2 },
+            { label: "Prizes Awarded", value: 1, prefix: "$", suffix: "M+", icon: Award },
           ].map((stat, idx) => (
             <motion.div
               key={idx}
@@ -162,7 +162,15 @@ export default function HackathonHero({
                 <stat.icon className="h-6 w-6 text-gray-600 dark:text-gray-400" />
               </div>
               <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
-                {stat.value}
+                <CountUp
+                  start={0}
+                  end={stat.value}
+                  duration={2.5}
+                  prefix={stat.prefix}
+                  suffix={stat.suffix}
+                  enableScrollSpy
+                  scrollSpyOnce
+                />
               </p>
               <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">
                 {stat.label}

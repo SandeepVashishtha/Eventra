@@ -1,0 +1,43 @@
+name: Eventra Frontend CI Quality Pipeline
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+    branches:
+      - master
+      - main
+
+jobs:
+  verify_quality:
+    name: Lint, Test and Build Verification
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment (v${{ matrix.node-version }})
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install Application Dependencies
+        run: npm ci
+
+      - name: Verify Quality Code Compilation (Build)
+        run: npm run build:fast
+        env:
+          CI: false # Prevents warnings from being treated as compilation errors to allow smooth build check
+
+      - name: Run Jest Test Suite
+        run: npm run test -- --watchAll=false --passWithNoTests
+        env:
+          CI: true

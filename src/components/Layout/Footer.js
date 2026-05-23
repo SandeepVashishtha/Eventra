@@ -1,5 +1,5 @@
-feature/event-countdown-timer
-import { useState } from "react";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   FaBook,
   FaBookOpen,
@@ -9,18 +9,6 @@ import {
   FaEnvelope,
   FaFolder,
   FaGithub,
-
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import {
-  FaGithub,
-  FaQuestionCircle,
-  FaEnvelope,
-  FaBookOpen,
-  FaPlus,
-  FaUsers,
-  FaBook,
- master
   FaHome,
   FaInfoCircle,
   FaInstagram,
@@ -30,19 +18,8 @@ import {
   FaStar,
   FaTelegram,
   FaTrophy,
- feature/event-countdown-timer
   FaUsers,
 } from "react-icons/fa";
-import { Link } from "react-router-dom";
-
-  FaComments,
-  FaLinkedin,
-  FaDiscord,
-  FaTelegram,
-  FaInstagram,
-  FaInfoCircle,
-} from "react-icons/fa";
-master
 
 const footerLinks = {
   quick_links: [
@@ -122,10 +99,6 @@ const socialLinks = [
 ];
 
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-feature/event-countdown-timer
-
-const Newsletter = ({ email, setEmail, isSubmitting, handleSubmit, feedback, setFeedback, feedbackId, feedbackColor }) => {
-
 
 const Newsletter = () => {
   const [email, setEmail] = useState("");
@@ -168,8 +141,6 @@ const Newsletter = () => {
     feedback.type === "success"
       ? "text-green-600 dark:text-green-400"
       : "text-red-600 dark:text-red-400";
-
- master
   return (
     <div className="mt-4">
       <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-2">
@@ -200,7 +171,7 @@ const Newsletter = () => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full sm:w-auto px-4 py-2.5 bg-black text-white dark:bg-white dark:text-black dark:hover:bg-gray-400 rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-gray-900 to-black hover:from-indigo-600 hover:to-purple-600 dark:from-white dark:to-gray-200 dark:hover:from-indigo-400 dark:hover:to-purple-500 text-white dark:text-black rounded-md transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-indigo-500/30 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed font-semibold tracking-wide"
         >
           {isSubmitting ? "Subscribing..." : "Subscribe"}
         </button>
@@ -279,51 +250,9 @@ const FooterLinksRender = () => (
 );
 
 const Footer = () => {
- feature/event-countdown-timer
-  const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [feedback, setFeedback] = useState({ type: "", message: "" });
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    const trimmedEmail = email.trim();
-    if (!trimmedEmail) {
-      setFeedback({ type: "error", message: "Please enter your email address." });
-      return;
-    }
-
-    if (!isValidEmail(trimmedEmail)) {
-      setFeedback({ type: "error", message: "Please enter a valid email address." });
-      return;
-    }
-
-    setIsSubmitting(true);
-    setFeedback({ type: "", message: "" });
-
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setFeedback({ type: "success", message: "Thanks for subscribing!" });
-      setEmail("");
-    } catch (error) {
-      setFeedback({
-        type: "error",
-        message: "Something went wrong. Please try again.",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const feedbackId = "footer-newsletter-feedback";
-  const feedbackColor =
-    feedback.type === "success"
-      ? "text-green-600 dark:text-green-400"
-      : "text-red-600 dark:text-red-400";
-
   return (
     <footer 
-      className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
+      className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 transition-colors duration-500 hover:bg-indigo-50/40 dark:hover:bg-gray-800/80"
       data-aos="fade-up"
       data-aos-duration="1000"
       data-aos-offset="100"
@@ -336,55 +265,7 @@ const Footer = () => {
             data-aos-delay="0"
           >
             <h2
-              className="text-2xl sm:text-3xl font-bold text-black dark:text-white"
-              style={{ fontFamily: "Anton, sans-serif" }}
-            >
-              Eventra
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
-              Open-source event management for communities worldwide.
-            </p>
-
-            {/* Newsletter Component */}
-            <Newsletter 
-              email={email}
-              setEmail={setEmail}
-              isSubmitting={isSubmitting}
-              handleSubmit={handleSubmit}
-              feedback={feedback}
-              setFeedback={setFeedback}
-              feedbackId={feedbackId}
-              feedbackColor={feedbackColor}
-            />
-            
-            {/* Social Links */}
-            <SocialLinksRender />
-          </div>
-          <FooterLinksRender />
-        </div>
-      </div>
-    </footer>
-  );
-};
-
-export default Footer;
-
-  return (
-    <footer 
-      className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
-      data-aos="fade-up"
-      data-aos-duration="1000"
-      data-aos-offset="100"
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-          <div 
-            className="space-y-4 lg:col-span-2"
-            data-aos="fade-up"
-            data-aos-delay="0"
-          >
-            <h2
-              className="text-2xl sm:text-3xl font-bold text-black dark:text-white"
+              className="text-2xl sm:text-3xl font-bold inline-block text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-black dark:from-white dark:to-gray-300 hover:from-indigo-600 hover:to-purple-600 dark:hover:from-indigo-400 dark:hover:to-purple-400 transition-all duration-300 hover:scale-105 hover:-translate-y-1 cursor-default"
               style={{ fontFamily: "Anton, sans-serif" }}
             >
               Eventra
@@ -402,9 +283,18 @@ export default Footer;
           <FooterLinksRender />
         </div>
       </div>
+
+      {/* Massive Bottom Text */}
+      <div className="w-full overflow-hidden flex justify-center items-end mt-0 pointer-events-none select-none">
+        <h1 
+          className="text-[20vw] sm:text-[21vw] font-black leading-none tracking-tighter whitespace-nowrap text-transparent bg-clip-text bg-gradient-to-b from-black via-black/80 to-transparent dark:from-white dark:via-white/80 dark:to-transparent opacity-90"
+          style={{ fontFamily: "Anton, sans-serif", marginBottom: "-3%" }}
+        >
+          EVENTRA
+        </h1>
+      </div>
     </footer>
   );
 };
 
 export default Footer;
-master
