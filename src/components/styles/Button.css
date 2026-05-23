@@ -19,11 +19,11 @@
 }
 
 /* Fixes focus effects for accessibility */
-.btn:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.4);
+.btn:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
 }
-
 /* Standardized disabled state */
 .btn:disabled {
   opacity: 0.6;
@@ -57,6 +57,9 @@
 .btn-outline:hover:not(:disabled) {
   background-color: #eff6ff;
 }
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+}
 
 /* --- SIZES (Standardized Spacing & Typography) --- */
 
@@ -73,4 +76,21 @@
 .btn-large {
   padding: 14px 28px;
   font-size: 18px;
+}
+.dark .btn-secondary {
+  background-color: #1e293b;
+  color: #f8fafc;
+}
+
+.dark .btn-secondary:hover:not(:disabled) {
+  background-color: #334155;
+}
+
+.dark .btn-outline {
+  border-color: #818cf8;
+  color: #a5b4fc;
+}
+
+.dark .btn-outline:hover:not(:disabled) {
+  background-color: rgba(129, 140, 248, 0.1);
 }

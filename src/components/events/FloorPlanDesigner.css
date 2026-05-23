@@ -30,7 +30,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 24px;
-  border-b: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(13, 13, 23, 0.6);
   backdrop-filter: blur(10px);
 }
@@ -100,6 +100,13 @@
 :global(.light) .fp-btn-secondary:hover,
 .light-theme .fp-btn-secondary:hover {
   background: rgba(0, 0, 0, 0.06);
+}
+.fp-btn:focus-visible,
+.fp-control-btn:focus-visible,
+.fp-input:focus-visible,
+.fp-attendee-select:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
 }
 
 /* Main workspace layout */

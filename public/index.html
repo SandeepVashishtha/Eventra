@@ -74,10 +74,11 @@
         "(prefers-color-scheme: dark)"
       ).matches;
 
-    if (
+    const isDark =
       savedTheme === "dark" ||
-      (!savedTheme && systemDark)
-    ) {
+      (!savedTheme && systemDark);
+
+    if (isDark) {
       document.documentElement.classList.add(
         "dark"
       );
@@ -86,6 +87,9 @@
         "dark"
       );
     }
+
+    document.documentElement.style.colorScheme =
+      isDark ? "dark" : "light";
   })();
 </script>
 
@@ -106,11 +110,10 @@
     ></script>
   </head>
 
-  <body>
+  <body class="bg-white text-black dark:bg-gray-900 dark:text-white">
     <noscript>
       You need to enable JavaScript to run this app.
     </noscript>
-
     <div id="root"></div>
   </body>
 </html>

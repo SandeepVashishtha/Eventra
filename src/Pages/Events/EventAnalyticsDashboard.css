@@ -5,6 +5,10 @@
   padding: 32px 24px;
   color: #1e1b4b;
 }
+.dark .ead-root {
+  background: #0f172a;
+  color: #f8fafc;
+}
 
 /* ── Header ── */
 .ead-header {
@@ -36,11 +40,17 @@
   margin: 0 0 4px;
   letter-spacing: -0.5px;
 }
+.dark .ead-title {
+  color: #f8fafc;
+}
 
 .ead-subtitle {
   font-size: 14px;
   color: #6b7280;
   margin: 0;
+}
+.dark .ead-subtitle {
+  color: #cbd5e1;
 }
 
 .ead-header-right {
@@ -57,6 +67,10 @@
   text-align: center;
   min-width: 110px;
   box-shadow: 0 1px 4px #6366f110;
+}
+.dark .ead-kpi {
+  background: #1e293b;
+  border-color: #334155;
 }
 
 .ead-kpi-val {
@@ -94,6 +108,11 @@
   transition: all 0.15s;
   font-family: inherit;
 }
+.dark .ead-tab {
+  background: #1e293b;
+  color: #e2e8f0;
+  border-color: #334155;
+}
 
 .ead-tab:hover {
   border-color: #6366f1;
@@ -121,6 +140,10 @@
   border: 1px solid #e5e7eb;
   box-shadow: 0 2px 12px #6366f108;
 }
+.dark .ead-card {
+  background: #1e293b;
+  border-color: #334155;
+}
 
 .ead-card--wide {
   grid-column: span 1;
@@ -135,6 +158,9 @@
   font-weight: 700;
   color: #1e1b4b;
   margin: 0 0 20px;
+}
+.dark .ead-card-title {
+  color: #f8fafc;
 }
 
 /* ── Feedback ── */
@@ -157,6 +183,9 @@
   font-weight: 600;
   color: #374151;
   flex-shrink: 0;
+}
+.dark .ead-feedback-event {
+  color: #e2e8f0;
 }
 
 .ead-feedback-bar-wrap {
@@ -188,7 +217,9 @@
   width: 90px;
   text-align: right;
 }
-
+.dark .ead-feedback-responses {
+  color: #cbd5e1;
+}
 /* ── Sentiment ── */
 .ead-sentiment {
   display: flex;

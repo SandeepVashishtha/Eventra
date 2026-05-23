@@ -7,6 +7,10 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 20px;
 }
+.dark .auth-container,
+.dark .loading-container {
+  color: #f8fafc;
+}
 
 /* Authentication Card */
 .auth-card {
@@ -17,6 +21,11 @@
   width: 100%;
   max-width: 500px;
   animation: slideUp 0.6s ease-out;
+}
+
+.dark .auth-card {
+  background: #1e293b;
+  color: #f8fafc;
 }
 
 @keyframes slideUp {
@@ -48,6 +57,13 @@
   font-size: 1rem;
   margin: 0;
 }
+.dark .auth-header h2 {
+  color: #f8fafc;
+}
+
+.dark .auth-header p {
+  color: #cbd5e0;
+}
 
 /* Form Styles */
 .auth-form {
@@ -73,6 +89,9 @@
   font-weight: 600;
   font-size: 0.95rem;
 }
+.dark .form-group label {
+  color: #f1f5f9;
+}
 
 .form-group input {
   padding: 12px 16px;
@@ -82,12 +101,24 @@
   transition: all 0.3s ease;
   background-color: #f8f9fa;
 }
+.dark .form-group input {
+  background-color: #111827;
+  border-color: #374151;
+  color: #f9fafb;
+}
+
+.dark .form-group input::placeholder {
+  color: #9ca3af;
+}
 
 .form-group input:focus {
   outline: none;
   border-color: #667eea;
   background-color: white;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+.dark .form-group input:focus {
+  background-color: #1e293b;
 }
 
 .form-group input:disabled {
@@ -110,12 +141,21 @@
   background-color: #f8f9fa;
   cursor: pointer;
 }
+.dark .role-select {
+  background-color: #111827;
+  border-color: #374151;
+  color: #f9fafb;
+}
+
 
 .role-select:focus {
   outline: none;
   border-color: #667eea;
   background-color: white;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+.dark .role-select:focus {
+  background-color: #1e293b;
 }
 
 .role-select:disabled {
@@ -186,10 +226,16 @@
   padding-top: 24px;
   border-top: 1px solid #e2e8f0;
 }
+.dark .auth-footer {
+  border-top-color: #374151;
+}
 
 .auth-footer p {
   color: #718096;
   margin: 0;
+}
+.dark .auth-footer p {
+  color: #cbd5e0;
 }
 
 .auth-link {
@@ -285,6 +331,10 @@
   color: #2d3748;
   animation: pulse 2s infinite;
 }
+.dark .loading-spinner {
+  background: #1e293b;
+  color: #f8fafc;
+}
 
 @keyframes pulse {
   0% { opacity: 1; }
@@ -301,6 +351,7 @@
 
 .login-form {
   background: #1e1e2f;
+  color: #f8fafc;
   padding: 2rem;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
