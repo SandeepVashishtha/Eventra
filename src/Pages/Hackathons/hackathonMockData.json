@@ -5,23 +5,11 @@
     "status": "live",
     "startDate": "2026-05-10",
     "endDate": "2026-06-10",
-    "timeLeft": "22 days",
     "participants": 1250,
     "teams": 315,
     "prize": "$50,000",
     "description": "Build innovative AI solutions that can solve real-world problems.",
-    "rules": [
-      "Teams of 2-4 members",
-      "Must use provided API endpoints",
-      "Submit working prototype with documentation",
-      "Open source code required"
-    ],
-    "techStack": ["Python", "TensorFlow", "React", "Node.js"],
-    "organizer": "TechCorp Inc.",
-    "difficulty": "Advanced",
-    "location": "Virtual",
-    "submissions": 89,
-    "featured": true
+    "location": "Virtual"
   },
   {
     "id": 2,
@@ -29,22 +17,11 @@
     "status": "upcoming",
     "startDate": "2026-08-15",
     "endDate": "2026-08-17",
-    "timeLeft": "88 days",
     "participants": 420,
     "teams": 110,
     "prize": "$25,000",
     "description": "Create sustainable technology solutions for environmental challenges.",
-    "rules": [
-      "Individual or team participation",
-      "Focus on sustainability",
-      "Working demo required",
-      "Present to judges"
-    ],
-    "techStack": ["Any", "IoT", "Mobile", "Web"],
-    "organizer": "EcoTech Foundation",
-    "difficulty": "Intermediate",
-    "location": "San Francisco, CA",
-    "submissions": 0
+    "location": "San Francisco, CA"
   },
   {
     "id": 3,
@@ -52,23 +29,11 @@
     "status": "completed",
     "startDate": "2025-12-01",
     "endDate": "2025-12-03",
-    "timeLeft": "Completed",
     "participants": 800,
     "teams": 200,
     "prize": "$30,000",
     "description": "Revolutionary financial technology solutions for the future.",
-    "rules": [
-      "Teams of 3-5 members",
-      "Financial domain focus",
-      "Security compliance required",
-      "Business plan submission"
-    ],
-    "techStack": ["Blockchain", "React", "Node.js", "Python"],
-    "organizer": "FinTech Alliance",
-    "difficulty": "Advanced",
-    "location": "New York, NY",
-    "submissions": 156,
-    "winner": "CryptoWallet Pro Team"
+    "location": "New York, NY"
   },
   {
     "id": 4,
@@ -76,23 +41,11 @@
     "status": "live",
     "startDate": "2026-05-01",
     "endDate": "2026-07-01",
-    "timeLeft": "43 days",
     "participants": 500,
     "teams": 150,
     "prize": "$20,000",
     "description": "Create immersive virtual reality experiences for future.",
-    "rules": [
-      "Teams of 2-4 members",
-      "VR domain focus",
-      "Working prototype required",
-      "Present to judges"
-    ],
-    "techStack": ["Unity", "Vuforia", "C++"],
-    "organizer": "VRX Studios",
-    "difficulty": "Intermediate",
-    "location": "Los Angeles, CA",
-    "submissions": 120,
-    "featured": true
+    "location": "Los Angeles, CA"
   },
   {
     "id": 5,
@@ -100,22 +53,11 @@
     "status": "upcoming",
     "startDate": "2026-09-15",
     "endDate": "2026-09-17",
-    "timeLeft": "119 days",
     "participants": 210,
     "teams": 65,
     "prize": "$10,000",
     "description": "Build a project in a coding bootcamp using latest techstack.",
-    "rules": [
-      "Teams of 2-4 members",
-      "Focus on bootcamp curriculum",
-      "Working prototype required",
-      "Present to judges"
-    ],
-    "techStack": ["React", "Node.js", "Python"],
-    "organizer": "Coding Bootcamp Alumni Association",
-    "difficulty": "Beginner",
-    "location": "Online",
-    "submissions": 0
+    "location": "Online"
   },
   {
     "id": 6,
@@ -123,23 +65,11 @@
     "status": "completed",
     "startDate": "2025-10-01",
     "endDate": "2025-10-03",
-    "timeLeft": "Completed",
     "participants": 300,
     "teams": 100,
     "prize": "$15,000",
     "description": "Build decentralized applications and blockchain solutions.",
-    "rules": [
-      "Teams of 3-5 members",
-      "Blockchain domain focus",
-      "Working prototype required",
-      "Business plan submission"
-    ],
-    "techStack": ["Ethereum", "Solidity", "Python"],
-    "organizer": "Blockchain Alliance",
-    "difficulty": "Advanced",
-    "location": "New York, NY",
-    "submissions": 80,
-    "winner": "CryptoVote Team"
+    "location": "New York, NY"
   },
   {
     "id": 7,
@@ -147,22 +77,11 @@
     "status": "live",
     "startDate": "2026-05-05",
     "endDate": "2026-06-20",
-    "timeLeft": "32 days",
     "participants": 400,
     "teams": 200,
     "prize": "$10,000",
     "description": "Build conversational AI chatbots with fuzzy searches.",
-    "rules": [
-      "Teams of 2-4 members",
-      "Natural Language Processing focus",
-      "Working prototype required",
-      "Present to judges"
-    ],
-    "techStack": ["Python", "Rasa", "ChatGPT"],
-    "organizer": "Chatbot Inc.",
-    "difficulty": "Intermediate",
-    "location": "San Francisco, CA",
-    "submissions": 180
+    "location": "San Francisco, CA"
   },
   {
     "id": 8,
@@ -170,22 +89,130 @@
     "status": "upcoming",
     "startDate": "2026-10-01",
     "endDate": "2026-10-03",
-    "timeLeft": "135 days",
     "participants": 175,
     "teams": 50,
     "prize": "$20,000",
     "description": "Build AI solutions for social and environmental challenges.",
-    "rules": [
-      "Individual or team participation",
-      "Social impact focus",
-      "Working prototype required",
-      "Present to judges"
-    ],
-    "techStack": ["Python", "TensorFlow", "React"],
-    "organizer": "AI for Social Good Foundation",
-    "difficulty": "Beginner",
-    "location": "Online",
-    "submissions": 0,
-    "featured": true
+    "location": "Online"
+  },
+  {
+    "id": 9,
+    "title": "Cloud Native Conference",
+    "status": "upcoming",
+    "startDate": "2026-07-18",
+    "endDate": "2026-07-18",
+    "participants": 220,
+    "teams": 0,
+    "prize": "",
+    "description": "Explore the future of cloud-native technologies and microservices architecture.",
+    "location": "Seattle, WA"
+  },
+  {
+    "id": 10,
+    "title": "Data Science Hackathon",
+    "status": "upcoming",
+    "startDate": "2026-08-05",
+    "endDate": "2026-08-05",
+    "participants": 150,
+    "teams": 40,
+    "prize": "",
+    "description": "48-hour hackathon focusing on solving real-world problems using data science and AI.",
+    "location": "Boston, MA"
+  },
+  {
+    "id": 11,
+    "title": "UX Research Bootcamp",
+    "status": "upcoming",
+    "startDate": "2026-09-05",
+    "endDate": "2026-09-05",
+    "participants": 60,
+    "teams": 0,
+    "prize": "",
+    "description": "Learn user research methodologies and how to apply them to product development.",
+    "location": "Online"
+  },
+  {
+    "id": 12,
+    "title": "Tech Leadership Summit",
+    "status": "upcoming",
+    "startDate": "2026-09-22",
+    "endDate": "2026-09-22",
+    "participants": 180,
+    "teams": 0,
+    "prize": "",
+    "description": "For tech leaders and managers to discuss leadership in the digital age.",
+    "location": "Chicago, IL"
+  },
+  {
+    "id": 13,
+    "title": "Web3 & DeFi Workshop",
+    "status": "live",
+    "startDate": "2026-10-05",
+    "endDate": "2026-10-05",
+    "participants": 75,
+    "teams": 0,
+    "prize": "",
+    "description": "Hands-on workshop on building decentralized applications and DeFi protocols.",
+    "location": "Austin, TX"
+  },
+  {
+    "id": 14,
+    "title": "Game Development Bootcamp",
+    "status": "upcoming",
+    "startDate": "2026-10-10",
+    "endDate": "2026-10-10",
+    "participants": 40,
+    "teams": 0,
+    "prize": "",
+    "description": "Intensive 2-week bootcamp on game development using Unity and Unreal Engine.",
+    "location": "Online"
+  },
+  {
+    "id": 15,
+    "title": "AI in Healthcare Conference",
+    "status": "upcoming",
+    "startDate": "2026-11-18",
+    "endDate": "2026-11-18",
+    "participants": 300,
+    "teams": 0,
+    "prize": "",
+    "description": "Exploring the intersection of artificial intelligence and healthcare innovations.",
+    "location": "Houston, TX"
+  },
+  {
+    "id": 16,
+    "title": "Startup Pitch Night",
+    "status": "upcoming",
+    "startDate": "2026-11-30",
+    "endDate": "2026-11-30",
+    "participants": 120,
+    "teams": 0,
+    "prize": "",
+    "description": "An evening of startup pitches, networking, and innovation showcase.",
+    "location": "New York, NY"
+  },
+  {
+    "id": 17,
+    "title": "Android Development Workshop",
+    "status": "live",
+    "startDate": "2026-11-15",
+    "endDate": "2026-11-15",
+    "participants": 95,
+    "teams": 0,
+    "prize": "",
+    "description": "Learn to build cross-platform mobile apps with React Native and Flutter.",
+    "location": "Online"
+  },
+  {
+    "id": 18,
+    "title": "DevOps Summit 2026",
+    "status": "live",
+    "startDate": "2026-12-10",
+    "endDate": "2026-12-10",
+    "participants": 400,
+    "teams": 0,
+    "prize": "",
+    "description": "Comprehensive summit on modern DevOps practices and cloud technologies.",
+    "location": "Denver, CO"
   }
 ]
