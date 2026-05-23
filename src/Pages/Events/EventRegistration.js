@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   Calendar,
@@ -12,31 +12,82 @@ import {
   CheckCircle,
   Loader2,
 } from "lucide-react";
+import { getEventStatus } from "../../utils/eventUtils";
 import { useAuth } from "../../context/AuthContext";
+import { useMyEvents } from "../../context/MyEventsContext";
+import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { useSessionRecovery } from "../../context/SessionRecoveryContext";
 import { API_ENDPOINTS } from "../../config/api";
+import { useFormValidation } from "../../hooks/useFormValidation";
+import { validate } from "../../validation";
 import { toast } from "react-toastify";
 import mockEvents from "./eventsMockData.json";
+import { pushToQueue } from "../../utils/offlineQueue";
+
+const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
+const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
+const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
+
+function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
+  if (EMAILJS_PUBLIC_KEY && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && window.emailjs) {
+    window.emailjs.init(EMAILJS_PUBLIC_KEY);
+    window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email: userEmail,
+      to_name: userName,
+      event_name: eventName,
+      event_date: eventDate,
+    }).catch(() => {});
+  }
+}
+
+// Registration lock map to prevent concurrent registrations for the same event
+const registrationLocks = new Map();
+
+const isCapacityMessage = (message = "") => {
+  const normalized = String(message).toLowerCase();
+  return normalized.includes("capacity") || normalized.includes("full");
+};
 
 const EventRegistration = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated, token } = useAuth();
+  const { addRegistration } = useMyEvents();
+  const { saveSession, clearSession } = useSessionRecovery();
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);
+  const isSubmittingRef = useRef(false);
 
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-    organization: "",
-    designation: "",
-    additionalInfo: "",
-  });
+  const validationRules = {
+    fullName: validate.fullName,
+    email: validate.email,
+    phone: validate.phone,
+  };
 
-  const [errors, setErrors] = useState({});
+  const {
+    values: formData,
+    errors,
+    touched,
+    isFormValid,
+    handleChange,
+    handleBlur,
+    validateAll,
+    setValues,
+  } = useFormValidation(
+    {
+      fullName: "",
+      email: "",
+      phone: "",
+      organization: "",
+      designation: "",
+      additionalInfo: "",
+    },
+    validationRules,
+    { debounceMs: 300 }
+  );
 
   // Load event data
   useEffect(() => {
@@ -46,11 +97,11 @@ const EventRegistration = () => {
       const foundEvent = mockEvents.find((e) => e.id === parseInt(eventId));
       
       if (foundEvent) {
-        setEvent(foundEvent);
+        setEvent({ ...foundEvent, status: getEventStatus(foundEvent) });
         
         // Pre-fill form if user is authenticated
         if (isAuthenticated() && user) {
-          setFormData((prev) => ({
+          setValues((prev) => ({
             ...prev,
             fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
             email: user.email || "",
@@ -61,90 +112,120 @@ const EventRegistration = () => {
     };
 
     loadEvent();
-  }, [eventId, user, isAuthenticated]);
-
-  // Validate form
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = "Full name is required";
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email is invalid";
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Phone number is required";
-    } else if (!/^\+?[\d\s-()]{10,}$/.test(formData.phone)) {
-      newErrors.phone = "Phone number is invalid";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // Handle input change
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    // Clear error for this field
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
-  };
+  }, [eventId, user, isAuthenticated, setValues]);
 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validateForm()) {
+    if (!validateAll()) {
       toast.error("Please fill in all required fields correctly");
       return;
     }
 
+    // Prevent concurrent submissions for the same event
+    if (isSubmittingRef.current) {
+      toast.error("Registration already in progress. Please wait.");
+      return;
+    }
+
+    // Check if another registration is in progress for this event
+    if (registrationLocks.has(eventId)) {
+      toast.error("Another registration is in progress for this event. Please wait.");
+      return;
+    }
+
+    // Atomic capacity check - re-check immediately before submission
+    if (event.attendees >= event.maxAttendees) {
+      toast.error("This event has reached maximum capacity.");
+      return;
+    }
+
+    // Set lock and submission state
+    registrationLocks.set(eventId, true);
+    isSubmittingRef.current = true;
     setSubmitting(true);
 
     try {
-      // API call to register for event
-      const response = await fetch(API_ENDPOINTS.EVENTS.REGISTER(eventId), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-        body: JSON.stringify({
+      // API call to register for event using centralized API layer
+      const response = await apiUtils.post(
+        API_ENDPOINTS.EVENTS.REGISTER(eventId),
+        {
           ...formData,
           eventId: parseInt(eventId),
           userId: user?.id || null,
+        }
+      );
+
+      setRegistered(true);
+      toast.success("Registration successful!");
+      // ── Save to My Events ──
+      addRegistration(event, formData);
+      // Redirect to event details after 2 seconds
+      setTimeout(() => {
+        navigate(`/events/${eventId}`);
+      }, 2000);
         }),
       });
 
       if (response.ok) {
         setRegistered(true);
         toast.success("Registration successful!");
-        
+        sendConfirmationEmail(formData.email, formData.fullName, event?.title, event?.date);
+        // ── Save to My Events ──
+        addRegistration(event, formData);
+        // Clear session after successful registration
+        clearSession();
         // Redirect to event details after 2 seconds
         setTimeout(() => {
           navigate(`/events/${eventId}`);
         }, 2000);
       } else {
-        const errorData = await response.json();
-        toast.error(errorData.message || "Registration failed. Please try again.");
+        let errorData = {};
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = {};
+        }
+
+        const serverMessage = errorData.message || "";
+        const isConflict = response.status === 409;
+        const isFull = isCapacityMessage(serverMessage);
+
+        if (isConflict && isFull) {
+          toast.error("This event has reached maximum capacity.");
+          const updatedEvent = mockEvents.find((e) => e.id === parseInt(eventId));
+          if (updatedEvent) {
+            setEvent({ ...updatedEvent, status: getEventStatus(updatedEvent) });
+          }
+        } else if (isConflict) {
+          toast.error("Too many simultaneous registrations. Please try again.");
+        } else {
+          toast.error(serverMessage || "Registration failed. Please try again.");
+        }
       }
     } catch (error) {
       console.error("Registration error:", error);
-      toast.error("Something went wrong. Please try again later.");
+      
+      // ── Offline Sync Queue Fallback ──
+      const payload = {
+        ...formData,
+        eventId: parseInt(eventId),
+        userId: user?.id || null,
+      };
+      
+      pushToQueue({ eventId: parseInt(eventId), payload });
+
+      setRegistered(true);
+      addRegistration(event, formData);
+      toast.warning("Network error. Registration queued and will sync when you are online.", { autoClose: 4000 });
+      setTimeout(() => {
+        navigate(`/events/${eventId}`);
+      }, 3000);
     } finally {
+      // Release lock and reset submission state
+      registrationLocks.delete(eventId);
+      isSubmittingRef.current = false;
       setSubmitting(false);
     }
   };
@@ -169,6 +250,31 @@ const EventRegistration = () => {
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Events
+        </Link>
+      </div>
+    );
+  }
+
+  const isPastEvent = new Date(`${event.date} ${event.time}`) < new Date();
+  const isEventFull = event.attendees >= event.maxAttendees;
+
+  if (isPastEvent || isEventFull) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+          Registration Unavailable
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
+          {isPastEvent 
+            ? "This event has already ended." 
+            : "This event has reached maximum capacity."}
+        </p>
+        <Link
+          to={`/events/${eventId}`}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-colors font-medium"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Event Details
         </Link>
       </div>
     );
@@ -212,7 +318,7 @@ const EventRegistration = () => {
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden">
           {/* Event Header */}
           <div className="relative h-64 overflow-hidden">
-            <img
+            <img loading="lazy"
               src={event.image}
               alt={event.title}
               className="w-full h-full object-cover"
@@ -265,15 +371,16 @@ const EventRegistration = () => {
                     name="fullName"
                     value={formData.fullName}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${
-                      errors.fullName
+                      errors.fullName && touched.fullName
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
                     }`}
                     placeholder="Enter your full name"
                   />
                 </div>
-                {errors.fullName && (
+                {errors.fullName && touched.fullName && (
                   <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>
                 )}
               </div>
@@ -294,15 +401,16 @@ const EventRegistration = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${
-                      errors.email
+                      errors.email && touched.email
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
                     }`}
                     placeholder="your.email@example.com"
                   />
                 </div>
-                {errors.email && (
+                {errors.email && touched.email && (
                   <p className="text-red-500 text-sm mt-1">{errors.email}</p>
                 )}
               </div>
@@ -323,15 +431,16 @@ const EventRegistration = () => {
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${
-                      errors.phone
+                      errors.phone && touched.phone
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
                     }`}
                     placeholder="+1 (555) 123-4567"
                   />
                 </div>
-                {errors.phone && (
+                {errors.phone && touched.phone && (
                   <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
                 )}
               </div>
@@ -407,7 +516,7 @@ const EventRegistration = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || !isFormValid}
                   className="flex-1 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {submitting ? (

@@ -1,30 +1,45 @@
-import { useEffect, useState, Fragment } from "react";
+import { useEffect, useState } from "react";
 import {
   FaCode,
   FaStar,
-  FaChevronDown,
   FaChevronLeft,
   FaChevronRight,
   FaUsers,
 } from "react-icons/fa";
-import { Menu, Transition } from "@headlessui/react";
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
 import StyledDropdown from "../../components/StyledDropdown";
+import { LeaderboardTableSkeleton } from "../../components/common/SkeletonLoaders";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 // Repository constant — update if the leaderboard should point to another repo
 const GITHUB_REPO = "SandeepVashishtha/Eventra";
 // Token read from env for higher rate limits (optional)
 const TOKEN = process.env.REACT_APP_GITHUB_TOKEN || "";
+const LEADERBOARD_CACHE_KEY = "leaderboardData:v2";
 
 // Points mapping for PR labels (keeps scoring logic centralized)
 const POINTS = {
-  "level-1": 3,
-  "level-2": 7,
-  "level-3": 10,
+  level1: 3,
+  level2: 7,
+  level3: 10,
+};
+const DEFAULT_MERGED_PR_POINTS = 1;
+
+const normalizeLabel = (label = "") =>
+  label.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+const calculatePrPoints = (labels) => {
+  const levelPoints = labels.reduce((total, label) => {
+    const normalized = normalizeLabel(label);
+    return total + (POINTS[normalized] || 0);
+  }, 0);
+
+  return levelPoints || DEFAULT_MERGED_PR_POINTS;
 };
 
 export default function LeaderBoard() {
+  useDocumentTitle("Eventra | Leaderboard");
   // Local state: contributors list and UI state
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +47,6 @@ export default function LeaderBoard() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("points");
-  const [isDark, setIsDark] = useState(false);
 
   // Constants for pagination and UI
   const CONTRIBUTORS_PER_PAGE = 10;
@@ -53,7 +67,7 @@ export default function LeaderBoard() {
   // Load data from cache or network
   const loadLeaderboardData = async () => {
     setLoading(true);
-    const cachedData = localStorage.getItem("leaderboardData");
+    const cachedData = localStorage.getItem(LEADERBOARD_CACHE_KEY);
     const now = Date.now();
 
     // If cached data exists and is fresh (1 hour), use it to avoid rate limits
@@ -63,7 +77,7 @@ export default function LeaderBoard() {
         if (now - timestamp < 60 * 60 * 1000) {
           setContributors(data);
           setLastUpdated(
-            `Last updated: ${new Date(timestamp).toLocaleString()} (cached)`
+            `Last updated: ${new Date(timestamp).toLocaleString()} (cached)`,
           );
           setLoading(false);
           return;
@@ -87,7 +101,7 @@ export default function LeaderBoard() {
       // Fetch contributor metadata (avatar, profile)
       const contributorsRes = await fetch(
         `https://api.github.com/repos/${GITHUB_REPO}/contributors`,
-        { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} }
+        { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} },
       );
 
       if (!contributorsRes.ok) throw new Error("Failed to fetch contributors");
@@ -108,11 +122,19 @@ export default function LeaderBoard() {
       while (hasMore) {
         const res = await fetch(
           `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`,
-          { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} }
+          { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} },
         );
+
+        if (!res.ok) {
+          console.warn(`GitHub API request failed with status: ${res.status}`);
+          hasMore = false;
+          break;
+        }
+
         const prs = await res.json();
-        // If no PRs returned, stop paginating
-        if (prs.length === 0) {
+
+        // Ensure standard array shape to avoid runtime TypeError crash
+        if (!Array.isArray(prs) || prs.length === 0) {
           hasMore = false;
           break;
         }
@@ -124,18 +146,13 @@ export default function LeaderBoard() {
           // Normalize labels for matching against POINTS map
           const labels = pr.labels.map((l) => l.name.toLowerCase());
           const hasGsocLabel = labels.some(
-            (label) => label.includes("gssoc") || label.includes("gsoc")
+            (label) => label.includes("gssoc") || label.includes("gsoc"),
           );
           // Skip PRs that are not GSoc-related
           if (!hasGsocLabel) return;
 
           const author = pr.user.login;
-          let points = 0;
-          // Sum points for all matching labels on the PR
-          labels.forEach((label) => {
-            const normalized = label.replace(/\s+/g, "").toLowerCase();
-            if (POINTS[normalized]) points += POINTS[normalized];
-          });
+          const points = calculatePrPoints(labels);
 
           // Initialize contributor entry if needed
           if (!contributorsMap[author]) {
@@ -165,15 +182,15 @@ export default function LeaderBoard() {
 
       // Convert map to array and sort by points descending
       const sortedContributors = Object.values(contributorsMap).sort(
-        (a, b) => b.points - a.points
+        (a, b) => b.points - a.points,
       );
 
       // Update UI state and cache the results for future loads
       setContributors(sortedContributors);
       setLastUpdated(new Date().toLocaleString());
       localStorage.setItem(
-        "leaderboardData",
-        JSON.stringify({ data: sortedContributors, timestamp: Date.now() })
+        LEADERBOARD_CACHE_KEY,
+        JSON.stringify({ data: sortedContributors, timestamp: Date.now() }),
       );
     } catch (err) {
       // Log errors but keep the app functional (shows empty state)
@@ -186,6 +203,7 @@ export default function LeaderBoard() {
   // Initial data load on component mount
   useEffect(() => {
     loadLeaderboardData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Filter & sort
@@ -212,10 +230,10 @@ export default function LeaderBoard() {
   const indexOfFirst = indexOfLast - CONTRIBUTORS_PER_PAGE;
   const currentContributors = sortedContributors.slice(
     indexOfFirst,
-    indexOfLast
+    indexOfLast,
   );
   const totalPages = Math.ceil(
-    sortedContributors.length / CONTRIBUTORS_PER_PAGE
+    sortedContributors.length / CONTRIBUTORS_PER_PAGE,
   );
 
   // Build a quick lookup for ranks based on the original sorted list
@@ -238,13 +256,13 @@ export default function LeaderBoard() {
   ];
 
   return (
-    <div className="bg-white dark:bg-black py-12 sm:py-16">
+    <div className="bg-white dark:bg-black pt-20 md:pt-24 py-12 sm:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           {/* UPDATED: Header text */}
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             <span className="block text-indigo-700 dark:text-indigo-400">
-              GSSoC'25
+              GSSoC'26
             </span>
             <span className="text-gray-800 dark:text-gray-200">
               Contributor Leaderboard
@@ -270,11 +288,14 @@ export default function LeaderBoard() {
           />
           <StyledDropdown
             label="Sort by"
-            value={sortOptions.find((opt) => opt.value === sortBy)?.label || "Select Sort"}
+            value={
+              sortOptions.find((opt) => opt.value === sortBy)?.label ||
+              "Select Sort"
+            }
             options={sortOptions.map((opt) => opt.label)}
             onChange={(value) => {
               const selectedOption = sortOptions.find(
-                (opt) => opt.label === value
+                (opt) => opt.label === value,
               );
               if (selectedOption) setSortBy(selectedOption.value);
             }}
@@ -337,7 +358,7 @@ export default function LeaderBoard() {
         {/* UPDATED: Table container */}
         <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl shadow-lg overflow-hidden">
           {loading ? (
-            <div className="overflow-x-auto">{/* Skeleton loader */}</div>
+            <LeaderboardTableSkeleton rows={CONTRIBUTORS_PER_PAGE} />
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-500">
@@ -372,10 +393,10 @@ export default function LeaderBoard() {
                               rank === 1
                                 ? "bg-yellow-500 text-white"
                                 : rank === 2
-                                ? "bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200"
-                                : rank === 3
-                                ? "bg-amber-800 text-white"
-                                : "bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300"
+                                  ? "bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200"
+                                  : rank === 3
+                                    ? "bg-amber-800 text-white"
+                                    : "bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300"
                             }`}
                           >
                             {rank}
@@ -384,7 +405,11 @@ export default function LeaderBoard() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
-                              <img
+<img
+                                loading="lazy"
+                                decoding="async"
+                                width="40"
+                                height="40"
                                 className="h-10 w-10 rounded-full border-2 border-indigo-200 dark:border-gray-600"
                                 src={c.avatar}
                                 alt={c.username}

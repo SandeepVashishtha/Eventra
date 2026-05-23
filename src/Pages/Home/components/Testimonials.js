@@ -158,7 +158,7 @@ shadow-lg
 
               {/* Author section */}
               <div className="flex items-center mt-auto pt-4 border-t border-gray-400 dark:border-gray-700">
-                <img
+                <img loading="lazy"
                   src={testimonial.image}
                   alt={testimonial.author}
                   className="h-14 w-14 rounded-full object-cover border-2 border-white/20 dark:border-gray-600"

@@ -2,38 +2,68 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiUtils } from '../../config/api';
 import { motion } from "framer-motion";
-
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 const PasswordReset = () => {
+  useDocumentTitle("Reset Password | Eventra");
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  
+
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setMessage('');
+ const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    try {
-      const response = await apiUtils.post('/api/auth/password-reset', { email });
-      const data = await response.json();
+  setError("");
+  setMessage("");
 
-      if (response.ok) {
-        setMessage('Password reset link sent! Check your email.');
-        setTimeout(() => navigate('/login'), 3000); // Redirect after 3 seconds
-      } else {
-        setError(data.message || 'Failed to send reset link. Please try again.');
-      }
-    } catch (error) {
-      setError('Network error. Please check your connection and try again.');
-    } finally {
-      setLoading(false);
+  if (!email.trim()) {
+    setError("Email is required");
+    return;
+  }
+
+  if (
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  ) {
+    setError("Invalid email format");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const response = await apiUtils.post(
+      "/api/auth/password-reset",
+      { email }
+    );
+
+    const data = await response.json();
+
+    if (response.ok) {
+      setMessage(
+        "Password reset link sent! Check your email."
+      );
+
+      setTimeout(
+        () => navigate("/login"),
+        3000
+      );
+    } else {
+      setError(
+        data.message ||
+          "Failed to send reset link. Please try again."
+      );
     }
-  };
+  } catch (error) {
+    setError(
+      "Network error. Please check your connection and try again."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     // UPDATED: Main page background
@@ -41,26 +71,26 @@ const PasswordReset = () => {
       {/* UPDATED: Form card background and border */}
       <div className="w-full max-w-md space-y-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-8 rounded-lg shadow-lg">
 
-         <motion.div
-              whileHover={{ scale: 1.05, rotate: 5 }}
-              whileTap={{ scale: 0.95 }}
-              className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg transform transition-transform duration-200"
-            >
-              <svg
-                className="w-8 h-8 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
-              </svg>
-            </motion.div>
+        <motion.div
+          whileHover={{ scale: 1.05, rotate: 5 }}
+          whileTap={{ scale: 0.95 }}
+          className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg transform transition-transform duration-200"
+        >
+          <svg
+            className="w-8 h-8 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 10V3L4 14h7v7l9-11h-7z"
+            />
+          </svg>
+        </motion.div>
         {/* UPDATED: Title text */}
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 text-center mb-0">Reset Password</h1>
         <p className="text-sm text-gray-600 dark:text-gray-400 ml-5 mt-0 pt-0">Secure your account and get back to creating events.</p>

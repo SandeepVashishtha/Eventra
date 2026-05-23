@@ -15,7 +15,6 @@ import {
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import {
   Calendar,
-  Clock,
   MapPin,
   Link2,
   Users,
@@ -32,6 +31,8 @@ import {
   Upload,
   Plus,
 } from "lucide-react";
+
+const DRAFT_KEY = "eventra_create_event_draft";
 
 const EventCreation = () => {
   const [currentStep, setCurrentStep] = useState("form");
@@ -71,6 +72,8 @@ const EventCreation = () => {
   });
   const [errors, setErrors] = useState("");
   const [newTag, setNewTag] = useState("");
+  // Track whether draft has been loaded to avoid overwriting on initial mount
+  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
 
   const categories = [
     { label: "Conference", value: "CONFERENCE" },
@@ -119,10 +122,14 @@ const EventCreation = () => {
     if (
       !newErrors.startTime &&
       !newErrors.endTime &&
-      !formData.isMultiDay &&
-      formData.startTime >= formData.endTime
+      !formData.isMultiDay
     ) {
-      newErrors.endTime = "End time must be after start time";
+      // Convert time strings (HH:MM format) to minutes for proper comparison
+      const startMinutes = parseInt(formData.startTime.replace(":", ""));
+      const endMinutes = parseInt(formData.endTime.replace(":", ""));
+      if (startMinutes >= endMinutes) {
+        newErrors.endTime = "End time must be after start time";
+      }
     }
 
     if (!formData.isVirtual && !formData.location.name.trim()) {
@@ -150,6 +157,24 @@ const EventCreation = () => {
         newErrors.registrationEnd =
           "Registration end must be after registration start";
       }
+    }
+
+    // Validate ticket tiers
+    if (formData.ticketTiers && formData.ticketTiers.length > 0) {
+      formData.ticketTiers.forEach((tier, index) => {
+        if (tier.name && tier.name.trim()) {
+          const price = Number(tier.price);
+          if (price < 0) {
+            newErrors[`ticketPrice_${index}`] = "Ticket price cannot be negative";
+          }
+          if (tier.capacity) {
+            const capacity = Number(tier.capacity);
+            if (capacity <= 0) {
+              newErrors[`ticketCapacity_${index}`] = "Ticket capacity must be greater than 0";
+            }
+          }
+        }
+      });
     }
 
     setErrors(newErrors);
@@ -197,6 +222,10 @@ const EventCreation = () => {
         i === index ? { ...tier, [field]: value } : tier
       ),
     }));
+    const errorKey = `ticketTier_${index}_${field}`;
+    if (errors[errorKey]) {
+      setErrors((prev) => ({ ...prev, [errorKey]: "" }));
+    }
   };
 
   const addTicketTier = () => {
@@ -297,13 +326,11 @@ const EventCreation = () => {
       }
 
       const eventStartDate = new Date(
-        `${formData.isMultiDay ? formData.startDate : formData.date}T${
-          formData.startTime
+        `${formData.isMultiDay ? formData.startDate : formData.date}T${formData.startTime
         }`
       );
       const eventEndDate = new Date(
-        `${formData.isMultiDay ? formData.endDate : formData.date}T${
-          formData.endTime
+        `${formData.isMultiDay ? formData.endDate : formData.date}T${formData.endTime
         }`
       );
 
@@ -320,10 +347,10 @@ const EventCreation = () => {
         location: formData.isVirtual
           ? null
           : {
-              name: formData.location.name.trim(),
-              address: formData.location.address?.trim() || "",
-              coordinates: coordinates,
-            },
+            name: formData.location.name.trim(),
+            address: formData.location.address?.trim() || "",
+            coordinates: coordinates,
+          },
         isVirtual: formData.isVirtual,
         virtualLink: formData.isVirtual ? formData.virtualLink.trim() : null,
         capacity: formData.capacity ? Number(formData.capacity) : null,
@@ -404,6 +431,18 @@ const EventCreation = () => {
   };
 
   useEffect(() => {
+    const saved = localStorage.getItem(DRAFT_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setFormData(prev => ({ ...prev, ...parsed, banner: null, bannerPreview: null }));
+        // Mark draft as loaded after initializing form data
+        setIsDraftLoaded(true);
+      } catch (e) { }
+    }
+  }, []);
+
+  useEffect(() => {
     if (successMessage || generalError) {
       const timer = setTimeout(() => {
         setSuccessMessage("");
@@ -412,6 +451,13 @@ const EventCreation = () => {
       return () => clearTimeout(timer);
     }
   }, [successMessage, generalError]);
+
+  useEffect(() => {
+    // Prevent saving before draft is loaded to avoid overwriting existing draft
+    if (!isDraftLoaded) return;
+    const { banner, bannerPreview, ...saveable } = formData;
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
+  }, [formData, isDraftLoaded]);
 
   const resetForm = () => {
     setFormData({
@@ -447,6 +493,7 @@ const EventCreation = () => {
       bannerPreview: null,
     });
     setErrors({});
+    localStorage.removeItem(DRAFT_KEY);
     setNewTag("");
     setCurrentStep("form");
   };
@@ -590,11 +637,10 @@ const EventCreation = () => {
                   onChange={handleInputChange}
                   placeholder="Enter event title (3-200 characters)"
                   maxLength={200}
-                  className={`w-full border ${
-                    errors.title
+                  className={`w-full border ${errors.title
                       ? "border-red-500"
                       : "border-gray-300 dark:border-gray-600"
-                  } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
+                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
                 />
                 {errors.title && (
                   <span className="text-red-500 text-sm mt-1">
@@ -702,7 +748,7 @@ const EventCreation = () => {
                   {/* Preview Section */}
                   {formData.bannerPreview && (
                     <div className="rounded-lg overflow-hidden border border-indigo-200 dark:border-gray-700 shadow-md">
-                      <img
+                      <img loading="lazy"
                         src={formData.bannerPreview}
                         alt="Banner preview"
                         className="w-full h-48 object-cover hover:scale-[1.02] transition-transform duration-300"
@@ -712,7 +758,7 @@ const EventCreation = () => {
                 </div>
               </motion.div>
 
-              {/* Description */}
+                            {/* Description */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -729,17 +775,42 @@ const EventCreation = () => {
                   onChange={handleInputChange}
                   placeholder="Describe your event"
                   rows={4}
-                  className={`w-full border ${
-                    errors.description
+                  maxLength={500}
+                  className={`w-full border ${errors.description
                       ? "border-red-500"
                       : "border-gray-300 dark:border-gray-600"
-                  } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
+                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
                 />
-                {errors.description && (
-                  <span className="text-red-500 text-sm mt-1">
-                    {errors.description}
-                  </span>
-                )}
+
+                {/* Character counter + error row */}
+                <div className="flex justify-between items-start mt-1">
+                  <div className="flex-1">
+                    {errors.description && (
+                      <span className="text-red-500 text-sm">
+                        {errors.description}
+                      </span>
+                    )}
+                  </div>
+                  {(() => {
+                    const len = formData.description.length;
+                    const max = 500;
+                    const ratio = len / max;
+                    const counterColor =
+                      ratio >= 0.95
+                        ? "text-red-500"
+                        : ratio >= 0.8
+                        ? "text-amber-500"
+                        : "text-gray-500 dark:text-gray-400";
+                    return (
+                      <span
+                        className={`text-xs font-medium ml-2 tabular-nums ${counterColor}`}
+                        aria-live="polite"
+                      >
+                        {len} / {max}
+                      </span>
+                    );
+                  })()}
+                </div>
               </motion.div>
 
               {/* Category */}
@@ -757,11 +828,10 @@ const EventCreation = () => {
                   name="category"
                   value={formData.category}
                   onChange={handleInputChange}
-                  className={`w-full border ${
-                    errors.category
+                  className={`w-full border ${errors.category
                       ? "border-red-500"
                       : "border-gray-300 dark:border-gray-600"
-                  } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
+                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
                 >
                   <option value="">Select a category</option>
                   {categories.map((cat) => (
@@ -856,11 +926,10 @@ const EventCreation = () => {
                       value={formData.startDate}
                       onChange={handleInputChange}
                       min={todayString}
-                      className={`w-full border ${
-                        errors.startDate
+                      className={`w-full border ${errors.startDate
                           ? "border-red-500"
                           : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                        } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.startDate && (
                       <span className="text-red-500 text-sm mt-1 block">
@@ -880,11 +949,10 @@ const EventCreation = () => {
                       value={formData.endDate}
                       onChange={handleInputChange}
                       min={formData.startDate || todayString}
-                      className={`w-full border ${
-                        errors.endDate
+                      className={`w-full border ${errors.endDate
                           ? "border-red-500"
                           : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                        } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.endDate && (
                       <span className="text-red-500 text-sm mt-1 block">
@@ -903,11 +971,10 @@ const EventCreation = () => {
                       name="startTime"
                       value={formData.startTime}
                       onChange={handleInputChange}
-                      className={`w-full border ${
-                        errors.startTime
+                      className={`w-full border ${errors.startTime
                           ? "border-red-500"
                           : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                        } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.startTime && (
                       <span className="text-red-500 text-sm mt-1 block">
@@ -926,11 +993,10 @@ const EventCreation = () => {
                       name="endTime"
                       value={formData.endTime}
                       onChange={handleInputChange}
-                      className={`w-full border ${
-                        errors.endTime
+                      className={`w-full border ${errors.endTime
                           ? "border-red-500"
                           : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                        } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.endTime && (
                       <span className="text-red-500 text-sm mt-1 block">
@@ -959,11 +1025,10 @@ const EventCreation = () => {
                       value={formData.date}
                       onChange={handleInputChange}
                       min={todayString}
-                      className={`w-full border ${
-                        errors.date
+                      className={`w-full border ${errors.date
                           ? "border-red-500"
                           : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                        } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.date && (
                       <span className="text-red-500 text-sm mt-1 block">
@@ -982,11 +1047,10 @@ const EventCreation = () => {
                       name="startTime"
                       value={formData.startTime}
                       onChange={handleInputChange}
-                      className={`w-full border ${
-                        errors.startTime
+                      className={`w-full border ${errors.startTime
                           ? "border-red-500"
                           : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                        } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.startTime && (
                       <span className="text-red-500 text-sm mt-1 block">
@@ -1005,11 +1069,10 @@ const EventCreation = () => {
                       name="endTime"
                       value={formData.endTime}
                       onChange={handleInputChange}
-                      className={`w-full border ${
-                        errors.endTime
+                      className={`w-full border ${errors.endTime
                           ? "border-red-500"
                           : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                        } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.endTime && (
                       <span className="text-red-500 text-sm mt-1 block">
@@ -1058,11 +1121,10 @@ const EventCreation = () => {
                     value={formData.virtualLink}
                     onChange={handleInputChange}
                     placeholder="https://zoom.us/j/..."
-                    className={`w-full border ${
-                      errors.virtualLink
+                    className={`w-full border ${errors.virtualLink
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
-                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
+                      } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
                   />
                   {errors.virtualLink && (
                     <span className="text-red-500 text-sm mt-1">
@@ -1088,11 +1150,10 @@ const EventCreation = () => {
                       value={formData.location.name}
                       onChange={handleInputChange}
                       placeholder="Convention Center, Community Hall, etc."
-                      className={`w-full border ${
-                        errors.location
+                      className={`w-full border ${errors.location
                           ? "border-red-500"
                           : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
+                        } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
                     />
                     {errors.location && (
                       <span className="text-red-500 text-sm mt-1">
@@ -1182,11 +1243,10 @@ const EventCreation = () => {
                   placeholder="Leave empty for unlimited (max: 100,000)"
                   min="1"
                   max="100000"
-                  className={`w-full border ${
-                    errors.capacity
+                  className={`w-full border ${errors.capacity
                       ? "border-red-500"
                       : "border-gray-300 dark:border-gray-600"
-                  } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
+                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
                 />
                 {errors.capacity && (
                   <span className="text-red-500 text-sm mt-1">
@@ -1227,11 +1287,10 @@ const EventCreation = () => {
                     name="registrationEnd"
                     value={formData.registrationEnd}
                     onChange={handleInputChange}
-                    className={`w-full border ${
-                      errors.registrationEnd
+                    className={`w-full border ${errors.registrationEnd
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
-                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
+                      } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
                   />
                   {errors.registrationEnd && (
                     <span className="text-red-500 text-sm mt-1">
@@ -1320,45 +1379,66 @@ const EventCreation = () => {
                       )}
                     </div>
                     <div className="space-y-3">
-                      <input
-                        type="text"
-                        placeholder="Tier name"
-                        value={tier.name}
-                        onChange={(e) =>
-                          handleTicketTierChange(index, "name", e.target.value)
-                        }
-                        className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                      />
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="Tier name"
+                          value={tier.name}
+                          onChange={(e) =>
+                            handleTicketTierChange(index, "name", e.target.value)
+                          }
+                          className={`w-full border ${errors[`ticketTier_${index}_name`] ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500`}
+                        />
+                        {errors[`ticketTier_${index}_name`] && (
+                          <span className="text-red-500 text-sm mt-1 block">
+                            {errors[`ticketTier_${index}_name`]}
+                          </span>
+                        )}
+                      </div>
                       <div className="grid grid-cols-2 gap-3">
-                        <input
-                          type="number"
-                          placeholder="Price"
-                          min="0"
-                          step="0.01"
-                          value={tier.price}
-                          onChange={(e) =>
-                            handleTicketTierChange(
-                              index,
-                              "price",
-                              e.target.value
-                            )
-                          }
-                          className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                        />
-                        <input
-                          type="number"
-                          placeholder="Capacity (optional)"
-                          min="1"
-                          value={tier.capacity}
-                          onChange={(e) =>
-                            handleTicketTierChange(
-                              index,
-                              "capacity",
-                              e.target.value
-                            )
-                          }
-                          className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                        />
+                        <div>
+                          <input
+                            type="number"
+                            placeholder="Price"
+                            min="0"
+                            step="0.01"
+                            value={tier.price}
+                            onChange={(e) =>
+                              handleTicketTierChange(
+                                index,
+                                "price",
+                                e.target.value
+                              )
+                            }
+                            className={`w-full border ${errors[`ticketTier_${index}_price`] ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500`}
+                          />
+                          {errors[`ticketTier_${index}_price`] && (
+                            <span className="text-red-500 text-sm mt-1 block">
+                              {errors[`ticketTier_${index}_price`]}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <input
+                            type="number"
+                            placeholder="Capacity (optional)"
+                            min="1"
+                            value={tier.capacity}
+                            onChange={(e) =>
+                              handleTicketTierChange(
+                                index,
+                                "capacity",
+                                e.target.value
+                              )
+                            }
+                            className={`w-full border ${errors[`ticketTier_${index}_capacity`] ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500`}
+                          />
+                          {errors[`ticketTier_${index}_capacity`] && (
+                            <span className="text-red-500 text-sm mt-1 block">
+                              {errors[`ticketTier_${index}_capacity`]}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <textarea
                         placeholder="Description"
@@ -1506,7 +1586,7 @@ const EventCreation = () => {
           <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl overflow-hidden border border-indigo-300 dark:border-gray-700">
             {formData.bannerPreview && (
               <div className="w-full h-64 overflow-hidden">
-                <img
+                <img loading="lazy"
                   src={formData.bannerPreview}
                   alt="Event banner"
                   className="w-full h-full object-cover"
@@ -1548,8 +1628,8 @@ const EventCreation = () => {
                     <p className="text-gray-600 dark:text-gray-400">
                       {formData.isMultiDay
                         ? `${formatDate(formData.startDate)} - ${formatDate(
-                            formData.endDate
-                          )}`
+                          formData.endDate
+                        )}`
                         : formatDate(formData.date)}
                     </p>
 

@@ -7,97 +7,487 @@ import ConfirmationModal from "../common/ConfirmationModal";
 import { toast } from "react-toastify";
 import { UserCog } from "lucide-react";
 import {
-  Home, Calendar, Sparkles, FolderKanban, Users, Trophy,
-  Info, LayoutDashboard, User as UserIcon, LogOut, LogIn,
-  MessageSquare, Book, HelpCircle, ChevronDown, MousePointer
+  Home,
+  Calendar,
+  Sparkles,
+  FolderKanban,
+  Users,
+  Trophy,
+  Info,
+  LayoutDashboard,
+  User as UserIcon,
+  LogOut,
+  LogIn,
+  MessageSquare,
+  Book,
+  Bookmark,
+  Bell,
+  HelpCircle,
+  ChevronDown,
+  MousePointer,
+  Moon,
+  Sun,
+  MoreHorizontal
 } from "lucide-react";
 
+// --- Helpers to reduce complexity ---
+const getUserDisplayNames = (user) => {
+  if (!user) return { primary: "User", secondary: null };
+  const primary = (user.fullName?.trim()) || 
+                 [user.firstName, user.lastName].filter(Boolean).join(" ").trim() || 
+                 (user.username?.trim()) || 
+                 (user.email?.trim()) || 
+                 "User";
+  const secondaryCand = (user.email?.trim()) || (user.username?.trim()) || "";
+  const secondary = secondaryCand && secondaryCand !== primary ? secondaryCand : null;
+  return { primary, secondary };
+};
+
+const clearBodyScrollStyles = () => {
+  try {
+    const stored = document.body.style.top;
+    Object.assign(document.body.style, { position: "", top: "", left: "", right: "", width: "" });
+    if (stored) window.scrollTo(0, parseInt(stored, 10) * -1 || 0);
+  } catch (e) { /* ignore */ }
+};
+
+const setBodyScrollStyles = (top) => {
+  Object.assign(document.body.style, { position: "fixed", top: `-${top}px`, left: "0", right: "0", width: "100%" });
+};
+
+const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
+  if (isMobile) {
+    return (
+      <motion.button
+        whileTap={{ scale: 0.95 }}
+        onClick={toggleTheme}
+        className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-xl bg-zinc-100 dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 font-semibold border border-zinc-200 dark:border-zinc-700/50 hover:bg-zinc-200 dark:hover:bg-zinc-700/80 transition-all"
+      >
+        {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        <span>{isDarkMode ? "Dark Mode OFF" : "Dark Mode ON"}</span>
+      </motion.button>
+    );
+  }
+  return (
+    <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={toggleTheme}
+      title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group"
+    >
+      <motion.span
+        key={isDarkMode ? "sun" : "moon"}
+        initial={{ rotate: -90, opacity: 0 }}
+        animate={{ rotate: 0, opacity: 1 }}
+        exit={{ rotate: 90, opacity: 0 }}
+        transition={{ duration: 0.3 }}
+        className="text-zinc-600 group-hover:text-indigo-500 dark:text-zinc-400 dark:group-hover:text-indigo-400"
+      >
+        {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+      </motion.span>
+      <span className="text-[10px] font-bold tracking-widest text-zinc-500 dark:text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 uppercase">
+        {isDarkMode ? "LIGHT" : "DARK"}
+      </span>
+    </motion.button>
+  );
+};
+
+const CursorToggleButton = ({ cursorEnabled, toggleCursor, isMobile }) => {
+  if (isMobile) {
+    return (
+      <motion.button
+        whileTap={{ scale: 0.95 }}
+        onClick={toggleCursor}
+        className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-xl bg-zinc-100 dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 font-semibold border border-zinc-200 dark:border-zinc-700/50 hover:bg-zinc-200 dark:hover:bg-zinc-700/80 transition-all"
+      >
+        {cursorEnabled ? <MousePointer className="w-5 h-5 text-indigo-500" /> : <MousePointer className="w-5 h-5 text-zinc-400" />}
+        <span>{cursorEnabled ? "Cursor: FLUID" : "Cursor: STATIC"}</span>
+      </motion.button>
+    );
+  }
+  return (
+    <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={toggleCursor}
+      title={cursorEnabled ? "Disable Fluid Cursor" : "Enable Fluid Cursor"}
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group"
+    >
+      {cursorEnabled ? (
+        <MousePointer className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+      ) : (
+        <MousePointer className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+      )}
+      <span className={`text-[10px] font-bold tracking-widest uppercase ${
+        cursorEnabled
+          ? "text-indigo-500 dark:text-indigo-400"
+          : "text-zinc-400 dark:text-zinc-500"
+      }`}>
+        {cursorEnabled ? "FLUID" : "STATIC"}
+      </span>
+    </motion.button>
+  );
+};
+
+const AuthButtons = ({ isMobile, closeAllMenus }) => (
+  <div className={isMobile ? "space-y-3 mt-4" : "flex items-center space-x-6"}>
+    <Link 
+      to="/login" 
+      onClick={isMobile ? closeAllMenus : undefined} 
+      className={isMobile 
+        ? "flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-white bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200 transition-all duration-300"
+        : "text-sm font-semibold text-zinc-600 hover:text-indigo-600 dark:text-zinc-300 dark:hover:text-indigo-400 transition-colors whitespace-nowrap"
+      }
+    >
+      {isMobile && <LogIn className="w-5 h-5" />}Sign In
+    </Link>
+    <Link 
+      to="/signup" 
+      onClick={isMobile ? closeAllMenus : undefined} 
+      className={isMobile
+        ? "flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-zinc-900 dark:text-white bg-transparent border-2 border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all duration-300"
+        : "flex items-center justify-center px-6 py-2.5 text-sm font-bold text-white transition-all duration-300 bg-indigo-600 hover:bg-indigo-700 rounded-full shadow-md hover:shadow-lg hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-indigo-500/30 whitespace-nowrap"
+      }
+    >
+      {isMobile && <Sparkles className="w-5 h-5" />}Get Started
+    </Link>
+  </div>
+);
+
+const MobileNavLink = ({ item, isActive, onClick }) => (
+  <Link
+    to={item.href}
+    onClick={onClick}
+    className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium border ${
+      isActive
+        ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
+        : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 border-transparent"
+    }`}
+  >
+    {item.icon}{item.name}
+  </Link>
+);
+
+const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, location }) => (
+  <div key={item.name}>
+    <button
+      onClick={onToggle}
+      className={`flex items-center justify-between w-full px-4 py-2.5 rounded-lg transition-colors text-left text-base font-medium border ${
+        isActive
+          ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
+          : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 border-transparent"
+      }`}
+    >
+      <span className="flex items-center gap-3">{item.icon} {item.name}</span>
+      <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+    </button>
+    {isOpen && (
+      <div className="mt-2 ml-3 pl-3 border-l-2 border-gray-200 dark:border-white/20 space-y-1">
+        {item.subItems.map((sub) => {
+          const isSubActive = location.pathname.startsWith(sub.href);
+          return (
+            <Link
+              key={sub.name}
+              to={sub.href}
+              onClick={closeAllMenus}
+              className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium border ${
+                isSubActive
+                  ? "bg-indigo-100/40 dark:bg-indigo-500/15 border-indigo-200/50 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
+                  : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white border-transparent"
+              }`}
+            >
+              {sub.icon}{sub.name}
+            </Link>
+          );
+        })}
+      </div>
+    )}
+  </div>
+);
+
+const DesktopNavLink = ({ item, isActive }) => (
+  <Link
+    to={item.href}
+    className={`relative group text-[13px] xl:text-[14px] font-medium transition-all duration-200 whitespace-nowrap px-3.5 py-1.5 rounded-lg ${
+      isActive
+        ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+        : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
+    }`}
+  >
+    <span className="relative z-10">{item.name}</span>
+
+    {isActive && (
+      <>
+        <motion.span
+          layoutId="activeBox"
+          className="absolute inset-0 bg-indigo-100/60 dark:bg-indigo-500/20 border border-indigo-200/80 dark:border-indigo-500/50 rounded-lg -z-0"
+          transition={{ type: "spring", stiffness: 380, damping: 30 }}
+        />
+        <motion.span
+          layoutId="activeBoxGlow"
+          className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
+          transition={{ type: "spring", stiffness: 380, damping: 30 }}
+        />
+      </>
+    )}
+
+  </Link>
+);
+
+const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location }) => (
+  <div className="relative">
+  const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location }) => (
+  <div className="relative">
+    <button
+      onClick={onToggle}
+      className={`relative group flex items-center gap-1.5 text-[13px] xl:text-[14px] font-medium transition-all duration-200 whitespace-nowrap px-3.5 py-1.5 rounded-lg ${
+        isActive || isOpen
+          ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+          : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
+      }`}
+    >
+      <span className="relative z-10 flex items-center gap-1">
+        {item.name}
+        <ChevronDown
+          className={`w-3.5 h-3.5 transition-transform duration-200 ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        />
+      </span>
+
+      {(isActive || isOpen) && (
+        <>
+          <motion.span
+            layoutId="activeBox"
+            className="absolute inset-0 bg-indigo-100/60 dark:bg-indigo-500/20 border border-indigo-200/80 dark:border-indigo-500/50 rounded-lg -z-0"
+            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+          />
+          <motion.span
+            layoutId="activeBoxGlow"
+            className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
+            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+          />
+        </>
+      )}
+    </button>
+
+    {isOpen && (
+      <motion.div
+        initial={{ opacity: 0, y: 15, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        className="absolute left-1/2 -translate-x-1/2 mt-4 w-60 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-3xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(99,102,241,0.1)] rounded-2xl z-50 border border-white/40 dark:border-zinc-700/40 p-2 overflow-hidden"
+      >
+        {item.subItems.map((sub) => (
+          <Link
+            key={sub.name}
+            to={sub.href}
+            onClick={() => setOpenDropdown(null)}
+            className={`group flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium rounded-lg transition-all duration-200 border ${
+              location.pathname.startsWith(sub.href)
+                ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
+                : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-transparent"
+            }`}
+          >
+            {React.cloneElement(sub.icon, {
+              className: `w-5 h-5 transition-colors ${
+                location.pathname.startsWith(sub.href)
+                  ? "text-indigo-600 dark:text-indigo-400"
+                  : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
+              }`,
+            })}
+            {sub.name}
+          </Link>
+        ))}
+      </motion.div>
+    )}
+  </div>
+);
+const MobileDrawerFooter = ({ 
+  isAuthenticated, user, primaryLine, secondaryLine, closeAllMenus, location, 
+  handleLogoutClick, isDarkMode, toggleTheme, cursorEnabled, toggleCursor 
+}) => (
+  <div className="p-4 border-t border-gray-200 dark:border-zinc-800/50 bg-gray-50 dark:bg-zinc-900/50">
+    {isAuthenticated() ? (
+      <MobileUserSection 
+        user={user} 
+        primaryLine={primaryLine} 
+        secondaryLine={secondaryLine} 
+        closeAllMenus={closeAllMenus} 
+        location={location} 
+        handleLogoutClick={handleLogoutClick} 
+      />
+    ) : (
+      <AuthButtons isMobile={true} closeAllMenus={closeAllMenus} />
+    )}
+    <div className="flex gap-3 mt-4">
+      <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={true} />
+      <CursorToggleButton cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} isMobile={true} />
+    </div>
+  </div>
+);
+
+const UserProfileDropdown = ({ 
+  user, primaryLine, secondaryLine, showProfileDropdown, setShowProfileDropdown, 
+  location, handleLogoutClick 
+}) => (
+  <div className="relative profile-container">
+    <button 
+      onClick={() => setShowProfileDropdown(!showProfileDropdown)} 
+      className="flex items-center gap-2 text-sm font-medium text-black/90 dark:text-white/90 hover:text-black dark:hover:text-white transition-colors"
+    >
+      {user?.profilePicture ? (
+        <img src={user.profilePicture} alt="Profile" className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20" onError={(e) => (e.currentTarget.style.display = "none")} />
+      ) : (
+        <div className="w-8 h-8 rounded-full dark:bg-white/20 bg-gray-300 flex items-center justify-center">
+          <UserIcon className="w-4 h-4 text-gray-600 dark:text-white" />
+        </div>
+      )}
+    </button>
+    <AnimatePresence>
+      {showProfileDropdown && (
+        <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} transition={{ duration: 0.15 }}
+          className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-900 rounded-lg shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-800">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+            <div className="flex items-center gap-3">
+              {user?.profilePicture ? (
+                <img src={user.profilePicture} alt="Profile" className="w-12 h-12 rounded-full object-cover ring-2 ring-purple-500/20" onError={(e) => (e.currentTarget.style.display = "none")} />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-800 to-indigo-950 flex items-center justify-center">
+                  <UserIcon className="w-6 h-6 text-white" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{primaryLine}</p>
+                {secondaryLine && <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{secondaryLine}</p>}
+              </div>
+            </div>
+          </div>
+          <div className="p-2 bg-white dark:bg-gray-900">
+            <Link to="/dashboard" onClick={() => setShowProfileDropdown(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/dashboard" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
+              <LayoutDashboard className="w-4 h-4" />Dashboard
+            </Link>
+            <Link to="/dashboard/achievements" onClick={() => setShowProfileDropdown(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/dashboard/achievements" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
+              <Trophy className="w-4 h-4" />Achievements
+            </Link>
+            <Link to="/profile" onClick={() => setShowProfileDropdown(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/profile" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
+              <UserCog className="w-4 h-4" />Edit Profile
+            </Link>
+          </div>
+          <div className="p-2 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+            <button onClick={handleLogoutClick} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+              <LogOut className="w-4 h-4" />Logout
+            </button>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
+);
+
+const MobileUserSection = ({ 
+  user, primaryLine, secondaryLine, closeAllMenus, location, handleLogoutClick 
+}) => (
+  <div className="space-y-1">
+    <div className="flex items-center gap-3 px-3 py-2 mb-2">
+      {user?.profilePicture ? (
+        <img src={user.profilePicture} alt="Profile" className="w-10 h-10 rounded-full object-cover" />
+      ) : (
+        <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white">
+          <UserIcon className="w-6 h-6" />
+        </div>
+      )}
+      <div>
+        <p className="font-semibold text-gray-800 dark:text-white truncate">{primaryLine}</p>
+        {secondaryLine && <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{secondaryLine}</p>}
+      </div>
+    </div>
+    <Link to="/dashboard" onClick={closeAllMenus} className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium ${location.pathname === "/dashboard" ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"}`}>
+      <LayoutDashboard className="w-5 h-5" />Dashboard
+    </Link>
+    <Link to="/dashboard/achievements" onClick={closeAllMenus} className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium ${location.pathname === "/dashboard/achievements" ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"}`}>
+      <Trophy className="w-5 h-5" />Achievements
+    </Link>
+    <Link to="/profile" onClick={closeAllMenus} className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors text-lg font-medium ${location.pathname === "/profile" ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"}`}>
+      <UserCog className="w-5 h-5" />Edit Profile
+    </Link>
+    <button onClick={handleLogoutClick} className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors font-medium">
+      <LogOut className="w-5 h-5" />Logout
+    </button>
+  </div>
+);
+
+// Top-level nav items kept lean so they never overflow at xl (1280px+).
+// About / FAQ / Contact are grouped under "More" to prevent collisions.
 const NAV_ITEMS = [
   { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
   { name: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
-  { name: "Hackathons", href: "/hackathons", icon: <Sparkles className="w-5 h-5" /> },
+  { name: "Bookmarks", href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
+  { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
+  { name: "Hackathons", href: "/hackathons", icon: <Trophy className="w-5 h-5" /> },
   { name: "Projects", href: "/projects", icon: <FolderKanban className="w-5 h-5" /> },
+  { name: "Home",       href: "/",          icon: <Home         className="w-5 h-5" /> },
+  { name: "Events",     href: "/events",     icon: <Calendar     className="w-5 h-5" /> },
+  { name: "Bookmarks",  href: "/bookmarks",  icon: <Bookmark     className="w-5 h-5" /> },
+  { name: "Hackathons", href: "/hackathons", icon: <Trophy       className="w-5 h-5" /> },
+  { name: "Projects",   href: "/projects",   icon: <FolderKanban className="w-5 h-5" /> },
   {
     name: "Community",
     icon: <Users className="w-5 h-5" />,
     subItems: [
-      { name: "Leaderboard", href: "/leaderBoard", icon: <Trophy className="w-5 h-5" /> },
-      { name: "Contributors", href: "/contributors", icon: <Users className="w-5 h-5" /> },
-      { name: "Contributors Guide", href: "/contributorguide", icon: <Book className="w-5 h-5" /> },
-      { name: "Community Events", href: "/communityEvent", icon: <Users className="w-5 h-5" /> },
+      { name: "Leaderboard",       href: "/leaderBoard",    icon: <Trophy       className="w-5 h-5" /> },
+      { name: "Contributors",      href: "/contributors",   icon: <Users        className="w-5 h-5" /> },
+      { name: "Contributors Guide",href: "/contributorguide",icon: <Book        className="w-5 h-5" /> },
+      { name: "Community Events",  href: "/communityEvent", icon: <Users        className="w-5 h-5" /> },
     ],
   },
-  { name: "About", href: "/about", icon: <Info className="w-5 h-5" /> },
-  { name: "FAQ", href: "/faq", icon: <HelpCircle className="w-5 h-5" /> },
-  { name: "Contact", href: "/contact", icon: <MessageSquare className="w-5 h-5" /> },
+  {
+    name: "More",
+    icon: <MoreHorizontal className="w-5 h-5" />,
+    subItems: [
+      { name: "About",   href: "/about",   icon: <Info          className="w-5 h-5" /> },
+      { name: "FAQ",     href: "/faq",     icon: <HelpCircle    className="w-5 h-5" /> },
+      { name: "Contact", href: "/contact", icon: <MessageSquare className="w-5 h-5" /> },
+    ],
+  },
 ];
+
+const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile }) => (
+  <>
+    {NAV_ITEMS.map((item) => {
+      const isActive = item.href 
+        ? (item.href === "/" ? location.pathname === "/" : location.pathname.startsWith(item.href))
+        : item.subItems?.some(s => location.pathname.startsWith(s.href));
+      
+      if (item.subItems) {
+        return isMobile ? (
+          <MobileNavGroup key={item.name} item={item} isActive={isActive} isOpen={openDropdown === item.name} onToggle={() => onToggleGroup(item.name)} closeAllMenus={onLinkClick} location={location} />
+        ) : (
+          <DesktopNavGroup key={item.name} item={item} isActive={isActive} isOpen={openDropdown === item.name} onToggle={(e) => { e.stopPropagation(); onToggleGroup(item.name); }} setOpenDropdown={onToggleGroup} location={location} />
+        );
+      }
+      return isMobile ? (
+        <MobileNavLink key={item.name} item={item} isActive={isActive} onClick={onLinkClick} />
+      ) : (
+        <DesktopNavLink key={item.name} item={item} isActive={isActive} />
+      );
+    })}
+  </>
+);
 
 const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   const location = useLocation();
   return (
-    <div className="hidden lg:flex absolute left-[48%] transform -translate-x-1/2 space-x-5 z-10">
-      {NAV_ITEMS.map((item) => {
-        const isActive = item.href
-          ? location.pathname === item.href
-          : item.subItems?.some((sub) => location.pathname === sub.href);
-        if (item.subItems) {
-          return (
-            <div key={item.name} className="relative">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setOpenDropdown(openDropdown === item.name ? null : item.name);
-                }}
-                className={`flex items-center gap-1 text-base font-medium transition-colors ${
-                  isActive || openDropdown === item.name
-                    ? "text-black dark:text-white"
-                    : "text-black/70 hover:text-black dark:text-white/70 dark:hover:text-white"
-                }`}
-              >
-                {item.name}
-                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${openDropdown === item.name ? "rotate-180" : ""}`} />
-              </button>
-              {openDropdown === item.name && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute left-1/2 -translate-x-1/2 mt-4 w-56 bg-white/90 dark:bg-black/80 backdrop-blur-md shadow-xl rounded-lg z-50 border border-black/10 dark:border-white/20 p-2"
-                >
-                  {item.subItems.map((sub) => (
-                    <Link
-                      key={sub.name}
-                      to={sub.href}
-                      onClick={() => setOpenDropdown(null)}
-                      className={`group flex items-center gap-3 w-full px-3 py-2 text-base font-medium rounded-md transition-colors ${
-                        location.pathname === sub.href
-                          ? "bg-black/10 dark:bg-white/15 text-black dark:text-white"
-                          : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
-                      }`}
-                    >
-                      {React.cloneElement(sub.icon, { className: "w-5 h-5 text-gray-500 dark:text-gray-400" })}
-                      {sub.name}
-                    </Link>
-                  ))}
-                </motion.div>
-              )}
-            </div>
-          );
-        }
-        return (
-          <Link
-            key={item.name}
-            to={item.href}
-            className={`text-base font-medium transition-colors ${
-              isActive
-                ? "text-black dark:text-white"
-                : "text-black/70 hover:text-black dark:text-white/70 dark:hover:text-white"
-            }`}
-          >
-            {item.name}
-          </Link>
-        );
-      })}
+    // gap-4 keeps items from crowding; flex-1 lets this section grow/shrink naturally
+    <div className="hidden lg:flex items-center justify-center gap-4 2xl:gap-6 flex-1 min-w-0">
+      <NavList 
+        location={location} 
+        openDropdown={openDropdown} 
+        onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)} 
+        isMobile={false} 
+      />
     </div>
   );
 };
@@ -108,139 +498,52 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
   const { user, isAuthenticated } = useAuth();
 
   return (
-    <div
-      id="mobile-drawer"
-      ref={drawerRef}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      className={`fixed top-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-sm shadow-2xl z-50 flex flex-col transform transition-transform duration-300 ease-in-out bg-white backdrop-blur-lg dark:bg-gray-900/95 ${isOpen ? "translate-x-0" : "translate-x-full"}`}
-      role="dialog"
-      aria-modal={isOpen}
-    >
-      <div className="flex items-center justify-between p-3.5 sm:p-4 border-b border-gray-200 dark:border-white/20">
-        <h2 className="text-xl sm:text-2xl font-bold text-black dark:text-white" style={{ fontFamily: '"Anton", sans-serif' }}>
-          Eventra
-        </h2>
-        <div className="flex items-center gap-3">
-          <button onClick={toggleTheme} className="p-2 rounded-full text-text-light bg-gray-100 dark:bg-white/10 hover:bg-gray-200">
-            {isDarkMode ? '☀️' : '🌙'}
-          </button>
-          <button
-            ref={closeBtnRef}
-            onClick={closeAllMenus}
-            className="p-2 rounded-full text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20"
-          >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      </div>
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          id="mobile-drawer"
+          ref={drawerRef}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          className="fixed top-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-sm shadow-2xl z-50 flex flex-col bg-white backdrop-blur-lg dark:bg-gray-900/95"
+          role="dialog"
+          aria-modal="true"
+          initial={{ x: "100%" }}
+          animate={{ x: 0 }}
+          exit={{ x: "100%" }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+        >
+          <MobileDrawerHeader closeBtnRef={closeBtnRef} closeAllMenus={closeAllMenus} isDarkMode={isDarkMode} />
 
-      <div className="flex-grow p-3.5 sm:p-4 space-y-2 overflow-y-auto">
-        {NAV_ITEMS.map((item) => {
-          const isActive = item.href
-            ? location.pathname === item.href
-            : item.subItems?.some((sub) => location.pathname === sub.href);
-          if (item.subItems) {
-            return (
-              <div key={item.name}>
-                <button
-                  onClick={() => setOpenDropdown(openDropdown === item.name ? null : item.name)}
-                  className={`flex items-center justify-between w-full px-4 py-2.5 rounded-lg transition-colors text-left text-base font-medium ${
-                    isActive
-                      ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
-                  }`}
-                >
-                  <span className="flex items-center gap-3">{item.icon} {item.name}</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown === item.name ? "rotate-180" : ""}`} />
-                </button>
-                {openDropdown === item.name && (
-                  <div className="mt-2 ml-3 pl-3 border-l-2 border-gray-200 dark:border-white/20 space-y-1">
-                    {item.subItems.map((sub) => (
-                      <Link
-                        key={sub.name}
-                        to={sub.href}
-                        onClick={closeAllMenus}
-                        className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium ${
-                          location.pathname === sub.href
-                            ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
-                            : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white"
-                        }`}
-                      >
-                        {sub.icon}{sub.name}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          }
-          return (
-            <Link
-              key={item.name}
-              to={item.href}
-              onClick={closeAllMenus}
-              className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium ${
-                isActive
-                  ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
-                  : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
-              }`}
-            >
-              {item.icon}{item.name}
-            </Link>
-          );
-        })}
-      </div>
+          <div className="flex-grow p-3.5 sm:p-4 space-y-2 overflow-y-auto">
+            <NavList 
+              location={location} 
+              openDropdown={openDropdown} 
+              onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)} 
+              onLinkClick={closeAllMenus} 
+              isMobile={true} 
+            />
+          </div>
 
-      <div className="p-4 border-t border-gray-200 dark:border-white/20">
-        {isAuthenticated() ? (
-          <div className="space-y-1">
-            <div className="flex items-center gap-3 px-3 py-2 mb-2">
-              {user?.profilePicture ? (
-                <img src={user.profilePicture} alt="Profile" className="w-10 h-10 rounded-full object-cover" />
-              ) : (
-                <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white">
-                  <UserIcon className="w-6 h-6" />
-                </div>
-              )}
-              <div>
-                <p className="font-semibold text-gray-800 dark:text-white truncate">{primaryLine}</p>
-                {secondaryLine && <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{secondaryLine}</p>}
-              </div>
-            </div>
-            <Link to="/dashboard" onClick={closeAllMenus} className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium ${location.pathname === "/dashboard" ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"}`}>
-              <LayoutDashboard className="w-5 h-5" />Dashboard
-            </Link>
-            <Link to="/profile" onClick={closeAllMenus} className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors text-lg font-medium ${location.pathname === "/profile" ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"}`}>
-              <UserCog className="w-5 h-5" />Edit Profile
-            </Link>
-            <button onClick={handleLogoutClick} className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors font-medium">
-              <LogOut className="w-5 h-5" />Logout
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <Link to="/login" onClick={closeAllMenus} className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-semibold text-white bg-black hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 border border-transparent">
-              <LogIn className="w-5 h-5" />Sign In
-            </Link>
-            <Link to="/signup" onClick={closeAllMenus} className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-semibold text-black dark:text-white bg-white dark:bg-black/50 hover:bg-gray-100 dark:hover:bg-white/10 border-2 border-black/15 dark:border-white/20 hover:border-black/25 dark:hover:border-white/30 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300">
-              <Sparkles className="w-5 h-5" />Get Started
-            </Link>
-          </div>
-        )}
-        <hr className="my-3" />
-        <button onClick={toggleCursor} className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg bg-black text-white hover:bg-zinc-800 transition-colors font-medium">
-          <MousePointer className="w-5 h-5" />
-          {cursorEnabled ? "Turn Cursor OFF" : "Turn Cursor ON"}
-        </button>
-      </div>
-    </div>
+          <MobileDrawerFooter 
+            isAuthenticated={isAuthenticated} 
+            user={user} 
+            primaryLine={primaryLine} 
+            secondaryLine={secondaryLine} 
+            closeAllMenus={closeAllMenus} 
+            location={location} 
+            handleLogoutClick={handleLogoutClick} 
+            isDarkMode={isDarkMode} 
+            toggleTheme={toggleTheme} 
+            cursorEnabled={cursorEnabled} 
+            toggleCursor={toggleCursor} 
+          />
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
-
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -256,31 +559,17 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const navRef = useRef(null);
 
   const { user, isAuthenticated, logout } = useAuth();
+  const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const primaryLine =
-    (user?.fullName && user.fullName.trim()) ||
-    [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() ||
-    (user?.username && user.username.trim()) ||
-    (user?.email && user.email.trim()) ||
-    "User";
-  const secondaryCandidate = (user?.email && user.email.trim()) || (user?.username && user.username.trim()) || "";
-  const secondaryLine = secondaryCandidate && secondaryCandidate !== primaryLine ? secondaryCandidate : null;
+  const { primary: primaryLine, secondary: secondaryLine } = getUserDisplayNames(user);
 
   const closeAllMenus = () => {
     setShowProfileDropdown(false);
     setIsMobileMenuOpen(false);
     setOpenDropdown(null);
-    try {
-      const stored = document.body.style.top;
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.left = "";
-      document.body.style.right = "";
-      document.body.style.width = "";
-      if (stored) window.scrollTo(0, parseInt(stored || "0", 10) * -1 || 0);
-    } catch (e) { /* ignore */ }
+    clearBodyScrollStyles();
     try { toggleBtnRef.current?.focus(); } catch (e) { /* ignore */ }
   };
 
@@ -290,33 +579,12 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
   useEffect(() => {
     if (isMobileMenuOpen) {
-      const prevTop = window.scrollY || 0;
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${prevTop}px`;
-      document.body.style.left = "0";
-      document.body.style.right = "0";
-      document.body.style.width = "100%";
+      setBodyScrollStyles(window.scrollY || 0);
       setTimeout(() => closeBtnRef.current?.focus(), 50);
     } else {
-      const stored = document.body.style.top;
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.left = "";
-      document.body.style.right = "";
-      document.body.style.width = "";
-      if (stored) window.scrollTo(0, parseInt(stored || "0", 10) * -1 || 0);
+      clearBodyScrollStyles();
     }
-    return () => {
-      try {
-        const stored = document.body.style.top;
-        document.body.style.position = "";
-        document.body.style.top = "";
-        document.body.style.left = "";
-        document.body.style.right = "";
-        document.body.style.width = "";
-        if (stored) window.scrollTo(0, parseInt(stored || "0", 10) * -1 || 0);
-      } catch (e) { /* ignore */ }
-    };
+    return clearBodyScrollStyles;
   }, [isMobileMenuOpen]);
 
   useEffect(() => { closeAllMenus(); }, [location.pathname]);
@@ -355,7 +623,10 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
     touchCurrentXRef.current = null;
   };
 
-  const handleLogoutClick = () => { setShowLogoutModal(true); setShowProfileDropdown(false); };
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
+    setShowProfileDropdown(false);
+  };
   const handleConfirmLogout = () => {
     setShowLogoutModal(false);
     logout();
@@ -367,85 +638,88 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   return (
     <>
       <div
-        className={`fixed inset-0 bg-black/60 z-30 transition-opacity duration-300 ${isMobileMenuOpen || showProfileDropdown || openDropdown || showLogoutModal ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        className={`fixed inset-0 z-30 transition-opacity duration-300 ${
+          isMobileMenuOpen || showLogoutModal
+            ? "bg-black/60 opacity-100"
+            : (showProfileDropdown || openDropdown)
+            ? "bg-transparent opacity-100"
+            : "opacity-0 pointer-events-none"
+        }`}
         onClick={closeAllMenus}
       />
 
-      <nav ref={navRef} data-aos="fade-down" data-aos-once="true" data-aos-duration="1000"
-        className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white dark:bg-gray-900 border-b border-black/10 dark:border-white/10">
-        <div className="w-full flex items-center h-20 px-6 md:px-12 relative">
-          <Link to="/" className="flex-shrink-0 z-20">
-            <h2 className="text-3xl font-semibold tracking-tight text-black dark:text-white" style={{ fontFamily: '"Anton", sans-serif' }}>
-              Eventra
-            </h2>
+      <nav
+        ref={navRef}
+        data-aos="fade-down"
+        data-aos-once="true"
+        data-aos-duration="1000"
+        className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 transition-colors duration-300 relative"
+      >
+        <div className="neon-navbar-border"></div>
+        <div className="max-w-screen-2xl mx-auto flex items-center h-[68px] px-6 xl:px-10 gap-6">
+          {/* ── Logo ── left-anchored, never squishes */}
+          <Link to="/" className="flex items-center shrink-0 z-20">
+          <h2
+  className="bg-gradient-to-r from-zinc-950 via-indigo-600 to-violet-600 dark:from-white dark:via-indigo-300 dark:to-indigo-500 bg-clip-text text-transparent"
+  style={{
+    fontFamily: "'Oxanium', monospace",
+    fontSize: "1.44rem",
+    fontWeight: 800,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    margin: 0,
+    lineHeight: 1,
+  }}
+>
+  Eventra
+</h2>
           </Link>
 
-          <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
+          {/* ── Nav links ── takes all remaining space, items centered */}
+          <div className="flex-1 min-w-0">
+            <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
+        {/* Right Group: Auth Controls and Mobile Toggle */}
+<div className="hidden lg:flex items-center gap-2 shrink-0 justify-end">
+  <ThemeToggleButton
+    isDarkMode={isDarkMode}
+    toggleTheme={toggleTheme}
+    isMobile={false}
+  />
 
-          <div className="hidden lg:flex items-center ml-auto z-20">
-            <button onClick={toggleCursor} className="flex items-center gap-1 px-2 py-1 mr-3 text-s font-normal bg-black text-white rounded-md hover:bg-zinc-800 transition-all">
-              <MousePointer className="w-4 h-4" />
-              {cursorEnabled ? "OFF" : "ON"}
-            </button>
-            <div className="flex items-center space-x-2 ml-2">
-              {isAuthenticated() ? (
-                <div className="relative profile-container">
-                  <button onClick={() => setShowProfileDropdown(!showProfileDropdown)} className="flex items-center gap-2 text-sm font-medium text-black/90 dark:text-white/90 hover:text-black dark:hover:text-white transition-colors">
-                    {user?.profilePicture ? (
-                      <img src={user.profilePicture} alt="Profile" className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20" onError={(e) => (e.currentTarget.style.display = "none")} />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full dark:bg-white/20 bg-gray-300 flex items-center justify-center">
-                        <UserIcon className="w-4 h-4 text-gray-600 dark:text-white" />
-                      </div>
-                    )}
-                  </button>
-                  <AnimatePresence>
-                    {showProfileDropdown && (
-                      <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} transition={{ duration: 0.15 }}
-                        className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-900 rounded-lg shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-800">
-                        <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
-                          <div className="flex items-center gap-3">
-                            {user?.profilePicture ? (
-                              <img src={user.profilePicture} alt="Profile" className="w-12 h-12 rounded-full object-cover ring-2 ring-purple-500/20" onError={(e) => (e.currentTarget.style.display = "none")} />
-                            ) : (
-                              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-800 to-indigo-950 flex items-center justify-center">
-                                <UserIcon className="w-6 h-6 text-white" />
-                              </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{primaryLine}</p>
-                              {secondaryLine && <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{secondaryLine}</p>}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="p-2 bg-white dark:bg-gray-900">
-                          <Link to="/dashboard" onClick={() => setShowProfileDropdown(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/dashboard" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
-                            <LayoutDashboard className="w-4 h-4" />Dashboard
-                          </Link>
-                          <Link to="/profile" onClick={() => setShowProfileDropdown(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/profile" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
-                            <UserCog className="w-4 h-4" />Edit Profile
-                          </Link>
-                        </div>
-                        <div className="p-2 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
-                          <button onClick={handleLogoutClick} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                            <LogOut className="w-4 h-4" />Logout
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-1">
-                  <Link to="/login" className="px-4 py-2 text-base font-medium text-black/75 hover:text-black dark:text-white/75 dark:hover:text-white transition-colors">Sign In</Link>
-                  <Link to="/signup" className="px-5 py-2 text-sm font-semibold text-white transition-all duration-300 bg-black hover:bg-zinc-800 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 dark:bg-white dark:text-black dark:hover:bg-zinc-200 focus:outline-none focus:ring-4 focus:ring-black/20 dark:focus:ring-white/20">Get Started</Link>
-                </div>
-              )}
-            </div>
-          </div>
+  <CursorToggleButton
+    cursorEnabled={cursorEnabled}
+    toggleCursor={toggleCursor}
+    isMobile={false}
+  />
 
+  <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700"></div>
+
+  {isAuthenticated() ? (
+    <UserProfileDropdown
+      user={user}
+      primaryLine={primaryLine}
+      secondaryLine={secondaryLine}
+      showProfileDropdown={showProfileDropdown}
+      setShowProfileDropdown={setShowProfileDropdown}
+      location={location}
+      handleLogoutClick={handleLogoutClick}
+    />
+  ) : (
+    <AuthButtons isMobile={false} />
+  )}
+</div>
+         
+
+          {/* Mobile menu button */}
           <div className="lg:hidden ml-auto">
-            <button ref={toggleBtnRef} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} aria-expanded={isMobileMenuOpen} aria-label="Open navigation" className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10">
+            <button 
+              ref={toggleBtnRef} 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+              aria-expanded={isMobileMenuOpen} 
+              aria-controls="mobile-drawer"
+              aria-label={isMobileMenuOpen ? "Close navigation" : "Open navigation"} 
+              className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10"
+            >
               <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
@@ -471,6 +745,8 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         secondaryLine={secondaryLine}
       />
 
+
+      {/* Confirmation Modal */}
       <ConfirmationModal
         isOpen={showLogoutModal}
         onClose={handleCancelLogout}

@@ -22,7 +22,7 @@ const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
 
 // Role assignment
 const getRoleByGitHubActivity = (contributor) => {
-  const { contributions, followers = 0, public_repos = 0, login } = contributor;
+  const { contributions, followers = 0, login } = contributor;
   if (login === "sandeepvashishtha") return "Project Lead";
 
   if (contributions > 100 && followers > 50) return "Core Maintainer";
@@ -296,11 +296,11 @@ const Contributors = () => {
                   {/* Avatar */}
                   <div className="absolute top-3 mt-3 left-1/2 -translate-x-1/2">
                     <div className="relative">
-                      <img
-                        src={c.avatar_url}
-                        alt={c.login}
-                        className="w-[65px] h-[65px] rounded-full border-4 border-black shadow-md relative z-10"
-                      />
+                      <img loading="lazy" decoding="async" width="65" height="65"
+  src={c.avatar_url}
+  alt={c.login}
+  className="w-[65px] h-[65px] rounded-full border-4 border-black shadow-md relative z-10"
+/>
                       <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 blur-sm -z-10"></div>
                     </div>
                   </div>

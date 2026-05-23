@@ -6,34 +6,157 @@ const SkeletonBlock = ({ className = "" }) => (
 );
 
 export const EventCardSkeleton = () => (
-  <div className="group relative bg-white dark:bg-gray-900 rounded-3xl shadow-xl flex flex-col overflow-hidden">
-    <div className="flex items-center px-8 py-6 gap-4 border-b border-gray-200/60 dark:border-gray-700/50">
-      <SkeletonBlock className="w-12 h-12 rounded-2xl" />
+  <div className="group relative bg-white dark:bg-gray-900 rounded-3xl shadow-xl flex flex-col overflow-hidden border border-gray-100 dark:border-gray-800">
+    <div className="flex items-center px-5 py-4 gap-4 bg-gradient-to-r from-white/80 to-indigo-50/60 dark:from-gray-900/80 dark:to-indigo-950/60 border-b border-gray-100 dark:border-gray-800">
+      <SkeletonBlock className="w-10 h-10 rounded-xl" />
       <SkeletonBlock className="h-6 flex-1" />
-      <SkeletonBlock className="h-6 w-24 rounded-full" />
+      <SkeletonBlock className="h-6 w-16 rounded-full" />
     </div>
 
-    <SkeletonBlock className="h-64 w-full" />
+    <SkeletonBlock className="h-40 w-full" />
 
-    <div className="px-8 py-6 border-b border-gray-200/60 dark:border-gray-700/50">
+    <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
       <SkeletonBlock className="h-4 w-full mb-2" />
-      <SkeletonBlock className="h-4 w-5/6 mb-2" />
-      <SkeletonBlock className="h-4 w-2/3" />
+      <SkeletonBlock className="h-4 w-5/6" />
     </div>
 
-    <div className="px-8 py-6 grid grid-cols-2 gap-6">
+    <div className="px-5 py-4 grid grid-cols-2 gap-x-4 gap-y-3 bg-gray-50/50 dark:bg-gray-800/30">
       {[...Array(4)].map((_, i) => (
-        <div key={i} className="flex items-center gap-3">
-          <SkeletonBlock className="w-8 h-8 rounded-lg" />
+        <div key={i} className="flex items-center gap-2">
+          <SkeletonBlock className="w-4 h-4 rounded" />
           <SkeletonBlock className="h-4 flex-1" />
         </div>
       ))}
     </div>
 
-    <div className="px-8 py-6 flex gap-4">
+    <div className="px-5 py-4 flex gap-3 mt-auto">
       <SkeletonBlock className="h-12 flex-1 rounded-2xl" />
       <SkeletonBlock className="h-12 flex-1 rounded-2xl" />
     </div>
+  </div>
+);
+
+export const HomeCardSkeleton = () => (
+  <div className="flex flex-col rounded-xl overflow-hidden shadow-md bg-white dark:bg-black/60 min-h-[300px] sm:min-h-[360px] ring-2 ring-sky-200 dark:ring-sky-700/60 animate-pulse">
+    <div className="p-4 sm:p-6 flex-1 flex flex-col">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
+        <SkeletonBlock className="h-6 w-24 rounded-full" />
+        <SkeletonBlock className="h-5 w-16 rounded" />
+      </div>
+
+      <SkeletonBlock className="h-7 w-3/4 mb-4" />
+      <SkeletonBlock className="h-4 w-full mb-2" />
+      <SkeletonBlock className="h-4 w-full mb-2" />
+      <SkeletonBlock className="h-4 w-2/3 mb-4" />
+
+      <div className="flex items-center mb-2">
+        <SkeletonBlock className="w-4 h-4 mr-2 rounded" />
+        <SkeletonBlock className="h-4 w-32" />
+      </div>
+
+      <div className="flex items-center mt-4">
+        <SkeletonBlock className="w-5 h-5 mr-2 rounded" />
+        <SkeletonBlock className="h-4 w-40" />
+      </div>
+    </div>
+
+    <div className="bg-gray-50 dark:bg-gray-700/50 px-4 sm:px-6 py-3 sm:py-4">
+      <SkeletonBlock className="h-10 w-full rounded-md" />
+    </div>
+  </div>
+);
+
+export const ContributorCardSkeleton = () => (
+  <div className="relative bg-white/95 dark:bg-gray-800/90 backdrop-blur-xl p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 flex flex-col items-center text-center animate-pulse">
+    <div className="absolute -top-8 left-1/2 -translate-x-1/2">
+      <SkeletonBlock className="w-20 h-20 rounded-full border-4 border-white dark:border-gray-800 shadow-xl" />
+    </div>
+
+    <div className="mt-16 w-full flex flex-col items-center">
+      <SkeletonBlock className="h-6 w-32 mb-2" />
+      <SkeletonBlock className="h-4 w-24 mb-4" />
+    </div>
+
+    <div className="grid grid-cols-3 gap-3 my-5 w-full">
+      {[...Array(3)].map((_, i) => (
+        <div
+          key={i}
+          className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 p-2 rounded-lg"
+        >
+          <SkeletonBlock className="w-4 h-4 mb-2" />
+          <SkeletonBlock className="h-4 w-8 mb-1" />
+          <SkeletonBlock className="h-3 w-10" />
+        </div>
+      ))}
+    </div>
+
+    <SkeletonBlock className="w-full h-2 rounded-full mb-4" />
+
+    <div className="flex flex-col gap-1 w-full items-center mb-4">
+      <SkeletonBlock className="h-3 w-20" />
+      <SkeletonBlock className="h-3 w-24" />
+    </div>
+
+    <SkeletonBlock className="h-10 w-32 rounded-full mt-auto" />
+  </div>
+);
+
+export const GitHubStatCardSkeleton = () => (
+  <div className="group flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-2xl px-3 py-4 sm:px-6 sm:py-6 md:px-8 shadow-lg border border-gray-100 dark:border-gray-700 relative overflow-hidden animate-pulse">
+    <div className="z-10 flex flex-col items-center space-y-2 sm:space-y-3 w-full">
+      <SkeletonBlock className="p-2 sm:p-3 md:p-4 h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-full" />
+      <SkeletonBlock className="h-6 w-16" />
+      <SkeletonBlock className="h-4 w-20" />
+    </div>
+  </div>
+);
+
+export const LeaderboardTableSkeleton = ({ rows = 10 }) => (
+  <div className="overflow-x-auto">
+    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-500">
+      <thead className="bg-gray-50 dark:bg-gray-900">
+        <tr>
+          {["Rank", "Contributor", "Points", "PRs"].map((col) => (
+            <th
+              key={col}
+              className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+            >
+              {col}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody className="bg-gradient-to-b from-indigo-50 to-white dark:from-gray-900 dark:to-black divide-y divide-gray-400 dark:divide-gray-500">
+        {[...Array(rows)].map((_, i) => (
+          <tr key={i} className="animate-pulse">
+            <td className="px-6 py-4 whitespace-nowrap">
+              <SkeletonBlock className="h-8 w-8 rounded-full mx-auto" />
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+              <div className="flex items-center">
+                <SkeletonBlock className="h-10 w-10 rounded-full" />
+                <div className="ml-4">
+                  <SkeletonBlock className="h-4 w-24 mb-2" />
+                  <SkeletonBlock className="h-3 w-16" />
+                </div>
+              </div>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+              <div className="flex items-center">
+                <SkeletonBlock className="h-4 w-4 mr-1" />
+                <SkeletonBlock className="h-4 w-12" />
+              </div>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+              <div className="flex items-center">
+                <SkeletonBlock className="h-4 w-4 mr-1" />
+                <SkeletonBlock className="h-4 w-12" />
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   </div>
 );
 
@@ -158,5 +281,137 @@ export const ProjectCardSkeleton = () => (
       <SkeletonBlock className="h-10 flex-1 rounded-lg" />
       <SkeletonBlock className="h-10 flex-1 rounded-lg" />
     </div>
+  </div>
+);
+
+export const DashboardStatCardSkeleton = () => (
+  <div className="ud-stat-card">
+    <SkeletonBlock className="ud-stat-icon h-11 w-11 rounded-xl" />
+    <div className="ud-stat-info flex-1">
+      <SkeletonBlock className="h-3 w-20 mb-2" />
+      <SkeletonBlock className="h-8 w-14 mb-2" />
+      <SkeletonBlock className="h-3 w-32" />
+    </div>
+  </div>
+);
+
+export const DashboardQuickActionSkeleton = () => (
+  <div className="ud-quick-card">
+    <SkeletonBlock className="ud-quick-icon h-10 w-10 rounded-xl" />
+    <SkeletonBlock className="h-4 w-20" />
+  </div>
+);
+
+export const DashboardListCardSkeleton = () => (
+  <div className="ud-card">
+    <div className="ud-card-head">
+      <SkeletonBlock className="h-8 w-8 rounded-lg" />
+      <SkeletonBlock className="h-5 w-32" />
+    </div>
+    {[...Array(3)].map((_, i) => (
+      <div key={i} className="ud-list-item">
+        <div className="flex-1">
+          <SkeletonBlock className="h-4 w-3/4 mb-2" />
+          <SkeletonBlock className="h-3 w-1/2" />
+        </div>
+        <SkeletonBlock className="h-6 w-16 rounded-full" />
+      </div>
+    ))}
+  </div>
+);
+
+export const DashboardItemCardSkeleton = () => (
+  <div className="ud-item-card">
+    <div className="ud-item-top">
+      <SkeletonBlock className="h-6 w-20 rounded-full" />
+      <SkeletonBlock className="h-6 w-16 rounded-full" />
+    </div>
+    <SkeletonBlock className="h-5 w-4/5 mb-3" />
+    <SkeletonBlock className="h-4 w-full mb-2" />
+    <SkeletonBlock className="h-4 w-2/3 mb-4" />
+    <SkeletonBlock className="h-6 w-24 rounded-full" />
+  </div>
+);
+
+export const DashboardProfileSkeleton = () => (
+  <div>
+    <SkeletonBlock className="h-4 w-28 mb-2" />
+    <SkeletonBlock className="h-8 w-40" />
+  </div>
+);
+
+export const DashboardSectionTitleSkeleton = () => (
+  <SkeletonBlock className="h-6 w-40 mb-4" />
+);
+
+export const AdminStatCardSkeleton = () => (
+  <div className="ad-stat-card">
+    <SkeletonBlock className="ad-stat-icon h-10 w-10 rounded-xl" />
+    <div className="flex-1">
+      <SkeletonBlock className="h-3 w-20 mb-2" />
+      <SkeletonBlock className="h-7 w-12 mb-1" />
+      <SkeletonBlock className="h-3 w-24" />
+    </div>
+  </div>
+);
+
+export const AdminTableSkeleton = ({ rows = 5 }) => (
+  <div className="ad-table-wrap">
+    <div className="ad-table">
+      {[...Array(rows)].map((_, i) => (
+        <div key={i} className="ad-table-row flex items-center gap-4 px-4 py-3">
+          <SkeletonBlock className="h-4 w-1/4" />
+          <SkeletonBlock className="h-4 w-1/3" />
+          <SkeletonBlock className="h-6 w-16 rounded-full" />
+          <SkeletonBlock className="h-4 w-20" />
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+export const AdminListCardSkeleton = () => (
+  <div className="ad-card">
+    <div className="ad-card-head">
+      <SkeletonBlock className="h-8 w-8 rounded-lg" />
+      <SkeletonBlock className="h-5 w-32" />
+    </div>
+    {[...Array(4)].map((_, i) => (
+      <div key={i} className="ad-list-item">
+        <SkeletonBlock className="ad-list-avatar h-8 w-8 rounded-full" />
+        <div className="flex-1">
+          <SkeletonBlock className="h-4 w-3/4 mb-2" />
+          <SkeletonBlock className="h-3 w-1/2" />
+        </div>
+        <SkeletonBlock className="h-6 w-16 rounded-full" />
+      </div>
+    ))}
+  </div>
+);
+
+export const DashboardTableSkeleton = ({ rows = 5 }) => (
+  <div className="ud-table-wrap">
+    <table className="ud-table">
+      <thead>
+        <tr>
+          {["Type", "Title", "Date", "Location", "Status", "Participation"].map(
+            (col) => (
+              <th key={col}>{col}</th>
+            ),
+          )}
+        </tr>
+      </thead>
+      <tbody>
+        {[...Array(rows)].map((_, i) => (
+          <tr key={i}>
+            {[...Array(6)].map((__, j) => (
+              <td key={j}>
+                <SkeletonBlock className="h-4 w-full" />
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
   </div>
 );

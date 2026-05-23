@@ -26,5 +26,6 @@ jobs:
               issue_number: prNumber,
               body: commentBody
             });
-
-            console.log('Comment added successfully.');
+            if (process.env.NODE_ENV === "development") {
+             console.log('Comment added successfully.');
+            }

@@ -8,6 +8,19 @@
   min-height: 100vh;
   background: var(--bg-color);
   font-family: 'Inter', system-ui, sans-serif;
+  --ud-space-xxs: 0.25rem;
+  --ud-space-xs: 0.5rem;
+  --ud-space-sm: 0.75rem;
+  --ud-space-md: 1rem;
+  --ud-space-lg: 1.5rem;
+  --ud-space-xl: 2rem;
+}
+
+.dark .ud-root {
+  --card-bg-color: rgba(17, 24, 39, 0.92);
+  --border-color: rgba(148, 163, 184, 0.18);
+  --text-color: #f8fafc;
+  --text-color-light: #cbd5e1;
 }
 
 /* Dark mode root */
@@ -21,7 +34,7 @@
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  padding: 1.5rem 0.75rem;
+  padding: var(--ud-space-lg) var(--ud-space-sm);
   position: sticky;
   top: 0;
   flex-shrink: 0;
@@ -33,11 +46,11 @@
 .ud-sidebar-brand {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--ud-space-xs);
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--text-color);
-  padding: 0.25rem 0.75rem 1.5rem;
+  padding: var(--ud-space-xxs) var(--ud-space-sm) var(--ud-space-lg);
   letter-spacing: -0.3px;
 }
 
@@ -56,23 +69,24 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--ud-space-xxs);
+  min-height: 0;      /* ← add this line (required for flex scroll to work) */
 }
 
 .ud-nav-item {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: var(--ud-space-sm);
   padding: 0.6rem 0.85rem;
   border-radius: 10px;
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-color-light);
-  background: none;
-  border: none;
+  background: transparent;
+  border: 1px solid transparent;
   cursor: pointer;
   text-decoration: none;
-  transition: all 0.18s ease;
+  transition: all 0.2s ease;
   width: 100%;
   text-align: left;
 }
@@ -80,14 +94,28 @@
 .ud-nav-item:hover {
   background: #f3f4f6;
   color: var(--text-color);
+  border-color: #e5e7eb;
+}
+
+.dark .ud-nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #f8fafc;
+  border-color: rgba(148, 163, 184, 0.18);
 }
 
 /* removed dark mode override (handled by CSS variables) */
 
 .ud-nav-active {
-  background: linear-gradient(135deg, #6366f115, #8b5cf615);
+  background: linear-gradient(135deg, #6366f115, #8b5cf615) !important;
   color: #6366f1 !important;
   font-weight: 600;
+  border: 1px solid #c7d2fe !important;
+}
+
+.dark .ud-nav-active {
+  background: rgba(99, 102, 241, 0.18) !important;
+  color: #c7d2fe !important;
+  border-color: rgba(129, 140, 248, 0.35) !important;
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -98,13 +126,19 @@
 .ud-nav-logout:hover {
   background: #fee2e220 !important;
   color: #ef4444 !important;
+  border-color: #fca5a5 !important;
+}
+
+.dark .ud-nav-logout:hover {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border-color: rgba(248, 113, 113, 0.3) !important;
 }
 
 .ud-sidebar-bottom {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding-top: 1rem;
+  gap: var(--ud-space-xxs);
+  padding-top: var(--ud-space-md);
   border-top: 1px solid var(--border-color);
   margin-top: auto;
 }
@@ -124,12 +158,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.25rem 2rem;
+  padding: 1.25rem var(--ud-space-xl);
   background: var(--card-bg-color);
   border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
   z-index: 10;
+}
+
+.dark .ud-topbar {
+  background: rgba(15, 23, 42, 0.92);
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -153,7 +191,7 @@
 .ud-topbar-right {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--ud-space-sm);
 }
 
 .ud-search-wrap {
@@ -164,7 +202,7 @@
 
 .ud-search-icon {
   position: absolute;
-  left: 0.75rem;
+  left: var(--ud-space-sm);
   color: var(--text-color-light);
   pointer-events: none;
 }
@@ -179,12 +217,22 @@
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+.dark .ud-search-wrap {
+  background: rgba(15, 23, 42, 0.9);
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
 .ud-search-wrap:focus-within {
   border-color: #6366f1;
   background: var(--card-bg-color);
   box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.2), 0 8px 10px -6px rgba(99, 102, 241, 0.1);
   transform: translateY(-4px) scale(1.02);
   width: 260px;
+}
+
+.dark .ud-search-wrap:focus-within {
+  background: rgba(15, 23, 42, 0.98);
+  border-color: rgba(129, 140, 248, 0.4);
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -197,6 +245,10 @@
   color: var(--text-color-light);
   pointer-events: none;
   transition: color 0.3s ease;
+}
+
+.dark .ud-search-icon {
+  color: #94a3b8;
 }
 
 .ud-search-wrap:focus-within .ud-search-icon {
@@ -230,6 +282,10 @@
   align-items: center;
 }
 
+.dark .ud-search-clear {
+  color: #cbd5e1;
+}
+
 .ud-icon-btn {
   position: relative;
   background: none;
@@ -249,6 +305,18 @@
   color: #6366f1;
   transform: scale(1.05);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.dark .ud-icon-btn {
+  background: rgba(15, 23, 42, 0.9);
+  border-color: rgba(148, 163, 184, 0.18);
+  color: #cbd5e1;
+}
+
+.dark .ud-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -274,7 +342,7 @@
 /* Notification panel */
 .ud-notif-panel {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + var(--ud-space-xs));
   right: 0;
   width: 300px;
   background: var(--card-bg-color);
@@ -285,13 +353,19 @@
   overflow: hidden;
 }
 
+.dark .ud-notif-panel {
+  background: rgba(15, 23, 42, 0.98);
+  border-color: rgba(148, 163, 184, 0.18);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.35);
+}
+
 /* removed dark mode override (handled by CSS variables) */
 
 .ud-notif-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.85rem 1rem;
+  padding: 0.85rem var(--ud-space-md);
   border-bottom: 1px solid var(--border-color);
   font-weight: 600;
   font-size: 0.875rem;
@@ -308,9 +382,17 @@
 }
 
 .ud-notif-item {
-  padding: 0.85rem 1rem;
+  padding: 0.85rem var(--ud-space-md);
   border-bottom: 1px solid #f3f4f6;
   transition: background 0.15s;
+}
+
+.dark .ud-notif-item {
+  border-bottom-color: rgba(148, 163, 184, 0.14);
+}
+
+.dark .ud-notif-item:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .ud-notif-item:last-child { border-bottom: none; }
@@ -351,10 +433,10 @@
 
 /* ── Content area ── */
 .ud-content {
-  padding: 1.75rem 2rem;
+  padding: 1.75rem var(--ud-space-xl);
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: var(--ud-space-lg);
   flex: 1;
 }
 
@@ -362,11 +444,11 @@
 .ud-section-title {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--ud-space-xs);
   font-size: 1rem;
   font-weight: 600;
   color: var(--text-color);
-  margin: 0 0 1rem;
+  margin: 0 0 var(--ud-space-sm);
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -387,7 +469,7 @@
 .ud-stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
+  gap: var(--ud-space-md);
 }
 
 .ud-stat-card {
@@ -397,8 +479,18 @@
   padding: 1.25rem;
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
+  gap: var(--ud-space-md);
   transition: all 0.2s ease;
+}
+
+.dark .ud-stat-card {
+  background: rgba(17, 24, 39, 0.95);
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+.dark .ud-stat-card:hover {
+  border-color: rgba(129, 140, 248, 0.4);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28);
 }
 
 .ud-stat-card:hover {
@@ -432,7 +524,7 @@
 .ud-stat-label {
   font-size: 0.78rem;
   color: var(--text-color-light);
-  margin: 0 0 2px;
+  margin: 0 0 var(--ud-space-xxs);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -442,7 +534,7 @@
   font-size: 1.75rem;
   font-weight: 700;
   color: var(--text-color);
-  margin: 0 0 2px;
+  margin: 0 0 var(--ud-space-xxs);
   line-height: 1.1;
 }
 
@@ -458,14 +550,14 @@
 .ud-quick-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 0.75rem;
+  gap: var(--ud-space-md);
 }
 
 .ud-quick-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--ud-space-xs);
   padding: 1rem 0.5rem;
   background: var(--card-bg-color);
   border: 1px solid var(--border-color);
@@ -474,6 +566,16 @@
   transition: all 0.2s ease;
   cursor: pointer;
   position: relative;
+}
+
+.dark .ud-quick-card {
+  background: rgba(17, 24, 39, 0.95);
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+.dark .ud-quick-card:hover {
+  border-color: rgba(129, 140, 248, 0.35);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
 }
 
 .ud-quick-card:hover {
@@ -534,7 +636,7 @@
 .ud-three-col {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.25rem;
+  gap: var(--ud-space-md);
 }
 
 .ud-card {
@@ -544,7 +646,12 @@
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: var(--ud-space-sm);
+}
+
+.dark .ud-card {
+  background: rgba(17, 24, 39, 0.95);
+  border-color: rgba(148, 163, 184, 0.18);
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -552,7 +659,7 @@
 .ud-card-head {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--ud-space-sm);
 }
 
 .ud-card-head h3 {
@@ -592,14 +699,22 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.75rem;
+  gap: var(--ud-space-sm);
+  padding: var(--ud-space-sm);
   border-radius: 10px;
   border: 1px solid #f3f4f6;
   transition: background 0.15s;
 }
 
 .ud-list-item:hover { background: #f9fafb; }
+
+.dark .ud-list-item {
+  border-color: rgba(148, 163, 184, 0.14);
+}
+
+.dark .ud-list-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
 
 /* removed dark mode override (handled by CSS variables) */
 
@@ -609,7 +724,7 @@
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-color);
-  margin: 0 0 4px;
+  margin: 0 0 var(--ud-space-xxs);
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -617,7 +732,7 @@
 .ud-list-meta {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: var(--ud-space-xxs);
   font-size: 0.75rem;
   color: var(--text-color-light);
   margin: 0;
@@ -647,6 +762,12 @@
 .ud-badge-yellow { background: #fef3c7; color: #92400e; }
 .ud-badge-red    { background: #fee2e2; color: #991b1b; }
 .ud-badge-gray   { background: #f3f4f6; color: var(--text-color-light); }
+
+.dark .ud-badge-gray {
+  background: rgba(148, 163, 184, 0.16);
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
 
 /* removed dark mode override (handled by CSS variables) */
 /* removed dark mode override (handled by CSS variables) */
@@ -702,6 +823,16 @@
   flex-direction: column;
   gap: 0.75rem;
   transition: all 0.2s;
+}
+
+.dark .ud-item-card {
+  background: rgba(17, 24, 39, 0.95);
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+.dark .ud-item-card:hover {
+  border-color: rgba(129, 140, 248, 0.35);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.24);
 }
 
 .ud-item-card:hover {
@@ -786,6 +917,12 @@
   transition: border-color 0.18s;
 }
 
+.dark .ud-select {
+  background: rgba(15, 23, 42, 0.92);
+  border-color: rgba(148, 163, 184, 0.18);
+  color: #f8fafc;
+}
+
 .ud-select:focus { border-color: #6366f1; }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -804,6 +941,21 @@
   border-collapse: collapse;
   background: var(--card-bg-color);
   font-size: 0.85rem;
+  table-layout: fixed;
+}
+
+.ud-table th:nth-child(1) { width: 120px; }
+.ud-table th:nth-child(2) { width: 200px; }
+.ud-table th:nth-child(3) { width: 110px; }
+.ud-table th:nth-child(4) { width: 150px; }
+.ud-table th:nth-child(5) { width: 110px; }
+.ud-table th:nth-child(6) { width: 120px; }
+
+.ud-table td:nth-child(4) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -813,10 +965,15 @@
   border-bottom: 1px solid var(--border-color);
 }
 
+.dark .ud-table thead tr {
+  background: rgba(30, 41, 59, 0.92);
+  border-bottom-color: rgba(148, 163, 184, 0.18);
+}
+
 /* removed dark mode override (handled by CSS variables) */
 
 .ud-table th {
-  padding: 0.9rem 1rem;
+  padding: 0.85rem var(--ud-space-md);
   text-align: left;
   font-size: 0.75rem;
   font-weight: 600;
@@ -829,10 +986,27 @@
 /* removed dark mode override (handled by CSS variables) */
 
 .ud-table td {
-  padding: 0.85rem 1rem;
+  padding: 0.85rem var(--ud-space-md);
   border-bottom: 1px solid #f3f4f6;
   color: var(--text-color);
   vertical-align: middle;
+}
+
+.dark .ud-table td {
+  border-bottom-color: rgba(148, 163, 184, 0.14);
+  color: #e2e8f0;
+}
+
+.dark .ud-table tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark .ud-table-wrap {
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+.dark .ud-table {
+  background: rgba(17, 24, 39, 0.95);
 }
 
 /* removed dark mode override (handled by CSS variables) */
@@ -850,7 +1024,14 @@
   font-weight: 600;
 }
 
-.ud-table-title { font-weight: 600; color: var(--text-color); }
+.ud-table-title {
+  font-weight: 600;
+  color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
 
 /* removed dark mode override (handled by CSS variables) */
 
@@ -879,4 +1060,238 @@
 @media (max-width: 480px) {
   .ud-stats-grid { grid-template-columns: 1fr; }
   .ud-quick-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ============================================================
+   MY EVENTS TAB  — styles appended below existing rules
+   ============================================================ */
+
+/* ── Sidebar badge (shows count of registered events) ── */
+.ud-nav-badge {
+  margin-left: auto;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* ── Summary pills row ── */
+.my-events-summary {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.my-events-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  background: var(--card-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 0.65rem 1.1rem;
+  min-width: 80px;
+  transition: box-shadow 0.2s;
+}
+.my-events-pill:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+}
+.my-events-pill-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--pill-color, #6366f1);
+  line-height: 1;
+}
+.my-events-pill-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-color-light);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Search + filter toolbar ── */
+.my-events-toolbar {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.my-events-search {
+  flex: 1;
+  min-width: 180px;
+}
+
+.my-events-filter-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.my-events-filter-icon {
+  position: absolute;
+  left: 10px;
+  color: var(--text-color-light);
+  pointer-events: none;
+}
+.my-events-filter-wrap .ud-select {
+  padding-left: 2rem;
+}
+/* ── Event card — styling handled by Tailwind inline classes (matches Events page) ── */
+
+/* ── Empty state ── */
+.my-events-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3.5rem 1rem;
+  text-align: center;
+}
+.my-events-empty-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #6366f110;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6366f1;
+}
+.my-events-empty-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0;
+}
+.my-events-empty-sub {
+  font-size: 0.875rem;
+  color: var(--text-color-light);
+  max-width: 320px;
+  margin: 0;
+}
+.my-events-empty-cta {
+  margin-top: 0.5rem;
+}
+
+/* ── No results ── */
+.my-events-no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2.5rem 1rem;
+  color: var(--text-color-light);
+  font-size: 0.875rem;
+}
+.my-events-clear-filters {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #6366f1;
+  background: #6366f112;
+  border: none;
+  padding: 5px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+.my-events-clear-filters:hover {
+  background: #6366f122;
+}
+
+/* ── Cancel confirmation dialog ── */
+.my-events-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+.my-events-dialog {
+  background: var(--card-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  padding: 1.75rem 2rem;
+  max-width: 360px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+.my-events-dialog-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0;
+}
+.my-events-dialog-body {
+  font-size: 0.875rem;
+  color: var(--text-color-light);
+  margin: 0;
+  line-height: 1.5;
+}
+.my-events-dialog-actions {
+  display: flex;
+  gap: 0.65rem;
+  margin-top: 0.35rem;
+}
+.my-events-dialog-cancel {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-color);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+.my-events-dialog-cancel:hover {
+  background: var(--border-color);
+}
+.my-events-dialog-confirm {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 10px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+.my-events-dialog-confirm:hover {
+  background: #dc2626;
+}
+/* ── Large screen fix (Issue #891) ── */
+@media (min-width: 1400px) {
+  .ud-content { max-width: 1400px; padding-left: 2.5rem; padding-right: 2.5rem; }
+  .ud-stats-grid { grid-template-columns: repeat(4, 1fr); }
+  .ud-quick-grid { grid-template-columns: repeat(6, 1fr); }
+  .ud-three-col  { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 1400px) and (min-width: 1100px) {
+  .ud-stats-grid { grid-template-columns: repeat(4, 1fr); }
+  .ud-quick-grid { grid-template-columns: repeat(4, 1fr); }
+  .ud-three-col  { grid-template-columns: repeat(3, 1fr); }
 }

@@ -1,171 +1,137 @@
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { useState } from "react";
 import "./App.css";
-import ToastProvider from "./components/Toastprovider";
 
-// --------------- LAYOUT
+// Layout & Components
 import Navbar from "./components/Layout/Navbar";
-import Footer from "./components/Layout/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
-import Chatbot from "./components/Chatbot";
 import FluidCursor from "./jhalak/FluidCursor";
+import PageTransition from "./components/common/PageTransition";
+import ReminderChecker from "./components/reminders/ReminderChecker";
 
-// --------------- PAGES
-import Contributors from "./components/Contributors";
-import EventCreation from "./components/common/EventCreation";
-import AboutPage from "./Pages/About/AboutPage";
-import EventsPage from "./Pages/Events/EventsPage";
-import HackathonPage from "./Pages/Hackathons/HackathonPage";
-import ProjectsPage from "./Pages/Projects/ProjectsPage";
-import ContactUs from "./Pages/Contact/ContactUs";
-import FeedbackPage from "./Pages/Feedback/FeedbackPage";
-import LeaderBoard from "./Pages/Leaderboard/Leaderboard";
-import ContributorGuide from "./Pages/Leaderboard/ContributorGuide";
+// Pages
+import RegistrationPage from "./Pages/RegistrationPage";
 
-import NotFound from "./components/NotFound";
-import DocumentationPage from "./Pages/About/DocumentationPage";
-import SubmitProject from "./Pages/Projects/SubmitProject";
-import HostHackathon from "./Pages/Hackathons/HostHackathon";
-import CommunityEvent from "./components/CommunityEvent";
-
-// --------------- AUTH PAGES
-import Login from "./components/auth/Login";
-import Signup from "./components/auth/Signup";
-import Unauthorized from "./components/auth/Unauthorized";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
+// Context & Hooks
+import NotificationToastContainer from "./components/common/NotificationProvider";
+import { NotificationProvider } from "./context/NotificationContext";
 import { AuthProvider } from "./context/AuthContext";
-import PasswordReset from "./components/auth/PasswordReset";
+import { MyEventsProvider } from "./context/MyEventsContext";
+import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
+import useOfflineSync from "./hooks/useOfflineSync";
+import useLenis from "./hooks/useLenis";
 
-// --------------- DASHBOARD PAGES
-import Dashboard from "./components/Dashboard";
-import AdminDashboard from "./components/admin/AdminDashboard";
-import EditProfile from "./components/user/EditProfile";
-import HomePage from "./Pages/Home/HomePage";
-import Terms from "./Pages/Terms";
-import { Privacy } from "./Pages/Privacy";
-import ApiDocs from "./Pages/ApiDocs";
-import HelpCenter from "./Pages/HelpCenter";
-import FAQPage from "./Pages/FAQ/FAQPage";
-import EventRegistration from "./Pages/Events/EventRegistration";
-import EventAnalyticsDashboard from "./Pages/Events/EventAnalyticsDashboard";
+// Lazy load heavy components
+const Footer = lazy(() => import("./components/Layout/Footer"));
+const Chatbot = lazy(() => import("./components/Chatbot"));
+const AppRoutes = lazy(() => import("./components/AppRoutes"));
 
-import { ThemeProvider } from "./context/ThemeContext";
+const OfflineSyncManager = () => {
+  useOfflineSync();
+  return null;
+};
 
 function App() {
-  const [cursorEnabled, setCursorEnabled] = useState(
-    localStorage.getItem("cursor") !== "off"
-  );
+  const [cursorEnabled, setCursorEnabled] =
+    useState(
+      localStorage.getItem("cursor") !== "off"
+    );
 
+  // Initialize Lenis smooth scrolling
+  useLenis();
+
+  // Toggle Cursor
   const toggleCursor = () => {
     const newValue = !cursorEnabled;
+
     setCursorEnabled(newValue);
-    localStorage.setItem("cursor", newValue ? "on" : "off");
+
+    localStorage.setItem(
+      "cursor",
+      newValue ? "on" : "off"
+    );
   };
 
+  // Listen For Cursor Preference Changes
+  useEffect(() => {
+    const handleCursorPreference = (event) => {
+      if (
+        event?.detail?.cursorEnabled !== undefined
+      ) {
+        setCursorEnabled(
+          event.detail.cursorEnabled
+        );
+      }
+    };
+
+    window.addEventListener(
+      "cursorPreferenceChanged",
+      handleCursorPreference
+    );
+
+    return () => {
+      window.removeEventListener(
+        "cursorPreferenceChanged",
+        handleCursorPreference
+      );
+    };
+  }, []);
+
   return (
-    <ThemeProvider>
-      <ToastProvider />
-      <AuthProvider>
-        <Router>
-          <div className="App">
-            <Navbar
-              cursorEnabled={cursorEnabled}
-              toggleCursor={toggleCursor}
-            />
+    <AuthProvider>
+      <NotificationProvider>
+        <MyEventsProvider>
+          <SessionRecoveryProvider>
+            <NotificationProvider />
+            <ReminderChecker />
+            <NotificationToastContainer />
 
-            <main className="min-h-screen bg-white dark:bg-black">
-              <Routes>
+            <OfflineSyncManager />
 
-                <Route path="/" element={<HomePage />} />
-                <Route path="/events" element={<EventsPage />} />
-                <Route path="/events/:eventId/register" element={<EventRegistration />} />
-                <Route path="/hackathons" element={<HackathonPage />} />
-                <Route path="/projects" element={<ProjectsPage />} />
-                <Route path="/contributors" element={<Contributors />} />
-                <Route path="/communityEvent" element={<CommunityEvent />} />
-                <Route path="/leaderBoard" element={<LeaderBoard />} />
-                <Route path="/contributorguide" element={<ContributorGuide />} />
-                <Route path="/about" element={<AboutPage />} />
-                <Route path="/faq" element={<FAQPage />} />
-                <Route path="/terms" element={<Terms />} />
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="/apiDocs" element={<ApiDocs />} />
-                <Route path="/helpcenter" element={<HelpCenter />} />
-                <Route path="/contact" element={<ContactUs />} />
-                <Route path="/feedback" element={<FeedbackPage />} />
-                <Route path="/analytics" element={<EventAnalyticsDashboard />} />
+            <Router>
+            <div className="App">
+              <Navbar
+                cursorEnabled={cursorEnabled}
+                toggleCursor={toggleCursor}
+              />
 
-                {/* Protected Routes */}
-                <Route
-                  path="/create-event"
-                  element={
-                    <ProtectedRoute requiredPermissions={["CREATE_EVENT"]}>
-                      <EventCreation />
-                    </ProtectedRoute>
-                  }
-                />
+              <main
+                className="
+                  relative
+                  z-10
+                min-h-[85vh]
+                  bg-white
+                  dark:bg-slate-950
+                  text-black
+                  dark:text-white
+                  transition-colors
+                  duration-300
+                "
+              >
+                <PageTransition>
+                  <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+                    <Routes>
+                      <Route path="/register/:id" element={<RegistrationPage />} />
+                      <Route path="*" element={<AppRoutes />} />
+                    </Routes>
+                  </Suspense>
+                </PageTransition>
+              </main>
 
-                <Route
-                  path="/admin"
-                  element={
-                    <ProtectedRoute requiredRoles={["ADMIN"]}>
-                      <AdminDashboard />
-                    </ProtectedRoute>
-                  }
-                />
-
-                <Route path="/documentation" element={<DocumentationPage />} />
-                <Route path="/submit-project" element={<SubmitProject />} />
-
-                <Route
-                  path="/host-hackathon"
-                  element={
-                    <ProtectedRoute requiredPermissions={["HOST_HACKATHON"]}>
-                      <HostHackathon />
-                    </ProtectedRoute>
-                  }
-                />
-
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  }
-                />
-
-                <Route
-                  path="/profile"
-                  element={
-                    <ProtectedRoute>
-                      <EditProfile />
-                    </ProtectedRoute>
-                  }
-                />
-
-                {/* Auth Routes */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/unauthorized" element={<Unauthorized />} />
-                <Route path="/password-reset" element={<PasswordReset />} />
-
-                <Route path="/*" element={<NotFound />} />
-
-              </Routes>
-            </main>
-
-            <ScrollToTop />
-            <Chatbot />
-            <FeedbackButton />
-            <Footer />
-
-            {cursorEnabled && <FluidCursor />}
-          </div>
-        </Router>
-      </AuthProvider>
-    </ThemeProvider>
+              <ScrollToTop />
+              <Suspense fallback={null}>
+                <Chatbot />
+                <Footer />
+              </Suspense>
+              <FeedbackButton />
+              <FluidCursor enabled={cursorEnabled} />
+            </div>
+          </Router>
+          </SessionRecoveryProvider>
+        </MyEventsProvider>
+      </NotificationProvider>
+    </AuthProvider>
   );
 }
 

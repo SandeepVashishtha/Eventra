@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FiMessageSquare } from "react-icons/fi";
@@ -9,8 +9,7 @@ const FeedbackButton = () => {
     <motion.div
       layout 
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className={"fixed left-[1.625rem] z-[10] translate-y-1/2 bottom-6"
-      }
+      className={"fixed left-[1.625rem] z-[100] translate-y-1/2 bottom-6"}
       initial={{ opacity: 0, scale: 0 }}
       animate={{ opacity: 1, scale: 1 }}
     >

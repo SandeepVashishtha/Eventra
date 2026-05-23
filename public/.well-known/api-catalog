@@ -1,0 +1,28 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://eventra.sandeepvashishtha.in/api/hackathons",
+      "rel": "service-desc",
+      "href": "https://eventra.sandeepvashishtha.in/apiDocs",
+      "type": "text/html"
+    },
+    {
+      "anchor": "https://eventra.sandeepvashishtha.in/api/projects",
+      "rel": "service-desc",
+      "href": "https://eventra.sandeepvashishtha.in/apiDocs",
+      "type": "text/html"
+    },
+    {
+      "anchor": "https://eventra.sandeepvashishtha.in/api/contributors",
+      "rel": "service-desc",
+      "href": "https://eventra.sandeepvashishtha.in/apiDocs",
+      "type": "text/html"
+    },
+    {
+      "anchor": "https://eventra.sandeepvashishtha.in/api/leaderboard",
+      "rel": "service-desc",
+      "href": "https://eventra.sandeepvashishtha.in/apiDocs",
+      "type": "text/html"
+    }
+  ]
+}
