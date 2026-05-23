@@ -117,7 +117,6 @@ const EventsPage = () => {
       </div>
 
       <EventCTA />
-
       <FeedbackButton />
     </div>
   );
