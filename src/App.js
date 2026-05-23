@@ -30,10 +30,9 @@ const OfflineSyncManager = () => {
 };
 
 function App() {
-  const [cursorEnabled, setCursorEnabled] =
-    useState(
-      localStorage.getItem("cursor") !== "off"
-    );
+  const [cursorEnabled, setCursorEnabled] = useState(
+    localStorage.getItem("cursor") !== "off"
+  );
 
   // Initialize Lenis smooth scrolling
   useLenis();
@@ -41,37 +40,22 @@ function App() {
   // Toggle Cursor
   const toggleCursor = () => {
     const newValue = !cursorEnabled;
-
     setCursorEnabled(newValue);
-
-    localStorage.setItem(
-      "cursor",
-      newValue ? "on" : "off"
-    );
+    localStorage.setItem("cursor", newValue ? "on" : "off");
   };
 
   // Listen For Cursor Preference Changes
   useEffect(() => {
     const handleCursorPreference = (event) => {
-      if (
-        event?.detail?.cursorEnabled !== undefined
-      ) {
-        setCursorEnabled(
-          event.detail.cursorEnabled
-        );
+      if (event?.detail?.cursorEnabled !== undefined) {
+        setCursorEnabled(event.detail.cursorEnabled);
       }
     };
 
-    window.addEventListener(
-      "cursorPreferenceChanged",
-      handleCursorPreference
-    );
+    window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
 
     return () => {
-      window.removeEventListener(
-        "cursorPreferenceChanged",
-        handleCursorPreference
-      );
+      window.removeEventListener("cursorPreferenceChanged", handleCursorPreference);
     };
   }, []);
 
@@ -81,48 +65,49 @@ function App() {
         <MyEventsProvider>
           <SessionRecoveryProvider>
             <NotificationToastContainer />
-
             <OfflineSyncManager />
 
             <Router>
-            <div className="App">
-              <Navbar
-                cursorEnabled={cursorEnabled}
-                toggleCursor={toggleCursor}
-              />
+              <div className="App">
+                <Navbar
+                  cursorEnabled={cursorEnabled}
+                  toggleCursor={toggleCursor}
+                />
 
-              <main
-                className="
-                  relative
-                  z-10
-                  min-h-screen
-                  bg-white
-                  dark:bg-slate-950
-                  text-black
-                  dark:text-white
-                  transition-colors
-                  duration-300
-                "
-              >
-                <PageTransition>
-                  <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
-                    <Routes>
-                      <Route path="/register/:id" element={<RegistrationPage />} />
-                      <Route path="*" element={<AppRoutes />} />
-                    </Routes>
-                  </Suspense>
-                </PageTransition>
-              </main>
+                <main
+                  className="
+                    relative
+                    z-10
+                    min-h-screen
+                    bg-white
+                    dark:bg-slate-950
+                    text-black
+                    dark:text-white
+                    transition-colors
+                    duration-300
+                  "
+                >
+                  <PageTransition>
+                    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+                      <Routes>
+                        <Route path="/register/:id" element={<RegistrationPage />} />
+                        <Route path="*" element={<AppRoutes />} />
+                      </Routes>
+                    </Suspense>
+                  </PageTransition>
+                </main>
 
-              <ScrollToTop />
-              <Suspense fallback={null}>
-                <Chatbot />
-                <Footer />
-              </Suspense>
-              <FeedbackButton />
-              <FluidCursor enabled={cursorEnabled} />
-            </div>
-          </Router>
+                <ScrollToTop />
+                
+                <Suspense fallback={null}>
+                  <Chatbot />
+                  <Footer />
+                </Suspense>
+                
+                <FeedbackButton />
+                <FluidCursor enabled={cursorEnabled} />
+              </div>
+            </Router>
           </SessionRecoveryProvider>
         </MyEventsProvider>
       </NotificationProvider>

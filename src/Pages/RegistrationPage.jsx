@@ -1,12 +1,24 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiUser, FiMail, FiPhone, FiBriefcase, FiAward, FiMessageSquare, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
 import useDocumentTitle from "../hooks/useDocumentTitle";
+import { apiUtils, API_ENDPOINTS, ApiError } from "../config/api";
 
 const RegistrationPage = () => {
-  useDocumentTitle("Eventra | Registration");
+  const { id } = useParams(); // Hooks into the dynamic route parameter from App.jsx
+  useDocumentTitle(`Eventra | Register for Event ${id || ""}`);
   const navigate = useNavigate();
+  
+  // Guard against calling state updates on an unmounted component during async calls
+  const isMounted = useRef(true);
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  // Form Field State Definitions
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -16,16 +28,23 @@ const RegistrationPage = () => {
     additionalInfo: "",
   });
 
+  // Validation and Status States
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user types
+    
+    // Clear dynamic field error tracking on type action
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+    // Dismiss submission errors as the user modifies entries
+    if (submissionError) {
+      setSubmissionError("");
     }
   };
 
@@ -39,7 +58,7 @@ const RegistrationPage = () => {
       newErrors.fullName = "Name must be at least 3 characters";
     }
 
-    // Email check
+    // Email signature check
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email) {
       newErrors.email = "Email address is required";
@@ -47,7 +66,7 @@ const RegistrationPage = () => {
       newErrors.email = "Please enter a valid email address";
     }
 
-    // Phone check
+    // Phone standard pattern matching
     const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/;
     if (!formData.phone) {
       newErrors.phone = "Phone number is required";
@@ -59,21 +78,54 @@ const RegistrationPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
     setIsSubmitting(true);
-    // Simulate API registration request
-    setTimeout(() => {
-      console.log("Registration Successful! Data:", formData);
-      setIsSubmitting(false);
-      setSubmitSuccess(true);
-    }, 1500);
+    setSubmissionError("");
+
+    try {
+      // Real API call to register for the event
+      const response = await apiUtils.post(API_ENDPOINTS.EVENTS.REGISTER(id), {
+        fullName: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        organization: formData.organization,
+        designation: formData.designation,
+        additionalInfo: formData.additionalInfo,
+      });
+
+      if (isMounted.current) {
+        setSubmitSuccess(true);
+      }
+    } catch (err) {
+      if (isMounted.current) {
+        // Handle ApiError instances specifically for better error messages
+        if (err instanceof ApiError) {
+          if (err.status === 409) {
+            setSubmissionError("This email is already registered for this event.");
+          } else if (err.status === 400) {
+            setSubmissionError(err.data?.message || "Invalid registration data. Please check your inputs.");
+          } else if (err.isNetworkError) {
+            setSubmissionError("Network error. Please check your connection and try again.");
+          } else if (err.isTimeout) {
+            setSubmissionError("Request timed out. Please try again.");
+          } else {
+            setSubmissionError(err.message || "Registration failed. Please try again.");
+          }
+        } else {
+          setSubmissionError(err.message || "Something went wrong. Please try again.");
+        }
+      }
+    } finally {
+      if (isMounted.current) {
+        setIsSubmitting(false);
+      }
+    }
   };
 
   const handleCancel = () => {
-    // Navigate back to the previous page
     navigate(-1);
   };
 
@@ -93,7 +145,7 @@ const RegistrationPage = () => {
           </div>
           <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-3">Registration Successful!</h2>
           <p className="text-slate-600 dark:text-slate-300 mb-8 leading-relaxed">
-            Thank you for registering, <span className="font-semibold">{formData.fullName}</span>. An confirmation email has been sent to <span className="font-semibold">{formData.email}</span> with your event pass.
+            Thank you for registering for event <span className="font-semibold">#{id}</span>, <span className="font-semibold">{formData.fullName}</span>. A confirmation email has been sent to <span className="font-semibold">{formData.email}</span> with your event pass.
           </p>
           <div className="flex flex-col gap-3">
             <button
@@ -122,19 +174,37 @@ const RegistrationPage = () => {
         transition={{ duration: 0.6 }}
         className="max-w-2xl mx-auto backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border border-slate-200/50 dark:border-slate-800/50 shadow-2xl rounded-3xl p-6 sm:p-10 relative overflow-hidden"
       >
-        {/* Glow Effects */}
+        {/* Abstract Structural Glow Nodes */}
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-60 h-60 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-60 h-60 bg-violet-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="relative z-10">
           <h1 className="text-3xl sm:text-4xl font-extrabold mb-2 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 dark:from-indigo-400 dark:via-violet-400 dark:to-purple-400 bg-clip-text text-transparent">
-            Register for this Event
+            Register for Event #{id}
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mb-8 text-sm sm:text-base">
             Secure your spot now! Fields marked with an asterisk (<span className="text-rose-500 font-bold">*</span>) are mandatory.
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Dynamic Backend Alert Framework */}
+          <AnimatePresence>
+            {submissionError && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="mb-6 p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-sm flex items-start gap-2.5"
+              >
+                <FiAlertCircle className="mt-0.5 flex-shrink-0 text-base" />
+                <div>
+                  <span className="font-semibold">Registration Failed:</span> {submissionError}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Form Context with Explicit Native validation overrides */}
+          <form onSubmit={handleSubmit} noValidate className="space-y-6">
             {/* Full Name */}
             <div>
               <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
@@ -142,19 +212,16 @@ const RegistrationPage = () => {
                 <span>Full Name</span>
                 <span className="text-rose-500 font-bold">*</span>
               </label>
-              <div className="relative">
-                <input
-                  name="fullName"
-                  type="text"
-                  placeholder="Enter your full name"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  className={`w-full bg-white/80 dark:bg-slate-950/80 border ${
-                    errors.fullName ? "border-rose-500 ring-rose-500/20" : "border-slate-200 dark:border-slate-800 focus:border-indigo-500 dark:focus:border-indigo-400"
-                  } p-3.5 rounded-2xl text-slate-800 dark:text-white outline-none focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-indigo-400/10 transition-all duration-300`}
-                  required
-                />
-              </div>
+              <input
+                name="fullName"
+                type="text"
+                placeholder="Enter your full name"
+                value={formData.fullName}
+                onChange={handleChange}
+                className={`w-full bg-white/80 dark:bg-slate-950/80 border ${
+                  errors.fullName ? "border-rose-500 ring-rose-500/20" : "border-slate-200 dark:border-slate-800 focus:border-indigo-500 dark:focus:border-indigo-400"
+                } p-3.5 rounded-2xl text-slate-800 dark:text-white outline-none focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-indigo-400/10 transition-all duration-300`}
+              />
               <AnimatePresence>
                 {errors.fullName && (
                   <motion.div
@@ -170,7 +237,7 @@ const RegistrationPage = () => {
               </AnimatePresence>
             </div>
 
-            {/* Email */}
+            {/* Email Address */}
             <div>
               <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 <FiMail className="text-indigo-500 dark:text-indigo-400" />
@@ -186,7 +253,6 @@ const RegistrationPage = () => {
                 className={`w-full bg-white/80 dark:bg-slate-950/80 border ${
                   errors.email ? "border-rose-500 ring-rose-500/20" : "border-slate-200 dark:border-slate-800 focus:border-indigo-500 dark:focus:border-indigo-400"
                 } p-3.5 rounded-2xl text-slate-800 dark:text-white outline-none focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-indigo-400/10 transition-all duration-300`}
-                required
               />
               <AnimatePresence>
                 {errors.email && (
@@ -203,7 +269,7 @@ const RegistrationPage = () => {
               </AnimatePresence>
             </div>
 
-            {/* Phone */}
+            {/* Phone Number */}
             <div>
               <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 <FiPhone className="text-indigo-500 dark:text-indigo-400" />
@@ -219,7 +285,6 @@ const RegistrationPage = () => {
                 className={`w-full bg-white/80 dark:bg-slate-950/80 border ${
                   errors.phone ? "border-rose-500 ring-rose-500/20" : "border-slate-200 dark:border-slate-800 focus:border-indigo-500 dark:focus:border-indigo-400"
                 } p-3.5 rounded-2xl text-slate-800 dark:text-white outline-none focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-indigo-400/10 transition-all duration-300`}
-                required
               />
               <AnimatePresence>
                 {errors.phone && (
@@ -236,7 +301,7 @@ const RegistrationPage = () => {
               </AnimatePresence>
             </div>
 
-            {/* Organization */}
+            {/* Organization Optional Field */}
             <div>
               <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 <FiBriefcase className="text-indigo-500 dark:text-indigo-400" />
@@ -252,7 +317,7 @@ const RegistrationPage = () => {
               />
             </div>
 
-            {/* Designation */}
+            {/* Designation Optional Field */}
             <div>
               <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 <FiAward className="text-indigo-500 dark:text-indigo-400" />
@@ -268,7 +333,7 @@ const RegistrationPage = () => {
               />
             </div>
 
-            {/* Additional Info */}
+            {/* Additional Text Info Area */}
             <div>
               <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 <FiMessageSquare className="text-indigo-500 dark:text-indigo-400" />
@@ -283,7 +348,7 @@ const RegistrationPage = () => {
               />
             </div>
 
-            {/* Buttons */}
+            {/* Action Interventions */}
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <button
                 type="button"
