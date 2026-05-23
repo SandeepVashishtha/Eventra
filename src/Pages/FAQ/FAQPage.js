@@ -191,8 +191,6 @@ const blur = factor * 2;
   }, [headerHeight]);
 
 
-  const cardStickyTop = NAVBAR_HEIGHT + headerHeight;
-
   return (
     <>
       <style>{`

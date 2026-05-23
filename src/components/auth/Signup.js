@@ -143,7 +143,7 @@ const Signup = () => {
   }, 1000);
 
   return () => clearTimeout(timer);
-}, [formData.password, formData.confirmPassword]);
+}, [formData]);
 
 const handleSubmit = async (e) => {
   e.preventDefault();

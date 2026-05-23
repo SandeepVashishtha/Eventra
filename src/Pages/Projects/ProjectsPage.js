@@ -15,7 +15,6 @@ import ModernSearchInput from "../../components/common/ModernSearchInput";
 import SearchEmptyState from "../../components/common/SearchEmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import PageLoader from "../../components/common/PageLoader";
-import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
 
 // Main ProjectGallery component
 const ProjectGallery = () => {

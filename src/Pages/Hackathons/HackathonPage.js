@@ -44,7 +44,6 @@ import {
 } from "react-icons/fi";
 import HackathonCTA from "./HackathonCTA";
 import { createPortal } from "react-dom";
-import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 import SearchEmptyState from "../../components/common/SearchEmptyState";
 import PageLoader from "../../components/common/PageLoader";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
