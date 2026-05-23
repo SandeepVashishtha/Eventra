@@ -6,7 +6,7 @@ import axios from "axios";
 
 const BASE_URL =
   process.env.REACT_APP_API_URL ||
-  "http://localhost:5000/api";
+  "https://eventra-backend-dgcae3etebbag8ft.centralindia-01.azurewebsites.net";
 
 // ---------------------------------------------------------------------------
 // Network Resilience Configuration
