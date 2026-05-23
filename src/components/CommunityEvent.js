@@ -111,7 +111,7 @@ const CommunityEvent = () => {
           <h1 className="text-5xl font-extrabold text-indigo-900 dark:text-gray-100 mb-4">
             Community Events
           </h1>
-          <p className="text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          <p className="text-base text-white dark:text-white max-w-2xl mx-auto">
             "Explore meetups, hackathons, webinars, and global conferences where
             developers collaborate, innovate, and grow together."
           </p>
@@ -134,7 +134,9 @@ const CommunityEvent = () => {
                   {event.icon}
                 </div>
                 {/* UPDATED: Text color */}
-                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{event.title}</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  {event.title}
+                </h2>
               </div>
 
               {/* Event Info */}
@@ -145,7 +147,9 @@ const CommunityEvent = () => {
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 <strong>Location:</strong> {event.location}
               </p>
-              <p className="mt-4 text-gray-700 dark:text-gray-300">{event.description}</p>
+              <p className="mt-4 text-gray-700 dark:text-gray-300">
+                {event.description}
+              </p>
 
               {/* Learn More Button is fine for both themes */}
               <motion.button
