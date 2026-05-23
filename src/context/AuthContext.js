@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from '../config/api';
 import { isTokenValid } from '../utils/tokenUtils';
 import { syncSecureStorage } from '../utils/secureStorage';
+import { clearQueue } from '../utils/offlineQueue';
 
 const AuthContext = createContext();
 
@@ -24,6 +25,7 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     syncSecureStorage.removeItem('token');
     syncSecureStorage.removeItem('user');
+    clearQueue();
   }, []);
 
   useEffect(() => {
