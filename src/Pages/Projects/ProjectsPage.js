@@ -9,8 +9,7 @@ import ProjectCTA from "./ProjectCTA";
 // Import mock data directly (assuming it's named mockProjectsData.json in the same folder as ProjectsPage.js)
 import mockProjects from "./mockProjectsData.json";
 // fix: import API config for real backend calls with mock fallback
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
-
+import { API_ENDPOINTS } from "../../config/api";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import SearchEmptyState from "../../components/common/SearchEmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
@@ -51,80 +50,46 @@ const ProjectGallery = () => {
 
   // fix: try real API first; fall back to mock data if API is unavailable or returns empty
   useEffect(() => {
+    const controller = new AbortController();
+    let isMounted = true;
     const fetchProjects = async () => {
       try {
-        setIsLoading(true); // Set loading before fetching
-        setError(""); // Reset error
-
-        // --- PRODUCTION LOGIC: attempt real API call to Spring Boot backend ---
-        const response = await apiUtils.get(API_ENDPOINTS.PROJECTS.LIST);
-
-        if (response.ok) {
-          const projectsData = await response.json();
-
-          // fix: only use API data if it is non-empty; otherwise fall back to mock
-          if (projectsData && projectsData.length > 0) {
-            setProjects(projectsData);
-
-            // Attempt to fetch categories from API
-            try {
-              const categoriesResponse = await apiUtils.get(
-                API_ENDPOINTS.PROJECTS.CATEGORIES,
-              );
-              if (categoriesResponse.ok) {
-                const categoriesData = await categoriesResponse.json();
-                setCategories(["all", ...categoriesData]);
-              } else {
-                // fix: derive categories from API project data if categories endpoint fails
-                const uniqueCategories = [
-                  ...new Set(projectsData.map((p) => p.category)),
-                ];
-                setCategories(["all", ...uniqueCategories]);
-              }
-            } catch {
-              // fix: derive categories from API project data if categories endpoint throws
-              const uniqueCategories = [
-                ...new Set(projectsData.map((p) => p.category)),
-              ];
-              setCategories(["all", ...uniqueCategories]);
-            }
-
-            setIsLoading(false);
-            return; // exit — API data loaded successfully
+        setIsLoading(true);
+        setError("");
+        const response = await fetch(API_ENDPOINTS.PROJECTS.LIST, {
+          signal: controller.signal,
+        });
+        
+        if (!response.ok) {
+          throw new Error("Failed to fetch projects");
+        }
+        
+        const projectsData = await response.json();
+        if (!isMounted) return;
+        if (projectsData && projectsData.length > 0) {
+          setProjects(projectsData);
+        } else {
+          setProjects(mockProjects);
+        }
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          console.error(error);
+          
+          if (isMounted) {
+            setProjects(mockProjects);
           }
         }
-
-        // --- MOCK DATA FALLBACK: API unavailable, not ok, or returned empty array ---
-        console.warn("Projects API unavailable or empty — loading mock data.");
-        setTimeout(() => {
-          const projectsData = mockProjects;
-          setProjects(projectsData);
-
-          // Extract unique categories from mock data
-          const uniqueCategories = [
-            ...new Set(projectsData.map((p) => p.category)),
-          ];
-          setCategories(["all", ...uniqueCategories]);
-          setIsLoading(false);
-        }, 500);
-      } catch (error) {
-        // fix: on any network error fall back to mock instead of showing error
-        console.warn(
-          "Projects API error — falling back to mock data:",
-          error.message,
-        );
-        setTimeout(() => {
-          setProjects(mockProjects);
-          const uniqueCategories = [
-            ...new Set(mockProjects.map((p) => p.category)),
-          ];
-          setCategories(["all", ...uniqueCategories]);
-          setIsLoading(false);
-        }, 500);
+      } finally {
+        if (isMounted) {
+         setIsLoading(false);
+        }
       }
     };
-
-    fetchProjects(); // Trigger data fetch
+    fetchProjects();
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, []);
 
   useEffect(() => {

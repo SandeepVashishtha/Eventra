@@ -93,7 +93,7 @@ export default function ProjectHero({ setShowSubmissionModal, scrollToCard }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 0.3 }}
-          className="text-base sm:text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto mb-6"
+          className="text-base sm:text-lg text-gray-600 dark:text-gray-200 max-w-2xl mx-auto mb-6 leading-relaxed"
         >
           Explore, contribute to, and showcase innovative open-source creations
           from developers worldwide.
