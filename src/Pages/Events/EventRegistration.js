@@ -15,8 +15,11 @@ import {
 import { getEventStatus } from "../../utils/eventUtils";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
+import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useSessionRecovery } from "../../context/SessionRecoveryContext";
 import { API_ENDPOINTS } from "../../config/api";
+import { useFormValidation } from "../../hooks/useFormValidation";
+import { validate } from "../../validation";
 import { toast } from "react-toastify";
 import mockEvents from "./eventsMockData.json";
 import { pushToQueue } from "../../utils/offlineQueue";
@@ -58,16 +61,33 @@ const EventRegistration = () => {
   const [registered, setRegistered] = useState(false);
   const isSubmittingRef = useRef(false);
 
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-    organization: "",
-    designation: "",
-    additionalInfo: "",
-  });
+  const validationRules = {
+    fullName: validate.fullName,
+    email: validate.email,
+    phone: validate.phone,
+  };
 
-  const [errors, setErrors] = useState({});
+  const {
+    values: formData,
+    errors,
+    touched,
+    isFormValid,
+    handleChange,
+    handleBlur,
+    validateAll,
+    setValues,
+  } = useFormValidation(
+    {
+      fullName: "",
+      email: "",
+      phone: "",
+      organization: "",
+      designation: "",
+      additionalInfo: "",
+    },
+    validationRules,
+    { debounceMs: 300 }
+  );
 
   // Load event data
   useEffect(() => {
@@ -81,7 +101,7 @@ const EventRegistration = () => {
         
         // Pre-fill form if user is authenticated
         if (isAuthenticated() && user) {
-          setFormData((prev) => ({
+          setValues((prev) => ({
             ...prev,
             fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
             email: user.email || "",
@@ -92,79 +112,13 @@ const EventRegistration = () => {
     };
 
     loadEvent();
-  }, [eventId, user, isAuthenticated]);
-
-  // Save session state when form data changes
-  useEffect(() => {
-    if (event && formData) {
-      saveSession({
-        page: 'event-registration',
-        eventId,
-        formData,
-        eventTitle: event.title,
-      });
-    }
-  }, [formData, event, eventId, saveSession]);
-
-  // Listen for session restoration
-  useEffect(() => {
-    const handleSessionRestored = (event) => {
-      const restoredData = event.detail;
-      if (restoredData?.page === 'event-registration' && restoredData?.eventId === eventId) {
-        setFormData(restoredData.formData || {});
-        toast.info('Your registration form has been restored');
-      }
-    };
-
-    window.addEventListener('sessionRestored', handleSessionRestored);
-    return () => window.removeEventListener('sessionRestored', handleSessionRestored);
-  }, [eventId]);
-
-  // Validate form
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = "Full name is required";
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email is invalid";
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Phone number is required";
-    } else if (!/^\+?[\d\s-()]{10,}$/.test(formData.phone)) {
-      newErrors.phone = "Phone number is invalid";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // Handle input change
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    // Clear error for this field
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
-  };
+  }, [eventId, user, isAuthenticated, setValues]);
 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validateForm()) {
+    if (!validateAll()) {
       toast.error("Please fill in all required fields correctly");
       return;
     }
@@ -193,24 +147,31 @@ const EventRegistration = () => {
     setSubmitting(true);
 
     try {
-      // API call to register for event
-      const response = await fetch(API_ENDPOINTS.EVENTS.REGISTER(eventId), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-        body: JSON.stringify({
+      // API call to register for event using centralized API layer
+      const response = await apiUtils.post(
+        API_ENDPOINTS.EVENTS.REGISTER(eventId),
+        {
           ...formData,
           eventId: parseInt(eventId),
           userId: user?.id || null,
+        }
+      );
+
+      setRegistered(true);
+      toast.success("Registration successful!");
+      // ── Save to My Events ──
+      addRegistration(event, formData);
+      // Redirect to event details after 2 seconds
+      setTimeout(() => {
+        navigate(`/events/${eventId}`);
+      }, 2000);
         }),
       });
 
       if (response.ok) {
         setRegistered(true);
         toast.success("Registration successful!");
-        sendConfirmationEmail(formData.email, formData.name, event?.title, event?.date);
+        sendConfirmationEmail(formData.email, formData.fullName, event?.title, event?.date);
         // ── Save to My Events ──
         addRegistration(event, formData);
         // Clear session after successful registration
@@ -410,15 +371,16 @@ const EventRegistration = () => {
                     name="fullName"
                     value={formData.fullName}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${
-                      errors.fullName
+                      errors.fullName && touched.fullName
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
                     }`}
                     placeholder="Enter your full name"
                   />
                 </div>
-                {errors.fullName && (
+                {errors.fullName && touched.fullName && (
                   <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>
                 )}
               </div>
@@ -439,15 +401,16 @@ const EventRegistration = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${
-                      errors.email
+                      errors.email && touched.email
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
                     }`}
                     placeholder="your.email@example.com"
                   />
                 </div>
-                {errors.email && (
+                {errors.email && touched.email && (
                   <p className="text-red-500 text-sm mt-1">{errors.email}</p>
                 )}
               </div>
@@ -468,15 +431,16 @@ const EventRegistration = () => {
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${
-                      errors.phone
+                      errors.phone && touched.phone
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
                     }`}
                     placeholder="+1 (555) 123-4567"
                   />
                 </div>
-                {errors.phone && (
+                {errors.phone && touched.phone && (
                   <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
                 )}
               </div>
@@ -552,7 +516,7 @@ const EventRegistration = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || !isFormValid}
                   className="flex-1 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {submitting ? (

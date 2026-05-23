@@ -3,6 +3,38 @@ import { HelpCircle, LifeBuoy, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function FAQCTA() {
+  const cards = [
+    {
+      title: "Browse FAQs",
+      description:
+        "Quickly find answers to common questions about our platform.",
+      to: "/faq",
+      icon: <LifeBuoy className="w-10 h-10 text-purple-400" />,
+      hoverClass: "hover:bg-black/10",
+      onClick: () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      },
+    },
+    {
+      title: "Contact Support",
+      description: "Reach out to our team for personalized assistance.",
+      to: "/contact",
+      icon: <MessageCircle className="w-10 h-10 text-teal-400" />,
+      hoverClass:
+        "hover:bg-gradient-to-br from-teal-400/20 via-cyan-400/20 to-blue-500/10",
+    },
+    {
+      title: "Give Feedback",
+      description:
+        "Help us improve by sharing your thoughts and suggestions.",
+      to: "/feedback",
+      icon: <HelpCircle className="w-10 h-10 text-pink-400" />,
+      hoverClass: "hover:bg-black/10",
+    },
+  ];
+
+  const MotionLink = motion(Link);
+
   return (
     <section className="relative bg-gradient-to-tr from-[#0C0C1F] via-[#1A1F36] to-[#0B1E2E] py-16 px-8 sm:px-12 lg:px-20 overflow-hidden m-8 rounded-3xl">
       <div className="relative max-w-6xl mx-auto text-center m-4">
@@ -36,54 +68,24 @@ export default function FAQCTA() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          {/* Card 1 */}
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="group bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col items-center gap-4 shadow-md hover:shadow-lg hover:bg-black/10 transition-all duration-300"
-          >
-            <LifeBuoy className="w-10 h-10 text-purple-400" />
-            <h3 className="text-white font-semibold text-lg text-center">
-              <Link
-                to="/faq"
-                onClick={() => {
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-              >
-                Browse FAQs
-              </Link>
-            </h3>
-            <p className="text-white/70 text-sm text-center">
-              Quickly find answers to common questions about our platform.
-            </p>
-          </motion.div>
-
-          {/* Card 2 */}
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="group bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col items-center gap-4 shadow-md hover:shadow-lg hover:bg-gradient-to-br from-teal-400/20 via-cyan-400/20 to-blue-500/10 transition-all duration-300"
-          >
-            <MessageCircle className="w-10 h-10 text-teal-400" />
-            <h3 className="text-white font-semibold text-lg text-center">
-              <Link to="/contact">Contact Support</Link>
-            </h3>
-            <p className="text-white/70 text-sm text-center">
-              Reach out to our team for personalized assistance.
-            </p>
-          </motion.div>
-
-          {/* Card 3 */}
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="group bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col items-center gap-4 shadow-md hover:shadow-lg hover:bg-black/10 transition-all duration-300"
-          >
-            <HelpCircle className="w-10 h-10 text-pink-400" />
-            <h3 className="text-white font-semibold text-lg text-center">
-              <Link to="/feedback">Give Feedback</Link>
-            </h3>
-            <p className="text-white/70 text-sm text-center">
-              Help us improve by sharing your thoughts and suggestions.
-            </p>
-          </motion.div>
+          {cards.map((card) => (
+            <MotionLink
+              key={card.title}
+              to={card.to}
+              onClick={card.onClick}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+              className={`group bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col items-center gap-4 shadow-md hover:shadow-lg transition-all duration-300 ${card.hoverClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0C0C1F]`}
+            >
+              {card.icon}
+              <h3 className="text-white font-semibold text-lg text-center">
+                {card.title}
+              </h3>
+              <p className="text-white/70 text-sm text-center">
+                {card.description}
+              </p>
+            </MotionLink>
+          ))}
         </motion.div>
       </div>
     </section>
