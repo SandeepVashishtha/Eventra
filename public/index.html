@@ -19,10 +19,17 @@
       content="Open-source event management platform for communities, colleges, and organizations worldwide"
     />
 
-    <link
+<link
       rel="apple-touch-icon"
       href="%PUBLIC_URL%/logo192.png"
     />
+    <!-- Preconnect for faster external resource loading -->
+    <link rel="preconnect" href="https://api.github.com" />
+    <link rel="dns-prefetch" href="https://api.github.com" />
+    <link rel="preconnect" href="https://accounts.google.com" crossorigin />
+    <link rel="dns-prefetch" href="https://accounts.google.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
     <link
       rel="manifest"
@@ -63,30 +70,42 @@
       as="image"
     />
 
-   <!-- Prevent Theme Flickering -->
+  <!-- Prevent Theme Flickering -->
 <script>
+  document.documentElement.classList.add(
+    "no-transition"
+  );
+
   (() => {
     const savedTheme =
-      localStorage.getItem("theme");
+      localStorage.getItem(
+        "theme"
+      );
 
     const systemDark =
       window.matchMedia(
         "(prefers-color-scheme: dark)"
       ).matches;
 
-    if (
-      savedTheme === "dark" ||
-      (!savedTheme && systemDark)
-    ) {
-      document.documentElement.classList.add(
-        "dark"
-      );
-    } else {
+    const theme =
+      savedTheme ||
+      (systemDark
+        ? "dark"
+        : "light");
+
+    document.documentElement.classList.add(
+      theme
+    );
+  })();
+
+  window.addEventListener(
+    "load",
+    () => {
       document.documentElement.classList.remove(
-        "dark"
+        "no-transition"
       );
     }
-  })();
+  );
 </script>
 
     <title>
@@ -103,6 +122,12 @@
       src="https://accounts.google.com/gsi/client"
       async
       defer
+    ></script>
+
+    <!-- EmailJS for RSVP confirmation emails -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"
+      async
     ></script>
   </head>
 

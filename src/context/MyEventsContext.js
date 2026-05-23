@@ -20,6 +20,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
+import { syncSecureStorage } from '../utils/secureStorage';
 
 const MyEventsContext = createContext(null);
 
@@ -30,7 +31,7 @@ const storageKey = (userId) => `my_events_${userId}`;
 const loadFromStorage = (userId) => {
   if (!userId) return [];
   try {
-    const raw = localStorage.getItem(storageKey(userId));
+    const raw = syncSecureStorage.getItem(storageKey(userId));
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -40,7 +41,7 @@ const loadFromStorage = (userId) => {
 const saveToStorage = (userId, data) => {
   if (!userId) return;
   try {
-    localStorage.setItem(storageKey(userId), JSON.stringify(data));
+    syncSecureStorage.setItem(storageKey(userId), JSON.stringify(data));
   } catch {
     // localStorage might be full — fail silently
   }

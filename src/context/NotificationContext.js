@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { apiUtils, API_ENDPOINTS } from '../config/api';
+import { useAuth } from './AuthContext';
 
 const NotificationContext = createContext();
 
@@ -7,6 +8,7 @@ const NotificationContext = createContext();
 const POLLING_INTERVAL_MS = 60_000;
 
 export const NotificationProvider = ({ children }) => {
+  const { token } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [achievements, setAchievements] = useState({
     totalEvents: 0,
@@ -16,16 +18,12 @@ export const NotificationProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  /** Get JWT from storage — single source of truth */
-  const getAuthToken = () => localStorage.getItem('token');
-
   const fetchNotifications = useCallback(async () => {
-    const token = getAuthToken();
     if (!token) return;
 
     try {
       setLoading(true);
-      const response = await apiUtils.get(API_ENDPOINTS.NOTIFICATIONS.BASE, token);
+      const response = await apiUtils.get(API_ENDPOINTS.NOTIFICATIONS.ALL, token);
       if (response.ok) {
         const data = await response.json();
         setNotifications(data);
@@ -36,10 +34,9 @@ export const NotificationProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [token]);
 
   const fetchAchievements = useCallback(async () => {
-    const token = getAuthToken();
     if (!token) return;
 
     try {
@@ -51,11 +48,10 @@ export const NotificationProvider = ({ children }) => {
     } catch (error) {
       console.error('Error fetching achievements:', error);
     }
-  }, []);
+  }, [token]);
 
   /** Mark a single notification as read */
   const markAsRead = useCallback(async (notificationId) => {
-    const token = getAuthToken();
     if (!token) return;
 
     try {
@@ -73,11 +69,10 @@ export const NotificationProvider = ({ children }) => {
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
-  }, []);
+  }, [token]);
 
   /** Mark ALL notifications as read in one shot */
   const markAllAsRead = useCallback(async () => {
-    const token = getAuthToken();
     if (!token || notifications.length === 0) return;
 
     const unread = notifications.filter((n) => !n.isRead);
@@ -98,11 +93,21 @@ export const NotificationProvider = ({ children }) => {
       // Re-fetch to restore accurate state
       fetchNotifications();
     }
-  }, [notifications, fetchNotifications]);
+  }, [token, notifications, fetchNotifications]);
 
   // ── Initial fetch + polling ───────────────────────────────────────────────
   useEffect(() => {
-    if (!getAuthToken()) return;
+    if (!token) {
+      // Reset state on logout
+      setNotifications([]);
+      setUnreadCount(0);
+      setAchievements({
+        totalEvents: 0,
+        currentStreak: 0,
+        badges: [],
+      });
+      return;
+    }
 
     fetchNotifications();
     fetchAchievements();
@@ -111,7 +116,7 @@ export const NotificationProvider = ({ children }) => {
     const intervalId = setInterval(fetchNotifications, POLLING_INTERVAL_MS);
 
     return () => clearInterval(intervalId);
-  }, [fetchNotifications, fetchAchievements]);
+  }, [token, fetchNotifications, fetchAchievements]);
 
   return (
     <NotificationContext.Provider

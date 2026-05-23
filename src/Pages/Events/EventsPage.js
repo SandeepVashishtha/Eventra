@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import mockEvents from "./eventsMockData.json";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
@@ -11,7 +11,12 @@ import StyledDropdown from "../../components/StyledDropdown";
 import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
 import SearchEmptyState from "../../components/common/SearchEmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import ActiveFilters from "./ActiveFilters";
 import { getRouteSearchResults } from "../../utils/searchUtils";
+import PageLoader from "../../components/common/PageLoader";
+import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const EVENT_SEARCH_KEYS = [
   "title",
@@ -23,16 +28,19 @@ const EVENT_SEARCH_KEYS = [
   "status",
 ];
 
-const renderCardSection = (isLoading, filteredEvents, viewMode, filterType, searchQuery, onClearSearch) => {
-  if (isLoading) {
-    return (
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
-          <EventCardSkeleton key={`skeleton-${i}`} />
-        ))}
-      </div>
-    );
-  }
+const renderCardSection = (
+  isLoading,
+  filteredEvents,
+  viewMode,
+  filterType,
+  searchQuery,
+  onClearSearch,
+) => {
+ if (isLoading) {
+  return (
+    <PageLoader text="Loading events..." />
+  );
+}
 
   if (filteredEvents.length === 0) {
     return (
@@ -53,10 +61,10 @@ const renderCardSection = (isLoading, filteredEvents, viewMode, filterType, sear
     <div
       key={filterType + viewMode}
       className={`grid gap-6 ${
-  viewMode === "grid"
-    ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-    : "grid-cols-1 max-w-4xl mx-auto"
-}`}
+        viewMode === "grid"
+          ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+          : "grid-cols-1 max-w-4xl mx-auto"
+      }`}
     >
       {filteredEvents.map((event) => (
         <EventCard key={event.id} event={event} />
@@ -66,9 +74,10 @@ const renderCardSection = (isLoading, filteredEvents, viewMode, filterType, sear
 };
 
 const EventsPage = () => {
-  useDocumentTitle("Eventra | Events")
+  useDocumentTitle("Eventra | Events");
   const location = useLocation();
-  const routeSearchQuery = new URLSearchParams(location.search).get("search") || "";
+  const routeSearchQuery =
+    new URLSearchParams(location.search).get("search") || "";
   const [events, setEvents] = useState([]);
   const [filterType, setFilterType] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
@@ -79,42 +88,55 @@ const EventsPage = () => {
   const cardSectionRef = useRef();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setEvents(mockEvents.map((event) => ({
-        ...event,
-        status: getEventStatus(event),
-      })));
-      setIsLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
+    const fetchEvents = async () => {
+      setIsLoading(true);
+      try {
+        const res = await apiUtils.get(API_ENDPOINTS.EVENTS.ALL);
+        setEvents(
+          res.data.map((event) => ({
+            ...event,
+            status: getEventStatus(event),
+          })),
+        );
+      } catch (err) {
+        toast.error("Failed to load events. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEvents();
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
     setSearchQuery(routeSearchQuery);
   }, [routeSearchQuery]);
 
-  const handleSearch = useCallback((query = "") => {
-    setSearchQuery(query);
 
-    let results = events;
-    if (query.trim()) {
-      results = getRouteSearchResults(events, query, EVENT_SEARCH_KEYS, {
-        threshold: 0.35,
-      });
-    }
+  const handleSearch = useCallback(
+    (query = "") => {
+      setSearchQuery(query);
 
-    const final = results.filter((event) => {
-      const status = getEventStatus(event);
+      let results = events;
+      if (query.trim()) {
+        results = getRouteSearchResults(events, query, EVENT_SEARCH_KEYS, {
+          threshold: 0.35,
+        });
+      }
+
+      const final = results.filter((event) => {
         return (
           filterType === "all" ||
-          (filterType === "upcoming" && status === "upcoming") ||
-          (filterType === "past" && status === "past") ||
+          (filterType === "upcoming" && event.status === "upcoming") ||
+          (filterType === "past" && event.status === "past") ||
           event.type === filterType
         );
-    });
+      });
 
-    setFilteredEvents(final);
-  }, [events, filterType]);
+setFilteredEvents(final);
+    },
+    [events, filterType],
+  );
 
   useEffect(() => {
     handleSearch(searchQuery);
@@ -123,7 +145,10 @@ const EventsPage = () => {
   useEffect(() => {
     if (!isLoading && routeSearchQuery) {
       setTimeout(() => {
-        cardSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        cardSectionRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
       }, 100);
     }
   }, [isLoading, routeSearchQuery]);
@@ -163,7 +188,7 @@ const EventsPage = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 overflow-x-hidden">
       <EventHero
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -176,9 +201,7 @@ const EventsPage = () => {
         ref={cardSectionRef}
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
       >
-        <div
-          className="mb-5 sm:mb-6 flex flex-col gap-3"
-        >
+        <div className="mb-5 sm:mb-6 flex flex-col gap-3">
           <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center sm:justify-start">
             {[
               { key: "all", label: "All" },
@@ -190,16 +213,32 @@ const EventsPage = () => {
               <button
                 key={filter.key}
                 onClick={() => setFilterType(filter.key)}
-                className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-full transition ${
+                className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-lg transition ${
                   filterType === filter.key
-                    ? "bg-black text-white dark:bg-white dark:text-black"
-                    : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-700"
+                    ? "bg-blue-600 text-white dark:bg-blue-600 dark:text-white"
+                    : "border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:text-gray-300 dark:border-slate-700 dark:hover:bg-slate-800"
                 }`}
                 aria-pressed={filterType === filter.key}
               >
                 {filter.label}
               </button>
             ))}
+
+            {/* Clear Filters Button */}
+            {(filterType !== "all" ||
+              sortType !== "Newest" ||
+              searchQuery !== "") && (
+              <button
+                onClick={() => {
+                  setFilterType("all");
+                  setSortType("Newest");
+                  setSearchQuery("");
+                }}
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-full transition bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 dark:bg-red-900/30 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/50 font-semibold"
+              >
+                Clear Filters
+              </button>
+            )}
           </div>
 
           {/* Sort Dropdown and View Toggle */}
@@ -218,9 +257,7 @@ const EventsPage = () => {
               />
             </div>
 
-            <div
-              className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm"
-            >
+            <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
               <button
                 onClick={() => setViewMode("grid")}
                 className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
@@ -249,19 +286,31 @@ const EventsPage = () => {
           </div>
         </div>
 
+        <ActiveFilters
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          filterType={filterType}
+          setFilterType={setFilterType}
+          sortType={sortType}
+          setSortType={setSortType}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+        />
+
         {renderCardSection(
           isLoading,
           filteredEvents,
           viewMode,
           filterType,
           searchQuery,
-          clearSearchAndFilters
+          clearSearchAndFilters,
         )}
       </div>
 
       <EventCTA />
 
       <FeedbackButton />
+      <ToastContainer position="bottom-right" />
     </div>
   );
 };

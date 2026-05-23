@@ -8,15 +8,19 @@ import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
 import FluidCursor from "./jhalak/FluidCursor";
 import PageTransition from "./components/common/PageTransition";
+import ReminderChecker from "./components/reminders/ReminderChecker";
+
+// Pages
 import RegistrationPage from "./Pages/RegistrationPage";
 
 // Context & Hooks
-import NotificationProvider from "./components/common/NotificationProvider";
+import NotificationToastContainer from "./components/common/NotificationProvider";
+import { NotificationProvider } from "./context/NotificationContext";
 import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
-import { ThemeProvider } from "./context/ThemeContext";
-import { useModelContext } from "./hooks/useModelContext";
+import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
 import useOfflineSync from "./hooks/useOfflineSync";
+import useLenis from "./hooks/useLenis";
 
 // Lazy load heavy components
 const Footer = lazy(() => import("./components/Layout/Footer"));
@@ -29,67 +33,86 @@ const OfflineSyncManager = () => {
 };
 
 function App() {
-  const [cursorEnabled, setCursorEnabled] = useState(
-    localStorage.getItem("cursor") !== "off",
-  );
+  const [cursorEnabled, setCursorEnabled] =
+    useState(
+      localStorage.getItem("cursor") !== "off"
+    );
 
-  useModelContext();
+  // Initialize Lenis smooth scrolling
+  useLenis();
 
+  // Toggle Cursor
   const toggleCursor = () => {
     const newValue = !cursorEnabled;
+
     setCursorEnabled(newValue);
-    localStorage.setItem("cursor", newValue ? "on" : "off");
+
+    localStorage.setItem(
+      "cursor",
+      newValue ? "on" : "off"
+    );
   };
 
+  // Listen For Cursor Preference Changes
   useEffect(() => {
     const handleCursorPreference = (event) => {
-      if (event?.detail?.cursorEnabled !== undefined) {
-        setCursorEnabled(event.detail.cursorEnabled);
+      if (
+        event?.detail?.cursorEnabled !== undefined
+      ) {
+        setCursorEnabled(
+          event.detail.cursorEnabled
+        );
       }
     };
 
     window.addEventListener(
       "cursorPreferenceChanged",
-      handleCursorPreference,
+      handleCursorPreference
     );
 
     return () => {
       window.removeEventListener(
         "cursorPreferenceChanged",
-        handleCursorPreference,
+        handleCursorPreference
       );
     };
   }, []);
 
   return (
-    <ThemeProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <NotificationProvider>
         <MyEventsProvider>
-          <NotificationProvider />
-          <OfflineSyncManager />
+          <SessionRecoveryProvider>
+            <NotificationProvider />
+            <ReminderChecker />
+            <NotificationToastContainer />
 
-          <Router>
+            <OfflineSyncManager />
+
+            <Router>
             <div className="App">
               <Navbar
                 cursorEnabled={cursorEnabled}
                 toggleCursor={toggleCursor}
               />
 
-              <main className="relative z-10 min-h-screen bg-white dark:bg-black">
+              <main
+                className="
+                  relative
+                  z-10
+                min-h-[85vh]
+                  bg-white
+                  dark:bg-slate-950
+                  text-black
+                  dark:text-white
+                  transition-colors
+                  duration-300
+                "
+              >
                 <PageTransition>
-                  <Suspense
-                    fallback={
-                      <div className="flex min-h-screen items-center justify-center">
-                        Loading...
-                      </div>
-                    }
-                  >
+                  <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
                     <Routes>
-                      <Route
-                        path="/register/:id"
-                        element={<RegistrationPage />}
-                      />
-
+                      <Route path="/register/:id" element={<RegistrationPage />} />
                       <Route path="*" element={<AppRoutes />} />
                     </Routes>
                   </Suspense>
@@ -97,19 +120,18 @@ function App() {
               </main>
 
               <ScrollToTop />
-
               <Suspense fallback={null}>
                 <Chatbot />
                 <Footer />
               </Suspense>
-
               <FeedbackButton />
               <FluidCursor enabled={cursorEnabled} />
             </div>
           </Router>
+          </SessionRecoveryProvider>
         </MyEventsProvider>
-      </AuthProvider>
-    </ThemeProvider>
+      </NotificationProvider>
+    </AuthProvider>
   );
 }
 

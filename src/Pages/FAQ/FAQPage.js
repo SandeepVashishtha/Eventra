@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   Sparkles,
   Calendar,
@@ -10,18 +10,7 @@ import {
   Globe,
 } from "lucide-react";
 import FAQCTA from "./FaqCTA";
-
-function useDocumentTitle(title) {
-  useEffect(() => {
-    const previousTitle = document.title;
-
-    document.title = title;
-
-    return () => {
-      document.title = previousTitle;
-    };
-  }, [title]);
-}
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 const faqs = [
   {
@@ -108,7 +97,7 @@ export default function FAQSection() {
   );
 
   const wrapperRefs = useRef([]);
-  
+
 
   const sectionRef = useRef(null);
   const headerRef = useRef(null);
@@ -164,13 +153,14 @@ export default function FAQSection() {
               1
             );
 
-            const scale = 1 - factor * 0.02;
-            const blur = factor * 1;
+            const scale = 1 - factor * 0.04;
+const blur = factor * 2;
 
             return {
-              transform: `scale(${scale})`,
-              filter: `blur(${blur}px) brightness(${1 - factor * 0.05})`,
-            };
+  transform: `scale(${scale}) translateY(${factor * -10}px)`,
+  filter: `blur(${blur}px) brightness(${1 - factor * 0.05})`,
+  opacity: 1 - factor * 0.15,
+};
           }
 
           return {
@@ -201,13 +191,14 @@ export default function FAQSection() {
   }, [headerHeight]);
 
 
-const cardStickyTop = NAVBAR_HEIGHT + headerHeight;
+  const cardStickyTop = NAVBAR_HEIGHT + headerHeight;
 
-return (
-  <>
-    <style>{`
+  return (
+    <>
+      <style>{`
         /* ── CSS variables (light mode defaults) ── */
         .faq-section-root {
+        transition: background-color 0.3s ease, color 0.3s ease;
           --bg-primary: #f9fafb;
           --text-primary: #111827;
           --card-bg: #ffffff;
@@ -233,15 +224,20 @@ return (
          * instead of the OS media query so the toggle is respected immediately.
          */
         .dark .faq-section-root {
-          --bg-primary: #111827;
+          --bg-primary: linear-gradient(
+  to bottom,
+  #020617,
+  #0f172a,
+  #111827
+);
           --text-primary: #f9fafb;
-          --card-bg: #1f2937;
-          --card-border: #374151;
+          --card-bg: #0f172a;
+          --card-border: rgba(255,255,255,0.08);
           --cat-color: #818cf8;
           --heading-color: #f3f4f6;
           --subtext-color: #9ca3af;
           --answer-color: #d1d5db;
-          --heading-bg: rgba(17, 24, 39, 0.95);
+          --heading-bg: rgba(2, 6, 23, 0.92);
           --heading-border: rgba(255, 255, 255, 0.07);
           --icon-bg: #312e81;
           --icon-color: #818cf8;
@@ -257,6 +253,11 @@ return (
           z-index: 90;
           width: 100%;
           box-sizing: border-box;
+          transition:
+          transform 0.5s ease,
+          opacity 0.5s ease,
+          padding 0.5s ease,
+          background 0.5s ease;
         }
 
         .faq-heading-block.is-fixed {
@@ -294,23 +295,40 @@ return (
         }
 
         .card-pin-wrapper {
-          position: sticky;
+          position: relative;
           width: 100%;
-          max-width: 760px;
-          margin-bottom: 60px;
+          max-width: 820px;
+          margin-bottom: 90px;
         }
 
         .faq-card-inner {
+          transition:
+            transform 0.35s ease,
+            box-shadow 0.35s ease,
+            border-color 0.35s ease,
+            background 0.35s ease;
           width: 100%;
           background: var(--card-bg);
           border: 1px solid var(--card-border);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
           border-radius: 16px;
-          padding: 32px;
-          box-shadow:
-            0 10px 25px -5px rgba(0, 0, 0, 0.05),
-            0 8px 10px -6px rgba(0, 0, 0, 0.03);
+          padding: 36px;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.06);
           box-sizing: border-box;
         }
+
+        .dark .faq-card-inner {
+          box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+
+        .faq-card-inner:hover {
+  transform: translateY(-6px);
+  border-color: rgba(99,102,241,0.4);
+  box-shadow:
+    0 20px 60px rgba(79,70,229,0.18);
+}
 
         .faq-card-header {
           display: flex;
@@ -340,7 +358,9 @@ return (
         }
 
         .faq-card-inner h3 {
-          font-size: 1.25rem;
+          font-size: 1.45rem;
+line-height: 1.4;
+letter-spacing: -0.02em;
           color: var(--heading-color);
           margin: 0 0 10px;
           font-weight: 600;
@@ -349,7 +369,8 @@ return (
         .faq-card-inner p {
           color: var(--answer-color);
           line-height: 1.6;
-          font-size: 0.95rem;
+          font-size: 1rem;
+line-height: 1.8;
           margin: 0;
         }
 
@@ -359,58 +380,61 @@ return (
         }
       `}</style>
 
-    <div className="faq-section-root" ref={sectionRef}>
-
-      
-      {/* ── Heading — becomes fixed once section reaches the navbar ── */}
       <div
-        ref={headerRef}
-        className={`faq-heading-block${isHeaderFixed ? " is-fixed" : ""}`}
-        style={isHeaderFixed ? { top: headerTop } : {}}
-      >
-        <h2>Frequently Asked Questions</h2>
-        <p>
-          Everything you need to know about using Eventra, from getting
-          started to hosting your own events.
-        </p>
-      </div>
+  className="faq-section-root text-slate-900 dark:text-gray-100"
+  ref={sectionRef}
+>
 
-      {/* Spacer holds layout space when heading is fixed */}
-      {isHeaderFixed && (
+
+        {/* ── Heading — becomes fixed once section reaches the navbar ── */}
         <div
-          className="faq-heading-spacer"
-          style={{ height: headerHeight }}
-        />
-      )}
+          ref={headerRef}
+          className={`faq-heading-block${isHeaderFixed ? " is-fixed" : ""}`}
+          style={isHeaderFixed ? { top: headerTop } : {}}
+        >
+          <h2>Frequently Asked Questions</h2>
+          <p>
+            Everything you need to know about using Eventra, from getting
+            started to hosting your own events.
+          </p>
+        </div>
 
-      {/* ── Stacking Cards ── */}
-      <div className="faq-cards-container">
-        {faqs.map((faq, index) => (
+        {/* Spacer holds layout space when heading is fixed */}
+        {isHeaderFixed && (
           <div
-            key={index}
-            className="card-pin-wrapper"
-            // FIX 5: Ref callback that appends without overwriting
-            ref={(el) => {
-              if (el) wrapperRefs.current[index] = el;
-            }}
-            style={{ top: cardStickyTop + 16 }}
-          >
-            {/* FIX 3: Style applied via React state, not direct DOM write */}
-            <div className="faq-card-inner" style={cardStyles[index]}>
-              {/* FIX 4: Icons re-added with category label */}
-              <div className="faq-card-header">
-                <span className="faq-icon">{faq.icon}</span>
-                <span className="faq-cat">{faq.category}</span>
+            className="faq-heading-spacer"
+            style={{ height: headerHeight }}
+          />
+        )}
+
+        {/* ── Stacking Cards ── */}
+        <div className="faq-cards-container">
+          {faqs.map((faq, index) => (
+            <div
+              key={index}
+              className="card-pin-wrapper"
+              // FIX 5: Ref callback that appends without overwriting
+              ref={(el) => {
+                if (el) wrapperRefs.current[index] = el;
+              }}
+              style={{}}
+            >
+              {/* FIX 3: Style applied via React state, not direct DOM write */}
+              <div className="faq-card-inner" style={cardStyles[index]}>
+                {/* FIX 4: Icons re-added with category label */}
+                <div className="faq-card-header">
+                  <span className="faq-icon">{faq.icon}</span>
+                  <span className="faq-cat">{faq.category}</span>
+                </div>
+                <h3>{faq.question}</h3>
+                <p>{faq.answer}</p>
               </div>
-              <h3>{faq.question}</h3>
-              <p>{faq.answer}</p>
             </div>
-          </div>
-        ))}
-        <div className="scroll-spacer" />
+          ))}
+          <div className="scroll-spacer" />
+        </div>
+        <FAQCTA />
       </div>
-      <FAQCTA />
-    </div>
-  </>
-);
+    </>
+  );
 } 

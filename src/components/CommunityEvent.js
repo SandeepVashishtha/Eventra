@@ -92,7 +92,7 @@ const CommunityEvent = () => {
 
   return (
     // UPDATED: Main page background
-    <div className="bg-white dark:bg-black pt-20 md:pt-24">
+    <div className="bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 pt-20 md:pt-24 text-slate-900 dark:text-gray-100 min-h-screen">
       <div className="max-w-7xl mx-auto px-6 py-16">
         {/* Intro Section */}
         <motion.div
@@ -111,7 +111,7 @@ const CommunityEvent = () => {
           <h1 className="text-5xl font-extrabold text-indigo-900 dark:text-gray-100 mb-4">
             Community Events
           </h1>
-          <p className="text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          <p className="text-base text-gray-700 dark:text-white max-w-2xl mx-auto">
             "Explore meetups, hackathons, webinars, and global conferences where
             developers collaborate, innovate, and grow together."
           </p>
@@ -134,7 +134,9 @@ const CommunityEvent = () => {
                   {event.icon}
                 </div>
                 {/* UPDATED: Text color */}
-                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{event.title}</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  {event.title}
+                </h2>
               </div>
 
               {/* Event Info */}
@@ -145,14 +147,16 @@ const CommunityEvent = () => {
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 <strong>Location:</strong> {event.location}
               </p>
-              <p className="mt-4 text-gray-700 dark:text-gray-300">{event.description}</p>
+              <p className="mt-4 text-gray-700 dark:text-gray-300">
+                {event.description}
+              </p>
 
               {/* Learn More Button is fine for both themes */}
               <motion.button
                 type="button"
                 whileHover={{ scale: 1.05 }}
                 onClick={() => setSelectedEvent(event)}
-                className="mt-6 px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-md bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 transition-all"
+                className="mt-6 px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-md bg-blue-600 hover:bg-blue-700 transition-all"
                 aria-label={`Learn more about ${event.title}`}
               >
                 Learn More -&gt;

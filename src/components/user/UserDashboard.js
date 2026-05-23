@@ -156,6 +156,10 @@ export default function UserDashboard() {
               )}
             </button>
           ))}
+          <Link to="/dashboard/achievements" className="ud-nav-item">
+            <Trophy size={18} />
+            <span>Achievements</span>
+          </Link>
         </nav>
 
         <div className="ud-sidebar-bottom">

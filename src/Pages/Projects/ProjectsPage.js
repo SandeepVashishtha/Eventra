@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react"; // React hooks for state and lifecycle
 import { motion, AnimatePresence } from "framer-motion"; // Framer Motion for animations
-import { FiAlertCircle, FiSearch, FiX } from "react-icons/fi"; // Feather icons
+import { FiAlertCircle, FiSearch, FiX, FiChevronDown } from "react-icons/fi"; // Feather icons
 
 import ProjectHero from "./ProjectHero"; // Hero section component
 import ProjectCard from "./ProjectCard"; // Individual project card component
@@ -9,45 +9,18 @@ import ProjectCTA from "./ProjectCTA";
 // Import mock data directly (assuming it's named mockProjectsData.json in the same folder as ProjectsPage.js)
 import mockProjects from "./mockProjectsData.json";
 // fix: import API config for real backend calls with mock fallback
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
-
+import { API_ENDPOINTS } from "../../config/api";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import SearchEmptyState from "../../components/common/SearchEmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-
-// Skeleton loader for project cards while data is loading
-const SkeletonCard = () => (
-  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden animate-pulse">
-    <div className="h-40 bg-gray-100 dark:bg-gray-700"></div>
-    <div className="p-6">
-      <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded w-3/4 mb-4"></div>
-      <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-full mb-2"></div>
-      <div className="h-4 w-5/6 bg-gray-100 dark:bg-gray-600 rounded mb-4"></div>
-      <div className="flex flex-wrap gap-2 mb-4">
-        <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-16"></div>
-        <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-24"></div>
-      </div>
-      <div className="flex items-center justify-between mb-4">
-        <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700"></div>
-        <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-1/3"></div>
-      </div>
-      <div className="flex flex-wrap gap-2 mb-4">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-16"></div>
-        ))}
-      </div>
-      <div className="flex items-center justify-between mt-4">
-        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg w-1/3"></div>
-        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg w-1/3"></div>
-      </div>
-    </div>
-  </div>
-);
+import PageLoader from "../../components/common/PageLoader";
+import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
 
 // Main ProjectGallery component
 const ProjectGallery = () => {
-  useDocumentTitle("Eventra | Projects")
-  const initialSearchQuery = new URLSearchParams(window.location.search).get("search") || "";
+  useDocumentTitle("Eventra | Projects");
+  const initialSearchQuery =
+    new URLSearchParams(window.location.search).get("search") || "";
   // State variables
   const [projects, setProjects] = useState([]); // Stores all fetched projects
   const [isLoading, setIsLoading] = useState(true); // Loading state
@@ -58,7 +31,7 @@ const ProjectGallery = () => {
   const [error, setError] = useState(""); // Error message
   const [categoryOpen, setCategoryOpen] = useState(false); // Category dropdown state
   const [sortOpen, setSortOpen] = useState(false); // Sort dropdown state
-  const cardSectionRef = useRef() // Refer to card section
+  const cardSectionRef = useRef(); // Refer to card section
   const toggleCategory = (category) => {
     setSelectedCategories((prev) => {
       if (prev.includes(category)) {
@@ -77,76 +50,55 @@ const ProjectGallery = () => {
 
   // fix: try real API first; fall back to mock data if API is unavailable or returns empty
   useEffect(() => {
+    const controller = new AbortController();
+    let isMounted = true;
     const fetchProjects = async () => {
       try {
-        setIsLoading(true); // Set loading before fetching
-        setError(""); // Reset error
-
-        // --- PRODUCTION LOGIC: attempt real API call to Spring Boot backend ---
-        const response = await apiUtils.get(API_ENDPOINTS.PROJECTS.LIST);
-
-        if (response.ok) {
-          const projectsData = await response.json();
-
-          // fix: only use API data if it is non-empty; otherwise fall back to mock
-          if (projectsData && projectsData.length > 0) {
-            setProjects(projectsData);
-
-            // Attempt to fetch categories from API
-            try {
-              const categoriesResponse = await apiUtils.get(
-                API_ENDPOINTS.PROJECTS.CATEGORIES
-              );
-              if (categoriesResponse.ok) {
-                const categoriesData = await categoriesResponse.json();
-                setCategories(["all", ...categoriesData]);
-              } else {
-                // fix: derive categories from API project data if categories endpoint fails
-                const uniqueCategories = [...new Set(projectsData.map(p => p.category))];
-                setCategories(["all", ...uniqueCategories]);
-              }
-            } catch {
-              // fix: derive categories from API project data if categories endpoint throws
-              const uniqueCategories = [...new Set(projectsData.map(p => p.category))];
-              setCategories(["all", ...uniqueCategories]);
-            }
-
-            setIsLoading(false);
-            return; // exit — API data loaded successfully
+        setIsLoading(true);
+        setError("");
+        const response = await fetch(API_ENDPOINTS.PROJECTS.LIST, {
+          signal: controller.signal,
+        });
+        
+        if (!response.ok) {
+          throw new Error("Failed to fetch projects");
+        }
+        
+        const projectsData = await response.json();
+        if (!isMounted) return;
+        if (projectsData && projectsData.length > 0) {
+          setProjects(projectsData);
+        } else {
+          setProjects(mockProjects);
+        }
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          console.error(error);
+          
+          if (isMounted) {
+            setProjects(mockProjects);
           }
         }
-
-        // --- MOCK DATA FALLBACK: API unavailable, not ok, or returned empty array ---
-        console.warn("Projects API unavailable or empty — loading mock data.");
-        setTimeout(() => {
-          const projectsData = mockProjects;
-          setProjects(projectsData);
-
-          // Extract unique categories from mock data
-          const uniqueCategories = [...new Set(projectsData.map(p => p.category))];
-          setCategories(["all", ...uniqueCategories]);
-          setIsLoading(false);
-        }, 500);
-
-      } catch (error) {
-        // fix: on any network error fall back to mock instead of showing error
-        console.warn("Projects API error — falling back to mock data:", error.message);
-        setTimeout(() => {
-          setProjects(mockProjects);
-          const uniqueCategories = [...new Set(mockProjects.map(p => p.category))];
-          setCategories(["all", ...uniqueCategories]);
-          setIsLoading(false);
-        }, 500);
+      } finally {
+        if (isMounted) {
+         setIsLoading(false);
+        }
       }
     };
-
-    fetchProjects(); // Trigger data fetch
+    fetchProjects();
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, []);
 
   useEffect(() => {
     if (!isLoading && initialSearchQuery) {
       setTimeout(() => {
-        cardSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        cardSectionRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
       }, 100);
     }
   }, [isLoading, initialSearchQuery]);
@@ -154,7 +106,7 @@ const ProjectGallery = () => {
   // Filter, search, and sort projects dynamically
   const filteredAndSortedProjects = projects
     .filter((project) => {
-      // Filter by selected category 
+      // Filter by selected category
       if (
         selectedCategories.length > 0 &&
         !selectedCategories.includes(project.category)
@@ -168,9 +120,10 @@ const ProjectGallery = () => {
         return (
           project.title.toLowerCase().includes(query) ||
           project.description.toLowerCase().includes(query) ||
-          (project.techStack && project.techStack.some((tech) =>
-            tech.toLowerCase().includes(query)
-          )) ||
+          (project.techStack &&
+            project.techStack.some((tech) =>
+              tech.toLowerCase().includes(query),
+            )) ||
           project.category.toLowerCase().includes(query) ||
           project.author.toLowerCase().includes(query)
         );
@@ -195,21 +148,27 @@ const ProjectGallery = () => {
     });
 
   const scrollToCard = () => {
-    cardSectionRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
+    cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   return (
     // UPDATED: Main page background
-    <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
+    <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100">
       {/* Hero Section with CTA */}
       <ProjectHero scrollToCard={scrollToCard} />
       {/* Main Container */}
-      <div ref={cardSectionRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div
+        ref={cardSectionRef}
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+      >
         {/* Search and Filter Panel */}
         <motion.div
           // UPDATED: Panel background and border
           className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8"
-          style={{ boxShadow: "0 10px 25px rgba(59, 130, 246, 0.08)", fontFamily: '"Big Shoulders Display", sans-seri'}}
+          style={{
+            boxShadow: "0 10px 25px rgba(59, 130, 246, 0.08)",
+            fontFamily: '"Big Shoulders Display", sans-seri',
+          }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -245,9 +204,11 @@ const ProjectGallery = () => {
                     aria-expanded={categoryOpen}
                   >
                     <span className="text-gray-700 dark:text-gray-200">
-                     {selectedCategories.length === 0 ? "All Categories" : `${selectedCategories.length} Selected`}
+                      {selectedCategories.length === 0
+                        ? "All Categories"
+                        : `${selectedCategories.length} Selected`}
                     </span>
-                    <FiX className="ml-2 text-gray-400 dark:text-gray-500" />
+                    <FiChevronDown className={`ml-2 text-gray-400 dark:text-gray-500 transition-transform duration-200 ${categoryOpen ? "rotate-180" : ""}`} />
                   </button>
                   <AnimatePresence>
                     {categoryOpen && (
@@ -255,19 +216,21 @@ const ProjectGallery = () => {
                         // UPDATED: Dropdown menu styles
                         className="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
                       >
-                        {categories.filter((cat) => cat !== "all").map((cat) => (
-                        <li
-                          key={cat}
-                          onClick={() => toggleCategory(cat)}
-                          className={`px-4 py-2 cursor-pointer text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                            selectedCategories.includes(cat)
-                              ? "bg-blue-100 dark:bg-blue-900"
-                              : ""
-                          }`}
-                        >
-                          {cat}
-                        </li>
-                        ))}
+                        {categories
+                          .filter((cat) => cat !== "all")
+                          .map((cat) => (
+                            <li
+                              key={cat}
+                              onClick={() => toggleCategory(cat)}
+                              className={`px-4 py-2 cursor-pointer text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                                selectedCategories.includes(cat)
+                                  ? "bg-blue-100 dark:bg-blue-900"
+                                  : ""
+                              }`}
+                            >
+                              {cat}
+                            </li>
+                          ))}
                       </motion.ul>
                     )}
                   </AnimatePresence>
@@ -292,7 +255,7 @@ const ProjectGallery = () => {
                     <span className="text-gray-700 dark:text-gray-300">
                       {sortByLabels[sortBy]}
                     </span>
-                    <FiX className="ml-2 text-gray-400 dark:text-gray-500" />
+                    <FiChevronDown className={`ml-2 text-gray-400 dark:text-gray-500 transition-transform duration-200 ${sortOpen ? "rotate-180" : ""}`} />
                   </button>
 
                   {/* Sort Dropdown Menu */}
@@ -305,7 +268,6 @@ const ProjectGallery = () => {
                         // UPDATED: Dropdown menu styles
                         className="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
                       >
-                      
                         {Object.entries(sortByLabels).map(([key, label]) => (
                           <li
                             key={key}
@@ -327,9 +289,9 @@ const ProjectGallery = () => {
               {/* Clear Filters Button */}
               <motion.button
                 whileHover={{ scale: 1.05 }}
-                className="whitespace-nowrap flex-shrink-0 px-4 py-3 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white text-sm font-semibold rounded-xl flex items-center gap-2 hover:from-blue-500 hover:to-cyan-500 transition-all shadow-lg"
+                className="whitespace-nowrap flex-shrink-0 px-4 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold rounded-lg flex items-center gap-2 hover:bg-gray-700 dark:hover:bg-gray-100 transition-all shadow-sm"
                 onClick={() => {
-                  setSelectedCategories([]);// Reset category
+                  setSelectedCategories([]); // Reset category
                   setSearchQuery(""); // Clear search
                   setSortBy("recent"); // Reset sort
                 }}
@@ -360,11 +322,7 @@ const ProjectGallery = () => {
         <AnimatePresence mode="wait">
           {isLoading ? (
             // Show skeleton loaders while fetching
-            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <SkeletonCard key={`skeleton-${i}`} />
-              ))}
-            </div>
+            <PageLoader text="Loading Projects..." />
           ) : error ? (
             // Show error message if fetch fails
             <motion.div
@@ -379,7 +337,9 @@ const ProjectGallery = () => {
                 <h3 className="mt-2 text-lg font-medium text-red-900 dark:text-red-200">
                   Error loading projects
                 </h3>
-                <p className="mt-1 text-sm text-red-700 dark:text-red-300">{error}</p>
+                <p className="mt-1 text-sm text-red-700 dark:text-red-300">
+                  {error}
+                </p>
                 <div className="mt-6">
                   <button
                     onClick={() => window.location.reload()}
@@ -438,46 +398,6 @@ const ProjectGallery = () => {
                 }}
               />
 
-              {/* Floating bubbles */}
-              <div className="absolute inset-0 z-0 overflow-hidden">
-                {[...Array(6)].map((_, i) => {
-                  const positions = [
-                    { left: "10%", top: "20%" },
-                    { left: "70%", top: "15%" },
-                    { left: "30%", top: "70%" },
-                    { left: "80%", top: "60%" },
-                    { left: "50%", top: "40%" },
-                    { left: "20%", top: "50%" },
-                  ];
-                  const size = 30 + Math.random() * 40;
-                  return (
-                    <motion.div
-                      key={i}
-                      className="absolute rounded-full bg-sky-200 dark:bg-sky-500/40"
-                      style={{
-                        width: size,
-                        height: size,
-                        left: positions[i].left,
-                        top: positions[i].top,
-                        opacity: 0.6, // Increased from 0.3
-                        filter: "blur(2px)",
-                      }}
-                      animate={{
-                        y: [0, -30, 0],
-                        x: [0, 10, -10, 0],
-                        scale: [1, 1.2, 1],
-                      }}
-                      transition={{
-                        duration: 6 + i,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        delay: i * 0.5,
-                      }}
-                    />
-                  );
-                })}
-              </div>
-
               {/* No projects icon */}
               <div className="mx-auto max-w-sm relative z-10">
                 <motion.div
@@ -501,7 +421,9 @@ const ProjectGallery = () => {
                     setSearchQuery("");
                     setSortBy("recent");
                   }}
-                  popularTags={categories.filter((category) => category !== "all")}
+                  popularTags={categories.filter(
+                    (category) => category !== "all",
+                  )}
                 />
               </div>
             </motion.div>
@@ -519,4 +441,3 @@ const ProjectGallery = () => {
 };
 
 export default ProjectGallery;
-

@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { lazy } from 'react';
 import { Route } from 'react-router-dom';
 import PageLayout from '../Layout/PageLayout';
 
 // --------------- PAGES
 import HomePage from "../../Pages/Home/HomePage";
-import EventsPage from "../../Pages/Events/EventsPage";
 import EventDetails from "../../Pages/Events/EventDetails";
 import EventRegistration from "../../Pages/Events/EventRegistration";
+import BookmarkedEvents from "../../Pages/Events/BookmarkedEvents";
+import RemindersPage from "../../Pages/Events/RemindersPage";
 import HackathonPage from "../../Pages/Hackathons/HackathonPage";
 import ProjectsPage from "../../Pages/Projects/ProjectsPage";
 import Contributors from "../Contributors";
@@ -21,18 +22,26 @@ import ApiDocs from "../../Pages/ApiDocs";
 import HelpCenter from "../../Pages/HelpCenter";
 import ContactUs from "../../Pages/Contact/ContactUs";
 import FeedbackPage from "../../Pages/Feedback/FeedbackPage";
-import EventAnalyticsDashboard from "../../Pages/Events/EventAnalyticsDashboard";
 import FloorPlanDesignerPage from "../../Pages/Events/FloorPlanDesignerPage";
 import DocumentationPage from "../../Pages/About/DocumentationPage";
 import SubmitProject from "../../Pages/Projects/SubmitProject";
 import MockApiResponse from "../MockApiResponse";
 
+const EventsPage = lazy(() => import("../../Pages/Events/EventsPage"));
+const HackathonPage = lazy(() => import("../../Pages/Hackathons/HackathonPage"));
+const HackathonDetailsPage = lazy(() => import("../../Pages/Hackathons/HackathonDetailsPage"));
+const ProjectsPage = lazy(() => import("../../Pages/Projects/ProjectsPage"));
+const EventAnalyticsDashboard = lazy(() => import("../../Pages/Events/EventAnalyticsDashboard"));
+
 export const getPublicRoutes = () => [
   <Route key="/" path="/" element={<HomePage />} />,
   <Route key="/events" path="/events" element={<EventsPage />} />,
+  <Route key="/bookmarks" path="/bookmarks" element={<BookmarkedEvents />} />,
+  <Route key="/reminders" path="/reminders" element={<RemindersPage />} />,
   <Route key="/event-details" path="/events/:eventId" element={<EventDetails />} />,
   <Route key="/register" path="/events/:eventId/register" element={<EventRegistration />} />,
   <Route key="/hackathons" path="/hackathons" element={<HackathonPage />} />,
+  <Route key="/hackathon-details" path="/hackathons/:hackathonId" element={<HackathonDetailsPage />} />,
   <Route key="/projects" path="/projects" element={<ProjectsPage />} />,
   <Route key="/api/hackathons" path="/api/hackathons" element={<MockApiResponse />} />,
   <Route key="/api/projects" path="/api/projects" element={<MockApiResponse />} />,

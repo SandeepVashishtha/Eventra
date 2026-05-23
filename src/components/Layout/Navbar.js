@@ -20,11 +20,14 @@ import {
   LogIn,
   MessageSquare,
   Book,
+  Bookmark,
+  Bell,
   HelpCircle,
   ChevronDown,
   MousePointer,
+  Moon,
   Sun,
-  Moon
+  MoreHorizontal
 } from "lucide-react";
 
 // --- Helpers to reduce complexity ---
@@ -52,57 +55,89 @@ const setBodyScrollStyles = (top) => {
   Object.assign(document.body.style, { position: "fixed", top: `-${top}px`, left: "0", right: "0", width: "100%" });
 };
 
-const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => (
-  <button
-    onClick={toggleTheme}
-    aria-label={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-    title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-    className={isMobile
-      ? "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 font-medium text-sm"
-      : "flex items-center gap-1.5 px-2.5 py-1 mr-2 text-xs font-medium border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
-    }
-  >
-    {isDarkMode ? (
-      <Sun className={isMobile ? "w-5 h-5 text-amber-500" : "w-4 h-4 text-amber-500"} />
-    ) : (
-      <Moon className={isMobile ? "w-5 h-5 text-indigo-500" : "w-4 h-4 text-indigo-500"} />
-    )}
-    {isMobile
-      ? (isDarkMode ? "Light Mode" : "Dark Mode")
-      : (isDarkMode ? "LIGHT" : "DARK")
-    }
-  </button>
-);
+const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
+  if (isMobile) {
+    return (
+      <motion.button
+        whileTap={{ scale: 0.95 }}
+        onClick={toggleTheme}
+        className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-xl bg-zinc-100 dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 font-semibold border border-zinc-200 dark:border-zinc-700/50 hover:bg-zinc-200 dark:hover:bg-zinc-700/80 transition-all"
+      >
+        {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        <span>{isDarkMode ? "Dark Mode OFF" : "Dark Mode ON"}</span>
+      </motion.button>
+    );
+  }
+  return (
+    <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={toggleTheme}
+      title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group"
+    >
+      <motion.span
+        key={isDarkMode ? "sun" : "moon"}
+        initial={{ rotate: -90, opacity: 0 }}
+        animate={{ rotate: 0, opacity: 1 }}
+        exit={{ rotate: 90, opacity: 0 }}
+        transition={{ duration: 0.3 }}
+        className="text-zinc-600 group-hover:text-indigo-500 dark:text-zinc-400 dark:group-hover:text-indigo-400"
+      >
+        {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+      </motion.span>
+      <span className="text-[10px] font-bold tracking-widest text-zinc-500 dark:text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 uppercase">
+        {isDarkMode ? "LIGHT" : "DARK"}
+      </span>
+    </motion.button>
+  );
+};
 
-const CursorToggleButton = ({ cursorEnabled, toggleCursor, isMobile }) => (
-  <button
-    onClick={toggleCursor}
-    aria-label={cursorEnabled ? "Disable Fluid Cursor" : "Enable Fluid Cursor"}
-    title={cursorEnabled ? "Disable Fluid Cursor" : "Enable Fluid Cursor"}
-    className={isMobile
-      ? "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 font-medium text-sm"
-      : "flex items-center gap-1.5 px-2.5 py-1 mr-3 text-xs font-medium border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
-    }
-  >
-    <MousePointer className={isMobile
-      ? `w-5 h-5 ${cursorEnabled ? "text-emerald-500" : "text-gray-400"}`
-      : `w-4 h-4 ${cursorEnabled ? "text-emerald-500" : "text-gray-400"}`
-    } />
-    {isMobile
-      ? (cursorEnabled ? "Cursor On" : "Cursor Off")
-      : (cursorEnabled ? "ON" : "OFF")
-    }
-  </button>
-);
+const CursorToggleButton = ({ cursorEnabled, toggleCursor, isMobile }) => {
+  if (isMobile) {
+    return (
+      <motion.button
+        whileTap={{ scale: 0.95 }}
+        onClick={toggleCursor}
+        className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-xl bg-zinc-100 dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 font-semibold border border-zinc-200 dark:border-zinc-700/50 hover:bg-zinc-200 dark:hover:bg-zinc-700/80 transition-all"
+      >
+        {cursorEnabled ? <MousePointer className="w-5 h-5 text-indigo-500" /> : <MousePointer className="w-5 h-5 text-zinc-400" />}
+        <span>{cursorEnabled ? "Cursor: FLUID" : "Cursor: STATIC"}</span>
+      </motion.button>
+    );
+  }
+  return (
+    <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={toggleCursor}
+      title={cursorEnabled ? "Disable Fluid Cursor" : "Enable Fluid Cursor"}
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group"
+    >
+      {cursorEnabled ? (
+        <MousePointer className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+      ) : (
+        <MousePointer className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+      )}
+      <span className={`text-[10px] font-bold tracking-widest uppercase ${
+        cursorEnabled
+          ? "text-indigo-500 dark:text-indigo-400"
+          : "text-zinc-400 dark:text-zinc-500"
+      }`}>
+        {cursorEnabled ? "FLUID" : "STATIC"}
+      </span>
+    </motion.button>
+  );
+};
 
 const AuthButtons = ({ isMobile, closeAllMenus }) => (
-  <div className={isMobile ? "space-y-3" : "flex items-center space-x-3"}>
+  <div className={isMobile ? "space-y-3 mt-4" : "flex items-center space-x-6"}>
     <Link 
       to="/login" 
       onClick={isMobile ? closeAllMenus : undefined} 
       className={isMobile 
-        ? "flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-semibold text-white bg-black hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 border border-transparent"
-        : "px-4 py-2 text-sm font-medium text-black/75 hover:text-black dark:text-white/75 dark:hover:text-white transition-colors"
+        ? "flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-white bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200 transition-all duration-300"
+        : "text-sm font-semibold text-zinc-600 hover:text-indigo-600 dark:text-zinc-300 dark:hover:text-indigo-400 transition-colors whitespace-nowrap"
       }
     >
       {isMobile && <LogIn className="w-5 h-5" />}Sign In
@@ -111,8 +146,8 @@ const AuthButtons = ({ isMobile, closeAllMenus }) => (
       to="/signup" 
       onClick={isMobile ? closeAllMenus : undefined} 
       className={isMobile
-        ? "flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-semibold text-black dark:text-white bg-white dark:bg-black/50 hover:bg-gray-100 dark:hover:bg-white/10 border-2 border-black/15 dark:border-white/20 hover:border-black/25 dark:hover:border-white/30 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
-        : "px-5 py-2 text-sm font-semibold text-white transition-all duration-300 bg-black hover:bg-zinc-800 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 dark:bg-white dark:text-black dark:hover:bg-zinc-200 focus:outline-none focus:ring-4 focus:ring-black/20 dark:focus:ring-white/20"
+        ? "flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-zinc-900 dark:text-white bg-transparent border-2 border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all duration-300"
+        : "flex items-center justify-center px-6 py-2.5 text-sm font-bold text-white transition-all duration-300 bg-indigo-600 hover:bg-indigo-700 rounded-full shadow-md hover:shadow-lg hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-indigo-500/30 whitespace-nowrap"
       }
     >
       {isMobile && <Sparkles className="w-5 h-5" />}Get Started
@@ -124,10 +159,10 @@ const MobileNavLink = ({ item, isActive, onClick }) => (
   <Link
     to={item.href}
     onClick={onClick}
-    className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium ${
+    className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium border ${
       isActive
-        ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
-        : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
+        ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
+        : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 border-transparent"
     }`}
   >
     {item.icon}{item.name}
@@ -138,10 +173,10 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
   <div key={item.name}>
     <button
       onClick={onToggle}
-      className={`flex items-center justify-between w-full px-4 py-2.5 rounded-lg transition-colors text-left text-base font-medium ${
+      className={`flex items-center justify-between w-full px-4 py-2.5 rounded-lg transition-colors text-left text-base font-medium border ${
         isActive
-          ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
-          : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
+          ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
+          : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 border-transparent"
       }`}
     >
       <span className="flex items-center gap-3">{item.icon} {item.name}</span>
@@ -150,16 +185,16 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
     {isOpen && (
       <div className="mt-2 ml-3 pl-3 border-l-2 border-gray-200 dark:border-white/20 space-y-1">
         {item.subItems.map((sub) => {
-          const darkActiveBg = item.name === 'Community' ? 'dark:bg-black/60' : 'dark:bg-white/15';
+          const isSubActive = location.pathname.startsWith(sub.href);
           return (
             <Link
               key={sub.name}
               to={sub.href}
               onClick={closeAllMenus}
-              className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium ${
-                location.pathname === sub.href
-                  ? `bg-black/10 ${darkActiveBg} border border-black/10 dark:border-white/20 text-black dark:text-white`
-                  : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white"
+              className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium border ${
+                isSubActive
+                  ? "bg-indigo-100/40 dark:bg-indigo-500/15 border-indigo-200/50 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
+                  : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white border-transparent"
               }`}
             >
               {sub.icon}{sub.name}
@@ -174,83 +209,107 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
 const DesktopNavLink = ({ item, isActive }) => (
   <Link
     to={item.href}
-    className={`text-base font-medium transition-colors ${
+    className={`relative group text-[13px] xl:text-[14px] font-medium transition-all duration-200 whitespace-nowrap px-3.5 py-1.5 rounded-lg ${
       isActive
-        ? "text-black dark:text-white"
-        : "text-black/70 hover:text-black dark:text-white/70 dark:hover:text-white"
+        ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+        : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
     }`}
   >
-    {item.name}
+    <span className="relative z-10">{item.name}</span>
+
+    {isActive && (
+      <>
+        <motion.span
+          layoutId="activeBox"
+          className="absolute inset-0 bg-indigo-100/60 dark:bg-indigo-500/20 border border-indigo-200/80 dark:border-indigo-500/50 rounded-lg -z-0"
+          transition={{ type: "spring", stiffness: 380, damping: 30 }}
+        />
+        <motion.span
+          layoutId="activeBoxGlow"
+          className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
+          transition={{ type: "spring", stiffness: 380, damping: 30 }}
+        />
+      </>
+    )}
+
   </Link>
 );
 
 const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location }) => (
   <div className="relative">
+  const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location }) => (
+  <div className="relative">
     <button
       onClick={onToggle}
-      className={`flex items-center gap-1 text-base font-medium transition-colors ${
+      className={`relative group flex items-center gap-1.5 text-[13px] xl:text-[14px] font-medium transition-all duration-200 whitespace-nowrap px-3.5 py-1.5 rounded-lg ${
         isActive || isOpen
-          ? "text-black dark:text-white"
-          : "text-black/70 hover:text-black dark:text-white/70 dark:hover:text-white"
+          ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+          : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
       }`}
     >
-      {item.name}
-      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+      <span className="relative z-10 flex items-center gap-1">
+        {item.name}
+        <ChevronDown
+          className={`w-3.5 h-3.5 transition-transform duration-200 ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        />
+      </span>
+
+      {(isActive || isOpen) && (
+        <>
+          <motion.span
+            layoutId="activeBox"
+            className="absolute inset-0 bg-indigo-100/60 dark:bg-indigo-500/20 border border-indigo-200/80 dark:border-indigo-500/50 rounded-lg -z-0"
+            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+          />
+          <motion.span
+            layoutId="activeBoxGlow"
+            className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
+            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+          />
+        </>
+      )}
     </button>
+
     {isOpen && (
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 10 }}
-        className="absolute left-1/2 -translate-x-1/2 mt-4 w-56 bg-white/90 dark:bg-black/80 backdrop-blur-md shadow-xl rounded-lg z-50 border border-black/10 dark:border-white/20 p-2"
+        initial={{ opacity: 0, y: 15, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        className="absolute left-1/2 -translate-x-1/2 mt-4 w-60 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-3xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(99,102,241,0.1)] rounded-2xl z-50 border border-white/40 dark:border-zinc-700/40 p-2 overflow-hidden"
       >
-        {item.subItems.map((sub) => {
-          const darkActiveBg = item.name === 'Community' ? 'dark:bg-black/60' : 'dark:bg-white/15';
-          return (
-            <Link
-              key={sub.name}
-              to={sub.href}
-              onClick={() => setOpenDropdown(null)}
-              className={`group flex items-center gap-3 w-full px-3 py-2 text-base font-medium rounded-md transition-colors ${
-                location.pathname === sub.href
-                  ? `bg-black/10 ${darkActiveBg} text-black dark:text-white`
-                  : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
-              }`}
-            >
-              {React.cloneElement(sub.icon, { className: "w-5 h-5 text-gray-500 dark:text-gray-400" })}
-              {sub.name}
-            </Link>
-          );
-        })}
+        {item.subItems.map((sub) => (
+          <Link
+            key={sub.name}
+            to={sub.href}
+            onClick={() => setOpenDropdown(null)}
+            className={`group flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium rounded-lg transition-all duration-200 border ${
+              location.pathname.startsWith(sub.href)
+                ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
+                : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-transparent"
+            }`}
+          >
+            {React.cloneElement(sub.icon, {
+              className: `w-5 h-5 transition-colors ${
+                location.pathname.startsWith(sub.href)
+                  ? "text-indigo-600 dark:text-indigo-400"
+                  : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
+              }`,
+            })}
+            {sub.name}
+          </Link>
+        ))}
       </motion.div>
     )}
   </div>
 );
-
-const MobileDrawerHeader = ({ closeBtnRef, closeAllMenus }) => (
-  <div className="flex items-center justify-between p-3.5 sm:p-4 border-b border-gray-200 dark:border-white/20">
-    <h2 className="text-xl sm:text-2xl font-bold text-black dark:text-white" style={{ fontFamily: '"Anton", sans-serif' }}>
-      Eventra
-    </h2>
-    <div className="flex items-center gap-3">
-      <button
-        ref={closeBtnRef}
-        onClick={closeAllMenus}
-        className="p-2 rounded-full text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20"
-      >
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    </div>
-  </div>
-);
-
 const MobileDrawerFooter = ({ 
   isAuthenticated, user, primaryLine, secondaryLine, closeAllMenus, location, 
   handleLogoutClick, isDarkMode, toggleTheme, cursorEnabled, toggleCursor 
 }) => (
-  <div className="p-4 border-t border-gray-200 dark:border-white/20">
+  <div className="p-4 border-t border-gray-200 dark:border-zinc-800/50 bg-gray-50 dark:bg-zinc-900/50">
     {isAuthenticated() ? (
       <MobileUserSection 
         user={user} 
@@ -263,7 +322,7 @@ const MobileDrawerFooter = ({
     ) : (
       <AuthButtons isMobile={true} closeAllMenus={closeAllMenus} />
     )}
-    <div className="flex gap-2 mt-3">
+    <div className="flex gap-3 mt-4">
       <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={true} />
       <CursorToggleButton cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} isMobile={true} />
     </div>
@@ -282,9 +341,9 @@ const UserProfileDropdown = ({
       {user?.profilePicture ? (
         <img src={user.profilePicture} alt="Profile" className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20" onError={(e) => (e.currentTarget.style.display = "none")} />
       ) : (
-       <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold text-sm">
-        {primaryLine?.charAt(0).toUpperCase()}
-      </div>
+        <div className="w-8 h-8 rounded-full dark:bg-white/20 bg-gray-300 flex items-center justify-center">
+          <UserIcon className="w-4 h-4 text-gray-600 dark:text-white" />
+        </div>
       )}
     </button>
     <AnimatePresence>
@@ -309,6 +368,9 @@ const UserProfileDropdown = ({
           <div className="p-2 bg-white dark:bg-gray-900">
             <Link to="/dashboard" onClick={() => setShowProfileDropdown(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/dashboard" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
               <LayoutDashboard className="w-4 h-4" />Dashboard
+            </Link>
+            <Link to="/dashboard/achievements" onClick={() => setShowProfileDropdown(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/dashboard/achievements" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
+              <Trophy className="w-4 h-4" />Achievements
             </Link>
             <Link to="/profile" onClick={() => setShowProfileDropdown(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/profile" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
               <UserCog className="w-4 h-4" />Edit Profile
@@ -345,6 +407,9 @@ const MobileUserSection = ({
     <Link to="/dashboard" onClick={closeAllMenus} className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium ${location.pathname === "/dashboard" ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"}`}>
       <LayoutDashboard className="w-5 h-5" />Dashboard
     </Link>
+    <Link to="/dashboard/achievements" onClick={closeAllMenus} className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium ${location.pathname === "/dashboard/achievements" ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"}`}>
+      <Trophy className="w-5 h-5" />Achievements
+    </Link>
     <Link to="/profile" onClick={closeAllMenus} className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors text-lg font-medium ${location.pathname === "/profile" ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"}`}>
       <UserCog className="w-5 h-5" />Edit Profile
     </Link>
@@ -354,32 +419,47 @@ const MobileUserSection = ({
   </div>
 );
 
+// Top-level nav items kept lean so they never overflow at xl (1280px+).
+// About / FAQ / Contact are grouped under "More" to prevent collisions.
 const NAV_ITEMS = [
   { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
   { name: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
+  { name: "Bookmarks", href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
+  { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
   { name: "Hackathons", href: "/hackathons", icon: <Trophy className="w-5 h-5" /> },
   { name: "Projects", href: "/projects", icon: <FolderKanban className="w-5 h-5" /> },
+  { name: "Home",       href: "/",          icon: <Home         className="w-5 h-5" /> },
+  { name: "Events",     href: "/events",     icon: <Calendar     className="w-5 h-5" /> },
+  { name: "Bookmarks",  href: "/bookmarks",  icon: <Bookmark     className="w-5 h-5" /> },
+  { name: "Hackathons", href: "/hackathons", icon: <Trophy       className="w-5 h-5" /> },
+  { name: "Projects",   href: "/projects",   icon: <FolderKanban className="w-5 h-5" /> },
   {
     name: "Community",
     icon: <Users className="w-5 h-5" />,
     subItems: [
-      { name: "Leaderboard", href: "/leaderBoard", icon: <Trophy className="w-5 h-5" /> },
-      { name: "Contributors", href: "/contributors", icon: <Users className="w-5 h-5" /> },
-      { name: "Contributors Guide", href: "/contributorguide", icon: <Book className="w-5 h-5" /> },
-      { name: "Community Events", href: "/communityEvent", icon: <Users className="w-5 h-5" /> },
+      { name: "Leaderboard",       href: "/leaderBoard",    icon: <Trophy       className="w-5 h-5" /> },
+      { name: "Contributors",      href: "/contributors",   icon: <Users        className="w-5 h-5" /> },
+      { name: "Contributors Guide",href: "/contributorguide",icon: <Book        className="w-5 h-5" /> },
+      { name: "Community Events",  href: "/communityEvent", icon: <Users        className="w-5 h-5" /> },
     ],
   },
-  { name: "About", href: "/about", icon: <Info className="w-5 h-5" /> },
-  { name: "FAQ", href: "/faq", icon: <HelpCircle className="w-5 h-5" /> },
-  { name: "Contact", href: "/contact", icon: <MessageSquare className="w-5 h-5" /> },
+  {
+    name: "More",
+    icon: <MoreHorizontal className="w-5 h-5" />,
+    subItems: [
+      { name: "About",   href: "/about",   icon: <Info          className="w-5 h-5" /> },
+      { name: "FAQ",     href: "/faq",     icon: <HelpCircle    className="w-5 h-5" /> },
+      { name: "Contact", href: "/contact", icon: <MessageSquare className="w-5 h-5" /> },
+    ],
+  },
 ];
 
 const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile }) => (
   <>
     {NAV_ITEMS.map((item) => {
       const isActive = item.href 
-        ? location.pathname === item.href 
-        : item.subItems?.some(s => location.pathname === s.href);
+        ? (item.href === "/" ? location.pathname === "/" : location.pathname.startsWith(item.href))
+        : item.subItems?.some(s => location.pathname.startsWith(s.href));
       
       if (item.subItems) {
         return isMobile ? (
@@ -400,7 +480,8 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
 const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   const location = useLocation();
   return (
-    <div className="hidden lg:flex items-center justify-center gap-8 xl:gap-10 flex-1">
+    // gap-4 keeps items from crowding; flex-1 lets this section grow/shrink naturally
+    <div className="hidden lg:flex items-center justify-center gap-4 2xl:gap-6 flex-1 min-w-0">
       <NavList 
         location={location} 
         openDropdown={openDropdown} 
@@ -417,42 +498,50 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
   const { user, isAuthenticated } = useAuth();
 
   return (
-    <div
-      id="mobile-drawer"
-      ref={drawerRef}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      className={`fixed top-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-sm shadow-2xl z-50 flex flex-col transform transition-transform duration-300 ease-in-out bg-white backdrop-blur-lg dark:bg-gray-900/95 ${isOpen ? "translate-x-0" : "translate-x-full"}`}
-      role="dialog"
-      aria-modal={isOpen}
-    >
-      <MobileDrawerHeader closeBtnRef={closeBtnRef} closeAllMenus={closeAllMenus} />
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          id="mobile-drawer"
+          ref={drawerRef}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          className="fixed top-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-sm shadow-2xl z-50 flex flex-col bg-white backdrop-blur-lg dark:bg-gray-900/95"
+          role="dialog"
+          aria-modal="true"
+          initial={{ x: "100%" }}
+          animate={{ x: 0 }}
+          exit={{ x: "100%" }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+        >
+          <MobileDrawerHeader closeBtnRef={closeBtnRef} closeAllMenus={closeAllMenus} isDarkMode={isDarkMode} />
 
-      <div className="flex-grow p-3.5 sm:p-4 space-y-2 overflow-y-auto">
-        <NavList 
-          location={location} 
-          openDropdown={openDropdown} 
-          onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)} 
-          onLinkClick={closeAllMenus} 
-          isMobile={true} 
-        />
-      </div>
+          <div className="flex-grow p-3.5 sm:p-4 space-y-2 overflow-y-auto">
+            <NavList 
+              location={location} 
+              openDropdown={openDropdown} 
+              onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)} 
+              onLinkClick={closeAllMenus} 
+              isMobile={true} 
+            />
+          </div>
 
-      <MobileDrawerFooter 
-        isAuthenticated={isAuthenticated} 
-        user={user} 
-        primaryLine={primaryLine} 
-        secondaryLine={secondaryLine} 
-        closeAllMenus={closeAllMenus} 
-        location={location} 
-        handleLogoutClick={handleLogoutClick} 
-        isDarkMode={isDarkMode} 
-        toggleTheme={toggleTheme} 
-        cursorEnabled={cursorEnabled} 
-        toggleCursor={toggleCursor} 
-      />
-    </div>
+          <MobileDrawerFooter 
+            isAuthenticated={isAuthenticated} 
+            user={user} 
+            primaryLine={primaryLine} 
+            secondaryLine={secondaryLine} 
+            closeAllMenus={closeAllMenus} 
+            location={location} 
+            handleLogoutClick={handleLogoutClick} 
+            isDarkMode={isDarkMode} 
+            toggleTheme={toggleTheme} 
+            cursorEnabled={cursorEnabled} 
+            toggleCursor={toggleCursor} 
+          />
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
@@ -460,7 +549,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [navHeight] = useState(0);
+  const [navHeight, setNavHeight] = useState(0);
 
   const drawerRef = useRef(null);
   const closeBtnRef = useRef(null);
@@ -518,21 +607,18 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isMobileMenuOpen]);
 
-  const handleTouchStart = (e) => {
-    touchStartXRef.current = e.touches[0].clientX;
-    touchCurrentXRef.current = e.touches[0].clientX;
-  };
-  const handleTouchMove = (e) => {
-    touchCurrentXRef.current = e.touches[0].clientX;
-  };
+  useEffect(() => {
+    if (navRef.current) setNavHeight(navRef.current.offsetHeight);
+    const handleResize = () => { if (navRef.current) setNavHeight(navRef.current.offsetHeight); };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const handleTouchStart = (e) => { touchStartXRef.current = e.touches[0].clientX; touchCurrentXRef.current = e.touches[0].clientX; };
+  const handleTouchMove = (e) => { touchCurrentXRef.current = e.touches[0].clientX; };
   const handleTouchEnd = () => {
-    const start = touchStartXRef.current;
-    const end = touchCurrentXRef.current;
-    if (typeof start !== "number" || typeof end !== "number") return;
-    const deltaX = end - start;
-    if (deltaX > 50) {
-      closeAllMenus();
-    }
+    const delta = (touchCurrentXRef.current ?? 0) - (touchStartXRef.current ?? 0);
+    if (delta > 50) closeAllMenus();
     touchStartXRef.current = null;
     touchCurrentXRef.current = null;
   };
@@ -541,7 +627,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
     setShowLogoutModal(true);
     setShowProfileDropdown(false);
   };
-
   const handleConfirmLogout = () => {
     setShowLogoutModal(false);
     logout();
@@ -553,7 +638,13 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   return (
     <>
       <div
-        className={`fixed inset-0 bg-black/60 z-30 transition-opacity duration-300 ${isMobileMenuOpen || showProfileDropdown || openDropdown || showLogoutModal ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        className={`fixed inset-0 z-30 transition-opacity duration-300 ${
+          isMobileMenuOpen || showLogoutModal
+            ? "bg-black/60 opacity-100"
+            : (showProfileDropdown || openDropdown)
+            ? "bg-transparent opacity-100"
+            : "opacity-0 pointer-events-none"
+        }`}
         onClick={closeAllMenus}
       />
 
@@ -562,37 +653,62 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         data-aos="fade-down"
         data-aos-once="true"
         data-aos-duration="1000"
-        className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white dark:bg-gray-900 border-b border-black/10 dark:border-white/10"
+        className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 transition-colors duration-300 relative"
       >
-        <div className="max-w-7xl mx-auto flex items-center justify-between h-[72px] px-6 lg:px-8 relative">
-          {/* Logo on the left */}
-          <Link to="/" className="flex items-center min-w-[160px] z-20">
-            <h2 className="text-3xl font-semibold tracking-tight text-black dark:text-white" style={{ fontFamily: '"Anton", sans-serif' }}>
-              Eventra
-            </h2>
+        <div className="neon-navbar-border"></div>
+        <div className="max-w-screen-2xl mx-auto flex items-center h-[68px] px-6 xl:px-10 gap-6">
+          {/* ── Logo ── left-anchored, never squishes */}
+          <Link to="/" className="flex items-center shrink-0 z-20">
+          <h2
+  className="bg-gradient-to-r from-zinc-950 via-indigo-600 to-violet-600 dark:from-white dark:via-indigo-300 dark:to-indigo-500 bg-clip-text text-transparent"
+  style={{
+    fontFamily: "'Oxanium', monospace",
+    fontSize: "1.44rem",
+    fontWeight: 800,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    margin: 0,
+    lineHeight: 1,
+  }}
+>
+  Eventra
+</h2>
           </Link>
 
-          {/* Centered nav links */}
-          <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
+          {/* ── Nav links ── takes all remaining space, items centered */}
+          <div className="flex-1 min-w-0">
+            <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
+        {/* Right Group: Auth Controls and Mobile Toggle */}
+<div className="hidden lg:flex items-center gap-2 shrink-0 justify-end">
+  <ThemeToggleButton
+    isDarkMode={isDarkMode}
+    toggleTheme={toggleTheme}
+    isMobile={false}
+  />
 
-          {/* Right Group: Auth Controls and Mobile Toggle - FIXED VERSION */}
-          <div className="hidden lg:flex items-center gap-3 min-w-[220px] justify-end">
-            <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={false} />
-            <CursorToggleButton cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} isMobile={false} />
-            {isAuthenticated() ? (
-              <UserProfileDropdown
-                user={user}
-                primaryLine={primaryLine}
-                secondaryLine={secondaryLine}
-                showProfileDropdown={showProfileDropdown}
-                setShowProfileDropdown={setShowProfileDropdown}
-                location={location}
-                handleLogoutClick={handleLogoutClick}
-              />
-            ) : (
-              <AuthButtons isMobile={false} />
-            )}
-          </div>
+  <CursorToggleButton
+    cursorEnabled={cursorEnabled}
+    toggleCursor={toggleCursor}
+    isMobile={false}
+  />
+
+  <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700"></div>
+
+  {isAuthenticated() ? (
+    <UserProfileDropdown
+      user={user}
+      primaryLine={primaryLine}
+      secondaryLine={secondaryLine}
+      showProfileDropdown={showProfileDropdown}
+      setShowProfileDropdown={setShowProfileDropdown}
+      location={location}
+      handleLogoutClick={handleLogoutClick}
+    />
+  ) : (
+    <AuthButtons isMobile={false} />
+  )}
+</div>
+         
 
           {/* Mobile menu button */}
           <div className="lg:hidden ml-auto">
@@ -600,7 +716,8 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               ref={toggleBtnRef} 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
               aria-expanded={isMobileMenuOpen} 
-              aria-label="Open navigation" 
+              aria-controls="mobile-drawer"
+              aria-label={isMobileMenuOpen ? "Close navigation" : "Open navigation"} 
               className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10"
             >
               <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -627,6 +744,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         primaryLine={primaryLine}
         secondaryLine={secondaryLine}
       />
+
 
       {/* Confirmation Modal */}
       <ConfirmationModal
