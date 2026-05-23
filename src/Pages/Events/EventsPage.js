@@ -44,7 +44,7 @@ const renderCardSection = (
 
   if (filteredEvents.length === 0) {
     return (
-      <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
+      <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
         <SearchEmptyState
           query={searchQuery}
           itemLabel="events"
@@ -188,7 +188,7 @@ setFilteredEvents(final);
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 overflow-x-hidden">
       <EventHero
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -199,7 +199,7 @@ setFilteredEvents(final);
 
       <div
         ref={cardSectionRef}
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10"
       >
         <div className="mb-5 sm:mb-6 flex flex-col gap-3">
           <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center sm:justify-start">
@@ -216,7 +216,7 @@ setFilteredEvents(final);
                 className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-lg transition ${
                   filterType === filter.key
                     ? "bg-blue-600 text-white dark:bg-blue-600 dark:text-white"
-                    : "border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:text-gray-300 dark:border-slate-700 dark:hover:bg-slate-800"
+                    : "border border-slate-200 text-slate-700 bg-white hover:bg-slate-100 shadow-sm dark:bg-slate-900 dark:text-gray-300 dark:border-slate-700 dark:hover:bg-slate-800"
                 }`}
                 aria-pressed={filterType === filter.key}
               >
@@ -257,13 +257,13 @@ setFilteredEvents(final);
               />
             </div>
 
-            <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
+            <div className="flex items-center space-x-2 bg-white dark:bg-slate-900 rounded-xl p-1 border border-slate-200 dark:border-slate-700 shadow-sm">
               <button
                 onClick={() => setViewMode("grid")}
                 className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
                   viewMode === "grid"
                     ? "bg-black text-white shadow-md dark:bg-white dark:text-black"
-                    : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
                 aria-label="Grid view"
                 aria-pressed={viewMode === "grid"}

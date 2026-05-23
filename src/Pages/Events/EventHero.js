@@ -12,16 +12,16 @@ export default function EventHero({
   const navigate = useNavigate();
 
   return (
-    <div className="relative bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 py-16 sm:py-20 md:py-24 border-b border-gray-200 dark:border-slate-900">
+    <div className="relative bg-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 py-16 sm:py-20 md:py-24 border-b border-gray-200 dark:border-slate-800 overflow-hidden">
       <div className="relative px-4 min-h-[80vh] flex flex-col items-center justify-center text-center z-10">
         <h1
-          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight px-4 sm:px-0 text-gray-900 dark:text-white"
+          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight px-4 sm:px-0 text-slate-900 dark:text-white drop-shadow-sm"
           style={{ fontFamily: '"Big Shoulders Display", sans-seri' }}
         >
           Discover <span className="text-blue-600 dark:text-blue-500">Events</span>
         </h1>
 
-        <p className="mt-4 text-sm sm:text-base md:text-lg text-gray-500 dark:text-white max-w-2xl mx-auto px-4 sm:px-0">
+        <p className="mt-4 text-sm sm:text-base md:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto px-4 sm:px-0">
           Discover exciting events, compete with talented participants, learn
           new skills, and <span className="font-semibold text-gray-900 dark:text-white">win rewards</span>.
         </p>
@@ -40,7 +40,7 @@ export default function EventHero({
                 <span
                   key={tag}
                   onClick={() => handleSearch(tag)}
-                  className="px-2 sm:px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-700 transition"
+                  className="px-2 sm:px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-900 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-700 transition"
                 >
                   {tag}
                 </span>
