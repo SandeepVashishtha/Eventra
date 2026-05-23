@@ -185,6 +185,7 @@ export const API_ENDPOINTS = {
     SIGNUP: "/auth/signup",
     LOGOUT: "/auth/logout",
     RESET_PASSWORD: "/auth/reset-password",
+    GOOGLE: "/auth/google",
   },
 
   EVENTS: {
@@ -203,6 +204,7 @@ export const API_ENDPOINTS = {
 
   NOTIFICATIONS: {
     ALL: "/notifications",
+    BASE: "/notifications",
     READ: (id) => `/notifications/${id}/read`,
     READ_ALL: "/notifications/read-all",
   },
