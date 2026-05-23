@@ -20,6 +20,8 @@ import ShareMenu from "../../components/common/ShareMenu";
 import { generateEventSharingData } from "../../utils/shareUtils";
 import StatusBadge from "../../components/common/StatusBadge";
 import { getEventStatus } from "../../utils/eventUtils";
+import { useMyEvents } from "../../context/MyEventsContext";
+import ReminderControls from "../../components/reminders/ReminderControls";
 import {
   addBookmarkedEvent,
   isEventBookmarked,
@@ -29,6 +31,7 @@ import {
 
 const EventCard = ({ event }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
+  const { isRegistered } = useMyEvents();
   const [randomIcon] = useState(() => {
     const icons = [
       <Star size={16} className="text-yellow-500" />,
@@ -67,6 +70,7 @@ const EventCard = ({ event }) => {
   };
 
   const computedStatus = getEventStatus(event);
+  const canSetReminder = isBookmarked || isRegistered(event.id);
 
   useEffect(() => {
     setIsBookmarked(isEventBookmarked(event.id));
@@ -234,6 +238,10 @@ const EventCard = ({ event }) => {
             })}
           </span>
         </div>
+      </div>
+
+      <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+        <ReminderControls event={event} canSetReminder={canSetReminder} compact />
       </div>
 
       {/* CTA */}

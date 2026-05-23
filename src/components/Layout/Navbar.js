@@ -21,6 +21,7 @@ import {
   MessageSquare,
   Book,
   Bookmark,
+  Bell,
   HelpCircle,
   ChevronDown,
   MousePointer,
@@ -359,6 +360,7 @@ const NAV_ITEMS = [
   { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
   { name: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
   { name: "Bookmarks", href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
+  { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
   { name: "Hackathons", href: "/hackathons", icon: <Trophy className="w-5 h-5" /> },
   { name: "Projects", href: "/projects", icon: <FolderKanban className="w-5 h-5" /> },
   {
