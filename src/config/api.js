@@ -98,6 +98,11 @@ let onUnauthorized = null;
 export const setOnUnauthorizedHandler = (handler) => {
   onUnauthorized = handler;
 };
+/**
+ * Register unauthorized callback.
+ * AuthContext sets this during initialization so that any 401 response
+ * triggers a centralized logout + redirect.
+ */
 
 // ---------------------------------------------------------------------------
 // Request Interceptor — per-request AbortController & debug logging
