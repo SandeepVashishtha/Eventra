@@ -174,10 +174,14 @@ const ContactUs = () => {
 
     if (!validateForm()) {
       // Shake animation for invalid form
-      formRef.current.classList.add("animate-shake");
-      setTimeout(() => {
-        formRef.current.classList.remove("animate-shake");
-      }, 500);
+      if (formRef.current) {
+        formRef.current.classList.add("animate-shake");
+        setTimeout(() => {
+          if (formRef.current) {
+            formRef.current.classList.remove("animate-shake");
+          }
+        }, 500);
+      }
       return;
     }
 
