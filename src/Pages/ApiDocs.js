@@ -7,10 +7,6 @@ import {
   BookOpen,
   Users,
   Trophy,
-  Key,
-  Gauge,
-  Filter,
-  Terminal,
 } from "lucide-react";
 
 const endpoints = [
@@ -56,7 +52,7 @@ const endpoints = [
     desc: "Get a list of top contributors and GSOC participants.",
     method: "GET",
     url: "/api/contributors",
-    example: `fetch("\${process.env.REACT_APP_API_URL}/contributors", {
+  example: `fetch("${process.env.REACT_APP_API_URL}/contributors", {
   headers: { Authorization: "Bearer <API_KEY>" }
 })`,
     response: `[

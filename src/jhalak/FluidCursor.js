@@ -16,12 +16,12 @@ const FluidCursor = ({ enabled = true }) => {
 
     let config = {
       SIM_RESOLUTION: 128,
-      DYE_RESOLUTION: 1440,
+      DYE_RESOLUTION: 512,
       CAPTURE_RESOLUTION: 512,
       DENSITY_DISSIPATION: 3.5,
       VELOCITY_DISSIPATION: 2,
       PRESSURE: 0.1,
-      PRESSURE_ITERATIONS: 20,
+      PRESSURE_ITERATIONS: 10,
       CURL: 3,
       SPLAT_RADIUS: 0.2,
       SPLAT_FORCE: 6000,

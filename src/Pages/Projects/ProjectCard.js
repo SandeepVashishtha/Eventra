@@ -94,8 +94,7 @@ const ProjectCard = ({ project }) => {
           <RandomIcon className="text-gray-800 dark:text-white" size={18} />
         </div>
 
-        <h3 className="flex-1 text-lg font-semibold text-gray-900 dark:text-white line-clamp-1">
-          {project.title}
+      <h3 className="flex-1 min-w-0 text-lg font-semibold text-gray-900 dark:text-white line-clamp-1"> 
         </h3>
 
         <span
@@ -176,8 +175,7 @@ const ProjectCard = ({ project }) => {
               {project.author || "Unknown"}
             </span>
           </div>
-
-          <div className="grid grid-cols-4 gap-2 text-xs">
+<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
 
             <div className="flex items-center justify-center gap-1 bg-yellow-50 dark:bg-yellow-900/40 rounded-md py-1 text-yellow-700 dark:text-yellow-300">
               <FiStar />
@@ -213,7 +211,7 @@ const ProjectCard = ({ project }) => {
       </div>
 
       {/* Buttons */}
-      <div className="px-5 py-4 flex gap-3 mt-auto">
+      <div className="px-5 py-4 flex flex-col sm:flex-row gap-3 mt-auto">
 
         {/* fix: guard githubUrl — show disabled "No Repo" if null/undefined/empty */}
         {project.githubUrl ? (
