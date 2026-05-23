@@ -12,6 +12,7 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
+import CountUp from "react-countup";
 
 const SEARCH_HISTORY_KEY = "eventra.events.searchHistory";
 const TRENDING_SEARCHES = [
@@ -92,7 +93,7 @@ export default function EventHero({
 
   return (
     <div className="relative bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 py-16 sm:py-20 md:py-24 border-b border-gray-200 dark:border-slate-900">
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 text-center z-10">
+      <div className="relative px-4 min-h-[80vh] flex flex-col items-center justify-center text-center z-10">
         <h1
           className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight px-4 sm:px-0 text-gray-900 dark:text-white"
           style={{ fontFamily: '"Big Shoulders Display", sans-seri' }}
@@ -101,7 +102,7 @@ export default function EventHero({
           <span className="text-blue-600 dark:text-blue-500">Events</span>
         </h1>
 
-        <p className="mt-4 text-sm sm:text-base md:text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto px-4 sm:px-0">
+        <p className="mt-4 text-sm sm:text-base md:text-lg text-gray-500 dark:text-white max-w-2xl mx-auto px-4 sm:px-0">
           Discover exciting events, compete with talented participants, learn
           new skills, and{" "}
           <span className="font-semibold text-gray-900 dark:text-white">
@@ -239,22 +240,27 @@ export default function EventHero({
           {[
             {
               label: "Events Hosted",
-              value: "120+",
+              value: 120,
+              suffix: "+",
               icon: Calendar,
             },
             {
               label: "Active Participants",
-              value: "50k+",
+              value: 50,
+              suffix: "k+",
               icon: Users,
             },
             {
               label: "Projects Created",
-              value: "8k+",
+              value: 8,
+              suffix: "k+",
               icon: Code2,
             },
             {
               label: "Total Prizes",
-              value: "$1M+",
+              value: 1,
+              prefix: "$",
+              suffix: "M+",
               icon: Award,
             },
           ].map((stat) => (
@@ -267,7 +273,15 @@ export default function EventHero({
               </div>
 
               <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
-                {stat.value}
+                <CountUp
+                  start={0}
+                  end={stat.value}
+                  duration={2.5}
+                  prefix={stat.prefix}
+                  suffix={stat.suffix}
+                  enableScrollSpy
+                  scrollSpyOnce
+                />
               </p>
               <p className="mt-1 text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                 {stat.label}

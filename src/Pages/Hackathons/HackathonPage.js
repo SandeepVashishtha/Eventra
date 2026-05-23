@@ -46,6 +46,7 @@ import HackathonCTA from "./HackathonCTA";
 import { createPortal } from "react-dom";
 import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 import SearchEmptyState from "../../components/common/SearchEmptyState";
+import PageLoader from "../../components/common/PageLoader";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { getRouteSearchResults } from "../../utils/searchUtils";
 
@@ -77,9 +78,9 @@ const HackathonHub = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isScrollVisible, setIsScrollVisible] = useState(false);
   const [filters, setFilters] = useState({
-    difficulty: "",
-    prize: "",
-    location: "",
+    difficulty: [],
+    prize: [],
+    location: [],
   });
   const [showFilters, setShowFilters] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
@@ -243,25 +244,35 @@ const HackathonHub = () => {
       return hackathon.status === activeTab;
     })
     .filter((hackathon) => {
-      if (filters.difficulty && hackathon.difficulty !== filters.difficulty)
+      if (
+        filters.difficulty &&
+        filters.difficulty.length > 0 &&
+        !filters.difficulty.includes(hackathon.difficulty)
+      )
         return false;
-      if (filters.prize) {
+
+      if (filters.prize && filters.prize.length > 0) {
         const prizeValue = Number.parseInt(
           String(hackathon.prize).replace(/[^\d]/g, ""),
           10,
         );
+        const activePrize = filters.prize[0];
 
-        if (filters.prize === "Under $1,000" && prizeValue >= 1000) return false;
+        if (activePrize === "Under $1,000" && prizeValue >= 1000) return false;
         if (
-          filters.prize === "$1,000 - $5,000" &&
+          activePrize === "$1,000 - $5,000" &&
           (prizeValue < 1000 || prizeValue > 5000)
         )
           return false;
-        if (filters.prize === "$5,000+" && prizeValue < 5000) return false;
+        if (activePrize === "$5,000+" && prizeValue < 5000) return false;
       }
+
       if (
         filters.location &&
-        !hackathon.location.toLowerCase().includes(filters.location.toLowerCase())
+        filters.location.length > 0 &&
+        !hackathon.location
+          .toLowerCase()
+          .includes(filters.location[0].toLowerCase())
       )
         return false;
 
@@ -281,9 +292,9 @@ const HackathonHub = () => {
   // UPDATED: Reset filters and tags
   const resetFilters = () => {
     setFilters({
-      difficulty: "",
-      prize: "",
-      location: "",
+      difficulty: [],
+      prize: [],
+      location: [],
     });
     setSearchQuery("");
     setSelectedTags([]);
@@ -544,9 +555,9 @@ const HackathonHub = () => {
                 </svg>
                 {showFilters ? "Hide Filters" : "Show Filters"}
               </button>
-              {(filters.difficulty ||
-                filters.prize ||
-                filters.location ||
+              {((filters.difficulty && filters.difficulty.length > 0) ||
+                (filters.prize && filters.prize.length > 0) ||
+                (filters.location && filters.location.length > 0) ||
                 selectedTags.length > 0) && (
                   <button
                     onClick={resetFilters}
@@ -682,11 +693,7 @@ const HackathonHub = () => {
         {/* Hackathons Grid */}
         <AnimatePresence mode="wait">
           {isLoading ? (
-            <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <HackathonCardSkeleton key={`skeleton-${i}`} />
-              ))}
-            </div>
+            <PageLoader text="Loading hackathons..." />
           ) : filteredHackathons.length > 0 ? (
             <motion.div
               key={activeTab}

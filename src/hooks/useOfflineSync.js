@@ -2,8 +2,7 @@ import { useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 import { API_ENDPOINTS } from '../config/api';
-
-const QUEUE_KEY = 'eventra_offline_queue';
+import { getQueue, setQueue, clearQueue } from '../utils/offlineQueue';
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 1_000; // 1s → 2s → 4s per item
 
@@ -53,7 +52,10 @@ const useOfflineSync = () => {
       if (response.status >= 400 && response.status < 500) {
         console.warn(
           `Offline queue: server rejected item with ${response.status} — dropping.`,
-          await response.text().catch(() => '')
+          await response.text().catch((error) => {
+            console.error('Failed to parse error response text:', error);
+            return '';
+          })
         );
         return true; // Treat as "handled" — bad data won't succeed on retry
       }
@@ -65,17 +67,7 @@ const useOfflineSync = () => {
       // Prevent concurrent sync runs (e.g. if the user rapidly toggles network)
       if (isSyncing.current) return;
 
-      const queueStr = localStorage.getItem(QUEUE_KEY);
-      if (!queueStr) return;
-
-      let queue = [];
-      try {
-        queue = JSON.parse(queueStr);
-      } catch {
-        localStorage.removeItem(QUEUE_KEY);
-        return;
-      }
-
+      const queue = getQueue();
       if (queue.length === 0) return;
 
       isSyncing.current = true;
@@ -112,12 +104,12 @@ const useOfflineSync = () => {
       }
 
       if (failedQueue.length > 0) {
-        localStorage.setItem(QUEUE_KEY, JSON.stringify(failedQueue));
+        setQueue(failedQueue);
         toast.warning(
           `Synced ${successCount} registration(s). ${failedQueue.length} still queued (will retry).`
         );
       } else {
-        localStorage.removeItem(QUEUE_KEY);
+        clearQueue();
         if (successCount > 0) {
           toast.success('All offline registrations synced successfully!');
         }

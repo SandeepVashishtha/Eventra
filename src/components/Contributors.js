@@ -232,7 +232,6 @@ const Contributors = () => {
         </div>
       </section>
     );
-
   return (
     // UPDATED: Section background
     <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
@@ -282,9 +281,8 @@ const Contributors = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12">
             {filteredContributors.map((c, i) => (
-              <motion.div
+<motion.div
                 key={c.id}
-                // UPDATED: Card background and border
                 className="relative bg-white/95 dark:bg-gray-800/90 backdrop-blur-xl p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 flex flex-col items-center text-center transition-all duration-300 ease-out"
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -300,6 +298,9 @@ const Contributors = () => {
                   <div className="relative">
                     <img
                       loading="lazy"
+                      decoding="async"
+                      width="80"
+                      height="80"
                       src={c.avatar_url}
                       alt={c.login}
                       className="w-20 h-20 rounded-full border-4 border-black shadow-xl"
