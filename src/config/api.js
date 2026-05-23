@@ -4,9 +4,42 @@ import axios from "axios";
 // Base API URL
 // ---------------------------------------------------------------------------
 
-const BASE_URL =
-  process.env.REACT_APP_API_URL ||
-  "https://eventra-backend-dgcae3etebbag8ft.centralindia-01.azurewebsites.net";
+const normalizeApiBaseUrl = (value = "") => {
+  if (!value) {
+    return "";
+  }
+
+  return value.replace(/\/+$/, "").replace(/\/api$/, "");
+};
+
+const isDevelopment = process.env.NODE_ENV === "development";
+
+const resolveEnvApiBaseUrl = () =>
+  isDevelopment
+    ? ""
+    : normalizeApiBaseUrl(
+        process.env.REACT_APP_API_URL || process.env.VITE_API_URL || "",
+      );
+
+export const API_BASE_URL = resolveEnvApiBaseUrl();
+
+const buildApiUrl = (path = "") => {
+  if (!path) {
+    return "";
+  }
+
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+  if (!API_BASE_URL) {
+    return normalizedPath;
+  }
+
+  return `${API_BASE_URL}${normalizedPath}`;
+};
 
 // ---------------------------------------------------------------------------
 // Network Resilience Configuration
@@ -28,7 +61,7 @@ const RETRY_DELAY_MS = 1_000;
  * isDev — true only in local development.
  * Used to gate verbose console.debug statements so they don't appear in production builds.
  */
-const isDev = process.env.NODE_ENV === "development";
+const isDev = isDevelopment;
 
 // ---------------------------------------------------------------------------
 // Normalized API Error
@@ -63,41 +96,20 @@ export class ApiError extends Error {
 // ---------------------------------------------------------------------------
 
 const API = axios.create({
-  baseURL: BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-  withCredentials: true, // Crucial for cookie-based auth/session handling
+  baseURL: API_BASE_URL || undefined,
   timeout: REQUEST_TIMEOUT_MS,
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true,
+  withCredentials: false,
 });
 
 // ---------------------------------------------------------------------------
-// Interceptors
+// Global 401 Unauthorized Handler
 // ---------------------------------------------------------------------------
 
-// Request Interceptor: Ensures every request has the auth token (if available)
-API.interceptors.request.use(
-  (config) => {
-    // Attempt to get token from localStorage (adjust key name if your app uses a different one)
-    const token = localStorage.getItem("token"); 
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// Response Interceptor: Global 401 Unauthorized Handler
 let onUnauthorized = null;
 
-export const setOnUnauthorizedHandler = (handler) => {
-  onUnauthorized = handler;
-};
 /**
  * Register unauthorized callback.
  * AuthContext sets this during initialization so that any 401 response
@@ -106,6 +118,38 @@ export const setOnUnauthorizedHandler = (handler) => {
 export const setOnUnauthorizedHandler = (handler) => {
   onUnauthorized = handler;
 };
+
+const normalizeRequestConfig = (configOrToken = {}, maybeToken) => {
+  const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
+  const token =
+    typeof configOrToken === "string"
+      ? configOrToken
+      : typeof maybeToken === "string"
+        ? maybeToken
+        : "";
+
+  if (token) {
+    config.headers = {
+      ...(config.headers || {}),
+      Authorization: `Bearer ${token}`,
+    };
+  }
+
+  return config;
+};
+
+const normalizeAxiosResponse = (response) => ({
+  data: response.data,
+  status: response.status,
+  statusText: response.statusText,
+  headers: response.headers,
+  ok: response.status >= 200 && response.status < 300,
+  json: async () => response.data,
+  text: async () =>
+    typeof response.data === "string"
+      ? response.data
+      : JSON.stringify(response.data),
+});
 
 // ---------------------------------------------------------------------------
 // Request Interceptor — per-request AbortController & debug logging
@@ -120,7 +164,10 @@ API.interceptors.request.use((config) => {
   }
 
   if (isDev) {
-    console.debug(`[API ${config.method?.toUpperCase()}]`, config.url);
+    console.debug(
+      `[API ${config.method?.toUpperCase()}]`,
+      buildApiUrl(config.url || ""),
+    );
   }
 
   return config;
@@ -133,7 +180,6 @@ API.interceptors.request.use((config) => {
 API.interceptors.response.use(
   // Success — pass through
   (response) => response,
-  (error) => {
 
   // Error — normalize and optionally retry
   async (error) => {
@@ -145,7 +191,6 @@ API.interceptors.response.use(
         onUnauthorized();
       }
     }
-    return Promise.reject(error);
 
     // --- Automatic retry for transient 5xx errors ---
     const retryCount = config._retryCount || 0;
@@ -199,52 +244,47 @@ API.interceptors.response.use(
 );
 
 // ---------------------------------------------------------------------------
-// API Endpoints & Utilities
+// API Endpoints
 // ---------------------------------------------------------------------------
 
 export const API_ENDPOINTS = {
   AUTH: {
-    LOGIN: "/auth/login",
-    SIGNUP: "/auth/signup",
-    LOGOUT: "/auth/logout",
-    RESET_PASSWORD: "/auth/reset-password",
-    GOOGLE: "/auth/google",
+    LOGIN: buildApiUrl("/api/auth/login"),
+    REGISTER: buildApiUrl("/api/auth/signup"),
+    SIGNUP: buildApiUrl("/api/auth/signup"),
+    LOGOUT: buildApiUrl("/api/auth/logout"),
+    RESET_PASSWORD: buildApiUrl("/api/auth/reset-password"),
   },
+
   EVENTS: {
-    CREATE: "/events/create",
-    ALL: "/events",
-    DETAIL: (id) => `/events/${id}`,
-    REGISTER: (id) => `/events/${id}/register`,
+    CREATE: buildApiUrl("/api/events/create"),
+    ALL: buildApiUrl("/api/events"),
+    LIST: buildApiUrl("/api/events"),
+    DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
+    REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
   },
+
   PROJECTS: {
-    ALL: "/projects",
-    DETAIL: (id) => `/projects/${id}`,
-    CATEGORIES: "/projects/categories",
-    SUBMIT: "/projects",
+    ALL: buildApiUrl("/api/projects"),
+    LIST: buildApiUrl("/api/projects"),
+    DETAIL: (id) => buildApiUrl(`/api/projects/${id}`),
+    CATEGORIES: buildApiUrl("/api/projects/categories"),
+    SUBMIT: buildApiUrl("/api/projects"),
   },
+
   NOTIFICATIONS: {
-    ALL: "/notifications",
-    BASE: "/notifications",
-    READ: (id) => `/notifications/${id}/read`,
-    READ_ALL: "/notifications/read-all",
+    ALL: buildApiUrl("/api/notifications"),
+    BASE: buildApiUrl("/api/notifications"),
+    READ: (id) => buildApiUrl(`/api/notifications/${id}/read`),
+    READ_ALL: buildApiUrl("/api/notifications/read-all"),
   },
+
   USERS: {
-    PROFILE: "/users/profile",
-    ACHIEVEMENTS: "/users/achievements",
+    PROFILE: buildApiUrl("/api/users/profile"),
+    ACHIEVEMENTS: buildApiUrl("/api/users/achievements"),
   },
 };
 
-// Exporting API as default for direct use (e.g., API.get(...))
-// and exporting apiUtils for those who prefer the wrapper pattern.
-export const apiUtils = {
-  get: (url, config = {}) => API.get(url, config),
-  post: (url, data = {}, config = {}) => API.post(url, data, config),
-  put: (url, data = {}, config = {}) => API.put(url, data, config),
-  patch: (url, data = {}, config = {}) => API.patch(url, data, config),
-  delete: (url, config = {}) => API.delete(url, config),
-};
-
-export default API;
 // ---------------------------------------------------------------------------
 // API Utility Methods
 // ---------------------------------------------------------------------------
@@ -252,15 +292,20 @@ export default API;
 // receive axios response objects and handle them as before.
 
 export const apiUtils = {
-  get: (url, config = {}) => API.get(url, config),
+  get: async (url, configOrToken = {}) =>
+    normalizeAxiosResponse(await API.get(url, normalizeRequestConfig(configOrToken))),
 
-  post: (url, data = {}, config = {}) => API.post(url, data, config),
+  post: async (url, data = {}, configOrToken = {}) =>
+    normalizeAxiosResponse(await API.post(url, data, normalizeRequestConfig(configOrToken))),
 
-  put: (url, data = {}, config = {}) => API.put(url, data, config),
+  put: async (url, data = {}, configOrToken = {}) =>
+    normalizeAxiosResponse(await API.put(url, data, normalizeRequestConfig(configOrToken))),
 
-  patch: (url, data = {}, config = {}) => API.patch(url, data, config),
+  patch: async (url, data = {}, configOrToken = {}) =>
+    normalizeAxiosResponse(await API.patch(url, data, normalizeRequestConfig(configOrToken))),
 
-  delete: (url, config = {}) => API.delete(url, config),
+  delete: async (url, configOrToken = {}) =>
+    normalizeAxiosResponse(await API.delete(url, normalizeRequestConfig(configOrToken))),
 };
 
 // ---------------------------------------------------------------------------
