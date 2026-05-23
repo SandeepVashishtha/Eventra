@@ -94,9 +94,9 @@ const HostHackathon = () => {
       newErrors.location = "Location must be at least 3 characters long!";
     }
 
-    // ✅ Email validation — works even for incomplete email
+    // ✅ Email validation — stricter regex to prevent invalid TLDs
     if (data.email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
       if (!emailRegex.test(data.email.trim())) {
         newErrors.email = "Please enter a valid email address!";
       }
