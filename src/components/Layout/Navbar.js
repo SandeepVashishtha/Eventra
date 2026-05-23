@@ -448,7 +448,7 @@ const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   const location = useLocation();
   return (
     // gap-4 keeps items from crowding; flex-1 lets this section grow/shrink naturally
-    <div className="hidden xl:flex items-center justify-center gap-4 2xl:gap-6 flex-1 min-w-0">
+    <div className="hidden xl:flex items-center justify-center 2xl:gap-6 flex-1 min-w-0 mr-12">
       <NavList 
         location={location} 
         openDropdown={openDropdown} 
@@ -625,7 +625,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         <div className="neon-navbar-border"></div>
         <div className="max-w-screen-2xl mx-auto flex items-center h-[68px] px-6 xl:px-10 gap-6">
           {/* ── Logo ── left-anchored, never squishes */}
-          <Link to="/" className="flex items-center shrink-0 z-20">
+          <Link to="/" className="flex items-center shrink-0 z-20 mr-20">
             <h2
               className="neon-logo text-2xl font-extrabold tracking-widest uppercase"
               style={{ fontFamily: "'Oxanium', monospace", margin: 0, lineHeight: 1 }}
