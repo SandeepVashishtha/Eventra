@@ -206,70 +206,49 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
   </div>
 );
 
+const MobileDrawerHeader = ({ closeBtnRef, closeAllMenus, isDarkMode }) => (
+  <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-white/10 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md">
+    <Link to="/" onClick={closeAllMenus} className="flex items-center gap-2">
+      <span className={`text-lg font-black tracking-[0.18em] uppercase ${isDarkMode ? "text-white" : "text-zinc-950"}`}>
+        Eventra
+      </span>
+    </Link>
+    <button
+      ref={closeBtnRef}
+      onClick={closeAllMenus}
+      aria-label="Close navigation"
+      className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+    >
+      <span className="text-xl leading-none">&times;</span>
+    </button>
+  </div>
+);
+
 const DesktopNavLink = ({ item, isActive }) => (
   <Link
     to={item.href}
-    className={`relative group text-[13px] xl:text-[14px] font-medium transition-all duration-200 whitespace-nowrap px-3.5 py-1.5 rounded-lg ${
+    className={`relative group text-sm font-semibold transition-all duration-200 whitespace-nowrap px-3.5 py-2 rounded-full ${
       isActive
-        ? "text-indigo-600 dark:text-indigo-400 font-semibold"
-        : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
+        ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10"
+        : "text-zinc-600 hover:text-indigo-600 dark:text-zinc-300 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50"
     }`}
   >
-    <span className="relative z-10">{item.name}</span>
-
-    {isActive && (
-      <>
-        <motion.span
-          layoutId="activeBox"
-          className="absolute inset-0 bg-indigo-100/60 dark:bg-indigo-500/20 border border-indigo-200/80 dark:border-indigo-500/50 rounded-lg -z-0"
-          transition={{ type: "spring", stiffness: 380, damping: 30 }}
-        />
-        <motion.span
-          layoutId="activeBoxGlow"
-          className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
-          transition={{ type: "spring", stiffness: 380, damping: 30 }}
-        />
-      </>
-    )}
-
+    {item.name}
   </Link>
 );
 
 const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location }) => (
   <div className="relative">
-  const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location }) => (
-  <div className="relative">
     <button
       onClick={onToggle}
-      className={`relative group flex items-center gap-1.5 text-[13px] xl:text-[14px] font-medium transition-all duration-200 whitespace-nowrap px-3.5 py-1.5 rounded-lg ${
+      className={`relative group flex items-center gap-1.5 text-sm font-semibold transition-all duration-200 whitespace-nowrap px-3.5 py-2 rounded-full ${
         isActive || isOpen
-          ? "text-indigo-600 dark:text-indigo-400 font-semibold"
-          : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
+          ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10"
+          : "text-zinc-600 hover:text-indigo-600 dark:text-zinc-300 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50"
       }`}
     >
-      <span className="relative z-10 flex items-center gap-1">
-        {item.name}
-        <ChevronDown
-          className={`w-3.5 h-3.5 transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
-          }`}
-        />
-      </span>
-
-      {(isActive || isOpen) && (
-        <>
-          <motion.span
-            layoutId="activeBox"
-            className="absolute inset-0 bg-indigo-100/60 dark:bg-indigo-500/20 border border-indigo-200/80 dark:border-indigo-500/50 rounded-lg -z-0"
-            transition={{ type: "spring", stiffness: 380, damping: 30 }}
-          />
-          <motion.span
-            layoutId="activeBoxGlow"
-            className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
-            transition={{ type: "spring", stiffness: 380, damping: 30 }}
-          />
-        </>
-      )}
+      {item.name}
+      <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
     </button>
 
     {isOpen && (
@@ -285,15 +264,15 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
             key={sub.name}
             to={sub.href}
             onClick={() => setOpenDropdown(null)}
-            className={`group flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium rounded-lg transition-all duration-200 border ${
-              location.pathname.startsWith(sub.href)
-                ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
-                : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-transparent"
+            className={`group flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium rounded-lg transition-all duration-200 ${
+              location.pathname === sub.href
+                ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
+                : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             }`}
           >
             {React.cloneElement(sub.icon, {
               className: `w-5 h-5 transition-colors ${
-                location.pathname.startsWith(sub.href)
+                location.pathname === sub.href
                   ? "text-indigo-600 dark:text-indigo-400"
                   : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
               }`,
@@ -428,11 +407,6 @@ const NAV_ITEMS = [
   { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
   { name: "Hackathons", href: "/hackathons", icon: <Trophy className="w-5 h-5" /> },
   { name: "Projects", href: "/projects", icon: <FolderKanban className="w-5 h-5" /> },
-  { name: "Home",       href: "/",          icon: <Home         className="w-5 h-5" /> },
-  { name: "Events",     href: "/events",     icon: <Calendar     className="w-5 h-5" /> },
-  { name: "Bookmarks",  href: "/bookmarks",  icon: <Bookmark     className="w-5 h-5" /> },
-  { name: "Hackathons", href: "/hackathons", icon: <Trophy       className="w-5 h-5" /> },
-  { name: "Projects",   href: "/projects",   icon: <FolderKanban className="w-5 h-5" /> },
   {
     name: "Community",
     icon: <Users className="w-5 h-5" />,
@@ -678,6 +652,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           {/* ── Nav links ── takes all remaining space, items centered */}
           <div className="flex-1 min-w-0">
             <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
+          </div>
         {/* Right Group: Auth Controls and Mobile Toggle */}
 <div className="hidden lg:flex items-center gap-2 shrink-0 justify-end">
   <ThemeToggleButton

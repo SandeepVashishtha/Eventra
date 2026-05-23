@@ -17,7 +17,6 @@ import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useSessionRecovery } from "../../context/SessionRecoveryContext";
-import { API_ENDPOINTS } from "../../config/api";
 import { useFormValidation } from "../../hooks/useFormValidation";
 import { validate } from "../../validation";
 import { toast } from "react-toastify";
@@ -147,25 +146,10 @@ const EventRegistration = () => {
     setSubmitting(true);
 
     try {
-      // API call to register for event using centralized API layer
-      const response = await apiUtils.post(
-        API_ENDPOINTS.EVENTS.REGISTER(eventId),
-        {
-          ...formData,
-          eventId: parseInt(eventId),
-          userId: user?.id || null,
-        }
-      );
-
-      setRegistered(true);
-      toast.success("Registration successful!");
-      // ── Save to My Events ──
-      addRegistration(event, formData);
-      // Redirect to event details after 2 seconds
-      setTimeout(() => {
-        navigate(`/events/${eventId}`);
-      }, 2000);
-        }),
+      const response = await apiUtils.post(API_ENDPOINTS.EVENTS.REGISTER(eventId), {
+        ...formData,
+        eventId: parseInt(eventId),
+        userId: user?.id || null,
       });
 
       if (response.ok) {
