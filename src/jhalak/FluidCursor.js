@@ -18,13 +18,13 @@ const FluidCursor = ({ enabled = true }) => {
       SIM_RESOLUTION: 128,
       DYE_RESOLUTION: 512,
       CAPTURE_RESOLUTION: 512,
-      DENSITY_DISSIPATION: 3.5,
-      VELOCITY_DISSIPATION: 2,
+      DENSITY_DISSIPATION: 6,
+      VELOCITY_DISSIPATION: 4,
       PRESSURE: 0.1,
-      PRESSURE_ITERATIONS: 10,
-      CURL: 3,
-      SPLAT_RADIUS: 0.2,
-      SPLAT_FORCE: 6000,
+      PRESSURE_ITERATIONS: 6,
+      CURL: 1,
+      SPLAT_RADIUS: 0.12,
+      SPLAT_FORCE: 2500,
       SHADING: true,
       COLOR_UPDATE_SPEED: 10,
       PAUSED: false,
@@ -1023,9 +1023,9 @@ const FluidCursor = ({ enabled = true }) => {
 
     function clickSplat(pointer) {
       const color = generateColor();
-      color.r *= 10.0;
-      color.g *= 10.0;
-      color.b *= 10.0;
+      color.r *= 4;
+      color.g *= 4;
+      color.b *= 4.0;
       let dx = 10 * (Math.random() - 0.5);
       let dy = 30 * (Math.random() - 0.5);
       splat(pointer.texcoordX, pointer.texcoordY, dx, dy, color);
@@ -1096,9 +1096,9 @@ const FluidCursor = ({ enabled = true }) => {
       // Premium sky blue / deep ocean cyan (#00A3FF)
       // Scaled by 0.15 to maintain the perfect density in the fluid solver and prevent over-saturation
       return {
-        r: 0.0 * 0.15,
-        g: (163 / 255) * 0.15,
-        b: (255 / 255) * 0.15
+        r: 0.0 * 0.07,
+        g: (163 / 255) * 0.07,
+        b: (255 / 255) * 0.07
       };
     }
 
