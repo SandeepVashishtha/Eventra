@@ -3,8 +3,7 @@ import { Link } from "react-router-dom";
 import {
   LayoutDashboard,
   LogOut,
-  User,
-  Settings
+  User
 } from "lucide-react";
 
 const ProfileMenu = ({ user, logout }) => {
@@ -64,11 +63,11 @@ const ProfileMenu = ({ user, logout }) => {
           </Link>
 
           <Link
-            to="/settings"
+            to="/profile"
             onClick={() => setIsOpen(false)}
             className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors mt-1"
           >
-            <Settings className="w-4 h-4" />
+            <User className="w-4 h-4" />
             Edit Profile
           </Link>
 

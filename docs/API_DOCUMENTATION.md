@@ -192,6 +192,30 @@ Content-Type: application/json
 }
 ```
 
+### Error Response (409) — Event Full
+
+```json
+{
+  "status": 409,
+  "error": "Conflict",
+  "message": "This event has reached capacity.",
+  "path": "/api/events/1/register",
+  "timestamp": "2026-05-23T09:30:00"
+}
+```
+
+### Error Response (409) — Concurrent Registration Conflict
+
+```json
+{
+  "status": 409,
+  "error": "Conflict",
+  "message": "Too many simultaneous registrations. Please try again.",
+  "path": "/api/events/1/register",
+  "timestamp": "2026-05-23T09:30:00"
+}
+```
+
 ---
 
 ## List Events
