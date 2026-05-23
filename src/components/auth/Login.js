@@ -100,27 +100,27 @@ const Login = () => {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="w-full pl-3 pr-4 py-3 my-14 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+          className="relative w-full my-8 sm:my-12 overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-600 bg-white/80 dark:bg-gray-800/90 p-4 sm:p-6 lg:p-8 text-gray-900 shadow-lg backdrop-blur-sm transition-all duration-200 hover:shadow-xl dark:text-white"
         >
-          <div className="absolute top-8 left-10 w-16 h-16 bg-blue-100 rounded-full blur-sm opacity-60"></div>
-          <div className="absolute bottom-10 left-32 w-20 h-20 bg-pink-100 rounded-full blur-sm opacity-60"></div>
-          <div className="absolute top-20 right-20 w-14 h-14 bg-yellow-100 rounded-full blur-sm opacity-60"></div>
-          <div className="md:flex">
+            <div className="pointer-events-none absolute top-8 left-6 h-16 w-16 rounded-full bg-blue-100 opacity-60 blur-sm"></div>
+            <div className="pointer-events-none absolute bottom-10 left-20 h-20 w-20 rounded-full bg-pink-100 opacity-60 blur-sm"></div>
+            <div className="pointer-events-none absolute top-16 right-10 h-14 w-14 rounded-full bg-yellow-100 opacity-60 blur-sm"></div>
+            <div className="flex flex-col gap-6 md:flex-row md:gap-0">
 
             {/* LEFT PANEL */}
-            <div className="relative z-10 md:w-[38%] bg-gradient-to-br from-blue-100 via-yellow-50 to-pink-100 dark:from-gray-800 dark:via-gray-900 dark:to-black text-gray-900 dark:text-white p-12 flex flex-col justify-between rounded-3xl">
+            <div className="relative z-10 w-full md:w-[38%] bg-gradient-to-br from-blue-100 via-yellow-50 to-pink-100 dark:from-gray-800 dark:via-gray-900 dark:to-black text-gray-900 dark:text-white p-8 sm:p-10 lg:p-12 flex flex-col justify-between rounded-2xl md:rounded-l-2xl md:rounded-r-none">
               <div>
-                <h2 className="text-4xl text-center font-extrabold mb-5" style={{ fontFamily: '"Anton", sans-serif' }}>
+                <h2 className="text-3xl sm:text-4xl text-center font-extrabold mb-5 md:text-left" style={{ fontFamily: '"Anton", sans-serif' }}>
                   Welcome Back
                 </h2>
-                <p className="mb-8 text-lg opacity-90 leading-relaxed">
+                <p className="mb-8 text-base sm:text-lg opacity-90 leading-relaxed md:text-left">
                   Sign in to your Eventra account and pick up where you left off.
                 </p>
-                <div>
+                <div className="space-y-3">
                   {introPoints.map((point) => (
                     <div
                       key={point}
-                      className="flex items-start gap-3 rounded-xl border border-white/20 bg-white/10 py-3 text-sm text-gray-800 dark:text-gray-100 backdrop-blur-sm"
+                      className="flex items-start gap-3 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-gray-800 backdrop-blur-sm dark:text-gray-100"
                     >
                       <span className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-500 shrink-0" />
                       <span className="leading-relaxed">{point}</span>
@@ -131,7 +131,7 @@ const Login = () => {
             </div>
 
             {/* RIGHT PANEL */}
-            <div className="md:w-3/5 p-10 space-y-6 bg-white/70 dark:bg-gray-900/90 backdrop-blur-xl">
+            <div className="w-full md:w-[62%] p-6 sm:p-8 lg:p-10 space-y-6 bg-white/70 dark:bg-gray-900/90 backdrop-blur-xl rounded-2xl md:rounded-r-2xl md:rounded-l-none">
               {/* Logo / Title */}
               <motion.div
                 initial={{ scale: 0 }}
