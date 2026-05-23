@@ -1,45 +1,77 @@
 import React from "react";
 
-const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
+const ShortcutRow = ({ action, shortcut }) => (
+  <div
+    className="flex items-center justify-between py-3 border-b border-gray-200"
+  >
+    <span className="font-medium">
+      {action}
+    </span>
+
+    <kbd className="px-3 py-1 rounded-lg bg-gray-100 border text-sm font-semibold">
+      {shortcut}
+    </kbd>
+  </div>
+);
+
+const KeyboardShortcutsModal = ({
+  isOpen,
+  onClose,
+}) => {
   if (!isOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center px-4"
       onClick={onClose}
+      className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center px-4"
     >
       <div
-        className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-md w-full p-6"
         onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6"
       >
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xl font-bold text-black dark:text-white">
-            Keyboard Shortcuts
-          </h2>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold">
+              Keyboard Shortcuts
+            </h2>
+
+            <p className="text-gray-500 mt-1">
+              Navigate Eventra faster
+            </p>
+          </div>
 
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-black dark:hover:text-white"
+            className="w-10 h-10 rounded-lg bg-gray-100 text-xl"
           >
             ✕
           </button>
         </div>
 
-        <div className="space-y-4 text-sm">
-          <div className="flex justify-between">
-            <span>Open shortcuts help</span>
-            <kbd className="px-2 py-1 bg-gray-200 dark:bg-zinc-700 rounded">
-              Shift + /
-            </kbd>
-          </div>
+        <ShortcutRow
+          action="Open shortcuts help"
+          shortcut="Shift + /"
+        />
 
-          <div className="flex justify-between">
-            <span>Close modal</span>
-            <kbd className="px-2 py-1 bg-gray-200 dark:bg-zinc-700 rounded">
-              Esc
-            </kbd>
-          </div>
-        </div>
+        <ShortcutRow
+          action="Close modal"
+          shortcut="Esc"
+        />
+
+        <ShortcutRow
+          action="Go to Home"
+          shortcut="g + h"
+        />
+
+        <ShortcutRow
+          action="Go to Login"
+          shortcut="g + l"
+        />
+
+        <ShortcutRow
+          action="Go to Signup"
+          shortcut="g + s"
+        />
       </div>
     </div>
   );
