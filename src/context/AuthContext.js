@@ -66,6 +66,25 @@ export const AuthProvider = ({ children }) => {
     return () => setOnUnauthorizedHandler(null);
   }, [clearSession]);
 
+  // --- Periodic Token Expiry Check ---
+  // Check token validity in the background so we don't mutate state during a render.
+  useEffect(() => {
+    if (!token) return;
+
+    const checkTokenExpiry = () => {
+      if (!isTokenValid(token)) {
+        clearSession(); // Safe here because useEffect runs AFTER rendering finishes
+      }
+    };
+
+    // Check immediately when the component mounts or token changes
+    checkTokenExpiry();
+
+    // Check periodically every 15 seconds to catch mid-session expiry
+    const interval = setInterval(checkTokenExpiry, 15000);
+    return () => clearInterval(interval);
+  }, [token, clearSession]);
+
   const persistSession = (sessionToken, sessionUser) => {
     setToken(sessionToken);
     setUser(sessionUser);
@@ -131,16 +150,15 @@ const login = async (usernameOrEmail, password) => {
     clearSession();
   };
 
-  const isAuthenticated = useCallback(() => {
+ const isAuthenticated = useCallback(() => {
     // Also verify the current token hasn't expired since it was stored.
     if (!user || !token) return false;
     if (!isTokenValid(token)) {
-      // Token expired mid-session — clean up immediately.
-      clearSession();
+      // Token expired mid-session — safely return false without mutating state
       return false;
     }
     return true;
-  }, [user, token, clearSession]);
+  }, [user, token]);
 
   const hasRole = (roleName) => {
     return user?.roles?.includes(roleName) || false;
