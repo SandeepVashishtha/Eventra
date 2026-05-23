@@ -17,7 +17,6 @@ import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useSessionRecovery } from "../../context/SessionRecoveryContext";
-import { API_ENDPOINTS } from "../../config/api";
 import { useFormValidation } from "../../hooks/useFormValidation";
 import { validate } from "../../validation";
 import { toast } from "react-toastify";
@@ -156,17 +155,6 @@ const EventRegistration = () => {
           userId: user?.id || null,
         }
       );
-
-      setRegistered(true);
-      toast.success("Registration successful!");
-      // ── Save to My Events ──
-      addRegistration(event, formData);
-      // Redirect to event details after 2 seconds
-      setTimeout(() => {
-        navigate(`/events/${eventId}`);
-      }, 2000);
-        }),
-      });
 
       if (response.ok) {
         setRegistered(true);

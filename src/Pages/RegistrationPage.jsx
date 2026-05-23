@@ -1,12 +1,17 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiUser, FiMail, FiPhone, FiBriefcase, FiAward, FiMessageSquare, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
 import useDocumentTitle from "../hooks/useDocumentTitle";
+import { API_ENDPOINTS, apiUtils } from "../config/api";
+import { useAuth } from "../context/AuthContext";
+import { toast } from "react-toastify";
 
 const RegistrationPage = () => {
   useDocumentTitle("Eventra | Registration");
   const navigate = useNavigate();
+  const { id } = useParams();
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -59,17 +64,32 @@ const RegistrationPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
     setIsSubmitting(true);
-    // Simulate API registration request
-    setTimeout(() => {
-      console.log("Registration Successful! Data:", formData);
-      setIsSubmitting(false);
+    try {
+      await apiUtils.post(
+        API_ENDPOINTS.EVENTS.REGISTER(id),
+        {
+          fullName: formData.fullName.trim(),
+          email: formData.email.trim(),
+          phone: formData.phone.trim(),
+          organization: formData.organization.trim(),
+          designation: formData.designation.trim(),
+          additionalInfo: formData.additionalInfo.trim(),
+          eventId: parseInt(id),
+          userId: user?.id || null,
+        }
+      );
       setSubmitSuccess(true);
-    }, 1500);
+      toast.success("Registration successful!");
+    } catch (error) {
+      toast.error(error.message || "Registration failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {

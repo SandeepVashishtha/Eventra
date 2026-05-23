@@ -237,8 +237,6 @@ const DesktopNavLink = ({ item, isActive }) => (
 
 const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location }) => (
   <div className="relative">
-  const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location }) => (
-  <div className="relative">
     <button
       onClick={onToggle}
       className={`relative group flex items-center gap-1.5 text-[13px] xl:text-[14px] font-medium transition-all duration-200 whitespace-nowrap px-3.5 py-1.5 rounded-lg ${
@@ -305,6 +303,26 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
     )}
   </div>
 );
+
+const MobileDrawerHeader = ({ closeBtnRef, closeAllMenus, isDarkMode }) => (
+  <div className="flex items-center justify-between p-3.5 sm:p-4 border-b border-gray-200 dark:border-white/20">
+    <h2 className="text-xl sm:text-2xl font-bold text-black dark:text-white" style={{ fontFamily: '"Anton", sans-serif' }}>
+      Eventra
+    </h2>
+    <div className="flex items-center gap-3">
+      <button
+        ref={closeBtnRef}
+        onClick={closeAllMenus}
+        className="p-2 rounded-full text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20"
+      >
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+  </div>
+);
+
 const MobileDrawerFooter = ({ 
   isAuthenticated, user, primaryLine, secondaryLine, closeAllMenus, location, 
   handleLogoutClick, isDarkMode, toggleTheme, cursorEnabled, toggleCursor 
@@ -678,6 +696,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           {/* ── Nav links ── takes all remaining space, items centered */}
           <div className="flex-1 min-w-0">
             <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
+          </div>
         {/* Right Group: Auth Controls and Mobile Toggle */}
 <div className="hidden lg:flex items-center gap-2 shrink-0 justify-end">
   <ThemeToggleButton

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import mockEvents from "./eventsMockData.json";
 import { getRouteSearchResults } from "../../utils/searchUtils";
 import {
-  computeEventStatus,
+  getEventStatus,
 } from "../../utils/eventUtils";
 import {
   DEFAULT_EVENTS_PER_PAGE,
@@ -43,7 +43,7 @@ const useEventListing = () => {
 
     const normalizedEvents = mockEvents.map((event) => ({
       ...event,
-      status: computeEventStatus(event),
+      status: getEventStatus(event),
     }));
 
     setEvents(normalizedEvents);

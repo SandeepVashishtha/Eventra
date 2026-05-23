@@ -69,10 +69,6 @@ const API = axios.create({
   },
   withCredentials: true, // Crucial for cookie-based auth/session handling
   timeout: REQUEST_TIMEOUT_MS,
-  headers: {
-    "Content-Type": "application/json",
-  },
-  withCredentials: true,
 });
 
 // ---------------------------------------------------------------------------
@@ -95,9 +91,6 @@ API.interceptors.request.use(
 // Response Interceptor: Global 401 Unauthorized Handler
 let onUnauthorized = null;
 
-export const setOnUnauthorizedHandler = (handler) => {
-  onUnauthorized = handler;
-};
 /**
  * Register unauthorized callback.
  * AuthContext sets this during initialization so that any 401 response
@@ -133,23 +126,20 @@ API.interceptors.request.use((config) => {
 API.interceptors.response.use(
   // Success — pass through
   (response) => response,
-  (error) => {
-
   // Error — normalize and optionally retry
   async (error) => {
     const config = error.config || {};
+    const status = error?.response?.status;
 
     // --- 401 Unauthorized: trigger session cleanup ---
-    if (error?.response?.status === 401) {
+    if (status === 401) {
       if (onUnauthorized) {
         onUnauthorized();
       }
     }
-    return Promise.reject(error);
 
     // --- Automatic retry for transient 5xx errors ---
     const retryCount = config._retryCount || 0;
-    const status = error?.response?.status;
 
     if (
       RETRYABLE_STATUS_CODES.includes(status) &&
@@ -243,28 +233,4 @@ export const apiUtils = {
   patch: (url, data = {}, config = {}) => API.patch(url, data, config),
   delete: (url, config = {}) => API.delete(url, config),
 };
-
-export default API;
-// ---------------------------------------------------------------------------
-// API Utility Methods
-// ---------------------------------------------------------------------------
-// Signatures are 100% backwards-compatible. Existing callers continue to
-// receive axios response objects and handle them as before.
-
-export const apiUtils = {
-  get: (url, config = {}) => API.get(url, config),
-
-  post: (url, data = {}, config = {}) => API.post(url, data, config),
-
-  put: (url, data = {}, config = {}) => API.put(url, data, config),
-
-  patch: (url, data = {}, config = {}) => API.patch(url, data, config),
-
-  delete: (url, config = {}) => API.delete(url, config),
-};
-
-// ---------------------------------------------------------------------------
-// Default Export
-// ---------------------------------------------------------------------------
-
 export default API;

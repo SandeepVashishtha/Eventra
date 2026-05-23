@@ -8,8 +8,6 @@ import EventDetails from "../../Pages/Events/EventDetails";
 import EventRegistration from "../../Pages/Events/EventRegistration";
 import BookmarkedEvents from "../../Pages/Events/BookmarkedEvents";
 import RemindersPage from "../../Pages/Events/RemindersPage";
-import HackathonPage from "../../Pages/Hackathons/HackathonPage";
-import ProjectsPage from "../../Pages/Projects/ProjectsPage";
 import Contributors from "../Contributors";
 import CommunityEvent from "../CommunityEvent";
 import LeaderBoard from "../../Pages/Leaderboard/Leaderboard";
