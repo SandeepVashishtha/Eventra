@@ -96,7 +96,11 @@ const AdminDashboard = () => {
   const totalUsers  = users.length;
   const activeUsers = users.filter(u => u.status === 'Active').length;
   const totalEvents = events.length;
-  const upcoming    = events.filter(e => e.status === 'Upcoming').length;
+
+  const upcoming = events.filter(e =>
+    new Date(e.date) > new Date()
+  ).length;
+
   const totalParticipants = events.reduce((s, e) => s + e.participantCount, 0);
 
   /* Delete handlers */
