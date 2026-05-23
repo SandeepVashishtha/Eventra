@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import { API_ENDPOINTS, apiUtils } from '../config/api';
 
 const QUEUE_KEY = 'eventra_offline_queue';
-import { API_ENDPOINTS } from '../config/api';
 import { getQueue, setQueue, clearQueue } from '../utils/offlineQueue';
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 1_000; // 1s → 2s → 4s per item
