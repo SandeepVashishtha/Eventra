@@ -8,6 +8,9 @@ import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
 import FluidCursor from "./jhalak/FluidCursor";
 import PageTransition from "./components/common/PageTransition";
+import ReminderChecker from "./components/reminders/ReminderChecker";
+
+// Pages
 import RegistrationPage from "./Pages/RegistrationPage";
 
 // Context & Hooks
@@ -64,6 +67,8 @@ function App() {
       <NotificationProvider>
         <MyEventsProvider>
           <SessionRecoveryProvider>
+            <NotificationProvider />
+            <ReminderChecker />
             <NotificationToastContainer />
             <OfflineSyncManager />
 
