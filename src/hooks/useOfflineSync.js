@@ -101,6 +101,9 @@ const useOfflineSync = () => {
           // Still a network error — keep in queue with incremented retry counter
           failedQueue.push({ ...item, retries: retries + 1 });
         }
+
+        // Delay 1 second between processing each item to throttle sync rate
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
 
       if (failedQueue.length > 0) {
