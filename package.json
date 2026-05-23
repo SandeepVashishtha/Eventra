@@ -24,7 +24,8 @@
     "react-router-dom": "^6.8.0",
     "react-scripts": "^5.0.1",
     "react-toastify": "^11.0.5",
-    "recharts": "^3.8.1"
+    "recharts": "^3.8.1",
+    "yaml": "^2.9.0"
   },
   "scripts": {
     "dev": "react-scripts start",
