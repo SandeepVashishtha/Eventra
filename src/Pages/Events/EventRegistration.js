@@ -40,6 +40,11 @@ function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
 // Registration lock map to prevent concurrent registrations for the same event
 const registrationLocks = new Map();
 
+const isCapacityMessage = (message = "") => {
+  const normalized = String(message).toLowerCase();
+  return normalized.includes("capacity") || normalized.includes("full");
+};
+
 const EventRegistration = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
@@ -215,17 +220,27 @@ const EventRegistration = () => {
           navigate(`/events/${eventId}`);
         }, 2000);
       } else {
-        const errorData = await response.json();
-        // Handle capacity exceeded error specifically
-        if (response.status === 409 || errorData.message?.toLowerCase().includes('capacity') || errorData.message?.toLowerCase().includes('full')) {
+        let errorData = {};
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = {};
+        }
+
+        const serverMessage = errorData.message || "";
+        const isConflict = response.status === 409;
+        const isFull = isCapacityMessage(serverMessage);
+
+        if (isConflict && isFull) {
           toast.error("This event has reached maximum capacity.");
-          // Refresh event data to get updated capacity
           const updatedEvent = mockEvents.find((e) => e.id === parseInt(eventId));
           if (updatedEvent) {
             setEvent({ ...updatedEvent, status: getEventStatus(updatedEvent) });
           }
+        } else if (isConflict) {
+          toast.error("Too many simultaneous registrations. Please try again.");
         } else {
-          toast.error(errorData.message || "Registration failed. Please try again.");
+          toast.error(serverMessage || "Registration failed. Please try again.");
         }
       }
     } catch (error) {
