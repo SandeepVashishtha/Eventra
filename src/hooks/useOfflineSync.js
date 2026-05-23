@@ -1,6 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
+import { API_ENDPOINTS, apiUtils } from '../config/api';
+
+const QUEUE_KEY = 'eventra_offline_queue';
 import { API_ENDPOINTS } from '../config/api';
 import { getQueue, setQueue, clearQueue } from '../utils/offlineQueue';
 const MAX_RETRIES = 3;
@@ -38,6 +41,19 @@ const useOfflineSync = () => {
         await new Promise((resolve) => setTimeout(resolve, delayMs));
       }
 
+      try {
+        await apiUtils.post(url, payload);
+        return true;
+      } catch (error) {
+        // 4xx → bad request (don't retry); 5xx → may be transient
+        if (error.response && error.response.status >= 400 && error.response.status < 500) {
+          console.warn(
+            `Offline queue: server rejected item with ${error.response.status} — dropping.`,
+            error.response.data || ''
+          );
+          return true; // Treat as "handled" — bad data won't succeed on retry
+        }
+        throw error;
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -59,8 +75,6 @@ const useOfflineSync = () => {
         );
         return true; // Treat as "handled" — bad data won't succeed on retry
       }
-
-      throw new Error(`Server responded with ${response.status}`);
     };
 
     const handleOnline = async () => {

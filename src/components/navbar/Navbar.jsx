@@ -77,6 +77,9 @@ const Navbar = ({
                   w-8
                   rounded-xl
                   object-contain
+                  bg-gray-200
+                  dark:bg-transparent
+                  p-1
                 "
               />
 

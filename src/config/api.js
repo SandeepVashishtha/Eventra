@@ -64,6 +64,10 @@ export class ApiError extends Error {
 
 const API = axios.create({
   baseURL: BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+  withCredentials: true, // Crucial for cookie-based auth/session handling
   timeout: REQUEST_TIMEOUT_MS,
   headers: {
     "Content-Type": "application/json",
@@ -72,11 +76,28 @@ const API = axios.create({
 });
 
 // ---------------------------------------------------------------------------
-// Global 401 Unauthorized Handler
+// Interceptors
 // ---------------------------------------------------------------------------
 
+// Request Interceptor: Ensures every request has the auth token (if available)
+API.interceptors.request.use(
+  (config) => {
+    // Attempt to get token from localStorage (adjust key name if your app uses a different one)
+    const token = localStorage.getItem("token"); 
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response Interceptor: Global 401 Unauthorized Handler
 let onUnauthorized = null;
 
+export const setOnUnauthorizedHandler = (handler) => {
+  onUnauthorized = handler;
+};
 /**
  * Register unauthorized callback.
  * AuthContext sets this during initialization so that any 401 response
@@ -112,6 +133,7 @@ API.interceptors.request.use((config) => {
 API.interceptors.response.use(
   // Success — pass through
   (response) => response,
+  (error) => {
 
   // Error — normalize and optionally retry
   async (error) => {
@@ -123,6 +145,7 @@ API.interceptors.response.use(
         onUnauthorized();
       }
     }
+    return Promise.reject(error);
 
     // --- Automatic retry for transient 5xx errors ---
     const retryCount = config._retryCount || 0;
@@ -176,7 +199,7 @@ API.interceptors.response.use(
 );
 
 // ---------------------------------------------------------------------------
-// API Endpoints
+// API Endpoints & Utilities
 // ---------------------------------------------------------------------------
 
 export const API_ENDPOINTS = {
@@ -186,33 +209,40 @@ export const API_ENDPOINTS = {
     LOGOUT: "/auth/logout",
     RESET_PASSWORD: "/auth/reset-password",
   },
-
   EVENTS: {
     CREATE: "/events/create",
     ALL: "/events",
     DETAIL: (id) => `/events/${id}`,
     REGISTER: (id) => `/events/${id}/register`,
   },
-
   PROJECTS: {
     ALL: "/projects",
     DETAIL: (id) => `/projects/${id}`,
     CATEGORIES: "/projects/categories",
     SUBMIT: "/projects",
   },
-
   NOTIFICATIONS: {
     ALL: "/notifications",
     READ: (id) => `/notifications/${id}/read`,
     READ_ALL: "/notifications/read-all",
   },
-
   USERS: {
     PROFILE: "/users/profile",
     ACHIEVEMENTS: "/users/achievements",
   },
 };
 
+// Exporting API as default for direct use (e.g., API.get(...))
+// and exporting apiUtils for those who prefer the wrapper pattern.
+export const apiUtils = {
+  get: (url, config = {}) => API.get(url, config),
+  post: (url, data = {}, config = {}) => API.post(url, data, config),
+  put: (url, data = {}, config = {}) => API.put(url, data, config),
+  patch: (url, data = {}, config = {}) => API.patch(url, data, config),
+  delete: (url, config = {}) => API.delete(url, config),
+};
+
+export default API;
 // ---------------------------------------------------------------------------
 // API Utility Methods
 // ---------------------------------------------------------------------------
