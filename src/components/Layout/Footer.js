@@ -171,7 +171,7 @@ const Newsletter = () => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full sm:w-auto px-4 py-2.5 bg-black text-white dark:bg-white dark:text-black dark:hover:bg-gray-400 rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-gray-900 to-black hover:from-indigo-600 hover:to-purple-600 dark:from-white dark:to-gray-200 dark:hover:from-indigo-400 dark:hover:to-purple-500 text-white dark:text-black rounded-md transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-indigo-500/30 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed font-semibold tracking-wide"
         >
           {isSubmitting ? "Subscribing..." : "Subscribe"}
         </button>
@@ -252,7 +252,7 @@ const FooterLinksRender = () => (
 const Footer = () => {
   return (
     <footer 
-      className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
+      className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 transition-colors duration-500 hover:bg-indigo-50/40 dark:hover:bg-gray-800/80"
       data-aos="fade-up"
       data-aos-duration="1000"
       data-aos-offset="100"
@@ -265,7 +265,7 @@ const Footer = () => {
             data-aos-delay="0"
           >
             <h2
-              className="text-2xl sm:text-3xl font-bold text-black dark:text-white"
+              className="text-2xl sm:text-3xl font-bold inline-block text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-black dark:from-white dark:to-gray-300 hover:from-indigo-600 hover:to-purple-600 dark:hover:from-indigo-400 dark:hover:to-purple-400 transition-all duration-300 hover:scale-105 hover:-translate-y-1 cursor-default"
               style={{ fontFamily: "Anton, sans-serif" }}
             >
               Eventra
@@ -282,6 +282,16 @@ const Footer = () => {
           </div>
           <FooterLinksRender />
         </div>
+      </div>
+
+      {/* Massive Bottom Text */}
+      <div className="w-full overflow-hidden flex justify-center items-end mt-0 pointer-events-none select-none">
+        <h1 
+          className="text-[20vw] sm:text-[21vw] font-black leading-none tracking-tighter whitespace-nowrap text-transparent bg-clip-text bg-gradient-to-b from-black via-black/80 to-transparent dark:from-white dark:via-white/80 dark:to-transparent opacity-90"
+          style={{ fontFamily: "Anton, sans-serif", marginBottom: "-3%" }}
+        >
+          EVENTRA
+        </h1>
       </div>
     </footer>
   );

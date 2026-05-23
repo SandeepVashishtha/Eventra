@@ -1,7 +1,7 @@
-// src/Pages/Home/HomePage.jsx
 import Hero from "./components/Hero";
 import WhatsHappening from "./components/WhatsHappening";
 import HomeCTA from "./components/HomeCTA";
+import RecommendedEvents from "../../components/user/RecommendedEvents";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 const HomePage = () => {
   useDocumentTitle("Home | Eventra");
@@ -9,7 +9,8 @@ const HomePage = () => {
     <>
       <Hero />
       <WhatsHappening />
-      <HomeCTA></HomeCTA>
+      <RecommendedEvents />
+      <HomeCTA />
     </>
   );
 };

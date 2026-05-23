@@ -215,7 +215,7 @@ export default function Chatbot() {
       className="
         fixed bottom-6 right-6 z-[100]
         flex flex-col                        /* KEY FIX: flex column layout */
-        w-[calc(100vw-2rem)] max-w-sm
+        w-[calc(100vw-2rem)] max-w-sm sm:max-w-sm
         rounded-2xl
         border border-slate-200 dark:border-slate-700
         bg-white dark:bg-slate-900
@@ -223,7 +223,7 @@ export default function Chatbot() {
 
         /* KEY FIX: constrain total height to viewport so it never overflows.
            bottom-6 = 1.5rem offset from bottom, so we subtract that + a little breathing room. */
-        max-h-[calc(100vh-5rem)]
+        max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-5rem)]
       "
     >
       {/* ── Header — always visible, never scrolls away ── */}
@@ -278,6 +278,7 @@ export default function Chatbot() {
         role="log"
         aria-live="polite"
         aria-label="Chat messages"
+        data-lenis-prevent
       >
         {messages.map((message, index) => (
           <div

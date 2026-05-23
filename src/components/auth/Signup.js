@@ -219,7 +219,7 @@ const handleSubmit = async (e) => {
 
   try {
     const response = await apiUtils.post(
-      API_ENDPOINTS.AUTH.REGISTER,
+      API_ENDPOINTS.AUTH.SIGNUP,
       {
         firstName:
           formData.firstName.trim(),
