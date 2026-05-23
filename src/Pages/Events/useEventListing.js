@@ -60,9 +60,11 @@ const useEventListing = () => {
   }, [events, filterType, searchQuery, sortType]);
 
   const totalPages = getTotalPages(filteredEvents.length, eventsPerPage);
-  const paginatedEvents = useMemo(() => {
-    return getPaginatedEvents(filteredEvents, currentPage, eventsPerPage);
-  }, [currentPage, eventsPerPage, filteredEvents]);
+
+  const paginatedEvents = useMemo(
+    () => getPaginatedEvents(filteredEvents, currentPage, eventsPerPage),
+    [currentPage, eventsPerPage, filteredEvents],
+  );
 
   useEffect(() => {
     setCurrentPage(1);
