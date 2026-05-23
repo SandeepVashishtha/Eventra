@@ -16,11 +16,8 @@ import {
   LinkIcon,
   CalendarDaysIcon,
   DocumentTextIcon,
-  ComputerDesktopIcon
+  ComputerDesktopIcon,
 } from "@heroicons/react/24/solid";
-
-
-
 
 const HostHackathon = () => {
   const [errors, setErrors] = useState({});
@@ -168,7 +165,7 @@ const HostHackathon = () => {
 
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-  
+
   const formFields = [
     {
       label: "Hackathon Name",
@@ -220,7 +217,6 @@ const HostHackathon = () => {
       icon: LinkIcon,
     },
   ];
-
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
