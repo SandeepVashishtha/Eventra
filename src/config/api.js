@@ -4,9 +4,15 @@ import axios from "axios";
 // Base API URL
 // ---------------------------------------------------------------------------
 
-const BASE_URL =
-  process.env.REACT_APP_API_URL ||
-  "https://eventra-backend-dgcae3etebbag8ft.centralindia-01.azurewebsites.net";
+const getBaseUrl = () => {
+  const url = process.env.REACT_APP_API_URL;
+  if (!url) {
+    return "/api";
+  }
+  return url.endsWith("/api") ? url : `${url}/api`;
+};
+
+const BASE_URL = getBaseUrl();
 
 // ---------------------------------------------------------------------------
 // Network Resilience Configuration
@@ -69,10 +75,6 @@ const API = axios.create({
   },
   withCredentials: true, // Crucial for cookie-based auth/session handling
   timeout: REQUEST_TIMEOUT_MS,
-  headers: {
-    "Content-Type": "application/json",
-  },
-  withCredentials: true,
 });
 
 // ---------------------------------------------------------------------------
@@ -95,9 +97,6 @@ API.interceptors.request.use(
 // Response Interceptor: Global 401 Unauthorized Handler
 let onUnauthorized = null;
 
-export const setOnUnauthorizedHandler = (handler) => {
-  onUnauthorized = handler;
-};
 /**
  * Register unauthorized callback.
  * AuthContext sets this during initialization so that any 401 response
@@ -133,23 +132,20 @@ API.interceptors.request.use((config) => {
 API.interceptors.response.use(
   // Success — pass through
   (response) => response,
-  (error) => {
-
   // Error — normalize and optionally retry
   async (error) => {
     const config = error.config || {};
+    const status = error?.response?.status;
 
     // --- 401 Unauthorized: trigger session cleanup ---
-    if (error?.response?.status === 401) {
+    if (status === 401) {
       if (onUnauthorized) {
         onUnauthorized();
       }
     }
-    return Promise.reject(error);
 
     // --- Automatic retry for transient 5xx errors ---
     const retryCount = config._retryCount || 0;
-    const status = error?.response?.status;
 
     if (
       RETRYABLE_STATUS_CODES.includes(status) &&
@@ -206,6 +202,7 @@ export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: "/auth/login",
     SIGNUP: "/auth/signup",
+    REGISTER: "/auth/signup",
     LOGOUT: "/auth/logout",
     RESET_PASSWORD: "/auth/reset-password",
     GOOGLE: "/auth/google",
@@ -213,11 +210,13 @@ export const API_ENDPOINTS = {
   EVENTS: {
     CREATE: "/events/create",
     ALL: "/events",
+    LIST: "/events",
     DETAIL: (id) => `/events/${id}`,
     REGISTER: (id) => `/events/${id}/register`,
   },
   PROJECTS: {
     ALL: "/projects",
+    LIST: "/projects",
     DETAIL: (id) => `/projects/${id}`,
     CATEGORIES: "/projects/categories",
     SUBMIT: "/projects",
@@ -234,33 +233,61 @@ export const API_ENDPOINTS = {
   },
 };
 
-// Exporting API as default for direct use (e.g., API.get(...))
-// and exporting apiUtils for those who prefer the wrapper pattern.
-export const apiUtils = {
-  get: (url, config = {}) => API.get(url, config),
-  post: (url, data = {}, config = {}) => API.post(url, data, config),
-  put: (url, data = {}, config = {}) => API.put(url, data, config),
-  patch: (url, data = {}, config = {}) => API.patch(url, data, config),
-  delete: (url, config = {}) => API.delete(url, config),
+const buildConfig = (configOrToken) => {
+  if (typeof configOrToken === 'string') {
+    return {
+      headers: {
+        Authorization: `Bearer ${configOrToken}`,
+      },
+    };
+  }
+  return configOrToken;
 };
 
-export default API;
-// ---------------------------------------------------------------------------
-// API Utility Methods
-// ---------------------------------------------------------------------------
-// Signatures are 100% backwards-compatible. Existing callers continue to
-// receive axios response objects and handle them as before.
+const wrapHeaders = (headers) => {
+  if (!headers) return { get: () => null };
+  if (typeof headers.get === 'function') return headers;
+  return {
+    get: (key) => headers[key] || headers[key.toLowerCase()] || null,
+  };
+};
+
+const wrapAxiosResponse = (response) => {
+  const wrappedHeaders = wrapHeaders(response.headers);
+  return {
+    ...response,
+    headers: wrappedHeaders,
+    ok: response.status >= 200 && response.status < 300,
+    json: async () => response.data,
+    text: async () => typeof response.data === 'string' ? response.data : JSON.stringify(response.data),
+  };
+};
 
 export const apiUtils = {
-  get: (url, config = {}) => API.get(url, config),
+  get: (url, configOrToken) => {
+    const config = buildConfig(configOrToken);
+    return API.get(url, config).then(wrapAxiosResponse);
+  },
 
-  post: (url, data = {}, config = {}) => API.post(url, data, config),
+  post: (url, data = {}, configOrToken) => {
+    const config = buildConfig(configOrToken);
+    return API.post(url, data, config).then(wrapAxiosResponse);
+  },
 
-  put: (url, data = {}, config = {}) => API.put(url, data, config),
+  put: (url, data = {}, configOrToken) => {
+    const config = buildConfig(configOrToken);
+    return API.put(url, data, config).then(wrapAxiosResponse);
+  },
 
-  patch: (url, data = {}, config = {}) => API.patch(url, data, config),
+  patch: (url, data = {}, configOrToken) => {
+    const config = buildConfig(configOrToken);
+    return API.patch(url, data, config).then(wrapAxiosResponse);
+  },
 
-  delete: (url, config = {}) => API.delete(url, config),
+  delete: (url, configOrToken) => {
+    const config = buildConfig(configOrToken);
+    return API.delete(url, config).then(wrapAxiosResponse);
+  },
 };
 
 // ---------------------------------------------------------------------------
