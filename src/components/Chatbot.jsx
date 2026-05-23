@@ -278,6 +278,7 @@ export default function Chatbot() {
         role="log"
         aria-live="polite"
         aria-label="Chat messages"
+        data-lenis-prevent
       >
         {messages.map((message, index) => (
           <div
