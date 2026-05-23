@@ -73,7 +73,7 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
       whileTap={{ scale: 0.95 }}
       onClick={toggleTheme}
       title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group"
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100/80 dark:bg-zinc-800/80 backdrop-blur-md hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200/50 dark:border-zinc-700/50 group shadow-sm"
     >
       <motion.span
         key={isDarkMode ? "sun" : "moon"}
@@ -111,7 +111,7 @@ const CursorToggleButton = ({ cursorEnabled, toggleCursor, isMobile }) => {
       whileTap={{ scale: 0.95 }}
       onClick={toggleCursor}
       title={cursorEnabled ? "Disable Fluid Cursor" : "Enable Fluid Cursor"}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group"
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100/80 dark:bg-zinc-800/80 backdrop-blur-md hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200/50 dark:border-zinc-700/50 group shadow-sm"
     >
       {cursorEnabled ? (
         <MousePointer className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
@@ -146,10 +146,11 @@ const AuthButtons = ({ isMobile, closeAllMenus }) => (
       onClick={isMobile ? closeAllMenus : undefined} 
       className={isMobile
         ? "flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-zinc-900 dark:text-white bg-transparent border-2 border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all duration-300"
-        : "flex items-center justify-center px-6 py-2.5 text-sm font-bold text-white transition-all duration-300 bg-indigo-600 hover:bg-indigo-700 rounded-full shadow-md hover:shadow-lg hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-indigo-500/30 whitespace-nowrap"
+        : "relative flex items-center justify-center px-6 py-2.5 text-sm font-bold text-white transition-all duration-300 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full hover:shadow-[0_0_20px_rgba(99,102,241,0.5)] hover:scale-105 whitespace-nowrap overflow-hidden group border border-white/10"
       }
     >
-      {isMobile && <Sparkles className="w-5 h-5" />}Get Started
+      <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-purple-600 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+      <span className="relative z-10 flex items-center gap-2">{isMobile && <Sparkles className="w-5 h-5" />}Get Started</span>
     </Link>
   </div>
 );
@@ -202,57 +203,96 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
   </div>
 );
 
-const DesktopNavLink = ({ item, isActive }) => (
+const DesktopNavLink = ({ item, isActive, hoveredTab, setHoveredTab }) => (
   <Link
     to={item.href}
-    className={`relative group text-sm font-semibold transition-all duration-200 whitespace-nowrap px-3.5 py-2 rounded-full ${
+    onMouseEnter={() => setHoveredTab && setHoveredTab(item.name)}
+    className={`relative group text-sm font-medium transition-colors duration-200 whitespace-nowrap px-4 py-2 rounded-full ${
       isActive
-        ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10"
-        : "text-zinc-600 hover:text-indigo-600 dark:text-zinc-300 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50"
+        ? "text-indigo-900 dark:text-white"
+        : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
     }`}
   >
-    {item.name}
+    {isActive && (
+      <motion.div
+        layoutId="activeTabIndicator"
+        className="absolute inset-0 bg-indigo-500/10 dark:bg-indigo-500/20 border border-indigo-500/20 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.15)] z-0"
+        transition={{ type: "spring", stiffness: 350, damping: 30 }}
+      />
+    )}
+    {(hoveredTab === item.name && !isActive) && (
+      <motion.div
+        layoutId="hoverTabIndicator"
+        className="absolute inset-0 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-full z-0"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+      />
+    )}
+    <span className="relative z-10">{item.name}</span>
   </Link>
 );
 
-const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location }) => (
-  <div className="relative">
+const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location, hoveredTab, setHoveredTab }) => (
+  <div className="relative" onMouseEnter={() => setHoveredTab && setHoveredTab(item.name)}>
     <button
       onClick={onToggle}
-      className={`relative group flex items-center gap-1.5 text-sm font-semibold transition-all duration-200 whitespace-nowrap px-3.5 py-2 rounded-full ${
+      className={`relative group flex items-center gap-1.5 text-sm font-medium transition-colors duration-200 whitespace-nowrap px-4 py-2 rounded-full ${
         isActive || isOpen
-          ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10"
-          : "text-zinc-600 hover:text-indigo-600 dark:text-zinc-300 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50"
+          ? "text-indigo-900 dark:text-white"
+          : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
       }`}
     >
-      {item.name}
-      <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
+      {(isActive || isOpen) && (
+        <motion.div
+          layoutId="activeTabIndicator"
+          className="absolute inset-0 bg-indigo-500/10 dark:bg-indigo-500/20 border border-indigo-500/20 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.15)] z-0"
+          transition={{ type: "spring", stiffness: 350, damping: 30 }}
+        />
+      )}
+      {(hoveredTab === item.name && !isActive && !isOpen) && (
+        <motion.div
+          layoutId="hoverTabIndicator"
+          className="absolute inset-0 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-full z-0"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+        />
+      )}
+      <span className="relative z-10 flex items-center gap-1.5">
+        {item.name}
+        <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
+      </span>
     </button>
-    {isOpen && (
-      <motion.div
-        initial={{ opacity: 0, y: 15, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-        transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        className="absolute left-1/2 -translate-x-1/2 mt-4 w-60 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-3xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(99,102,241,0.1)] rounded-2xl z-50 border border-white/40 dark:border-zinc-700/40 p-2 overflow-hidden"
-      >
-        {item.subItems.map((sub) => (
-          <Link
-            key={sub.name}
-            to={sub.href}
-            onClick={() => setOpenDropdown(null)}
-            className={`group flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium rounded-lg transition-all duration-200 ${
-              location.pathname === sub.href
-                ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
-                : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-            }`}
-          >
-            {React.cloneElement(sub.icon, { className: `w-5 h-5 transition-colors ${location.pathname === sub.href ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300'}` })}
-            {sub.name}
-          </Link>
-        ))}
-      </motion.div>
-    )}
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0, y: 15, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          className="absolute left-1/2 -translate-x-1/2 mt-4 w-60 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-3xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(99,102,241,0.1)] rounded-2xl z-50 border border-white/40 dark:border-zinc-700/40 p-2 overflow-hidden"
+        >
+          {item.subItems.map((sub) => (
+            <Link
+              key={sub.name}
+              to={sub.href}
+              onClick={() => setOpenDropdown(null)}
+              className={`group flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium rounded-lg transition-all duration-200 ${
+                location.pathname === sub.href
+                  ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
+                  : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              }`}
+            >
+              {React.cloneElement(sub.icon, { className: `w-5 h-5 transition-colors ${location.pathname === sub.href ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300'}` })}
+              {sub.name}
+            </Link>
+          ))}
+        </motion.div>
+      )}
+    </AnimatePresence>
   </div>
 );
 
@@ -421,7 +461,7 @@ const NAV_ITEMS = [
   },
 ];
 
-const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile }) => (
+const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile, hoveredTab, setHoveredTab }) => (
   <>
     {NAV_ITEMS.map((item) => {
       const isActive = item.href 
@@ -432,13 +472,13 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
         return isMobile ? (
           <MobileNavGroup key={item.name} item={item} isActive={isActive} isOpen={openDropdown === item.name} onToggle={() => onToggleGroup(item.name)} closeAllMenus={onLinkClick} location={location} />
         ) : (
-          <DesktopNavGroup key={item.name} item={item} isActive={isActive} isOpen={openDropdown === item.name} onToggle={(e) => { e.stopPropagation(); onToggleGroup(item.name); }} setOpenDropdown={onToggleGroup} location={location} />
+          <DesktopNavGroup key={item.name} item={item} isActive={isActive} isOpen={openDropdown === item.name} onToggle={(e) => { e.stopPropagation(); onToggleGroup(item.name); }} setOpenDropdown={onToggleGroup} location={location} hoveredTab={hoveredTab} setHoveredTab={setHoveredTab} />
         );
       }
       return isMobile ? (
         <MobileNavLink key={item.name} item={item} isActive={isActive} onClick={onLinkClick} />
       ) : (
-        <DesktopNavLink key={item.name} item={item} isActive={isActive} />
+        <DesktopNavLink key={item.name} item={item} isActive={isActive} hoveredTab={hoveredTab} setHoveredTab={setHoveredTab} />
       );
     })}
   </>
@@ -446,14 +486,16 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
 
 const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   const location = useLocation();
+  const [hoveredTab, setHoveredTab] = useState(null);
   return (
-    // gap-4 keeps items from crowding; flex-1 lets this section grow/shrink naturally
-    <div className="hidden xl:flex items-center justify-center gap-4 2xl:gap-6 flex-1 min-w-0">
+    <div className="hidden xl:flex items-center justify-center gap-2 2xl:gap-3 flex-1 min-w-0" onMouseLeave={() => setHoveredTab(null)}>
       <NavList 
         location={location} 
         openDropdown={openDropdown} 
         onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)} 
         isMobile={false} 
+        hoveredTab={hoveredTab}
+        setHoveredTab={setHoveredTab}
       />
     </div>
   );
@@ -620,14 +662,15 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         data-aos="fade-down"
         data-aos-once="true"
         data-aos-duration="1000"
-        className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 transition-colors duration-300 relative"
+        className="fixed top-0 left-0 w-full z-40 bg-white/60 dark:bg-[#0a0a0a]/70 backdrop-blur-xl border-b border-transparent shadow-[0_4px_30px_rgba(0,0,0,0.1)] transition-all duration-300 relative"
       >
-        <div className="neon-navbar-border"></div>
+        {/* Animated glowing border at the bottom */}
+        <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-indigo-500/50 dark:via-purple-500/50 to-transparent"></div>
         <div className="max-w-screen-2xl mx-auto flex items-center h-[68px] px-6 xl:px-10 gap-6">
           {/* ── Logo ── left-anchored, never squishes */}
-          <Link to="/" className="flex items-center shrink-0 z-20">
+          <Link to="/" className="flex items-center shrink-0 z-20 group">
             <h2
-              className="neon-logo text-2xl font-extrabold tracking-widest uppercase"
+              className="text-2xl font-extrabold tracking-widest uppercase bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 group-hover:from-pink-500 group-hover:via-purple-500 group-hover:to-indigo-500 transition-all duration-500 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)]"
               style={{ fontFamily: "'Oxanium', monospace", margin: 0, lineHeight: 1 }}
             >
               Eventra
