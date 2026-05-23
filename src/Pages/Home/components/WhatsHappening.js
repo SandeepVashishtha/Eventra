@@ -44,8 +44,11 @@ const WhatsHappening = () => {
           event.status === "upcoming" ? "Registration Open" : "Live Event",
         link: `/events/${event.id}`,
         featured: event.attendees > 200,
+
         location: event.location,
         attendees: event.attendees,
+        timeLeft: `${Math.ceil(
+       (new Date(event.rawDate || event.date) - new Date()) /(1000 * 60 * 60 * 24))} days`,
       }));
   };
 
@@ -56,6 +59,15 @@ const WhatsHappening = () => {
         id: `hackathon-${hackathon.id}`,
         title: hackathon.title,
         description: hackathon.description,
+
+        timeLeft:
+  new Date(hackathon.endDate) < new Date()
+    ? "Ended"
+    : `${Math.ceil(
+        (new Date(hackathon.startDate) - new Date()) /
+          (1000 * 60 * 60 * 24)
+      )} days`,
+        
         date: `${new Date(hackathon.startDate).toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
@@ -373,6 +385,17 @@ border-t border-gray-100 dark:border-slate-800/80"
                               {event.date}
                             </div>
                           </div>
+
+<div className="mt-4 ml-3 flex flex-col gap-2">
+  <div className="inline-flex items-center gap-1.5 w-fit px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-xs font-semibold shadow-sm">
+
+  {event.timeLeft === "Ended"
+  ? "✅ Ended"
+  : `⏳ Starts in ${event.timeLeft}`}
+</div>
+
+</div>
+                          
 
                           <div className="bg-gray-50 dark:bg-gray-700/50 px-4 sm:px-6 py-3 sm:py-4">
                             <Link
