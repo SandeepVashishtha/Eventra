@@ -15,6 +15,7 @@ import {
   AdminTableSkeleton,
 } from '../common/SkeletonLoaders';
 import './AdminDashboard.css';
+import AnalyticsDashboard from './AnalyticsDashboard';
 import { toast } from 'react-toastify';
 
 const fadeUp = {
@@ -429,48 +430,10 @@ const AdminDashboard = () => {
                   ))}
                 </motion.div>
 
-                {/* Event Breakdown */}
-                <motion.section custom={1} variants={fadeUp} className="ad-card" style={{ marginTop: '1.5rem' }}>
-                  <div className="ad-card-head">
-                    <span className="ad-card-icon" style={{ background: '#6366f118', color: '#6366f1' }}><BarChart2 size={15} /></span>
-                    <h3>Event Breakdown</h3>
-                  </div>
-                  <div className="ad-analytics-bars">
-                    {events.map(ev => (
-                      <div key={ev.id} className="ad-bar-row">
-                        <span className="ad-bar-label">{ev.title}</span>
-                        <div className="ad-bar-track">
-                          <motion.div
-                            className="ad-bar-fill"
-                            initial={{ width: 0 }}
-                            animate={{ width: `${(ev.participantCount / totalParticipants) * 100}%` }}
-                            transition={{ duration: 0.6, delay: 0.1 }}
-                          />
-                        </div>
-                        <span className="ad-bar-value">{ev.participantCount}</span>
-                      </div>
-                    ))}
-                  </div>
-                </motion.section>
-
-                {/* Role Distribution */}
-                <motion.section custom={2} variants={fadeUp} className="ad-card" style={{ marginTop: '1rem' }}>
-                  <div className="ad-card-head">
-                    <span className="ad-card-icon" style={{ background: '#ec489918', color: '#ec4899' }}><Shield size={15} /></span>
-                    <h3>Role Distribution</h3>
-                  </div>
-                  <div className="ad-role-chips">
-                    {['USER', 'EVENT_MANAGER', 'ADMIN'].map(role => {
-                      const count = users.filter(u => u.roles.includes(role)).length;
-                      return (
-                        <div key={role} className="ad-role-chip">
-                          <StatusBadge status={role} />
-                          <span className="ad-role-count">{count} user{count !== 1 ? 's' : ''}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </motion.section>
+                {/* Dynamic Analytics Dashboard */}
+                <div style={{ marginTop: '1.5rem' }}>
+                  <AnalyticsDashboard />
+                </div>
               </motion.div>
             )}
 
