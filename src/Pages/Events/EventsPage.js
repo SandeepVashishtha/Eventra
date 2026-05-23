@@ -104,12 +104,13 @@ const EventsPage = () => {
     }
 
     const final = results.filter((event) => {
-      return (
-        filterType === "all" ||
-        (filterType === "upcoming" && event.status === "upcoming") ||
-        (filterType === "past" && event.status === "past") ||
-        event.type === filterType
-      );
+      const status = getEventStatus(event);
+        return (
+          filterType === "all" ||
+          (filterType === "upcoming" && status === "upcoming") ||
+          (filterType === "past" && status === "past") ||
+          event.type === filterType
+        );
     });
 
     setFilteredEvents(final);
