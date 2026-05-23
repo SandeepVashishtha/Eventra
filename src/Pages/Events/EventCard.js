@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
 import { Link } from "react-router-dom";
 import {
   Bookmark,
@@ -62,10 +62,15 @@ const EventCard = ({ event }) => {
     navigator.clipboard
       .writeText(shareUrl)
       .then(() => {
-        alert("Event link copied to clipboard!");
+        toast.success("Event link copied to clipboard!", {
+          autoClose: 2000,
+        });
       })
       .catch((err) => {
         console.error("Failed to copy: ", err);
+        toast.error("Could not copy link. Please try again.", {
+          autoClose: 2500,
+        });
       });
   };
 
@@ -194,13 +199,14 @@ const EventCard = ({ event }) => {
       </div>
 
       {/* Image */}
-      <div className="relative h-40 overflow-hidden">
+<div className="relative h-40 overflow-hidden">
         <img
+          loading="lazy"
+          decoding="async"
           src={event.image}
           alt={event.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
       </div>
 
@@ -243,6 +249,66 @@ const EventCard = ({ event }) => {
       <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
         <ReminderControls event={event} canSetReminder={canSetReminder} compact />
       </div>
+      {/* Seats / Capacity */}
+      {typeof event.maxAttendees === "number" && event.maxAttendees > 0 && (() => {
+        const registered = Number(event.attendees) || 0;
+        const capacity = Number(event.maxAttendees);
+        const isFull = registered >= capacity;
+        const ratio = Math.min(registered / capacity, 1);
+        const percent = Math.round(ratio * 100);
+        const spotsLeft = Math.max(capacity - registered, 0);
+
+        const barColor = isFull
+          ? "bg-red-500"
+          : ratio >= 0.85
+          ? "bg-red-500"
+          : ratio >= 0.6
+          ? "bg-amber-500"
+          : "bg-emerald-500";
+
+        const textColor = isFull
+          ? "text-red-600 dark:text-red-400"
+          : ratio >= 0.85
+          ? "text-red-600 dark:text-red-400"
+          : ratio >= 0.6
+          ? "text-amber-600 dark:text-amber-400"
+          : "text-emerald-600 dark:text-emerald-400";
+
+        return (
+          <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                Seats
+              </span>
+              {isFull ? (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
+                  Full
+                </span>
+              ) : (
+                <span className={`text-xs font-semibold tabular-nums ${textColor}`}>
+                  {spotsLeft} spot{spotsLeft === 1 ? "" : "s"} left
+                </span>
+              )}
+            </div>
+            <div
+              className="w-full h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden"
+              role="progressbar"
+              aria-valuenow={percent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`${registered} of ${capacity} seats filled`}
+            >
+              <div
+                className={`h-full ${barColor} transition-all duration-500 ease-out`}
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+            <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-500 tabular-nums">
+              {registered} / {capacity} registered
+            </div>
+          </div>
+        );
+      })()}
 
       {/* CTA */}
       <div className="px-5 py-4 flex gap-3 mt-auto">
@@ -268,4 +334,4 @@ const EventCard = ({ event }) => {
   );
 };
 
-export default EventCard;
+export default memo(EventCard);

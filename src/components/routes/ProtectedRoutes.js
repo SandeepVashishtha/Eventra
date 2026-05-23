@@ -1,12 +1,10 @@
-import React from 'react';
+import React, { lazy } from 'react';
 import { Route } from 'react-router-dom';
 
 // --------------- COMPONENTS
 import ProtectedRoute from "../auth/ProtectedRoute";
 import EventCreation from "../common/EventCreation";
-import AdminDashboard from "../admin/AdminDashboard";
 import HostHackathon from "../../Pages/Hackathons/HostHackathon";
-import Dashboard from "../Dashboard";
 import EditProfile from "../user/EditProfile";
 import Settings from "../../Pages/Settings";
 import Login from "../auth/Login";
@@ -15,12 +13,19 @@ import Unauthorized from "../auth/Unauthorized";
 import PasswordReset from "../auth/PasswordReset";
 import NotFound from "../NotFound";
 
+const AdminDashboard = lazy(() => import("../admin/AdminDashboard"));
+const Dashboard = lazy(() => import("../Dashboard"));
+
 export const getProtectedRoutes = () => [
   <Route
     key="/create-event"
     path="/create-event"
     element={
-      <ProtectedRoute requiredPermissions={["CREATE_EVENT"]}>
+      <ProtectedRoute 
+        requiredPermissions={["CREATE_EVENT"]}
+        requiredScopes={["event:write"]}
+        validateContext={({ user }) => user?.roles?.includes("ADMIN") || user?.roles?.includes("EVENT_MANAGER")}
+      >
         <EventCreation />
       </ProtectedRoute>
     }
@@ -29,7 +34,11 @@ export const getProtectedRoutes = () => [
     key="/admin"
     path="/admin"
     element={
-      <ProtectedRoute requiredRoles={["ADMIN"]}>
+      <ProtectedRoute 
+        requiredRoles={["ADMIN"]}
+        requiredScopes={["admin:all"]}
+        validateContext={({ user }) => user?.status !== "Suspended"}
+      >
         <AdminDashboard />
       </ProtectedRoute>
     }
@@ -38,7 +47,11 @@ export const getProtectedRoutes = () => [
     key="/host-hackathon"
     path="/host-hackathon"
     element={
-      <ProtectedRoute requiredPermissions={["HOST_HACKATHON"]}>
+      <ProtectedRoute 
+        requiredPermissions={["HOST_HACKATHON"]}
+        requiredScopes={["hackathon:write"]}
+        validateContext={({ user }) => user?.roles?.includes("ADMIN") || user?.roles?.includes("EVENT_MANAGER")}
+      >
         <HostHackathon />
       </ProtectedRoute>
     }
