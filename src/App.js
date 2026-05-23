@@ -95,7 +95,7 @@ function App() {
                 className="
                   relative
                   z-10
-                  min-h-screen
+                min-h-[85vh]
                   bg-white
                   dark:bg-slate-950
                   text-black
