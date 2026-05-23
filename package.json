@@ -10,6 +10,7 @@
     "aos": "^2.3.4",
     "axios": "^1.16.1",
     "canvas-confetti": "^1.9.3",
+    "crypto-js": "^4.2.0",
     "framer-motion": "^8.5.2",
     "fuse.js": "^7.1.0",
     "jspdf": "^4.2.1",
@@ -22,17 +23,19 @@
     "react-router-dom": "^6.8.0",
     "react-scripts": "^5.0.1",
     "react-toastify": "^11.0.5",
-    "recharts": "^3.8.1",
-    "zxcvbn": "^4.4.2"
+    "recharts": "^3.8.1"
   },
   "scripts": {
+    
     "dev": "react-scripts start",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "build:fast": "set \"GENERATE_SOURCEMAP=false\" && set \"DISABLE_ESLINT_PLUGIN=true\" && set \"NODE_OPTIONS=--no-deprecation --max-old-space-size=4096\" && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
+    "lint": "echo \"No lint configured\"",
     "prepare": "node scripts/setup-git-config.js"
+    
   },
   "eslintConfig": {
     "extends": [

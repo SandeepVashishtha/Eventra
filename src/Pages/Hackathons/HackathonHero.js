@@ -1,6 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Award, Calendar, Code2, Sparkles, Users, X } from "lucide-react";
-import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import { useAuth } from "../../context/AuthContext";
@@ -61,7 +60,7 @@ export default function HackathonHero({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.7 }}
-          className="mt-4 text-base sm:text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto"
+          className="text-base sm:text-lg text-gray-600 dark:text-gray-200 max-w-2xl mx-auto mb-6 leading-relaxed"
         >
           Find and join the most exciting hackathons, compete with the best,
           and win prizes.

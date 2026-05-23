@@ -46,6 +46,7 @@ import HackathonCTA from "./HackathonCTA";
 import { createPortal } from "react-dom";
 import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 import SearchEmptyState from "../../components/common/SearchEmptyState";
+import PageLoader from "../../components/common/PageLoader";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { getRouteSearchResults } from "../../utils/searchUtils";
 
@@ -692,11 +693,7 @@ const HackathonHub = () => {
         {/* Hackathons Grid */}
         <AnimatePresence mode="wait">
           {isLoading ? (
-            <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <HackathonCardSkeleton key={`skeleton-${i}`} />
-              ))}
-            </div>
+            <PageLoader text="Loading hackathons..." />
           ) : filteredHackathons.length > 0 ? (
             <motion.div
               key={activeTab}

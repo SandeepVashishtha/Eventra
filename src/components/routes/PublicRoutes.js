@@ -26,6 +26,7 @@ import MockApiResponse from "../MockApiResponse";
 
 const EventsPage = lazy(() => import("../../Pages/Events/EventsPage"));
 const HackathonPage = lazy(() => import("../../Pages/Hackathons/HackathonPage"));
+const HackathonDetailsPage = lazy(() => import("../../Pages/Hackathons/HackathonDetailsPage"));
 const ProjectsPage = lazy(() => import("../../Pages/Projects/ProjectsPage"));
 const EventAnalyticsDashboard = lazy(() => import("../../Pages/Events/EventAnalyticsDashboard"));
 
@@ -36,6 +37,7 @@ export const getPublicRoutes = () => [
   <Route key="/event-details" path="/events/:eventId" element={<EventDetails />} />,
   <Route key="/register" path="/events/:eventId/register" element={<EventRegistration />} />,
   <Route key="/hackathons" path="/hackathons" element={<HackathonPage />} />,
+  <Route key="/hackathon-details" path="/hackathons/:hackathonId" element={<HackathonDetailsPage />} />,
   <Route key="/projects" path="/projects" element={<ProjectsPage />} />,
   <Route key="/api/hackathons" path="/api/hackathons" element={<MockApiResponse />} />,
   <Route key="/api/projects" path="/api/projects" element={<MockApiResponse />} />,

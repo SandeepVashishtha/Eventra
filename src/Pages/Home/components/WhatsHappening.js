@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { useInView } from "react-intersection-observer";
 import { HomeCardSkeleton } from "../../../components/common/SkeletonLoaders";
 
@@ -41,7 +42,7 @@ const WhatsHappening = () => {
         type: event.type.charAt(0).toUpperCase() + event.type.slice(1),
         status:
           event.status === "upcoming" ? "Registration Open" : "Live Event",
-        link: "/events",
+        link: `/events/${event.id}`,
         featured: event.attendees > 200,
         location: event.location,
         attendees: event.attendees,
@@ -66,7 +67,7 @@ const WhatsHappening = () => {
         rawDate: hackathon.startDate,
         type: "Hackathon",
         status: hackathon.status === "live" ? "Live Now" : "Registration Open",
-        link: "/hackathons",
+        link: `/hackathons/${hackathon.id}`,
         featured:
           hackathon.prize &&
           parseInt(hackathon.prize.replace(/[$,]/g, "")) > 30000,
@@ -160,7 +161,11 @@ const WhatsHappening = () => {
   return (
     <section
       ref={ref}
-      className="py-12 sm:py-16 bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-900 text-slate-900 dark:text-gray-100 border-t border-gray-100 dark:border-slate-800/80"
+      className="py-12 sm:py-16 
+bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white
+dark:from-slate-950 dark:via-slate-900 dark:to-black
+text-slate-900 dark:text-gray-100 
+border-t border-gray-100 dark:border-slate-800/80"
     >
       <div className="relative z-[50] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Heading */}
@@ -170,10 +175,10 @@ const WhatsHappening = () => {
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-black dark:text-gray-100">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-black dark:text-gray-900">
             What's Happening Now
           </h2>
-          <p className="mt-2 sm:mt-3 max-w-xl mx-auto text-sm sm:text-lg text-black dark:text-gray-400">
+          <p className="mt-2 sm:mt-3 max-w-xl mx-auto text-sm sm:text-lg text-black dark:text-gray-800">
             Stay updated with {upcomingEvents.length} upcoming events, community
             programs, and opportunities to contribute to Eventra
           </p>
@@ -370,23 +375,13 @@ const WhatsHappening = () => {
                           </div>
 
                           <div className="bg-gray-50 dark:bg-gray-700/50 px-4 sm:px-6 py-3 sm:py-4">
-                            <a
-                              href={event.link}
+                            <Link
+                              to={event.link}
                               className={`w-full inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 border border-transparent rounded-md shadow-sm text-xs sm:text-sm font-medium transition-colors ${
                                 event.featured
                                   ? "bg-black text-white hover:bg-sky-100 hover:text-black"
                                   : "bg-black text-white hover:bg-emerald-100 hover:text-black"
                               }`}
-                              target={
-                                event.link.startsWith("http")
-                                  ? "_blank"
-                                  : "_self"
-                              }
-                              rel={
-                                event.link.startsWith("http")
-                                  ? "noopener noreferrer"
-                                  : ""
-                              }
                             >
                               {event.featured ? "Join Now" : "Learn More"}
                               <svg
@@ -400,7 +395,7 @@ const WhatsHappening = () => {
                                   clipRule="evenodd"
                                 />
                               </svg>
-                            </a>
+                            </Link>
                           </div>
                         </div>
                       ))}
