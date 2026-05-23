@@ -16,7 +16,7 @@ import useDocumentTitle from "../../../hooks/useDocumentTitle";
 const MotionLink = motion(Link);
 
 const Hero = () => {
-  useDocumentTitle("Eventra | Home")
+  useDocumentTitle("Eventra | Home");
   const phrases = [
     "Amazing Tech Events",
     "Exciting Hackathons Today",
@@ -28,6 +28,21 @@ const Hero = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
+  const [isDark, setIsDark] = useState(
+    document.documentElement.classList.contains("dark")
+  );
+
+  // Sync isDark with theme changes
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
 
   // Change phrase every 3 seconds
   useEffect(() => {
@@ -88,7 +103,7 @@ const Hero = () => {
   const handleSearch = (query) => {
     setSearchQuery(query);
     if (query.trim()) {
-      const results = fuse.search(query).slice(0, 8); // Limit to 8 results
+      const results = fuse.search(query).slice(0, 8);
       setSearchResults(results);
       setShowResults(true);
     } else {
@@ -104,7 +119,6 @@ const Hero = () => {
 
   const getResultHref = (item) => {
     const query = encodeURIComponent(item.title || searchQuery);
-
     if (item.type === "event") return `/events?search=${query}`;
     if (item.type === "hackathon") return `/hackathons?search=${query}`;
     if (item.type === "project") return `/projects?search=${query}`;
@@ -141,38 +155,32 @@ const Hero = () => {
     transition: { duration: 4.4 + i * 0.7, repeat: Infinity, ease: "easeInOut" },
   });
 
+  // Vibrant colors for light mode, soft pastels for dark mode
   const shapes = [
-    { size: 42, pos: { top: "10%", left: "5%" }, color: "#dbeafe" },
-    { size: 54, pos: { top: "14%", left: "20%" }, color: "#fde68a" },
-    { size: 30, pos: { top: "24%", left: "42%" }, color: "#dcfce7" },
-    { size: 50, pos: { top: "30%", left: "70%" }, color: "#bae6fd" },
-    { size: 40, pos: { top: "52%", left: "10%" }, color: "#fbcfe8" },
-    { size: 26, pos: { top: "42%", left: "32%" }, color: "#c7d2fe" },
-    { size: 68, pos: { top: "68%", left: "24%" }, color: "#fecdd3" },
-    { size: 50, pos: { top: "72%", left: "64%" }, color: "#bbf7d0" },
-    { size: 34, pos: { top: "48%", left: "80%" }, color: "#fde68a" },
+    { size: 42,  pos: { top: "10%", left: "5%"  }, lightColor: "#3b82f6", darkColor: "#dbeafe" },
+    { size: 54,  pos: { top: "14%", left: "20%" }, lightColor: "#f59e0b", darkColor: "#fde68a" },
+    { size: 30,  pos: { top: "24%", left: "42%" }, lightColor: "#22c55e", darkColor: "#dcfce7" },
+    { size: 50,  pos: { top: "30%", left: "70%" }, lightColor: "#0ea5e9", darkColor: "#bae6fd" },
+    { size: 40,  pos: { top: "52%", left: "10%" }, lightColor: "#ec4899", darkColor: "#fbcfe8" },
+    { size: 26,  pos: { top: "42%", left: "32%" }, lightColor: "#8b5cf6", darkColor: "#c7d2fe" },
+    { size: 68,  pos: { top: "68%", left: "24%" }, lightColor: "#f43f5e", darkColor: "#fecdd3" },
+    { size: 50,  pos: { top: "72%", left: "64%" }, lightColor: "#10b981", darkColor: "#bbf7d0" },
+    { size: 34,  pos: { top: "48%", left: "80%" }, lightColor: "#eab308", darkColor: "#fde68a" },
   ];
 
   const stats = [
-    {
-      value: 1500,
-      suffix: "+",
-      label: "Developers Joined",
-    },
-    {
-      value: 75,
-      suffix: "",
-      label: "Events Organized",
-    },
-    {
-      value: 30,
-      suffix: "+",
-      label: "Partners & Sponsors",
-    },
+    { value: "1500+", label: "Developers Joined" },
+    { value: "75",    label: "Events Organized"  },
+    { value: "30+",   label: "Partners & Sponsors" },
   ];
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 pb-16 sm:pb-20 md:pb-24 pt-6 sm:pt-10 border-b border-gray-100 dark:border-slate-900">
+    <section className="relative overflow-hidden 
+bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white 
+dark:from-slate-950 dark:via-slate-900 dark:to-black
+text-slate-900 dark:text-gray-100 
+pb-16 sm:pb-20 md:pb-24 pt-6 sm:pt-10 
+border-b border-gray-100 dark:border-slate-900">
       {/* Hero Content */}
       <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10 pt-20">
         <motion.div
@@ -226,7 +234,7 @@ const Hero = () => {
           {/* Subtext */}
           <motion.p
             variants={fadeUp}
-            className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
+            className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
           >
             Connect with developers, learn new skills, and grow your network at
             the best tech events, hackathons, and workshops in your area.
@@ -250,8 +258,10 @@ const Hero = () => {
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
                     className="absolute top-full left-0 right-0 mt-3 
-                     bg-white rounded-xl 
-                     shadow-2xl border border-gray-200 
+                     bg-white dark:bg-slate-900
+rounded-xl
+shadow-2xl
+border border-gray-200 dark:border-slate-700
                      max-h-96 overflow-y-auto z-50"
                   >
                     <div className="p-4">
@@ -270,36 +280,32 @@ const Hero = () => {
                                 transition={{ delay: index * 0.05 }}
                                 onClick={clearSearch}
                                 className="flex items-center gap-3 p-3 rounded-lg 
-                                 hover:bg-gray-50 
+                                 hover:bg-gray-50 dark:hover:bg-slate-800
                                  cursor-pointer transition-colors group text-left no-underline"
                                 aria-label={`Open ${result.item.title} in ${result.item.searchType || result.item.type || "page"
                                   }`}
                               >
-                                <div
-                                  className="flex-shrink-0 p-2 bg-blue-50 rounded-lg text-blue-600 
-                                      group-hover:bg-blue-100 transition-colors"
-                                >
+                                <div className="flex-shrink-0 p-2 bg-blue-100 rounded-xl text-blue-600 group-hover:bg-blue-200 transition-colors">
                                   {getResultIcon(result.item.type)}
                                 </div>
                                 <div className="flex-1 min-w-0 relative">
                                   <div className="flex items-center gap-2 mb-1">
-                                    <h4 className="text-sm font-semibold text-gray-900 truncate">
+                                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                                       {result.item.title}
                                     </h4>
                                     <span
                                       className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium 
-                                           bg-gray-100 text-gray-600"
+                                           bg-gray-100 dark:bg-slate-800
+text-gray-600 dark:text-gray-300"
                                     >
                                       {result.item.searchType}
                                     </span>
                                   </div>
-                                  <p className="text-xs text-gray-500 line-clamp-2 absolute left-0">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 absolute left-0">
                                     {result.item.description?.substring(0, 80)}...
                                   </p>
                                 </div>
-                                <ExternalLink
-                                  className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors"
-                                />
+                                <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
                               </MotionLink>
                             ))}
                           </div>
@@ -310,10 +316,10 @@ const Hero = () => {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 10 }}
                           transition={{ duration: 0.25, ease: "easeOut" }}
-                          className="text-center text-gray-500 py-10 text-base"
+                          className="text-center text-gray-500 dark:text-gray-400 py-10 text-base"
                         >
                           No results match "
-                          <span className="font-medium text-gray-700">
+                          <span className="font-medium text-gray-700 dark:text-white">
                             {searchQuery}
                           </span>
                           "
@@ -335,12 +341,12 @@ const Hero = () => {
             <motion.div variants={fadeUp}>
               <Link
                 to="/events"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3.5 rounded-lg bg-blue-600 text-white font-semibold shadow-sm overflow-hidden group transition-all duration-200 hover:bg-blue-700"
+                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-500 dark:bg-blue-900 text-white dark:text-white font-bold shadow-md shadow-blue-200 dark:shadow-none overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-600 dark:hover:bg-blue-800"
               >
                 <span className="relative z-10 flex items-center">
                   Explore Events
                   <svg
-                    className="ml-3 w-5 h-5 text-white transition-transform duration-200 group-hover:translate-x-1"
+                    className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -358,7 +364,7 @@ const Hero = () => {
             <motion.div variants={fadeUp}>
               <Link
                 to="/hackathons"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-gray-300 font-semibold shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-200"
+                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-amber-400 dark:bg-yellow-900 border border-amber-300 dark:border-yellow-700 text-white dark:text-white font-semibold shadow-md shadow-amber-100 dark:shadow-none hover:shadow-lg hover:bg-amber-500 dark:hover:bg-yellow-800 hover:scale-105 transition-all duration-300"
               >
                 Join Hackathons
               </Link>
@@ -368,11 +374,11 @@ const Hero = () => {
             <motion.div variants={fadeUp}>
               <Link
                 to="/about"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-gray-300 font-semibold shadow-sm transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-pink-500 dark:bg-pink-900 text-white dark:text-white font-semibold shadow-md shadow-pink-100 dark:shadow-none transform transition-all duration-300 hover:scale-105 hover:bg-pink-600 dark:hover:bg-pink-800"
               >
                 Learn More
                 <svg
-                  className="ml-3 w-5 h-5 text-gray-900 dark:text-white transition-transform duration-200 group-hover:translate-x-1"
+                  className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -398,7 +404,7 @@ const Hero = () => {
                   variants={fadeUp}
                   whileHover={{ scale: 1.02 }}
                   transition={{ type: "spring", stiffness: 300 }}
-                  className="bg-white dark:bg-slate-900 rounded-lg p-5 sm:p-6 text-center shadow-sm border border-gray-200 dark:border-slate-800"
+                  className="bg-white/90 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-xl shadow-blue-100/50 dark:shadow-none border border-blue-100 dark:border-gray-700 hover:shadow-blue-200/60 transition-shadow duration-300"
                 >
                   <p className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
                     <CountUp
@@ -410,7 +416,7 @@ const Hero = () => {
                       scrollSpyOnce
                     />
                   </p>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm">
+                  <p className="text-gray-500 dark:text-gray-300 text-sm">
                     {stat.label}
                   </p>
                 </motion.div>

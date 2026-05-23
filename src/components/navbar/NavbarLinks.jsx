@@ -72,7 +72,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
         return (
           <Link
             key={item.name}
-            to={item.href || "#"}
+            to={item.href}
             onClick={onClick}
             className={`flex gap-1 items-center text-sm font-medium transition-all duration-200 whitespace-nowrap ${
               vertical

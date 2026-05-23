@@ -262,7 +262,7 @@ export default function LeaderBoard() {
           {/* UPDATED: Header text */}
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             <span className="block text-indigo-700 dark:text-indigo-400">
-              GSSoC'25
+              GSSoC'26
             </span>
             <span className="text-gray-800 dark:text-gray-200">
               Contributor Leaderboard
@@ -405,8 +405,11 @@ export default function LeaderBoard() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
-                              <img
+<img
                                 loading="lazy"
+                                decoding="async"
+                                width="40"
+                                height="40"
                                 className="h-10 w-10 rounded-full border-2 border-indigo-200 dark:border-gray-600"
                                 src={c.avatar}
                                 alt={c.username}
