@@ -210,7 +210,7 @@ const EventRegistration = () => {
       if (response.ok) {
         setRegistered(true);
         toast.success("Registration successful!");
-        sendConfirmationEmail(formData.email, formData.name, event?.title, event?.date);
+        sendConfirmationEmail(formData.email, formData.fullName, event?.title, event?.date);
         // ── Save to My Events ──
         addRegistration(event, formData);
         // Clear session after successful registration
