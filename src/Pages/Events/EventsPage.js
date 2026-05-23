@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import mockEvents from "./eventsMockData.json";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
@@ -8,7 +8,6 @@ import { useLocation } from "react-router-dom";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
 import StyledDropdown from "../../components/StyledDropdown";
-import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
 import SearchEmptyState from "../../components/common/SearchEmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import ActiveFilters from "./ActiveFilters";
@@ -30,17 +29,39 @@ const EVENT_SEARCH_KEYS = [
 
 const renderCardSection = (
   isLoading,
+  loadError,
   filteredEvents,
   viewMode,
   filterType,
   searchQuery,
   onClearSearch,
+  onRetry,
 ) => {
- if (isLoading) {
-  return (
-    <PageLoader text="Loading events..." />
-  );
-}
+  if (isLoading) {
+    return <PageLoader text="Loading events..." />;
+  }
+
+  if (loadError) {
+    return (
+      <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-red-100 dark:border-red-900 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
+        <div className="mx-auto max-w-xl">
+          <p className="text-lg font-semibold text-red-600 dark:text-red-300">
+            Failed to load events
+          </p>
+          <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+            {loadError}
+          </p>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="mt-6 inline-flex items-center justify-center rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-500"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (filteredEvents.length === 0) {
     return (
@@ -85,28 +106,49 @@ const EventsPage = () => {
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [sortType, setSortType] = useState("Newest");
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const cardSectionRef = useRef();
 
-  useEffect(() => {
-    const fetchEvents = async () => {
-      setIsLoading(true);
-      try {
-        const res = await apiUtils.get(API_ENDPOINTS.EVENTS.ALL);
+  const fetchEvents = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError("");
+
+    try {
+      const res = await apiUtils.get(API_ENDPOINTS.EVENTS.ALL);
+      const eventList = Array.isArray(res.data) ? res.data : [];
+
+      setEvents(
+        eventList.map((event) => ({
+          ...event,
+          status: getEventStatus(event),
+        })),
+      );
+    } catch (err) {
+      const message =
+        err?.message || "Failed to load events. Please try again.";
+
+      if (process.env.NODE_ENV === "development") {
         setEvents(
-          res.data.map((event) => ({
+          mockEvents.map((event) => ({
             ...event,
             status: getEventStatus(event),
           })),
         );
-      } catch (err) {
+        setLoadError("");
+        toast.info("Loaded local event data because the backend is unavailable in development.");
+      } else {
+        setEvents([]);
+        setLoadError(message);
         toast.error("Failed to load events. Please try again.");
-      } finally {
-        setIsLoading(false);
       }
-    };
-
-    fetchEvents();
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
 useEffect(() => {
     setSearchQuery(routeSearchQuery);
@@ -299,11 +341,13 @@ setFilteredEvents(final);
 
         {renderCardSection(
           isLoading,
+          loadError,
           filteredEvents,
           viewMode,
           filterType,
           searchQuery,
           clearSearchAndFilters,
+          fetchEvents,
         )}
       </div>
 
