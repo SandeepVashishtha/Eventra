@@ -111,7 +111,7 @@ const CommunityEvent = () => {
           <h1 className="text-5xl font-extrabold text-indigo-900 dark:text-gray-100 mb-4">
             Community Events
           </h1>
-          <p className="text-base text-white dark:text-white max-w-2xl mx-auto">
+          <p className="text-base text-gray-700 dark:text-white max-w-2xl mx-auto">
             "Explore meetups, hackathons, webinars, and global conferences where
             developers collaborate, innovate, and grow together."
           </p>
