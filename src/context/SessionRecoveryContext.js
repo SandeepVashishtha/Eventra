@@ -148,9 +148,11 @@ export const SessionRecoveryProvider = ({ children }) => {
   }, [hasSession, clearSession]);
 
   useEffect(() => {
+    const saveTimeout = saveTimeoutRef.current;
+    const activityTimeout = activityTimeoutRef.current;
     return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      if (activityTimeoutRef.current) clearTimeout(activityTimeoutRef.current);
+      if (saveTimeout) clearTimeout(saveTimeout);
+      if (activityTimeout) clearTimeout(activityTimeout);
     };
   }, []);
 

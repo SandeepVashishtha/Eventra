@@ -33,7 +33,7 @@ const ErrorMessage = ({ title = "Error", message }) => {
           {title}
         </strong>
         <p className="mt-1 text-sm text-red-700 dark:text-red-300">
-          {displayMessage} /* 🔹 Updated to use custom Google message */
+          {displayMessage} {/* 🔹 Updated to use custom Google message */}
         </p>
       </div>
     </div>

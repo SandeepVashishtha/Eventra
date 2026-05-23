@@ -38,7 +38,7 @@ const useLenis = (options = {}) => {
       lenis.destroy();
       window.lenis = null;
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return null;
 };

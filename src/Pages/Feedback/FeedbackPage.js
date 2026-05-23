@@ -341,7 +341,7 @@ const FeedbackPage = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [submittedFeedback, setSubmittedFeedback] = useState([]);
+  const [, setSubmittedFeedback] = useState([]);
   const formRef = useRef(null);
 
   const feedbackTypes = [

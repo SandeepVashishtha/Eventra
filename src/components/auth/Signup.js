@@ -143,7 +143,7 @@ const Signup = () => {
   }, 1000);
 
   return () => clearTimeout(timer);
-}, [formData.password, formData.confirmPassword]);
+}, [formData.password, formData.confirmPassword]); // eslint-disable-line react-hooks/exhaustive-deps
 
 const handleSubmit = async (e) => {
   e.preventDefault();

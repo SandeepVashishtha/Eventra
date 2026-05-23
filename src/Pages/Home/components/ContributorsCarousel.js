@@ -70,12 +70,13 @@ const Contributors = () => {
       { threshold: 0.4 } // 40% of section must be visible
     );
 
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
+    const section = sectionRef.current;
+    if (section) {
+      observer.observe(section);
     }
 
     return () => {
-      if (sectionRef.current) observer.unobserve(sectionRef.current);
+      if (section) observer.unobserve(section);
     };
   }, []);
 
@@ -178,11 +179,11 @@ const Contributors = () => {
     fetchContributors();
   }, [fetchContributors]);
 
-  const nextSlide = () => {
+ const nextSlide = useCallback(() => {
     setCurrentIndex((prev) =>
       prev + itemsPerView >= contributors.length ? 0 : prev + itemsPerView
     );
-  };
+  }, [itemsPerView, contributors.length]);
 
   const prevSlide = () => {
     setCurrentIndex((prev) =>
@@ -200,7 +201,7 @@ const Contributors = () => {
     }, 5000); // Auto-slide every 5 seconds
 
     return () => clearInterval(interval);
-  }, [contributors.length, itemsPerView, currentIndex]);
+  }, [contributors.length, itemsPerView, currentIndex, nextSlide]);
 
   // UPDATED: Loading text color
   if (loading)

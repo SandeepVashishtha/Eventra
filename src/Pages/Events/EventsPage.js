@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import mockEvents from "./eventsMockData.json";
+import { useState, useEffect, useRef, useCallback } from "react";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
 import { getEventStatus } from "../../utils/eventUtils";
@@ -8,7 +7,6 @@ import { useLocation } from "react-router-dom";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
 import StyledDropdown from "../../components/StyledDropdown";
-import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
 import SearchEmptyState from "../../components/common/SearchEmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import ActiveFilters from "./ActiveFilters";
@@ -108,10 +106,9 @@ const EventsPage = () => {
     fetchEvents();
   }, []);
 
-useEffect(() => {
+  useEffect(() => {
     setSearchQuery(routeSearchQuery);
   }, [routeSearchQuery]);
-
 
   const handleSearch = useCallback(
     (query = "") => {
@@ -133,7 +130,7 @@ useEffect(() => {
         );
       });
 
-setFilteredEvents(final);
+      setFilteredEvents(final);
     },
     [events, filterType],
   );

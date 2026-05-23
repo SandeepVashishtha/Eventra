@@ -1,26 +1,12 @@
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
 import {
-  Calendar,
-  MapPin,
-  Clock,
-  Users,
-  Tag,
-  Share2,
   ArrowLeft,
-  LayoutTemplate,
 } from "lucide-react";
 
 import eventsMockData from "./eventsMockData.json";
-
-import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
-
-import ShareMenu from "../../components/common/ShareMenu";
-import CertificateDownload from "../../components/CertificateDownload";
-
-import { generateEventSharingData } from "../../utils/shareUtils";
 
 const EventDetailsPage = () => {
   const { eventId } = useParams();
@@ -110,46 +96,6 @@ const EventDetailsPage = () => {
 
   const isPastEvent =
     eventDateTime < new Date();
-
-  const attendeePercentage =
-    (event.attendees /
-      event.maxAttendees) *
-    100;
-
-  const popularEvents =
-    eventsMockData
-      .filter(
-        (e) => e.id !== event.id
-      )
-      .sort(
-        (a, b) =>
-          b.attendees - a.attendees
-      )
-      .slice(0, 4);
-
-  const eventSharingData =
-    generateEventSharingData({
-      ...event,
-      title: event.title,
-      description:
-        event.description,
-      date: event.date,
-      id: event.id,
-    });
-
-  const handleCopyLink = (e) => {
-    e.preventDefault();
-
-    const shareUrl = `${window.location.origin}/events/${event.id}`;
-
-    navigator.clipboard
-      .writeText(shareUrl)
-      .then(() => {
-        alert(
-          "Event link copied to clipboard!"
-        );
-      });
-  };
 
   return (
     <div className="min-h-screen mt-16 bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">

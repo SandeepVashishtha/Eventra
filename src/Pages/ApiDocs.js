@@ -7,10 +7,6 @@ import {
   BookOpen,
   Users,
   Trophy,
-  Key,
-  Gauge,
-  Filter,
-  Terminal,
 } from "lucide-react";
 
 const endpoints = [

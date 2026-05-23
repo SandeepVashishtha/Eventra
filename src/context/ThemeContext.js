@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -110,15 +111,13 @@ export const ThemeProvider = ({
   }, []);
 
   // Toggle Theme
-  const toggleTheme = () => {
-    if (
-      resolvedTheme === "dark"
-    ) {
+  const toggleTheme = useCallback(() => {
+    if (resolvedTheme === "dark") {
       setTheme("light");
     } else {
       setTheme("dark");
     }
-  };
+  }, [resolvedTheme]);
 
   const value = useMemo(
     () => ({
@@ -133,6 +132,7 @@ export const ThemeProvider = ({
     [
       theme,
       resolvedTheme,
+      toggleTheme,
     ]
   );
 

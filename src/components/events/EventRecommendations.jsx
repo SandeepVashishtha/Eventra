@@ -6,7 +6,7 @@ import {
   ChevronRight,
   Calendar,
   MapPin,
-  Tag,
+  
   ArrowRight
 } from "lucide-react";
 import mockEvents from "../../Pages/Events/eventsMockData.json";
