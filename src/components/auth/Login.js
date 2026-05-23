@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
+import GoogleLoginButton from './GoogleLoginButton';
 
 const Login = () => {
   useDocumentTitle("Login | Eventra");
@@ -321,6 +322,8 @@ focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:op
                 </motion.button>
 
               </motion.form>
+
+              <GoogleLoginButton/>
 
               {/* Sign up link */}
               <div className="text-center">
