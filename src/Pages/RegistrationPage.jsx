@@ -59,17 +59,42 @@ const RegistrationPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
     setIsSubmitting(true);
-    // Simulate API registration request
-    setTimeout(() => {
-      console.log("Registration Successful! Data:", formData);
+
+    try {
+      // 1. Make the real API request to the registration endpoint
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      // 2. Parse the backend JSON response
+      const data = await response.json();
+
+      // 3. Check for successful execution or catch server errors
+      if (!response.ok) {
+        throw new Error(data.message || "Registration failed. Please try again.");
+      }
+
+      // 4. Update the layout on successful registration
       setIsSubmitting(false);
       setSubmitSuccess(true);
-    }, 1500);
+    } catch (error) {
+      // 5. Handle errors and map server validations to frontend form fields if applicable
+      console.error("API Error during registration submission:", error.message);
+      setErrors((prev) => ({
+        ...prev,
+        submit: error.message || "An unexpected network error occurred.",
+      }));
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
@@ -135,6 +160,21 @@ const RegistrationPage = () => {
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Global API Submission Error Feedback Banner */}
+            <AnimatePresence>
+              {errors.submit && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="flex items-center gap-3 p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-500/30 text-rose-600 dark:text-rose-400 rounded-2xl text-sm"
+                >
+                  <FiAlertCircle className="text-xl flex-shrink-0" />
+                  <span>{errors.submit}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Full Name */}
             <div>
               <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
