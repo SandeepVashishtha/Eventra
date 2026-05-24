@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -6,7 +6,7 @@ import {
   Search,
   Sparkles,
   Command,
-  ArrowRight,
+  
   Sun,
   Moon,
   MousePointer,
@@ -137,21 +137,19 @@ export default function CommandPalette({
   }, [isOpen]);
 
   // Handle selected item action
-  const handleSelect = (item) => {
+  const handleSelect = useCallback((item) => {
     if (item.type === "nav") {
       navigate(item.href);
       onClose();
-    } else if (item.type === "action") {
-      if (item.action === "theme") {
-        toggleTheme();
-      } else if (item.action === "cursor") {
-        toggleCursor();
-      } else if (item.action === "logout") {
-        handleLogoutClick();
-      }
+      return;
+    }
+    if (item.type === "action") {
+      if (item.action === "theme") toggleTheme();
+      else if (item.action === "cursor") toggleCursor();
+      else if (item.action === "logout") handleLogoutClick();
       onClose();
     }
-  };
+  }, [navigate, onClose, toggleTheme, toggleCursor, handleLogoutClick]);
 
   // Keyboard navigation controller
   useEffect(() => {

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   
   Users,
@@ -111,8 +111,6 @@ const PHASES = [
 ];
 
 const HackathonLifecycle = () => {
-  const { id: routeId } = useParams();
-  const hackathonId = routeId || "global-gs-hackathon";
 
   // Mock Active Phase Management
   const [activePhaseIndex, setActivePhaseIndex] = useState(1); // Defaults to registration

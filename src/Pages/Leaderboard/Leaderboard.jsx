@@ -174,29 +174,7 @@ export default function LeaderBoard() {
     );
   }, [streamContributors, lastSynced]);
 
-  // Load data from cache or network
-  const loadLeaderboardData = async () => {
-    setLoading(true);
-    const cachedData = localStorage.getItem(LEADERBOARD_CACHE_KEY);
-    const now = Date.now();
-
-    if (cachedData) {
-      try {
-        const { data, timestamp } = JSON.parse(cachedData);
-        if (now - timestamp < 60 * 60 * 1000) {
-          setContributors(data);
-          setLastUpdated(
-            `Last updated: ${new Date(timestamp).toLocaleString()} (cached)`
-          );
-          setLoading(false);
-          return;
-        }
-      } catch (error) {
-        console.error("Error parsing cached data:", error);
-      }
-    }
-    await fetchContributors();
-  };
+  // Load data from cache or network will be handled by effect below
 
   const fetchContributors = async () => {
     try {
@@ -301,9 +279,32 @@ export default function LeaderBoard() {
     }
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Load data from cache or network on mount
   useEffect(() => {
-    loadLeaderboardData();
+    const doLoad = async () => {
+      setLoading(true);
+      const cachedData = localStorage.getItem(LEADERBOARD_CACHE_KEY);
+      const now = Date.now();
+
+      if (cachedData) {
+        try {
+          const { data, timestamp } = JSON.parse(cachedData);
+          if (now - timestamp < 60 * 60 * 1000) {
+            setContributors(data);
+            setLastUpdated(
+              `Last updated: ${new Date(timestamp).toLocaleString()} (cached)`
+            );
+            setLoading(false);
+            return;
+          }
+        } catch (error) {
+          console.error("Error parsing cached data:", error);
+        }
+      }
+      await fetchContributors();
+    };
+    doLoad();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchContributors is stable across renders
   }, []);
 
   const filteredContributors = contributors.filter((c) => {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Clock } from "lucide-react";
 
 const calculateTimeLeft = (deadline) => {
@@ -16,7 +16,7 @@ const pad = (n) => String(n).padStart(2, "0");
 
 // Compact version for EventCard
 export const CountdownBadge = ({ date, time }) => {
-  const deadline = new Date(`${date} ${time}`);
+  const deadline = useMemo(() => new Date(`${date} ${time}`), [date, time]);
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(deadline));
 
   useEffect(() => {
@@ -44,7 +44,7 @@ export const CountdownBadge = ({ date, time }) => {
 
 // Large version for EventDetailsPage
 const CountdownTimer = ({ date, time }) => {
-  const deadline = new Date(`${date} ${time}`);
+  const deadline = useMemo(() => new Date(`${date} ${time}`), [date, time]);
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(deadline));
 
   useEffect(() => {
