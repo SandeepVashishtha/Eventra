@@ -98,7 +98,6 @@ const socialLinks = [
       />
     ),
   },
-
   {
     name: "LinkedIn",
     href: "https://www.linkedin.com/in/sandeepvashishtha/",
@@ -109,41 +108,8 @@ const socialLinks = [
       />
     ),
   },
-
-  {
-    name: "Discord",
-    href: "https://www.discord.com/",
-    icon: (
-      <FaDiscord
-        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
-        size={20}
-      />
-    ),
-  },
-
-  {
-    name: "Telegram",
-    href: "https://t.me/eventra",
-    icon: (
-      <FaTelegram
-        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
-        size={20}
-      />
-    ),
-  },
-
-  {
-    name: "Instagram",
-    href: "https://www.instagram.com/",
-    icon: (
-      <FaInstagram
-        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
-        size={20}
-      />
-    ),
-  },
-];
-
+  // Discord and Telegram removed until official Eventra community channels are available
+].filter(Boolean);
 /* ================================
    Reusable Secure External Links
 ================================ */
@@ -154,7 +120,7 @@ const externalLinkProps = {
 };
 
 const ExternalLink = ({
-  href,
+  href,git add src/components/Layout/Footer.js
   children,
   className,
   ...props
