@@ -6,6 +6,7 @@ import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
 import FeedbackButton from "../../components/FeedbackButton";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
+import EmptyState from "../../components/common/EmptyState";
 import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 import {
   FiCode,
@@ -620,143 +621,89 @@ const HackathonHub = () => {
         </motion.div>
 
         {/* Hackathons Grid */}
-        <AnimatePresence mode="wait">
-          {isLoading ? (
-            <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <HackathonCardSkeleton key={`skeleton-${i}`} />
-              ))}
-            </div>
-          ) : filteredHackathons.length > 0 ? (
-            <motion.div
-              key={activeTab}
-              className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-              variants={containerVariants}
-              initial="hidden"
-              animate="show"
-              exit={{ opacity: 0 }}
-            >
-              {filteredHackathons.map((hackathon, index) => (
-                <HackathonCard
-                  key={hackathon.id}
-                  hackathon={hackathon}
-                  data-aos="flip-up"
-                  data-aos-delay={index * 100}
-                />
-              ))}
-            </motion.div>
-          ) : (
-            <motion.div
-              className="relative overflow-hidden rounded-3xl p-10 text-center shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)] border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800"
-              initial={{ opacity: 0, y: 30, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-            >
-              <motion.div
-                className="absolute inset-0 -z-10 bg-black/10 dark:bg-black/30 blur-3xl"
-                animate={{
-                  opacity: [0.3, 0.6, 0.3],
-                  scale: [1, 1.1, 1],
-                  rotate: [0, 10, -10, 0],
-                }}
-                transition={{
-                  duration: 8,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              />
+    {/* Hackathons Grid */}
+<AnimatePresence mode="wait">
+  {isLoading ? (
+    <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <HackathonCardSkeleton key={`skeleton-${i}`} />
+      ))}
+    </div>
+  ) : filteredHackathons.length > 0 ? (
+    <motion.div
+      key={activeTab}
+      className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+      exit={{ opacity: 0 }}
+    >
+      {filteredHackathons.map((hackathon, index) => (
+        <HackathonCard
+          key={hackathon.id}
+          hackathon={hackathon}
+          data-aos="flip-up"
+          data-aos-delay={index * 100}
+        />
+      ))}
+    </motion.div>
+  ) : (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.4 }}
+    >
+      <EmptyState
+        title="No Hackathons Found"
+        message={
+          searchQuery ||
+          filters.difficulty ||
+          filters.prize ||
+          filters.location ||
+          selectedTags.length > 0
+            ? "🚀 No hackathons match your current filters. Try adjusting your search criteria or reset the filters."
+            : "🎉 No hackathons are available right now. Be the first to host an exciting hackathon!"
+        }
+        ctaLabel={
+          searchQuery ||
+          filters.difficulty ||
+          filters.prize ||
+          filters.location ||
+          selectedTags.length > 0
+            ? "Reset Filters"
+            : "Host Hackathon"
+        }
+        ctaLink={
+          searchQuery ||
+          filters.difficulty ||
+          filters.prize ||
+          filters.location ||
+          selectedTags.length > 0
+            ? "/hackathons"
+            : "/host-hackathon"
+        }
+      />
 
-              <div className="absolute inset-0 z-0 overflow-hidden">
-                {[...Array(6)].map((_, i) => {
-                  const positions = [
-                    { left: "10%", top: "20%" },
-                    { left: "70%", top: "15%" },
-                    { left: "30%", top: "70%" },
-                    { left: "80%", top: "60%" },
-                    { left: "50%", top: "40%" },
-                    { left: "20%", top: "50%" },
-                  ];
-                  const size = 30 + Math.random() * 40;
-
-                  return (
-                    <motion.div
-                      key={i}
-                      className="absolute rounded-full bg-blue-400/60 dark:bg-blue-500/40"
-                      style={{
-                        width: size,
-                        height: size,
-                        left: positions[i].left,
-                        top: positions[i].top,
-                        opacity: 0.3,
-                      }}
-                      animate={{
-                        y: [0, -30, 0],
-                        x: [0, 10, -10, 0],
-                        scale: [1, 1.2, 1],
-                      }}
-                      transition={{
-                        duration: 6 + i,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        delay: i * 0.5,
-                      }}
-                    />
-                  );
-                })}
-              </div>
-
-              <div className="mx-auto max-w-md relative z-10">
-                <motion.div
-                  animate={{ y: [0, -8, 0] }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                  className="flex justify-center items-center w-20 h-20 rounded-full bg-white dark:bg-gray-700 shadow-lg mx-auto border border-indigo-100 dark:border-gray-600"
-                >
-                  <FiCode className="h-10 w-10 text-indigo-600 dark:text-indigo-400" />
-                </motion.div>
-
-                <h3 className="mt-6 text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  No Hackathons Found
-                </h3>
-
-                <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                  {searchQuery ||
-                  filters.difficulty ||
-                  filters.prize ||
-                  filters.location ||
-                  selectedTags.length > 0
-                    ? "No hackathons match your current filters. Try adjusting your search or filters."
-                    : "Check back later for exciting new hackathons!"}
-                </p>
-
-                <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={resetFilters}
-                    className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-white bg-black hover:bg-zinc-800 shadow-lg transition-all"
-                  >
-                    <FiRotateCw className="w-4 h-4" />
-                    Reset Filters
-                  </motion.button>
-
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => { }}
-                    className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-black dark:text-white border border-black/15 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 shadow-md transition-all"
-                  >
-                    Explore Hackathons
-                    <FiCompass className="w-4 h-4" />
-                  </motion.button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+      {/* Reset Filters Button */}
+      {(searchQuery ||
+        filters.difficulty ||
+        filters.prize ||
+        filters.location ||
+        selectedTags.length > 0) && (
+        <div className="mt-6 flex justify-center">
+          <button
+            onClick={resetFilters}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-black hover:bg-zinc-800 text-white text-sm font-medium shadow-md transition-all duration-300"
+          >
+            <FiRotateCw className="w-4 h-4" />
+            Reset Filters
+          </button>
+        </div>
+      )}
+    </motion.div>
+  )}
+</AnimatePresence>
       </div>
       <HackathonCTA></HackathonCTA>
 
