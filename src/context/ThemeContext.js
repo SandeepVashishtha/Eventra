@@ -4,6 +4,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useCallback,
 } from "react";
 
 export const ThemeContext =
@@ -110,7 +111,7 @@ export const ThemeProvider = ({
   }, []);
 
   // Toggle Theme
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     if (
       resolvedTheme === "dark"
     ) {
@@ -118,7 +119,7 @@ export const ThemeProvider = ({
     } else {
       setTheme("dark");
     }
-  };
+  }, [resolvedTheme]);
 
   const value = useMemo(
     () => ({
@@ -133,6 +134,7 @@ export const ThemeProvider = ({
     [
       theme,
       resolvedTheme,
+      toggleTheme,
     ]
   );
 
