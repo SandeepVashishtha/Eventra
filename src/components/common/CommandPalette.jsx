@@ -175,7 +175,7 @@ export default function CommandPalette({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, filteredItems, activeIndex]);
+  }, [isOpen, filteredItems, activeIndex, handleSelect, onClose]);
 
   // Categorized index mapper helper
   const categorizedItems = useMemo(() => {

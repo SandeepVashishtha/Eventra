@@ -24,7 +24,7 @@ export const CountdownBadge = ({ date, time }) => {
       setTimeLeft(calculateTimeLeft(deadline));
     }, 1000);
     return () => clearInterval(timer);
-  }, [date, time]);
+  }, [deadline]);
 
   if (!timeLeft) {
     return (
@@ -52,7 +52,7 @@ const CountdownTimer = ({ date, time }) => {
       setTimeLeft(calculateTimeLeft(deadline));
     }, 1000);
     return () => clearInterval(timer);
-  }, [date, time]);
+  }, [deadline]);
 
   if (!timeLeft) {
     return (
