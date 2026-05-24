@@ -65,9 +65,7 @@ const CountdownTimer = ({ targetDate, label }) => {
         isUrgent ? "text-red-500" : "text-blue-500"
       }`}
     >
-      <ClockIcon
-        className={`w-4 h-4 ${isUrgent ? "animate-pulse" : ""}`}
-      />
+      <ClockIcon className={`w-4 h-4 ${isUrgent ? "animate-pulse" : ""}`} />
 
       <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
         {label}:
@@ -118,9 +116,7 @@ const CountdownTimer = ({ targetDate, label }) => {
 
 // Urgency Badge
 const UrgencyBadge = ({ startDate, endDate, status }) => {
-  const timeLeft = useCountdown(
-    status === "upcoming" ? startDate : endDate
-  );
+  const timeLeft = useCountdown(status === "upcoming" ? startDate : endDate);
 
   if (status === "completed") return null;
   if (!timeLeft) return null;
@@ -155,11 +151,7 @@ const computeStatus = (startDate, endDate) => {
   return "upcoming";
 };
 
-const HackathonCard = ({
-  hackathon,
-  isFeatured = false,
-  ...props
-}) => {
+const HackathonCard = ({ hackathon = {}, isFeatured = false, ...props }) => {
   const navigate = useNavigate();
   const normalizedHackathon = {
     ...hackathon,
@@ -252,11 +244,7 @@ const HackathonCard = ({
         flex
         flex-col
         card-with-floating-elements
-        ${
-          isFeatured
-            ? "ring-2 ring-blue-300 dark:ring-blue-400"
-            : ""
-        }
+        ${isFeatured ? "ring-2 ring-blue-300 dark:ring-blue-400" : ""}
       `}
       {...props}
     >
@@ -291,7 +279,6 @@ const HackathonCard = ({
 
       {/* Main Content */}
       <div className="p-6 flex flex-col gap-5 h-full min-h-[500px]">
-
         {/* Header */}
         <div className="flex justify-between items-center flex-wrap gap-2">
           <div className="flex items-center gap-2 flex-wrap">
@@ -300,8 +287,8 @@ const HackathonCard = ({
                 status === "live"
                   ? "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
                   : status === "upcoming"
-                  ? "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300"
-                  : "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
+                    ? "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300"
+                    : "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
               }`}
             >
               {/* FIX 3: Use computed status label */}
@@ -352,24 +339,16 @@ const HackathonCard = ({
         <div className="flex flex-col gap-3 text-gray-600 dark:text-gray-400 text-sm min-h-[120px]">
           <div className="flex items-center gap-2">
             <CalendarIcon className="w-4 h-4 text-sky-500" />
-
-            {new Date(normalizedHackathon.startDate).toLocaleDateString(
-              "en-US",
-              {
-                month: "short",
-                day: "numeric",
-              }
-            )}{" "}
-            -
-            {" "}
-            {new Date(normalizedHackathon.endDate).toLocaleDateString(
-              "en-US",
-              {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              }
-            )}
+            {new Date(hackathon.startDate).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+            })}{" "}
+            -{" "}
+            {new Date(hackathon.endDate).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
           </div>
 
           <div className="flex items-center gap-2">
@@ -378,21 +357,16 @@ const HackathonCard = ({
           </div>
 
           {/* FIX 3: Use computed status for countdown logic */}
-          {status === "upcoming" &&
-            normalizedHackathon.startDate && (
-              <CountdownTimer
-                targetDate={normalizedHackathon.startDate}
-                label="Starts in"
-              />
-            )}
+          {status === "upcoming" && hackathon.startDate && (
+            <CountdownTimer
+              targetDate={hackathon.startDate}
+              label="Starts in"
+            />
+          )}
 
-          {status === "live" &&
-            normalizedHackathon.endDate && (
-              <CountdownTimer
-                targetDate={normalizedHackathon.endDate}
-                label="Ends in"
-              />
-            )}
+          {status === "live" && hackathon.endDate && (
+            <CountdownTimer targetDate={hackathon.endDate} label="Ends in" />
+          )}
         </div>
 
         <div className="border-b border-gray-300 dark:border-gray-700" />
@@ -404,7 +378,7 @@ const HackathonCard = ({
           </h4>
 
           <div className="flex flex-wrap gap-2">
-            {normalizedHackathon.techStack.map((tech, index) => (
+            {(hackathon.techStack || []).map((tech, index) => (
               <span
                 key={index}
                 className="px-3 py-1 border border-blue-200 dark:border-blue-700 bg-blue-100 dark:bg-blue-900/60 text-gray-800 dark:text-gray-200 text-xs font-medium rounded-full"
@@ -425,7 +399,7 @@ const HackathonCard = ({
           </h4>
 
           <ul className="list-disc list-inside text-xs line-clamp-3 min-h-[60px]">
-            {normalizedHackathon.rules.map((rule, index) => (
+            {(hackathon.rules || []).map((rule, index) => (
               <li key={index}>{rule}</li>
             ))}
           </ul>
@@ -478,9 +452,7 @@ const HackathonCard = ({
         <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/40 p-3 rounded-lg border border-yellow-100 dark:border-yellow-800 min-h-[60px]">
           <TrophyIcon className="w-5 h-5 text-yellow-500" />
 
-          <span className="text-sm font-medium">
-            Winner:
-          </span>
+          <span className="text-sm font-medium">Winner:</span>
 
           <span className="text-sm text-gray-700 dark:text-gray-300">
             {/* FIX 3: Use computed status for winner display */}
@@ -506,8 +478,8 @@ const HackathonCard = ({
           ) : status === "upcoming" ? (
             <div className="grid grid-cols-2 gap-3">
               <button
-                onClick={() => navigate(`/register/${normalizedHackathon.id}`)}
-                className="px-4 py-2 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white text-sm font-medium rounded-lg"
+                onClick={() => navigate(`/register/${hackathon.id}`)}
+                className="..."
               >
                 Register
               </button>

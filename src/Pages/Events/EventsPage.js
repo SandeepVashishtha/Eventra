@@ -6,6 +6,7 @@ import EventCardSection from "./EventCardSection";
 import EventFiltersToolbar from "./EventFiltersToolbar";
 import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
+import { darkTheme } from "../../components/styles/theme";
 
 const EventsPage = () => {
   const cardSectionRef = useRef();
@@ -25,7 +26,14 @@ const EventsPage = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 overflow-x-hidden">
+    <div
+      className={`
+        ${darkTheme.section}
+        flex flex-col
+        min-h-screen
+        overflow-x-hidden
+      `}
+    >
       <EventHero
         searchQuery={listing.searchQuery}
         setSearchQuery={listing.setSearchQuery}
@@ -36,7 +44,7 @@ const EventsPage = () => {
 
       <div
         ref={cardSectionRef}
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12"
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 w-full"
       >
         {listing.loadError && !listing.isLoading ? (
           <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-red-100 dark:border-red-900/40 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">

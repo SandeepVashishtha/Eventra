@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FaCode,
@@ -15,6 +15,7 @@ import GSSoCContribution from "./GSSoCContribution";
 import StyledDropdown from "../../components/StyledDropdown";
 import { LeaderboardTableSkeleton } from "../../components/common/SkeletonLoaders";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { useLeaderboardStream, SSE_STATUS } from "../../context/RealTimeContext";
 
 // Repository constant — update if the leaderboard should point to another repo
 const GITHUB_REPO = "SandeepVashishtha/Eventra";
@@ -75,7 +76,33 @@ const AnimatedCounter = ({ value }) => {
   return <span>{count}</span>;
 };
 
-// Premium contributor tiers mapping
+function LiveStatusBadge({ status }) {
+  if (status === SSE_STATUS.CONNECTED) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+        </span>
+        Live
+      </span>
+    );
+  }
+  if (status === SSE_STATUS.RECONNECTING) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-amber-500 dark:text-amber-400">
+        <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+        Reconnecting…
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+      <span className="h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600" />
+      Offline
+    </span>
+  );
+}
 const getAchievementBadge = (rank, prs, points) => {
   if (rank === 1) {
     return {
@@ -114,6 +141,11 @@ export default function LeaderBoard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("points");
 
+  const { contributors: streamContributors, lastSynced, status: streamStatus } = useLeaderboardStream();
+  // Track which stream snapshot we've already applied to avoid duplicate merges
+  const lastAppliedSyncRef = useRef(null);
+
+  // Constants for pagination and UI
   const CONTRIBUTORS_PER_PAGE = 10;
 
   // 🎉 Celebratory confetti on load
@@ -128,6 +160,22 @@ export default function LeaderBoard() {
     });
   }, []);
 
+  // Merge real-time contributor updates from SSE stream into local state
+  useEffect(() => {
+    if (
+      streamContributors.length === 0 ||
+      lastSynced === lastAppliedSyncRef.current
+    ) return;
+    lastAppliedSyncRef.current = lastSynced;
+    setContributors(streamContributors);
+    setLastUpdated(`Live update: ${new Date(lastSynced).toLocaleString()}`);
+    localStorage.setItem(
+      LEADERBOARD_CACHE_KEY,
+      JSON.stringify({ data: streamContributors, timestamp: lastSynced }),
+    );
+  }, [streamContributors, lastSynced]);
+
+  // Load data from cache or network
   const loadLeaderboardData = async () => {
     setLoading(true);
     const cachedData = localStorage.getItem(LEADERBOARD_CACHE_KEY);
@@ -737,13 +785,14 @@ export default function LeaderBoard() {
             </div>
           )}
 
-          {/* TABLE FOOTER METADATA */}
-          <div className="bg-slate-50 dark:bg-slate-950/60 px-6 py-3 border-t border-slate-100 dark:border-slate-800 text-right">
+          {/* Table footer: last updated + live connection badge */}
+          <div className="bg-gray-50 dark:bg-black/70 px-6 py-2 flex items-center justify-between border-t border-gray-200 dark:border-gray-700">
             {lastUpdated && (
               <span className="text-xs font-medium text-slate-400">
                 {lastUpdated}
               </span>
             )}
+            <LiveStatusBadge status={streamStatus} />
           </div>
         </div>
       </div>
