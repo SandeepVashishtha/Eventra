@@ -734,23 +734,39 @@ const EventRegistration = () => {
               </div>
 
               {/* Additional Info */}
-              <div>
-                <label
-                  htmlFor="additionalInfo"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                >
-                  Additional Information (Optional)
-                </label>
-                <textarea
-                  id="additionalInfo"
-                  name="additionalInfo"
-                  value={formData.additionalInfo}
-                  onChange={handleChange}
-                  rows="4"
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
-                  placeholder="Any special requirements or questions?"
-                ></textarea>
-              </div>
+             {/* Additional Info */}
+<div>
+  <label
+    htmlFor="additionalInfo"
+    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+  >
+    Additional Information (Optional)
+  </label>
+
+  <textarea
+    id="additionalInfo"
+    name="additionalInfo"
+    value={formData.additionalInfo}
+    onChange={handleChange}
+    rows="4"
+    maxLength={500}
+    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
+    placeholder="Any special requirements or questions?"
+  />
+
+  {/* Character Counter */}
+  <div className="mt-2 flex justify-end">
+    <span
+      className={`text-sm font-medium transition-colors ${
+        formData.additionalInfo.length >= 400
+          ? "text-red-500"
+          : "text-gray-500 dark:text-gray-400"
+      }`}
+    >
+      {formData.additionalInfo.length} / 500 characters
+    </span>
+  </div>
+</div>
 
               {/* Submit Button */}
               <div className="flex gap-4">
