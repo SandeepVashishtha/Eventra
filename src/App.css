@@ -9,14 +9,11 @@
 }
 .neon-navbar-border {
   position: absolute;
-  bottom: -2px;
+  bottom: -1px;
   left: 0;
   width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, #ff00ff, #00ffff, #7c3aed, #ff00ff, #00ffff);
-  background-size: 400% 400%;
-  animation: neonRevolve 3s linear infinite;
-  box-shadow: 0 0 10px rgba(0, 255, 255, 0.4), 0 0 15px rgba(255, 0, 255, 0.4);
+  height: 1px;
+  background: var(--border-color);
   z-index: 50;
 }
 
@@ -27,9 +24,14 @@
   100% { background-position: 0% 50%;   }
 }
 .neon-logo {
-  background: linear-gradient(90deg, #7c3aed, #6366f1, #00ffff, #ff00ff, #f59e0b, #6366f1, #7c3aed);
+  font-weight: 800;
+  color: var(--text-color) !important;
+  background: none !important;
+  -webkit-text-fill-color: initial !important;
+  filter: none !important;
+  background: linear-gradient(90deg, #6f2ae6, #5558d6, #30bfbf, #b522b5, #b4750a, #494a8f, #702ee1);
   background-size: 300% 300%;
-  animation: neonLogoShift 4s ease infinite;
+  animation: neonLogoShift 10s ease infinite;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;

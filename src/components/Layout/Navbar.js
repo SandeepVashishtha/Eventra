@@ -21,13 +21,17 @@ import {
   MessageSquare,
   Book,
   Bookmark,
+  Bell,
   HelpCircle,
   ChevronDown,
   MousePointer,
   Moon,
   Sun,
-  MoreHorizontal
+  MoreHorizontal,
+  Search,
+  Palette
 } from "lucide-react";
+import CommandPalette from "../common/CommandPalette";
 
 // --- Helpers to reduce complexity ---
 const getUserDisplayNames = (user) => {
@@ -55,40 +59,64 @@ const setBodyScrollStyles = (top) => {
 };
 
 const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
+  const { setIsCustomizerOpen } = useTheme();
+
   if (isMobile) {
     return (
-      <motion.button
-        whileTap={{ scale: 0.95 }}
-        onClick={toggleTheme}
-        className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-xl bg-zinc-100 dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 font-semibold border border-zinc-200 dark:border-zinc-700/50 hover:bg-zinc-200 dark:hover:bg-zinc-700/80 transition-all"
-      >
-        {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-        <span>{isDarkMode ? "Dark Mode OFF" : "Dark Mode ON"}</span>
-      </motion.button>
+      <div className="flex flex-col gap-2.5 w-full">
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={toggleTheme}
+          className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-xl bg-zinc-100 dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 font-semibold border border-zinc-200 dark:border-zinc-700/50 hover:bg-zinc-200 dark:hover:bg-zinc-700/80 transition-all cursor-pointer"
+        >
+          {isDarkMode ? <Sun className="w-5 h-5 text-amber-500" /> : <Moon className="w-5 h-5 text-indigo-500" />}
+          <span>{isDarkMode ? "Switch to Light" : "Switch to Dark"}</span>
+        </motion.button>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setIsCustomizerOpen(true)}
+          className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-pink-500 text-white font-semibold border-none shadow-md hover:shadow-lg transition-all cursor-pointer"
+        >
+          <Palette className="w-5 h-5" />
+          <span>Theme Skins Panel</span>
+        </motion.button>
+      </div>
     );
   }
   return (
-    <motion.button
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      onClick={toggleTheme}
-      title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group"
-    >
-      <motion.span
-        key={isDarkMode ? "sun" : "moon"}
-        initial={{ rotate: -90, opacity: 0 }}
-        animate={{ rotate: 0, opacity: 1 }}
-        exit={{ rotate: 90, opacity: 0 }}
-        transition={{ duration: 0.3 }}
-        className="text-zinc-600 group-hover:text-indigo-500 dark:text-zinc-400 dark:group-hover:text-indigo-400"
+    <div className="flex items-center gap-2">
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={toggleTheme}
+        title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group cursor-pointer"
       >
-        {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-      </motion.span>
-      <span className="text-[10px] font-bold tracking-widest text-zinc-500 dark:text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 uppercase">
-        {isDarkMode ? "LIGHT" : "DARK"}
-      </span>
-    </motion.button>
+        <motion.span
+          key={isDarkMode ? "sun" : "moon"}
+          initial={{ rotate: -90, opacity: 0 }}
+          animate={{ rotate: 0, opacity: 1 }}
+          exit={{ rotate: 90, opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="text-zinc-600 group-hover:text-indigo-500 dark:text-zinc-400 dark:group-hover:text-indigo-400"
+        >
+          {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        </motion.span>
+        <span className="text-[10px] font-bold tracking-widest text-zinc-500 dark:text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 uppercase">
+          {isDarkMode ? "LIGHT" : "DARK"}
+        </span>
+      </motion.button>
+
+      <motion.button
+        whileHover={{ scale: 1.08 }}
+        whileTap={{ scale: 0.92 }}
+        onClick={() => setIsCustomizerOpen(true)}
+        title="Open Theme Customizer"
+        className="flex items-center justify-center p-2 rounded-full transition-all duration-300 focus:outline-none bg-gradient-to-r from-indigo-500/10 to-pink-500/10 hover:from-indigo-500/20 hover:to-pink-500/20 border border-indigo-200/50 dark:border-indigo-800/40 hover:shadow-[0_0_12px_rgba(236,72,153,0.3)] text-indigo-550 dark:text-indigo-400 cursor-pointer"
+      >
+        <Palette className="w-4 h-4 animate-pulse text-indigo-500 dark:text-indigo-400" />
+      </motion.button>
+    </div>
   );
 };
 
@@ -158,10 +186,10 @@ const MobileNavLink = ({ item, isActive, onClick }) => (
   <Link
     to={item.href}
     onClick={onClick}
-    className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium ${
+    className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg transition-colors text-base font-medium border ${
       isActive
-        ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
-        : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
+        ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
+        : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 border-transparent"
     }`}
   >
     {item.icon}{item.name}
@@ -172,10 +200,10 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
   <div key={item.name}>
     <button
       onClick={onToggle}
-      className={`flex items-center justify-between w-full px-4 py-2.5 rounded-lg transition-colors text-left text-base font-medium ${
+      className={`flex items-center justify-between w-full px-4 py-2.5 rounded-lg transition-colors text-left text-base font-medium border ${
         isActive
-          ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
-          : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"
+          ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
+          : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 border-transparent"
       }`}
     >
       <span className="flex items-center gap-3">{item.icon} {item.name}</span>
@@ -183,20 +211,23 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
     </button>
     {isOpen && (
       <div className="mt-2 ml-3 pl-3 border-l-2 border-gray-200 dark:border-white/20 space-y-1">
-        {item.subItems.map((sub) => (
-          <Link
-            key={sub.name}
-            to={sub.href}
-            onClick={closeAllMenus}
-            className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium ${
-              location.pathname === sub.href
-                ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white"
-                : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white"
-            }`}
-          >
-            {sub.icon}{sub.name}
-          </Link>
-        ))}
+        {item.subItems.map((sub) => {
+          const isSubActive = location.pathname.startsWith(sub.href);
+          return (
+            <Link
+              key={sub.name}
+              to={sub.href}
+              onClick={closeAllMenus}
+              className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium border ${
+                isSubActive
+                  ? "bg-indigo-100/40 dark:bg-indigo-500/15 border-indigo-200/50 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
+                  : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white border-transparent"
+              }`}
+            >
+              {sub.icon}{sub.name}
+            </Link>
+          );
+        })}
       </div>
     )}
   </div>
@@ -205,13 +236,29 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
 const DesktopNavLink = ({ item, isActive }) => (
   <Link
     to={item.href}
-    className={`relative group text-sm font-semibold transition-all duration-200 whitespace-nowrap px-3.5 py-2 rounded-full ${
+    className={`relative group text-[13px] xl:text-[14px] font-medium transition-all duration-200 whitespace-nowrap px-3.5 py-1.5 rounded-lg ${
       isActive
-        ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10"
-        : "text-zinc-600 hover:text-indigo-600 dark:text-zinc-300 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50"
+        ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+        : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
     }`}
   >
-    {item.name}
+    <span className="relative z-10">{item.name}</span>
+
+    {isActive && (
+      <>
+        <motion.span
+          layoutId="activeBox"
+          className="absolute inset-0 bg-indigo-100/60 dark:bg-indigo-500/20 border border-indigo-200/80 dark:border-indigo-500/50 rounded-lg -z-0"
+          transition={{ type: "spring", stiffness: 380, damping: 30 }}
+        />
+        <motion.span
+          layoutId="activeBoxGlow"
+          className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
+          transition={{ type: "spring", stiffness: 380, damping: 30 }}
+        />
+      </>
+    )}
+
   </Link>
 );
 
@@ -219,15 +266,37 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
   <div className="relative">
     <button
       onClick={onToggle}
-      className={`relative group flex items-center gap-1.5 text-sm font-semibold transition-all duration-200 whitespace-nowrap px-3.5 py-2 rounded-full ${
+      className={`relative group flex items-center gap-1.5 text-[13px] xl:text-[14px] font-medium transition-all duration-200 whitespace-nowrap px-3.5 py-1.5 rounded-lg ${
         isActive || isOpen
-          ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10"
-          : "text-zinc-600 hover:text-indigo-600 dark:text-zinc-300 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50"
+          ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+          : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
       }`}
     >
-      {item.name}
-      <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
+      <span className="relative z-10 flex items-center gap-1">
+        {item.name}
+        <ChevronDown
+          className={`w-3.5 h-3.5 transition-transform duration-200 ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        />
+      </span>
+
+      {(isActive || isOpen) && (
+        <>
+          <motion.span
+            layoutId="activeBox"
+            className="absolute inset-0 bg-indigo-100/60 dark:bg-indigo-500/20 border border-indigo-200/80 dark:border-indigo-500/50 rounded-lg -z-0"
+            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+          />
+          <motion.span
+            layoutId="activeBoxGlow"
+            className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
+            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+          />
+        </>
+      )}
     </button>
+
     {isOpen && (
       <motion.div
         initial={{ opacity: 0, y: 15, scale: 0.95 }}
@@ -241,13 +310,19 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
             key={sub.name}
             to={sub.href}
             onClick={() => setOpenDropdown(null)}
-            className={`group flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium rounded-lg transition-all duration-200 ${
-              location.pathname === sub.href
-                ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
-                : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className={`group flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium rounded-lg transition-all duration-200 border ${
+              location.pathname.startsWith(sub.href)
+                ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
+                : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-transparent"
             }`}
           >
-            {React.cloneElement(sub.icon, { className: `w-5 h-5 transition-colors ${location.pathname === sub.href ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300'}` })}
+            {React.cloneElement(sub.icon, {
+              className: `w-5 h-5 transition-colors ${
+                location.pathname.startsWith(sub.href)
+                  ? "text-indigo-600 dark:text-indigo-400"
+                  : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
+              }`,
+            })}
             {sub.name}
           </Link>
         ))}
@@ -255,29 +330,6 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
     )}
   </div>
 );
-
-const MobileDrawerHeader = ({ closeBtnRef, closeAllMenus, isDarkMode }) => (
-  <div className="flex items-center justify-between p-3.5 sm:p-4 border-b border-zinc-200 dark:border-zinc-800/50">
-    <h2
-      className="text-2xl font-extrabold tracking-widest uppercase bg-clip-text text-transparent bg-gradient-to-br from-zinc-900 via-indigo-600 to-violet-600 dark:from-white dark:via-indigo-300 dark:to-indigo-500"
-      style={{ fontFamily: "'Oxanium', monospace", margin: 0, lineHeight: 1 }}
-    >
-      Eventra
-    </h2>
-    <div className="flex items-center gap-3">
-      <button
-        ref={closeBtnRef}
-        onClick={closeAllMenus}
-        className="p-2 rounded-full text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20"
-      >
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    </div>
-  </div>
-);
-
 const MobileDrawerFooter = ({ 
   isAuthenticated, user, primaryLine, secondaryLine, closeAllMenus, location, 
   handleLogoutClick, isDarkMode, toggleTheme, cursorEnabled, toggleCursor 
@@ -395,11 +447,12 @@ const MobileUserSection = ({
 // Top-level nav items kept lean so they never overflow at xl (1280px+).
 // About / FAQ / Contact are grouped under "More" to prevent collisions.
 const NAV_ITEMS = [
-  { name: "Home",       href: "/",          icon: <Home         className="w-5 h-5" /> },
-  { name: "Events",     href: "/events",     icon: <Calendar     className="w-5 h-5" /> },
-  { name: "Bookmarks",  href: "/bookmarks",  icon: <Bookmark     className="w-5 h-5" /> },
-  { name: "Hackathons", href: "/hackathons", icon: <Trophy       className="w-5 h-5" /> },
-  { name: "Projects",   href: "/projects",   icon: <FolderKanban className="w-5 h-5" /> },
+  { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
+  { name: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
+  { name: "Bookmarks", href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
+  { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
+  { name: "Hackathons", href: "/hackathons", icon: <Trophy className="w-5 h-5" /> },
+  { name: "Projects", href: "/projects", icon: <FolderKanban className="w-5 h-5" /> },
   {
     name: "Community",
     icon: <Users className="w-5 h-5" />,
@@ -425,8 +478,8 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
   <>
     {NAV_ITEMS.map((item) => {
       const isActive = item.href 
-        ? location.pathname === item.href 
-        : item.subItems?.some(s => location.pathname === s.href);
+        ? (item.href === "/" ? location.pathname === "/" : location.pathname.startsWith(item.href))
+        : item.subItems?.some(s => location.pathname.startsWith(s.href));
       
       if (item.subItems) {
         return isMobile ? (
@@ -448,7 +501,7 @@ const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   const location = useLocation();
   return (
     // gap-4 keeps items from crowding; flex-1 lets this section grow/shrink naturally
-    <div className="hidden xl:flex items-center justify-center gap-4 2xl:gap-6 flex-1 min-w-0">
+    <div className="hidden lg:flex items-center justify-center gap-4 2xl:gap-6 flex-1 min-w-0">
       <NavList 
         location={location} 
         openDropdown={openDropdown} 
@@ -458,6 +511,24 @@ const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
     </div>
   );
 };
+
+const MobileDrawerHeader = ({ closeBtnRef, closeAllMenus, isDarkMode }) => (
+  <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-zinc-800/50">
+    <div className="flex items-center gap-2">
+      <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
+        <Sparkles className="w-5 h-5 text-white" />
+      </div>
+      <span className="font-bold text-gray-900 dark:text-white">Menu</span>
+    </div>
+    <button
+      ref={closeBtnRef}
+      onClick={closeAllMenus}
+      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-gray-400 transition-colors"
+    >
+      <ChevronDown className="w-6 h-6 rotate-90" />
+    </button>
+  </div>
+);
 
 const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeAllMenus, handleTouchStart, handleTouchMove, handleTouchEnd, closeBtnRef, toggleCursor, cursorEnabled, handleLogoutClick, primaryLine, secondaryLine }) => {
   const location = useLocation();
@@ -517,6 +588,18 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [navHeight, setNavHeight] = useState(0);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setShowCommandPalette((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const drawerRef = useRef(null);
   const closeBtnRef = useRef(null);
@@ -626,12 +709,20 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         <div className="max-w-screen-2xl mx-auto flex items-center h-[68px] px-6 xl:px-10 gap-6">
           {/* ── Logo ── left-anchored, never squishes */}
           <Link to="/" className="flex items-center shrink-0 z-20">
-            <h2
-              className="neon-logo text-2xl font-extrabold tracking-widest uppercase"
-              style={{ fontFamily: "'Oxanium', monospace", margin: 0, lineHeight: 1 }}
-            >
-              Eventra
-            </h2>
+          <h2
+  className="bg-gradient-to-r from-zinc-950 via-indigo-600 to-violet-600 dark:from-white dark:via-indigo-300 dark:to-indigo-500 bg-clip-text text-transparent"
+  style={{
+    fontFamily: "'Oxanium', monospace",
+    fontSize: "1.44rem",
+    fontWeight: 800,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    margin: 0,
+    lineHeight: 1,
+  }}
+>
+  Eventra
+</h2>
           </Link>
 
           {/* ── Nav links ── takes all remaining space, items centered */}
@@ -639,11 +730,37 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
           </div>
 
-          {/* ── Right controls ── shrink-0 so they stay on the right edge */}
-          <div className="hidden xl:flex items-center gap-3 shrink-0">
-            <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={false} />
-            <CursorToggleButton cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} isMobile={false} />
+          {/* Right Group: Auth Controls and Mobile Toggle */}
+          <div className="hidden lg:flex items-center gap-2 shrink-0 justify-end">
+            {/* Command Palette Trigger Button */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowCommandPalette(true)}
+              title="Open Command Palette (⌘K)"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group mr-1"
+            >
+              <Search className="w-4 h-4 text-zinc-500 dark:text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400" />
+              <div className="flex items-center gap-0.5 text-[9px] font-black tracking-widest text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 uppercase">
+                <span>⌘</span>
+                <span>K</span>
+              </div>
+            </motion.button>
+
+            <ThemeToggleButton
+              isDarkMode={isDarkMode}
+              toggleTheme={toggleTheme}
+              isMobile={false}
+            />
+
+            <CursorToggleButton
+              cursorEnabled={cursorEnabled}
+              toggleCursor={toggleCursor}
+              isMobile={false}
+            />
+
             <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700"></div>
+
             {isAuthenticated() ? (
               <UserProfileDropdown
                 user={user}
@@ -660,7 +777,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           </div>
 
           {/* Mobile menu button */}
-          <div className="xl:hidden ml-auto">
+          <div className="lg:hidden ml-auto">
             <button 
               ref={toggleBtnRef} 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
@@ -702,6 +819,18 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         onConfirm={handleConfirmLogout}
         title="Logout Confirmation"
         message="Are you sure you want to log out?"
+      />
+
+      {/* Global Command Palette */}
+      <CommandPalette
+        isOpen={showCommandPalette}
+        onClose={() => setShowCommandPalette(false)}
+        isDarkMode={isDarkMode}
+        toggleTheme={toggleTheme}
+        cursorEnabled={cursorEnabled}
+        toggleCursor={toggleCursor}
+        isAuthenticated={isAuthenticated}
+        handleLogoutClick={handleLogoutClick}
       />
 
       <div style={{ height: navHeight }} />

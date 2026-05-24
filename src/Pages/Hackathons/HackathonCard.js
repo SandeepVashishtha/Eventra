@@ -129,21 +129,39 @@ const statusStyles = {
 // ─── Main Card ────────────────────────────────────────────────────────────────
 const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
   const navigate = useNavigate();
-  const status = computeStatus(hackathon.startDate, hackathon.endDate);
+  const normalizedHackathon = {
+    ...hackathon,
+    title: hackathon?.title || "Untitled Hackathon",
+    description: hackathon?.description || "More details will be announced soon.",
+    difficulty: hackathon?.difficulty || "Open",
+    organizer: hackathon?.organizer || "Eventra Community",
+    location: hackathon?.location || "Location TBA",
+    prize: hackathon?.prize || "Prize TBA",
+    techStack:
+      Array.isArray(hackathon?.techStack) && hackathon.techStack.length > 0
+        ? hackathon.techStack
+        : ["General"],
+    rules:
+      Array.isArray(hackathon?.rules) && hackathon.rules.length > 0
+        ? hackathon.rules
+        : ["Rules will be shared before the hackathon starts."],
+  };
+
+  const status = computeStatus(normalizedHackathon.startDate, normalizedHackathon.endDate);
   const style = statusStyles[status] || statusStyles.upcoming;
 
   const stats = {
-    participants: hackathon.participants,
-    teams: hackathon.teams,
-    submissions: hackathon.submissions,
+    participants: normalizedHackathon.participants,
+    teams: normalizedHackathon.teams,
+    submissions: normalizedHackathon.submissions,
   };
 
   const hackathonSharingData = generateEventSharingData({
-    ...hackathon,
-    title: hackathon.title,
-    description: hackathon.description,
-    date: hackathon.startDate,
-    id: hackathon.id,
+    ...normalizedHackathon,
+    title: normalizedHackathon.title,
+    description: normalizedHackathon.description,
+    date: normalizedHackathon.startDate,
+    id: normalizedHackathon.id,
   });
 
   return (
@@ -184,10 +202,10 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
             </span>
 
             <span className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700/60 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 text-xs font-medium">
-              {hackathon.difficulty}
+              {normalizedHackathon.difficulty}
             </span>
 
-            <UrgencyBadge startDate={hackathon.startDate} endDate={hackathon.endDate} status={status} />
+            <UrgencyBadge startDate={normalizedHackathon.startDate} endDate={normalizedHackathon.endDate} status={status} />
           </div>
 
           {/* Right: Share button only */}
@@ -200,25 +218,9 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
               className="flex-shrink-0 bg-slate-50 dark:bg-white/5 rounded-full p-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 transition-all"
               whileHover={{ scale: 1.1 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
-            >
-              <ShareIcon className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-            </motion.div>
-          </ShareMenu>
-        </div>
-
-        {/* ── ROW 2: Featured badge (full-width, only shown if featured) ── */}
-        {isFeatured && (
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-600/30 dark:to-violet-600/30 border border-indigo-200 dark:border-indigo-500/40 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">
-              ✦ Featured
-            </span>
-          </div>
-        )}
-
-        {/* ── ROW 3: Prize chip ── */}
-        <div className="flex items-center">
-          <span className="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 dark:bg-amber-500/15 dark:border-amber-500/30 dark:text-amber-300 text-xs font-bold px-3 py-1.5 rounded-full">
-            🏆 {hackathon.prize}
+                    <div className="flex items-center">
+          <span className="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-300 text-xs font-bold px-3 py-1.5 rounded-full">
+            🏆 {normalizedHackathon.prize}
           </span>
         </div>
 
@@ -227,10 +229,10 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
         {/* ── Title + Description ── */}
         <div className="min-h-[72px]">
           <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1.5 leading-snug">
-            {hackathon.title}
+            {normalizedHackathon.title}
           </h3>
           <p className="text-slate-600 dark:text-slate-400 text-sm line-clamp-2 leading-relaxed">
-            {hackathon.description}
+            {normalizedHackathon.description}
           </p>
         </div>
 
@@ -239,7 +241,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
         {/* ── Organizer ── */}
         <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 text-sm">
           <BuildingLibraryIcon className="w-4 h-4 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
-          <span className="truncate">{hackathon.organizer}</span>
+          <span className="truncate">{normalizedHackathon.organizer}</span>
         </div>
 
         <div className="border-t border-slate-100 dark:border-white/5" />
@@ -249,12 +251,12 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
           <div className="flex items-center gap-2">
             <CalendarIcon className="w-4 h-4 text-sky-500 dark:text-sky-400 flex-shrink-0" />
             <span>
-              {new Date(hackathon.startDate).toLocaleDateString("en-US", {
+              {new Date(normalizedHackathon.startDate).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
               })}
               {" – "}
-              {new Date(hackathon.endDate).toLocaleDateString("en-US", {
+              {new Date(normalizedHackathon.endDate).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
                 year: "numeric",
@@ -264,6 +266,26 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
 
           <div className="flex items-center gap-2">
             <MapPinIcon className="w-4 h-4 text-emerald-500 dark:text-emerald-400 flex-shrink-0" />
+            <span>{normalizedHackathon.location}</span>
+          </div>
+
+          {status === "upcoming" && normalizedHackathon.startDate && (
+            <CountdownTimer targetDate={normalizedHackathon.startDate} label="Starts in" />
+          )}
+          {status === "live" && normalizedHackathon.endDate && (
+            <CountdownTimer targetDate={normalizedHackathon.endDate} label="Ends in" />
+          )}
+        </div>
+
+        <div className="border-t border-slate-100 dark:border-white/5" />
+
+        {/* ── Tech Stack ── */}
+        <div>
+          <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">
+            Tech Stack
+          </h4>
+          <div className="flex flex-wrap gap-1.5">
+            {normalizedHackathon.techStack.map((tech, index) => (0 dark:text-emerald-400 flex-shrink-0" />
             <span>{hackathon.location}</span>
           </div>
 
@@ -303,7 +325,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
             Rules
           </h4>
           <ul className="space-y-0.5">
-            {hackathon.rules.slice(0, 3).map((rule, index) => (
+            {normalizedHackathon.rules.slice(0, 3).map((rule, index) => (
               <li key={index} className="text-xs text-slate-600 dark:text-slate-500 flex items-start gap-1.5">
                 <span className="text-indigo-500 mt-0.5 flex-shrink-0">•</span>
                 {rule}
@@ -336,7 +358,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
           <TrophyIcon className="w-4 h-4 text-amber-500 dark:text-amber-400 flex-shrink-0" />
           <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Winner:</span>
           <span className="text-xs text-slate-700 dark:text-slate-300 truncate">
-            {status === "completed" && hackathon.winner ? hackathon.winner : "Announced soon"}
+            {status === "completed" && normalizedHackathon.winner ? normalizedHackathon.winner : "Announced soon"}
           </span>
         </div>
 
@@ -354,13 +376,13 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
           ) : status === "upcoming" ? (
             <div className="grid grid-cols-2 gap-3">
               <button
-                onClick={() => navigate(`/register/${hackathon.id}`)}
+                onClick={() => navigate(`/register/${normalizedHackathon.id}`)}
                 className="px-4 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white text-sm font-semibold rounded-xl shadow-md hover:shadow-lg dark:shadow-[0_0_16px_rgba(99,102,241,0.3)] dark:hover:shadow-[0_0_24px_rgba(99,102,241,0.5)] transition-all"
               >
                 Register
               </button>
               <a
-                href={addHackathonToGoogleCalendar(hackathon)}
+                href={addHackathonToGoogleCalendar(normalizedHackathon)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block"
