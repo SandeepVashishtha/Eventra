@@ -163,7 +163,6 @@ export default function UserAchievements() {
             <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-400">
               <Sparkles className="w-3.5 h-3.5 text-yellow-500" />
               Rank Progression
->>>>>>> upstream/master
             </div>
 
             {/* Radial SVG Circle Wheel */}
