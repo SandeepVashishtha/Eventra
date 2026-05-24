@@ -615,19 +615,13 @@ const HackathonHub = () => {
           data-aos="fade-up"
           data-aos-delay="300"
         >
-         <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Sort by:</label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
-            >
-              <option value="newest">Newest</option>
-              <option value="deadline">Deadline</option>
-              <option value="popularity">Popularity</option>
-              <option value="prize">Prize Amount</option>
-            </select>
-          </div>
+        <div className="flex flex-wrap gap-3">
+            {[
+              { key: "all", label: "All Hackathons" },
+              { key: "live", label: "Live Now" },
+              { key: "upcoming", label: "Upcoming" },
+              { key: "completed", label: "Completed" },
+            ].map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
@@ -639,6 +633,19 @@ const HackathonHub = () => {
                 {tab.label}
               </button>
             ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Sort by:</label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+            >
+              <option value="newest">Newest</option>
+              <option value="deadline">Deadline</option>
+              <option value="popularity">Popularity</option>
+              <option value="prize">Prize Amount</option>
+            </select>
           </div>
         </motion.div>
 
