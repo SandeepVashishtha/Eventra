@@ -6,6 +6,7 @@ import EventCardSection from "./EventCardSection";
 import EventFiltersToolbar from "./EventFiltersToolbar";
 import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
+import { darkTheme } from "../../components/styles/theme";
 
 const EventsPage = () => {
   const cardSectionRef = useRef();

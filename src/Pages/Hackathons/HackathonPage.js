@@ -12,23 +12,18 @@ import { FiCode, FiRotateCw, FiCompass, FiChevronDown } from "react-icons/fi";
 import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
-// NEW: Tag component for selected tags in search bar
-const Tag = ({ tag, onRemove }) => (
-  <motion.div
-    initial={{ scale: 0.8, opacity: 0 }}
-    animate={{ scale: 1, opacity: 1 }}
-    exit={{ scale: 0.8, opacity: 0 }}
-    className="flex items-center gap-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-3 py-1 rounded-full text-sm font-medium"
-  >
-    <span>{tag}</span>
-    <button
-      onClick={() => onRemove(tag)}
-      className="hover:bg-indigo-200 dark:hover:bg-indigo-800 rounded-full p-0.5 transition-colors"
-    >
-      <FiX className="w-3 h-3" />
-    </button>
-  </motion.div>
-);
+import { darkTheme } from "../../components/styles/theme";
+
+const containerVariants = {
+  hidden: { opacity: 0, y: 8 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      staggerChildren: 0.06,
+    },
+  },
+};
 
 const HackathonHub = () => {
   const [hackathons, setHackathons] = useState([]);
