@@ -14,6 +14,7 @@ import {
   FaInstagram,
   FaLinkedin,
   FaPlus,
+  FaQuestion,
   FaQuestionCircle,
   FaStar,
   FaTelegram,
@@ -68,6 +69,11 @@ const footerLinks = {
       name: "Help Center",
       href: "/helpcenter",
       icon: <FaQuestionCircle size={14} />,
+    },
+    {
+      name: "FAQ",
+      href: "/faq",
+      icon: <FaQuestion size={14} />,
     },
     {
       name: "Contact Us",
@@ -312,8 +318,8 @@ const FooterLinksRender = () => (
           key === "quick_links"
             ? "100"
             : key === "community"
-            ? "200"
-            : "300"
+              ? "200"
+              : "300"
         }
       >
         <h4 className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-widest mb-6">
