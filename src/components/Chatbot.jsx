@@ -148,6 +148,11 @@ export default function Chatbot() {
               border border-slate-700
               bg-slate-950 px-4 py-3
               text-white shadow-2xl
+              fixed-floating-widget
+              transition-opacity duration-300
+            "
+            aria-label="Eventra assistant minimized"
+          >
             "
             aria-label="Eventra assistant minimized"
           >
@@ -196,7 +201,8 @@ export default function Chatbot() {
             shadow-2xl shadow-indigo-500/30
             hover:bg-indigo-700
             focus:outline-none focus:ring-4 focus:ring-indigo-300
-            transition-transform duration-200 hover:scale-110
+            transition-all duration-200 hover:scale-110
+            fixed-floating-widget
             ${isMinimized ? "sm:hidden" : ""}
           `}
           aria-label="Open Eventra assistant"
@@ -211,6 +217,7 @@ export default function Chatbot() {
   return (
     <section
       data-chatbot-open
+      data-lenis-prevent
       aria-label="Eventra assistant"
       className="
         fixed bottom-6 right-6 z-[100]
@@ -220,6 +227,8 @@ export default function Chatbot() {
         border border-slate-200 dark:border-slate-700
         bg-white dark:bg-slate-900
         shadow-2xl
+        fixed-floating-widget
+        transition-opacity duration-300
 
         /* KEY FIX: constrain total height to viewport so it never overflows.
            bottom-6 = 1.5rem offset from bottom, so we subtract that + a little breathing room. */

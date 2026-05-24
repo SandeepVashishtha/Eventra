@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronUp } from "lucide-react";
+import "./styles/scrolltotopButton.css";
 
 export default function ScrollToTopButton() {
   const { pathname } = useLocation();
@@ -10,13 +11,26 @@ export default function ScrollToTopButton() {
 
   // Automatically scroll to top whenever the route changes
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (window.lenis) {
+      window.lenis.scrollTo(0, { immediate: true });
+    } else {
+      window.scrollTo(0, 0);
+    }
   }, [pathname]);
 
   useEffect(() => {
-    const handleScroll = () => setVisible(window.scrollY > 50);
+    const handleScroll = () => {
+      const scrollY = window.lenis ? window.lenis.scroll : window.scrollY;
+      setVisible(scrollY > 50);
+    };
+    
     handleScroll();
-    window.addEventListener("scroll", handleScroll);
+    
+    if (window.lenis) {
+      window.lenis.on('scroll', handleScroll);
+    } else {
+      window.addEventListener("scroll", handleScroll);
+    }
     
     // Listen for chatbot state changes
     const handleChatbotState = () => {
@@ -29,24 +43,33 @@ export default function ScrollToTopButton() {
     observer.observe(document.body, { childList: true, subtree: true });
     
     return () => {
-      window.removeEventListener("scroll", handleScroll);
+      if (window.lenis) {
+        window.lenis.off('scroll', handleScroll);
+      } else {
+        window.removeEventListener("scroll", handleScroll);
+      }
       observer.disconnect();
     };
   }, []);
 
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (window.lenis) {
+      window.lenis.scrollTo(0, { duration: 1.2 });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   // Position based on chatbot state
   const positionClass = isChatbotOpen 
     ? "bottom-24 left-6"  // When chatbot is open - bottom left
-    : "bottom-24 right-6"; // When chatbot is closed - bottom right
+    : "bottom-6 right-6 sm:bottom-24 sm:right-6"; // When chatbot is closed - bottom right
 
   return (
     <AnimatePresence>
       {visible && (
         <motion.button
+          id="scrollToTopBtn"
           onClick={scrollToTop}
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
@@ -66,6 +89,7 @@ export default function ScrollToTopButton() {
             hover:border-black/30 dark:hover:border-white/40
             transition-all
             z-[9998]
+            show
           `}
           title="Back to Top"
         >
