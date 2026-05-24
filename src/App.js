@@ -20,6 +20,7 @@ import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
    Pages
 ========================= */
 import RegistrationPage from "./Pages/RegistrationPage";
+import NotFoundPage from "./Pages/NotFoundPage";
 
 /* =========================
    Context & Hooks
@@ -179,7 +180,7 @@ function App() {
                       >
                         <Routes>
                           <Route path="/register/:id" element={<RegistrationPage />} />
-                          <Route path="*" element={<AppRoutes />} />
+                          <Route path="/*" element={<AppRoutes />} />
                         </Routes>
                       </Suspense>
                     </PageTransition>
