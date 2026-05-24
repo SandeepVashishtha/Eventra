@@ -1,5 +1,5 @@
 import React from "react";
-
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import ReactDOM from "react-dom/client";
 
 import "./index.css";
@@ -25,13 +25,16 @@ const root =
   );
 
 root.render(
-  <React.StrictMode>
+ 
     <GlobalErrorBoundary>
       <MotionConfig reducedMotion="user">
         <ThemeProvider>
+        <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
+
           <App />
+        </GoogleOAuthProvider>
         </ThemeProvider>
       </MotionConfig>
     </GlobalErrorBoundary>
-  </React.StrictMode>
+ 
 );
