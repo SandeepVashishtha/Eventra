@@ -18,7 +18,7 @@ export default function CTASection() {
           </motion.div>
 
           {/* Main heading */}
-          <motion.h2 className="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-white mb-4">
+          <motion.h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-4">
             Ignite Ideas, Connect Innovators
           </motion.h2>
 
