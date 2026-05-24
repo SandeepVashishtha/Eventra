@@ -148,54 +148,58 @@ export default function Chatbot() {
     return createPortal(
       <>
         {/* Minimized strip — only on desktop when minimized */}
-        {isOpen && isMinimized && (
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="
-              fixed bottom-6 right-6 z-[100]
-              hidden sm:flex               /* hide strip on mobile, show FAB instead */
-              items-center justify-between gap-3
-              w-72 rounded-2xl
-              border border-slate-700
-              bg-slate-950 px-4 py-3
-              text-white shadow-2xl
-            "
-            aria-label="Eventra assistant minimized"
-          >
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-500">
-                <Sparkles className="h-3.5 w-3.5" />
+        <AnimatePresence>
+          {isOpen && isMinimized && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              className="
+                fixed bottom-6 right-6 z-[100]
+                hidden sm:flex               /* hide strip on mobile, show FAB instead */
+                items-center justify-between gap-3
+                w-72 rounded-2xl
+                border border-slate-700
+                bg-slate-950 px-4 py-3
+                text-white shadow-2xl
+                fixed-floating-widget
+                transition-opacity duration-300
+              "
+              aria-label="Eventra assistant minimized"
+            >
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-500">
+                  <Sparkles className="h-3.5 w-3.5" />
+                </div>
+                <div className="flex items-center gap-1">
+                  <h2 className="text-sm font-bold truncate">Eventra Assist</h2>
+                </div>
               </div>
-              <h2 className="text-sm font-bold truncate">Eventra Assist</h2>
-            </div>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={handleOpen}
-                className="rounded-xl p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
-                aria-label="Expand assistant"
-              >
-                <ChevronUp className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={handleClose}
-                className="rounded-xl p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
-                aria-label="Close assistant"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </motion.div>
-        )}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={handleOpen}
+                  className="rounded-xl p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+                  aria-label="Expand assistant"
+                >
+                  <ChevronUp className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="rounded-xl p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+                  aria-label="Close assistant"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <motion.button
-          type="button"
           onClick={handleOpen}
           whileHover={{ scale: 1.1, rotate: 5 }}
-          whileTap={{ scale: 0.9 }}
           className={`
             fixed bottom-6 right-6 z-[100]
             flex h-14 w-14 items-center justify-center
@@ -221,69 +225,69 @@ export default function Chatbot() {
     <AnimatePresence>
       {isOpen && !isMinimized && (
         <motion.section
-          initial={{ opacity: 0, y: 20 }}
+          data-chatbot-open
+          data-lenis-prevent
+          aria-label="Eventra assistant"
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 20 }}
-          transition={{ duration: 0.3 }}
-      data-chatbot-open
-      data-lenis-prevent
-      aria-label="Eventra assistant"
-      className="
-        fixed bottom-6 right-6 z-[100]
-        flex flex-col                        /* KEY FIX: flex column layout */
-        w-[calc(100vw-2rem)] max-w-sm sm:max-w-sm
-        rounded-2xl
-        border border-slate-200 dark:border-slate-700
-        bg-white dark:bg-slate-900
-        shadow-2xl
-        fixed-floating-widget
-        transition-opacity duration-300
+          exit={{ opacity: 0, y: 12 }}
+          transition={{ duration: 0.2 }}
+          className="
+            fixed bottom-6 right-6 z-[100]
+            flex flex-col                        /* KEY FIX: flex column layout */
+            w-[calc(100vw-2rem)] max-w-sm sm:max-w-sm
+            rounded-2xl
+            border border-slate-200 dark:border-slate-700
+            bg-white dark:bg-slate-900
+            shadow-2xl
+            fixed-floating-widget
+            transition-opacity duration-300
 
-        /* KEY FIX: constrain total height to viewport so it never overflows.
-           bottom-6 = 1.5rem offset from bottom, so we subtract that + a little breathing room. */
-        max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-5rem)]
-      "
-    >
-      {/* ── Header — always visible, never scrolls away ── */}
-      {/*
-        FIX #1 (desktop): header is a flex-shrink-0 child so it is always
-        rendered at the top of the constrained container. It will never be
-        pushed out of the viewport.
-      */}
-      <header className="
-        flex flex-shrink-0 items-center justify-between gap-3
-        border-b border-slate-200 dark:border-slate-700
-        bg-slate-950 px-4 py-3 text-white
-        rounded-t-2xl
-      ">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-500">
-            <Sparkles className="h-4 w-4" />
-          </div>
-          <div>
-            <h2 className="text-sm font-bold">Eventra Assist</h2>
-            <p className="text-xs text-slate-300">Events, workshops, and support</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={handleMinimize}
-            className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white"
-            aria-label="Minimize assistant"
-          >
-            <Minus className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={handleClose}
-            className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white"
-            aria-label="Close assistant"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      </header>
+            /* KEY FIX: constrain total height to viewport so it never overflows.
+              bottom-6 = 1.5rem offset from bottom, so we subtract that + a little breathing room. */
+            max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-5rem)]
+          "
+        >
+          {/* ── Header — always visible, never scrolls away ── */}
+          {/*
+            FIX #1 (desktop): header is a flex-shrink-0 child so it is always
+            rendered at the top of the constrained container. It will never be
+            pushed out of the viewport.
+          */}
+          <header className="
+            flex flex-shrink-0 items-center justify-between gap-3
+            border-b border-slate-200 dark:border-slate-700
+            bg-slate-950 px-4 py-3 text-white
+            rounded-t-2xl
+          ">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-500">
+                <Sparkles className="h-4 w-4" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold">Eventra Assist</h2>
+                <p className="text-xs text-slate-300">Events, workshops, and support</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={handleMinimize}
+                className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white"
+                aria-label="Minimize assistant"
+              >
+                <Minus className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white"
+                aria-label="Close assistant"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </header>
 
           {/* Messages list */}
           <div

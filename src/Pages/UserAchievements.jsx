@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNotification } from '../context/NotificationContext';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import QuestCenter from '../components/gamification/QuestCenter';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Award,
@@ -431,6 +432,12 @@ export default function UserAchievements() {
             })}
           </div>
         </section>
+
+        {/* Quest Center */}
+        <QuestCenter
+          totalEvents={achievements.totalEvents}
+          currentStreak={achievements.currentStreak}
+        />
 
       </div>
     </div>

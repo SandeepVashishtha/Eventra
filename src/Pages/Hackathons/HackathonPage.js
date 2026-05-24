@@ -1,54 +1,18 @@
-/**
- * CHANGES MADE TO THIS FILE (HackathonPage.js):
- * 
- * 1. FIXED DROPDOWN STYLING:
- *    - Updated CustomDropdown component styling around line 313-327
- *    - Removed "width: menuCoords.width" constraint
- *    - Added "min-w-[180px]" for minimum width
- *    - Changed "shadow-lg" to "shadow-xl" for better depth
- *    - Added "overflow-hidden" to properly contain content
- *    - Improved className formatting for readability
- * 
- * 2. FIXED DROPDOWN PADDING:
- *    - Changed all "py-2" to "py-3" in dropdown menu items around lines 325, 340
- *    - Applied to both placeholder item and options items for consistent spacing
- * 
- * 3. FIXED FILTER ARRAY TYPE ERROR (Critical Fix):
- *    - Error: "filters.prize.some is not a function"
- *    - Root cause: CustomDropdown returns a string, but filters expected arrays
- *    - Fixed in lines 543-568:
- *      * Difficulty filter: Wrap/unwrap with array conversion
- *      * Prize filter: Wrap/unwrap with array conversion  
- *      * Location filter: Wrap/unwrap with array conversion
- *    - Now filters.prize[0] || "" is used for dropdown value
- *    - onChange: val ? [val] : [] wraps single string into array
- * 
- * 4. RESULT:
- *    - Dropdown menu now displays with proper styling and positioning
- *    - Better visual spacing with py-3 padding
- *    - Filter logic now correctly handles array type checks
- *    - .some() method works properly on filter arrays
- */
-
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import mockHackathons from "./hackathonMockData.json";
 import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
 import FeedbackButton from "../../components/FeedbackButton";
-import {
-  FiCode,
-  FiChevronDown,
-  FiX,
-} from "react-icons/fi";
+import { FiCode, FiRotateCw, FiCompass, FiChevronDown, FiX } from "react-icons/fi";
 import HackathonCTA from "./HackathonCTA";
+import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
 import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
-import SearchEmptyState from "../../components/common/SearchEmptyState";
+import BackToTopButton from "../../components/common/BackToTopButton";
 import PageLoader from "../../components/common/PageLoader";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { getRouteSearchResults } from "../../utils/searchUtils";
 
 // NEW: Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
@@ -69,21 +33,20 @@ const Tag = ({ tag, onRemove }) => (
 );
 
 const HackathonHub = () => {
-  useDocumentTitle("Eventra | Hackathon Hub")
-  const location = useLocation();
-  const routeSearchQuery = new URLSearchParams(location.search).get("search") || "";
   const [hackathons, setHackathons] = useState([]);
   const [activeTab, setActiveTab] = useState("all");
-  const [searchQuery, setSearchQuery] = useState(routeSearchQuery);
+  const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isScrollVisible, setIsScrollVisible] = useState(false);
   const [filters, setFilters] = useState({
-    difficulty: [],
-    prize: [],
-    location: [],
+    difficulty: "",
+    prize: "",
+    location: "",
   });
   const [showFilters, setShowFilters] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+
+  useDocumentTitle("Eventra | Hackathons");
 
   // NEW: State for selected tags
   const [selectedTags, setSelectedTags] = useState([]);
@@ -94,64 +57,25 @@ const HackathonHub = () => {
 
   // Simulate API call
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setHackathons(mockHackathons);
-      setIsLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    setSearchQuery(routeSearchQuery);
-  }, [routeSearchQuery]);
-
-  useEffect(() => {
-    if (!isLoading && routeSearchQuery) {
-      setTimeout(() => {
-        cardsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 100);
-    }
-  }, [isLoading, routeSearchQuery]);
-
-  // UPDATED: Extract available tags from hackathons - ADDED BLOCKCHAIN TAGS
-  useEffect(() => {
-    if (hackathons.length > 0) {
-      const allTags = new Set();
-      hackathons.forEach(hackathon => {
-        if (hackathon.techStack && Array.isArray(hackathon.techStack)) {
-          hackathon.techStack.forEach(tag => {
-            // Replace "Any" with "Blockchain"
-            if (tag === "Any") {
-              allTags.add("Blockchain");
-            } else {
-              allTags.add(tag);
-            }
-          });
-        }
-      });
-      // ADD ONLY THESE 3 BLOCKCHAIN TAGS
-      allTags.add("Blockchain");
-      allTags.add("Solidity");
-      allTags.add("Ethereum");
-
-      setAvailableTags(Array.from(allTags));
-    }
-  }, [hackathons]);
-
-  const scrollToCards = () => {
-    cardsSectionRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrollVisible(window.scrollY > 50);
-    };
-    window.addEventListener("scroll", handleScroll);
-    handleScroll();
-
+      if (filters.difficulty && hackathon.difficulty !== filters.difficulty) {
+        return false;
+      }
+      if (
+        filters.prize &&
+        !hackathon.prize.toLowerCase().includes(filters.prize.toLowerCase())
+      ) {
+        return false;
+      }
+      if (
+        filters.location &&
+        !hackathon.location
+          .toLowerCase()
+          .includes(filters.location.toLowerCase())
+      ) {
+        return false;
+      }
     const handleChatbotState = () => {
-      setIsChatbotOpen(document.querySelector("[data-chatbot-open]") !== null);
+      setIsChatbotOpen(document.querySelector('[data-chatbot-open]') !== null);
     };
 
     handleChatbotState();
@@ -210,31 +134,20 @@ const HackathonHub = () => {
 
   // NEW: Handle backspace in search input
   const handleSearchKeyDown = (e) => {
-    if (
-      e.key === "Backspace" &&
-      searchQuery === "" &&
-      selectedTags.length > 0
-    ) {
+    if (e.key === "Backspace" && searchQuery === "" && selectedTags.length > 0) {
       // Remove the last tag when backspace is pressed on empty input
       const lastTag = selectedTags[selectedTags.length - 1];
       handleTagRemove(lastTag);
     }
   };
 
-  const searchKeys = [
-    "title",
-    "description",
-    "location",
-    "techStack",
-    "organizer",
-    "difficulty",
-    "status",
-    "startDate",
-    "endDate",
-  ];
+  const fuse = new Fuse(hackathons, {
+    keys: ["title", "description", "location", "techStack"],
+    threshold: 0.4,
+  });
 
   const searchedHackathons = searchQuery
-    ? getRouteSearchResults(hackathons, searchQuery, searchKeys)
+    ? fuse.search(searchQuery).map((result) => result.item)
     : hackathons;
 
   // UPDATED: Filter hackathons based on selected tags
@@ -244,37 +157,23 @@ const HackathonHub = () => {
       return hackathon.status === activeTab;
     })
     .filter((hackathon) => {
-      if (
-        filters.difficulty &&
-        filters.difficulty.length > 0 &&
-        !filters.difficulty.includes(hackathon.difficulty)
-      )
+      if (filters.difficulty && hackathon.difficulty !== filters.difficulty) {
         return false;
-
-      if (filters.prize && filters.prize.length > 0) {
-        const prizeValue = Number.parseInt(
-          String(hackathon.prize).replace(/[^\d]/g, ""),
-          10,
-        );
-        const activePrize = filters.prize[0];
-
-        if (activePrize === "Under $1,000" && prizeValue >= 1000) return false;
-        if (
-          activePrize === "$1,000 - $5,000" &&
-          (prizeValue < 1000 || prizeValue > 5000)
-        )
-          return false;
-        if (activePrize === "$5,000+" && prizeValue < 5000) return false;
       }
-
+      if (
+        filters.prize &&
+        !hackathon.prize.toLowerCase().includes(filters.prize.toLowerCase())
+      ) {
+        return false;
+      }
       if (
         filters.location &&
-        filters.location.length > 0 &&
         !hackathon.location
           .toLowerCase()
-          .includes(filters.location[0].toLowerCase())
-      )
+          .includes(filters.location.toLowerCase())
+      ) {
         return false;
+      }
 
       // NEW: Filter by selected tags
       if (selectedTags.length > 0) {
@@ -292,9 +191,9 @@ const HackathonHub = () => {
   // UPDATED: Reset filters and tags
   const resetFilters = () => {
     setFilters({
-      difficulty: [],
-      prize: [],
-      location: [],
+      difficulty: "",
+      prize: "",
+      location: "",
     });
     setSearchQuery("");
     setSelectedTags([]);
@@ -363,7 +262,6 @@ const HackathonHub = () => {
           ref={buttonRef}
           className="flex w-full items-center justify-between gap-3 px-4 py-3 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-white/5 cursor-pointer hover:ring-2 hover:ring-indigo-500/30 dark:hover:ring-indigo-500/50 hover:border-indigo-300 dark:hover:border-indigo-500/30 transition-all text-slate-700 dark:text-slate-300"
           onClick={toggleOpen}
-          aria-expanded={open}
         >
           <span
             className={`flex-1 text-left text-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis ${!value ? "text-slate-400 dark:text-slate-500" : "text-slate-900 dark:text-slate-200"}`}
@@ -390,6 +288,7 @@ const HackathonHub = () => {
                 position: "absolute",
                 top: menuCoords.top,
                 left: menuCoords.left,
+                width: menuCoords.width,
               }}
             >
               <li
@@ -560,9 +459,7 @@ const HackathonHub = () => {
                 </svg>
                 {showFilters ? "Hide Filters" : "Filters"}
               </button>
-              {((filters.difficulty && filters.difficulty.length > 0) ||
-                (filters.prize && filters.prize.length > 0) ||
-                (filters.location && filters.location.length > 0) ||
+              {(filters.difficulty || filters.prize || filters.location ||
                 selectedTags.length > 0) && (
                   <button
                     onClick={resetFilters}
@@ -613,28 +510,28 @@ const HackathonHub = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <CustomDropdown
                     label="Difficulty"
-                    value={filters.difficulty[0] || ""}
+                    value={filters.difficulty}
                     options={difficulties}
                     onChange={(val) =>
-                      setFilters({ ...filters, difficulty: val ? [val] : [] })
+                      setFilters({ ...filters, difficulty: val })
                     }
                     placeholder="All Levels"
                   />
 
                   <CustomDropdown
                     label="Prize Pool"
-                    value={filters.prize[0] || ""}
+                    value={filters.prize}
                     options={["Under $1,000", "$1,000 - $5,000", "$5,000+"]}
-                    onChange={(val) => setFilters({ ...filters, prize: val ? [val] : [] })}
+                    onChange={(val) => setFilters({ ...filters, prize: val })}
                     placeholder="Any Prize"
                   />
 
                   <CustomDropdown
                     label="Location"
-                    value={filters.location[0] || ""}
+                    value={filters.location}
                     options={locations}
                     onChange={(val) =>
-                      setFilters({ ...filters, location: val ? [val] : [] })
+                      setFilters({ ...filters, location: val })
                     }
                     placeholder="All Locations"
                   />
@@ -796,14 +693,37 @@ const HackathonHub = () => {
                   No Hackathons Found
                 </h3>
 
-                <SearchEmptyState
-                  query={searchQuery}
-                  itemLabel="hackathons"
-                  browseLabel="Browse All Hackathons"
-                  browsePath="/hackathons"
-                  onClear={resetFilters}
-                  popularTags={availableTags}
-                />
+                <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                  {searchQuery ||
+                  filters.difficulty ||
+                  filters.prize ||
+                  filters.location ||
+                  selectedTags.length > 0
+                    ? "No hackathons match your current filters. Try adjusting your search or filters."
+                    : "Check back later for exciting new hackathons!"}
+                </p>
+
+                <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={resetFilters}
+                    className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-white bg-black hover:bg-zinc-800 shadow-lg transition-all"
+                  >
+                    <FiRotateCw className="w-4 h-4" />
+                    Reset Filters
+                  </motion.button>
+
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {}}
+                    className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-black dark:text-white border border-black/15 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 shadow-md transition-all"
+                  >
+                    Explore Hackathons
+                    <FiCompass className="w-4 h-4" />
+                  </motion.button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -813,6 +733,7 @@ const HackathonHub = () => {
 
       {/* Feedback Button */}
       <FeedbackButton />
+      <BackToTopButton />
     </div>
   );
 };

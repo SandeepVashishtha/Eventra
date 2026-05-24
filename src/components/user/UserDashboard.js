@@ -160,6 +160,10 @@ export default function UserDashboard() {
             <Trophy size={18} />
             <span>Achievements</span>
           </Link>
+          <Link to="/dashboard/achievements" className="ud-nav-item">
+            <Zap size={18} />
+            <span>Quest Center</span>
+          </Link>
         </nav>
 
         <div className="ud-sidebar-bottom">

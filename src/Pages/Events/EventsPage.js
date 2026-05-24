@@ -7,6 +7,7 @@ import EventFiltersToolbar from "./EventFiltersToolbar";
 import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
 import { darkTheme } from "../../components/styles/theme";
+import BackToTopButton from "../../components/common/BackToTopButton";
 
 const EventsPage = () => {
   const cardSectionRef = useRef();
@@ -63,7 +64,6 @@ const EventsPage = () => {
             </button>
           </div>
         ) : null}
-
         <EventFiltersToolbar
           filterType={listing.filterType}
           onFilterChange={listing.setFilterType}
@@ -100,6 +100,8 @@ const EventsPage = () => {
       </div>
 
       <EventCTA />
+      <FeedbackButton />
+      <BackToTopButton />
     </div>
   );
 };

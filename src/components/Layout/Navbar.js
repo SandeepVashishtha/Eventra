@@ -29,7 +29,12 @@ import {
   Sun,
   MoreHorizontal,
   Search,
-  Palette
+  Palette,
+  Book,
+  MoreHorizontal,
+  Info,
+  HelpCircle,
+  MessageSquare
 } from "lucide-react";
 import CommandPalette from "../common/CommandPalette";
 
