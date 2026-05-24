@@ -449,10 +449,16 @@ const MobileUserSection = ({
 // About / FAQ / Contact are grouped under "More" to prevent collisions.
 const NAV_ITEMS = [
   { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
-  { name: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
-  { name: "Calendar", href: "/calendar", icon: <CalendarDays className="w-5 h-5" /> },
-  { name: "Bookmarks", href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
-  { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
+  {
+    name: "Events",
+    icon: <Calendar className="w-5 h-5" />,
+    subItems: [
+      { name: "Explore Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
+      { name: "Event Calendar", href: "/calendar", icon: <CalendarDays className="w-5 h-5" /> },
+      { name: "Bookmarks",      href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
+      { name: "Reminders",      href: "/reminders", icon: <Bell className="w-5 h-5" /> },
+    ],
+  },
   { name: "Hackathons", href: "/hackathons", icon: <Trophy className="w-5 h-5" /> },
   { name: "Projects", href: "/projects", icon: <FolderKanban className="w-5 h-5" /> },
   {
