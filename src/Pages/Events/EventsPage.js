@@ -116,6 +116,8 @@ const EventsPage = () => {
           onSortChange={listing.setSortType}
           viewMode={listing.viewMode}
           onViewModeChange={listing.setViewMode}
+          searchQuery={listing.searchQuery}
+          onSearchChange={listing.setSearchQuery}
         />
 
         <EventCardSection
@@ -123,6 +125,10 @@ const EventsPage = () => {
           events={listing.paginatedEvents}
           viewMode={listing.viewMode}
           filterType={listing.filterType}
+          onClearFilters={() => {
+            listing.setSearchQuery("");
+            listing.setFilterType("all");
+          }}
         />
 
         {!listing.isLoading && (
