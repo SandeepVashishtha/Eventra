@@ -304,19 +304,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
     )}
   </div>
 );
-const MobileDrawerHeader = ({ closeBtnRef, closeAllMenus, isDarkMode }) => (
-  <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-    <div className="text-base font-semibold text-gray-900 dark:text-white">Menu</div>
-    <button
-      ref={closeBtnRef}
-      onClick={closeAllMenus}
-      aria-label="Close navigation"
-      className="inline-flex items-center justify-center rounded-full p-2 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-zinc-800"
-    >
-      <X className="w-5 h-5" />
-    </button>
-  </div>
-);
+
 
 const MobileDrawerFooter = ({ 
   isAuthenticated, user, primaryLine, secondaryLine, closeAllMenus, location, 
