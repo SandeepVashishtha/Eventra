@@ -10,13 +10,10 @@ import ProjectCTA from "./ProjectCTA";
 import mockProjects from "./mockProjectsData.json";
 
 import ModernSearchInput from "../../components/common/ModernSearchInput";
-<<<<<<< HEAD
 import SearchEmptyState from "../../components/common/SearchEmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import PageLoader from "../../components/common/PageLoader";
-=======
 import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
->>>>>>> f35178a86bcf2d8a09d2f9fa4a9f024ba75738b7
 
 const ProjectGallery = () => {
   const [projects, setProjects] = useState([]);

@@ -5,8 +5,6 @@ import { API_ENDPOINTS, apiUtils } from '../config/api';
 import { getQueue, setQueue, clearQueue } from '../utils/offlineQueue';
 
 const QUEUE_KEY = 'eventra_offline_queue';
-import { API_ENDPOINTS } from '../config/api';
-import { getQueue, setQueue, clearQueue } from '../utils/offlineQueue';
 
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 1_000;
@@ -35,21 +33,7 @@ const useOfflineSync = () => {
           return true; // Treat as "handled" — bad data won't succeed on retry
         }
         throw error;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(authToken && { Authorization: `Bearer ${authToken}` }),
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) return true;
-      if (response.status >= 400 && response.status < 500) {
-        console.warn(`Offline queue: server rejected item with ${response.status} — dropping.`);
-        return true; 
       }
-      throw new Error(`Server responded with ${response.status}`);
     };
 
     const handleOnline = async () => {

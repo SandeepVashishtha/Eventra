@@ -7,9 +7,7 @@ const CertificateDownload = ({ eventName, eventDate, eventType }) => {
 
   if (!user) {
     return (
-      
-        🔒 Login to Download Certificate
-      
+      <span>{"🔒"} Login to Download Certificate</span>
     );
   }
 
@@ -51,9 +49,9 @@ const CertificateDownload = ({ eventName, eventDate, eventType }) => {
   };
 
   return (
-    
-      📜 Download Certificate
-    
+    <button type="button" onClick={generateCertificate}>
+      <span>{"📜"} Download Certificate</span>
+    </button>
   );
 };
 
