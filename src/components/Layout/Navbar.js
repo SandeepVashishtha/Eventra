@@ -695,7 +695,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       >
         <div className="neon-navbar-border"></div>
         <div className="max-w-screen-2xl mx-auto flex items-center h-[68px] px-4 sm:px-6 xl:px-10 gap-3 sm:gap-6 min-w-0">
-        <div className="max-w-screen-2xl mx-auto flex items-center h-[68px] px-6 xl:px-10 gap-8 justify-between">
           {/* ── Logo ── left-anchored, never squishes */}
           <Link to="/" className="flex items-center shrink-0 z-20 min-w-0">
           <h2
