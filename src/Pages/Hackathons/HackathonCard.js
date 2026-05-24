@@ -153,22 +153,47 @@ const computeStatus = (startDate, endDate) => {
 
 const HackathonCard = ({ hackathon = {}, isFeatured = false, ...props }) => {
   const navigate = useNavigate();
+  const normalizedHackathon = {
+    ...hackathon,
+    title: hackathon?.title || "Untitled Hackathon",
+    description: hackathon?.description || "More details will be announced soon.",
+    difficulty: hackathon?.difficulty || "Open",
+    organizer: hackathon?.organizer || "Eventra Community",
+    location: hackathon?.location || "Location TBA",
+    prize: hackathon?.prize || "Prize TBA",
+    techStack:
+      Array.isArray(hackathon?.techStack) && hackathon.techStack.length > 0
+        ? hackathon.techStack
+        : ["General"],
+    rules:
+      Array.isArray(hackathon?.rules) && hackathon.rules.length > 0
+        ? hackathon.rules
+        : ["Rules will be shared before the hackathon starts."],
+    participants: hackathon?.participants ?? 0,
+    teams: hackathon?.teams ?? 0,
+    submissions: hackathon?.submissions ?? 0,
+    winner: hackathon?.winner || "",
+  };
+
   // FIX 3: Use computed status everywhere instead of hackathon.status
-  const status = computeStatus(hackathon.startDate, hackathon.endDate);
+  const status = computeStatus(
+    normalizedHackathon.startDate,
+    normalizedHackathon.endDate,
+  );
 
   // Show real stats for ALL statuses (live, upcoming, completed)
   const stats = {
-    participants: hackathon.participants,
-    teams: hackathon.teams,
-    submissions: hackathon.submissions,
+    participants: normalizedHackathon.participants,
+    teams: normalizedHackathon.teams,
+    submissions: normalizedHackathon.submissions,
   };
 
   const hackathonSharingData = generateEventSharingData({
-    ...hackathon,
-    title: hackathon.title,
-    description: hackathon.description,
-    date: hackathon.startDate,
-    id: hackathon.id,
+    ...normalizedHackathon,
+    title: normalizedHackathon.title,
+    description: normalizedHackathon.description,
+    date: normalizedHackathon.startDate,
+    id: normalizedHackathon.id,
   });
 
   // FIX 3: Pass computed status (not hackathon.status) to UrgencyBadge
@@ -271,19 +296,19 @@ const HackathonCard = ({ hackathon = {}, isFeatured = false, ...props }) => {
             </span>
 
             <span className="px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 text-xs font-medium">
-              {hackathon.difficulty}
+              {normalizedHackathon.difficulty}
             </span>
 
             {/* FIX 3: Pass computed status to UrgencyBadge */}
             <UrgencyBadge
-              startDate={hackathon.startDate}
-              endDate={hackathon.endDate}
+              startDate={normalizedHackathon.startDate}
+              endDate={normalizedHackathon.endDate}
               status={status}
             />
           </div>
 
           <span className="text-white text-sm font-semibold px-3 py-1 rounded-full bg-black">
-            {hackathon.prize}
+            {normalizedHackathon.prize}
           </span>
         </div>
 
@@ -292,11 +317,11 @@ const HackathonCard = ({ hackathon = {}, isFeatured = false, ...props }) => {
         {/* Title */}
         <div className="min-h-[72px]">
           <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
-            {hackathon.title}
+            {normalizedHackathon.title}
           </h3>
 
           <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 min-h-[40px]">
-            {hackathon.description}
+            {normalizedHackathon.description}
           </p>
         </div>
 
@@ -305,7 +330,7 @@ const HackathonCard = ({ hackathon = {}, isFeatured = false, ...props }) => {
         {/* Organizer */}
         <div className="flex items-center text-gray-600 dark:text-gray-400 text-sm gap-1.5 min-h-[32px]">
           <BuildingLibraryIcon className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-          <span>{hackathon.organizer}</span>
+          <span>{normalizedHackathon.organizer}</span>
         </div>
 
         <div className="border-b border-gray-300 dark:border-gray-700" />
@@ -314,6 +339,7 @@ const HackathonCard = ({ hackathon = {}, isFeatured = false, ...props }) => {
         <div className="flex flex-col gap-3 text-gray-600 dark:text-gray-400 text-sm min-h-[120px]">
           <div className="flex items-center gap-2">
             <CalendarIcon className="w-4 h-4 text-sky-500" />
+<<<<<<< HEAD
             {new Date(hackathon.startDate).toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
@@ -324,14 +350,35 @@ const HackathonCard = ({ hackathon = {}, isFeatured = false, ...props }) => {
               day: "numeric",
               year: "numeric",
             })}
+=======
+
+            {new Date(normalizedHackathon.startDate).toLocaleDateString(
+              "en-US",
+              {
+                month: "short",
+                day: "numeric",
+              }
+            )}{" "}
+            -
+            {" "}
+            {new Date(normalizedHackathon.endDate).toLocaleDateString(
+              "en-US",
+              {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              }
+            )}
+>>>>>>> c6d45bc5b4137eb4e2de65d83593ba9d4842c7e0
           </div>
 
           <div className="flex items-center gap-2">
             <MapPinIcon className="w-4 h-4 text-green-500" />
-            {hackathon.location}
+            {normalizedHackathon.location}
           </div>
 
           {/* FIX 3: Use computed status for countdown logic */}
+<<<<<<< HEAD
           {status === "upcoming" && hackathon.startDate && (
             <CountdownTimer
               targetDate={hackathon.startDate}
@@ -342,6 +389,23 @@ const HackathonCard = ({ hackathon = {}, isFeatured = false, ...props }) => {
           {status === "live" && hackathon.endDate && (
             <CountdownTimer targetDate={hackathon.endDate} label="Ends in" />
           )}
+=======
+          {status === "upcoming" &&
+            normalizedHackathon.startDate && (
+              <CountdownTimer
+                targetDate={normalizedHackathon.startDate}
+                label="Starts in"
+              />
+            )}
+
+          {status === "live" &&
+            normalizedHackathon.endDate && (
+              <CountdownTimer
+                targetDate={normalizedHackathon.endDate}
+                label="Ends in"
+              />
+            )}
+>>>>>>> c6d45bc5b4137eb4e2de65d83593ba9d4842c7e0
         </div>
 
         <div className="border-b border-gray-300 dark:border-gray-700" />
@@ -353,7 +417,11 @@ const HackathonCard = ({ hackathon = {}, isFeatured = false, ...props }) => {
           </h4>
 
           <div className="flex flex-wrap gap-2">
+<<<<<<< HEAD
             {(hackathon.techStack || []).map((tech, index) => (
+=======
+            {normalizedHackathon.techStack.map((tech, index) => (
+>>>>>>> c6d45bc5b4137eb4e2de65d83593ba9d4842c7e0
               <span
                 key={index}
                 className="px-3 py-1 border border-blue-200 dark:border-blue-700 bg-blue-100 dark:bg-blue-900/60 text-gray-800 dark:text-gray-200 text-xs font-medium rounded-full"
@@ -374,7 +442,11 @@ const HackathonCard = ({ hackathon = {}, isFeatured = false, ...props }) => {
           </h4>
 
           <ul className="list-disc list-inside text-xs line-clamp-3 min-h-[60px]">
+<<<<<<< HEAD
             {(hackathon.rules || []).map((rule, index) => (
+=======
+            {normalizedHackathon.rules.map((rule, index) => (
+>>>>>>> c6d45bc5b4137eb4e2de65d83593ba9d4842c7e0
               <li key={index}>{rule}</li>
             ))}
           </ul>
@@ -431,8 +503,8 @@ const HackathonCard = ({ hackathon = {}, isFeatured = false, ...props }) => {
 
           <span className="text-sm text-gray-700 dark:text-gray-300">
             {/* FIX 3: Use computed status for winner display */}
-            {status === "completed" && hackathon.winner
-              ? hackathon.winner
+            {status === "completed" && normalizedHackathon.winner
+              ? normalizedHackathon.winner
               : "Announced soon"}
           </span>
         </div>
@@ -453,14 +525,19 @@ const HackathonCard = ({ hackathon = {}, isFeatured = false, ...props }) => {
           ) : status === "upcoming" ? (
             <div className="grid grid-cols-2 gap-3">
               <button
+<<<<<<< HEAD
                 onClick={() => navigate(`/register/${hackathon.id}`)}
                 className="..."
+=======
+                onClick={() => navigate(`/register/${normalizedHackathon.id}`)}
+                className="px-4 py-2 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white text-sm font-medium rounded-lg"
+>>>>>>> c6d45bc5b4137eb4e2de65d83593ba9d4842c7e0
               >
                 Register
               </button>
 
               <a
-                href={addHackathonToGoogleCalendar(hackathon)}
+                href={addHackathonToGoogleCalendar(normalizedHackathon)}
                 target="_blank"
                 rel="noopener noreferrer"
               >

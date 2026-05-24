@@ -70,7 +70,7 @@ const EventCreation = () => {
     banner: null,
     bannerPreview: null,
   });
-  const [errors, setErrors] = useState("");
+const [errors, setErrors] = useState({});
   const [newTag, setNewTag] = useState("");
   // Track whether draft has been loaded to avoid overwriting on initial mount
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
@@ -452,12 +452,71 @@ const EventCreation = () => {
     }
   }, [successMessage, generalError]);
 
-  useEffect(() => {
-    // Prevent saving before draft is loaded to avoid overwriting existing draft
-    if (!isDraftLoaded) return;
-    const { banner, bannerPreview, ...saveable } = formData;
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
-  }, [formData, isDraftLoaded]);
+useEffect(() => {
+  // Prevent saving before draft restoration
+  if (!isDraftLoaded) return;
+
+  const { banner, bannerPreview, ...saveable } = formData;
+
+  localStorage.setItem(
+    DRAFT_KEY,
+    JSON.stringify(saveable)
+  );
+}, [formData, isDraftLoaded]);
+
+/**
+ * Warn user before accidental refresh,
+ * tab close, or browser close
+ */
+useEffect(() => {
+  const hasUnsavedChanges = Object.entries(formData).some(
+    ([key, value]) => {
+      // Ignore banner fields
+      if (key === "banner" || key === "bannerPreview") {
+        return false;
+      }
+
+      // Handle strings
+      if (typeof value === "string") {
+        return value.trim() !== "";
+      }
+
+      // Handle arrays
+      if (Array.isArray(value)) {
+        return value.length > 0;
+      }
+
+      // Handle objects
+      if (typeof value === "object" && value !== null) {
+        return JSON.stringify(value) !== "{}";
+      }
+
+      // Handle booleans/numbers
+      return Boolean(value);
+    }
+  );
+
+  const handleBeforeUnload = (e) => {
+    if (hasUnsavedChanges) {
+      e.preventDefault();
+
+      // Required for browser warning
+      e.returnValue = "";
+    }
+  };
+
+  window.addEventListener(
+    "beforeunload",
+    handleBeforeUnload
+  );
+
+  return () => {
+    window.removeEventListener(
+      "beforeunload",
+      handleBeforeUnload
+    );
+  };
+}, [formData]);
 
   const resetForm = () => {
     setFormData({

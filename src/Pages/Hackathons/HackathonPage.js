@@ -10,7 +10,28 @@ import { FiCode, FiRotateCw, FiCompass, FiChevronDown } from "react-icons/fi";
 import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
+<<<<<<< HEAD
 import { darkTheme } from "../../components/styles/theme";
+=======
+
+// NEW: Tag component for selected tags in search bar
+const Tag = ({ tag, onRemove }) => (
+  <motion.div
+    initial={{ scale: 0.8, opacity: 0 }}
+    animate={{ scale: 1, opacity: 1 }}
+    exit={{ scale: 0.8, opacity: 0 }}
+    className="flex items-center gap-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-3 py-1 rounded-full text-sm font-medium"
+  >
+    <span>{tag}</span>
+    <button
+      onClick={() => onRemove(tag)}
+      className="hover:bg-indigo-200 dark:hover:bg-indigo-800 rounded-full p-0.5 transition-colors"
+    >
+      <FiX className="w-3 h-3" />
+    </button>
+  </motion.div>
+);
+>>>>>>> c6d45bc5b4137eb4e2de65d83593ba9d4842c7e0
 
 const HackathonHub = () => {
   const [hackathons, setHackathons] = useState([]);
@@ -26,6 +47,7 @@ const HackathonHub = () => {
   });
 
   const [showFilters, setShowFilters] = useState(false);
+  const [sortBy, setSortBy] = useState("newest");
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
   const [selectedTags, setSelectedTags] = useState([]);
@@ -173,6 +195,22 @@ const HackathonHub = () => {
 
       return true;
     });
+
+  const sortHackathons = (list) => {
+    const sorted = [...list];
+    if (sortBy === "deadline") {
+      sorted.sort((a, b) => new Date(a.endDate) - new Date(b.endDate));
+    } else if (sortBy === "popularity") {
+      sorted.sort((a, b) => (b.participants || 0) - (a.participants || 0));
+    } else if (sortBy === "newest") {
+      sorted.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+    } else if (sortBy === "prize") {
+      const parseP = (p) => parseInt((p || "0").replace(/[^0-9]/g, ""), 10);
+      sorted.sort((a, b) => parseP(b.prize) - parseP(a.prize));
+    }
+    return sorted;
+  };
+    const sortedFilteredHackathons = sortHackathons(filteredHackathons);
 
   const featuredHackathons = [...hackathons]
     .filter((h) => h.featured)
@@ -520,7 +558,18 @@ const HackathonHub = () => {
             )}
           </AnimatePresence>
 
+<<<<<<< HEAD
           <div className="flex flex-wrap gap-3">
+=======
+        {/* Tabs */}
+        <motion.div
+          className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0"
+          variants={item}
+          data-aos="fade-up"
+          data-aos-delay="300"
+        >
+        <div className="flex flex-wrap gap-3">
+>>>>>>> c6d45bc5b4137eb4e2de65d83593ba9d4842c7e0
             {[
               { key: "all", label: "All Hackathons" },
               { key: "live", label: "Live Now" },
@@ -546,7 +595,24 @@ const HackathonHub = () => {
               </button>
             ))}
           </div>
+<<<<<<< HEAD
         </div>
+=======
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Sort by:</label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+            >
+              <option value="newest">Newest</option>
+              <option value="deadline">Deadline</option>
+              <option value="popularity">Popularity</option>
+              <option value="prize">Prize Amount</option>
+            </select>
+          </div>
+        </motion.div>
+>>>>>>> c6d45bc5b4137eb4e2de65d83593ba9d4842c7e0
 
         <AnimatePresence mode="wait">
           {isLoading ? (
@@ -561,8 +627,18 @@ const HackathonHub = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
+<<<<<<< HEAD
               {filteredHackathons.map((hackathon) => (
                 <HackathonCard key={hackathon.id} hackathon={hackathon} />
+=======
+              {sortedFilteredHackathons.map((hackathon, index) => (
+                <HackathonCard
+                  key={hackathon.id}
+                  hackathon={hackathon}
+                  data-aos="flip-up"
+                  data-aos-delay={index * 100}
+                />
+>>>>>>> c6d45bc5b4137eb4e2de65d83593ba9d4842c7e0
               ))}
             </motion.div>
           ) : (
