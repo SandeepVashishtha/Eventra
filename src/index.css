@@ -19,18 +19,24 @@
   --bg-color: #ffffff;
   --text-color: #1a1a1a;
   --text-color-light: #4a4a4a;
-  --border-color: #e1e5e9;
+  --border-color: #e2e8f0;
   --card-bg-color: #ffffff;
 
   --scrollbar-track-color: #f1f1f1;
-  --scrollbar-thumb-color: #000000;
-  --scrollbar-thumb-hover-color: #262626;
+  --scrollbar-thumb-color: #cbd5e1;
+  --scrollbar-thumb-hover-color: #94a3b8;
 
   --btn-secondary-text: #4a4a4a;
 
-  /* Additional Light Theme Variables */
+  /* Additional Light Theme Variables & SaaS Aesthetics */
   --navbar-bg: #ffffff;
-  --sidebar-bg: #f9fafb;
+  --sidebar-bg: #f8fafc;
+  --bg-gradient: linear-gradient(135deg, #f0f4f8 0%, #ffffff 100%);
+  --bg-secondary: #f8fafc;
+  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --card-border: 1px solid #eef2f6;
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
 
   --input-bg: #ffffff;
   --input-text: #1a1a1a;
@@ -85,11 +91,29 @@
   /* Additional Dark Theme Colors */
   --navbar-bg: #111827;
   --sidebar-bg: #0f172a;
+  --border-color: #1e293b;
+  --card-bg-color: #1e293b;
+
+  --scrollbar-track-color: #0f172a;
+  --scrollbar-thumb-color: #334155;
+  --scrollbar-thumb-hover-color: #475569;
+
+  --btn-secondary-text: #f1f5f9;
+
+  /* Additional Dark Theme Colors & SaaS Aesthetics */
+  --navbar-bg: #1e293b;
+  --sidebar-bg: #0f172a;
+  --bg-gradient: linear-gradient(135deg, #0b0f19 0%, #0f172a 100%);
+  --bg-secondary: #0f172a;
+  --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --card-border: 1px solid #334155;
+  --color-primary: #60a5fa;
+  --color-primary-hover: #3b82f6;
 
   --input-bg: #1e293b;
   --input-text: #f8fafc;
 
-  --table-bg: #111827;
+  --table-bg: #1e293b;
   --modal-bg: #1e293b;
 }
 
@@ -97,6 +121,13 @@
 html {
   scroll-behavior: auto;
   font-size: 16px; /* Explicit root size for reliable rem calculations */
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 0;
 }
 
 /* Lenis smooth scrolling styles */
@@ -124,6 +155,8 @@ body {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
     "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: var(--lh-body);
@@ -133,6 +166,53 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
   font-size: var(--font-body);
   font-weight: var(--fw-regular);
+}
+
+img,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+main,
+section,
+article,
+header,
+footer,
+aside {
+  min-width: 0;
+.dark {
+  color-scheme: dark;
+}
+
+/* Fix unreadable text */
+.dark p,
+.dark span,
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6,
+.dark label,
+.dark li,
+.dark a {
+  color: inherit;
+}
+
+/* Placeholder text fix */
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #94a3b8;
+}
+
+/* Better default text colors */
+.dark body {
+  color: #f8fafc;
+  background-color: #0f172a;
 }
 .dark .pastel-grid-bg {
   /* Use a solid dark background in dark mode and remove the light pastel grid image
@@ -175,7 +255,7 @@ code {
 .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
 .section-padding { padding: 80px 0; }
 .text-gradient {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--text-color) 0%, var(--text-color-light) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -183,7 +263,7 @@ code {
 
 /* Buttons */
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #5a67d8 100%);
+  background: var(--color-primary);
   color: white;
   padding: 12px 32px;
   border: none;
@@ -199,6 +279,8 @@ code {
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+  background: var(--color-primary-hover);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
   color: #ffffff;
 }
 
@@ -219,6 +301,8 @@ code {
 .btn-secondary:hover {
   border-color: #667eea;
   color: #667eea;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
   transform: translateY(-2px);
 }
 
@@ -234,9 +318,23 @@ code {
 
   }
 
-  .container { padding: 0 16px; }
+  .container {
+    width: min(100%, calc(100% - 1.5rem));
+    padding: 0 16px;
+  }
   .section-padding { padding: 60px 0; }
   .btn-primary, .btn-secondary { padding: 10px 24px; font-size: 0.875rem; }
+}
+
+@media (max-width: 640px) {
+  .section-padding {
+    padding: 48px 0;
+  }
+
+  .container {
+    width: min(100%, calc(100% - 1rem));
+    padding: 0 14px;
+  }
 }
 
 /* Issue #862: keep mobile and coarse-pointer controls comfortable to tap. */
@@ -441,6 +539,9 @@ select,
     border-color 0.3s ease,
     box-shadow 0.3s ease;
 }
+.dark * {
+  border-color: var(--border-color);
+}
 
 /* Reusable Theme Utility Classes */
 
@@ -535,57 +636,3 @@ select,
       0.5
     );
 }
-
-/* =========================================
-   Premium Theme Transition Engine
-   ========================================= */
-body, 
-button, 
-input, 
-textarea, 
-select, 
-a, 
-div, 
-span, 
-header, 
-nav, 
-table, 
-tr, 
-td, 
-th,
-article,
-section {
-  transition: background-color 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), 
-              color 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), 
-              border-color 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), 
-              box-shadow 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
-}
-
-/* Theme accent highlights overrides */
-.theme-nova-cyberpunk button.bg-blue-600,
-.theme-nova-cyberpunk .btn-primary {
-  background: var(--accent-gradient) !important;
-  box-shadow: 0 4px 14px rgba(236, 72, 153, 0.3);
-  border: none;
-}
-
-.theme-forest-mint button.bg-blue-600,
-.theme-forest-mint .btn-primary {
-  background: var(--accent-gradient) !important;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
-  border: none;
-}
-
-.theme-sunset-amber button.bg-blue-600,
-.theme-sunset-amber .btn-primary {
-  background: var(--accent-gradient) !important;
-  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
-  border: none;
-}
-
-.theme-dracula-classic button.bg-blue-600,
-.theme-dracula-classic .btn-primary {
-  background: var(--accent-gradient) !important;
-  box-shadow: 0 4px 14px rgba(189, 147, 249, 0.3);
-  border: none;
-}

@@ -13,7 +13,6 @@ import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
 import ThemeCustomizerDrawer from "./components/common/ThemeCustomizerDrawer";
 
 import RegistrationPage from "./Pages/RegistrationPage";
-import NotFoundPage from "./Pages/NotFoundPage";
 
 import NotificationToastContainer from "./components/common/NotificationProvider";
 import { NotificationProvider } from "./context/NotificationContext";

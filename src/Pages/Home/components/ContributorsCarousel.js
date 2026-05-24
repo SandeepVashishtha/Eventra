@@ -59,6 +59,7 @@ const Contributors = () => {
   const sectionRef = useRef(null);
 
   useEffect(() => {
+    const target = sectionRef.current;
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -70,12 +71,10 @@ const Contributors = () => {
       { threshold: 0.4 } // 40% of section must be visible
     );
 
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
+    if (target) observer.observe(target);
 
     return () => {
-      if (sectionRef.current) observer.unobserve(sectionRef.current);
+      if (target) observer.unobserve(target);
     };
   }, []);
 
@@ -178,11 +177,11 @@ const Contributors = () => {
     fetchContributors();
   }, [fetchContributors]);
 
-  const nextSlide = () => {
+  const nextSlide = useCallback(() => {
     setCurrentIndex((prev) =>
       prev + itemsPerView >= contributors.length ? 0 : prev + itemsPerView
     );
-  };
+  }, [contributors.length, itemsPerView]);
 
   const prevSlide = () => {
     setCurrentIndex((prev) =>
@@ -200,7 +199,7 @@ const Contributors = () => {
     }, 5000); // Auto-slide every 5 seconds
 
     return () => clearInterval(interval);
-  }, [contributors.length, itemsPerView, currentIndex]);
+  }, [contributors.length, itemsPerView, currentIndex, nextSlide]);
 
   // UPDATED: Loading text color
   if (loading)

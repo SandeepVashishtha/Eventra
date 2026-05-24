@@ -26,6 +26,17 @@
   height: 100%;
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
 }
+.dark .not-found {
+  background: #111827;
+}
+
+.dark .not-found-gradient {
+  background: linear-gradient(
+    135deg,
+    rgba(79, 70, 229, 0.12) 0%,
+    rgba(124, 58, 237, 0.12) 100%
+  );
+}
 
 .floating-icon {
   position: absolute;
@@ -145,6 +156,18 @@
   transform: translateY(-5px);
   animation: floatCard 1.2s ease-in-out;
 }
+.dark .suggestion-card {
+  background: rgba(31, 41, 55, 0.9);
+  border: 1px solid #374151;
+}
+
+.dark .suggestion-card h4 {
+  color: #f9fafb;
+}
+
+.dark .card-category {
+  color: #a5b4fc;
+}
 
 .card-category {
   font-size: 0.8rem;
@@ -216,6 +239,18 @@
   padding: 0 1.5rem;
   cursor: pointer;
 }
+.dark .search-container {
+  background: #1f2937;
+  border: 1px solid #374151;
+}
+
+.dark .search-container input {
+  color: #f9fafb;
+}
+
+.dark .search-container input::placeholder {
+  color: #9ca3af;
+}
 
 .button {
   display: inline-block;
@@ -261,6 +296,18 @@
   color: #5a189a;
   border-color: #5a189a;
   transform: translateY(-2px) scale(1.04);
+}
+.dark .button-secondary {
+  background: #1f2937;
+  color: #c4b5fd;
+  border-color: #8b5cf6;
+}
+
+.dark .button-secondary:hover,
+.dark .button-secondary:focus {
+  background: #7c3aed;
+  color: #ffffff;
+  border-color: #7c3aed;
 }
 
 @keyframes floatCard {
