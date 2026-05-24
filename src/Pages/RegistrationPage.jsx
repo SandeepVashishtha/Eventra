@@ -8,7 +8,7 @@ import { toast } from "react-toastify";
 import {
   isAlreadyRegistered,
   saveRegistration,
-} from "../utils/registrationUtils";
+} from "../utils/registerUtils";
 const RegistrationPage = () => {
   useDocumentTitle("Eventra | Registration");
   const navigate = useNavigate();
