@@ -84,13 +84,13 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
     );
   }
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1">
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={toggleTheme}
         title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group cursor-pointer"
+        className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group cursor-pointer"
       >
         <motion.span
           key={isDarkMode ? "sun" : "moon"}
@@ -102,9 +102,6 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
         >
           {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </motion.span>
-        <span className="text-[10px] font-bold tracking-widest text-zinc-500 dark:text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 uppercase">
-          {isDarkMode ? "LIGHT" : "DARK"}
-        </span>
       </motion.button>
 
       <motion.button
@@ -112,7 +109,7 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
         whileTap={{ scale: 0.92 }}
         onClick={() => setIsCustomizerOpen(true)}
         title="Open Theme Customizer"
-        className="flex items-center justify-center p-2 rounded-full transition-all duration-300 focus:outline-none bg-gradient-to-r from-indigo-500/10 to-pink-500/10 hover:from-indigo-500/20 hover:to-pink-500/20 border border-indigo-200/50 dark:border-indigo-800/40 hover:shadow-[0_0_12px_rgba(236,72,153,0.3)] text-indigo-550 dark:text-indigo-400 cursor-pointer"
+        className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 focus:outline-none bg-gradient-to-r from-indigo-500/10 to-pink-500/10 hover:from-indigo-500/20 hover:to-pink-500/20 border border-indigo-200/50 dark:border-indigo-800/40 hover:shadow-[0_0_12px_rgba(236,72,153,0.3)] text-indigo-550 dark:text-indigo-400 cursor-pointer"
       >
         <Palette className="w-4 h-4 animate-pulse text-indigo-500 dark:text-indigo-400" />
       </motion.button>
@@ -139,20 +136,11 @@ const CursorToggleButton = ({ cursorEnabled, toggleCursor, isMobile }) => {
       whileTap={{ scale: 0.95 }}
       onClick={toggleCursor}
       title={cursorEnabled ? "Disable Fluid Cursor" : "Enable Fluid Cursor"}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group"
+      className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group"
     >
-      {cursorEnabled ? (
-        <MousePointer className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
-      ) : (
-        <MousePointer className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
-      )}
-      <span className={`text-[10px] font-bold tracking-widest uppercase ${
-        cursorEnabled
-          ? "text-indigo-500 dark:text-indigo-400"
-          : "text-zinc-400 dark:text-zinc-500"
-      }`}>
-        {cursorEnabled ? "FLUID" : "STATIC"}
-      </span>
+      <MousePointer className={`w-4 h-4 ${
+        cursorEnabled ? "text-indigo-500 dark:text-indigo-400" : "text-zinc-400 dark:text-zinc-500"
+      }`} />
     </motion.button>
   );
 };
@@ -236,7 +224,7 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
 const DesktopNavLink = ({ item, isActive }) => (
   <Link
     to={item.href}
-    className={`relative group text-[13px] xl:text-[14px] font-medium transition-all duration-200 whitespace-nowrap px-3.5 py-1.5 rounded-lg ${
+    className={`relative group text-[12px] xl:text-[13px] font-medium transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-lg ${
       isActive
         ? "text-indigo-600 dark:text-indigo-400 font-semibold"
         : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
@@ -266,7 +254,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
   <div className="relative">
     <button
       onClick={onToggle}
-      className={`relative group flex items-center gap-1.5 text-[13px] xl:text-[14px] font-medium transition-all duration-200 whitespace-nowrap px-3.5 py-1.5 rounded-lg ${
+      className={`relative group flex items-center gap-1 text-[12px] xl:text-[13px] font-medium transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-lg ${
         isActive || isOpen
           ? "text-indigo-600 dark:text-indigo-400 font-semibold"
           : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
@@ -444,23 +432,21 @@ const MobileUserSection = ({
   </div>
 );
 
-// Top-level nav items kept lean so they never overflow at xl (1280px+).
-// About / FAQ / Contact are grouped under "More" to prevent collisions.
 const NAV_ITEMS = [
-  { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
-  { name: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
-  { name: "Bookmarks", href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
-  { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
-  { name: "Hackathons", href: "/hackathons", icon: <Trophy className="w-5 h-5" /> },
-  { name: "Projects", href: "/projects", icon: <FolderKanban className="w-5 h-5" /> },
+  { name: "Home",       href: "/",           icon: <Home         className="w-5 h-5" /> },
+  { name: "Events",     href: "/events",     icon: <Calendar     className="w-5 h-5" /> },
+  { name: "Bookmarks",  href: "/bookmarks",  icon: <Bookmark     className="w-5 h-5" /> },
+  { name: "Reminders",  href: "/reminders",  icon: <Bell         className="w-5 h-5" /> },
+  { name: "Hackathons", href: "/hackathons", icon: <Trophy       className="w-5 h-5" /> },
+  { name: "Projects",   href: "/projects",   icon: <FolderKanban className="w-5 h-5" /> },
   {
     name: "Community",
     icon: <Users className="w-5 h-5" />,
     subItems: [
-      { name: "Leaderboard",       href: "/leaderBoard",    icon: <Trophy       className="w-5 h-5" /> },
-      { name: "Contributors",      href: "/contributors",   icon: <Users        className="w-5 h-5" /> },
-      { name: "Contributors Guide",href: "/contributorguide",icon: <Book        className="w-5 h-5" /> },
-      { name: "Community Events",  href: "/communityEvent", icon: <Users        className="w-5 h-5" /> },
+      { name: "Leaderboard",        href: "/leaderBoard",     icon: <Trophy       className="w-5 h-5" /> },
+      { name: "Contributors",       href: "/contributors",    icon: <Users        className="w-5 h-5" /> },
+      { name: "Contributors Guide", href: "/contributorguide",icon: <Book         className="w-5 h-5" /> },
+      { name: "Community Events",   href: "/communityEvent",  icon: <Users        className="w-5 h-5" /> },
     ],
   },
   {
@@ -500,8 +486,7 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
 const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   const location = useLocation();
   return (
-    // gap-4 keeps items from crowding; flex-1 lets this section grow/shrink naturally
-    <div className="hidden lg:flex items-center justify-center gap-4 2xl:gap-6 flex-1 min-w-0">
+    <div className="hidden lg:flex items-center justify-center gap-0.5 xl:gap-1 flex-1 min-w-0">
       <NavList 
         location={location} 
         openDropdown={openDropdown} 
@@ -738,13 +723,9 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowCommandPalette(true)}
               title="Open Command Palette (⌘K)"
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group mr-1"
+              className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group"
             >
               <Search className="w-4 h-4 text-zinc-500 dark:text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400" />
-              <div className="flex items-center gap-0.5 text-[9px] font-black tracking-widest text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 uppercase">
-                <span>⌘</span>
-                <span>K</span>
-              </div>
             </motion.button>
 
             <ThemeToggleButton
