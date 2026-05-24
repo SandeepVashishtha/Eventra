@@ -25,9 +25,9 @@ const LEADERBOARD_CACHE_KEY = "leaderboardData:v2";
 
 // Points mapping for PR labels (keeps scoring logic centralized)
 const POINTS = {
-  level1: 3,
-  level2: 7,
-  level3: 10,
+  gssoclevel1: 3,
+  gssoclevel2: 7,
+  gssoclevel3: 10,
 };
 const DEFAULT_MERGED_PR_POINTS = 1;
 
