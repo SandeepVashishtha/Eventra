@@ -11,6 +11,7 @@ import mockProjects from "./mockProjectsData.json";
 
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
+import { apiUtils, API_ENDPOINTS } from "../../config/api";
 
 const ProjectGallery = () => {
   const [projects, setProjects] = useState([]);
@@ -39,22 +40,31 @@ const ProjectGallery = () => {
         setIsLoading(true);
         setError("");
 
-        setTimeout(() => {
+        const response = await apiUtils.get(API_ENDPOINTS.PROJECTS.ALL);
+        const projectsData = response.data;
+
+        setProjects(projectsData);
+
+        const uniqueCategories = [
+          ...new Set(projectsData.map((p) => p.category)),
+        ];
+        setCategories(["all", ...uniqueCategories]);
+      } catch (err) {
+        console.error("Error fetching projects:", err);
+
+        // Fall back to mock data in development so local work is unaffected
+        if (process.env.NODE_ENV === "development") {
+          console.warn("API unavailable — falling back to mock project data.");
           const projectsData = mockProjects;
-
           setProjects(projectsData);
-
           const uniqueCategories = [
             ...new Set(projectsData.map((p) => p.category)),
           ];
-
           setCategories(["all", ...uniqueCategories]);
-
-          setIsLoading(false);
-        }, 500);
-      } catch (err) {
-        console.error("Error fetching projects:", err);
-        setError("Failed to load projects. Please try again later.");
+        } else {
+          setError("Failed to load projects. Please try again later.");
+        }
+      } finally {
         setIsLoading(false);
       }
     };
