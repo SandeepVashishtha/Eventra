@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertTriangle, Clock, Calendar, X, ArrowRight } from 'lucide-react';
-import { formatTimeRange } from '../../utils/conflictDetection';
+import { formatTimeRange } from '../utils/conflictDetection';
 
 /**
  * EventConflictModal

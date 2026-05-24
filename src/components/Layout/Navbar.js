@@ -729,7 +729,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         onClick={closeAllMenus}
       />
 
-      <nav
+
 
   ref={navRef}
   data-aos="fade-down"
