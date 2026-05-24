@@ -99,6 +99,13 @@ html {
   font-size: 16px; /* Explicit root size for reliable rem calculations */
 }
 
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 0;
+}
+
 /* Lenis smooth scrolling styles */
 html.lenis {
   height: auto;
@@ -124,6 +131,8 @@ body {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
     "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: var(--lh-body);
@@ -133,6 +142,24 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
   font-size: var(--font-body);
   font-weight: var(--fw-regular);
+}
+
+img,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+main,
+section,
+article,
+header,
+footer,
+aside {
+  min-width: 0;
 }
 .dark .pastel-grid-bg {
   /* Use a solid dark background in dark mode and remove the light pastel grid image
@@ -172,7 +199,11 @@ code {
 ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover-color); }
 
 /* Utilities */
-.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+.container {
+  width: min(1200px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 0 24px;
+}
 .section-padding { padding: 80px 0; }
 .text-gradient {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -234,9 +265,23 @@ code {
 
   }
 
-  .container { padding: 0 16px; }
+  .container {
+    width: min(100%, calc(100% - 1.5rem));
+    padding: 0 16px;
+  }
   .section-padding { padding: 60px 0; }
   .btn-primary, .btn-secondary { padding: 10px 24px; font-size: 0.875rem; }
+}
+
+@media (max-width: 640px) {
+  .section-padding {
+    padding: 48px 0;
+  }
+
+  .container {
+    width: min(100%, calc(100% - 1rem));
+    padding: 0 14px;
+  }
 }
 
 /* Issue #862: keep mobile and coarse-pointer controls comfortable to tap. */
@@ -588,4 +633,4 @@ section {
   background: var(--accent-gradient) !important;
   box-shadow: 0 4px 14px rgba(189, 147, 249, 0.3);
   border: none;
-}
+}
