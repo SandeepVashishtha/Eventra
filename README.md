@@ -164,8 +164,10 @@ Eventra/
 │   │   ├── styles/
 │   │   └── user/
 │   ├── config/
-│   ├── context/
 │   ├── jhalak/
+│   │   ├── FluidCursor.js   # Fluid cursor animation effect (navbar)
+│   │   └── RespawningText.js # Animated respawning/typewriter text effect
+│   ├── context/
 │   ├── Pages/
 │   ├── utils/
 │   ├── App.js
