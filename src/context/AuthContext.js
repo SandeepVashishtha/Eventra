@@ -52,15 +52,14 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, [clearSession]);
 
+
   // --- Global 401 handler ---
   // Register a callback so that any API call receiving a 401 Unauthorized
   // response automatically clears the session. This prevents "zombie"
   // authenticated states where the frontend thinks the user is logged in
   // but every backend call fails silently.
   useEffect(() => {
-    setOnUnauthorizedHandler(() => {
-      clearSession();
-    });
+    setOnUnauthorizedHandler(clearSession);
 
     // Cleanup on unmount
     return () => setOnUnauthorizedHandler(null);
