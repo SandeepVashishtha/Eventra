@@ -15,6 +15,7 @@ import PageTransition from "./components/common/PageTransition";
 import ReminderChecker from "./components/reminders/ReminderChecker";
 import ScrollProgressBar from "./components/common/ScrollProgressBar";
 import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
+import ThemeCustomizerDrawer from "./components/common/ThemeCustomizerDrawer";
 
 /* =========================
    Pages
@@ -156,6 +157,8 @@ function App() {
                     isOpen={showKeyboardModal}
                     onClose={() => setShowKeyboardModal(false)}
                   />
+
+                  <ThemeCustomizerDrawer />
 
                   <main
                     className="
