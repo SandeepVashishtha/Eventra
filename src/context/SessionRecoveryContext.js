@@ -72,6 +72,7 @@ export const SessionRecoveryProvider = ({ children }) => {
         const isValidTimestamp =
           parsed &&
           parsed.timestamp &&
+          parsed.timestamp &&
           typeof parsed.timestamp === 'number' &&
           !isNaN(parsed.timestamp);
 
@@ -130,12 +131,6 @@ export const SessionRecoveryProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    const handleBeforeUnload = () => {};
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, []);
-
-  useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
       const inactiveTime = now - lastActivityRef.current;
@@ -149,9 +144,11 @@ export const SessionRecoveryProvider = ({ children }) => {
   }, [hasSession, clearSession]);
 
   useEffect(() => {
+    const saveTimeout = saveTimeoutRef.current;
+    const activityTimeout = activityTimeoutRef.current;
     return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      if (activityTimeoutRef.current) clearTimeout(activityTimeoutRef.current);
+      if (saveTimeout) clearTimeout(saveTimeout);
+      if (activityTimeout) clearTimeout(activityTimeout);
     };
   }, []);
 
