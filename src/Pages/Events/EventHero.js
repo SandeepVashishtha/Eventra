@@ -121,17 +121,8 @@ export default function EventHero({
   }}>
       <div className="relative px-4 flex flex-col items-center justify-center text-center z-10">
         <h1
-          className={`
-            text-3xl sm:text-4xl md:text-5xl lg:text-6xl
-            font-extrabold
-            leading-tight
-            px-4 sm:px-0
-            ${darkTheme.textPrimary}
-          `}
-          style={{
-            fontFamily:
-              '"Big Shoulders Display", sans-serif',
-          }}
+          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight px-4 sm:px-0 text-slate-900 dark:text-white drop-shadow-sm"
+          style={{ fontFamily: '"Big Shoulders Display", sans-seri' }}
         >
           Discover{" "}
           <span className="text-blue-600 dark:text-blue-500">
@@ -139,22 +130,10 @@ export default function EventHero({
           </span>
         </h1>
 
-        <p
-          className={`
-            mt-4
-            text-sm sm:text-base md:text-lg
-            ${darkTheme.textSecondary}
-            max-w-2xl
-            mx-auto
-            px-4 sm:px-0
-          `}
-        >
-          Discover exciting events, compete with
-          talented participants, learn new skills,
-          and{" "}
-          <span
-            className={`font-semibold ${darkTheme.textPrimary}`}
-          >
+        <p className="mt-4 text-sm sm:text-base md:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto px-4 sm:px-0">
+          Discover exciting events, compete with talented participants, learn
+          new skills, and{" "}
+          <span className="font-semibold text-gray-900 dark:text-white">
             win rewards
           </span>
           .
@@ -362,6 +341,7 @@ export default function EventHero({
                 </span>
               ))}
             </div>
+            </div>
 
             <span
               className={`
@@ -380,50 +360,63 @@ export default function EventHero({
           </div>
         </div>
 
-        <div className="mt-8 sm:mt-12 flex justify-center gap-3 sm:gap-5 flex-wrap px-4 sm:px-0">
-          <button
-            className={`
-              relative
-              px-5 sm:px-7
-              py-2.5 sm:py-3.5
-              rounded-2xl
-              text-sm sm:text-base
-              font-semibold
-              overflow-hidden
-              group
-              transition-all duration-300
-              ${darkTheme.buttonPrimary}
-            `}
-            onClick={scrollToCard}
+        <div
+             className="
+             mt-8 sm:mt-12
+             flex flex-col sm:flex-row
+             items-center
+             justify-center
+             gap-4
+             w-auto   
+             px-4
+             "
           >
-            <span className="relative flex items-center">
-              <Sparkles className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-              Explore Events
-            </span>
-          </button>
+    <button
+      className={`
+      relative
+      w-full sm:w-auto
+      min-w-[220px]
+      px-6 sm:px-7
+      py-3 sm:py-3.5
+      rounded-2xl
+      text-sm sm:text-base
+      font-semibold
+      overflow-hidden
+      group
+      transition-all duration-300
+      flex items-center justify-center
+      ${darkTheme.buttonPrimary}
+    `}
+    onClick={scrollToCard}
+  >
+    <span className="relative flex items-center justify-center">
+      <Sparkles className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+      Explore Events
+    </span>
+  </button>
 
-          <button
-            onClick={() =>
-              navigate("/create-event")
-            }
-            className={`
-              relative
-              px-5 sm:px-7
-              py-2.5 sm:py-3.5
-              rounded-2xl
-              text-sm sm:text-base
-              font-medium
-              transition-all duration-300
-              ${darkTheme.buttonSecondary}
-            `}
-          >
-            <span className="relative flex items-center">
-              <Users className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-              Host an Event
-            </span>
-          </button>
-        </div>
-      </div>
+  <button
+    onClick={() => navigate("/create-event")}
+    className={`
+      relative
+      w-full sm:w-auto
+      min-w-[220px]
+      px-6 sm:px-7
+      py-3 sm:py-3.5
+      rounded-2xl
+      text-sm sm:text-base
+      font-medium
+      transition-all duration-300
+      flex items-center justify-center
+      ${darkTheme.buttonSecondary}
+    `}
+  >
+    <span className="relative flex items-center justify-center">
+      <Users className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+      Host an Event
+    </span>
+  </button>
+</div>
 
       {searchQuery.trim() === "" && (
         <div

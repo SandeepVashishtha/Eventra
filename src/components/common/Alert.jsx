@@ -5,7 +5,7 @@ const ALERT_CONFIG = {
   success: {
     icon: CheckCircle,
     container: "border-green-200 bg-green-50 dark:border-green-700 dark:bg-green-900/40",
-    icon: "text-green-500 dark:text-green-400",
+    iconColor: "text-green-500 dark:text-green-400",
     title: "text-green-800 dark:text-green-200",
     message: "text-green-700 dark:text-green-300",
   },

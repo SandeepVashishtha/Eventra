@@ -14,6 +14,12 @@
   --ud-space-md: 1rem;
   --ud-space-lg: 1.5rem;
   --ud-space-xl: 2rem;
+   /* Theme Colors */
+  --card-bg-color: #ffffff;
+  --border-color: #e5e7eb;
+  --text-color: #111827;
+  --text-color-light: #6b7280;
+  --hover-bg: #f9fafb;
 }
 
 .dark .ud-root {
@@ -21,6 +27,7 @@
   --border-color: rgba(148, 163, 184, 0.18);
   --text-color: #f8fafc;
   --text-color-light: #cbd5e1;
+  --hover-bg: rgba(255, 255, 255, 0.05);
 }
 
 /* Dark mode root */
@@ -92,9 +99,9 @@
 }
 
 .ud-nav-item:hover {
-  background: #f3f4f6;
+  background: var(--hover-bg);
   color: var(--text-color);
-  border-color: #e5e7eb;
+  border-color: var(--border-color);
 }
 
 .dark .ud-nav-item:hover {
@@ -212,8 +219,8 @@
   display: flex;
   align-items: center;
   border-radius: 12px;
-  background: #f9fafb;
-  border: 1.5px solid #e5e7eb;
+  background: var(--card-bg-color);
+  border: 1.5px solid var(--border-color);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -301,7 +308,9 @@
 }
 
 .ud-icon-btn:hover {
-  background: #f3f4f6;
+  
+  background: var(--hover-bg);
+
   color: #6366f1;
   transform: scale(1.05);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
@@ -438,6 +447,8 @@
   flex-direction: column;
   gap: var(--ud-space-lg);
   flex: 1;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 /* ── Section titles ── */
@@ -706,7 +717,7 @@
   transition: background 0.15s;
 }
 
-.ud-list-item:hover { background: #f9fafb; }
+.ud-list-item:hover {  background: var(--hover-bg);; }
 
 .dark .ud-list-item {
   border-color: rgba(148, 163, 184, 0.14);
@@ -961,7 +972,7 @@
 /* removed dark mode override (handled by CSS variables) */
 
 .ud-table thead tr {
-  background: #f9fafb;
+  background: var(--hover-bg);
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -1013,7 +1024,7 @@
 
 .ud-table tbody tr:last-child td { border-bottom: none; }
 
-.ud-table tbody tr:hover td { background: #f9fafb; }
+.ud-table tbody tr:hover td { background: var(--hover-bg) ; }
 
 /* removed dark mode override (handled by CSS variables) */
 
