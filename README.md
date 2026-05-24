@@ -45,6 +45,7 @@ This repository contains the React frontend application for Eventra. The backend
 
 - **Base URL**: [https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net](https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net)
 - **Swagger**: [https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html](https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html)
+- Capacity and registration availability endpoints are documented in Swagger UI.
 
 
 ## Project Insights
@@ -164,8 +165,10 @@ Eventra/
 │   │   ├── styles/
 │   │   └── user/
 │   ├── config/
-│   ├── context/
 │   ├── jhalak/
+│   │   ├── FluidCursor.js   # Fluid cursor animation effect (navbar)
+│   │   └── RespawningText.js # Animated respawning/typewriter text effect
+│   ├── context/
 │   ├── Pages/
 │   ├── utils/
 │   ├── App.js
