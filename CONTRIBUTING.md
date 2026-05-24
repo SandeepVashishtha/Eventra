@@ -55,24 +55,28 @@ You can help improve Eventra in several ways:
 
 1. **Fork the Repository**
    ```bash
-   git fork https://github.com/SandeepVashishtha/Eventra.git
+   git clone https://github.com/SandeepVashishtha/Eventra.git
    cd Eventra
+   ```
 2. Create a Feature Branch
-```bash
-git checkout -b feature/amazing-feature
-```
+   ```bash
+   git checkout -b feature/amazing-feature
+   ```
 3. Make Your Changes
-Follow the code standards and test your changes locally.
+   Follow the code standards and test your changes locally.
 4. Commit Your Changes
-```bash
-git commit -m "feat: add amazing feature"
-```
+   ```bash
+   git commit -m "feat: add amazing feature"
+   ```
+
+   **Pro tip:** Use a clear branch name and keep each branch scoped to one issue.
+
 5. Push to Your Branch
-```bash
-git push origin feature/amazing-feature
-```
+   ```bash
+   git push origin feature/amazing-feature
+   ```
 6. Open a Pull Request
-Submit a PR with a clear description of your changes.
+   Submit a PR with a clear description of your changes.
 
 ## 🧩 Code Standards  
 
