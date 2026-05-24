@@ -7,6 +7,10 @@
   background: var(--bg-gradient);
   padding: 20px;
 }
+.dark .auth-container,
+.dark .loading-container {
+  color: #f8fafc;
+}
 
 /* Authentication Card */
 .auth-card {
@@ -19,6 +23,11 @@
   max-width: 500px;
   color: var(--text-color);
   animation: slideUp 0.6s ease-out;
+}
+
+.dark .auth-card {
+  background: #1e293b;
+  color: #f8fafc;
 }
 
 @keyframes slideUp {
@@ -50,6 +59,13 @@
   font-size: 1rem;
   margin: 0;
 }
+.dark .auth-header h2 {
+  color: #f8fafc;
+}
+
+.dark .auth-header p {
+  color: #cbd5e0;
+}
 
 /* Form Styles */
 .auth-form {
@@ -75,6 +91,9 @@
   font-weight: 600;
   font-size: 0.95rem;
 }
+.dark .form-group label {
+  color: #f1f5f9;
+}
 
 .form-group input {
   padding: 12px 16px;
@@ -85,12 +104,24 @@
   background-color: var(--input-bg);
   color: var(--input-text);
 }
+.dark .form-group input {
+  background-color: #111827;
+  border-color: #374151;
+  color: #f9fafb;
+}
+
+.dark .form-group input::placeholder {
+  color: #9ca3af;
+}
 
 .form-group input:focus {
   outline: none;
   border-color: var(--color-primary);
   background-color: var(--input-bg);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+.dark .form-group input:focus {
+  background-color: #1e293b;
 }
 
 .form-group input:disabled {
@@ -114,12 +145,21 @@
   color: var(--input-text);
   cursor: pointer;
 }
+.dark .role-select {
+  background-color: #111827;
+  border-color: #374151;
+  color: #f9fafb;
+}
+
 
 .role-select:focus {
   outline: none;
   border-color: var(--color-primary);
   background-color: var(--input-bg);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+.dark .role-select:focus {
+  background-color: #1e293b;
 }
 
 .role-select:disabled {
@@ -191,10 +231,16 @@
   padding-top: 24px;
   border-top: 1px solid var(--border-color);
 }
+.dark .auth-footer {
+  border-top-color: #374151;
+}
 
 .auth-footer p {
   color: var(--text-color-light);
   margin: 0;
+}
+.dark .auth-footer p {
+  color: #cbd5e0;
 }
 
 .auth-link {
@@ -290,6 +336,10 @@
   font-size: 1.2rem;
   color: var(--text-color);
   animation: pulse 2s infinite;
+}
+.dark .loading-spinner {
+  background: #1e293b;
+  color: #f8fafc;
 }
 
 @keyframes pulse {

@@ -124,6 +124,7 @@ main {
   background: var(--bg-gradient);
   color: var(--text-color);
   min-height: 100vh;
+  color: white;
 }
 
 .events-section .container {
@@ -389,6 +390,15 @@ main {
   border-color: var(--color-primary);
   color: var(--color-primary);
   transform: translateY(-1px);
+}
+.dark .btn-outline {
+  background: #374151;
+  color: #f3f4f6;
+  border-color: #6b7280;
+}
+
+.dark .btn-outline:hover {
+  background: #4b5563;
 }
 
 .no-events {
@@ -745,6 +755,12 @@ main {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
+.dark .filter-select,
+.dark .sort-select {
+  background: rgba(31, 41, 55, 0.9);
+  color: #f9fafb;
+  border-color: rgba(255,255,255,0.2);
+}
 
 .filter-select option,
 .sort-select option {
@@ -1049,10 +1065,17 @@ main {
 }
 
 .mission-text-column .main-heading {
-  color: #000000;
+  
   font-size: 3rem;
   font-weight: 700;
   margin-bottom: 24px;
+}
+.mission-text-column .main-heading {
+  color: #111827;
+}
+
+.dark .mission-text-column .main-heading {
+  color: #ffffff;
 }
 
 :is(.dark) .mission-text-column .main-heading {
@@ -1065,7 +1088,9 @@ main {
   line-height: 1.6;
   margin-bottom: 20px;
 }
-
+.dark .mission-text-column .desc-text {
+  color: #d1d5db;
+}
 :is(.dark) .mission-text-column .desc-text {
   color: #8a99ad;
 }
@@ -1109,7 +1134,14 @@ main {
   font-size: 3rem;
   font-weight: 700;
   letter-spacing: 0.05em;
-  color: #000000;
+  
+}
+.eventra-brand-card h1 {
+  color: #111827;
+}
+
+.dark .eventra-brand-card h1 {
+  color: #ffffff;
 }
 
 :is(.dark) .eventra-brand-card h1 {
@@ -1140,6 +1172,9 @@ main {
   transform: translate(0, 0) scale(0.6);
   transition: transform 0.75s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.6s ease;
 }
+.dark .eventra-sub-card {
+  background: #1f2937;
+}
 
 :is(.dark) .eventra-sub-card {
   background: #1f2937;
@@ -1164,6 +1199,9 @@ main {
   line-height: 1.4;
   font-weight: 500;
   text-align: left;
+}
+.dark .eventra-sub-card p {
+  color: #d1d5db;
 }
 
 :is(.dark) .eventra-sub-card p {
@@ -1268,4 +1306,19 @@ main {
   .eventra-animation-container {
     grid-template-columns: 1fr;
   }
+}
+.dark {
+  color-scheme: dark;
+}
+
+.dark p,
+.dark span,
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6,
+.dark label {
+  color: inherit;
 }
