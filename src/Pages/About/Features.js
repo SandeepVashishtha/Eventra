@@ -156,13 +156,13 @@ export default function Features() {
                     <FaArrowRight className="ml-2 w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-200" />
                   </Link>
                 ) : (
-                  <a
-                    href="#"
-                    className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium text-sm flex items-center group"
+                  <span
+                    className="text-indigo-400 dark:text-indigo-600 font-medium text-sm flex items-center cursor-not-allowed opacity-60"
+                    title="Coming soon"
                   >
-                    {feature.cta}
-                    <FaArrowRight className="ml-2 w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-200" />
-                  </a>
+                      {feature.cta}
+                      <FaArrowRight className="ml-2 w-4 h-4" />
+                  </span>
                 )}
               </div>
             </motion.div>
