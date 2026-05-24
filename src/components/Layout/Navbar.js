@@ -686,36 +686,38 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           {/* ── Nav links ── takes all remaining space, items centered */}
           <div className="flex-1 min-w-0">
             <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
-        {/* Right Group: Auth Controls and Mobile Toggle */}
-<div className="hidden lg:flex items-center gap-2 shrink-0 justify-end">
-  <ThemeToggleButton
-    isDarkMode={isDarkMode}
-    toggleTheme={toggleTheme}
-    isMobile={false}
-  />
+          </div>
 
-  <CursorToggleButton
-    cursorEnabled={cursorEnabled}
-    toggleCursor={toggleCursor}
-    isMobile={false}
-  />
+          {/* Right Group: Auth Controls and Mobile Toggle */}
+          <div className="hidden lg:flex items-center gap-2 shrink-0 justify-end">
+            <ThemeToggleButton
+              isDarkMode={isDarkMode}
+              toggleTheme={toggleTheme}
+              isMobile={false}
+            />
 
-  <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700"></div>
+            <CursorToggleButton
+              cursorEnabled={cursorEnabled}
+              toggleCursor={toggleCursor}
+              isMobile={false}
+            />
 
-  {isAuthenticated() ? (
-    <UserProfileDropdown
-      user={user}
-      primaryLine={primaryLine}
-      secondaryLine={secondaryLine}
-      showProfileDropdown={showProfileDropdown}
-      setShowProfileDropdown={setShowProfileDropdown}
-      location={location}
-      handleLogoutClick={handleLogoutClick}
-    />
-  ) : (
-    <AuthButtons isMobile={false} />
-  )}
-</div>
+            <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700"></div>
+
+            {isAuthenticated() ? (
+              <UserProfileDropdown
+                user={user}
+                primaryLine={primaryLine}
+                secondaryLine={secondaryLine}
+                showProfileDropdown={showProfileDropdown}
+                setShowProfileDropdown={setShowProfileDropdown}
+                location={location}
+                handleLogoutClick={handleLogoutClick}
+              />
+            ) : (
+              <AuthButtons isMobile={false} />
+            )}
+          </div>
          
 
           {/* Mobile menu button */}
@@ -734,7 +736,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             </button>
           </div>
         </div>
-      </div>
       </nav>
 
       <MobileDrawer
