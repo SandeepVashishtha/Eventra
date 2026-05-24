@@ -120,7 +120,7 @@ const RegistrationPage = () => {
           </div>
           <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-3">Registration Successful!</h2>
           <p className="text-slate-600 dark:text-slate-300 mb-8 leading-relaxed">
-            Thank you for registering, <span className="font-semibold">{formData.fullName}</span>. An confirmation email has been sent to <span className="font-semibold">{formData.email}</span> with further details.
+            Thank you for registering, <span className="font-semibold">{formData.fullName}</span>. A confirmation email has been sent to <span className="font-semibold">{formData.email}</span> with further details.
           </p>
           <div className="flex flex-col gap-3">
             <button
@@ -179,13 +179,14 @@ const RegistrationPage = () => {
 
             {/* Full Name */}
             <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+              <label htmlFor="fullName" className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 <FiUser className="text-indigo-500 dark:text-indigo-400" />
                 <span>Full Name</span>
                 <span className="text-rose-500 font-bold">*</span>
               </label>
               <div className="relative">
                 <input
+                  id="fullName"
                   name="fullName"
                   type="text"
                   placeholder="Enter your full name"
@@ -214,12 +215,13 @@ const RegistrationPage = () => {
 
             {/* Email */}
             <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+              <label htmlFor="email" className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 <FiMail className="text-indigo-500 dark:text-indigo-400" />
                 <span>Email Address</span>
                 <span className="text-rose-500 font-bold">*</span>
               </label>
               <input
+                id="email"
                 name="email"
                 type="email"
                 placeholder="your.email@example.com"
@@ -247,12 +249,13 @@ const RegistrationPage = () => {
 
             {/* Phone */}
             <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+              <label htmlFor="phone" className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 <FiPhone className="text-indigo-500 dark:text-indigo-400" />
                 <span>Phone Number</span>
                 <span className="text-rose-500 font-bold">*</span>
               </label>
               <input
+                id="phone"
                 name="phone"
                 type="tel"
                 placeholder="+1 (555) 123-4567"
@@ -280,11 +283,12 @@ const RegistrationPage = () => {
 
             {/* Organization */}
             <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+              <label htmlFor="organization" className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 <FiBriefcase className="text-indigo-500 dark:text-indigo-400" />
                 <span>Organization <span className="text-xs text-slate-400 font-normal">(Optional)</span></span>
               </label>
               <input
+                id="organization"
                 name="organization"
                 type="text"
                 placeholder="Your company or institution"
@@ -296,11 +300,12 @@ const RegistrationPage = () => {
 
             {/* Designation */}
             <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+              <label htmlFor="designation" className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 <FiAward className="text-indigo-500 dark:text-indigo-400" />
                 <span>Designation <span className="text-xs text-slate-400 font-normal">(Optional)</span></span>
               </label>
               <input
+                id="designation"
                 name="designation"
                 type="text"
                 placeholder="Your job title or role"
@@ -312,11 +317,12 @@ const RegistrationPage = () => {
 
             {/* Additional Info */}
             <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+              <label htmlFor="additionalInfo" className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 <FiMessageSquare className="text-indigo-500 dark:text-indigo-400" />
                 <span>Additional Information <span className="text-xs text-slate-400 font-normal">(Optional)</span></span>
               </label>
               <textarea
+                id="additionalInfo"
                 name="additionalInfo"
                 placeholder="Any special requirements or questions?"
                 value={formData.additionalInfo}
