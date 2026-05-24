@@ -649,7 +649,7 @@ const HackathonHub = () => {
             </select>
           </div>
         </motion.div>
-
+        
       {/* Hackathons Grid */}
 <AnimatePresence mode="wait">
   {isLoading ? (
