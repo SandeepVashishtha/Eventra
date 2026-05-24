@@ -7,10 +7,10 @@ const CertificateDownload = ({ eventName, eventDate, eventType }) => {
 
   if (!user) {
     return (
-      
-        {"🔒"} Login to Download Certificate
-      
-    );
+  <span className="inline-flex items-center justify-center">
+    {"🔒"} Login to Download Certificate
+  </span>
+);
   }
 
   const generateCertificate = () => {
@@ -52,10 +52,10 @@ const CertificateDownload = ({ eventName, eventDate, eventType }) => {
   };
 
   return (
-    
-      📜 Download Certificate
-    
-  );
+  <button onClick={generateCertificate}>
+    📜 Download Certificate
+  </button>
+);
 };
 
 export default CertificateDownload;
