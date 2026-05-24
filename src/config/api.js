@@ -240,7 +240,7 @@ export const API_ENDPOINTS = {
   NOTIFICATIONS: {
     ALL: buildApiUrl("/api/notifications"),
     BASE: buildApiUrl("/api/notifications"),
-    READ: (id) => buildApiUrl(`/api/notifications/${id}/read`),
+    READ: (id) => id ? buildApiUrl(`/api/notifications/${id}/read`) : "",
     READ_ALL: buildApiUrl("/api/notifications/read-all"),
   },
   USERS: {
