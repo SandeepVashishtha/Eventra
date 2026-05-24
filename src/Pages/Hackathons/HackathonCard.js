@@ -339,7 +339,6 @@ const HackathonCard = ({ hackathon = {}, isFeatured = false, ...props }) => {
         <div className="flex flex-col gap-3 text-gray-600 dark:text-gray-400 text-sm min-h-[120px]">
           <div className="flex items-center gap-2">
             <CalendarIcon className="w-4 h-4 text-sky-500" />
-<<<<<<< HEAD
             {new Date(hackathon.startDate).toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
@@ -350,26 +349,6 @@ const HackathonCard = ({ hackathon = {}, isFeatured = false, ...props }) => {
               day: "numeric",
               year: "numeric",
             })}
-=======
-
-            {new Date(normalizedHackathon.startDate).toLocaleDateString(
-              "en-US",
-              {
-                month: "short",
-                day: "numeric",
-              }
-            )}{" "}
-            -
-            {" "}
-            {new Date(normalizedHackathon.endDate).toLocaleDateString(
-              "en-US",
-              {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              }
-            )}
->>>>>>> c6d45bc5b4137eb4e2de65d83593ba9d4842c7e0
           </div>
 
           <div className="flex items-center gap-2">
@@ -378,7 +357,6 @@ const HackathonCard = ({ hackathon = {}, isFeatured = false, ...props }) => {
           </div>
 
           {/* FIX 3: Use computed status for countdown logic */}
-<<<<<<< HEAD
           {status === "upcoming" && hackathon.startDate && (
             <CountdownTimer
               targetDate={hackathon.startDate}
@@ -389,23 +367,6 @@ const HackathonCard = ({ hackathon = {}, isFeatured = false, ...props }) => {
           {status === "live" && hackathon.endDate && (
             <CountdownTimer targetDate={hackathon.endDate} label="Ends in" />
           )}
-=======
-          {status === "upcoming" &&
-            normalizedHackathon.startDate && (
-              <CountdownTimer
-                targetDate={normalizedHackathon.startDate}
-                label="Starts in"
-              />
-            )}
-
-          {status === "live" &&
-            normalizedHackathon.endDate && (
-              <CountdownTimer
-                targetDate={normalizedHackathon.endDate}
-                label="Ends in"
-              />
-            )}
->>>>>>> c6d45bc5b4137eb4e2de65d83593ba9d4842c7e0
         </div>
 
         <div className="border-b border-gray-300 dark:border-gray-700" />
@@ -417,11 +378,7 @@ const HackathonCard = ({ hackathon = {}, isFeatured = false, ...props }) => {
           </h4>
 
           <div className="flex flex-wrap gap-2">
-<<<<<<< HEAD
             {(hackathon.techStack || []).map((tech, index) => (
-=======
-            {normalizedHackathon.techStack.map((tech, index) => (
->>>>>>> c6d45bc5b4137eb4e2de65d83593ba9d4842c7e0
               <span
                 key={index}
                 className="px-3 py-1 border border-blue-200 dark:border-blue-700 bg-blue-100 dark:bg-blue-900/60 text-gray-800 dark:text-gray-200 text-xs font-medium rounded-full"
@@ -442,11 +399,7 @@ const HackathonCard = ({ hackathon = {}, isFeatured = false, ...props }) => {
           </h4>
 
           <ul className="list-disc list-inside text-xs line-clamp-3 min-h-[60px]">
-<<<<<<< HEAD
             {(hackathon.rules || []).map((rule, index) => (
-=======
-            {normalizedHackathon.rules.map((rule, index) => (
->>>>>>> c6d45bc5b4137eb4e2de65d83593ba9d4842c7e0
               <li key={index}>{rule}</li>
             ))}
           </ul>
@@ -525,13 +478,8 @@ const HackathonCard = ({ hackathon = {}, isFeatured = false, ...props }) => {
           ) : status === "upcoming" ? (
             <div className="grid grid-cols-2 gap-3">
               <button
-<<<<<<< HEAD
                 onClick={() => navigate(`/register/${hackathon.id}`)}
                 className="..."
-=======
-                onClick={() => navigate(`/register/${normalizedHackathon.id}`)}
-                className="px-4 py-2 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white text-sm font-medium rounded-lg"
->>>>>>> c6d45bc5b4137eb4e2de65d83593ba9d4842c7e0
               >
                 Register
               </button>

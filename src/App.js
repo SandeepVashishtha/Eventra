@@ -22,6 +22,7 @@ import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
 import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
 import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
+import SessionRecovery from "./components/SessionRecovery";
 
 const Footer = lazy(() => import("./components/Layout/Footer"));
 const Chatbot = lazy(() => import("./components/Chatbot"));
@@ -29,6 +30,15 @@ const AppRoutes = lazy(() => import("./components/AppRoutes"));
 
 const OfflineSyncManager = () => {
   useOfflineSync();
+  return null;
+};
+
+// 1. ADDED: Headless wrapper to inject Router context down into the hook safely
+const KeyboardShortcutManager = ({ setShowKeyboardModal }) => {
+  useKeyboardShortcuts({
+    onOpenHelp: () => setShowKeyboardModal(true),
+    onCloseHelp: () => setShowKeyboardModal(false),
+  });
   return null;
 };
 
@@ -41,10 +51,7 @@ function App() {
 
   useLenis();
 
-  useKeyboardShortcuts({
-    onOpenHelp: () => setShowKeyboardModal(true),
-    onCloseHelp: () => setShowKeyboardModal(false),
-  });
+  // REMOVED: The raw useKeyboardShortcuts call was deleted from here to fix the routing context crash
 
   const toggleCursor = () => {
     const newValue = !cursorEnabled;
@@ -61,10 +68,7 @@ function App() {
       }
     };
 
-    window.addEventListener(
-      "cursorPreferenceChanged",
-      handleCursorPreference
-    );
+    window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
 
     return () => {
       window.removeEventListener(
@@ -77,17 +81,23 @@ function App() {
   // Handle Online/Offline Status Notification
   useEffect(() => {
     const handleOnline = () => {
-      toast.success("Back online! Your connections have been restored and sync is complete.", {
-        position: "bottom-right",
-        autoClose: 4000,
-      });
+      toast.success(
+        "Back online! Your connections have been restored and sync is complete.",
+        {
+          position: "bottom-right",
+          autoClose: 4000,
+        }
+      );
     };
 
     const handleOffline = () => {
-      toast.warning("You are currently offline. Running in secure local offline caching mode.", {
-        position: "bottom-right",
-        autoClose: 5000,
-      });
+      toast.warning(
+        "You are currently offline. Running in secure local offline caching mode.",
+        {
+          position: "bottom-right",
+          autoClose: 5000,
+        }
+      );
     };
 
     window.addEventListener("online", handleOnline);
@@ -109,12 +119,15 @@ function App() {
       <NotificationProvider>
         <MyEventsProvider>
           <SessionRecoveryProvider>
-            <NotificationProvider />
+            {/* CLEANED UP: Removed the duplicate dead self-closing <NotificationProvider /> element */}
             <ReminderChecker />
             <NotificationToastContainer />
             <OfflineSyncManager />
 
             <Router>
+              {/* 2. ADDED: Render the manager directly within the Router boundary context */}
+              <KeyboardShortcutManager setShowKeyboardModal={setShowKeyboardModal} />
+
               <div className="App">
                 <Navbar
                   cursorEnabled={cursorEnabled}
@@ -161,13 +174,12 @@ function App() {
                 <ScrollToTop />
 
                 <Suspense fallback={null}>
-                 
                   <Footer />
-                   <Chatbot />
+                  <Chatbot />
                 </Suspense>
 
                 <FeedbackButton />
-                  <SessionRecovery />
+                <SessionRecovery />
                 <FluidCursor enabled={cursorEnabled} />
               </div>
             </Router>
