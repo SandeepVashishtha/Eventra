@@ -7,9 +7,9 @@ const CertificateDownload = ({ eventName, eventDate, eventType }) => {
 
   if (!user) {
     return (
-      
+      <div>
         🔒 Login to Download Certificate
-      
+      </div>
     );
   }
 
@@ -51,9 +51,9 @@ const CertificateDownload = ({ eventName, eventDate, eventType }) => {
   };
 
   return (
-    
-      📜 Download Certificate
-    
+    <div>
+      🔒 Login to Download Certificate
+    </div>
   );
 };
 

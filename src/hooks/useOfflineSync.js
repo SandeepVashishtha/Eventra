@@ -3,10 +3,7 @@ import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 import { API_ENDPOINTS, apiUtils } from '../config/api';
 import { getQueue, setQueue, clearQueue } from '../utils/offlineQueue';
-
 const QUEUE_KEY = 'eventra_offline_queue';
-import { API_ENDPOINTS } from '../config/api';
-import { getQueue, setQueue, clearQueue } from '../utils/offlineQueue';
 
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 1_000;
@@ -17,40 +14,33 @@ const useOfflineSync = () => {
 
   useEffect(() => {
     const fetchWithBackoff = async (url, payload, authToken, attempt = 0) => {
-      if (attempt > 0) {
-        const delayMs = BASE_BACKOFF_MS * Math.pow(2, attempt - 1);
-        await new Promise((resolve) => setTimeout(resolve, delayMs));
-      }
+  if (attempt > 0) {
+    const delayMs = BASE_BACKOFF_MS * Math.pow(2, attempt - 1);
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
 
-      try {
-        await apiUtils.post(url, payload);
-        return true;
-      } catch (error) {
-        // 4xx → bad request (don't retry); 5xx → may be transient
-        if (error.response && error.response.status >= 400 && error.response.status < 500) {
-          console.warn(
-            `Offline queue: server rejected item with ${error.response.status} — dropping.`,
-            error.response.data || ''
-          );
-          return true; // Treat as "handled" — bad data won't succeed on retry
-        }
-        throw error;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(authToken && { Authorization: `Bearer ${authToken}` }),
-        },
-        body: JSON.stringify(payload),
-      });
+  try {
+    await apiUtils.post(url, payload);
+    return true;
+  } catch (error) {
+    // 4xx errors → don't retry
+    if (
+      error.response &&
+      error.response.status >= 400 &&
+      error.response.status < 500
+    ) {
+      console.warn(
+        `Offline queue: server rejected item with ${error.response.status} — dropping.`,
+        error.response.data || ''
+      );
 
-      if (response.ok) return true;
-      if (response.status >= 400 && response.status < 500) {
-        console.warn(`Offline queue: server rejected item with ${response.status} — dropping.`);
-        return true; 
-      }
-      throw new Error(`Server responded with ${response.status}`);
-    };
+      return true;
+    }
+
+    throw error;
+  }
+};
+      
 
     const handleOnline = async () => {
       // THE GUARD: Prevent multiple concurrent sync runs
