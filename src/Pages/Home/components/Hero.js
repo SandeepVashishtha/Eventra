@@ -187,10 +187,19 @@ const Hero = () => {
 bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white
 dark:from-slate-950 dark:via-slate-900 dark:to-black
 text-slate-900 dark:text-gray-100 
-pb-16 sm:pb-20 md:pb-24 pt-6 sm:pt-10 
+pb-16 sm:pb-20 md:pb-24
 border-b border-gray-100 dark:border-slate-900">
       {/* Hero Content */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10 pt-20">
+      <div className=" mx-auto px-6 lg:px-8 relative z-10 pt-20"
+      style={{
+    backgroundImage: "url('/background.png')",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+    minHeight: "100vh",
+    width:"100vw"
+  }}
+      >
         <motion.div
           className="text-center"
           variants={container}
@@ -355,6 +364,7 @@ text-gray-600 dark:text-gray-300"
                 className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-500 dark:bg-blue-900 text-white dark:text-white font-bold shadow-md shadow-blue-200 dark:shadow-none overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-600 dark:hover:bg-blue-800"
               >
                 <span className="relative z-10 flex items-center">
+                  <img src="/assets/events.svg" alt="" className="mr-2"/>
                   Explore Events
                   <svg
                     className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
@@ -378,7 +388,19 @@ text-gray-600 dark:text-gray-300"
                 aria-label="Join upcoming hackathons"
                 className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-amber-400 dark:bg-yellow-900 border border-amber-300 dark:border-yellow-700 text-white dark:text-white font-semibold shadow-md shadow-amber-100 dark:shadow-none hover:shadow-lg hover:bg-amber-500 dark:hover:bg-yellow-800 hover:scale-105 transition-all duration-300"
               >
+                <img src="/assets/hackathons.svg" alt="" className="mr-2"/>
                 Join Hackathons
+                <svg
+                    className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
               </Link>
             </motion.div>
 
@@ -389,6 +411,7 @@ text-gray-600 dark:text-gray-300"
                 aria-label="Learn more about Eventra"
                 className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-pink-500 dark:bg-pink-900 text-white dark:text-white font-semibold shadow-md shadow-pink-100 dark:shadow-none transform transition-all duration-300 hover:scale-105 hover:bg-pink-600 dark:hover:bg-pink-800"
               >
+                <img src="/assets/learnmore.svg" alt="" className="mr-2"/>
                 Learn More
                 <svg
                   className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
@@ -421,6 +444,7 @@ text-gray-600 dark:text-gray-300"
                   transition={{ type: "spring", stiffness: 300 }}
                   className="bg-white/90 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-xl shadow-blue-100/50 dark:shadow-none border border-blue-100 dark:border-gray-700 hover:shadow-blue-200/60 transition-shadow duration-300"
                 >
+                  
                   <p className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
                     {statsReady ? (
                       <CountUp
