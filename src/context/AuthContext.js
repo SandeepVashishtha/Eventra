@@ -310,9 +310,10 @@ export const AuthProvider = ({ children }) => {
     isAttendee,
   };
 
+
   return (
     <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
-};
+};
