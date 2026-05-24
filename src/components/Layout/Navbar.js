@@ -205,7 +205,8 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
 const DesktopNavLink = ({ item, isActive }) => (
   <Link
     to={item.href}
-    className={`relative group text-sm font-semibold transition-all duration-200 whitespace-nowrap px-3.5 py-2 rounded-full ${
+    // style={{ marginLeft: item.name === "Home" ? "24px" : "0" }}
+    className={`relative group text-[13px] font-semibold transition-all duration-200 whitespace-nowrap px-3.5 py-2 rounded-full ${
       isActive
         ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10"
         : "text-zinc-600 hover:text-indigo-600 dark:text-zinc-300 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50"
@@ -448,7 +449,8 @@ const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   const location = useLocation();
   return (
     // gap-4 keeps items from crowding; flex-1 lets this section grow/shrink naturally
-    <div className="hidden xl:flex items-center justify-center gap-4 2xl:gap-6 flex-1 min-w-0">
+    // <div className="hidden xl:flex items-center justify-center gap-4 2xl:gap-6 flex-1 min-w-0">
+      <div className="hidden lg:flex items-center justify-center flex-1 min-w-0 pl-6">
       <NavList 
         location={location} 
         openDropdown={openDropdown} 
@@ -616,66 +618,103 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       />
 
       <nav
-        ref={navRef}
-        data-aos="fade-down"
-        data-aos-once="true"
-        data-aos-duration="1000"
-        className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 transition-colors duration-300 relative"
+  ref={navRef}
+  data-aos="fade-down"
+  data-aos-once="true"
+  data-aos-duration="1000"
+  className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 transition-colors duration-300"
+>
+  <div className="neon-navbar-border"></div>
+
+  <div className="max-w-screen-2xl mx-auto flex items-center justify-between h-[68px] px-4 md:px-6 xl:px-10 gap-4 w-full overflow-hidden">
+
+    {/* Logo */}
+    <Link to="/" className="flex items-center shrink-0 z-20 pr-2">
+      <h2
+        className="neon-logo text-2xl font-extrabold tracking-widest uppercase"
+        style={{
+          fontFamily: "'Oxanium', monospace",
+          margin: 0,
+          lineHeight: 1,
+        }}
       >
-        <div className="neon-navbar-border"></div>
-        <div className="max-w-screen-2xl mx-auto flex items-center h-[68px] px-6 xl:px-10 gap-6">
-          {/* ── Logo ── left-anchored, never squishes */}
-          <Link to="/" className="flex items-center shrink-0 z-20">
-            <h2
-              className="neon-logo text-2xl font-extrabold tracking-widest uppercase"
-              style={{ fontFamily: "'Oxanium', monospace", margin: 0, lineHeight: 1 }}
-            >
-              Eventra
-            </h2>
-          </Link>
+        Eventra
+      </h2>
+    </Link>
 
-          {/* ── Nav links ── takes all remaining space, items centered */}
-          <div className="flex-1 min-w-0">
-            <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
-          </div>
+    {/* Desktop Nav */}
+    <div className="hidden lg:flex items-center justify-center gap-3 xl:gap-4 flex-1 min-w-0">
+      <NavList
+        location={location}
+        openDropdown={openDropdown}
+        onToggleGroup={(name) =>
+          setOpenDropdown(openDropdown === name ? null : name)
+        }
+        isMobile={false}
+      />
+    </div>
 
-          {/* ── Right controls ── shrink-0 so they stay on the right edge */}
-          <div className="hidden xl:flex items-center gap-3 shrink-0">
-            <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={false} />
-            <CursorToggleButton cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} isMobile={false} />
-            <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700"></div>
-            {isAuthenticated() ? (
-              <UserProfileDropdown
-                user={user}
-                primaryLine={primaryLine}
-                secondaryLine={secondaryLine}
-                showProfileDropdown={showProfileDropdown}
-                setShowProfileDropdown={setShowProfileDropdown}
-                location={location}
-                handleLogoutClick={handleLogoutClick}
-              />
-            ) : (
-              <AuthButtons isMobile={false} />
-            )}
-          </div>
+    {/* Right Controls */}
+    <div className="hidden lg:flex items-center gap-2 shrink-0 pl-2">
+      <ThemeToggleButton
+        isDarkMode={isDarkMode}
+        toggleTheme={toggleTheme}
+        isMobile={false}
+      />
 
-          {/* Mobile menu button */}
-          <div className="xl:hidden ml-auto">
-            <button 
-              ref={toggleBtnRef} 
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-              aria-expanded={isMobileMenuOpen} 
-              aria-controls="mobile-drawer"
-              aria-label={isMobileMenuOpen ? "Close navigation" : "Open navigation"} 
-              className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10"
-            >
-              <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </nav>
+      <CursorToggleButton
+        cursorEnabled={cursorEnabled}
+        toggleCursor={toggleCursor}
+        isMobile={false}
+      />
+
+      <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700"></div>
+
+      {isAuthenticated() ? (
+        <UserProfileDropdown
+          user={user}
+          primaryLine={primaryLine}
+          secondaryLine={secondaryLine}
+          showProfileDropdown={showProfileDropdown}
+          setShowProfileDropdown={setShowProfileDropdown}
+          location={location}
+          handleLogoutClick={handleLogoutClick}
+        />
+      ) : (
+        <AuthButtons isMobile={false} />
+      )}
+    </div>
+
+    {/* Mobile Menu Button */}
+    <div className="lg:hidden ml-auto">
+      <button
+        ref={toggleBtnRef}
+        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        aria-expanded={isMobileMenuOpen}
+        aria-controls="mobile-drawer"
+        aria-label={
+          isMobileMenuOpen ? "Close navigation" : "Open navigation"
+        }
+        className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10"
+      >
+        <svg
+          className="h-5 w-5 sm:h-6 sm:w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 6h16M4 12h16M4 18h16"
+          />
+        </svg>
+      </button>
+    </div>
+
+  </div>
+</nav>
 
       <MobileDrawer
         isOpen={isMobileMenuOpen}

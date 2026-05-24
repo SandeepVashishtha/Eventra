@@ -535,3 +535,12 @@ select,
       0.5
     );
 }
+
+/* navbar updates */
+nav {
+  overflow-x: hidden;
+}
+
+.neon-logo {
+  white-space: nowrap;
+}
