@@ -145,12 +145,48 @@ const HackathonHub = () => {
   };
 
   const fuse = new Fuse(hackathons, {
-    keys: ["title", "description", "location", "techStack"],
-    threshold: 0.4,
-  });
+  keys: [
+    "title",
+    "description",
+    "location",
+    "organizer",
+    "difficulty",
+    "techStack",
+  ],
+  threshold: 0.3,
+});
 
-  const searchedHackathons = searchQuery
+  /*const searchedHackathons = searchQuery
     ? fuse.search(searchQuery).map((result) => result.item)
+    : hackathons;*/
+    const searchedHackathons =
+  searchQuery.trim() !== ""
+    ? fuse
+        .search(searchQuery)
+        .map((result) => result.item)
+        .filter((hackathon) => {
+          // strict tech stack match
+          if (hackathon.techStack) {
+            return hackathon.techStack.some((tech) =>
+              tech.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+          }
+
+          return (
+            hackathon.title
+              ?.toLowerCase()
+              .includes(searchQuery.toLowerCase()) ||
+            hackathon.description
+              ?.toLowerCase()
+              .includes(searchQuery.toLowerCase()) ||
+            hackathon.location
+              ?.toLowerCase()
+              .includes(searchQuery.toLowerCase()) ||
+            hackathon.organizer
+              ?.toLowerCase()
+              .includes(searchQuery.toLowerCase())
+          );
+        })
     : hackathons;
 
   const filteredHackathons = searchedHackathons
@@ -187,6 +223,7 @@ const HackathonHub = () => {
 
       return true;
     });
+
 
   const sortHackathons = (list) => {
     const sorted = [...list];
