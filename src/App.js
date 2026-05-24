@@ -10,7 +10,6 @@ import Navbar from "./components/Layout/Navbar";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
 import SessionRecovery from "./components/SessionRecovery"; // CLEANED UP: Left this single import intact
-import FluidCursor from "./jhalak/FluidCursor";
 import PageTransition from "./components/common/PageTransition";
 import ReminderChecker from "./components/reminders/ReminderChecker";
 import ScrollProgressBar from "./components/common/ScrollProgressBar";
@@ -21,7 +20,7 @@ import ThemeCustomizerDrawer from "./components/common/ThemeCustomizerDrawer";
    Pages
 ========================= */
 import RegistrationPage from "./Pages/RegistrationPage";
-import NotFoundPage from "./Pages/NotFoundPage";
+
 
 /* =========================
    Context & Hooks
@@ -62,41 +61,12 @@ const KeyboardShortcutManager = ({ setShowKeyboardModal }) => {
 };
 
 function App() {
-  const [cursorEnabled, setCursorEnabled] = useState(
-    localStorage.getItem("cursor") !== "off"
-  );
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
 
   /* =========================
      Initialize Smooth Scroll
   ========================= */
   useLenis();
-
-  /* =========================
-     Toggle Cursor
-  ========================= */
-  const toggleCursor = () => {
-    const newValue = !cursorEnabled;
-    setCursorEnabled(newValue);
-    localStorage.setItem("cursor", newValue ? "on" : "off");
-  };
-
-  /* =========================
-     Listen For Cursor Changes
-  ========================= */
-  useEffect(() => {
-    const handleCursorPreference = (event) => {
-      if (event?.detail?.cursorEnabled !== undefined) {
-        setCursorEnabled(event.detail.cursorEnabled);
-      }
-    };
-
-    window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
-
-    return () => {
-      window.removeEventListener("cursorPreferenceChanged", handleCursorPreference);
-    };
-  }, []);
 
   /* =========================
      Online / Offline Toasts
@@ -151,7 +121,7 @@ function App() {
 
                 <div className="App">
                   <ScrollProgressBar />
-                  <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+                  <Navbar />
 
                   <KeyboardShortcutsModal
                     isOpen={showKeyboardModal}
@@ -198,7 +168,6 @@ function App() {
 
                   <FeedbackButton />
                   <SessionRecovery />
-                  <FluidCursor enabled={cursorEnabled} />
                 </div>
               </Router>
             </SessionRecoveryProvider>
