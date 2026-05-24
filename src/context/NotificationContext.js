@@ -21,13 +21,21 @@ export const NotificationProvider = ({ children }) => {
   const fetchNotifications = useCallback(async () => {
     if (!token) return;
 
+    // Defensive check: safeguard against undefined/missing notification endpoints
+    const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.ALL || API_ENDPOINTS?.NOTIFICATIONS?.BASE;
+    if (!endpoint || typeof endpoint !== "string" || endpoint.includes("undefined")) {
+      console.warn("[NotificationContext] Fetch endpoint is undefined or improperly configured. Skipping network call.");
+      return;
+    }
+
     try {
       setLoading(true);
-      const response = await apiUtils.get(API_ENDPOINTS.NOTIFICATIONS.ALL, token);
+      const response = await apiUtils.get(endpoint, token);
       if (response.ok) {
         const data = await response.json();
-        setNotifications(data);
-        setUnreadCount(data.filter((n) => !n.isRead).length);
+        const normalizedData = Array.isArray(data) ? data : [];
+        setNotifications(normalizedData);
+        setUnreadCount(normalizedData.filter((n) => !n.isRead).length);
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -39,8 +47,14 @@ export const NotificationProvider = ({ children }) => {
   const fetchAchievements = useCallback(async () => {
     if (!token) return;
 
+    const endpoint = API_ENDPOINTS?.USERS?.ACHIEVEMENTS;
+    if (!endpoint || typeof endpoint !== "string" || endpoint.includes("undefined")) {
+      console.warn("[NotificationContext] Achievements endpoint is undefined. Skipping network call.");
+      return;
+    }
+
     try {
-      const response = await apiUtils.get(API_ENDPOINTS.USERS.ACHIEVEMENTS, token);
+      const response = await apiUtils.get(endpoint, token);
       if (response.ok) {
         const data = await response.json();
         setAchievements(data);
@@ -52,11 +66,24 @@ export const NotificationProvider = ({ children }) => {
 
   /** Mark a single notification as read */
   const markAsRead = useCallback(async (notificationId) => {
-    if (!token) return;
+    if (!token || !notificationId) return;
+
+    // Defensive check: safeguard against missing READ endpoint functions
+    const endpointGetter = API_ENDPOINTS?.NOTIFICATIONS?.READ;
+    if (typeof endpointGetter !== "function") {
+      console.warn("[NotificationContext] READ endpoint creator is not a function. Skipping request.");
+      return;
+    }
+
+    const endpoint = endpointGetter(notificationId);
+    if (!endpoint || typeof endpoint !== "string" || endpoint.includes("undefined")) {
+      console.warn("[NotificationContext] Resolved READ endpoint is invalid. Skipping request.");
+      return;
+    }
 
     try {
       const response = await apiUtils.put(
-        API_ENDPOINTS.NOTIFICATIONS.READ(notificationId),
+        endpoint,
         {},
         token
       );
@@ -90,12 +117,22 @@ export const NotificationProvider = ({ children }) => {
     setTimeout(async () => {
       if (unread.length === 0) return;
 
+      const endpointGetter = API_ENDPOINTS?.NOTIFICATIONS?.READ;
+      if (typeof endpointGetter !== "function") {
+        console.warn("[NotificationContext] READ endpoint creator is not a function. Skipping bulk update.");
+        return;
+      }
+
       try {
         setUnreadCount(0);
         await Promise.allSettled(
-          unread.map((n) =>
-            apiUtils.put(API_ENDPOINTS.NOTIFICATIONS.READ(n.id), {}, token)
-          )
+          unread.map((n) => {
+            const endpoint = endpointGetter(n.id);
+            if (!endpoint || typeof endpoint !== "string" || endpoint.includes("undefined")) {
+              return Promise.reject("Invalid endpoint");
+            }
+            return apiUtils.put(endpoint, {}, token);
+          })
         );
       } catch (error) {
         console.error('Error marking all notifications as read:', error);
