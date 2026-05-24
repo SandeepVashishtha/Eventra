@@ -81,11 +81,36 @@ API.interceptors.response.use(
 );
 
 export const API_ENDPOINTS = {
-  AUTH: { LOGIN: "/auth/login", SIGNUP: "/auth/signup", LOGOUT: "/auth/logout", RESET_PASSWORD: "/auth/reset-password", GOOGLE: "/auth/google" },
-  EVENTS: { CREATE: "/events/create", ALL: "/events", DETAIL: (id) => `/events/${id}`, REGISTER: (id) => `/events/${id}/register` },
-  PROJECTS: { ALL: "/projects", DETAIL: (id) => `/projects/${id}`, CATEGORIES: "/projects/categories", SUBMIT: "/projects" },
-  NOTIFICATIONS: { ALL: "/notifications", BASE: "/notifications", READ: (id) => `/notifications/${id}/read`, READ_ALL: "/notifications/read-all" },
-  USERS: { PROFILE: "/users/profile", ACHIEVEMENTS: "/users/achievements" },
+  AUTH: {
+    LOGIN: "/auth/login",
+    SIGNUP: "/auth/signup",
+    REGISTER: "/auth/signup",
+    LOGOUT: "/auth/logout",
+    RESET_PASSWORD: "/auth/reset-password",
+    GOOGLE: "/auth/google",
+  },
+  EVENTS: {
+    CREATE: "/events/create",
+    ALL: "/events",
+    DETAIL: (id) => `/events/${id}`,
+    REGISTER: (id) => `/events/${id}/register`,
+  },
+  PROJECTS: {
+    ALL: "/projects",
+    DETAIL: (id) => `/projects/${id}`,
+    CATEGORIES: "/projects/categories",
+    SUBMIT: "/projects",
+  },
+  NOTIFICATIONS: {
+    ALL: "/notifications",
+    BASE: "/notifications",
+    READ: (id) => `/notifications/${id}/read`,
+    READ_ALL: "/notifications/read-all",
+  },
+  USERS: {
+    PROFILE: "/users/profile",
+    ACHIEVEMENTS: "/users/achievements",
+  },
 };
 
 export const apiUtils = {

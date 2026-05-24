@@ -218,51 +218,15 @@ const handleSubmit = async (e) => {
   setError("");
 
   try {
-    const response = await apiUtils.post(
-      API_ENDPOINTS.AUTH.SIGNUP,
-      {
-        firstName:
-          formData.firstName.trim(),
-        lastName:
-          formData.lastName.trim(),
-        email: formData.email.trim(),
-        password: formData.password,
-        confirmPassword:
-          formData.confirmPassword,
-      }
-    );
+    const response = await apiUtils.post(API_ENDPOINTS.AUTH.REGISTER, {
+      firstName: formData.firstName.trim(),
+      lastName: formData.lastName.trim(),
+      email: formData.email.trim(),
+      password: formData.password,
+      confirmPassword: formData.confirmPassword,
+    });
 
-    const responseText =
-      await response.text();
-
-    let data = null;
-
-    try {
-      data = responseText
-        ? JSON.parse(responseText)
-        : null;
-    } catch {
-      data = null;
-    }
-
-    if (!response.ok) {
-      const backendMessage =
-        data?.message ||
-        data?.error ||
-        "";
-
-      if (backendMessage) {
-        setError(
-          `${backendMessage} (${response.status})`
-        );
-      } else {
-        setError(
-          `Registration failed (${response.status})`
-        );
-      }
-
-      return;
-    }
+    const data = response?.data ?? {};
 
     const sessionToken = data?.token;
 
@@ -294,10 +258,7 @@ const handleSubmit = async (e) => {
       );
     }
 
-    setAuthSession(
-      sessionToken,
-      sessionUser
-    );
+    setAuthSession(sessionToken, sessionUser);
 
     setSuccess(
       "Account created successfully! Redirecting to dashboard..."
@@ -311,10 +272,7 @@ const handleSubmit = async (e) => {
       1200
     );
   } catch (err) {
-    setError(
-      err.message ||
-        "Network error. Please try again."
-    );
+    setError(err.message || "Network error. Please try again.");
 
     console.error(err);
   } finally {

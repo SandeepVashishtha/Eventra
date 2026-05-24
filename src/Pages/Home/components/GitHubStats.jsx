@@ -17,8 +17,6 @@ import {
 
 const GITHUB_USER = "SandeepVashishtha";
 const GITHUB_REPO = "Eventra";
-
-const TOKEN = process.env.REACT_APP_GITHUB_TOKEN || ""; // optional
 const LS_KEY = "eventra:repoStats";
 const CACHE_MS = 30 * 60 * 1000; // 30 min
 
@@ -67,7 +65,6 @@ export default function GitHubStats() {
         const headers = {
           Accept: "application/vnd.github+json",
           "X-GitHub-Api-Version": "2022-11-28",
-          ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}),
         };
 
         const repoRes = await fetch(

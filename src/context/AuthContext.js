@@ -26,6 +26,22 @@ export const AuthProvider = ({ children }) => {
     syncSecureStorage.removeItem('user');
   }, []);
 
+  const readResponseData = async (response) => {
+    if (!response) {
+      return {};
+    }
+
+    if (response.data !== undefined) {
+      return response.data;
+    }
+
+    if (typeof response.json === 'function') {
+      return await response.json().catch(() => ({}));
+    }
+
+    return {};
+  };
+
   useEffect(() => {
     // Check for existing authentication on app start
     const storedToken = syncSecureStorage.getItem('token');
@@ -97,7 +113,11 @@ export const AuthProvider = ({ children }) => {
     let sessionToken = data?.token ?? data?.accessToken ?? null;
 
     if (!sessionToken) {
-      const authHeader = res.headers.get('Authorization') || res.headers.get('authorization');
+      const authHeader =
+        res?.headers?.get?.('Authorization') ||
+        res?.headers?.get?.('authorization') ||
+        res?.headers?.authorization ||
+        res?.headers?.Authorization;
       if (authHeader && authHeader.startsWith('Bearer ')) {
         sessionToken = authHeader.substring(7);
       }
@@ -130,28 +150,25 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (usernameOrEmail, password) => {
-    const res = await apiUtils.post(API_ENDPOINTS.AUTH.LOGIN, {
-      usernameOrEmail,
-      password,
-    });
+    try {
+      const res = await apiUtils.post(API_ENDPOINTS.AUTH.LOGIN, {
+        usernameOrEmail,
+        password,
+      });
 
-  const data = await res.json().catch((error) => {
-    console.error('Failed to parse login response JSON:', error);
-    return null;
-  });
+      const data = await readResponseData(res);
+      const { sessionToken, sessionUser } = extractSession(res, data || {}, usernameOrEmail);
 
-    if (!res.ok) {
-      throw new Error(data?.message || data?.error || 'Invalid credentials');
+      if (!sessionToken) {
+        throw new Error('Login failed: token missing from response');
+      }
+
+      persistSession(sessionToken, sessionUser);
+      return true;
+    } catch (error) {
+      const backendMessage = error?.response?.data?.message || error?.response?.data?.error || error?.message;
+      throw new Error(backendMessage || 'Invalid credentials');
     }
-
-    const { sessionToken, sessionUser } = extractSession(res, data || {}, usernameOrEmail);
-
-    if (!sessionToken) {
-      throw new Error('Login failed: token missing from response');
-    }
-
-    persistSession(sessionToken, sessionUser);
-    return true;
   };
 
   // Decode a JWT payload (base64url) without external libraries
@@ -259,6 +276,10 @@ export const AuthProvider = ({ children }) => {
     hasAnyPermission,
     isAdmin,
     isEventManager,
+    isSuperAdmin,
+    isOrganizer,
+    isVolunteer,
+    isAttendee,
   };
 
   return (

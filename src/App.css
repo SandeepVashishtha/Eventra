@@ -14,6 +14,7 @@
   width: 100vw;
   height: 100vh;
   display: block;
+<<<<<<< HEAD
 }
 
 .App {
@@ -29,6 +30,14 @@
   filter: drop-shadow(0 0 6px rgba(99,102,241,0.6));
 }
 
+=======
+}
+
+.App {
+  position: relative;
+}
+
+>>>>>>> 6b0545d (fix: harden auth and remove frontend GitHub tokens)
 main,
 nav,
 footer {
@@ -203,26 +212,12 @@ footer {
   position: relative;
   z-index: 2;
   background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
   border-radius: 20px;
   padding: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
-}
-
-.event-card:hover {
-  background: rgba(255, 255, 255, 0.15);
-  transform: translateY(-5px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-}
-
-.event-image {
   position: relative;
-  width: 100%;
-  height: 200px;
-  border-radius: 15px;
-  overflow: hidden;
-  margin-bottom: 1rem;
+
 }
 
 .event-image img {

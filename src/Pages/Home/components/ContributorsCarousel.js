@@ -15,7 +15,6 @@ import { Link } from "react-router-dom";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
-const TOKEN = process.env.REACT_APP_GITHUB_TOKEN || "";
 
 const STORAGE_KEY = "github_contributors";
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
@@ -99,9 +98,7 @@ const Contributors = () => {
   // Fetch GitHub profile details
   const fetchGitHubProfile = useCallback(async (username) => {
     try {
-      const res = await fetch(`https://api.github.com/users/${username}`, {
-        headers: TOKEN ? { Authorization: `token ${TOKEN}` } : undefined,
-      });
+      const res = await fetch(`https://api.github.com/users/${username}`);
       if (!res.ok) throw new Error("Profile fetch failed");
       const profile = await res.json();
       return {
@@ -140,10 +137,7 @@ const Contributors = () => {
       let hasMore = true;
       while (hasMore) {
         const res = await fetch(
-          `https://api.github.com/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`,
-          {
-            headers: TOKEN ? { Authorization: `token ${TOKEN}` } : undefined,
-          }
+          `https://api.github.com/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`
         );
         const data = await res.json();
         if (!Array.isArray(data) || data.length === 0) hasMore = false;

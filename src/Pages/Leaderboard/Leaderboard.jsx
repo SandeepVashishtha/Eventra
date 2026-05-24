@@ -14,8 +14,6 @@ import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 // Repository constant — update if the leaderboard should point to another repo
 const GITHUB_REPO = "SandeepVashishtha/Eventra";
-// Token read from env for higher rate limits (optional)
-const TOKEN = process.env.REACT_APP_GITHUB_TOKEN || "";
 const LEADERBOARD_CACHE_KEY = "leaderboardData:v2";
 
 // Points mapping for PR labels (keeps scoring logic centralized)
@@ -101,7 +99,6 @@ export default function LeaderBoard() {
       // Fetch contributor metadata (avatar, profile)
       const contributorsRes = await fetch(
         `https://api.github.com/repos/${GITHUB_REPO}/contributors`,
-        { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} },
       );
 
       if (!contributorsRes.ok) throw new Error("Failed to fetch contributors");
@@ -122,7 +119,6 @@ export default function LeaderBoard() {
       while (hasMore) {
         const res = await fetch(
           `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`,
-          { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} },
         );
 
         if (!res.ok) {
