@@ -115,7 +115,7 @@ function App() {
             <NotificationToastContainer />
             <OfflineSyncManager />
 
-            <Router>
+            
               <div className="App">
                 <Navbar
                   cursorEnabled={cursorEnabled}
@@ -159,35 +159,6 @@ function App() {
                   </PageTransition>
                 </main>
 
-                  <main
-                    className="
-                      relative
-                      z-10
-                      min-h-[85vh]
-                      bg-white
-                      dark:bg-slate-950
-                      text-black
-                      dark:text-white
-                      transition-colors
-                      duration-300
-                    "
-                  >
-                    <PageTransition>
-                      <Suspense
-                        fallback={
-                          <div className="flex items-center justify-center min-h-screen">
-                            Loading...
-                          </div>
-                        }
-                      >
-                        <Routes>
-                          <Route path="/register/:id" element={<RegistrationPage />} />
-                          <Route path="/*" element={<AppRoutes />} />
-                        </Routes>
-                      </Suspense>
-                    </PageTransition>
-                  </main>
-
                 <Suspense fallback={null}>
                  
                   <Footer />
@@ -195,10 +166,10 @@ function App() {
                 </Suspense>
 
                 <FeedbackButton />
-                  <SessionRecovery />
+                  
                 <FluidCursor enabled={cursorEnabled} />
               </div>
-            </Router>
+            
           </SessionRecoveryProvider>
         </MyEventsProvider>
       </NotificationProvider>
