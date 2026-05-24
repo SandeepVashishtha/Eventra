@@ -21,7 +21,6 @@ import ThemeCustomizerDrawer from "./components/common/ThemeCustomizerDrawer";
    Pages
 ========================= */
 import RegistrationPage from "./Pages/RegistrationPage";
-import NotFoundPage from "./Pages/NotFoundPage";
 
 /* =========================
    Context & Hooks

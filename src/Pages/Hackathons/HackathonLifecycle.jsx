@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
-  Calendar,
+  
   Users,
   Award,
   Terminal,
   FileText,
   Settings,
   Lock,
-  Unlock,
+  
   CheckCircle2,
   Clock,
   ArrowRight,
@@ -111,8 +111,8 @@ const PHASES = [
 ];
 
 const HackathonLifecycle = () => {
-  const { id } = useParams();
-  const hackathonId = id || "global-gs-hackathon";
+  const { id: routeId } = useParams();
+  const hackathonId = routeId || "global-gs-hackathon";
 
   // Mock Active Phase Management
   const [activePhaseIndex, setActivePhaseIndex] = useState(1); // Defaults to registration
@@ -245,7 +245,6 @@ const HackathonLifecycle = () => {
                     : "bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 shadow-sm"
                 }`}
                 aria-current={isActive ? "step" : undefined}
-                aria-selected={isSelected}
               >
                 {/* Active/Completed Indicators */}
                 <div className="absolute top-4 right-4">

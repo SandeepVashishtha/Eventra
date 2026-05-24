@@ -8,7 +8,6 @@ import {
   FaUsers,
   FaAward,
   FaTrophy,
-  FaMedal,
 } from "react-icons/fa";
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
@@ -302,6 +301,7 @@ export default function LeaderBoard() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadLeaderboardData();
   }, []);

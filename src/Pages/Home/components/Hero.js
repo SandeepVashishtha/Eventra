@@ -29,21 +29,7 @@ const Hero = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
-  const [isDark, setIsDark] = useState(
-    document.documentElement.classList.contains("dark")
-  );
-
-  // Sync isDark with theme changes
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setIsDark(document.documentElement.classList.contains("dark"));
-    });
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-    return () => observer.disconnect();
-  }, []);
+  
 
   // Change phrase every 3 seconds
   useEffect(() => {

@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link, useParams } from "react-router-dom";
-import { Calendar, MapPin, Clock, Tag, ChevronDown } from "lucide-react";
+import { Calendar, MapPin, Clock, Tag } from "lucide-react";
 import { getEventStatus } from "../../utils/eventUtils";
 import { isEventBookmarked } from "../../utils/bookmarkUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
@@ -18,7 +18,7 @@ const EventDetails = () => {
     ? { ...foundEvent, status: getEventStatus(foundEvent) }
     : null;
 
-  const [calendarOpen, setCalendarOpen] = useState(false);
+  
 
   if (!event) {
     return (

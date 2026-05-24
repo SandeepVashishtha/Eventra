@@ -5,7 +5,7 @@ import mockHackathons from "./hackathonMockData.json";
 import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
 import FeedbackButton from "../../components/FeedbackButton";
-import ModernSearchInput from "../../components/common/ModernSearchInput";
+// ModernSearchInput import removed (unused in this page)
 import EmptyState from "../../components/common/EmptyState";
 import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 import { FiCode, FiRotateCw, FiCompass, FiChevronDown } from "react-icons/fi";

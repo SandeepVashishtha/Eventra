@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Calendar,
   MapPin,
@@ -191,17 +191,13 @@ const ConfettiCanvas = () => {
 // Registration lock map to prevent concurrent registrations for the same event
 const registrationLocks = new Map();
 
-const isCapacityMessage = (message = "") => {
-  const normalized = String(message).toLowerCase();
-  return normalized.includes("capacity") || normalized.includes("full");
-};
 
 const EventRegistration = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated, token } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { addRegistration } = useMyEvents();
-  const { saveSession, clearSession } = useSessionRecovery();
+  const { clearSession } = useSessionRecovery();
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -295,7 +291,7 @@ const EventRegistration = () => {
     setSubmitting(true);
 
     try {
-      const response = await apiUtils.post(
+      await apiUtils.post(
         API_ENDPOINTS.EVENTS.REGISTER(eventId),
         {
           ...formData,
