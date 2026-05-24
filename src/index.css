@@ -184,6 +184,7 @@ header,
 footer,
 aside {
   min-width: 0;
+}
 .dark {
   color-scheme: dark;
 }
