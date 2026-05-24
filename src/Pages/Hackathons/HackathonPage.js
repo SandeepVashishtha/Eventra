@@ -221,6 +221,9 @@ const HackathonHub = () => {
         return selectedTags.some((tag) => hackathonTags.includes(tag));
       }
 
+      return true;
+    });
+
 
   const sortHackathons = (list) => {
     const sorted = [...list];
