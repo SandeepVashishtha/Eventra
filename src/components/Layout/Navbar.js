@@ -30,11 +30,7 @@ import {
   MoreHorizontal,
   Search,
   Palette,
-  Book,
-  MoreHorizontal,
-  Info,
-  HelpCircle,
-  MessageSquare
+  
 } from "lucide-react";
 import CommandPalette from "../common/CommandPalette";
 
