@@ -341,7 +341,7 @@ const FeedbackPage = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [submittedFeedback, setSubmittedFeedback] = useState([]);
+  
   const formRef = useRef(null);
 
   const feedbackTypes = [
@@ -464,8 +464,7 @@ const FeedbackPage = () => {
         submittedAt: new Date().toISOString(),
       };
 
-      // Add to state
-      setSubmittedFeedback((prev) => [...prev, payload]);
+    
 
       // Log submission (for debugging)
 
