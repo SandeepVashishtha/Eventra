@@ -50,9 +50,7 @@ const Navbar = ({
     <>
       <nav
         ref={navRef}
-        role="navigation"
-        aria-label="Main navigation"
-        className="fixed top-0 left-0 w-full h-20 bg-white dark:bg-gray-900 border-b border-border z-[200] transition-all duration-300"
+        className="sticky top-0 left-0 w-full h-20 bg-white dark:bg-gray-900 border-b border-border z-[200] transition-all duration-300"
       >
         <div className="h-full px-6 flex items-center justify-between">
           {/* Logo */}

@@ -147,9 +147,12 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
         : ["Rules will be shared before the hackathon starts."],
   };
 
-  const status = computeStatus(normalizedHackathon.startDate, normalizedHackathon.endDate);
-  const style = statusStyles[status] || statusStyles.upcoming;
+  // FIX 3: Use computed status everywhere instead of hackathon.status
 
+  const status = computeStatus(hackathon.startDate, hackathon.endDate);
+  const safeTechStack = hackathon?.techStack || [];
+  const safeRules = hackathon?.rules || [];
+  
   const stats = {
     participants: normalizedHackathon.participants,
     teams: normalizedHackathon.teams,
@@ -300,8 +303,10 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
           <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">
             Tech Stack
           </h4>
-          <div className="flex flex-wrap gap-1.5">
-            {normalizedHackathon.techStack.map((tech, index) => (
+
+          <div className="flex flex-wrap gap-2">
+
+            {safeTechStack.map((tech, index) => (
               <span
                 key={index}
                 className="px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 dark:bg-indigo-500/10 dark:border-indigo-500/20 dark:text-indigo-300 text-xs font-medium"
@@ -320,12 +325,12 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
             <DocumentTextIcon className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
             Rules
           </h4>
-          <ul className="space-y-0.5">
-            {normalizedHackathon.rules.slice(0, 3).map((rule, index) => (
-              <li key={index} className="text-xs text-slate-600 dark:text-slate-500 flex items-start gap-1.5">
-                <span className="text-indigo-500 mt-0.5 flex-shrink-0">•</span>
-                {rule}
-              </li>
+
+          <ul className="list-disc list-inside text-xs line-clamp-3 min-h-[60px]">
+          
+            {safeRules.map((rule, index) => (
+
+              <li key={index}>{rule}</li>
             ))}
           </ul>
         </div>

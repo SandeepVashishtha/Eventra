@@ -55,25 +55,29 @@ const HackathonHub = () => {
   const cardsSectionRef = useRef(null);
   const searchInputRef = useRef(null);
 
-  // Simulate API call
+  const scrollToCards = () => {
+    cardsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  // Simulate API call and wire page listeners
   useEffect(() => {
-      if (filters.difficulty && hackathon.difficulty !== filters.difficulty) {
-        return false;
-      }
-      if (
-        filters.prize &&
-        !hackathon.prize.toLowerCase().includes(filters.prize.toLowerCase())
-      ) {
-        return false;
-      }
-      if (
-        filters.location &&
-        !hackathon.location
-          .toLowerCase()
-          .includes(filters.location.toLowerCase())
-      ) {
-        return false;
-      }
+    setIsLoading(true);
+    setHackathons(mockHackathons);
+    setIsLoading(false);
+
+    const tags = [
+      ...new Set(
+        mockHackathons.flatMap((hackathon) => hackathon.techStack || []),
+      ),
+    ];
+    setAvailableTags(tags);
+
+    const handleScroll = () => {
+      setIsScrollVisible(window.scrollY > 300);
+    };
+    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+
     const handleChatbotState = () => {
       setIsChatbotOpen(document.querySelector('[data-chatbot-open]') !== null);
     };
