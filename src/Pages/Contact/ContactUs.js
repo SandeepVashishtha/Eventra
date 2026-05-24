@@ -170,7 +170,6 @@ const ContactUs = () => {
     e.preventDefault();
 
     if (!validateForm()) {
-      // Shake animation for invalid form
       if (formRef.current) {
         formRef.current.classList.add("animate-shake");
         setTimeout(() => {
@@ -184,14 +183,22 @@ const ContactUs = () => {
 
     setIsSubmitting(true);
 
-    // Simulate API call
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const res = await fetch("https://formspree.io/f/YOUR_FORM_ID", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          subject: formData.subject,
+          message: formData.message,
+        }),
+      });
 
-      // Show success toast
+      if (!res.ok) throw new Error("Submission failed");
+
       toast.success("Your message has been sent successfully! We'll get back to you soon.");
 
-      // Reset form
       setFormData({
         name: "",
         email: "",
