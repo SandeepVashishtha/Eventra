@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
+import { Download } from "lucide-react";
+
+import { exportAttendeesToCSV }
+from "../../utils/exportCsv";
 import {
   ArrowRightIcon,
   CalendarIcon,
@@ -35,6 +39,26 @@ import {
 const DRAFT_KEY = "eventra_create_event_draft";
 
 const EventCreation = () => {
+  const mockAttendees = [
+  {
+    name: "John Doe",
+    email: "john@example.com",
+    registrationDate: "2026-08-15",
+    ticketType: "VIP",
+  },
+  {
+    name: "Sarah Smith",
+    email: "sarah@example.com",
+    registrationDate: "2026-08-16",
+    ticketType: "General",
+  },
+  {
+    name: "Alex Johnson",
+    email: "alex@example.com",
+    registrationDate: "2026-08-16",
+    ticketType: "Workshop",
+  },
+];
   const [currentStep, setCurrentStep] = useState("form");
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -599,6 +623,39 @@ useEffect(() => {
       {currentStep === "form" ? (
         <>
           {/* Heading Section */}
+          <div className="w-full max-w-4xl flex justify-end mb-6">
+  <button
+    onClick={() => {
+      exportAttendeesToCSV(
+        mockAttendees,
+        "event-attendees.csv"
+      );
+
+      toast.success(
+        "CSV exported successfully!"
+      );
+    }}
+    className="
+      inline-flex
+      items-center
+      gap-2
+      px-5
+      py-3
+      rounded-2xl
+      bg-emerald-600
+      hover:bg-emerald-700
+      text-white
+      font-semibold
+      shadow-md
+      hover:shadow-lg
+      transition-all
+      duration-300
+    "
+  >
+    <Download size={18} />
+    Download CSV
+  </button>
+</div>
           <motion.div
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
