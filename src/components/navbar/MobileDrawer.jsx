@@ -51,6 +51,7 @@ const MobileDrawer = ({
             >
               Dashboard
             </Link>
+            {/* Standardized "Edit Profile" route to route consistently to /profile across mobile and desktop viewports */}
             <Link
               to="/profile"
               onClick={closeMenu}

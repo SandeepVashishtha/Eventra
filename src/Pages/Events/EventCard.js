@@ -20,15 +20,19 @@ import ShareMenu from "../../components/common/ShareMenu";
 import { generateEventSharingData } from "../../utils/shareUtils";
 import StatusBadge from "../../components/common/StatusBadge";
 import { getEventStatus } from "../../utils/eventUtils";
+import { useMyEvents } from "../../context/MyEventsContext";
+import ReminderControls from "../../components/reminders/ReminderControls";
 import {
   addBookmarkedEvent,
   isEventBookmarked,
   removeBookmarkedEvent,
   subscribeToBookmarkChanges,
 } from "../../utils/bookmarkUtils";
+import { CountdownBadge } from "../../components/common/CountdownTimer";
 
 const EventCard = ({ event }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
+  const { isRegistered } = useMyEvents();
   const [randomIcon] = useState(() => {
     const icons = [
       <Star size={16} className="text-yellow-500" />,
@@ -72,6 +76,7 @@ const EventCard = ({ event }) => {
   };
 
   const computedStatus = getEventStatus(event);
+  const canSetReminder = isBookmarked || isRegistered(event.id);
 
   useEffect(() => {
     setIsBookmarked(isEventBookmarked(event.id));
@@ -120,11 +125,10 @@ const EventCard = ({ event }) => {
           aria-label={isBookmarked ? "Remove event bookmark" : "Bookmark event"}
           aria-pressed={isBookmarked}
           title={isBookmarked ? "Remove bookmark" : "Bookmark event"}
-          className={`bg-white/90 backdrop-blur-sm rounded-full p-2 shadow cursor-pointer hover:shadow-md border transition-all duration-200 ${
-            isBookmarked
+          className={`bg-white/90 backdrop-blur-sm rounded-full p-2 shadow cursor-pointer hover:shadow-md border transition-all duration-200 ${isBookmarked
               ? "border-indigo-200 text-indigo-600 bg-indigo-50/95"
               : "border-gray-200 text-gray-600 hover:text-indigo-600 hover:border-indigo-200"
-          }`}
+            }`}
         >
           {isBookmarked ? (
             <BookmarkCheck size={14} fill="currentColor" />
@@ -195,7 +199,7 @@ const EventCard = ({ event }) => {
       </div>
 
       {/* Image */}
-<div className="relative h-40 overflow-hidden">
+      <div className="relative h-40 overflow-hidden">
         <img
           loading="lazy"
           decoding="async"
@@ -240,8 +244,17 @@ const EventCard = ({ event }) => {
             })}
           </span>
         </div>
+
+        {!isPastEvent && (
+          <div className="col-span-2">
+            <CountdownBadge date={event.date} time={event.time} />
+          </div>
+        )}
       </div>
 
+      <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+        <ReminderControls event={event} canSetReminder={canSetReminder} compact />
+      </div>
       {/* Seats / Capacity */}
       {typeof event.maxAttendees === "number" && event.maxAttendees > 0 && (() => {
         const registered = Number(event.attendees) || 0;
@@ -254,18 +267,18 @@ const EventCard = ({ event }) => {
         const barColor = isFull
           ? "bg-red-500"
           : ratio >= 0.85
-          ? "bg-red-500"
-          : ratio >= 0.6
-          ? "bg-amber-500"
-          : "bg-emerald-500";
+            ? "bg-red-500"
+            : ratio >= 0.6
+              ? "bg-amber-500"
+              : "bg-emerald-500";
 
         const textColor = isFull
           ? "text-red-600 dark:text-red-400"
           : ratio >= 0.85
-          ? "text-red-600 dark:text-red-400"
-          : ratio >= 0.6
-          ? "text-amber-600 dark:text-amber-400"
-          : "text-emerald-600 dark:text-emerald-400";
+            ? "text-red-600 dark:text-red-400"
+            : ratio >= 0.6
+              ? "text-amber-600 dark:text-amber-400"
+              : "text-emerald-600 dark:text-emerald-400";
 
         return (
           <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">

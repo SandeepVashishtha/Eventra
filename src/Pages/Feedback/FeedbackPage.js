@@ -341,7 +341,6 @@ const FeedbackPage = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [submittedFeedback, setSubmittedFeedback] = useState([]);
   const formRef = useRef(null);
 
   const feedbackTypes = [
@@ -453,19 +452,6 @@ const FeedbackPage = () => {
 
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Store feedback in component state instead of localStorage
-      const payload = {
-        name: formData.name?.trim(),
-        email: formData.email?.trim(),
-        message: formData.message?.trim(),
-        feedbackType: formData.feedbackType,
-        rating: formData.rating,
-        submittedAt: new Date().toISOString(),
-      };
-
-      // Add to state
-      setSubmittedFeedback((prev) => [...prev, payload]);
 
       // Log submission (for debugging)
 

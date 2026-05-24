@@ -23,7 +23,7 @@ export const NotificationProvider = ({ children }) => {
 
     try {
       setLoading(true);
-      const response = await apiUtils.get(API_ENDPOINTS.NOTIFICATIONS.BASE, token);
+      const response = await apiUtils.get(API_ENDPOINTS.NOTIFICATIONS.ALL, token);
       if (response.ok) {
         const data = await response.json();
         setNotifications(data);
