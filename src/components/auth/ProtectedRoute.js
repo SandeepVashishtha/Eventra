@@ -27,7 +27,8 @@ const ProtectedRoute = ({
   // Check if authentication is required
   if (requireAuth && !isAuthenticated()) {
      // ⬇️ preserve where the user wanted to go
-    return <Navigate to={redirectTo} replace state={{ from: location }} />;
+     // If `user` is still set, the token expired mid-session (not a fresh visit).
+    return <Navigate to={redirectTo} replace state={{ from: location, sessionExpired: !!user }} />;
   }
 
   // Check required roles

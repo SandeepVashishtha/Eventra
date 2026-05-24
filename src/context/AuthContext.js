@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from '../config/api';
-import { isTokenValid } from '../utils/tokenUtils';
+import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
 import { syncSecureStorage } from '../utils/secureStorage';
+import { toast } from 'react-toastify';
 
 const AuthContext = createContext();
 
@@ -18,6 +19,11 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Ref-based flag so isAuthenticated() can request cleanup without
+  // mutating state during a render (React rule).
+  const needsExpiryCleanupRef = useRef(false);
+  const expiryToastShownRef = useRef(false);
+
   // Centralized session cleanup — clears both React state and secure storage.
   const clearSession = useCallback(() => {
     setUser(null);
@@ -25,6 +31,20 @@ export const AuthProvider = ({ children }) => {
     syncSecureStorage.removeItem('token');
     syncSecureStorage.removeItem('user');
   }, []);
+
+  /**
+   * Clear the session AND notify the user via toast.
+   * Guards against duplicate toasts with a ref flag.
+   */
+  const clearExpiredSession = useCallback(() => {
+    if (expiryToastShownRef.current) return;
+    expiryToastShownRef.current = true;
+    clearSession();
+    toast.info('Session expired. Please log in again.', {
+      toastId: 'session-expired',
+      autoClose: 5000,
+    });
+  }, [clearSession]);
 
   useEffect(() => {
     // Check for existing authentication on app start
@@ -53,30 +73,70 @@ export const AuthProvider = ({ children }) => {
   // --- Global 401 handler ---
   useEffect(() => {
     setOnUnauthorizedHandler(() => {
-      clearSession();
+      clearExpiredSession();
     });
 
     // Cleanup on unmount
     return () => setOnUnauthorizedHandler(null);
-  }, [clearSession]);
+  }, [clearExpiredSession]);
 
+  // --- Deferred expiry cleanup ---
+  // When isAuthenticated() detects an expired token during a render, it
+  // sets needsExpiryCleanupRef. This effect runs AFTER render finishes
+  // and performs the actual state cleanup + toast.
+  useEffect(() => {
+    if (needsExpiryCleanupRef.current) {
+      needsExpiryCleanupRef.current = false;
+      clearExpiredSession();
+    }
+  });
+
+  // --- Smart Token Expiry Timeout ---
+  // Instead of polling every 15 s, compute the exact remaining TTL from the
+  // token's `exp` claim and schedule a single timeout.  Falls back to a 60 s
+  // interval if `exp` is missing or unparseable.
   // --- Periodic Token Expiry Check ---
   useEffect(() => {
     if (!token) return;
 
-    const checkTokenExpiry = () => {
+    // Reset the toast guard when a new token is set (fresh login).
+    expiryToastShownRef.current = false;
+
+    const payload = decodeTokenPayload(token);
+    const expSeconds = payload?.exp;
+
+    let timeoutId;
+
+    if (typeof expSeconds === 'number') {
+      const nowMs = Date.now();
+      const expiresAtMs = expSeconds * 1000;
+      // Fire 1 second after actual expiry to avoid edge-case races.
+      const delayMs = Math.max(expiresAtMs - nowMs + 1000, 0);
+
+      timeoutId = setTimeout(() => {
+        if (!isTokenValid(token)) {
+          clearExpiredSession();
+        }
+      }, delayMs);
+    } else {
+      // No `exp` claim — fall back to a 60 s polling interval.
+      timeoutId = setInterval(() => {
+        if (!isTokenValid(token)) {
+          clearExpiredSession();
+        }
+      }, 60_000);
+
+      // Also check once immediately.
       if (!isTokenValid(token)) {
-        clearSession(); // Safe here because useEffect runs AFTER rendering finishes
+        clearExpiredSession();
       }
+    }
+
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(timeoutId);
     };
-
-    // Check immediately when the component mounts or token changes
-    checkTokenExpiry();
-
-    // Check periodically every 15 seconds to catch mid-session expiry
-    const interval = setInterval(checkTokenExpiry, 15000);
-    return () => clearInterval(interval);
-  }, [token, clearSession]);
+  }, [token, clearExpiredSession]);
 
   const persistSession = (sessionToken, sessionUser) => {
     setToken(sessionToken);
@@ -197,6 +257,9 @@ export const AuthProvider = ({ children }) => {
   const isAuthenticated = useCallback(() => {
     if (!user || !token) return false;
     if (!isTokenValid(token)) {
+      // Token expired mid-session — flag for deferred cleanup.
+      // Cannot call clearSession() here because this runs during render.
+      needsExpiryCleanupRef.current = true;
       return false;
     }
     return true;
