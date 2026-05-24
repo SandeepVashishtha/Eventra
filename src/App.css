@@ -1001,6 +1001,36 @@ main {
   }
 }
 
+@media (max-width: 640px) {
+  .event-header,
+  .project-header,
+  .hackathon-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .project-stats,
+  .event-actions,
+  .project-actions,
+  .cta-actions,
+  .hackathon-actions {
+    width: 100%;
+  }
+
+  .event-actions > *,
+  .project-actions > *,
+  .cta-actions > *,
+  .hackathon-actions > * {
+    width: 100%;
+  }
+
+  .filter-select,
+  .sort-select {
+    width: 100%;
+  }
+}
+
 @media (max-width: 480px) {
 
   .events-grid,

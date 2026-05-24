@@ -70,10 +70,27 @@
   --touch-target-gap: 0.75rem;
 }
 
+/* Fix #599: Changed from body.dark to .dark
+   ThemeToggleButton.js applies the dark class to document.documentElement (html),
+   not to body. Using body.dark meant these variables never activated in dark mode. */
 .dark {
   --bg-color: #0f172a;
   --text-color: #f8fafc;
   --text-color-light: #cbd5e1;
+
+  --border-color: #334155;
+
+  --card-bg-color: #111827;
+
+  --scrollbar-track-color: #1e293b;
+  --scrollbar-thumb-color: #475569;
+  --scrollbar-thumb-hover-color: #64748b;
+
+  --btn-secondary-text: #f1f5f9;
+
+  /* Additional Dark Theme Colors */
+  --navbar-bg: #111827;
+  --sidebar-bg: #0f172a;
   --border-color: #1e293b;
   --card-bg-color: #1e293b;
 
@@ -106,6 +123,13 @@ html {
   font-size: 16px; /* Explicit root size for reliable rem calculations */
 }
 
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 0;
+}
+
 /* Lenis smooth scrolling styles */
 html.lenis {
   height: auto;
@@ -131,6 +155,8 @@ body {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
     "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: var(--lh-body);
@@ -141,6 +167,23 @@ body {
   font-size: var(--font-body);
   font-weight: var(--fw-regular);
 }
+
+img,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+main,
+section,
+article,
+header,
+footer,
+aside {
+  min-width: 0;
 .dark {
   color-scheme: dark;
 }
@@ -235,6 +278,7 @@ code {
 
 .btn-primary:hover {
   transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
   background: var(--color-primary-hover);
   box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
   color: #ffffff;
@@ -255,6 +299,8 @@ code {
 }
 
 .btn-secondary:hover {
+  border-color: #667eea;
+  color: #667eea;
   border-color: var(--color-primary);
   color: var(--color-primary);
   transform: translateY(-2px);
@@ -272,9 +318,23 @@ code {
 
   }
 
-  .container { padding: 0 16px; }
+  .container {
+    width: min(100%, calc(100% - 1.5rem));
+    padding: 0 16px;
+  }
   .section-padding { padding: 60px 0; }
   .btn-primary, .btn-secondary { padding: 10px 24px; font-size: 0.875rem; }
+}
+
+@media (max-width: 640px) {
+  .section-padding {
+    padding: 48px 0;
+  }
+
+  .container {
+    width: min(100%, calc(100% - 1rem));
+    padding: 0 14px;
+  }
 }
 
 /* Issue #862: keep mobile and coarse-pointer controls comfortable to tap. */

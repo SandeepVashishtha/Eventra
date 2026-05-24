@@ -531,7 +531,7 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          className="fixed top-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-sm shadow-2xl z-50 flex flex-col bg-white backdrop-blur-lg dark:bg-gray-900/95"
+          className="fixed inset-y-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-[20rem] sm:max-w-sm shadow-2xl z-50 flex flex-col bg-white backdrop-blur-lg dark:bg-gray-900/95"
           role="dialog"
           aria-modal="true"
           initial={{ x: "100%" }}
@@ -693,14 +693,15 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 transition-colors duration-300 relative"
       >
         <div className="neon-navbar-border"></div>
+        <div className="max-w-screen-2xl mx-auto flex items-center h-[68px] px-4 sm:px-6 xl:px-10 gap-3 sm:gap-6 min-w-0">
         <div className="max-w-screen-2xl mx-auto flex items-center h-[68px] px-6 xl:px-10 gap-8 justify-between">
           {/* ── Logo ── left-anchored, never squishes */}
-          <Link to="/" className="flex items-center shrink-0 z-20">
+          <Link to="/" className="flex items-center shrink-0 z-20 min-w-0">
           <h2
   className="bg-gradient-to-r from-zinc-950 via-indigo-600 to-violet-600 dark:from-white dark:via-indigo-300 dark:to-indigo-500 bg-clip-text text-transparent"
   style={{
     fontFamily: "'Oxanium', monospace",
-    fontSize: "1.44rem",
+    fontSize: "clamp(1.12rem, 4vw, 1.44rem)",
     fontWeight: 800,
     letterSpacing: "0.08em",
     textTransform: "uppercase",
@@ -718,7 +719,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           </div>
 
           {/* Right Group: Auth Controls and Mobile Toggle */}
-          <div className="hidden lg:flex items-center gap-2 shrink-0 justify-end">
+          <div className="hidden lg:flex items-center gap-2 shrink-0 justify-end flex-nowrap">
             {/* Command Palette Trigger Button */}
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -767,7 +768,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           </div>
 
           {/* Mobile menu button */}
-          <div className="lg:hidden ml-auto">
+          <div className="lg:hidden ml-auto shrink-0">
             <button 
               ref={toggleBtnRef} 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 

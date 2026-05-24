@@ -1,8 +1,5 @@
 import { useEffect, useState, memo } from "react";
-import {
-  formatEventDateTime,
-  getUserTimezone,
-} from "../../utils/timezoneUtils";
+import { getUserTimezone } from "../../utils/timezoneUtils";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -10,7 +7,7 @@ import {
   BookmarkCheck,
   Calendar,
   MapPin,
-  Clock,
+  
   Tag,
   Star,
   Heart,

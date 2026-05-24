@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Users,
-  Calendar,
   Clock,
   TrendingUp,
   Activity,
   CheckCircle2,
-  AlertCircle,
   Play,
-  Award,
+  
   Zap
 } from "lucide-react";
 import {
@@ -18,8 +16,7 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  BarChart,
-  Bar,
+  
   Cell,
   PieChart,
   Pie
