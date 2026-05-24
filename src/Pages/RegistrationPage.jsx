@@ -93,12 +93,12 @@ const RegistrationPage = () => {
           </div>
           <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-3">Registration Successful!</h2>
           <p className="text-slate-600 dark:text-slate-300 mb-8 leading-relaxed">
-            Thank you for registering, <span className="font-semibold">{formData.fullName}</span>. An confirmation email has been sent to <span className="font-semibold">{formData.email}</span> with your event pass.
+            Thank you for registering, <span className="font-semibold">{formData.fullName}</span>. An confirmation email has been sent to <span className="font-semibold">{formData.email}</span> with further details.
           </p>
           <div className="flex flex-col gap-3">
             <button
               onClick={() => navigate("/dashboard")}
-              className="py-3.5 px-6 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-indigo-500/25 transition-all duration-300 hover:scale-[1.02]"
+              className="py-3.5 px-6 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-indigo-500/25 transition-all duration-300 hover:scale-105"
             >
               Go to Dashboard
             </button>
@@ -115,12 +115,12 @@ const RegistrationPage = () => {
   }
 
   return (
-    <div className="min-h-screen py-16 px-4 bg-gradient-to-br from-indigo-50/50 via-white to-violet-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-300">
+    <div className="fixed inset-0 py-16 px-4 bg-gradient-to-br from-indigo-50/50 via-white to-violet-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-300 z-[10000] overflow-y-auto flex items-center justify-center">
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: 30, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.6 }}
-        className="max-w-2xl mx-auto backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border border-slate-200/50 dark:border-slate-800/50 shadow-2xl rounded-3xl p-6 sm:p-10 relative overflow-hidden"
+        className="max-w-2xl w-full backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border border-slate-200/50 dark:border-slate-800/50 shadow-2xl rounded-3xl p-6 sm:p-10 relative overflow-hidden"
       >
         {/* Glow Effects */}
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-60 h-60 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -279,7 +279,7 @@ const RegistrationPage = () => {
                 placeholder="Any special requirements or questions?"
                 value={formData.additionalInfo}
                 onChange={handleChange}
-                className="w-full bg-white/80 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 dark:focus:border-indigo-400 p-3.5 rounded-2xl text-slate-800 dark:text-white outline-none focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-indigo-400/10 h-32 resize-none transition-all duration-300"
+                className="w-full bg-white/80 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 dark:focus:border-indigo-400 p-3.5 rounded-2xl text-slate-800 dark:text-white outline-none focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-indigo-400/10 transition-all duration-300 resize-none"
               />
             </div>
 
@@ -288,14 +288,14 @@ const RegistrationPage = () => {
               <button
                 type="button"
                 onClick={handleCancel}
-                className="flex-1 py-3.5 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-2xl font-bold transition-all duration-300 hover:scale-[1.01]"
+                className="flex-1 py-3.5 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-2xl font-bold transition-colors duration-300"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex-1 py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-2xl font-bold hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-300 hover:scale-[1.01] flex items-center justify-center gap-2"
+                className="flex-1 py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-2xl font-bold hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-300 hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

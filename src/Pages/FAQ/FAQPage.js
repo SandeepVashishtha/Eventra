@@ -225,6 +225,10 @@ export default function FAQSection() {
     };
   }, [headerHeight]);
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> f35178a86bcf2d8a09d2f9fa4a9f024ba75738b7
   return (
     <>
       <style>{`
