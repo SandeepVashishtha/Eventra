@@ -1,17 +1,24 @@
+import React, { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Calendar, MapPin, Clock, Tag } from "lucide-react";
+import { Calendar, MapPin, Clock, Tag, ChevronDown } from "lucide-react";
 import { getEventStatus } from "../../utils/eventUtils";
+import { isEventBookmarked } from "../../utils/bookmarkUtils";
+import { useMyEvents } from "../../context/MyEventsContext";
+import ReminderControls from "../../components/reminders/ReminderControls";
 import mockEvents from "./eventsMockData.json";
 import CertificateDownload from "../../components/CertificateDownload";
 import EventMaterials from "../../components/common/EventMaterials";
 import EventRecommendations from "../../components/events/EventRecommendations";
-
+import CopyLinkButton from "../../components/common/CopyLinkButton";
 const EventDetails = () => {
   const { eventId } = useParams();
+  const { isRegistered } = useMyEvents();
   const foundEvent = mockEvents.find((item) => String(item.id) === eventId);
   const event = foundEvent
     ? { ...foundEvent, status: getEventStatus(foundEvent) }
     : null;
+
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   if (!event) {
     return (
@@ -28,6 +35,8 @@ const EventDetails = () => {
       </div>
     );
   }
+
+  const canSetReminder = isEventBookmarked(event.id) || isRegistered(event.id);
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 py-16 px-4 sm:px-6 lg:px-8">
@@ -48,27 +57,31 @@ const EventDetails = () => {
           </div>
 
           <div className="flex flex-wrap gap-3">
-            {event.status === 'past' ? (
-              <CertificateDownload
-                eventName={event.title}
-                eventDate={event.date}
-                eventType={event.type}
-              />
-            ) : (
-              <Link
-                to={`/events/${event.id}/register`}
-                className="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 transition"
-              >
-                Register Now
-              </Link>
-            )}
-            <Link
-              to="/events"
-              className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
-            >
-              Back to Events
-            </Link>
-          </div>
+  {event.status === "past" ? (
+    <CertificateDownload
+      eventName={event.title}
+      eventDate={event.date}
+      eventType={event.type}
+    />
+  ) : (
+    <Link
+      to={`/events/${event.id}/register`}
+      className="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 transition"
+    >
+      Register Now
+    </Link>
+  )}
+
+  {/* Copy Link Button */}
+  <CopyLinkButton />
+
+  <Link
+    to="/events"
+    className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+  >
+    Back to Events
+  </Link>
+</div>
         </div>
 
         {/* Main Grid */}
@@ -141,6 +154,10 @@ const EventDetails = () => {
 
           {/* Right - Sidebar */}
           <aside className="space-y-6 rounded-3xl bg-white p-8 shadow-xl dark:bg-gray-900">
+            <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
+              <ReminderControls event={event} canSetReminder={canSetReminder} />
+            </div>
+
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">Event Details</h2>
               <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">

@@ -16,11 +16,8 @@ import {
   LinkIcon,
   CalendarDaysIcon,
   DocumentTextIcon,
-  ComputerDesktopIcon
+  ComputerDesktopIcon,
 } from "@heroicons/react/24/solid";
-
-
-
 
 const HostHackathon = () => {
   const [errors, setErrors] = useState({});
@@ -94,9 +91,9 @@ const HostHackathon = () => {
       newErrors.location = "Location must be at least 3 characters long!";
     }
 
-    // ✅ Email validation — works even for incomplete email
+    // ✅ Email validation — stricter regex to prevent invalid TLDs
     if (data.email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
       if (!emailRegex.test(data.email.trim())) {
         newErrors.email = "Please enter a valid email address!";
       }
@@ -168,7 +165,7 @@ const HostHackathon = () => {
 
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-  
+
   const formFields = [
     {
       label: "Hackathon Name",
@@ -220,7 +217,6 @@ const HostHackathon = () => {
       icon: LinkIcon,
     },
   ];
-
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
