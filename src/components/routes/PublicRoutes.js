@@ -8,8 +8,7 @@ import EventDetails from "../../Pages/Events/EventDetails";
 import EventRegistration from "../../Pages/Events/EventRegistration";
 import BookmarkedEvents from "../../Pages/Events/BookmarkedEvents";
 import RemindersPage from "../../Pages/Events/RemindersPage";
-import HackathonPage from "../../Pages/Hackathons/HackathonPage";
-import ProjectsPage from "../../Pages/Projects/ProjectsPage";
+import HackathonLifecycle from "../../Pages/Hackathons/HackathonLifecycle";
 import Contributors from "../Contributors";
 import CommunityEvent from "../CommunityEvent";
 import LeaderBoard from "../../Pages/Leaderboard/Leaderboard";
@@ -42,6 +41,7 @@ export const getPublicRoutes = () => [
   <Route key="/register" path="/events/:eventId/register" element={<EventRegistration />} />,
   <Route key="/hackathons" path="/hackathons" element={<HackathonPage />} />,
   <Route key="/hackathon-details" path="/hackathons/:hackathonId" element={<HackathonDetailsPage />} />,
+  <Route key="/hackathons-lifecycle" path="/hackathons/:id/lifecycle" element={<HackathonLifecycle />} />,
   <Route key="/projects" path="/projects" element={<ProjectsPage />} />,
   <Route key="/api/hackathons" path="/api/hackathons" element={<MockApiResponse />} />,
   <Route key="/api/projects" path="/api/projects" element={<MockApiResponse />} />,

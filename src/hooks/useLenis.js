@@ -33,12 +33,22 @@ const useLenis = (options = {}) => {
 
     requestAnimationFrame(raf);
 
+    // Add scroll listener for synchronization and visibility
+    lenis.on('scroll', ({ velocity, isScrolling }) => {
+      // Add data attributes to body for global scroll state
+      if (document.body) {
+        document.body.setAttribute('data-scrolling', isScrolling ? 'true' : 'false');
+        // Set high-speed flag for fast scrolling (fade out overlays)
+        document.body.setAttribute('data-fast-scroll', Math.abs(velocity) > 1.5 ? 'true' : 'false');
+      }
+    });
+
     // Cleanup on unmount
     return () => {
       lenis.destroy();
       window.lenis = null;
     };
-  }, []);
+  }, [options]);
 
   return null;
 };

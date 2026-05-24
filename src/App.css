@@ -9,14 +9,11 @@
 }
 .neon-navbar-border {
   position: absolute;
-  bottom: -2px;
+  bottom: -1px;
   left: 0;
   width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, #ff00ff, #00ffff, #7c3aed, #ff00ff, #00ffff);
-  background-size: 400% 400%;
-  animation: neonRevolve 3s linear infinite;
-  box-shadow: 0 0 10px rgba(0, 255, 255, 0.4), 0 0 15px rgba(255, 0, 255, 0.4);
+  height: 1px;
+  background: var(--border-color);
   z-index: 50;
 }
 
@@ -27,6 +24,11 @@
   100% { background-position: 0% 50%;   }
 }
 .neon-logo {
+  font-weight: 800;
+  color: var(--text-color) !important;
+  background: none !important;
+  -webkit-text-fill-color: initial !important;
+  filter: none !important;
   background: linear-gradient(90deg, #6f2ae6, #5558d6, #30bfbf, #b522b5, #b4750a, #494a8f, #702ee1);
   background-size: 300% 300%;
   animation: neonLogoShift 10s ease infinite;
@@ -118,9 +120,11 @@ main {
    EVENTS SECTION STYLES
    ========================================================================== */
 .events-section {
-  padding: 4rem 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 5rem 0;
+  background: var(--bg-gradient);
+  color: var(--text-color);
   min-height: 100vh;
+  color: white;
 }
 
 .events-section .container {
@@ -131,20 +135,21 @@ main {
 
 .section-header {
   text-align: center;
-  margin-bottom: 3rem;
-  color: white;
+  margin-bottom: 3.5rem;
+  color: var(--text-color);
 }
 
 .section-header h1 {
   font-size: var(--font-h1);
-  margin-bottom: 1rem;
-  background: linear-gradient(45deg, #fff, #f0f0f0);
+  margin-bottom: 1.25rem;
+  background: linear-gradient(135deg, var(--text-color) 0%, var(--text-color-light) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .section-header p {
   font-size: var(--font-h5);
+  color: var(--text-color-light);
   opacity: 0.9;
 }
 
@@ -165,27 +170,30 @@ main {
 
 .filter-controls button,
 .view-controls button {
-  padding: 0.5rem 1rem;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border-radius: 25px;
+  padding: 0.5rem 1.25rem;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg-color);
+  color: var(--text-color);
+  border-radius: 9999px;
   cursor: pointer;
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
   font-size: var(--font-body);
+  box-shadow: var(--card-shadow);
 }
 
 .filter-controls button:hover,
 .view-controls button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
+  background: var(--bg-secondary);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-1px);
 }
 
 .filter-controls button.active,
 .view-controls button.active {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
 }
 
 .view-controls {
@@ -204,18 +212,19 @@ main {
 }
 
 .event-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  border-radius: 20px;
-  padding: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
+  background: var(--card-bg-color);
+  border: var(--card-border);
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-color);
 }
 
 .event-card:hover {
-  background: rgba(255, 255, 255, 0.15);
-  transform: translateY(-5px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15);
+  border-color: var(--color-primary);
 }
 
 .event-image {
@@ -258,7 +267,7 @@ main {
 }
 
 .event-content {
-  color: white;
+  color: var(--text-color);
 }
 
 .event-header {
@@ -271,24 +280,28 @@ main {
 .event-header h3 {
   font-size: var(--font-h3);
   margin: 0;
+  color: var(--text-color);
 }
 
 .event-type {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-color-light);
   padding: 0.25rem 0.75rem;
-  border-radius: 15px;
+  border-radius: 9999px;
   font-size: var(--font-h6);
   text-transform: capitalize;
 }
 
 .event-description {
-  margin-bottom: 1rem;
-  opacity: 0.9;
+  margin-bottom: 1.25rem;
+  color: var(--text-color-light);
+  opacity: 0.95;
   line-height: 1.6;
 }
 
 .event-details {
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .detail {
@@ -296,77 +309,96 @@ main {
   align-items: center;
   margin-bottom: 0.5rem;
   gap: 0.5rem;
+  color: var(--text-color-light);
 }
 
 .detail .icon {
   font-size: var(--font-body);
+  color: var(--color-primary);
 }
 
 .event-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .tag {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-color-light);
   padding: 0.25rem 0.75rem;
-  border-radius: 15px;
+  border-radius: 9999px;
   font-size: var(--font-h6);
 }
 
 .event-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
 }
 
 .btn-primary,
 .btn-secondary,
 .btn-outline {
-  padding: 0.75rem 1.5rem;
-  border-radius: 25px;
-  border: none;
-  cursor: pointer;
-  font-weight: 500;
-  background-color: #74b9ff;
-  transition: all 0.3s ease;
+  padding: 0.625rem 1.5rem;
+  border-radius: 8px;
+  font-weight: var(--fw-medium);
+  font-size: var(--font-body);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   text-decoration: none;
   display: inline-block;
   text-align: center;
-  font-size: var(--font-body);
+  cursor: pointer;
+  box-sizing: border-box;
 }
 
 .btn-primary {
-  background: linear-gradient(45deg, #ff6b6b, #efb399);
+  background: var(--color-primary);
   color: white;
-  transition: box-shadow 0.3s ease;
+  border: 1px solid var(--color-primary);
 }
 
 .btn-primary:hover {
-  box-shadow: 0 6px 25px rgba(255, 107, 107, 0.8);
-}
-
-.btn-secondary {
-  background: linear-gradient(45deg, #47a1fb, #a7d7fc);
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
   color: white;
 }
 
+.btn-secondary {
+  background: var(--bg-secondary);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
 .btn-secondary:hover {
-  transform: translateY(-2px);
+  background: var(--border-color);
+  transform: translateY(-1px);
+  color: var(--text-color);
 }
 
 .btn-outline {
-  background: rgb(120, 120, 174);
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  color: rgb(227, 227, 227);
-  transition: all 0.3s ease;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-color-light);
 }
 
 .btn-outline:hover {
-  background: rgb(79, 79, 236);
-  transform: translateY(-2px);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-1px);
+}
+.dark .btn-outline {
+  background: #374151;
+  color: #f3f4f6;
+  border-color: #6b7280;
+}
+
+.dark .btn-outline:hover {
+  background: #4b5563;
 }
 
 .no-events {
@@ -379,8 +411,9 @@ main {
    HACKATHON HUB STYLES
    ========================================================================== */
 .hackathon-hub {
-  padding: 4rem 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 5rem 0;
+  background: var(--bg-gradient);
+  color: var(--text-color);
   min-height: 100vh;
 }
 
@@ -393,25 +426,28 @@ main {
 }
 
 .hackathon-tabs button {
-  padding: 0.75rem 1.5rem;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border-radius: 25px;
+  padding: 0.625rem 1.5rem;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg-color);
+  color: var(--text-color);
+  border-radius: 9999px;
   cursor: pointer;
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
   font-size: var(--font-body);
+  box-shadow: var(--card-shadow);
 }
 
 .hackathon-tabs button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
+  background: var(--bg-secondary);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-1px);
 }
 
 .hackathon-tabs button.active {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
 }
 
 .hackathon-grid {
@@ -431,19 +467,19 @@ main {
 }
 
 .hackathon-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  border-radius: 20px;
-  padding: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
-  color: white;
+  background: var(--card-bg-color);
+  border: var(--card-border);
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-color);
 }
 
 .hackathon-card:hover {
-  background: rgba(255, 255, 255, 0.15);
-  transform: translateY(-5px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15);
+  border-color: var(--color-primary);
 }
 
 .hackathon-header {
@@ -652,23 +688,24 @@ main {
 }
 
 .cta-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  border-radius: 20px;
-  padding: 2rem;
+  background: var(--card-bg-color);
+  border: var(--card-border);
+  border-radius: 16px;
+  padding: 2.5rem;
   text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
+  box-shadow: var(--card-shadow);
+  color: var(--text-color);
 }
 
 .cta-card h3 {
   margin-bottom: 1rem;
   font-size: var(--font-h3);
+  color: var(--text-color);
 }
 
 .cta-card p {
-  margin-bottom: 1.5rem;
-  opacity: 0.9;
+  margin-bottom: 1.75rem;
+  color: var(--text-color-light);
   font-size: var(--font-body);
 }
 
@@ -676,8 +713,9 @@ main {
    PROJECT GALLERY STYLES
    ========================================================================= */
 .project-gallery {
-  padding: 4rem 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 5rem 0;
+  background: var(--bg-gradient);
+  color: var(--text-color);
   min-height: 100vh;
 }
 
@@ -685,7 +723,7 @@ main {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 3rem;
+  margin-bottom: 3.5rem;
   flex-wrap: wrap;
   gap: 1rem;
 }
@@ -695,29 +733,43 @@ main {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: white;
+  color: var(--text-color-light);
   font-size: var(--font-body);
 }
 
 .filter-select,
 .sort-select {
   padding: 0.5rem 1rem;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border-radius: 15px;
-  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  background: var(--card-bg-color);
+  color: var(--text-color);
+  border-radius: 8px;
   font-size: var(--font-body);
+  outline: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-select:focus,
+.sort-select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+.dark .filter-select,
+.dark .sort-select {
+  background: rgba(31, 41, 55, 0.9);
+  color: #f9fafb;
+  border-color: rgba(255,255,255,0.2);
 }
 
 .filter-select option,
 .sort-select option {
-  background: #4c1d95;
-  color: white;
+  background: var(--card-bg-color);
+  color: var(--text-color);
 }
 
 .submit-project {
-  padding: 0.75rem 1.5rem !important;
+  padding: 0.625rem 1.5rem !important;
 }
 
 .projects-grid {
@@ -727,19 +779,19 @@ main {
 }
 
 .project-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  border-radius: 20px;
-  padding: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
-  color: white;
+  background: var(--card-bg-color);
+  border: var(--card-border);
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-color);
 }
 
 .project-card:hover {
-  background: rgba(255, 255, 255, 0.15);
-  transform: translateY(-5px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15);
+  border-color: var(--color-primary);
 }
 
 .project-image {
@@ -767,6 +819,7 @@ main {
 .project-header h3 {
   font-size: var(--font-h3);
   margin: 0;
+  color: var(--text-color);
 }
 
 .project-stats {
@@ -779,11 +832,13 @@ main {
   align-items: center;
   gap: 0.25rem;
   font-size: var(--font-body);
+  color: var(--text-color-light);
 }
 
 .project-description {
   margin-bottom: 1rem;
-  opacity: 0.9;
+  color: var(--text-color-light);
+  opacity: 0.95;
   line-height: 1.6;
   font-size: var(--font-body);
 }
@@ -797,15 +852,18 @@ main {
 .project-meta .difficulty {
   margin-bottom: 0.5rem;
   font-size: var(--font-body);
+  color: var(--text-color-light);
 }
 
 .author-name {
   font-weight: bold;
-  color: #4ade80;
+  color: var(--color-primary);
 }
 
 .category-tag {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-color-light);
   padding: 0.25rem 0.75rem;
   border-radius: 15px;
   font-size: var(--font-h6);
@@ -842,6 +900,7 @@ main {
   margin-bottom: 0.5rem;
   opacity: 0.8;
   font-size: var(--font-body);
+  color: var(--text-color-light);
 }
 
 .contributor-list {
@@ -851,15 +910,18 @@ main {
 }
 
 .contributor {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-color-light);
   padding: 0.25rem 0.75rem;
   border-radius: 15px;
   font-size: var(--font-h6);
 }
 
 .contributor.main {
-  background: rgba(74, 222, 128, 0.3);
-  color: #4ade80;
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--color-primary);
+  border-color: rgba(59, 130, 246, 0.3);
   font-weight: bold;
 }
 
@@ -873,6 +935,7 @@ main {
   gap: 0.5rem;
   margin-bottom: 0.25rem;
   font-size: var(--font-body);
+  color: var(--text-color-light);
   opacity: 0.8;
 }
 
@@ -1002,10 +1065,17 @@ main {
 }
 
 .mission-text-column .main-heading {
-  color: #000000;
+  
   font-size: 3rem;
   font-weight: 700;
   margin-bottom: 24px;
+}
+.mission-text-column .main-heading {
+  color: #111827;
+}
+
+.dark .mission-text-column .main-heading {
+  color: #ffffff;
 }
 
 :is(.dark) .mission-text-column .main-heading {
@@ -1018,7 +1088,9 @@ main {
   line-height: 1.6;
   margin-bottom: 20px;
 }
-
+.dark .mission-text-column .desc-text {
+  color: #d1d5db;
+}
 :is(.dark) .mission-text-column .desc-text {
   color: #8a99ad;
 }
@@ -1062,7 +1134,14 @@ main {
   font-size: 3rem;
   font-weight: 700;
   letter-spacing: 0.05em;
-  color: #000000;
+  
+}
+.eventra-brand-card h1 {
+  color: #111827;
+}
+
+.dark .eventra-brand-card h1 {
+  color: #ffffff;
 }
 
 :is(.dark) .eventra-brand-card h1 {
@@ -1093,6 +1172,9 @@ main {
   transform: translate(0, 0) scale(0.6);
   transition: transform 0.75s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.6s ease;
 }
+.dark .eventra-sub-card {
+  background: #1f2937;
+}
 
 :is(.dark) .eventra-sub-card {
   background: #1f2937;
@@ -1117,6 +1199,9 @@ main {
   line-height: 1.4;
   font-weight: 500;
   text-align: left;
+}
+.dark .eventra-sub-card p {
+  color: #d1d5db;
 }
 
 :is(.dark) .eventra-sub-card p {
@@ -1221,4 +1306,19 @@ main {
   .eventra-animation-container {
     grid-template-columns: 1fr;
   }
+}
+.dark {
+  color-scheme: dark;
+}
+
+.dark p,
+.dark span,
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6,
+.dark label {
+  color: inherit;
 }
