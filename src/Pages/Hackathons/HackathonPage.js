@@ -17,14 +17,6 @@ import {
 import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
-<<<<<<< HEAD
-import SearchEmptyState from "../../components/common/SearchEmptyState";
-import PageLoader from "../../components/common/PageLoader";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { getRouteSearchResults } from "../../utils/searchUtils";
-=======
-
->>>>>>> f35178a86bcf2d8a09d2f9fa4a9f024ba75738b7
 
 // NEW: Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
