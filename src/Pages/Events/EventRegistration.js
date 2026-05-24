@@ -17,7 +17,6 @@ import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useSessionRecovery } from "../../context/SessionRecoveryContext";
-import { API_ENDPOINTS } from "../../config/api";
 import { useFormValidation } from "../../hooks/useFormValidation";
 import { validate } from "../../validation";
 import { toast } from "react-toastify";
@@ -147,7 +146,6 @@ const EventRegistration = () => {
     setSubmitting(true);
 
     try {
-      // API call to register for event using centralized API layer
       const response = await apiUtils.post(
         API_ENDPOINTS.EVENTS.REGISTER(eventId),
         {
@@ -157,53 +155,14 @@ const EventRegistration = () => {
         }
       );
 
+      // Axios resolves for 2xx — treat as success
       setRegistered(true);
       toast.success("Registration successful!");
-      // ── Save to My Events ──
+      sendConfirmationEmail(formData.email, formData.fullName, event?.title, event?.date);
       addRegistration(event, formData);
-      // Redirect to event details after 2 seconds
-      setTimeout(() => {
-        navigate(`/events/${eventId}`);
-      }, 2000);
-        }),
-      });
-
-      if (response.ok) {
-        setRegistered(true);
-        toast.success("Registration successful!");
-        sendConfirmationEmail(formData.email, formData.fullName, event?.title, event?.date);
-        // ── Save to My Events ──
-        addRegistration(event, formData);
-        // Clear session after successful registration
-        clearSession();
-        // Redirect to event details after 2 seconds
-        setTimeout(() => {
-          navigate(`/events/${eventId}`);
-        }, 2000);
-      } else {
-        let errorData = {};
-        try {
-          errorData = await response.json();
-        } catch {
-          errorData = {};
-        }
-
-        const serverMessage = errorData.message || "";
-        const isConflict = response.status === 409;
-        const isFull = isCapacityMessage(serverMessage);
-
-        if (isConflict && isFull) {
-          toast.error("This event has reached maximum capacity.");
-          const updatedEvent = mockEvents.find((e) => e.id === parseInt(eventId));
-          if (updatedEvent) {
-            setEvent({ ...updatedEvent, status: getEventStatus(updatedEvent) });
-          }
-        } else if (isConflict) {
-          toast.error("Too many simultaneous registrations. Please try again.");
-        } else {
-          toast.error(serverMessage || "Registration failed. Please try again.");
-        }
-      }
+      clearSession();
+      setTimeout(() => navigate(`/events/${eventId}`), 2000);
+    
     } catch (error) {
       console.error("Registration error:", error);
       

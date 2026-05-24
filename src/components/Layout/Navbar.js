@@ -237,8 +237,6 @@ const DesktopNavLink = ({ item, isActive }) => (
 
 const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location }) => (
   <div className="relative">
-  const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location }) => (
-  <div className="relative">
     <button
       onClick={onToggle}
       className={`relative group flex items-center gap-1.5 text-[13px] xl:text-[14px] font-medium transition-all duration-200 whitespace-nowrap px-3.5 py-1.5 rounded-lg ${
@@ -428,11 +426,6 @@ const NAV_ITEMS = [
   { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
   { name: "Hackathons", href: "/hackathons", icon: <Trophy className="w-5 h-5" /> },
   { name: "Projects", href: "/projects", icon: <FolderKanban className="w-5 h-5" /> },
-  { name: "Home",       href: "/",          icon: <Home         className="w-5 h-5" /> },
-  { name: "Events",     href: "/events",     icon: <Calendar     className="w-5 h-5" /> },
-  { name: "Bookmarks",  href: "/bookmarks",  icon: <Bookmark     className="w-5 h-5" /> },
-  { name: "Hackathons", href: "/hackathons", icon: <Trophy       className="w-5 h-5" /> },
-  { name: "Projects",   href: "/projects",   icon: <FolderKanban className="w-5 h-5" /> },
   {
     name: "Community",
     icon: <Users className="w-5 h-5" />,
@@ -491,6 +484,24 @@ const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
     </div>
   );
 };
+
+const MobileDrawerHeader = ({ closeBtnRef, closeAllMenus, isDarkMode }) => (
+  <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-zinc-800/50">
+    <div className="flex items-center gap-2">
+      <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
+        <Sparkles className="w-5 h-5 text-white" />
+      </div>
+      <span className="font-bold text-gray-900 dark:text-white">Menu</span>
+    </div>
+    <button
+      ref={closeBtnRef}
+      onClick={closeAllMenus}
+      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-gray-400 transition-colors"
+    >
+      <ChevronDown className="w-6 h-6 rotate-90" />
+    </button>
+  </div>
+);
 
 const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeAllMenus, handleTouchStart, handleTouchMove, handleTouchEnd, closeBtnRef, toggleCursor, cursorEnabled, handleLogoutClick, primaryLine, secondaryLine }) => {
   const location = useLocation();
@@ -678,37 +689,38 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           {/* ── Nav links ── takes all remaining space, items centered */}
           <div className="flex-1 min-w-0">
             <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
-        {/* Right Group: Auth Controls and Mobile Toggle */}
-<div className="hidden lg:flex items-center gap-2 shrink-0 justify-end">
-  <ThemeToggleButton
-    isDarkMode={isDarkMode}
-    toggleTheme={toggleTheme}
-    isMobile={false}
-  />
+          </div>
 
-  <CursorToggleButton
-    cursorEnabled={cursorEnabled}
-    toggleCursor={toggleCursor}
-    isMobile={false}
-  />
+          {/* Right Group: Auth Controls and Mobile Toggle */}
+          <div className="hidden lg:flex items-center gap-2 shrink-0 justify-end">
+            <ThemeToggleButton
+              isDarkMode={isDarkMode}
+              toggleTheme={toggleTheme}
+              isMobile={false}
+            />
 
-  <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700"></div>
+            <CursorToggleButton
+              cursorEnabled={cursorEnabled}
+              toggleCursor={toggleCursor}
+              isMobile={false}
+            />
 
-  {isAuthenticated() ? (
-    <UserProfileDropdown
-      user={user}
-      primaryLine={primaryLine}
-      secondaryLine={secondaryLine}
-      showProfileDropdown={showProfileDropdown}
-      setShowProfileDropdown={setShowProfileDropdown}
-      location={location}
-      handleLogoutClick={handleLogoutClick}
-    />
-  ) : (
-    <AuthButtons isMobile={false} />
-  )}
-</div>
-         
+            <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700"></div>
+
+            {isAuthenticated() ? (
+              <UserProfileDropdown
+                user={user}
+                primaryLine={primaryLine}
+                secondaryLine={secondaryLine}
+                showProfileDropdown={showProfileDropdown}
+                setShowProfileDropdown={setShowProfileDropdown}
+                location={location}
+                handleLogoutClick={handleLogoutClick}
+              />
+            ) : (
+              <AuthButtons isMobile={false} />
+            )}
+          </div>
 
           {/* Mobile menu button */}
           <div className="lg:hidden ml-auto">
