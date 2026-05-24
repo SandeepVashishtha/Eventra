@@ -334,6 +334,7 @@ export default function EventHero({
                 </span>
               ))}
             </div>
+            </div>
 
             <span
               className={`
@@ -352,50 +353,63 @@ export default function EventHero({
           </div>
         </div>
 
-        <div className="mt-8 sm:mt-12 flex justify-center gap-3 sm:gap-5 flex-wrap px-4 sm:px-0">
-          <button
-            className={`
-              relative
-              px-5 sm:px-7
-              py-2.5 sm:py-3.5
-              rounded-2xl
-              text-sm sm:text-base
-              font-semibold
-              overflow-hidden
-              group
-              transition-all duration-300
-              ${darkTheme.buttonPrimary}
-            `}
-            onClick={scrollToCard}
+        <div
+             className="
+             mt-8 sm:mt-12
+             flex flex-col sm:flex-row
+             items-center
+             justify-center
+             gap-4
+             w-auto   
+             px-4
+             "
           >
-            <span className="relative flex items-center">
-              <Sparkles className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-              Explore Events
-            </span>
-          </button>
+    <button
+      className={`
+      relative
+      w-full sm:w-auto
+      min-w-[220px]
+      px-6 sm:px-7
+      py-3 sm:py-3.5
+      rounded-2xl
+      text-sm sm:text-base
+      font-semibold
+      overflow-hidden
+      group
+      transition-all duration-300
+      flex items-center justify-center
+      ${darkTheme.buttonPrimary}
+    `}
+    onClick={scrollToCard}
+  >
+    <span className="relative flex items-center justify-center">
+      <Sparkles className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+      Explore Events
+    </span>
+  </button>
 
-          <button
-            onClick={() =>
-              navigate("/create-event")
-            }
-            className={`
-              relative
-              px-5 sm:px-7
-              py-2.5 sm:py-3.5
-              rounded-2xl
-              text-sm sm:text-base
-              font-medium
-              transition-all duration-300
-              ${darkTheme.buttonSecondary}
-            `}
-          >
-            <span className="relative flex items-center">
-              <Users className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-              Host an Event
-            </span>
-          </button>
-        </div>
-      </div>
+  <button
+    onClick={() => navigate("/create-event")}
+    className={`
+      relative
+      w-full sm:w-auto
+      min-w-[220px]
+      px-6 sm:px-7
+      py-3 sm:py-3.5
+      rounded-2xl
+      text-sm sm:text-base
+      font-medium
+      transition-all duration-300
+      flex items-center justify-center
+      ${darkTheme.buttonSecondary}
+    `}
+  >
+    <span className="relative flex items-center justify-center">
+      <Users className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+      Host an Event
+    </span>
+  </button>
+</div>
 
       {searchQuery.trim() === "" && (
         <div
