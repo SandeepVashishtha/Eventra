@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 export default function CTASection() {
   return (
-    <div className="bg-white dark:bg-black py-12 px-6 lg:px-16">
+    <div className="bg-white dark:bg-black py-8 sm:py-12 px-4 sm:px-6 lg:px-16">
       {/* Main CTA Section */}
       <section className="relative py-16 bg-gray-50 dark:bg-slate-900/50 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-800 shadow-sm">
         {/* CTA Content Wrapper */}
@@ -18,7 +18,7 @@ export default function CTASection() {
           </motion.div>
 
           {/* Main heading */}
-          <motion.h2 className="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-white mb-4">
+          <motion.h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-4">
             Ignite Ideas, Connect Innovators
           </motion.h2>
 
