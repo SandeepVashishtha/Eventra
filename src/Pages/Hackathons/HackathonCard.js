@@ -284,7 +284,7 @@ const HackathonCard = ({
             </span>
 
             <span className="px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 text-xs font-medium">
-              {hackathon.difficulty}
+              {hackathon.difficulty || "Open"}
             </span>
 
             {/* FIX 3: Pass computed status to UrgencyBadge */}
@@ -296,7 +296,7 @@ const HackathonCard = ({
           </div>
 
           <span className="text-white text-sm font-semibold px-3 py-1 rounded-full bg-black">
-            {hackathon.prize}
+            {hackathon.prize || "TBA"}
           </span>
         </div>
 
@@ -318,7 +318,7 @@ const HackathonCard = ({
         {/* Organizer */}
         <div className="flex items-center text-gray-600 dark:text-gray-400 text-sm gap-1.5 min-h-[32px]">
           <BuildingLibraryIcon className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-          <span>{hackathon.organizer}</span>
+          <span>{hackathon.organizer || "Unknown Organizer"}</span>
         </div>
 
         <div className="border-b border-gray-300 dark:border-gray-700" />
@@ -349,7 +349,7 @@ const HackathonCard = ({
 
           <div className="flex items-center gap-2">
             <MapPinIcon className="w-4 h-4 text-green-500" />
-            {hackathon.location}
+            {hackathon.location || "Online"}
           </div>
 
           {/* FIX 3: Use computed status for countdown logic */}
@@ -379,7 +379,7 @@ const HackathonCard = ({
           </h4>
 
           <div className="flex flex-wrap gap-2">
-            {hackathon.techStack.map((tech, index) => (
+            {(hackathon.techStack || []).map((tech, index) => (
               <span
                 key={index}
                 className="px-3 py-1 border border-blue-200 dark:border-blue-700 bg-blue-100 dark:bg-blue-900/60 text-gray-800 dark:text-gray-200 text-xs font-medium rounded-full"
@@ -400,7 +400,7 @@ const HackathonCard = ({
           </h4>
 
           <ul className="list-disc list-inside text-xs line-clamp-3 min-h-[60px]">
-            {hackathon.rules.map((rule, index) => (
+            {(hackathon.rules || []).map((rule, index) => (
               <li key={index}>{rule}</li>
             ))}
           </ul>
@@ -482,7 +482,7 @@ const HackathonCard = ({
             <div className="grid grid-cols-2 gap-3">
              <button 
   onClick={() => navigate(`/register/${hackathon.id}`)}
-  className="..."
+  className="w-full px-4 py-2 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white text-sm font-medium rounded-lg hover:opacity-90 transition"
 >
   Register
 </button>

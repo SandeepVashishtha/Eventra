@@ -5,7 +5,7 @@ import mockHackathons from "./hackathonMockData.json";
 import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
 import FeedbackButton from "../../components/FeedbackButton";
-import ModernSearchInput from "../../components/common/ModernSearchInput";
+//import ModernSearchInput from "../../components/common/ModernSearchInput";
 import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 import {
   FiCode,
@@ -17,6 +17,10 @@ import {
 import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
+//import SearchEmptyState from "../../components/common/SearchEmptyState";
+//import PageLoader from "../../components/common/PageLoader";
+//import useDocumentTitle from "../../hooks/useDocumentTitle";
+//import { getRouteSearchResults } from "../../utils/searchUtils";
 
 
 // NEW: Tag component for selected tags in search bar
@@ -44,10 +48,10 @@ const HackathonHub = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isScrollVisible, setIsScrollVisible] = useState(false);
   const [filters, setFilters] = useState({
-    difficulty: [],
-    prize: [],
-    location: [],
-  });
+  difficulty: "",
+  prize: "",
+  location: "",
+});
   const [showFilters, setShowFilters] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
@@ -57,7 +61,10 @@ const HackathonHub = () => {
 
   const cardsSectionRef = useRef(null);
   const searchInputRef = useRef(null);
-
+  //temporary
+  useEffect(() => {
+  console.log("Hackathons loaded:", mockHackathons);
+}, []);
   // Simulate API call
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -175,50 +182,120 @@ const HackathonHub = () => {
   };
 
   const fuse = new Fuse(hackathons, {
-    keys: ["title", "description", "location", "techStack"],
-    threshold: 0.4,
-  });
+  keys: [
+    "title",
+    "description",
+    "location",
+    "organizer",
+    "difficulty",
+    "techStack",
+  ],
+  threshold: 0.3,
+});
 
-  const searchedHackathons = searchQuery
+  /*const searchedHackathons = searchQuery
     ? fuse.search(searchQuery).map((result) => result.item)
+    : hackathons;*/
+    const searchedHackathons =
+  searchQuery.trim() !== ""
+    ? fuse
+        .search(searchQuery)
+        .map((result) => result.item)
+        .filter((hackathon) => {
+          // strict tech stack match
+          if (hackathon.techStack) {
+            return hackathon.techStack.some((tech) =>
+              tech.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+          }
+
+          return (
+            hackathon.title
+              ?.toLowerCase()
+              .includes(searchQuery.toLowerCase()) ||
+            hackathon.description
+              ?.toLowerCase()
+              .includes(searchQuery.toLowerCase()) ||
+            hackathon.location
+              ?.toLowerCase()
+              .includes(searchQuery.toLowerCase()) ||
+            hackathon.organizer
+              ?.toLowerCase()
+              .includes(searchQuery.toLowerCase())
+          );
+        })
     : hackathons;
 
   // UPDATED: Filter hackathons based on selected tags
-  const filteredHackathons = searchedHackathons
-    .filter((hackathon) => {
-      if (activeTab === "all") return true;
-      return hackathon.status === activeTab;
-    })
-    .filter((hackathon) => {
-      if (
-        filters.difficulty.length > 0 &&
-        !filters.difficulty.includes(hackathon.difficulty)
-      )
-        return false;
-      if (
-        filters.prize.length > 0 &&
-        !filters.prize.some(
-          (prize) =>
-            !hackathon.prize.toLowerCase().includes(prize.toLowerCase()),
-        )
-      )
-        return false;
-      if (
-        filters.location.length > 0 &&
-        !filters.location.some((loc) =>
-          hackathon.location.toLowerCase().includes(loc.toLowerCase()),
-        )
-      )
-        return false;
+  const filteredHackathons = searchedHackathons.filter((hackathon) => {
+  // TAB FILTER
+  if (activeTab !== "all" && hackathon.status !== activeTab) {
+    return false;
+  }
 
-      // NEW: Filter by selected tags
-      if (selectedTags.length > 0) {
-        const hackathonTags = hackathon.techStack || [];
-        return selectedTags.some((tag) => hackathonTags.includes(tag));
-      }
+  // DIFFICULTY FILTER
+  if (
+    filters.difficulty &&
+    hackathon.difficulty !== filters.difficulty
+  ) {
+    return false;
+  }
 
-      return true;
-    });
+  // LOCATION FILTER
+  if (
+    filters.location &&
+    hackathon.location !== filters.location
+  ) {
+    return false;
+  }
+
+  // PRIZE FILTER
+  if (filters.prize) {
+    const prizeValue = Number(
+      hackathon.prize.replace(/[$,]/g, "")
+    );
+
+    if (
+      filters.prize === "Under $1,000" &&
+      prizeValue >= 1000
+    ) {
+      return false;
+    }
+
+    if (
+      filters.prize === "$1,000 - $5,000" &&
+      (prizeValue < 1000 || prizeValue > 5000)
+    ) {
+      return false;
+    }
+
+    if (
+      filters.prize === "$5,000+" &&
+      prizeValue < 5000
+    ) {
+      return false;
+    }
+  }
+
+  // TECH STACK FILTER
+  if (selectedTags.length > 0) {
+    const techStack = hackathon.techStack || [];
+
+    const matchesTag = selectedTags.some((tag) =>
+      techStack.some(
+        (tech) =>
+          tech.toLowerCase() === tag.toLowerCase()
+      )
+    );
+
+    if (!matchesTag) {
+      return false;
+    }
+  }
+
+  return true;
+});
+
 
   const featuredHackathons = [...hackathons]
     .filter((h) => h.featured)
@@ -227,10 +304,10 @@ const HackathonHub = () => {
   // UPDATED: Reset filters and tags
   const resetFilters = () => {
     setFilters({
-      difficulty: [],
-      prize: [],
-      location: [],
-    });
+  difficulty: "",
+  prize: "",
+  location: "",
+});
     setSearchQuery("");
     setSelectedTags([]);
   };
@@ -353,7 +430,7 @@ const HackathonHub = () => {
     );
   };
 
-  return (
+ return (
     <div className="overflow-x-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 py-6">
       {/* Floating Action Button */}
       <motion.div
@@ -401,26 +478,17 @@ const HackathonHub = () => {
       />
 
       <motion.div
-        ref={cardsSectionRef}
-        key={activeTab}
-        className="grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-        variants={{
-          hidden: { opacity: 0 },
-          show: {
-            opacity: 1,
-            transition: { staggerChildren: 0.1, delayChildren: 0.3 },
-          },
-        }}
-        initial="hidden"
-        animate="show"
-        exit={{ opacity: 0 }}
-      >
-        {hackathons.map((hackathon) => (
-          <div key={hackathon.id}>
-            {/* HackathonCard component unchanged */}
-          </div>
-        ))}
-      </motion.div>
+  ref={cardsSectionRef}
+  key={activeTab}
+  className="grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+>
+  {filteredHackathons.map((hackathon) => (
+    <HackathonCard
+      key={hackathon.id}
+      hackathon={hackathon}
+    />
+  ))}
+</motion.div>
 
       {/* Featured Hackathons */}
       {!isLoading && featuredHackathons.length > 0 && (
