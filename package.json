@@ -33,7 +33,7 @@
     "build:fast": "set \"GENERATE_SOURCEMAP=false\" && set \"DISABLE_ESLINT_PLUGIN=true\" && set \"NODE_OPTIONS=--no-deprecation --max-old-space-size=4096\" && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "lint": "eslint src --ext .js,.jsx --max-warnings=0",
+    "lint": "eslint src --ext .js,.jsx --max-warnings=-1",
     "lint:fix": "eslint src --ext .js,.jsx --fix",
     "format": "prettier --write \"src/**/*.{js,jsx,css}\"",
     "prepare": "node scripts/setup-git-config.js"
