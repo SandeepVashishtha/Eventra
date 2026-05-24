@@ -33,9 +33,6 @@ export const AuthProvider = ({ children }) => {
 
     if (storedToken && storedUser) {
       // --- Security fix: validate token before restoring session ---
-      // Decode the JWT payload and check the `exp` claim. If the token
-      // is expired or malformed, discard it instead of restoring a
-      // broken session that would silently fail on every API call.
       if (isTokenValid(storedToken)) {
         setToken(storedToken);
         try {
@@ -54,10 +51,6 @@ export const AuthProvider = ({ children }) => {
   }, [clearSession]);
 
   // --- Global 401 handler ---
-  // Register a callback so that any API call receiving a 401 Unauthorized
-  // response automatically clears the session. This prevents "zombie"
-  // authenticated states where the frontend thinks the user is logged in
-  // but every backend call fails silently.
   useEffect(() => {
     setOnUnauthorizedHandler(() => {
       clearSession();
@@ -68,7 +61,6 @@ export const AuthProvider = ({ children }) => {
   }, [clearSession]);
 
   // --- Periodic Token Expiry Check ---
-  // Check token validity in the background so we don't mutate state during a render.
   useEffect(() => {
     if (!token) return;
 
@@ -135,10 +127,10 @@ export const AuthProvider = ({ children }) => {
       password,
     });
 
-  const data = await res.json().catch((error) => {
-    console.error('Failed to parse login response JSON:', error);
-    return null;
-  });
+    const data = await res.json().catch((error) => {
+      console.error('Failed to parse login response JSON:', error);
+      return null;
+    });
 
     if (!res.ok) {
       throw new Error(data?.message || data?.error || 'Invalid credentials');
@@ -172,10 +164,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Sign in with Google using the credential returned by Google Identity Services.
-  // TODO: Send `credential` to backend (e.g. /api/auth/google) for server-side
-  // verification and to receive a backend-issued session token. For now we decode
-  // the Google ID token on the client so the UI flow works end-to-end.
   const signInWithGoogle = async (credential) => {
     if (!credential) {
       throw new Error('Google Sign-In failed: missing credential');
@@ -198,7 +186,6 @@ export const AuthProvider = ({ children }) => {
       provider: 'google',
     };
 
-    // Using the Google credential as the session token until backend support is added.
     persistSession(credential, sessionUser);
     return true;
   };
@@ -207,11 +194,9 @@ export const AuthProvider = ({ children }) => {
     clearSession();
   };
 
- const isAuthenticated = useCallback(() => {
-    // Also verify the current token hasn't expired since it was stored.
+  const isAuthenticated = useCallback(() => {
     if (!user || !token) return false;
     if (!isTokenValid(token)) {
-      // Token expired mid-session — safely return false without mutating state
       return false;
     }
     return true;
@@ -233,10 +218,7 @@ export const AuthProvider = ({ children }) => {
     return permissionNames.some(permission => hasPermission(permission));
   };
 
-  const isAdmin = () => {
-    return hasRole('ADMIN');
-  };
-
+  const isAdmin = () => hasRole('ADMIN');
   const isEventManager = () => hasRole('EVENT_MANAGER');
   const isSuperAdmin = () => hasRole('SUPER_ADMIN');
   const isOrganizer = () => hasRole('ORGANIZER');
@@ -259,6 +241,10 @@ export const AuthProvider = ({ children }) => {
     hasAnyPermission,
     isAdmin,
     isEventManager,
+    isSuperAdmin,
+    isOrganizer,
+    isVolunteer,
+    isAttendee,
   };
 
   return (
