@@ -31,7 +31,7 @@
     "dev": "react-scripts start",
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "build:fast": "set \"GENERATE_SOURCEMAP=false\" && set \"DISABLE_ESLINT_PLUGIN=true\" && set \"NODE_OPTIONS=--no-deprecation --max-old-space-size=4096\" && react-scripts build",
+    "build:fast": "cross-env GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true NODE_OPTIONS=\"--no-deprecation --max-old-space-size=4096\" react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "lint": "eslint src --ext .js,.jsx --max-warnings=-1",
@@ -61,6 +61,7 @@
   "devDependencies": {
     "@tailwindcss/line-clamp": "^0.4.4",
     "autoprefixer": "^10.4.21",
+    "cross-env": "^10.1.0",
     "postcss": "^8.5.6",
     "prettier": "^3.2.5",
     "tailwindcss": "^3.4.17",
