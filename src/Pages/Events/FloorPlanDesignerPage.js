@@ -20,7 +20,7 @@ const FloorPlanDesignerPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-950 dark:to-black py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white dark:bg-slate-950 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* Navigation Breadcrumbs and Back Button */}

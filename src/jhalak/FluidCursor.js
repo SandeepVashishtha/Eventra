@@ -16,15 +16,15 @@ const FluidCursor = ({ enabled = true }) => {
 
     let config = {
       SIM_RESOLUTION: 128,
-      DYE_RESOLUTION: 1440,
+      DYE_RESOLUTION: 512,
       CAPTURE_RESOLUTION: 512,
-      DENSITY_DISSIPATION: 3.5,
-      VELOCITY_DISSIPATION: 2,
+      DENSITY_DISSIPATION: 6,
+      VELOCITY_DISSIPATION: 4,
       PRESSURE: 0.1,
-      PRESSURE_ITERATIONS: 20,
-      CURL: 3,
-      SPLAT_RADIUS: 0.2,
-      SPLAT_FORCE: 6000,
+      PRESSURE_ITERATIONS: 6,
+      CURL: 1,
+      SPLAT_RADIUS: 0.12,
+      SPLAT_FORCE: 2500,
       SHADING: true,
       COLOR_UPDATE_SPEED: 10,
       PAUSED: false,
@@ -1023,9 +1023,9 @@ const FluidCursor = ({ enabled = true }) => {
 
     function clickSplat(pointer) {
       const color = generateColor();
-      color.r *= 10.0;
-      color.g *= 10.0;
-      color.b *= 10.0;
+      color.r *= 4;
+      color.g *= 4;
+      color.b *= 4.0;
       let dx = 10 * (Math.random() - 0.5);
       let dy = 30 * (Math.random() - 0.5);
       splat(pointer.texcoordX, pointer.texcoordY, dx, dy, color);
@@ -1093,58 +1093,15 @@ const FluidCursor = ({ enabled = true }) => {
     }
 
     function generateColor() {
-      let c = HSVtoRGB(Math.random(), 1.0, 1.0);
-      c.r *= 0.15;
-      c.g *= 0.15;
-      c.b *= 0.15;
-      return c;
+      // Premium sky blue / deep ocean cyan (#00A3FF)
+      // Scaled by 0.15 to maintain the perfect density in the fluid solver and prevent over-saturation
+      return {
+        r: 0.0 * 0.07,
+        g: (163 / 255) * 0.07,
+        b: (255 / 255) * 0.07
+      };
     }
 
-    function HSVtoRGB(h, s, v) {
-      let r, g, b, i, f, p, q, t;
-      i = Math.floor(h * 6);
-      f = h * 6 - i;
-      p = v * (1 - s);
-      q = v * (1 - f * s);
-      t = v * (1 - (1 - f) * s);
-
-      switch (i % 6) {
-        case 0:
-          r = v;
-          g = t;
-          b = p;
-          break;
-        case 1:
-          r = q;
-          g = v;
-          b = p;
-          break;
-        case 2:
-          r = p;
-          g = v;
-          b = t;
-          break;
-        case 3:
-          r = p;
-          g = q;
-          b = v;
-          break;
-        case 4:
-          r = t;
-          g = p;
-          b = v;
-          break;
-        case 5:
-          r = v;
-          g = p;
-          b = q;
-          break;
-        default:
-          break;
-      }
-
-      return { r, g, b };
-    }
 
     function updatePointerDownData(pointer, id, posX, posY) {
       pointer.id = id;

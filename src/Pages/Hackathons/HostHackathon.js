@@ -16,11 +16,8 @@ import {
   LinkIcon,
   CalendarDaysIcon,
   DocumentTextIcon,
-  ComputerDesktopIcon
+  ComputerDesktopIcon,
 } from "@heroicons/react/24/solid";
-
-
-
 
 const HostHackathon = () => {
   const [errors, setErrors] = useState({});
@@ -94,9 +91,9 @@ const HostHackathon = () => {
       newErrors.location = "Location must be at least 3 characters long!";
     }
 
-    // ✅ Email validation — works even for incomplete email
+    // ✅ Email validation — stricter regex to prevent invalid TLDs
     if (data.email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
       if (!emailRegex.test(data.email.trim())) {
         newErrors.email = "Please enter a valid email address!";
       }
@@ -168,7 +165,7 @@ const HostHackathon = () => {
 
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-  
+
   const formFields = [
     {
       label: "Hackathon Name",
@@ -221,9 +218,8 @@ const HostHackathon = () => {
     },
   ];
 
-
   return (
-    <div className="min-h-screen bg-gradient-to-r from-sky-50 via-white to-white dark:from-gray-900 dark:to-black flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
+    <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
       {/* Heading Section */}
       <motion.div
         initial={{ opacity: 0, y: -30 }}
@@ -488,14 +484,14 @@ const HostHackathon = () => {
           today!
         </p>
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-6">
-          <motion.a
-            href="#"
+          <motion.button
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="inline-block bg-white text-black px-8 py-3 rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300"
           >
             Explore Hosting Options
-          </motion.a>
+          </motion.button>
 
           <motion.a
             href="/hackathons"
