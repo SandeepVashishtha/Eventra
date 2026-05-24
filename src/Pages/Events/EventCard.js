@@ -252,67 +252,45 @@ const EventCard = ({ event }) => {
       </div>
 
       {/* Info Grid */}
-     {/* Info Grid */}
-<div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 text-gray-600 dark:text-gray-400 text-sm bg-gray-50/50 dark:bg-gray-800/30">
+      <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 text-gray-600 dark:text-gray-400 text-sm bg-gray-50/50 dark:bg-gray-800/30">
+        {/* Location */}
+        <div className="flex items-start gap-2">
+          <MapPin size={14} className="text-pink-500 flex-shrink-0" />
+          <div className="flex flex-col min-w-0">
+            <span className="truncate">{event.location}</span>
+            <span className="text-[11px] text-gray-500 dark:text-gray-400">
+              {getUserTimezone()}
+            </span>
+          </div>
+        </div>
 
-  {/* Location */}
-  <div className="flex items-center gap-2">
-    <MapPin
-      size={14}
-      className="text-pink-500 flex-shrink-0"
-    />
+        {/* Event Type */}
+        <div className="flex items-center gap-2">
+          <Tag size={14} className="text-green-500 flex-shrink-0" />
+          <span className="truncate">{event.type}</span>
+        </div>
 
-    <span className="truncate">
-      {event.location}
-    </span>
-  </div>
-
-
-
-      <span className="text-[11px] text-gray-500 dark:text-gray-400">
-        {getUserTimezone()}
-      </span>
-    </div>
-  </div>
-
-  {/* Event Type */}
-  <div className="flex items-center gap-2">
-    <Tag
-      size={14}
-      className="text-green-500 flex-shrink-0"
-    />
-
-    <span className="truncate">
-      {event.type}
-    </span>
-  </div>
-
-  {/* Event Date */}
-  <div className="flex items-start gap-2">
-    <Calendar
-      size={14}
-      className="text-indigo-500 flex-shrink-0 mt-0.5"
-    />
-
-    <div className="flex flex-col">
-      <span className="truncate">
-        {new Date(event.date).toLocaleDateString(
-          "en-US",
-          {
-            weekday: "short",
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-          }
-        )}
-      </span>
-
-      <span className="text-[11px] text-gray-500 dark:text-gray-400">
-        Localized Event Time
-      </span>
-    </div>
-  </div>
-</div>
+        {/* Event Date */}
+        <div className="flex items-start gap-2">
+          <Calendar size={14} className="text-indigo-500 flex-shrink-0 mt-0.5" />
+          <div className="flex flex-col">
+            <span className="truncate">
+              {new Date(event.date).toLocaleDateString(
+                "en-US",
+                {
+                  weekday: "short",
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                }
+              )}
+            </span>
+            <span className="text-[11px] text-gray-500 dark:text-gray-400">
+              Localized Event Time
+            </span>
+          </div>
+        </div>
+      </div>
       <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
         <ReminderControls event={event} canSetReminder={canSetReminder} compact />
       </div>
