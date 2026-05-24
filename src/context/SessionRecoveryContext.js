@@ -72,6 +72,7 @@ export const SessionRecoveryProvider = ({ children }) => {
         const isValidTimestamp =
           parsed &&
           parsed.timestamp &&
+          parsed.timestamp &&
           typeof parsed.timestamp === 'number' &&
           !isNaN(parsed.timestamp);
 
@@ -127,12 +128,6 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   const dismissRecoveryPrompt = useCallback(() => {
     setShowRecoveryPrompt(false);
-  }, []);
-
-  useEffect(() => {
-    const handleBeforeUnload = () => {};
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
 
   useEffect(() => {
