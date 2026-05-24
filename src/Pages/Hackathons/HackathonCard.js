@@ -218,7 +218,23 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
               className="flex-shrink-0 bg-slate-50 dark:bg-white/5 rounded-full p-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 transition-all"
               whileHover={{ scale: 1.1 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                    <div className="flex items-center">
+            >
+              <ShareIcon className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+            </motion.div>
+          </ShareMenu>
+        </div>
+
+        {/* ── ROW 2: Featured badge (full-width, only shown if featured) ── */}
+        {isFeatured && (
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-600/30 dark:to-violet-600/30 border border-indigo-200 dark:border-indigo-500/40 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">
+              ✦ Featured
+            </span>
+          </div>
+        )}
+
+        {/* ── ROW 3: Prize chip ── */}
+        <div className="flex items-center">
           <span className="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-300 text-xs font-bold px-3 py-1.5 rounded-full">
             🏆 {normalizedHackathon.prize}
           </span>
@@ -285,27 +301,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
             Tech Stack
           </h4>
           <div className="flex flex-wrap gap-1.5">
-            {normalizedHackathon.techStack.map((tech, index) => (0 dark:text-emerald-400 flex-shrink-0" />
-            <span>{hackathon.location}</span>
-          </div>
-
-          {status === "upcoming" && hackathon.startDate && (
-            <CountdownTimer targetDate={hackathon.startDate} label="Starts in" />
-          )}
-          {status === "live" && hackathon.endDate && (
-            <CountdownTimer targetDate={hackathon.endDate} label="Ends in" />
-          )}
-        </div>
-
-        <div className="border-t border-slate-100 dark:border-white/5" />
-
-        {/* ── Tech Stack ── */}
-        <div>
-          <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">
-            Tech Stack
-          </h4>
-          <div className="flex flex-wrap gap-1.5">
-            {hackathon.techStack.map((tech, index) => (
+            {normalizedHackathon.techStack.map((tech, index) => (
               <span
                 key={index}
                 className="px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 dark:bg-indigo-500/10 dark:border-indigo-500/20 dark:text-indigo-300 text-xs font-medium"
