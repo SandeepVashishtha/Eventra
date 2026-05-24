@@ -9,6 +9,7 @@ import ProjectCTA from "./ProjectCTA";
 
 import mockProjects from "./mockProjectsData.json";
 
+import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
 
@@ -38,6 +39,35 @@ const ProjectGallery = () => {
       try {
         setIsLoading(true);
         setError("");
+
+        // --- PRODUCTION LOGIC: attempt real API call to Spring Boot backend ---
+        const response = await apiUtils.get(API_ENDPOINTS.PROJECTS.LIST);
+
+        const projectsData = response.data;
+
+        // fix: only use API data if it is non-empty; otherwise fall back to mock
+        if (projectsData && projectsData.length > 0) {
+          setProjects(projectsData);
+
+          // Attempt to fetch categories from API
+          try {
+            const categoriesResponse = await apiUtils.get(
+              API_ENDPOINTS.PROJECTS.CATEGORIES
+            );
+            const categoriesData = categoriesResponse.data;
+            setCategories(["all", ...categoriesData]);
+          } catch {
+            // fix: derive categories from API project data if categories endpoint throws
+            const uniqueCategories = [...new Set(projectsData.map(p => p.category))];
+            setCategories(["all", ...uniqueCategories]);
+          }
+
+          setIsLoading(false);
+          return; // exit — API data loaded successfully
+        }
+
+        // --- MOCK DATA FALLBACK: API unavailable, not ok, or returned empty array ---
+        console.warn("Projects API unavailable or empty — loading mock data.");
 
         setTimeout(() => {
           const projectsData = mockProjects;

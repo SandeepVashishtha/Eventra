@@ -31,12 +31,10 @@ export const NotificationProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await apiUtils.get(endpoint, token);
-      if (response.ok) {
-        const data = await response.json();
-        const normalizedData = Array.isArray(data) ? data : [];
-        setNotifications(normalizedData);
-        setUnreadCount(normalizedData.filter((n) => !n.isRead).length);
-      }
+      const data = response.data;
+      const normalizedData = Array.isArray(data) ? data : [];
+      setNotifications(normalizedData);
+      setUnreadCount(normalizedData.filter((n) => !n.isRead).length);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     } finally {
@@ -55,10 +53,7 @@ export const NotificationProvider = ({ children }) => {
 
     try {
       const response = await apiUtils.get(endpoint, token);
-      if (response.ok) {
-        const data = await response.json();
-        setAchievements(data);
-      }
+      setAchievements(response.data);
     } catch (error) {
       console.error('Error fetching achievements:', error);
     }
@@ -82,17 +77,15 @@ export const NotificationProvider = ({ children }) => {
     }
 
     try {
-      const response = await apiUtils.put(
+      await apiUtils.put(
         endpoint,
         {},
         token
       );
-      if (response.ok) {
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n))
-        );
-        setUnreadCount((prev) => Math.max(0, prev - 1));
-      }
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n))
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
