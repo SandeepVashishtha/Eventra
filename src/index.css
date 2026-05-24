@@ -535,3 +535,57 @@ select,
       0.5
     );
 }
+
+/* =========================================
+   Premium Theme Transition Engine
+   ========================================= */
+body, 
+button, 
+input, 
+textarea, 
+select, 
+a, 
+div, 
+span, 
+header, 
+nav, 
+table, 
+tr, 
+td, 
+th,
+article,
+section {
+  transition: background-color 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), 
+              color 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), 
+              border-color 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), 
+              box-shadow 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+}
+
+/* Theme accent highlights overrides */
+.theme-nova-cyberpunk button.bg-blue-600,
+.theme-nova-cyberpunk .btn-primary {
+  background: var(--accent-gradient) !important;
+  box-shadow: 0 4px 14px rgba(236, 72, 153, 0.3);
+  border: none;
+}
+
+.theme-forest-mint button.bg-blue-600,
+.theme-forest-mint .btn-primary {
+  background: var(--accent-gradient) !important;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+  border: none;
+}
+
+.theme-sunset-amber button.bg-blue-600,
+.theme-sunset-amber .btn-primary {
+  background: var(--accent-gradient) !important;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+  border: none;
+}
+
+.theme-dracula-classic button.bg-blue-600,
+.theme-dracula-classic .btn-primary {
+  background: var(--accent-gradient) !important;
+  box-shadow: 0 4px 14px rgba(189, 147, 249, 0.3);
+  border: none;
+}

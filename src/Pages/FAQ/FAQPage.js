@@ -107,7 +107,6 @@ export default function FAQSection() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  // Dynamic state filter that updates instantly upon query or pill switches
   const filteredFaqs = faqs.filter((faq) => {
     const matchesCategory =
       selectedCategory === "All" ||
@@ -134,7 +133,6 @@ export default function FAQSection() {
   const [isHeaderFixed, setIsHeaderFixed] = useState(false);
   const [headerTop, setHeaderTop] = useState(0);
 
-  // Clear stale wrapper links and reset scaling cards on filter modifications
   useEffect(() => {
     wrapperRefs.current = [];
     setCardStyles(
@@ -142,7 +140,6 @@ export default function FAQSection() {
     );
   }, [searchTerm, selectedCategory, filteredFaqs.length]);
 
-  // Adjust headers height metrics to scale dynamic spacers smoothly
   useEffect(() => {
     if (headerRef.current) {
       setHeaderHeight(headerRef.current.offsetHeight);
@@ -211,12 +208,8 @@ export default function FAQSection() {
       });
     };
 
-    window.addEventListener("scroll", handleScroll, {
-      passive: true,
-    });
-
+    window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("resize", handleScroll);
-
     handleScroll();
 
     return () => {
@@ -228,7 +221,6 @@ export default function FAQSection() {
   return (
     <>
       <style>{`
-        /* ── CSS variables (light mode defaults) ── */
         .faq-section-root {
           transition: background-color 0.3s ease, color 0.3s ease;
           --bg-primary: #f9fafb;
@@ -243,7 +235,6 @@ export default function FAQSection() {
           --heading-border: rgba(0, 0, 0, 0.07);
           --icon-bg: #e0e7ff;
           --icon-color: #4f46e5;
-
           background-color: var(--bg-primary);
           color: var(--text-primary);
           font-family: system-ui, -apple-system, sans-serif;
@@ -251,12 +242,7 @@ export default function FAQSection() {
         }
 
         .dark .faq-section-root {
-          --bg-primary: linear-gradient(
-            to bottom,
-            #020617,
-            #0f172a,
-            #111827
-          );
+          --bg-primary: linear-gradient(to bottom, #020617, #0f172a, #111827);
           --text-primary: #f9fafb;
           --card-bg: #0f172a;
           --card-border: rgba(255,255,255,0.08);
@@ -270,7 +256,6 @@ export default function FAQSection() {
           --icon-color: #818cf8;
         }
 
-        /* ── The heading block ── */
         .faq-heading-block {
           text-align: center;
           padding: 60px 20px 32px;
@@ -280,11 +265,7 @@ export default function FAQSection() {
           z-index: 90;
           width: 100%;
           box-sizing: border-box;
-          transition:
-            transform 0.5s ease,
-            opacity 0.5s ease,
-            padding 0.5s ease,
-            background 0.5s ease;
+          transition: transform 0.5s ease, opacity 0.5s ease, padding 0.5s ease, background 0.5s ease;
         }
 
         .faq-heading-block.is-fixed {
@@ -309,11 +290,8 @@ export default function FAQSection() {
           max-width: 600px;
         }
 
-        .faq-heading-spacer {
-          width: 100%;
-        }
+        .faq-heading-spacer { width: 100%; }
 
-        /* ── Cards ── */
         .faq-cards-container {
           display: flex;
           flex-direction: column;
@@ -329,11 +307,7 @@ export default function FAQSection() {
         }
 
         .faq-card-inner {
-          transition:
-            transform 0.35s ease,
-            box-shadow 0.35s ease,
-            border-color 0.35s ease,
-            background 0.35s ease;
+          transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease, background 0.35s ease;
           width: 100%;
           background: var(--card-bg);
           border: 1px solid var(--card-border);
@@ -345,15 +319,12 @@ export default function FAQSection() {
           box-sizing: border-box;
         }
 
-        .dark .faq-card-inner {
-          box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-        }
+        .dark .faq-card-inner { box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
 
         .faq-card-inner:hover {
           transform: translateY(-6px);
           border-color: rgba(99,102,241,0.4);
-          box-shadow:
-            0 20px 60px rgba(79,70,229,0.18);
+          box-shadow: 0 20px 60px rgba(79,70,229,0.18);
         }
 
         .faq-card-header {
@@ -394,9 +365,8 @@ export default function FAQSection() {
 
         .faq-card-inner p {
           color: var(--answer-color);
-          line-height: 1.6;
-          font-size: 1rem;
           line-height: 1.8;
+          font-size: 1rem;
           margin: 0;
         }
 
@@ -410,7 +380,6 @@ export default function FAQSection() {
         className="faq-section-root text-slate-900 dark:text-gray-100"
         ref={sectionRef}
       >
-        {/* ── Heading — becomes fixed once section reaches the navbar ── */}
         <div
           ref={headerRef}
           className={`faq-heading-block${isHeaderFixed ? " is-fixed" : ""}`}
@@ -422,9 +391,7 @@ export default function FAQSection() {
             started to hosting your own events.
           </p>
 
-          {/* Premium Search and Filtering Controls Row */}
           <div className="max-w-2xl mx-auto mt-6 flex flex-col md:flex-row gap-4 items-center justify-between">
-            {/* Search Input Box */}
             <div className="relative w-full md:w-3/5">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400 dark:text-slate-500" />
               <input
@@ -432,12 +399,12 @@ export default function FAQSection() {
                 placeholder="Search hackathons, bookmarks, accounts..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-11 pr-10 py-2.5 text-sm rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-950/80 backdrop-blur-md text-slate-900 dark:text-gray-100 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 dark:focus:border-indigo-455"
+                className="w-full pl-11 pr-10 py-2.5 text-sm rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-950/80 backdrop-blur-md text-slate-900 dark:text-gray-100 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10"
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-655"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400"
                   aria-label="Clear search"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -445,7 +412,6 @@ export default function FAQSection() {
               )}
             </div>
 
-            {/* Category Filter Tab Pills */}
             <div className="flex flex-wrap gap-1.5 justify-center">
               {["All", "General", "Hackathons", "Account"].map((category) => (
                 <button
@@ -454,7 +420,7 @@ export default function FAQSection() {
                   className={`px-4 py-2 text-xs font-bold rounded-full transition-all duration-300 ${
                     selectedCategory === category
                       ? "bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-500/10"
-                      : "bg-slate-105/80 text-slate-600 hover:bg-slate-200 dark:bg-slate-800/40 dark:text-slate-400 dark:hover:bg-slate-800/80"
+                      : "bg-slate-100/80 text-slate-600 hover:bg-slate-200 dark:bg-slate-800/40 dark:text-slate-400 dark:hover:bg-slate-800/80"
                   }`}
                 >
                   {category}
@@ -464,7 +430,6 @@ export default function FAQSection() {
           </div>
         </div>
 
-        {/* Spacer holds layout space when heading is fixed */}
         {isHeaderFixed && (
           <div
             className="faq-heading-spacer"
@@ -472,7 +437,6 @@ export default function FAQSection() {
           />
         )}
 
-        {/* ── Stacking Cards / Zero-Results Block ── */}
         <div className="faq-cards-container">
           {filteredFaqs.length === 0 ? (
             <div className="max-w-[820px] w-full mx-auto mt-8 mb-16 text-center p-12 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/30 backdrop-blur-md animate-pulse">
@@ -525,4 +489,3 @@ export default function FAQSection() {
     </>
   );
 }
- 

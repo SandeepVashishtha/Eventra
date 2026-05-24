@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from '../config/api';
-import { isTokenValid } from '../utils/tokenUtils';
+import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
 import { syncSecureStorage } from '../utils/secureStorage';
+import { toast } from 'react-toastify';
 
 const AuthContext = createContext();
 
@@ -17,6 +18,11 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Ref-based flag so isAuthenticated() can request cleanup without
+  // mutating state during a render (React rule).
+  const needsExpiryCleanupRef = useRef(false);
+  const expiryToastShownRef = useRef(false);
 
   // Centralized session cleanup — clears both React state and secure storage.
   const clearSession = useCallback(() => {
@@ -49,9 +55,6 @@ export const AuthProvider = ({ children }) => {
 
     if (storedToken && storedUser) {
       // --- Security fix: validate token before restoring session ---
-      // Decode the JWT payload and check the `exp` claim. If the token
-      // is expired or malformed, discard it instead of restoring a
-      // broken session that would silently fail on every API call.
       if (isTokenValid(storedToken)) {
         setToken(storedToken);
         try {
@@ -70,37 +73,72 @@ export const AuthProvider = ({ children }) => {
   }, [clearSession]);
 
   // --- Global 401 handler ---
-  // Register a callback so that any API call receiving a 401 Unauthorized
-  // response automatically clears the session. This prevents "zombie"
-  // authenticated states where the frontend thinks the user is logged in
-  // but every backend call fails silently.
   useEffect(() => {
     setOnUnauthorizedHandler(() => {
-      clearSession();
+      clearExpiredSession();
     });
 
     // Cleanup on unmount
     return () => setOnUnauthorizedHandler(null);
-  }, [clearSession]);
+  }, [clearExpiredSession]);
 
+  // --- Deferred expiry cleanup ---
+  // When isAuthenticated() detects an expired token during a render, it
+  // sets needsExpiryCleanupRef. This effect runs AFTER render finishes
+  // and performs the actual state cleanup + toast.
+  useEffect(() => {
+    if (needsExpiryCleanupRef.current) {
+      needsExpiryCleanupRef.current = false;
+      clearExpiredSession();
+    }
+  });
+
+  // --- Smart Token Expiry Timeout ---
+  // Instead of polling every 15 s, compute the exact remaining TTL from the
+  // token's `exp` claim and schedule a single timeout.  Falls back to a 60 s
+  // interval if `exp` is missing or unparseable.
   // --- Periodic Token Expiry Check ---
-  // Check token validity in the background so we don't mutate state during a render.
   useEffect(() => {
     if (!token) return;
 
-    const checkTokenExpiry = () => {
+    // Reset the toast guard when a new token is set (fresh login).
+    expiryToastShownRef.current = false;
+
+    const payload = decodeTokenPayload(token);
+    const expSeconds = payload?.exp;
+
+    let timeoutId;
+
+    if (typeof expSeconds === 'number') {
+      const nowMs = Date.now();
+      const expiresAtMs = expSeconds * 1000;
+      // Fire 1 second after actual expiry to avoid edge-case races.
+      const delayMs = Math.max(expiresAtMs - nowMs + 1000, 0);
+
+      timeoutId = setTimeout(() => {
+        if (!isTokenValid(token)) {
+          clearExpiredSession();
+        }
+      }, delayMs);
+    } else {
+      // No `exp` claim — fall back to a 60 s polling interval.
+      timeoutId = setInterval(() => {
+        if (!isTokenValid(token)) {
+          clearExpiredSession();
+        }
+      }, 60_000);
+
+      // Also check once immediately.
       if (!isTokenValid(token)) {
-        clearSession(); // Safe here because useEffect runs AFTER rendering finishes
+        clearExpiredSession();
       }
+    }
+
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(timeoutId);
     };
-
-    // Check immediately when the component mounts or token changes
-    checkTokenExpiry();
-
-    // Check periodically every 15 seconds to catch mid-session expiry
-    const interval = setInterval(checkTokenExpiry, 15000);
-    return () => clearInterval(interval);
-  }, [token, clearSession]);
+  }, [token, clearExpiredSession]);
 
   const persistSession = (sessionToken, sessionUser) => {
     setToken(sessionToken);
@@ -189,10 +227,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Sign in with Google using the credential returned by Google Identity Services.
-  // TODO: Send `credential` to backend (e.g. /api/auth/google) for server-side
-  // verification and to receive a backend-issued session token. For now we decode
-  // the Google ID token on the client so the UI flow works end-to-end.
   const signInWithGoogle = async (credential) => {
     if (!credential) {
       throw new Error('Google Sign-In failed: missing credential');
@@ -215,7 +249,6 @@ export const AuthProvider = ({ children }) => {
       provider: 'google',
     };
 
-    // Using the Google credential as the session token until backend support is added.
     persistSession(credential, sessionUser);
     return true;
   };
@@ -224,11 +257,12 @@ export const AuthProvider = ({ children }) => {
     clearSession();
   };
 
- const isAuthenticated = useCallback(() => {
-    // Also verify the current token hasn't expired since it was stored.
+  const isAuthenticated = useCallback(() => {
     if (!user || !token) return false;
     if (!isTokenValid(token)) {
-      // Token expired mid-session — safely return false without mutating state
+      // Token expired mid-session — flag for deferred cleanup.
+      // Cannot call clearSession() here because this runs during render.
+      needsExpiryCleanupRef.current = true;
       return false;
     }
     return true;
@@ -250,10 +284,7 @@ export const AuthProvider = ({ children }) => {
     return permissionNames.some(permission => hasPermission(permission));
   };
 
-  const isAdmin = () => {
-    return hasRole('ADMIN');
-  };
-
+  const isAdmin = () => hasRole('ADMIN');
   const isEventManager = () => hasRole('EVENT_MANAGER');
   const isSuperAdmin = () => hasRole('SUPER_ADMIN');
   const isOrganizer = () => hasRole('ORGANIZER');
