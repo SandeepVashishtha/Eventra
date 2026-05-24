@@ -156,11 +156,43 @@
       as="image"
     />
 
+<<<<<<< HEAD
+   <!-- Prevent Theme Flickering -->
+<script>
+  (() => {
+    const savedTheme =
+      localStorage.getItem("theme");
+
+    const systemDark =
+      window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      ).matches;
+
+    const isDark =
+      savedTheme === "dark" ||
+      (!savedTheme && systemDark);
+
+    if (isDark) {
+=======
     <!-- Prevent Theme Flickering -->
     <script>
+>>>>>>> 8f5318afee14c3161cab3737a98ed20412990cbe
       document.documentElement.classList.add(
         "no-transition"
       );
+<<<<<<< HEAD
+    } else {
+      document.documentElement.classList.remove(
+        "dark"
+      );
+    }
+
+    document.documentElement.style.colorScheme =
+      isDark ? "dark" : "light";
+  })();
+</script>
+=======
+>>>>>>> 8f5318afee14c3161cab3737a98ed20412990cbe
 
       (() => {
         const savedTheme =
@@ -218,11 +250,10 @@
     ></script>
   </head>
 
-  <body>
+  <body class="bg-white text-black dark:bg-gray-900 dark:text-white">
     <noscript>
       You need to enable JavaScript to run this app.
     </noscript>
-
     <div id="root"></div>
   </body>
 </html>
