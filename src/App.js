@@ -10,6 +10,7 @@ import FluidCursor from "./jhalak/FluidCursor";
 import PageTransition from "./components/common/PageTransition";
 import ReminderChecker from "./components/reminders/ReminderChecker";
 import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
+import ThemeCustomizerDrawer from "./components/common/ThemeCustomizerDrawer";
 
 import RegistrationPage from "./Pages/RegistrationPage";
 import NotFoundPage from "./Pages/NotFoundPage";
