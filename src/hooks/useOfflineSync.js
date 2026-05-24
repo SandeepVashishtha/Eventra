@@ -39,12 +39,12 @@ const useOfflineSync = () => {
         await new Promise((resolve) => setTimeout(resolve, delayMs));
       }
 
+      const headers = { 'Content-Type': 'application/json' };
+      if (authToken) headers.Authorization = `Bearer ${authToken}`;
+
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(authToken && { Authorization: `Bearer ${authToken}` }),
-        },
+        headers,
         body: JSON.stringify(payload),
       });
 
