@@ -47,6 +47,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
 
 import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
+import { RealTimeProvider } from "./context/RealTimeContext";
 
 import useOfflineSync from "./hooks/useOfflineSync";
 
@@ -210,6 +211,7 @@ function App() {
       <NotificationProvider>
         <MyEventsProvider>
           <SessionRecoveryProvider>
+            <RealTimeProvider>
 
             {/* Toast Notifications */}
             <NotificationProvider />
@@ -231,24 +233,14 @@ function App() {
 
                 {/* Navbar */}
                 <Navbar
-                  cursorEnabled={
-                    cursorEnabled
-                  }
-                  toggleCursor={
-                    toggleCursor
-                  }
+                  cursorEnabled={cursorEnabled}
+                  toggleCursor={toggleCursor}
                 />
 
                 {/* Keyboard Shortcuts Modal */}
                 <KeyboardShortcutsModal
-                  isOpen={
-                    showKeyboardModal
-                  }
-                  onClose={() =>
-                    setShowKeyboardModal(
-                      false
-                    )
-                  }
+                  isOpen={showKeyboardModal}
+                  onClose={() => setShowKeyboardModal(false)}
                 />
 
                 {/* Main Content */}
@@ -274,48 +266,28 @@ function App() {
                       }
                     >
                       <Routes>
-
-                        {/* Registration */}
                         <Route
                           path="/register/:id"
-                          element={
-                            <RegistrationPage />
-                          }
+                          element={<RegistrationPage />}
                         />
-
-                        {/* Main Routes */}
-                        <Route
-                          path="*"
-                          element={
-                            <AppRoutes />
-                          }
-                        />
+                        <Route path="*" element={<AppRoutes />} />
                       </Routes>
                     </Suspense>
                   </PageTransition>
                 </main>
 
-                {/* Scroll To Top */}
                 <ScrollToTop />
 
-                {/* Lazy Components */}
                 <Suspense fallback={null}>
                   <Footer />
-
                   <Chatbot />
                 </Suspense>
 
-                {/* Feedback Button */}
                 <FeedbackButton />
-
-                {/* Fluid Cursor */}
-                <FluidCursor
-                  enabled={
-                    cursorEnabled
-                  }
-                />
+                <FluidCursor enabled={cursorEnabled} />
               </div>
             </Router>
+            </RealTimeProvider>
 
           </SessionRecoveryProvider>
         </MyEventsProvider>
