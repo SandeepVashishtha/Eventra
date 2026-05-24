@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import Navbar from "./components/Layout/Navbar";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
+import SessionRecovery from "./components/SessionRecovery";
 import FluidCursor from "./jhalak/FluidCursor";
 import PageTransition from "./components/common/PageTransition";
 import ReminderChecker from "./components/reminders/ReminderChecker";
