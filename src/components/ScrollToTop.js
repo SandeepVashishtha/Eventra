@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronUp } from "lucide-react";
@@ -6,10 +6,12 @@ import "./styles/scrolltotopButton.css";
 
 export default function ScrollToTopButton() {
   const { pathname } = useLocation();
+
   const [visible, setVisible] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
-  // Automatically scroll to top whenever the route changes
+  // Auto scroll to top on route change
   useEffect(() => {
     if (window.lenis) {
       window.lenis.scrollTo(0, { immediate: true });
@@ -17,6 +19,21 @@ export default function ScrollToTopButton() {
       window.scrollTo(0, 0);
     }
   }, [pathname]);
+
+  // Optimized scroll handling
+  const handleScroll = useCallback(() => {
+    requestAnimationFrame(() => {
+      const scrollTop = getScrollPosition();
+      const docHeight =
+        document.documentElement.scrollHeight -
+        document.documentElement.clientHeight;
+
+      const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+
+      setVisible(scrollTop > 300);
+      setScrollProgress(progress);
+    });
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -50,6 +67,12 @@ export default function ScrollToTopButton() {
       }
       observer.disconnect();
     };
+  }, [handleScroll]);
+
+  // Lightweight chatbot detection
+  useEffect(() => {
+    const chatbot = document.querySelector("[data-chatbot-open]");
+    setIsChatbotOpen(!!chatbot);
   }, []);
 
   const scrollToTop = () => {
