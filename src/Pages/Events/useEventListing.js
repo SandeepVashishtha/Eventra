@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import mockEvents from "./eventsMockData.json";
 import { getRouteSearchResults } from "../../utils/searchUtils";
 import {
-  computeEventStatus,
+  getEventStatus,
 } from "../../utils/eventUtils";
 import {
   DEFAULT_EVENTS_PER_PAGE,
@@ -39,21 +39,20 @@ const useEventListing = () => {
   const [eventsPerPage, setEventsPerPage] = useState(DEFAULT_EVENTS_PER_PAGE);
 
   useEffect(() => {
-  const timer = setTimeout(() => {
+    const timer = setTimeout(() => {
 
-    const normalizedEvents = mockEvents.map((event) => ({
-      ...event,
-      status: computeEventStatus(event),
-    }));
+      const normalizedEvents = mockEvents.map((event) => ({
+        ...event,
+        status: getEventStatus(event),
+      }));
 
-    setEvents(normalizedEvents);
+      setEvents(normalizedEvents);
+      setIsLoading(false);
 
-    setIsLoading(false);
+    }, 800);
 
-  }, 800);
-
-  return () => clearTimeout(timer);
-}, []);
+    return () => clearTimeout(timer);
+  }, []);
 
   const filteredEvents = useMemo(() => {
     const searchResults = getSearchResults(events, searchQuery);

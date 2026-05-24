@@ -27,7 +27,8 @@ import {
   MousePointer,
   Moon,
   Sun,
-  MoreHorizontal
+  MoreHorizontal,
+  X
 } from "lucide-react";
 
 // --- Helpers to reduce complexity ---
@@ -237,8 +238,6 @@ const DesktopNavLink = ({ item, isActive }) => (
 
 const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location }) => (
   <div className="relative">
-  const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location }) => (
-  <div className="relative">
     <button
       onClick={onToggle}
       className={`relative group flex items-center gap-1.5 text-[13px] xl:text-[14px] font-medium transition-all duration-200 whitespace-nowrap px-3.5 py-1.5 rounded-lg ${
@@ -305,6 +304,20 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
     )}
   </div>
 );
+const MobileDrawerHeader = ({ closeBtnRef, closeAllMenus, isDarkMode }) => (
+  <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+    <div className="text-base font-semibold text-gray-900 dark:text-white">Menu</div>
+    <button
+      ref={closeBtnRef}
+      onClick={closeAllMenus}
+      aria-label="Close navigation"
+      className="inline-flex items-center justify-center rounded-full p-2 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-zinc-800"
+    >
+      <X className="w-5 h-5" />
+    </button>
+  </div>
+);
+
 const MobileDrawerFooter = ({ 
   isAuthenticated, user, primaryLine, secondaryLine, closeAllMenus, location, 
   handleLogoutClick, isDarkMode, toggleTheme, cursorEnabled, toggleCursor 
@@ -428,27 +441,22 @@ const NAV_ITEMS = [
   { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
   { name: "Hackathons", href: "/hackathons", icon: <Trophy className="w-5 h-5" /> },
   { name: "Projects", href: "/projects", icon: <FolderKanban className="w-5 h-5" /> },
-  { name: "Home",       href: "/",          icon: <Home         className="w-5 h-5" /> },
-  { name: "Events",     href: "/events",     icon: <Calendar     className="w-5 h-5" /> },
-  { name: "Bookmarks",  href: "/bookmarks",  icon: <Bookmark     className="w-5 h-5" /> },
-  { name: "Hackathons", href: "/hackathons", icon: <Trophy       className="w-5 h-5" /> },
-  { name: "Projects",   href: "/projects",   icon: <FolderKanban className="w-5 h-5" /> },
   {
     name: "Community",
     icon: <Users className="w-5 h-5" />,
     subItems: [
-      { name: "Leaderboard",       href: "/leaderBoard",    icon: <Trophy       className="w-5 h-5" /> },
-      { name: "Contributors",      href: "/contributors",   icon: <Users        className="w-5 h-5" /> },
-      { name: "Contributors Guide",href: "/contributorguide",icon: <Book        className="w-5 h-5" /> },
-      { name: "Community Events",  href: "/communityEvent", icon: <Users        className="w-5 h-5" /> },
+      { name: "Leaderboard", href: "/leaderBoard", icon: <Trophy className="w-5 h-5" /> },
+      { name: "Contributors", href: "/contributors", icon: <Users className="w-5 h-5" /> },
+      { name: "Contributors Guide", href: "/contributorguide", icon: <Book className="w-5 h-5" /> },
+      { name: "Community Events", href: "/communityEvent", icon: <Users className="w-5 h-5" /> },
     ],
   },
   {
     name: "More",
     icon: <MoreHorizontal className="w-5 h-5" />,
     subItems: [
-      { name: "About",   href: "/about",   icon: <Info          className="w-5 h-5" /> },
-      { name: "FAQ",     href: "/faq",     icon: <HelpCircle    className="w-5 h-5" /> },
+      { name: "About", href: "/about", icon: <Info className="w-5 h-5" /> },
+      { name: "FAQ", href: "/faq", icon: <HelpCircle className="w-5 h-5" /> },
       { name: "Contact", href: "/contact", icon: <MessageSquare className="w-5 h-5" /> },
     ],
   },
@@ -726,6 +734,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             </button>
           </div>
         </div>
+      </div>
       </nav>
 
       <MobileDrawer

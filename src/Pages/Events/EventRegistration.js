@@ -17,7 +17,6 @@ import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useSessionRecovery } from "../../context/SessionRecoveryContext";
-import { API_ENDPOINTS } from "../../config/api";
 import { useFormValidation } from "../../hooks/useFormValidation";
 import { validate } from "../../validation";
 import { toast } from "react-toastify";
@@ -147,83 +146,43 @@ const EventRegistration = () => {
     setSubmitting(true);
 
     try {
-      // API call to register for event using centralized API layer
       const response = await apiUtils.post(
         API_ENDPOINTS.EVENTS.REGISTER(eventId),
         {
           ...formData,
-          eventId: parseInt(eventId),
+          eventId: parseInt(eventId, 10),
           userId: user?.id || null,
         }
       );
 
       setRegistered(true);
       toast.success("Registration successful!");
-      // ── Save to My Events ──
+      sendConfirmationEmail(formData.email, formData.fullName, event?.title, event?.date);
       addRegistration(event, formData);
-      // Redirect to event details after 2 seconds
+      clearSession();
       setTimeout(() => {
         navigate(`/events/${eventId}`);
       }, 2000);
-        }),
-      });
-
-      if (response.ok) {
-        setRegistered(true);
-        toast.success("Registration successful!");
-        sendConfirmationEmail(formData.email, formData.fullName, event?.title, event?.date);
-        // ── Save to My Events ──
-        addRegistration(event, formData);
-        // Clear session after successful registration
-        clearSession();
-        // Redirect to event details after 2 seconds
-        setTimeout(() => {
-          navigate(`/events/${eventId}`);
-        }, 2000);
-      } else {
-        let errorData = {};
-        try {
-          errorData = await response.json();
-        } catch {
-          errorData = {};
-        }
-
-        const serverMessage = errorData.message || "";
-        const isConflict = response.status === 409;
-        const isFull = isCapacityMessage(serverMessage);
-
-        if (isConflict && isFull) {
-          toast.error("This event has reached maximum capacity.");
-          const updatedEvent = mockEvents.find((e) => e.id === parseInt(eventId));
-          if (updatedEvent) {
-            setEvent({ ...updatedEvent, status: getEventStatus(updatedEvent) });
-          }
-        } else if (isConflict) {
-          toast.error("Too many simultaneous registrations. Please try again.");
-        } else {
-          toast.error(serverMessage || "Registration failed. Please try again.");
-        }
-      }
     } catch (error) {
       console.error("Registration error:", error);
-      
-      // ── Offline Sync Queue Fallback ──
+
       const payload = {
         ...formData,
-        eventId: parseInt(eventId),
+        eventId: parseInt(eventId, 10),
         userId: user?.id || null,
       };
-      
-      pushToQueue({ eventId: parseInt(eventId), payload });
 
+      pushToQueue({ eventId: parseInt(eventId, 10), payload });
       setRegistered(true);
       addRegistration(event, formData);
-      toast.warning("Network error. Registration queued and will sync when you are online.", { autoClose: 4000 });
+      toast.warning(
+        "Network error. Registration queued and will sync when you are online.",
+        { autoClose: 4000 }
+      );
       setTimeout(() => {
         navigate(`/events/${eventId}`);
       }, 3000);
     } finally {
-      // Release lock and reset submission state
       registrationLocks.delete(eventId);
       isSubmittingRef.current = false;
       setSubmitting(false);
