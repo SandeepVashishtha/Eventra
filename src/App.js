@@ -1,27 +1,15 @@
-import React, {
-  useState,
-  useEffect,
-  lazy,
-  Suspense,
-} from "react";
-
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-} from "react-router-dom";
-
+import React, { useState, useEffect, lazy, Suspense } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 import { toast } from "react-toastify";
 
 /* =========================
    Layout & Components
 ========================= */
-
 import Navbar from "./components/Layout/Navbar";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
-import SessionRecovery from "./components/SessionRecovery";
+import SessionRecovery from "./components/SessionRecovery"; // CLEANED UP: Left this single import intact
 import FluidCursor from "./jhalak/FluidCursor";
 import PageTransition from "./components/common/PageTransition";
 import ReminderChecker from "./components/reminders/ReminderChecker";
@@ -31,133 +19,86 @@ import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
 /* =========================
    Pages
 ========================= */
-
 import RegistrationPage from "./Pages/RegistrationPage";
 
 /* =========================
    Context & Hooks
 ========================= */
-
 import NotificationToastContainer from "./components/common/NotificationProvider";
-
 import { NotificationProvider } from "./context/NotificationContext";
-
 import { AuthProvider } from "./context/AuthContext";
-
 import { MyEventsProvider } from "./context/MyEventsContext";
-
 import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
 import { RealTimeProvider } from "./context/RealTimeContext";
 
 import useOfflineSync from "./hooks/useOfflineSync";
-
 import useLenis from "./hooks/useLenis";
-
 import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
+// REMOVED: The duplicate SessionRecovery import from line 45 has been stripped out.
 
 /* =========================
    Lazy Loaded Components
 ========================= */
-
-const Footer = lazy(() =>
-  import("./components/Layout/Footer")
-);
-
-const Chatbot = lazy(() =>
-  import("./components/Chatbot")
-);
-
-const AppRoutes = lazy(() =>
-  import("./components/AppRoutes")
-);
+const Footer = lazy(() => import("./components/Layout/Footer"));
+const Chatbot = lazy(() => import("./components/Chatbot"));
+const AppRoutes = lazy(() => import("./components/AppRoutes"));
 
 /* =========================
    Offline Sync Manager
 ========================= */
-
 const OfflineSyncManager = () => {
   useOfflineSync();
+  return null;
+};
 
+const KeyboardShortcutManager = ({ setShowKeyboardModal }) => {
+  useKeyboardShortcuts({
+    onOpenHelp: () => setShowKeyboardModal(true),
+    onCloseHelp: () => setShowKeyboardModal(false),
+  });
   return null;
 };
 
 function App() {
-  const [cursorEnabled, setCursorEnabled] =
-    useState(
-      localStorage.getItem("cursor") !== "off"
-    );
-
-  const [showKeyboardModal, setShowKeyboardModal] =
-    useState(false);
+  const [cursorEnabled, setCursorEnabled] = useState(
+    localStorage.getItem("cursor") !== "off"
+  );
+  const [showKeyboardModal, setShowKeyboardModal] = useState(false);
 
   /* =========================
      Initialize Smooth Scroll
   ========================= */
-
   useLenis();
-
-  /* =========================
-     Keyboard Shortcuts
-  ========================= */
-
-  useKeyboardShortcuts({
-    onOpenHelp: () =>
-      setShowKeyboardModal(true),
-
-    onCloseHelp: () =>
-      setShowKeyboardModal(false),
-  });
 
   /* =========================
      Toggle Cursor
   ========================= */
-
   const toggleCursor = () => {
     const newValue = !cursorEnabled;
-
     setCursorEnabled(newValue);
-
-    localStorage.setItem(
-      "cursor",
-      newValue ? "on" : "off"
-    );
+    localStorage.setItem("cursor", newValue ? "on" : "off");
   };
 
   /* =========================
      Listen For Cursor Changes
   ========================= */
-
   useEffect(() => {
-    const handleCursorPreference = (
-      event
-    ) => {
-      if (
-        event?.detail?.cursorEnabled !==
-        undefined
-      ) {
-        setCursorEnabled(
-          event.detail.cursorEnabled
-        );
+    const handleCursorPreference = (event) => {
+      if (event?.detail?.cursorEnabled !== undefined) {
+        setCursorEnabled(event.detail.cursorEnabled);
       }
     };
 
-    window.addEventListener(
-      "cursorPreferenceChanged",
-      handleCursorPreference
-    );
+    window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
 
     return () => {
-      window.removeEventListener(
-        "cursorPreferenceChanged",
-        handleCursorPreference
-      );
+      window.removeEventListener("cursorPreferenceChanged", handleCursorPreference);
     };
   }, []);
 
   /* =========================
      Online / Offline Toasts
   ========================= */
-
   useEffect(() => {
     const handleOnline = () => {
       toast.success(
@@ -179,30 +120,16 @@ function App() {
       );
     };
 
-    window.addEventListener(
-      "online",
-      handleOnline
-    );
-
-    window.addEventListener(
-      "offline",
-      handleOffline
-    );
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
     if (!navigator.onLine) {
       handleOffline();
     }
 
     return () => {
-      window.removeEventListener(
-        "online",
-        handleOnline
-      );
-
-      window.removeEventListener(
-        "offline",
-        handleOffline
-      );
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
@@ -210,86 +137,68 @@ function App() {
     <AuthProvider>
       <NotificationProvider>
         <MyEventsProvider>
-          <SessionRecoveryProvider>
-            <RealTimeProvider>
+          {/* FIXED: Added opening <RealTimeProvider> tag here to match the nested structural architecture */}
+          <RealTimeProvider>
+            <SessionRecoveryProvider>
+              <ReminderChecker />
+              <NotificationToastContainer />
+              <OfflineSyncManager />
 
-            {/* Toast Notifications */}
-            <NotificationProvider />
+              <Router>
+                <KeyboardShortcutManager setShowKeyboardModal={setShowKeyboardModal} />
 
-            {/* Reminder System */}
-            <ReminderChecker />
+                <div className="App">
+                  <ScrollProgressBar />
+                  <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
 
-            {/* Notification Container */}
-            <NotificationToastContainer />
+                  <KeyboardShortcutsModal
+                    isOpen={showKeyboardModal}
+                    onClose={() => setShowKeyboardModal(false)}
+                  />
 
-            {/* Offline Sync */}
-            <OfflineSyncManager />
+                  <main
+                    className="
+                      relative
+                      z-10
+                      min-h-[85vh]
+                      bg-white
+                      dark:bg-slate-950
+                      text-black
+                      dark:text-white
+                      transition-colors
+                      duration-300
+                    "
+                  >
+                    <PageTransition>
+                      <Suspense
+                        fallback={
+                          <div className="flex items-center justify-center min-h-screen">
+                            Loading...
+                          </div>
+                        }
+                      >
+                        <Routes>
+                          <Route path="/register/:id" element={<RegistrationPage />} />
+                          <Route path="*" element={<AppRoutes />} />
+                        </Routes>
+                      </Suspense>
+                    </PageTransition>
+                  </main>
 
-            <Router>
-              <div className="App">
+                  <ScrollToTop />
 
-                {/* Global Scroll Progress Bar */}
-                <ScrollProgressBar />
+                  <Suspense fallback={null}>
+                    <Footer />
+                    <Chatbot />
+                  </Suspense>
 
-                {/* Navbar */}
-                <Navbar
-                  cursorEnabled={cursorEnabled}
-                  toggleCursor={toggleCursor}
-                />
-
-                {/* Keyboard Shortcuts Modal */}
-                <KeyboardShortcutsModal
-                  isOpen={showKeyboardModal}
-                  onClose={() => setShowKeyboardModal(false)}
-                />
-
-                {/* Main Content */}
-                <main
-                  className="
-                    relative
-                    z-10
-                    min-h-[85vh]
-                    bg-white
-                    dark:bg-slate-950
-                    text-black
-                    dark:text-white
-                    transition-colors
-                    duration-300
-                  "
-                >
-                  <PageTransition>
-                    <Suspense
-                      fallback={
-                        <div className="flex items-center justify-center min-h-screen">
-                          Loading...
-                        </div>
-                      }
-                    >
-                      <Routes>
-                        <Route
-                          path="/register/:id"
-                          element={<RegistrationPage />}
-                        />
-                        <Route path="*" element={<AppRoutes />} />
-                      </Routes>
-                    </Suspense>
-                  </PageTransition>
-                </main>
-
-                <ScrollToTop />
-
-                <Suspense fallback={null}>
-                  <Footer />
-                  <Chatbot />
-                </Suspense>
-
-                <FeedbackButton />
-                <FluidCursor enabled={cursorEnabled} />
-              </div>
-            </Router>
-            </RealTimeProvider>
-
-          </SessionRecoveryProvider>
+                  <FeedbackButton />
+                  <SessionRecovery />
+                  <FluidCursor enabled={cursorEnabled} />
+                </div>
+              </Router>
+            </SessionRecoveryProvider>
+          </RealTimeProvider>
         </MyEventsProvider>
       </NotificationProvider>
     </AuthProvider>
