@@ -299,31 +299,32 @@ export default function Chatbot() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* ── Footer — always visible, never scrolls ── */}
+     {/* ── Footer — always visible, never scrolls ── */}
       {/*
         FIX #1 (desktop): flex-shrink-0 keeps the footer pinned at the bottom
         of the constrained container regardless of message count.
       */}
       <div className="
         flex-shrink-0
-        border-t border-slate-200 dark:border-slate-700
         px-4 py-3
         bg-white dark:bg-slate-900
         rounded-b-2xl
       ">
-        {/* Quick prompts */}
-        <div className="mb-3 flex flex-wrap gap-2">
-          {quickPrompts.map((prompt) => (
-            <button
-              key={prompt}
-              type="button"
-              onClick={() => sendMessage(prompt)}
-              className="rounded-full border border-slate-200 dark:border-slate-700 px-3 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-300 hover:text-indigo-600 transition-colors"
-            >
-              {prompt}
-            </button>
-          ))}
-        </div>
+    {/* Quick prompts */}
+      <div className="mb-3 flex flex-wrap gap-2">
+        {quickPrompts.map((prompt) => (
+          <button
+            key={prompt}
+            type="button"
+            onClick={() => sendMessage(prompt)}
+            /* Removed the scroll locks (flex-shrink-0, whitespace-nowrap, snap-start) */
+            className="rounded-full border border-slate-200 dark:border-slate-700 px-3 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-indigo-500 hover:text-white transition-all duration-200 transform hover:-translate-y-0.5"
+          >
+            {prompt}
+          </button>
+        ))}
+
+      </div>
 
         {/* Contextual action links */}
         {latestActions.length > 0 && (
