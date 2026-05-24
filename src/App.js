@@ -12,6 +12,7 @@ import ReminderChecker from "./components/reminders/ReminderChecker";
 
 // Pages
 import RegistrationPage from "./Pages/RegistrationPage";
+import NotFoundPage from "./Pages/NotFoundPage";
 
 // Context & Hooks
 import NotificationToastContainer from "./components/common/NotificationProvider";
@@ -113,7 +114,8 @@ function App() {
                   <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
                     <Routes>
                       <Route path="/register/:id" element={<RegistrationPage />} />
-                      <Route path="*" element={<AppRoutes />} />
+                      <Route path="/*" element={<AppRoutes />} />
+                      <Route path="*" element={<NotFoundPage />} />
                     </Routes>
                   </Suspense>
                 </PageTransition>
