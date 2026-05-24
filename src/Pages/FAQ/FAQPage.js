@@ -308,9 +308,9 @@ const blur = factor * 2;
   border-color 0.35s ease,
   background 0.35s ease;
           width: 100%;
-          background: rgba(15, 23, 42, 0.75);
-border: 1px solid rgba(255,255,255,0.08);
-backdrop-filter: blur(14px);
+          background: var(--card-bg);
+          border: 1px solid var(--card-border);
+          backdrop-filter: blur(14px);
 -webkit-backdrop-filter: blur(14px);
           border-radius: 16px;
           padding: 36px;
