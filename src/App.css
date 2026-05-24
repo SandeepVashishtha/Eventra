@@ -1,6 +1,44 @@
 /* Fix: Removed 'Dancing Script' decorative font import — Issue #828 */
 /* Only Inter (from index.css) is used for professional, consistent typography */
 
+/* Neon Revolving Navbar Border */
+@keyframes neonRevolve {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.neon-navbar-border {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--border-color);
+  z-index: 50;
+}
+
+/* Neon Animated Logo */
+@keyframes neonLogoShift {
+  0%   { background-position: 0% 50%;   }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%;   }
+}
+.neon-logo {
+  font-weight: 800;
+  color: var(--text-color) !important;
+  background: none !important;
+  -webkit-text-fill-color: initial !important;
+  filter: none !important;
+  background: linear-gradient(90deg, #6f2ae6, #5558d6, #30bfbf, #b522b5, #b4750a, #494a8f, #702ee1);
+  background-size: 300% 300%;
+  animation: neonLogoShift 10s ease infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  filter: drop-shadow(0 0 6px rgba(99,102,241,0.6));
+}
+
 main {
   position: relative;
   z-index: 10;
@@ -39,11 +77,12 @@ main {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem; /* 40px */
-  height: 2.5rem; /* 40px */
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 9999px;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  touch-action: manipulation;
 }
 
 /* FIX: Smooth background, text, and border color shifts on hover */
