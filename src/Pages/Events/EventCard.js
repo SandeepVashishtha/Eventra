@@ -121,7 +121,7 @@ const EventCard = ({ event }) => {
     <div
       data-aos="zoom-in"
       data-aos-duration="800"
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm transition-all duration-300 flex flex-col z-10 hover:z-50 hover:shadow-2xl hover:-translate-y-2 overflow-hidden border border-gray-100 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-700"
+      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm transition-all duration-300 flex flex-col z-10 hover:z-50 hover:shadow-2xl hover:-translate-y-2 border border-gray-100 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-700"
     >
       {/* Action buttons */}
       <div className="absolute top-[5.5rem] right-3 z-[200] flex space-x-1.5 items-center">
@@ -219,7 +219,7 @@ const EventCard = ({ event }) => {
       </div>
 
       {/* Header */}
-      <div className="flex items-center px-5 py-4 gap-4 bg-gradient-to-r from-white/80 to-indigo-50/60 dark:from-gray-900/80 dark:to-indigo-950/60 border-b border-gray-100 dark:border-gray-800">
+      <div className="flex items-center px-5 py-4 gap-4 bg-gradient-to-r from-white/80 to-indigo-50/60 dark:from-gray-900/80 dark:to-indigo-950/60 border-b border-gray-100 dark:border-gray-800 rounded-t-3xl">
         <div className="p-2 bg-gradient-to-br from-gray-100 to-white dark:from-gray-800 dark:to-gray-700 rounded-xl shadow-inner flex-shrink-0">
           {randomIcon}
         </div>
