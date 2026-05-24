@@ -6,6 +6,7 @@ import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
 import FeedbackButton from "../../components/FeedbackButton";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
+import EmptyState from "../../components/common/EmptyState";
 import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 import {
   FiCode,
@@ -236,7 +237,10 @@ const HackathonHub = () => {
   };
     const sortedFilteredHackathons = sortHackathons(filteredHackathons);
 
-  const featuredHackathons = [...hackathons]
+  const 
+  
+  
+  dHackathons = [...hackathons]
     .filter((h) => h.featured)
     .slice(0, 3);
 
@@ -648,7 +652,102 @@ const HackathonHub = () => {
           </div>
         </motion.div>
 
-        {/* Hackathons Grid */}
+      {/* Hackathons Grid */}
+<AnimatePresence mode="wait">
+  {isLoading ? (
+    <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <HackathonCardSkeleton key={`skeleton-${i}`} />
+      ))}
+    </div>
+  ) : filteredHackathons.length > 0 ? (
+    <motion.div
+      key={activeTab}
+      className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+      exit={{ opacity: 0 }}
+    >
+      {sortedFilteredHackathons.map(
+        (hackathon, index) => (
+          <HackathonCard
+            key={hackathon.id}
+            hackathon={hackathon}
+            data-aos="flip-up"
+            data-aos-delay={index * 100}
+          />
+        )
+      )}
+    </motion.div>
+  ) : (
+    <motion.div
+      initial={{
+        opacity: 0,
+        y: 30,
+      }}
+      animate={{
+        opacity: 1,
+        y: 0,
+      }}
+      exit={{
+        opacity: 0,
+      }}
+      transition={{
+        duration: 0.4,
+      }}
+    >
+      <EmptyState
+        title="No Hackathons Found"
+        message={
+          searchQuery ||
+          filters.difficulty ||
+          filters.prize ||
+          filters.location ||
+          selectedTags.length > 0
+            ? "🚀 No hackathons match your current filters. Try adjusting your search criteria or reset the filters."
+            : "🎉 No hackathons are available right now. Be the first to host an exciting hackathon!"
+        }
+        ctaLabel={
+          searchQuery ||
+          filters.difficulty ||
+          filters.prize ||
+          filters.location ||
+          selectedTags.length > 0
+            ? "Explore Hackathons"
+            : "Host Hackathon"
+        }
+        ctaLink={
+          searchQuery ||
+          filters.difficulty ||
+          filters.prize ||
+          filters.location ||
+          selectedTags.length > 0
+            ? "/hackathons"
+            : "/host-hackathon"
+        }
+      />
+
+      {/* Reset Filters Button */}
+      {(searchQuery ||
+        filters.difficulty ||
+        filters.prize ||
+        filters.location ||
+        selectedTags.length > 0) && (
+        <div className="mt-6 flex justify-center">
+          <button
+            onClick={resetFilters}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-black hover:bg-zinc-800 text-white text-sm font-medium shadow-md transition-all duration-300"
+          >
+            <FiRotateCw className="w-4 h-4" />
+            Reset Filters
+          </button>
+        </div>
+      )}
+    </motion.div>
+  )}
+</AnimatePresence>
+
         <AnimatePresence mode="wait">
           {isLoading ? (
             <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
@@ -786,6 +885,7 @@ const HackathonHub = () => {
             </motion.div>
           )}
         </AnimatePresence>
+
       </div>
       <HackathonCTA></HackathonCTA>
 
