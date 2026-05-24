@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from '../config/api';
-import { isTokenValid } from '../utils/tokenUtils';
+import { isTokenValid, getTokenTTL } from '../utils/auth';
 import { syncSecureStorage } from '../utils/secureStorage';
 
 const AuthContext = createContext();
@@ -66,6 +66,32 @@ export const AuthProvider = ({ children }) => {
     // Cleanup on unmount
     return () => setOnUnauthorizedHandler(null);
   }, [clearSession]);
+
+  // --- Proactive expiry watcher (Part 4 fix) ---
+  // When a token is loaded into state, schedule an automatic logout to fire
+  // exactly when the JWT `exp` claim passes. This prevents the scenario where
+  // a user stays on the page past token expiry and silently receives 401 errors.
+  useEffect(() => {
+    if (!token) return;
+
+    const ttl = getTokenTTL(token);
+
+    if (ttl <= 0) {
+      // Token is already expired on load — clear the session immediately.
+      clearSession();
+      return;
+    }
+
+    // Schedule auto-logout to fire when the token expires.
+    // ttl * 1000 converts seconds → milliseconds for setTimeout.
+    const timer = setTimeout(() => {
+      clearSession();
+    }, ttl * 1000);
+
+    // Cancel the scheduled logout if the token changes (e.g. user logs out
+    // manually or a new token is issued) to avoid double-clearing state.
+    return () => clearTimeout(timer);
+  }, [token, clearSession]);
 
   const persistSession = (sessionToken, sessionUser) => {
     setToken(sessionToken);
