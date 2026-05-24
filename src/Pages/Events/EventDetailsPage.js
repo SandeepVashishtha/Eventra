@@ -15,6 +15,8 @@ import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
 import ShareMenu from "../../components/common/ShareMenu";
 import CertificateDownload from "../../components/CertificateDownload";
 import { generateEventSharingData } from "../../utils/shareUtils";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const EventDetailsPage = () => {
   const { eventId } = useParams();
@@ -64,9 +66,15 @@ const EventDetailsPage = () => {
   const handleCopyLink = (e) => {
     e.preventDefault();
     const shareUrl = `${window.location.origin}/events/${event.id}`;
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      alert("Event link copied to clipboard!");
-    });
+    navigator.clipboard
+      .writeText(shareUrl)
+      .then(() => {
+        toast.success("Event link copied to clipboard!");
+      })
+      .catch((err) => {
+        console.error("Failed to copy: ", err);
+        toast.error("Failed to copy link. Please try again.");
+      });
   };
 
   return (
@@ -108,9 +116,7 @@ const EventDetailsPage = () => {
                   </span>
                   <span
                     className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                      isPastEvent
-                        ? "bg-gray-600"
-                        : "bg-green-600"
+                      isPastEvent ? "bg-gray-600" : "bg-green-600"
                     }`}
                   >
                     {isPastEvent ? "Past Event" : "Upcoming"}
@@ -136,7 +142,10 @@ const EventDetailsPage = () => {
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-start gap-4">
                   <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-                    <Calendar className="text-indigo-600 dark:text-indigo-400" size={24} />
+                    <Calendar
+                      className="text-indigo-600 dark:text-indigo-400"
+                      size={24}
+                    />
                   </div>
                   <div className="flex-1">
                     <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
@@ -162,7 +171,10 @@ const EventDetailsPage = () => {
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-start gap-4">
                   <div className="p-3 bg-pink-100 dark:bg-pink-900/30 rounded-lg">
-                    <MapPin className="text-pink-600 dark:text-pink-400" size={24} />
+                    <MapPin
+                      className="text-pink-600 dark:text-pink-400"
+                      size={24}
+                    />
                   </div>
                   <div className="flex-1">
                     <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
@@ -172,7 +184,9 @@ const EventDetailsPage = () => {
                       {event.location}
                     </p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {event.location.includes("Online") ? "Virtual Event" : "In-Person"}
+                      {event.location.includes("Online")
+                        ? "Virtual Event"
+                        : "In-Person"}
                     </p>
                   </div>
                 </div>
@@ -182,7 +196,10 @@ const EventDetailsPage = () => {
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-start gap-4">
                   <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                    <Users className="text-green-600 dark:text-green-400" size={24} />
+                    <Users
+                      className="text-green-600 dark:text-green-400"
+                      size={24}
+                    />
                   </div>
                   <div className="flex-1">
                     <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
@@ -194,7 +211,9 @@ const EventDetailsPage = () => {
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2">
                       <div
                         className="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full"
-                        style={{ width: `${Math.min(attendeePercentage, 100)}%` }}
+                        style={{
+                          width: `${Math.min(attendeePercentage, 100)}%`,
+                        }}
                       />
                     </div>
                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
@@ -208,7 +227,10 @@ const EventDetailsPage = () => {
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-start gap-4">
                   <div className="p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-                    <Tag className="text-yellow-600 dark:text-yellow-400" size={24} />
+                    <Tag
+                      className="text-yellow-600 dark:text-yellow-400"
+                      size={24}
+                    />
                   </div>
                   <div className="flex-1">
                     <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
@@ -257,7 +279,8 @@ const EventDetailsPage = () => {
                       {popularEvent.title}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
-                      {popularEvent.location} • {popularEvent.attendees} attendees
+                      {popularEvent.location} • {popularEvent.attendees}{" "}
+                      attendees
                     </p>
                   </Link>
                 ))}
@@ -271,18 +294,18 @@ const EventDetailsPage = () => {
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 sticky top-32">
               <div className="mb-6">
                 {isPastEvent ? (
-  <>
-    <div className="w-full py-3 px-4 bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg font-semibold text-center cursor-not-allowed">
-      Event Ended
-    </div>
-    <div className="mt-3">
-      <CertificateDownload
-        eventName={event.title}
-        eventDate={event.date}
-        eventType={event.type}
-      />
-    </div>
-  </>
+                  <>
+                    <div className="w-full py-3 px-4 bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg font-semibold text-center cursor-not-allowed">
+                      Event Ended
+                    </div>
+                    <div className="mt-3">
+                      <CertificateDownload
+                        eventName={event.title}
+                        eventDate={event.date}
+                        eventType={event.type}
+                      />
+                    </div>
+                  </>
                 ) : event.attendees >= event.maxAttendees ? (
                   <div className="w-full py-3 px-4 bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg font-semibold text-center cursor-not-allowed">
                     Event Full
@@ -352,6 +375,7 @@ const EventDetailsPage = () => {
           </div>
         </motion.div>
       </main>
+      <ToastContainer position="bottom-right" />
     </div>
   );
 };

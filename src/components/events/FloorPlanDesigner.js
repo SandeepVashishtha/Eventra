@@ -4,6 +4,8 @@ import {
   Move, Grid, Users, Layout, MapPin, Minimize2 
 } from "lucide-react";
 import "./FloorPlanDesigner.css";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 // Preset layouts
 const PRESETS = {
@@ -74,15 +76,42 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
 
   const saveLayout = () => {
     localStorage.setItem(`eventra_floorplan_${eventId}`, JSON.stringify(elements));
-    alert("Venue floor plan successfully saved!");
+    toast.success("Venue floor plan successfully saved!");
   };
 
-  const loadPreset = (presetName) => {
-    if (window.confirm(`Are you sure you want to load the ${presetName} layout? Current changes will be overwritten.`)) {
-      setElements(PRESETS[presetName]);
-      setSelectedId(null);
-    }
-  };
+ const loadPreset = (presetName) => {
+  toast(
+    ({ closeToast }) => (
+      <div>
+        <p className="text-sm font-semibold mb-2">
+          Load <span className="capitalize">{presetName}</span> layout?
+        </p>
+        <p className="text-xs text-gray-500 mb-3">
+          Current changes will be overwritten.
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              setElements(PRESETS[presetName]);
+              setSelectedId(null);
+              closeToast();
+            }}
+            className="px-3 py-1 bg-indigo-600 text-white text-xs rounded font-semibold hover:bg-indigo-700"
+          >
+            Yes, load it
+          </button>
+          <button
+            onClick={closeToast}
+            className="px-3 py-1 bg-gray-200 text-gray-700 text-xs rounded font-semibold hover:bg-gray-300"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    ),
+    { autoClose: false, closeOnClick: false }
+  );
+};
 
   const handleAddElement = (type) => {
     const id = `${type}-${Date.now()}`;
@@ -742,6 +771,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
           )}
         </div>
       </div>
+      <ToastContainer position="bottom-right" />
     </div>
   );
 };

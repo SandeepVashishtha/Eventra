@@ -14,7 +14,6 @@ import {
   Gift,
   Share2,
 } from "lucide-react";
-import { toast } from "react-toastify";
 import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
 import ShareMenu from "../../components/common/ShareMenu";
 import { generateEventSharingData } from "../../utils/shareUtils";
@@ -26,6 +25,8 @@ import {
   removeBookmarkedEvent,
   subscribeToBookmarkChanges,
 } from "../../utils/bookmarkUtils";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const EventCard = ({ event }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
@@ -322,6 +323,7 @@ const EventCard = ({ event }) => {
           </div>
         </Link>
       </div>
+      <ToastContainer position="bottom-right" />
     </div>
   );
 };
