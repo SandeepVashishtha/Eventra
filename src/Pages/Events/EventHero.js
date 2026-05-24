@@ -1,3 +1,9 @@
+<<<<<<< HEAD
+
+
+
+import { Award, Calendar, Code2, Sparkles, Users } from "lucide-react";
+=======
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Award,
@@ -10,6 +16,7 @@ import {
   Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+>>>>>>> f35178a86bcf2d8a09d2f9fa4a9f024ba75738b7
 import { useNavigate } from "react-router-dom";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import CountUp from "react-countup";
