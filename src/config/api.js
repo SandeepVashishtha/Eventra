@@ -1,16 +1,59 @@
 import axios from "axios";
 
-const BASE_URL =
-  process.env.REACT_APP_API_URL ||
-  "https://eventra-backend-dgcae3etebbag8ft.centralindia-01.azurewebsites.net";
+// ---------------------------------------------------------------------------
+// Base API URL
+// ---------------------------------------------------------------------------
 
+const getBaseUrl = () => {
+  const url = process.env.REACT_APP_API_URL;
+  if (!url) {
+    return "/api";
+  }
+  return url.endsWith("/api") ? url : `${url}/api`;
+};
+
+const BASE_URL = getBaseUrl();
+
+// ---------------------------------------------------------------------------
+// Network Resilience Configuration
+// ---------------------------------------------------------------------------
+
+/** Default request timeout in milliseconds (15 seconds). */
 const REQUEST_TIMEOUT_MS = 15_000;
+
+/** HTTP status codes that are safe to retry (transient server errors). */
 const RETRYABLE_STATUS_CODES = [502, 503, 504];
+
+/** Maximum number of automatic retries for retryable errors. */
 const MAX_RETRIES = 1;
+
+/** Base delay between retries in milliseconds. */
 const RETRY_DELAY_MS = 1_000;
+
+/**
+ * isDev — true only in local development.
+ * Used to gate verbose console.debug statements so they don't appear in production builds.
+ */
 const isDev = process.env.NODE_ENV === "development";
 
+// ---------------------------------------------------------------------------
+// Normalized API Error
+// ---------------------------------------------------------------------------
+
+/**
+ * A structured error class for consistent error handling across consumers.
+ * Callers can check `isTimeout`, `isNetworkError`, or `status` to decide
+ * how to respond without parsing raw axios error shapes.
+ */
 export class ApiError extends Error {
+  /**
+   * @param {string} message          - Human-readable error description.
+   * @param {object} options
+   * @param {number|null} options.status        - HTTP status code (null for network/timeout).
+   * @param {*}           options.data          - Parsed response body if available.
+   * @param {boolean}     options.isTimeout     - True when the request was aborted by timeout.
+   * @param {boolean}     options.isNetworkError - True for connectivity failures.
+   */
   constructor(message, { status = null, data = null, isTimeout = false, isNetworkError = false } = {}) {
     super(message);
     this.name = "ApiError";
@@ -21,79 +64,234 @@ export class ApiError extends Error {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Axios Instance
+// ---------------------------------------------------------------------------
+
 const API = axios.create({
   baseURL: BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+  withCredentials: true, // Crucial for cookie-based auth/session handling
   timeout: REQUEST_TIMEOUT_MS,
-  headers: { "Content-Type": "application/json" },
-  withCredentials: true,
 });
 
+// ---------------------------------------------------------------------------
+// Interceptors
+// ---------------------------------------------------------------------------
+
+// Request Interceptor: Ensures every request has the auth token (if available)
 API.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    if (!config.signal) {
-      const controller = new AbortController();
-      config.signal = controller.signal;
-      config._abortController = controller;
+    // Attempt to get token from localStorage (adjust key name if your app uses a different one)
+    const token = localStorage.getItem("token"); 
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    if (isDev) console.debug(`[API ${config.method?.toUpperCase()}]`, config.url);
     return config;
   },
   (error) => Promise.reject(error)
 );
 
+// Response Interceptor: Global 401 Unauthorized Handler
 let onUnauthorized = null;
+
+/**
+ * Register unauthorized callback.
+ * AuthContext sets this during initialization so that any 401 response
+ * triggers a centralized logout + redirect.
+ */
 export const setOnUnauthorizedHandler = (handler) => {
   onUnauthorized = handler;
 };
 
+// ---------------------------------------------------------------------------
+// Request Interceptor — per-request AbortController & debug logging
+// ---------------------------------------------------------------------------
+
+API.interceptors.request.use((config) => {
+  // Attach a per-request AbortController so callers can cancel if needed
+  if (!config.signal) {
+    const controller = new AbortController();
+    config.signal = controller.signal;
+    config._abortController = controller;
+  }
+
+  if (isDev) {
+    console.debug(`[API ${config.method?.toUpperCase()}]`, config.url);
+  }
+
+  return config;
+});
+
+// ---------------------------------------------------------------------------
+// Response Interceptor — 401 handling, retry, error normalization
+// ---------------------------------------------------------------------------
+
 API.interceptors.response.use(
+  // Success — pass through
   (response) => response,
+  // Error — normalize and optionally retry
   async (error) => {
     const config = error.config || {};
+    const status = error?.response?.status;
 
-    // 401 — centralized handler
-    if (error?.response?.status === 401) {
-      if (onUnauthorized) onUnauthorized();
-      return Promise.reject(error);
+    // --- 401 Unauthorized: trigger session cleanup ---
+    if (status === 401) {
+      if (onUnauthorized) {
+        onUnauthorized();
+      }
     }
 
-    // Retry for transient 5xx
+    // --- Automatic retry for transient 5xx errors ---
     const retryCount = config._retryCount || 0;
-    const status = error?.response?.status;
-    if (RETRYABLE_STATUS_CODES.includes(status) && retryCount < MAX_RETRIES) {
+
+    if (
+      RETRYABLE_STATUS_CODES.includes(status) &&
+      retryCount < MAX_RETRIES
+    ) {
       config._retryCount = retryCount + 1;
-      if (isDev) console.debug(`[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying...`);
-      await new Promise((res) => setTimeout(res, RETRY_DELAY_MS));
+
+      if (isDev) {
+        console.debug(
+          `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${RETRY_DELAY_MS}ms (attempt ${config._retryCount})…`
+        );
+      }
+
+      // Wait before retrying
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+
       return API(config);
     }
 
-    // Normalize errors
+    // --- Normalize error into ApiError ---
+
+    // Timeout (axios uses ECONNABORTED code, AbortController uses AbortError)
     if (error.code === "ECONNABORTED" || error.name === "AbortError" || error.message?.includes("timeout")) {
-      throw new ApiError(`Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${config.method?.toUpperCase()} ${config.url}`, { isTimeout: true });
+      throw new ApiError(
+        `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
+        { isTimeout: true }
+      );
     }
+
+    // Network error (offline, DNS failure, CORS, etc.)
     if (!error.response) {
-      throw new ApiError(error.message || `Network error: ${config.method?.toUpperCase()} ${config.url}`, { isNetworkError: true });
+      throw new ApiError(
+        error.message || `Network error: ${config.method?.toUpperCase()} ${config.url}`,
+        { isNetworkError: true }
+      );
     }
-    throw new ApiError(error.response?.data?.message || error.message || `Request failed with status ${status}`, { status: error.response.status, data: error.response.data });
+
+    // Server error with response body
+    throw new ApiError(
+      error.response?.data?.message || error.message || `Request failed with status ${status}`,
+      {
+        status: error.response.status,
+        data: error.response.data,
+      }
+    );
   }
 );
 
+// ---------------------------------------------------------------------------
+// API Endpoints & Utilities
+// ---------------------------------------------------------------------------
+
 export const API_ENDPOINTS = {
-  AUTH: { LOGIN: "/auth/login", SIGNUP: "/auth/signup", LOGOUT: "/auth/logout", RESET_PASSWORD: "/auth/reset-password", GOOGLE: "/auth/google" },
-  EVENTS: { CREATE: "/events/create", ALL: "/events", DETAIL: (id) => `/events/${id}`, REGISTER: (id) => `/events/${id}/register` },
-  PROJECTS: { ALL: "/projects", DETAIL: (id) => `/projects/${id}`, CATEGORIES: "/projects/categories", SUBMIT: "/projects" },
-  NOTIFICATIONS: { ALL: "/notifications", BASE: "/notifications", READ: (id) => `/notifications/${id}/read`, READ_ALL: "/notifications/read-all" },
-  USERS: { PROFILE: "/users/profile", ACHIEVEMENTS: "/users/achievements" },
+  AUTH: {
+    LOGIN: "/auth/login",
+    SIGNUP: "/auth/signup",
+    REGISTER: "/auth/signup",
+    LOGOUT: "/auth/logout",
+    RESET_PASSWORD: "/auth/reset-password",
+    GOOGLE: "/auth/google",
+  },
+  EVENTS: {
+    CREATE: "/events/create",
+    ALL: "/events",
+    LIST: "/events",
+    DETAIL: (id) => `/events/${id}`,
+    REGISTER: (id) => `/events/${id}/register`,
+  },
+  PROJECTS: {
+    ALL: "/projects",
+    LIST: "/projects",
+    DETAIL: (id) => `/projects/${id}`,
+    CATEGORIES: "/projects/categories",
+    SUBMIT: "/projects",
+  },
+  NOTIFICATIONS: {
+    ALL: "/notifications",
+    BASE: "/notifications",
+    READ: (id) => `/notifications/${id}/read`,
+    READ_ALL: "/notifications/read-all",
+  },
+  USERS: {
+    PROFILE: "/users/profile",
+    ACHIEVEMENTS: "/users/achievements",
+  },
+};
+
+const buildConfig = (configOrToken) => {
+  if (typeof configOrToken === 'string') {
+    return {
+      headers: {
+        Authorization: `Bearer ${configOrToken}`,
+      },
+    };
+  }
+  return configOrToken;
+};
+
+const wrapHeaders = (headers) => {
+  if (!headers) return { get: () => null };
+  if (typeof headers.get === 'function') return headers;
+  return {
+    get: (key) => headers[key] || headers[key.toLowerCase()] || null,
+  };
+};
+
+const wrapAxiosResponse = (response) => {
+  const wrappedHeaders = wrapHeaders(response.headers);
+  return {
+    ...response,
+    headers: wrappedHeaders,
+    ok: response.status >= 200 && response.status < 300,
+    json: async () => response.data,
+    text: async () => typeof response.data === 'string' ? response.data : JSON.stringify(response.data),
+  };
 };
 
 export const apiUtils = {
-  get: (url, config = {}) => API.get(url, config),
-  post: (url, data = {}, config = {}) => API.post(url, data, config),
-  put: (url, data = {}, config = {}) => API.put(url, data, config),
-  patch: (url, data = {}, config = {}) => API.patch(url, data, config),
-  delete: (url, config = {}) => API.delete(url, config),
+  get: (url, configOrToken) => {
+    const config = buildConfig(configOrToken);
+    return API.get(url, config).then(wrapAxiosResponse);
+  },
+
+  post: (url, data = {}, configOrToken) => {
+    const config = buildConfig(configOrToken);
+    return API.post(url, data, config).then(wrapAxiosResponse);
+  },
+
+  put: (url, data = {}, configOrToken) => {
+    const config = buildConfig(configOrToken);
+    return API.put(url, data, config).then(wrapAxiosResponse);
+  },
+
+  patch: (url, data = {}, configOrToken) => {
+    const config = buildConfig(configOrToken);
+    return API.patch(url, data, config).then(wrapAxiosResponse);
+  },
+
+  delete: (url, configOrToken) => {
+    const config = buildConfig(configOrToken);
+    return API.delete(url, config).then(wrapAxiosResponse);
+  },
 };
+
+// ---------------------------------------------------------------------------
+// Default Export
+// ---------------------------------------------------------------------------
 
 export default API;
