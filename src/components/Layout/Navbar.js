@@ -205,7 +205,6 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
 const DesktopNavLink = ({ item, isActive }) => (
   <Link
     to={item.href}
-    // style={{ marginLeft: item.name === "Home" ? "24px" : "0" }}
     className={`relative group text-[13px] font-semibold transition-all duration-200 whitespace-nowrap px-3.5 py-2 rounded-full ${
       isActive
         ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10"
@@ -431,15 +430,44 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
       
       if (item.subItems) {
         return isMobile ? (
-          <MobileNavGroup key={item.name} item={item} isActive={isActive} isOpen={openDropdown === item.name} onToggle={() => onToggleGroup(item.name)} closeAllMenus={onLinkClick} location={location} />
+          <MobileNavGroup 
+            key={item.name} 
+            item={item} 
+            isActive={isActive} 
+            isOpen={openDropdown === item.name} 
+            onToggle={() => onToggleGroup(item.name)} 
+            closeAllMenus={onLinkClick} 
+            location={location} 
+          />
         ) : (
-          <DesktopNavGroup key={item.name} item={item} isActive={isActive} isOpen={openDropdown === item.name} onToggle={(e) => { e.stopPropagation(); onToggleGroup(item.name); }} setOpenDropdown={onToggleGroup} location={location} />
+          <DesktopNavGroup 
+            key={item.name} 
+            item={item} 
+            isActive={isActive} 
+            isOpen={openDropdown === item.name} 
+            onToggle={(e) => { 
+              e.stopPropagation(); 
+              onToggleGroup(item.name); 
+            }} 
+            setOpenDropdown={() => onToggleGroup(null)}
+            location={location} 
+          />
         );
       }
+
       return isMobile ? (
-        <MobileNavLink key={item.name} item={item} isActive={isActive} onClick={onLinkClick} />
+        <MobileNavLink 
+          key={item.name} 
+          item={item} 
+          isActive={isActive} 
+          onClick={onLinkClick} 
+        />
       ) : (
-        <DesktopNavLink key={item.name} item={item} isActive={isActive} />
+        <DesktopNavLink 
+          key={item.name} 
+          item={item} 
+          isActive={isActive} 
+        />
       );
     })}
   </>
@@ -449,7 +477,6 @@ const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   const location = useLocation();
   return (
     // gap-4 keeps items from crowding; flex-1 lets this section grow/shrink naturally
-    // <div className="hidden xl:flex items-center justify-center gap-4 2xl:gap-6 flex-1 min-w-0">
       <div className="hidden lg:flex items-center justify-center flex-1 min-w-0 pl-6">
       <NavList 
         location={location} 

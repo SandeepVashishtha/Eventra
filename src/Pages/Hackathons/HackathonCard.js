@@ -163,6 +163,8 @@ const HackathonCard = ({
   const navigate = useNavigate();
   // FIX 3: Use computed status everywhere instead of hackathon.status
   const status = computeStatus(hackathon.startDate, hackathon.endDate);
+  const safeTechStack = hackathon?.techStack || [];
+  const safeRules = hackathon?.rules || [];
 
   // Show real stats for ALL statuses (live, upcoming, completed)
   const stats = {
@@ -379,7 +381,7 @@ const HackathonCard = ({
           </h4>
 
           <div className="flex flex-wrap gap-2">
-            {hackathon.techStack.map((tech, index) => (
+            {safeTechStack.map((tech, index) => (
               <span
                 key={index}
                 className="px-3 py-1 border border-blue-200 dark:border-blue-700 bg-blue-100 dark:bg-blue-900/60 text-gray-800 dark:text-gray-200 text-xs font-medium rounded-full"
@@ -400,7 +402,7 @@ const HackathonCard = ({
           </h4>
 
           <ul className="list-disc list-inside text-xs line-clamp-3 min-h-[60px]">
-            {hackathon.rules.map((rule, index) => (
+            {safeRules.map((rule, index) => (
               <li key={index}>{rule}</li>
             ))}
           </ul>
