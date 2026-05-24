@@ -24,6 +24,7 @@ const Hero = () => {
     "Cutting-Edge Tech Meetups",
   ];
 
+
   const [index, setIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -148,26 +149,6 @@ const Hero = () => {
     show: { y: 0, opacity: 1, transition: { duration: 0.8, ease: "easeOut" } },
   };
 
-  const floatShape = (i) => ({
-    y: [0, -20 - i * 5, 0],
-    x: [0, 20 + i * 5, 0],
-    rotate: [0, 15, -15, 0],
-    transition: { duration: 4.4 + i * 0.7, repeat: Infinity, ease: "easeInOut" },
-  });
-
-  // Vibrant colors for light mode, soft pastels for dark mode
-  const shapes = [
-    { size: 42,  pos: { top: "10%", left: "5%"  }, lightColor: "#3b82f6", darkColor: "#dbeafe" },
-    { size: 54,  pos: { top: "14%", left: "20%" }, lightColor: "#f59e0b", darkColor: "#fde68a" },
-    { size: 30,  pos: { top: "24%", left: "42%" }, lightColor: "#22c55e", darkColor: "#dcfce7" },
-    { size: 50,  pos: { top: "30%", left: "70%" }, lightColor: "#0ea5e9", darkColor: "#bae6fd" },
-    { size: 40,  pos: { top: "52%", left: "10%" }, lightColor: "#ec4899", darkColor: "#fbcfe8" },
-    { size: 26,  pos: { top: "42%", left: "32%" }, lightColor: "#8b5cf6", darkColor: "#c7d2fe" },
-    { size: 68,  pos: { top: "68%", left: "24%" }, lightColor: "#f43f5e", darkColor: "#fecdd3" },
-    { size: 50,  pos: { top: "72%", left: "64%" }, lightColor: "#10b981", darkColor: "#bbf7d0" },
-    { size: 34,  pos: { top: "48%", left: "80%" }, lightColor: "#eab308", darkColor: "#fde68a" },
-  ];
-
   const stats = [
     { value: "1500+", label: "Developers Joined" },
     { value: "75",    label: "Events Organized"  },
@@ -175,24 +156,12 @@ const Hero = () => {
   ];
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 pb-16 sm:pb-20 md:pb-24 pt-6 sm:pt-10">
-      {/* Floating shapes — vibrant + blurred in light mode, soft pastels in dark */}
-      {shapes.map((shape, i) => (
-        <motion.div
-          key={i}
-          animate={floatShape(i)}
-          className="absolute rounded-full pointer-events-none"
-          style={{
-            width: `${shape.size}px`,
-            height: `${shape.size}px`,
-            ...shape.pos,
-            backgroundColor: isDark ? shape.darkColor : shape.lightColor,
-            opacity: isDark ? 0.5 : 0.3,
-            filter: isDark ? "blur(2px)" : "blur(18px)",
-          }}
-        />
-      ))}
-
+    <section className="relative overflow-hidden 
+bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white 
+dark:from-slate-950 dark:via-slate-900 dark:to-black
+text-slate-900 dark:text-gray-100 
+pb-16 sm:pb-20 md:pb-24 pt-6 sm:pt-10 
+border-b border-gray-100 dark:border-slate-900">
       {/* Hero Content */}
       <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10 pt-20">
         <motion.div
@@ -236,7 +205,9 @@ const Hero = () => {
                       transition: { duration: 0.5, ease: "easeIn" },
                     }}
                   >
+                    <span className="text-blue-600 dark:text-blue-500">
                     {phrases[index]}
+                    </span>
                   </motion.span>
                 </AnimatePresence>
               </div>
@@ -269,9 +240,11 @@ const Hero = () => {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute top-full left-0 right-0 mt-3
-                     bg-white rounded-3xl
-                     shadow-2xl border border-gray-200
+                    className="absolute top-full left-0 right-0 mt-3 
+                     bg-white dark:bg-slate-900
+rounded-xl
+shadow-2xl
+border border-gray-200 dark:border-slate-700
                      max-h-96 overflow-y-auto z-50"
                   >
                     <div className="p-4">
@@ -289,8 +262,8 @@ const Hero = () => {
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.05 }}
                                 onClick={clearSearch}
-                                className="flex items-center gap-3 p-3 rounded-2xl
-                                 hover:bg-gray-50
+                                className="flex items-center gap-3 p-3 rounded-lg 
+                                 hover:bg-gray-50 dark:hover:bg-slate-800
                                  cursor-pointer transition-colors group text-left no-underline"
                                 aria-label={`Open ${result.item.title} in ${result.item.searchType || result.item.type || "page"
                                   }`}
@@ -300,14 +273,18 @@ const Hero = () => {
                                 </div>
                                 <div className="flex-1 min-w-0 relative">
                                   <div className="flex items-center gap-2 mb-1">
-                                    <h4 className="text-sm font-semibold text-gray-900 truncate">
+                                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                                       {result.item.title}
                                     </h4>
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                    <span
+                                      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium 
+                                           bg-gray-100 dark:bg-slate-800
+text-gray-600 dark:text-gray-300"
+                                    >
                                       {result.item.searchType}
                                     </span>
                                   </div>
-                                  <p className="text-xs text-gray-500 line-clamp-2 absolute left-0">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 absolute left-0">
                                     {result.item.description?.substring(0, 80)}...
                                   </p>
                                 </div>
@@ -322,10 +299,10 @@ const Hero = () => {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 10 }}
                           transition={{ duration: 0.25, ease: "easeOut" }}
-                          className="text-center text-gray-500 py-10 text-base"
+                          className="text-center text-gray-500 dark:text-gray-400 py-10 text-base"
                         >
                           No results match "
-                          <span className="font-medium text-gray-700">
+                          <span className="font-medium text-gray-700 dark:text-white">
                             {searchQuery}
                           </span>
                           "
