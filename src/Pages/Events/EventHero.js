@@ -1,6 +1,9 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  Award,
+  Calendar,
   Clock,
+  Code2,
   Sparkles,
   TrendingUp,
   Trash2,
