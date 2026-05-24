@@ -24,10 +24,12 @@ const Hero = () => {
     "Cutting-Edge Tech Meetups",
   ];
 
+
   const [index, setIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
+  const [statsReady, setStatsReady] = useState(false);
   const [isDark, setIsDark] = useState(
     document.documentElement.classList.contains("dark")
   );
@@ -58,6 +60,10 @@ const Hero = () => {
     controls.start("show");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [controls]);
+
+  useEffect(() => {
+    setStatsReady(true);
+  }, []);
 
   // Global search functionality
   const createSearchItem = (item, type, searchType) => ({
@@ -148,30 +154,10 @@ const Hero = () => {
     show: { y: 0, opacity: 1, transition: { duration: 0.8, ease: "easeOut" } },
   };
 
-  const floatShape = (i) => ({
-    y: [0, -20 - i * 5, 0],
-    x: [0, 20 + i * 5, 0],
-    rotate: [0, 15, -15, 0],
-    transition: { duration: 4.4 + i * 0.7, repeat: Infinity, ease: "easeInOut" },
-  });
-
-  // Vibrant colors for light mode, soft pastels for dark mode
-  const shapes = [
-    { size: 42,  pos: { top: "10%", left: "5%"  }, lightColor: "#3b82f6", darkColor: "#dbeafe" },
-    { size: 54,  pos: { top: "14%", left: "20%" }, lightColor: "#f59e0b", darkColor: "#fde68a" },
-    { size: 30,  pos: { top: "24%", left: "42%" }, lightColor: "#22c55e", darkColor: "#dcfce7" },
-    { size: 50,  pos: { top: "30%", left: "70%" }, lightColor: "#0ea5e9", darkColor: "#bae6fd" },
-    { size: 40,  pos: { top: "52%", left: "10%" }, lightColor: "#ec4899", darkColor: "#fbcfe8" },
-    { size: 26,  pos: { top: "42%", left: "32%" }, lightColor: "#8b5cf6", darkColor: "#c7d2fe" },
-    { size: 68,  pos: { top: "68%", left: "24%" }, lightColor: "#f43f5e", darkColor: "#fecdd3" },
-    { size: 50,  pos: { top: "72%", left: "64%" }, lightColor: "#10b981", darkColor: "#bbf7d0" },
-    { size: 34,  pos: { top: "48%", left: "80%" }, lightColor: "#eab308", darkColor: "#fde68a" },
-  ];
-
   const stats = [
-    { value: "1500+", label: "Developers Joined" },
-    { value: "75",    label: "Events Organized"  },
-    { value: "30+",   label: "Partners & Sponsors" },
+    { value: 1500, label: "Developers Joined", suffix: "+" },
+    { value: 75, label: "Events Organized", suffix: "+" },
+    { value: 30, label: "Partners & Sponsors", suffix: "+" },
   ];
 
   return (
@@ -224,7 +210,9 @@ border-b border-gray-100 dark:border-slate-900">
                       transition: { duration: 0.5, ease: "easeIn" },
                     }}
                   >
+                    <span className="text-blue-600 dark:text-blue-500">
                     {phrases[index]}
+                    </span>
                   </motion.span>
                 </AnimatePresence>
               </div>
@@ -407,14 +395,21 @@ text-gray-600 dark:text-gray-300"
                   className="bg-white/90 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-xl shadow-blue-100/50 dark:shadow-none border border-blue-100 dark:border-gray-700 hover:shadow-blue-200/60 transition-shadow duration-300"
                 >
                   <p className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
-                    <CountUp
-                      start={0}
-                      end={stat.value}
-                      duration={2.5}
-                      suffix={stat.suffix}
-                      enableScrollSpy
-                      scrollSpyOnce
-                    />
+                    {statsReady ? (
+                      <CountUp
+                        start={0}
+                        end={Number.isFinite(stat.value) ? stat.value : 0}
+                        duration={2.5}
+                        suffix={stat.suffix || ""}
+                        enableScrollSpy
+                        scrollSpyOnce
+                      />
+                    ) : (
+                      <>
+                        {stat.value}
+                        {stat.suffix || ""}
+                      </>
+                    )}
                   </p>
                   <p className="text-gray-500 dark:text-gray-300 text-sm">
                     {stat.label}

@@ -5,12 +5,14 @@
  * and external calendar subscription URLs (Google Calendar, Outlook Web).
  */
 
+// Helper to format Date objects into YYYYMMDDTHHmmSSZ format required by RFC 5545
 const formatToICSDate = (dateStr) => {
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) return new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
   return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
 };
 
+// Helper to safely escape special characters in ICS strings
 const escapeICSText = (text = "") => {
   return text
     .replace(/\\/g, "\\\\")
@@ -19,6 +21,9 @@ const escapeICSText = (text = "") => {
     .replace(/\n/g, "\\n");
 };
 
+/**
+ * Downloads a standard .ics iCalendar file for the given event.
+ */
 export const downloadICSFile = (event) => {
   const { title, description, date, endDate, location, id } = event;
   
@@ -59,6 +64,9 @@ export const downloadICSFile = (event) => {
   URL.revokeObjectURL(url);
 };
 
+/**
+ * Generates an external Google Calendar addition link.
+ */
 export const generateGoogleCalendarLink = (event) => {
   const { title, description, date, endDate, location } = event;
   const start = formatToICSDate(date);
@@ -78,6 +86,9 @@ export const generateGoogleCalendarLink = (event) => {
   return `${baseUrl}?${params.toString()}`;
 };
 
+/**
+ * Generates an external Outlook Web addition link.
+ */
 export const generateOutlookLink = (event) => {
   const { title, description, date, endDate, location } = event;
   const start = new Date(date).toISOString();
