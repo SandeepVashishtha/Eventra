@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNotification } from '../context/NotificationContext';
 import useDocumentTitle from '../hooks/useDocumentTitle';
-<<<<<<< HEAD
 import QuestCenter from '../components/gamification/QuestCenter';
-=======
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Award,
@@ -17,7 +15,6 @@ import {
   Sparkles,
   Trophy,
 } from 'lucide-react';
->>>>>>> upstream/master
 
 export default function UserAchievements() {
   useDocumentTitle("Eventra | Achievements");
@@ -150,31 +147,6 @@ export default function UserAchievements() {
           </div>
         </div>
 
-<<<<<<< HEAD
-      {/* Badges Section */}
-      <section className="mb-12">
-        <h2 className="text-xl font-bold text-gray-800 dark:text-slate-100 mb-4">Milestone Tokens & Badges</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {operationalBadges.map((badge) => (
-            <div 
-              key={badge.id || badge.name} 
-              className={`p-5 rounded-xl border transition-all ${
-                badge.earned 
-                  ? 'bg-white dark:bg-slate-900 border-gray-100 dark:border-slate-800 shadow-sm' 
-                  : 'bg-gray-50/50 dark:bg-slate-800/50 border-gray-200 dark:border-slate-700 opacity-60 filter grayscale'
-              }`}
-            >
-              <div className="flex items-start justify-between">
-                <span className="text-4xl bg-gray-50 dark:bg-slate-800 p-2 rounded-lg">{badge.icon || '🏆'}</span>
-                {badge.earned ? (
-                  <span className="text-xs font-semibold bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-400 px-2.5 py-0.5 rounded-full">Unlocked</span>
-                ) : (
-                  <span className="text-xs font-semibold bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-slate-400 px-2.5 py-0.5 rounded-full">Locked</span>
-                )}
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-100 mt-4">{badge.name}</h3>
-              <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">{badge.description}</p>
-=======
         {/* PROGRESSION ANALYTICS ROW */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           
@@ -336,15 +308,6 @@ export default function UserAchievements() {
 
           </div>
         </div>
-<<<<<<< HEAD
-      </section>
-
-      {/* ──────────────── Quest Center ──────────────── */}
-      <QuestCenter
-        totalEvents={achievements.totalEvents}
-        currentStreak={achievements.currentStreak}
-      />
-=======
 
         {/* MILESTONE BADGES SECTION */}
         <section className="space-y-4">
@@ -471,8 +434,13 @@ export default function UserAchievements() {
           </div>
         </section>
 
+        {/* Quest Center */}
+        <QuestCenter
+          totalEvents={achievements.totalEvents}
+          currentStreak={achievements.currentStreak}
+        />
+
       </div>
->>>>>>> upstream/master
     </div>
   );
 }

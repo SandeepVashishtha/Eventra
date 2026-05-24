@@ -163,9 +163,6 @@ export default function Chatbot() {
             "
             aria-label="Eventra assistant minimized"
           >
-            "
-            aria-label="Eventra assistant minimized"
-          >
             <div className="flex items-center gap-2">
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-500">
                 <Sparkles className="h-3.5 w-3.5" />
@@ -188,15 +185,13 @@ export default function Chatbot() {
                   <X className="h-4 w-4" />
                 </button>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          </div>
+        )}
 
         <motion.button
-          type="button"
           onClick={handleOpen}
           whileHover={{ scale: 1.1, rotate: 5 }}
-          whileTap={{ scale: 0.9 }}
           className={`
             fixed bottom-6 right-6 z-[100]
             flex h-14 w-14 items-center justify-center
@@ -218,11 +213,16 @@ export default function Chatbot() {
   }
 
   // ── Fully expanded chat popup ───────────────────────────────────────────────
-  return (
-    <section
+  return createPortal(
+    <AnimatePresence>
+      <motion.section
       data-chatbot-open
       data-lenis-prevent
       aria-label="Eventra assistant"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 12 }}
+      transition={{ duration: 0.2 }}
       className="
         fixed bottom-6 right-6 z-[100]
         flex flex-col                        /* KEY FIX: flex column layout */
@@ -238,7 +238,7 @@ export default function Chatbot() {
            bottom-6 = 1.5rem offset from bottom, so we subtract that + a little breathing room. */
         max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-5rem)]
       "
-    >
+      >
       {/* ── Header — always visible, never scrolls away ── */}
       {/*
         FIX #1 (desktop): header is a flex-shrink-0 child so it is always
@@ -400,7 +400,6 @@ export default function Chatbot() {
             </form>
           </div>
         </motion.section>
-      )}
     </AnimatePresence>,
     document.body
   );

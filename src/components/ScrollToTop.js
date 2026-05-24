@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronUp } from "lucide-react";
 import "./styles/scrolltotopButton.css";
 
+const getScrollPosition = () => (window.lenis ? window.lenis.scroll : window.scrollY || 0);
+
 export default function ScrollToTopButton() {
   const { pathname } = useLocation();
 

@@ -12,6 +12,7 @@ import {
   Sparkles,
   FolderKanban,
   Trophy,
+  Users,
   LayoutDashboard,
   User as UserIcon,
   LogOut,
@@ -23,7 +24,12 @@ import {
   Moon,
   Sun,
   Search,
-  Palette
+  Palette,
+  Book,
+  MoreHorizontal,
+  Info,
+  HelpCircle,
+  MessageSquare
 } from "lucide-react";
 import CommandPalette from "../common/CommandPalette";
 
