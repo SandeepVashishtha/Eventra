@@ -1,12 +1,18 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiUser, FiMail, FiPhone, FiBriefcase, FiAward, FiMessageSquare, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
 import useDocumentTitle from "../hooks/useDocumentTitle";
+import { toast } from "react-toastify";
 
+import {
+  isAlreadyRegistered,
+  saveRegistration,
+} from "../utils/registerUtils";
 const RegistrationPage = () => {
   useDocumentTitle("Eventra | Registration");
   const navigate = useNavigate();
+  const { eventId = "general" } = useParams();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -59,18 +65,39 @@ const RegistrationPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
 
     setIsSubmitting(true);
-    // Simulate API registration request
-    setTimeout(() => {
-      console.log("Registration Successful! Data:", formData);
-      setIsSubmitting(false);
+    setErrors((prev) => ({ ...prev, submit: "" }));
+
+    try {
+      if (isAlreadyRegistered(eventId, formData.email)) {
+        setErrors((prev) => ({
+          ...prev,
+          submit: "You have already registered with this email address.",
+        }));
+        return;
+      }
+
+      saveRegistration(eventId, formData.email);
       setSubmitSuccess(true);
-    }, 1500);
+      toast.success("Registration successful!");
+    } catch (error) {
+      setErrors((prev) => ({
+        ...prev,
+        submit: "Something went wrong. Please try again.",
+      }));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+
 
   const handleCancel = () => {
     // Navigate back to the previous page
@@ -115,19 +142,19 @@ const RegistrationPage = () => {
   }
 
   return (
-    <div className="fixed inset-0 py-16 px-4 bg-gradient-to-br from-indigo-50/50 via-white to-violet-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-300 z-[10000] overflow-y-auto flex items-center justify-center">
+    <div className="min-h-screen py-20 px-4 bg-gradient-to-br from-indigo-50/50 via-white to-violet-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-300 overflow-y-auto flex items-start sm:items-center justify-center">
       <motion.div
         initial={{ opacity: 0, y: 30, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.6 }}
-        className="max-w-2xl w-full backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border border-slate-200/50 dark:border-slate-800/50 shadow-2xl rounded-3xl p-6 sm:p-10 relative overflow-hidden"
+        className="max-w-2xl w-full backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border border-slate-200/50 dark:border-slate-800/50 shadow-2xl rounded-3xl p-4 sm:p-6 md:p-10 relative overflow-hidden my-4"
       >
         {/* Glow Effects */}
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-60 h-60 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-60 h-60 bg-violet-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="relative z-10">
-          <h1 className="text-3xl sm:text-4xl font-extrabold mb-2 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 dark:from-indigo-400 dark:via-violet-400 dark:to-purple-400 bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-2 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 dark:from-indigo-400 dark:via-violet-400 dark:to-purple-400 bg-clip-text text-transparent">
             Register for this Event
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mb-8 text-sm sm:text-base">
@@ -135,6 +162,21 @@ const RegistrationPage = () => {
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Global API Submission Error Feedback Banner */}
+            <AnimatePresence>
+              {errors.submit && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="flex items-center gap-3 p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-500/30 text-rose-600 dark:text-rose-400 rounded-2xl text-sm"
+                >
+                  <FiAlertCircle className="text-xl flex-shrink-0" />
+                  <span>{errors.submit}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Full Name */}
             <div>
               <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">

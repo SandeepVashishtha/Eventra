@@ -27,8 +27,10 @@ import {
   MousePointer,
   Moon,
   Sun,
-  MoreHorizontal
+  MoreHorizontal,
+  Search
 } from "lucide-react";
+import CommandPalette from "../common/CommandPalette";
 
 // --- Helpers to reduce complexity ---
 const getUserDisplayNames = (user) => {
@@ -561,6 +563,18 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [navHeight, setNavHeight] = useState(0);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setShowCommandPalette((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const drawerRef = useRef(null);
   const closeBtnRef = useRef(null);
@@ -693,6 +707,21 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
           {/* Right Group: Auth Controls and Mobile Toggle */}
           <div className="hidden lg:flex items-center gap-2 shrink-0 justify-end">
+            {/* Command Palette Trigger Button */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowCommandPalette(true)}
+              title="Open Command Palette (⌘K)"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group mr-1"
+            >
+              <Search className="w-4 h-4 text-zinc-500 dark:text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400" />
+              <div className="flex items-center gap-0.5 text-[9px] font-black tracking-widest text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 uppercase">
+                <span>⌘</span>
+                <span>K</span>
+              </div>
+            </motion.button>
+
             <ThemeToggleButton
               isDarkMode={isDarkMode}
               toggleTheme={toggleTheme}
@@ -765,6 +794,18 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         onConfirm={handleConfirmLogout}
         title="Logout Confirmation"
         message="Are you sure you want to log out?"
+      />
+
+      {/* Global Command Palette */}
+      <CommandPalette
+        isOpen={showCommandPalette}
+        onClose={() => setShowCommandPalette(false)}
+        isDarkMode={isDarkMode}
+        toggleTheme={toggleTheme}
+        cursorEnabled={cursorEnabled}
+        toggleCursor={toggleCursor}
+        isAuthenticated={isAuthenticated}
+        handleLogoutClick={handleLogoutClick}
       />
 
       <div style={{ height: navHeight }} />
