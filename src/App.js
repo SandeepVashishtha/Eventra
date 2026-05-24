@@ -12,6 +12,7 @@ import {
 } from "react-router-dom";
 
 import "./App.css";
+import { toast } from "react-toastify";
 
 /* =========================
    Layout & Components
@@ -20,10 +21,12 @@ import "./App.css";
 import Navbar from "./components/Layout/Navbar";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
+import SessionRecovery from "./components/SessionRecovery";
 import FluidCursor from "./jhalak/FluidCursor";
 import PageTransition from "./components/common/PageTransition";
 import ReminderChecker from "./components/reminders/ReminderChecker";
 import ScrollProgressBar from "./components/common/ScrollProgressBar";
+import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
 
 /* =========================
    Pages
@@ -44,10 +47,13 @@ import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
 
 import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
+import { RealTimeProvider } from "./context/RealTimeContext";
 
 import useOfflineSync from "./hooks/useOfflineSync";
 
 import useLenis from "./hooks/useLenis";
+
+import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 
 /* =========================
    Lazy Loaded Components
@@ -81,11 +87,26 @@ function App() {
       localStorage.getItem("cursor") !== "off"
     );
 
+  const [showKeyboardModal, setShowKeyboardModal] =
+    useState(false);
+
   /* =========================
      Initialize Smooth Scroll
   ========================= */
 
   useLenis();
+
+  /* =========================
+     Keyboard Shortcuts
+  ========================= */
+
+  useKeyboardShortcuts({
+    onOpenHelp: () =>
+      setShowKeyboardModal(true),
+
+    onCloseHelp: () =>
+      setShowKeyboardModal(false),
+  });
 
   /* =========================
      Toggle Cursor
@@ -133,11 +154,64 @@ function App() {
     };
   }, []);
 
+  /* =========================
+     Online / Offline Toasts
+  ========================= */
+
+  useEffect(() => {
+    const handleOnline = () => {
+      toast.success(
+        "Back online! Your connections have been restored and sync is complete.",
+        {
+          position: "bottom-right",
+          autoClose: 4000,
+        }
+      );
+    };
+
+    const handleOffline = () => {
+      toast.warning(
+        "You are currently offline. Running in secure local offline caching mode.",
+        {
+          position: "bottom-right",
+          autoClose: 5000,
+        }
+      );
+    };
+
+    window.addEventListener(
+      "online",
+      handleOnline
+    );
+
+    window.addEventListener(
+      "offline",
+      handleOffline
+    );
+
+    if (!navigator.onLine) {
+      handleOffline();
+    }
+
+    return () => {
+      window.removeEventListener(
+        "online",
+        handleOnline
+      );
+
+      window.removeEventListener(
+        "offline",
+        handleOffline
+      );
+    };
+  }, []);
+
   return (
     <AuthProvider>
       <NotificationProvider>
         <MyEventsProvider>
           <SessionRecoveryProvider>
+            <RealTimeProvider>
 
             {/* Toast Notifications */}
             <NotificationProvider />
@@ -154,25 +228,22 @@ function App() {
             <Router>
               <div className="App">
 
-                {/* =========================
-                    Global Scroll Progress Bar
-                ========================= */}
-
+                {/* Global Scroll Progress Bar */}
                 <ScrollProgressBar />
 
-                {/* =========================
-                    Navbar
-                ========================= */}
-
+                {/* Navbar */}
                 <Navbar
                   cursorEnabled={cursorEnabled}
                   toggleCursor={toggleCursor}
                 />
 
-                {/* =========================
-                    Main Content
-                ========================= */}
+                {/* Keyboard Shortcuts Modal */}
+                <KeyboardShortcutsModal
+                  isOpen={showKeyboardModal}
+                  onClose={() => setShowKeyboardModal(false)}
+                />
 
+                {/* Main Content */}
                 <main
                   className="
                     relative
@@ -195,56 +266,28 @@ function App() {
                       }
                     >
                       <Routes>
-
-                        {/* Registration Route */}
                         <Route
                           path="/register/:id"
-                          element={
-                            <RegistrationPage />
-                          }
+                          element={<RegistrationPage />}
                         />
-
-                        {/* Main Routes */}
-                        <Route
-                          path="*"
-                          element={<AppRoutes />}
-                        />
+                        <Route path="*" element={<AppRoutes />} />
                       </Routes>
                     </Suspense>
                   </PageTransition>
                 </main>
 
-                {/* =========================
-                    Scroll To Top
-                ========================= */}
-
                 <ScrollToTop />
 
-                {/* =========================
-                    Lazy Loaded Components
-                ========================= */}
-
                 <Suspense fallback={null}>
-                  <Chatbot />
-
                   <Footer />
+                  <Chatbot />
                 </Suspense>
 
-                {/* =========================
-                    Floating Feedback Button
-                ========================= */}
-
                 <FeedbackButton />
-
-                {/* =========================
-                    Fluid Cursor
-                ========================= */}
-
-                <FluidCursor
-                  enabled={cursorEnabled}
-                />
+                <FluidCursor enabled={cursorEnabled} />
               </div>
             </Router>
+            </RealTimeProvider>
 
           </SessionRecoveryProvider>
         </MyEventsProvider>

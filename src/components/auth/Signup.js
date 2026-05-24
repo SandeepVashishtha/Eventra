@@ -143,7 +143,7 @@ const Signup = () => {
   }, 1000);
 
   return () => clearTimeout(timer);
-}, [formData.password, formData.confirmPassword]);
+}, [formData]);
 
 const handleSubmit = async (e) => {
   e.preventDefault();
@@ -652,12 +652,17 @@ const handleSubmit = async (e) => {
               </div>
             )}
 
+            {/* Smart Button Gating using password strength and required fields */}
             <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={formData.firstName && formData.lastName && formData.email && formData.password && formData.confirmPassword && (formData.password === formData.confirmPassword) && assessStrength(formData.password).criteriaMet === 5 && !loading ? { scale: 1.02 } : {}}
+              whileTap={formData.firstName && formData.lastName && formData.email && formData.password && formData.confirmPassword && (formData.password === formData.confirmPassword) && assessStrength(formData.password).criteriaMet === 5 && !loading ? { scale: 0.98 } : {}}
               type="submit"
-              disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-300 hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
+              disabled={loading || !formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim() || !formData.password.trim() || !formData.confirmPassword.trim() || (formData.password !== formData.confirmPassword) || assessStrength(formData.password).criteriaMet < 5}
+              className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-semibold transition-all duration-300 ${
+                loading || !formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim() || !formData.password.trim() || !formData.confirmPassword.trim() || (formData.password !== formData.confirmPassword) || assessStrength(formData.password).criteriaMet < 5
+                  ? "bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed opacity-60"
+                  : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md hover:shadow-lg focus:ring-2 focus:ring-blue-500/20 active:scale-98"
+              }`}
             >
               {loading ? (
                 <svg

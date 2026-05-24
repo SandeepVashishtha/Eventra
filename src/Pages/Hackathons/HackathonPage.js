@@ -19,7 +19,6 @@ import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
 
-
 // NEW: Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
   <motion.div
@@ -50,6 +49,7 @@ const HackathonHub = () => {
     location: [],
   });
   const [showFilters, setShowFilters] = useState(false);
+  const [sortBy, setSortBy] = useState("newest");
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
   // NEW: State for selected tags
@@ -220,6 +220,22 @@ const HackathonHub = () => {
 
       return true;
     });
+
+  const sortHackathons = (list) => {
+    const sorted = [...list];
+    if (sortBy === "deadline") {
+      sorted.sort((a, b) => new Date(a.endDate) - new Date(b.endDate));
+    } else if (sortBy === "popularity") {
+      sorted.sort((a, b) => (b.participants || 0) - (a.participants || 0));
+    } else if (sortBy === "newest") {
+      sorted.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+    } else if (sortBy === "prize") {
+      const parseP = (p) => parseInt((p || "0").replace(/[^0-9]/g, ""), 10);
+      sorted.sort((a, b) => parseP(b.prize) - parseP(a.prize));
+    }
+    return sorted;
+  };
+    const sortedFilteredHackathons = sortHackathons(filteredHackathons);
 
   const featuredHackathons = [...hackathons]
     .filter((h) => h.featured)
@@ -599,7 +615,7 @@ const HackathonHub = () => {
           data-aos="fade-up"
           data-aos-delay="300"
         >
-          <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3">
             {[
               { key: "all", label: "All Hackathons" },
               { key: "live", label: "Live Now" },
@@ -618,92 +634,23 @@ const HackathonHub = () => {
               </button>
             ))}
           </div>
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Sort by:</label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+            >
+              <option value="newest">Newest</option>
+              <option value="deadline">Deadline</option>
+              <option value="popularity">Popularity</option>
+              <option value="prize">Prize Amount</option>
+            </select>
+          </div>
         </motion.div>
 
         {/* Hackathons Grid */}
-    {/* Hackathons Grid */}
-<AnimatePresence mode="wait">
-  {isLoading ? (
-    <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-      {[1, 2, 3, 4, 5, 6].map((i) => (
-        <HackathonCardSkeleton key={`skeleton-${i}`} />
-      ))}
-    </div>
-  ) : filteredHackathons.length > 0 ? (
-    <motion.div
-      key={activeTab}
-      className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-      variants={containerVariants}
-      initial="hidden"
-      animate="show"
-      exit={{ opacity: 0 }}
-    >
-      {filteredHackathons.map((hackathon, index) => (
-        <HackathonCard
-          key={hackathon.id}
-          hackathon={hackathon}
-          data-aos="flip-up"
-          data-aos-delay={index * 100}
-        />
-      ))}
-    </motion.div>
-  ) : (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.4 }}
-    >
-      <EmptyState
-        title="No Hackathons Found"
-        message={
-          searchQuery ||
-          filters.difficulty ||
-          filters.prize ||
-          filters.location ||
-          selectedTags.length > 0
-            ? "🚀 No hackathons match your current filters. Try adjusting your search criteria or reset the filters."
-            : "🎉 No hackathons are available right now. Be the first to host an exciting hackathon!"
-        }
-        ctaLabel={
-          searchQuery ||
-          filters.difficulty ||
-          filters.prize ||
-          filters.location ||
-          selectedTags.length > 0
-            ? "Reset Filters"
-            : "Host Hackathon"
-        }
-        ctaLink={
-          searchQuery ||
-          filters.difficulty ||
-          filters.prize ||
-          filters.location ||
-          selectedTags.length > 0
-            ? "/hackathons"
-            : "/host-hackathon"
-        }
-      />
 
-      {/* Reset Filters Button */}
-      {(searchQuery ||
-        filters.difficulty ||
-        filters.prize ||
-        filters.location ||
-        selectedTags.length > 0) && (
-        <div className="mt-6 flex justify-center">
-          <button
-            onClick={resetFilters}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-black hover:bg-zinc-800 text-white text-sm font-medium shadow-md transition-all duration-300"
-          >
-            <FiRotateCw className="w-4 h-4" />
-            Reset Filters
-          </button>
-        </div>
-      )}
-    </motion.div>
-  )}
-</AnimatePresence>
       </div>
       <HackathonCTA></HackathonCTA>
 

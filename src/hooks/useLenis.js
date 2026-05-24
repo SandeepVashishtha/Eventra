@@ -38,7 +38,7 @@ const useLenis = (options = {}) => {
       lenis.destroy();
       window.lenis = null;
     };
-  }, []);
+  }, [options]);
 
   return null;
 };
