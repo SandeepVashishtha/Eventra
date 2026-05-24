@@ -478,33 +478,6 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
             <DesktopNavGroup key={item.name} item={item} isActive={isActive} isOpen={openDropdown === item.name} onToggle={(e) => { e.stopPropagation(); onToggleGroup(item.name); }} setOpenDropdown={onToggleGroup} location={location} />
           );
         }
-        return isMobile ? (
-
-          <MobileNavGroup 
-            key={item.name} 
-            item={item} 
-            isActive={isActive} 
-            isOpen={openDropdown === item.name} 
-            onToggle={() => onToggleGroup(item.name)} 
-            closeAllMenus={onLinkClick} 
-            location={location} 
-          />
-        ) : (
-          <DesktopNavGroup 
-            key={item.name} 
-            item={item} 
-            isActive={isActive} 
-            isOpen={openDropdown === item.name} 
-            onToggle={(e) => { 
-              e.stopPropagation(); 
-              onToggleGroup(item.name); 
-            }} 
-            setOpenDropdown={() => onToggleGroup(null)}
-            location={location} 
-          />
-        );
-      }
-
       return isMobile ? (
         <MobileNavLink 
           key={item.name} 
@@ -728,16 +701,13 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         }`}
         onClick={closeAllMenus}
       />
-
-
-
-  ref={navRef}
-  data-aos="fade-down"
-  data-aos-once="true"
-  data-aos-duration="1000"
-  className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 transition-colors duration-300"
-
->
+      <nav
+        ref={navRef}
+        data-aos="fade-down"
+        data-aos-once="true"
+        data-aos-duration="1000"
+        className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 transition-colors duration-300"
+      >
   <div className="neon-navbar-border"></div>
 
   <div className="max-w-screen-2xl mx-auto flex items-center justify-between h-[68px] px-4 md:px-6 xl:px-10 gap-4 w-full overflow-hidden">
