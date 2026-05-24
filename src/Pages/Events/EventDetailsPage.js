@@ -168,7 +168,7 @@ const EventDetailsPage = () => {
         </div>
       </div>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
         <motion.div
           initial={{
             opacity: 0,
@@ -188,14 +188,14 @@ const EventDetailsPage = () => {
             {/* Hero Image */}
             <div className="relative rounded-2xl overflow-hidden mb-8 shadow-xl">
               <img
-                src={event.image}
-                alt={event.title}
-                className="w-full h-96 object-cover"
-              />
+  src={event.image}
+  alt={event.title}
+  className="w-full h-48 sm:h-64 md:h-96 object-cover"
+/>
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-              <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+              <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-6 text-white">
                 <div className="flex items-center gap-3 mb-4">
                   <span className="px-3 py-1 bg-indigo-600 rounded-full text-sm font-semibold">
                     {event.type
@@ -219,9 +219,9 @@ const EventDetailsPage = () => {
                   </span>
                 </div>
 
-                <h1 className="text-4xl font-bold">
-                  {event.title}
-                </h1>
+                <h1 className="text-xl sm:text-2xl md:text-4xl font-bold leading-tight">
+  {event.title}
+</h1>
               </div>
             </div>
 
