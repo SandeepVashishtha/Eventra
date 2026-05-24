@@ -29,6 +29,10 @@ export const getQueue = () => {
  */
 export const pushToQueue = (item) => {
   const queue = getQueue();
+  if (queue.length >= 5) {
+    console.warn('Offline queue limit reached (max 5). Dropping new registration to prevent local DoS.');
+    return;
+  }
   queue.push(item);
   localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
 };

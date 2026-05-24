@@ -1,7 +1,8 @@
+import useRecentlyViewed from "../../hooks/useRecentlyViewed";  
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-
+import CountdownTimer from "../../components/common/CountdownTimer";
 import {
   Calendar,
   MapPin,
@@ -27,6 +28,8 @@ const EventDetailsPage = () => {
 
   const navigate = useNavigate();
 
+  const { addRecentlyViewed } = useRecentlyViewed();
+
   const [loading, setLoading] =
     useState(true);
 
@@ -51,6 +54,16 @@ const EventDetailsPage = () => {
           );
 
         setEvent(foundEvent);
+        if (foundEvent) {
+          addRecentlyViewed({
+            id:       foundEvent.id,
+            title:    foundEvent.title,
+            date:     foundEvent.date,
+            location: foundEvent.location,
+            image:    foundEvent.image,
+            category: foundEvent.type,
+          });
+        }
       } catch (error) {
         console.error(error);
       } finally {
@@ -59,7 +72,7 @@ const EventDetailsPage = () => {
     };
 
     fetchEvent();
-  }, [eventId]);
+  }, [eventId , addRecentlyViewed]);
 
   // Loading State
   if (loading) {
@@ -168,7 +181,7 @@ const EventDetailsPage = () => {
         </div>
       </div>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
         <motion.div
           initial={{
             opacity: 0,
@@ -188,14 +201,14 @@ const EventDetailsPage = () => {
             {/* Hero Image */}
             <div className="relative rounded-2xl overflow-hidden mb-8 shadow-xl">
               <img
-                src={event.image}
-                alt={event.title}
-                className="w-full h-96 object-cover"
-              />
+  src={event.image}
+  alt={event.title}
+  className="w-full h-48 sm:h-64 md:h-96 object-cover"
+/>
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-              <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+              <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-6 text-white">
                 <div className="flex items-center gap-3 mb-4">
                   <span className="px-3 py-1 bg-indigo-600 rounded-full text-sm font-semibold">
                     {event.type
@@ -219,9 +232,9 @@ const EventDetailsPage = () => {
                   </span>
                 </div>
 
-                <h1 className="text-4xl font-bold">
-                  {event.title}
-                </h1>
+                <h1 className="text-xl sm:text-2xl md:text-4xl font-bold leading-tight">
+  {event.title}
+</h1>
               </div>
             </div>
 
@@ -235,6 +248,51 @@ const EventDetailsPage = () => {
                 {event.description}
               </p>
             </div>
+          </div>
+        {/* Sidebar */}
+          <div className="lg:col-span-1 flex flex-col gap-6">
+            {/* Countdown Timer */}
+            {!isPastEvent && (
+              <CountdownTimer date={event.date} time={event.time} />
+            )}
+
+            {/* Event Info */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                Event Details
+              </h3>
+              <div className="flex flex-col gap-4 text-sm text-gray-600 dark:text-gray-300">
+                <div className="flex items-center gap-3">
+                  <Calendar size={16} className="text-indigo-500 flex-shrink-0" />
+                  <span>{new Date(event.date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Clock size={16} className="text-blue-500 flex-shrink-0" />
+                  <span>{event.time}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <MapPin size={16} className="text-pink-500 flex-shrink-0" />
+                  <span>{event.location}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Users size={16} className="text-green-500 flex-shrink-0" />
+                  <span>{event.attendees} / {event.maxAttendees} registered</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Tag size={16} className="text-yellow-500 flex-shrink-0" />
+                  <span className="capitalize">{event.type}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Register Button */}
+            {!isPastEvent && (
+              <Link to={`/events/${event.id}/register`}>
+                <div className="inline-flex items-center justify-center w-full rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-900 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 text-white px-4 py-4 text-sm font-semibold shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
+                  Register Now
+                </div>
+              </Link>
+            )}
           </div>
         </motion.div>
       </main>

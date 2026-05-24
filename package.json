@@ -6,6 +6,7 @@
   "dependencies": {
     "@headlessui/react": "^2.2.8",
     "@heroicons/react": "^2.0.16",
+    "@react-oauth/google": "^0.13.5",
     "@studio-freight/lenis": "^1.0.42",
     "aos": "^2.3.4",
     "axios": "^1.16.1",
@@ -15,6 +16,7 @@
     "fuse.js": "^7.1.0",
     "jspdf": "^4.2.1",
     "lucide-react": "^0.542.0",
+    "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-countup": "^6.5.3",
     "react-dom": "^18.2.0",
@@ -26,7 +28,6 @@
     "recharts": "^3.8.1"
   },
   "scripts": {
-    
     "dev": "react-scripts start",
     "start": "react-scripts start",
     "build": "react-scripts build",
@@ -35,7 +36,6 @@
     "eject": "react-scripts eject",
     "lint": "echo \"No lint configured\"",
     "prepare": "node scripts/setup-git-config.js"
-    
   },
   "eslintConfig": {
     "extends": [

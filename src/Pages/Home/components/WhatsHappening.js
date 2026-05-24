@@ -187,10 +187,10 @@ border-t border-gray-100 dark:border-slate-800/80"
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-black dark:text-gray-900">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-black dark:text-white">
             What's Happening Now
           </h2>
-          <p className="mt-2 sm:mt-3 max-w-xl mx-auto text-sm sm:text-lg text-black dark:text-gray-800">
+          <p className="mt-2 sm:mt-3 max-w-xl mx-auto text-sm sm:text-lg text-black dark:text-gray-300">
             Stay updated with {upcomingEvents.length} upcoming events, community
             programs, and opportunities to contribute to Eventra
           </p>
