@@ -120,7 +120,7 @@ const RegistrationPage = () => {
           </div>
           <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-3">Registration Successful!</h2>
           <p className="text-slate-600 dark:text-slate-300 mb-8 leading-relaxed">
-            Thank you for registering, <span className="font-semibold">{formData.fullName}</span>. An confirmation email has been sent to <span className="font-semibold">{formData.email}</span> with further details.
+            Thank you for registering, <span className="font-semibold">{formData.fullName}</span>. A confirmation email has been sent to <span className="font-semibold">{formData.email}</span> with further details.
           </p>
           <div className="flex flex-col gap-3">
             <button
