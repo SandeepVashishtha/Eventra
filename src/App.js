@@ -10,9 +10,6 @@ import FluidCursor from "./jhalak/FluidCursor";
 import PageTransition from "./components/common/PageTransition";
 import ReminderChecker from "./components/reminders/ReminderChecker";
 
-// Pages
-import RegistrationPage from "./Pages/RegistrationPage";
-
 // Context & Hooks
 import NotificationToastContainer from "./components/common/NotificationProvider";
 import { NotificationProvider } from "./context/NotificationContext";
@@ -26,6 +23,8 @@ import useLenis from "./hooks/useLenis";
 const Footer = lazy(() => import("./components/Layout/Footer"));
 const Chatbot = lazy(() => import("./components/Chatbot"));
 const AppRoutes = lazy(() => import("./components/AppRoutes"));
+const RegistrationPage = lazy(() => import("./Pages/RegistrationPage"));
+const NotFoundPage = lazy(() => import("./Pages/NotFoundPage"));
 
 const OfflineSyncManager = () => {
   useOfflineSync();
@@ -90,11 +89,11 @@ function App() {
             <OfflineSyncManager />
 
             <Router>
-            <div className="App">
-              <Navbar
-                cursorEnabled={cursorEnabled}
-                toggleCursor={toggleCursor}
-              />
+              <div className="App">
+                <Navbar
+                  cursorEnabled={cursorEnabled}
+                  toggleCursor={toggleCursor}
+                />
 
               <main
                 className="
@@ -113,21 +112,22 @@ function App() {
                   <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
                     <Routes>
                       <Route path="/register/:id" element={<RegistrationPage />} />
-                      <Route path="*" element={<AppRoutes />} />
+                      <Route path="/*" element={<AppRoutes />} />
+                      <Route path="*" element={<NotFoundPage />} />
                     </Routes>
                   </Suspense>
                 </PageTransition>
               </main>
 
-              <ScrollToTop />
-              <Suspense fallback={null}>
-                <Chatbot />
-                <Footer />
-              </Suspense>
-              <FeedbackButton />
-              <FluidCursor enabled={cursorEnabled} />
-            </div>
-          </Router>
+                <ScrollToTop />
+                <Suspense fallback={null}>
+                  <Chatbot />
+                  <Footer />
+                </Suspense>
+                <FeedbackButton />
+                <FluidCursor enabled={cursorEnabled} />
+              </div>
+            </Router>
           </SessionRecoveryProvider>
         </MyEventsProvider>
       </NotificationProvider>
