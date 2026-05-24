@@ -63,17 +63,22 @@ const EventsPage = () => {
           onSortChange={listing.setSortType}
           viewMode={listing.viewMode}
           onViewModeChange={listing.setViewMode}
+          searchQuery={listing.searchQuery}
+          onSearchChange={listing.setSearchQuery}
         />
 
-        {!listing.loadError && (
-          <EventCardSection
-            isLoading={listing.isLoading}
-            events={listing.paginatedEvents}
-            viewMode={listing.viewMode}
-            filterType={listing.filterType}
-          />
-        )}
-
+{!listing.loadError && (
+  <EventCardSection
+    isLoading={listing.isLoading}
+    events={listing.paginatedEvents}
+    viewMode={listing.viewMode}
+    filterType={listing.filterType}
+    onClearFilters={() => {
+      listing.setSearchQuery("");
+      listing.setFilterType("all");
+    }}
+  />
+)}
         {!listing.isLoading && !listing.loadError && (
           <PaginationControls
             currentPage={listing.currentPage}
