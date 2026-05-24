@@ -161,11 +161,13 @@ function App() {
                 <ScrollToTop />
 
                 <Suspense fallback={null}>
-                  <Chatbot />
+                 
                   <Footer />
+                   <Chatbot />
                 </Suspense>
 
                 <FeedbackButton />
+                  <SessionRecovery />
                 <FluidCursor enabled={cursorEnabled} />
               </div>
             </Router>

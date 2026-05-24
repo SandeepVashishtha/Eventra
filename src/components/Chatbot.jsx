@@ -1,4 +1,5 @@
 import { useEffect, useRef, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import {
   Bot,
@@ -130,19 +131,15 @@ export default function Chatbot() {
   const handleMinimize = () => setIsMinimized((v) => !v);
 
   // ── Floating launcher — shown when closed OR minimized ─────────────────────
-  //
-  // FIX #2 (mobile): Always render a launcher FAB when the chat is not fully
-  // expanded so users can reopen it from any state.
-  //
   if (!isOpen || isMinimized) {
-    return (
+    return createPortal(
       <>
         {/* Minimized strip — only on desktop when minimized */}
         {isOpen && isMinimized && (
           <div
             className="
               fixed bottom-6 right-6 z-[100]
-              hidden sm:flex               /* hide strip on mobile, show FAB instead */
+              hidden sm:flex
               items-center justify-between gap-3
               w-72 rounded-2xl
               border border-slate-700
@@ -178,14 +175,6 @@ export default function Chatbot() {
           </div>
         )}
 
-        {/*
-          Floating Action Button — shown in all "not fully open" states.
-          On desktop: shown only when fully closed (isMinimized uses the strip above).
-          On mobile: always shown when not fully expanded (covers both closed + minimized).
-
-          FIX: sm:hidden hides it on desktop when minimized (strip handles that).
-                On mobile the strip is hidden so FAB always shows up for both states.
-        */}
         <button
           type="button"
           onClick={handleOpen}
@@ -203,12 +192,13 @@ export default function Chatbot() {
         >
           <Bot className="h-6 w-6" />
         </button>
-      </>
+      </>,
+      document.body
     );
   }
 
   // ── Fully expanded chat popup ───────────────────────────────────────────────
-  return (
+  return createPortal(
     <section
       data-chatbot-open
       aria-label="Eventra assistant"
@@ -226,12 +216,7 @@ export default function Chatbot() {
         max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-5rem)]
       "
     >
-      {/* ── Header — always visible, never scrolls away ── */}
-      {/*
-        FIX #1 (desktop): header is a flex-shrink-0 child so it is always
-        rendered at the top of the constrained container. It will never be
-        pushed out of the viewport.
-      */}
+      {/* ── Header ── */}
       <header className="
         flex flex-shrink-0 items-center justify-between gap-3
         border-b border-slate-200 dark:border-slate-700
@@ -267,12 +252,7 @@ export default function Chatbot() {
         </div>
       </header>
 
-      {/* ── Messages — scrollable, fills available space ── */}
-      {/*
-        FIX #1 (desktop): flex-1 + overflow-y-auto means this area grows to
-        fill whatever space is left between the header and footer, then scrolls
-        internally. The popup itself never grows taller than max-h above.
-      */}
+      {/* ── Messages ── */}
       <div
         className="flex-1 overflow-y-auto px-4 py-4 space-y-3"
         role="log"
@@ -286,16 +266,16 @@ export default function Chatbot() {
             className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
           >
             <div
-              className={`max-w-[82%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${message.role === "user"
-                ? "bg-indigo-600 text-white"
-                : "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-100"
-                }`}
+              className={`max-w-[82%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                message.role === "user"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-100"
+              }`}
             >
               {message.content}
             </div>
           </div>
         ))}
-        {/* Anchor element to scroll to on new messages */}
         <div ref={messagesEndRef} />
       </div>
 
@@ -367,6 +347,7 @@ export default function Chatbot() {
           </button>
         </form>
       </div>
-    </section>
+    </section>,
+    document.body
   );
 }
