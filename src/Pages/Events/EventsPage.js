@@ -75,18 +75,18 @@ const EventsPage = () => {
           onSearchChange={listing.setSearchQuery}
         />
 
-{!listing.loadError && (
-  <EventCardSection
-    isLoading={listing.isLoading}
-    events={listing.paginatedEvents}
-    viewMode={listing.viewMode}
-    filterType={listing.filterType}
-    onClearFilters={() => {
-      listing.setSearchQuery("");
-      listing.setFilterType("all");
-    }}
-  />
-)}
+        {!listing.loadError && (
+          <EventCardSection
+            isLoading={listing.isLoading}
+            events={listing.paginatedEvents}
+            viewMode={listing.viewMode}
+            filterType={listing.filterType}
+            onClearFilters={() => {
+              listing.setSearchQuery("");
+              listing.setFilterType("all");
+            }}
+          />
+        )}
         {!listing.isLoading && !listing.loadError && (
           <PaginationControls
             currentPage={listing.currentPage}
@@ -100,7 +100,6 @@ const EventsPage = () => {
       </div>
 
       <EventCTA />
-      <FeedbackButton />
     </div>
   );
 };

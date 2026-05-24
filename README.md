@@ -284,7 +284,7 @@ Then replace the placeholder values with your own local configuration.
 Example:
 
 ```env
-REACT_APP_API_URL=http://localhost:5000
+REACT_APP_API_URL=http://localhost:8080/api
 REACT_APP_GITHUB_TOKEN=your_github_token
 ```
 

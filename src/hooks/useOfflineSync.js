@@ -1,8 +1,8 @@
-import { useEffect, useRef } from "react";
-import { toast } from "react-toastify";
-import { useAuth } from "../context/AuthContext";
-import { API_ENDPOINTS, apiUtils } from "../config/api";
-import { getQueue, setQueue, clearQueue } from "../utils/offlineQueue";
+import { useEffect, useRef } from 'react';
+import { toast } from 'react-toastify';
+import { useAuth } from '../context/AuthContext';
+import { API_ENDPOINTS, apiUtils } from '../config/api';
+import { getQueue, setQueue, clearQueue } from '../utils/offlineQueue';
 
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 1_000;
