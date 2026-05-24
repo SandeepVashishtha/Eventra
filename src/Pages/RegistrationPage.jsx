@@ -3,7 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiUser, FiMail, FiPhone, FiBriefcase, FiAward, FiMessageSquare, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
 import useDocumentTitle from "../hooks/useDocumentTitle";
+import { toast } from "react-toastify";
 
+import {
+  isAlreadyRegistered,
+  saveRegistration,
+} from "../utils/registrationUtils";
 const RegistrationPage = () => {
   useDocumentTitle("Eventra | Registration");
   const navigate = useNavigate();
@@ -59,43 +64,7 @@ const RegistrationPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
 
-    setIsSubmitting(true);
-
-    try {
-      // 1. Make the real API request to the registration endpoint
-      const response = await fetch("/api/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      // 2. Parse the backend JSON response
-      const data = await response.json();
-
-      // 3. Check for successful execution or catch server errors
-      if (!response.ok) {
-        throw new Error(data.message || "Registration failed. Please try again.");
-      }
-
-      // 4. Update the layout on successful registration
-      setIsSubmitting(false);
-      setSubmitSuccess(true);
-    } catch (error) {
-      // 5. Handle errors and map server validations to frontend form fields if applicable
-      console.error("API Error during registration submission:", error.message);
-      setErrors((prev) => ({
-        ...prev,
-        submit: error.message || "An unexpected network error occurred.",
-      }));
-      setIsSubmitting(false);
-    }
-  };
 
   const handleCancel = () => {
     // Navigate back to the previous page
