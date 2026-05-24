@@ -2,7 +2,7 @@ import { motion, useAnimation, AnimatePresence, MotionConfig } from "framer-moti
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
-import { Search, Calendar, Trophy, Code, ExternalLink } from "lucide-react";
+import { Search, Calendar, Trophy, Code, ExternalLink, ArrowRight } from "lucide-react";
 
 // Import mock data
 import eventsData from "../../Events/eventsMockData.json";
@@ -156,14 +156,13 @@ const Hero = () => {
   ];
 
   return (
-    <section className="relative overflow-hidden 
-bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white 
-dark:from-slate-950 dark:via-slate-900 dark:to-black
-text-slate-900 dark:text-gray-100 
-pb-16 sm:pb-20 md:pb-24 pt-6 sm:pt-10 
-border-b border-gray-100 dark:border-slate-900">
+    <section className="relative overflow-hidden bg-white dark:bg-[#0a0a0a] text-slate-900 dark:text-gray-100 pb-16 sm:pb-24 pt-12 sm:pt-16 border-b border-gray-200 dark:border-gray-900">
+      {/* Professional Background Elements */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+      <div className="absolute left-0 right-0 top-[-10%] -z-10 m-auto h-[300px] w-[300px] sm:h-[500px] sm:w-[500px] rounded-full bg-indigo-500 opacity-20 dark:opacity-10 blur-[100px]"></div>
+
       {/* Hero Content */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10 pt-20">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10 pt-16 sm:pt-20">
         <motion.div
           className="text-center"
           variants={container}
@@ -176,8 +175,8 @@ border-b border-gray-100 dark:border-slate-900">
           <MotionConfig reducedMotion="never">
             {/* Headline */}
             <motion.h1
-              className="mx-auto max-w-[92vw] mt-6 text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-5 sm:mb-6 leading-tight sm:leading-tight text-gray-900 dark:text-white break-words px-2 sm:px-0"
-              style={{ fontFamily: '"Anton", sans-serif' }}
+              className="mx-auto max-w-4xl mt-6 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-6 leading-tight tracking-tight text-gray-900 dark:text-white px-2 sm:px-0"
+              style={{ fontFamily: '"Inter", sans-serif' }}
             >
               <motion.span
                 className="block text-gray-900 dark:text-white mb-2 md:mb-0"
@@ -205,7 +204,7 @@ border-b border-gray-100 dark:border-slate-900">
                       transition: { duration: 0.5, ease: "easeIn" },
                     }}
                   >
-                    <span className="text-blue-600 dark:text-blue-500">
+                    <span className="text-indigo-600 dark:text-indigo-500 font-extrabold drop-shadow-sm">
                     {phrases[index]}
                     </span>
                   </motion.span>
@@ -223,8 +222,8 @@ border-b border-gray-100 dark:border-slate-900">
             the best tech events, hackathons, and workshops in your area.
           </motion.p>
 
-          {/* Global Search Bar */}
-          <div className="w-full max-w-2xl mx-auto mb-8 sm:mb-10">
+          {/* Global Search Bar (Glassmorphism) */}
+          <div className="w-full max-w-2xl mx-auto mb-10 p-2 sm:p-2.5 bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xl shadow-indigo-500/5">
             <ModernSearchInput
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
@@ -315,62 +314,28 @@ text-gray-600 dark:text-gray-300"
             </ModernSearchInput>
           </div>
 
-          {/* Buttons */}
+          {/* Professional Buttons */}
           <motion.div
             variants={container}
-            className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6 mb-12 sm:mb-16"
+            className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 mb-16"
           >
-            {/* Primary Button - Explore Events */}
             <motion.div variants={fadeUp}>
               <Link
                 to="/events"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-500 dark:bg-blue-900 text-white dark:text-white font-bold shadow-md shadow-blue-200 dark:shadow-none overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-600 dark:hover:bg-blue-800"
+                className="group relative inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 w-full sm:w-auto"
               >
-                <span className="relative z-10 flex items-center">
-                  Explore Events
-                  <svg
-                    className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </span>
+                Explore Events
+                <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
               </Link>
             </motion.div>
 
-            {/* Secondary Button - Join Hackathons */}
             <motion.div variants={fadeUp}>
               <Link
                 to="/hackathons"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-amber-400 dark:bg-yellow-900 border border-amber-300 dark:border-yellow-700 text-white dark:text-white font-semibold shadow-md shadow-amber-100 dark:shadow-none hover:shadow-lg hover:bg-amber-500 dark:hover:bg-yellow-800 hover:scale-105 transition-all duration-300"
+                className="group inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white font-semibold shadow-sm hover:shadow-md transition-all duration-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:-translate-y-1 w-full sm:w-auto"
               >
+                <Trophy className="mr-2 w-4 h-4 text-indigo-500 transition-transform group-hover:scale-110" />
                 Join Hackathons
-              </Link>
-            </motion.div>
-
-            {/* Tertiary Button - Learn More */}
-            <motion.div variants={fadeUp}>
-              <Link
-                to="/about"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-pink-500 dark:bg-pink-900 text-white dark:text-white font-semibold shadow-md shadow-pink-100 dark:shadow-none transform transition-all duration-300 hover:scale-105 hover:bg-pink-600 dark:hover:bg-pink-800"
-              >
-                Learn More
-                <svg
-                  className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
               </Link>
             </motion.div>
           </motion.div>
@@ -385,21 +350,19 @@ text-gray-600 dark:text-gray-300"
                 <motion.div
                   key={i}
                   variants={fadeUp}
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                  className="bg-white/90 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-xl shadow-blue-100/50 dark:shadow-none border border-blue-100 dark:border-gray-700 hover:shadow-blue-200/60 transition-shadow duration-300"
+                  whileHover={{ y: -5 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex flex-col items-center justify-center p-6 bg-white/60 dark:bg-gray-900/40 backdrop-blur-md rounded-2xl border border-gray-200/60 dark:border-gray-800/60 shadow-sm"
                 >
-                  <p className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
+                  <p className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white mb-2">
                     <CountUp
                       start={0}
-                      end={stat.value}
+                      end={parseFloat(stat.value)}
                       duration={2.5}
-                      suffix={stat.suffix}
-                      enableScrollSpy
-                      scrollSpyOnce
+                      suffix={stat.value.includes('+') ? '+' : ''}
                     />
                   </p>
-                  <p className="text-gray-500 dark:text-gray-300 text-sm">
+                  <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-semibold uppercase tracking-wider">
                     {stat.label}
                   </p>
                 </motion.div>
