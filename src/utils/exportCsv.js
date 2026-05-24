@@ -13,32 +13,22 @@ export const exportAttendeesToCSV = (
     "Ticket Type",
   ];
 
-  const rows = attendees.map(
-    (attendee) => [
-      attendee.name || "",
-      attendee.email || "",
-      attendee.registrationDate || "",
-      attendee.ticketType || "General",
-    ]
-  );
+  const rows = attendees.map((attendee) => [
+    attendee.name || "",
+    attendee.email || "",
+    attendee.registrationDate || "",
+    attendee.ticketType || "General",
+  ]);
 
-  const csvContent = [
-    headers,
-    ...rows,
-  ]
+  const csvContent = [headers, ...rows]
     .map((row) =>
-      row
-        .map((field) => `"${field}"`)
-        .join(",")
+      row.map((field) => `"${field}"`).join(",")
     )
     .join("\n");
 
-  const blob = new Blob(
-    [csvContent],
-    {
-      type: "text/csv;charset=utf-8;",
-    }
-  );
+  const blob = new Blob([csvContent], {
+    type: "text/csv;charset=utf-8;",
+  });
 
   const url =
     window.URL.createObjectURL(blob);

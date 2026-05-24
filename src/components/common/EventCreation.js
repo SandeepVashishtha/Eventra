@@ -2,6 +2,12 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { Download } from "lucide-react";
+import {
+  saveDraft,
+  getDraft,
+  clearDraft,
+} from "../../utils/eventDraftUtils";
+
 
 import { exportAttendeesToCSV }
 from "../../utils/exportCsv";
@@ -39,7 +45,7 @@ import {
 const DRAFT_KEY = "eventra_create_event_draft";
 
 const EventCreation = () => {
-  const mockAttendees = [
+ const mockAttendees = [
   {
     name: "John Doe",
     email: "john@example.com",
@@ -55,7 +61,7 @@ const EventCreation = () => {
   {
     name: "Alex Johnson",
     email: "alex@example.com",
-    registrationDate: "2026-08-16",
+    registrationDate: "2026-08-17",
     ticketType: "Workshop",
   },
 ];
@@ -98,7 +104,7 @@ const [errors, setErrors] = useState({});
   const [newTag, setNewTag] = useState("");
   // Track whether draft has been loaded to avoid overwriting on initial mount
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
-
+const [showRestoreModal, setShowRestoreModal] = useState(false);
   const categories = [
     { label: "Conference", value: "CONFERENCE" },
     { label: "Workshop", value: "WORKSHOP" },
@@ -454,18 +460,47 @@ const [errors, setErrors] = useState({});
     }
   };
 
-  useEffect(() => {
-    const saved = localStorage.getItem(DRAFT_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setFormData(prev => ({ ...prev, ...parsed, banner: null, bannerPreview: null }));
-        // Mark draft as loaded after initializing form data
-        setIsDraftLoaded(true);
-      } catch (e) { }
-    }
-  }, []);
+ useEffect(() => {
+  const saved = localStorage.getItem(DRAFT_KEY);
 
+  if (saved) {
+    setShowRestoreModal(true);
+  }
+
+  setIsDraftLoaded(true);
+}, []);
+const handleRestoreDraft = () => {
+  try {
+    const saved =
+      localStorage.getItem(DRAFT_KEY);
+
+    if (saved) {
+      const parsed = JSON.parse(saved);
+
+      setFormData((prev) => ({
+        ...prev,
+        ...parsed,
+        banner: null,
+        bannerPreview: null,
+      }));
+
+      toast.success(
+        "Draft restored successfully!"
+      );
+    }
+  } catch (error) {
+    console.error(error);
+  }
+
+  setShowRestoreModal(false);
+};
+const handleDiscardDraft = () => {
+  localStorage.removeItem(DRAFT_KEY);
+
+  setShowRestoreModal(false);
+
+  toast.info("Saved draft discarded.");
+};
   useEffect(() => {
     if (successMessage || generalError) {
       const timer = setTimeout(() => {
@@ -600,6 +635,80 @@ useEffect(() => {
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-indigo-100 to-white dark:from-gray-900 dark:to-black flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+     {showRestoreModal && (
+  <div
+    className="
+      fixed inset-0 z-50
+      flex items-center justify-center
+      bg-black/50
+      px-4
+    "
+  >
+    <div
+      className="
+        w-full max-w-md
+        bg-white dark:bg-gray-900
+        rounded-3xl
+        p-8
+        shadow-2xl
+        border border-gray-200
+        dark:border-gray-700
+      "
+    >
+      <h2
+        className="
+          text-2xl font-bold
+          text-gray-900 dark:text-white
+          mb-3
+        "
+      >
+        Restore Draft?
+      </h2>
+
+      <p
+        className="
+          text-gray-600 dark:text-gray-400
+          mb-6
+        "
+      >
+        A previously saved event draft was found.
+        Would you like to restore it?
+      </p>
+
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={handleDiscardDraft}
+          className="
+            px-4 py-2
+            rounded-xl
+            border border-gray-300
+            dark:border-gray-700
+            hover:bg-gray-100
+            dark:hover:bg-gray-800
+            transition
+          "
+        >
+          Discard
+        </button>
+
+        <button
+          onClick={handleRestoreDraft}
+          className="
+            px-5 py-2
+            rounded-xl
+            bg-indigo-600
+            hover:bg-indigo-700
+            text-white
+            font-medium
+            transition
+          "
+        >
+          Restore Draft
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       {successMessage && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
