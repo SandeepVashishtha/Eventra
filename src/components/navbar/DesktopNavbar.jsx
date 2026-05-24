@@ -13,7 +13,7 @@ const DesktopNavbar = ({
   toggleCursor,
 }) => {
   return (
-    <div className="hidden lg:flex items-center justify-between flex-1 gap-2">
+    <div className="hidden xl:flex items-center justify-between flex-1 gap-2">
       <NavbarLinks />
 
       <div className="flex items-center gap-4 mr-5">

@@ -6,7 +6,7 @@ const MobileNavbar = ({ isOpen, setIsOpen, isAuthenticated, user, logout }) => {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="lg:hidden p-3 min-w-[44px] min-h-[44px] flex items-center justify-center"
+        className="xl:hidden p-3 min-w-[44px] min-h-[44px] flex items-center justify-center"
         aria-label="Open navigation menu"
       >
         ☰
