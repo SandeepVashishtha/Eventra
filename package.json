@@ -6,6 +6,7 @@
   "dependencies": {
     "@headlessui/react": "^2.2.8",
     "@heroicons/react": "^2.0.16",
+    "@react-oauth/google": "^0.13.5",
     "@studio-freight/lenis": "^1.0.42",
     "aos": "^2.3.4",
     "axios": "^1.16.1",
@@ -15,6 +16,7 @@
     "fuse.js": "^7.1.0",
     "jspdf": "^4.2.1",
     "lucide-react": "^0.542.0",
+    "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-countup": "^6.5.3",
     "react-dom": "^18.2.0",
@@ -26,16 +28,16 @@
     "recharts": "^3.8.1"
   },
   "scripts": {
-    
     "dev": "react-scripts start",
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "build:fast": "set \"GENERATE_SOURCEMAP=false\" && set \"DISABLE_ESLINT_PLUGIN=true\" && set \"NODE_OPTIONS=--no-deprecation --max-old-space-size=4096\" && react-scripts build",
+    "build:fast": "cross-env GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true NODE_OPTIONS=\"--no-deprecation --max-old-space-size=4096\" react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "lint": "echo \"No lint configured\"",
+    "lint": "eslint src --ext .js,.jsx --max-warnings=-1",
+    "lint:fix": "eslint src --ext .js,.jsx --fix",
+    "format": "prettier --write \"src/**/*.{js,jsx,css}\"",
     "prepare": "node scripts/setup-git-config.js"
-    
   },
   "eslintConfig": {
     "extends": [
@@ -59,7 +61,9 @@
   "devDependencies": {
     "@tailwindcss/line-clamp": "^0.4.4",
     "autoprefixer": "^10.4.21",
+    "cross-env": "^10.1.0",
     "postcss": "^8.5.6",
+    "prettier": "^3.2.5",
     "tailwindcss": "^3.4.17",
     "typescript": "^4.9.5"
   }
