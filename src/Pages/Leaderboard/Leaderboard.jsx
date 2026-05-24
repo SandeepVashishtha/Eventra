@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   FaCode,
   FaStar,
@@ -11,6 +11,7 @@ import GSSoCContribution from "./GSSoCContribution";
 import StyledDropdown from "../../components/StyledDropdown";
 import { LeaderboardTableSkeleton } from "../../components/common/SkeletonLoaders";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { useLeaderboardStream, SSE_STATUS } from "../../context/RealTimeContext";
 
 // Repository constant — update if the leaderboard should point to another repo
 const GITHUB_REPO = "SandeepVashishtha/Eventra";
@@ -38,6 +39,34 @@ const calculatePrPoints = (labels) => {
   return levelPoints || DEFAULT_MERGED_PR_POINTS;
 };
 
+function LiveStatusBadge({ status }) {
+  if (status === SSE_STATUS.CONNECTED) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+        </span>
+        Live
+      </span>
+    );
+  }
+  if (status === SSE_STATUS.RECONNECTING) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-amber-500 dark:text-amber-400">
+        <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+        Reconnecting…
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+      <span className="h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600" />
+      Offline
+    </span>
+  );
+}
+
 export default function LeaderBoard() {
   useDocumentTitle("Eventra | Leaderboard");
   // Local state: contributors list and UI state
@@ -47,6 +76,10 @@ export default function LeaderBoard() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("points");
+
+  const { contributors: streamContributors, lastSynced, status: streamStatus } = useLeaderboardStream();
+  // Track which stream snapshot we've already applied to avoid duplicate merges
+  const lastAppliedSyncRef = useRef(null);
 
   // Constants for pagination and UI
   const CONTRIBUTORS_PER_PAGE = 10;
@@ -63,6 +96,21 @@ export default function LeaderBoard() {
       scalar: 1.2,
     });
   }, []);
+
+  // Merge real-time contributor updates from SSE stream into local state
+  useEffect(() => {
+    if (
+      streamContributors.length === 0 ||
+      lastSynced === lastAppliedSyncRef.current
+    ) return;
+    lastAppliedSyncRef.current = lastSynced;
+    setContributors(streamContributors);
+    setLastUpdated(`Live update: ${new Date(lastSynced).toLocaleString()}`);
+    localStorage.setItem(
+      LEADERBOARD_CACHE_KEY,
+      JSON.stringify({ data: streamContributors, timestamp: lastSynced }),
+    );
+  }, [streamContributors, lastSynced]);
 
   // Load data from cache or network
   const loadLeaderboardData = async () => {
@@ -485,13 +533,14 @@ export default function LeaderBoard() {
             </div>
           )}
 
-          {/* UPDATED: Table footer */}
-          <div className="bg-gray-50 dark:bg-black/70 px-6 py-2 text-right border-t border-gray-200 dark:border-gray-700">
+          {/* Table footer: last updated + live connection badge */}
+          <div className="bg-gray-50 dark:bg-black/70 px-6 py-2 flex items-center justify-between border-t border-gray-200 dark:border-gray-700">
             {lastUpdated && (
               <span className="text-xs text-gray-500 dark:text-gray-400">
                 {lastUpdated}
               </span>
             )}
+            <LiveStatusBadge status={streamStatus} />
           </div>
         </div>
       </div>

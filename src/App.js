@@ -19,6 +19,7 @@ import { NotificationProvider } from "./context/NotificationContext";
 import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
 import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
+import { RealTimeProvider } from "./context/RealTimeContext";
 import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
 
@@ -83,6 +84,7 @@ function App() {
       <NotificationProvider>
         <MyEventsProvider>
           <SessionRecoveryProvider>
+            <RealTimeProvider>
             <NotificationProvider />
             <ReminderChecker />
             <NotificationToastContainer />
@@ -128,6 +130,7 @@ function App() {
               <FluidCursor enabled={cursorEnabled} />
             </div>
           </Router>
+            </RealTimeProvider>
           </SessionRecoveryProvider>
         </MyEventsProvider>
       </NotificationProvider>
