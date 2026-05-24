@@ -149,7 +149,10 @@ export default function Chatbot() {
       <>
         {/* Minimized strip — only on desktop when minimized */}
         {isOpen && isMinimized && (
-          <div
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
             className="
               fixed bottom-6 right-6 z-[100]
               hidden sm:flex               /* hide strip on mobile, show FAB instead */
@@ -158,11 +161,6 @@ export default function Chatbot() {
               border border-slate-700
               bg-slate-950 px-4 py-3
               text-white shadow-2xl
-              fixed-floating-widget
-              transition-opacity duration-300
-            "
-            aria-label="Eventra assistant minimized"
-          >
             "
             aria-label="Eventra assistant minimized"
           >
@@ -170,27 +168,28 @@ export default function Chatbot() {
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-500">
                 <Sparkles className="h-3.5 w-3.5" />
               </div>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={handleMinimize}
-                  className="rounded-xl p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
-                  aria-label="Expand assistant"
-                >
-                  <ChevronUp className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="rounded-xl p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
-                  aria-label="Close assistant"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <h2 className="text-sm font-bold truncate">Eventra Assist</h2>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={handleOpen}
+                className="rounded-xl p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+                aria-label="Expand assistant"
+              >
+                <ChevronUp className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="rounded-xl p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+                aria-label="Close assistant"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
 
         <motion.button
           type="button"
@@ -218,8 +217,14 @@ export default function Chatbot() {
   }
 
   // ── Fully expanded chat popup ───────────────────────────────────────────────
-  return (
-    <section
+  return createPortal(
+    <AnimatePresence>
+      {isOpen && !isMinimized && (
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          transition={{ duration: 0.3 }}
       data-chatbot-open
       data-lenis-prevent
       aria-label="Eventra assistant"

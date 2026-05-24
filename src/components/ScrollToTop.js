@@ -23,7 +23,7 @@ export default function ScrollToTopButton() {
   // Optimized scroll handling
   const handleScroll = useCallback(() => {
     requestAnimationFrame(() => {
-      const scrollTop = getScrollPosition();
+      const scrollTop = window.lenis ? window.lenis.scroll : window.scrollY;
       const docHeight =
         document.documentElement.scrollHeight -
         document.documentElement.clientHeight;
