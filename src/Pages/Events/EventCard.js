@@ -1,4 +1,8 @@
 import { useEffect, useState, memo } from "react";
+import {
+  formatEventDateTime,
+  getUserTimezone,
+} from "../../utils/timezoneUtils";
 import { Link } from "react-router-dom";
 import {
   Bookmark,
@@ -218,34 +222,79 @@ const EventCard = ({ event }) => {
       </div>
 
       {/* Info Grid */}
-      <div className="px-5 py-4 grid grid-cols-2 gap-x-4 gap-y-3 text-gray-600 dark:text-gray-400 text-sm bg-gray-50/50 dark:bg-gray-800/30">
-        <div className="flex items-center gap-2">
-          <MapPin size={14} className="text-pink-500 flex-shrink-0" />
-          <span className="truncate">{event.location}</span>
-        </div>
+     {/* Info Grid */}
+<div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 text-gray-600 dark:text-gray-400 text-sm bg-gray-50/50 dark:bg-gray-800/30">
 
-        <div className="flex items-center gap-2">
-          <Clock size={14} className="text-blue-500 flex-shrink-0" />
-          <span className="truncate">{event.time}</span>
-        </div>
+  {/* Location */}
+  <div className="flex items-center gap-2">
+    <MapPin
+      size={14}
+      className="text-pink-500 flex-shrink-0"
+    />
 
-        <div className="flex items-center gap-2">
-          <Tag size={14} className="text-green-500 flex-shrink-0" />
-          <span className="truncate">{event.type}</span>
-        </div>
+    <span className="truncate">
+      {event.location}
+    </span>
+  </div>
 
-        <div className="flex items-center gap-2">
-          <Calendar size={14} className="text-indigo-500 flex-shrink-0" />
-          <span className="truncate">
-            {new Date(event.date).toLocaleDateString("en-US", {
-              weekday: "short",
-              day: "numeric",
-              month: "short",
-            })}
-          </span>
-        </div>
-      </div>
+  {/* Local Time */}
+  <div className="flex items-start gap-2">
+    <Clock
+      size={14}
+      className="text-blue-500 flex-shrink-0 mt-0.5"
+    />
 
+    <div className="flex flex-col">
+      <span className="font-medium text-gray-700 dark:text-gray-200">
+        {formatEventDateTime(
+          `${event.date}T${event.time}`
+        )}
+      </span>
+
+      <span className="text-[11px] text-gray-500 dark:text-gray-400">
+        {getUserTimezone()}
+      </span>
+    </div>
+  </div>
+
+  {/* Event Type */}
+  <div className="flex items-center gap-2">
+    <Tag
+      size={14}
+      className="text-green-500 flex-shrink-0"
+    />
+
+    <span className="truncate">
+      {event.type}
+    </span>
+  </div>
+
+  {/* Event Date */}
+  <div className="flex items-start gap-2">
+    <Calendar
+      size={14}
+      className="text-indigo-500 flex-shrink-0 mt-0.5"
+    />
+
+    <div className="flex flex-col">
+      <span className="truncate">
+        {new Date(event.date).toLocaleDateString(
+          "en-US",
+          {
+            weekday: "short",
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          }
+        )}
+      </span>
+
+      <span className="text-[11px] text-gray-500 dark:text-gray-400">
+        Localized Event Time
+      </span>
+    </div>
+  </div>
+</div>
       <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
         <ReminderControls event={event} canSetReminder={canSetReminder} compact />
       </div>
