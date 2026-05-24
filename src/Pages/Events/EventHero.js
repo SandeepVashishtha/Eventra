@@ -92,8 +92,15 @@ export default function EventHero({
   const showSearchDropdown = isSearchFocused;
 
   return (
-    <div className="relative bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 py-16 sm:py-20 md:py-24 border-b border-gray-200 dark:border-slate-900">
-      <div className="relative px-4 min-h-[80vh] flex flex-col items-center justify-center text-center z-10">
+    <div className="relative bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 py-16 sm:py-20 md:py-24 border-b border-gray-200 dark:border-slate-900" style={{
+    backgroundImage: "url('/assets/eventbg.png')",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+    minHeight: "100vh",
+    width:"100vw"
+  }}>
+      <div className="relative px-4 flex flex-col items-center justify-center text-center z-10">
         <h1
           className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight px-4 sm:px-0 text-gray-900 dark:text-white"
           style={{ fontFamily: '"Big Shoulders Display", sans-seri' }}

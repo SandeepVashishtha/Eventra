@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 export default function CTASection() {
   return (
-    <div className="bg-white dark:bg-black py-12 px-6 lg:px-16">
+    <div className="bg-white dark:bg-black py-12 px-6 lg:px-16 ">
       {/* Main CTA Section */}
       <section className="relative py-16 bg-gray-50 dark:bg-slate-900/50 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-800 shadow-sm">
         {/* CTA Content Wrapper */}
@@ -39,6 +39,22 @@ export default function CTASection() {
               to="/hackathons"
               className="inline-flex items-center gap-2 z-[50] bg-blue-100 dark:bg-blue-900 text-black dark:text-white px-8 py-3 rounded-full font-semibold shadow-lg border border-blue-200 dark:border-blue-700 hover:bg-blue-200 dark:hover:bg-blue-800 hover:scale-105 transition-all duration-300 ease-out"
             >
+              <svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="black"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+  <circle cx="8.5" cy="7" r="4" />
+  <path d="M20 8v6" />
+  <path d="M23 11h-6" />
+</svg>
               Explore Hackathons
               <ArrowRight className="w-5 h-5" />
             </Link>

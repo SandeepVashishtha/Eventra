@@ -95,7 +95,6 @@ function App() {
                 cursorEnabled={cursorEnabled}
                 toggleCursor={toggleCursor}
               />
-
               <main
                 className="
                   relative
