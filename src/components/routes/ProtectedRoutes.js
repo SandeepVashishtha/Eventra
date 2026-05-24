@@ -7,7 +7,8 @@ import EventCreation from "../common/EventCreation";
 import HostHackathon from "../../Pages/Hackathons/HostHackathon";
 import EditProfile from "../user/EditProfile";
 import Settings from "../../Pages/Settings";
-import AuthPage from "../auth/AuthPage";
+import LoginPage from "../../Pages/LoginPage";
+import Signup from "../auth/Signup";
 import Unauthorized from "../auth/Unauthorized";
 import PasswordReset from "../auth/PasswordReset";
 import NotFound from "../NotFound";
@@ -85,8 +86,8 @@ export const getProtectedRoutes = () => [
 ];
 
 export const getAuthRoutes = () => [
-  <Route key="/login" path="/login" element={<AuthPage />} />,
-  <Route key="/signup" path="/signup" element={<AuthPage />} />,
+  <Route key="/login" path="/login" element={<LoginPage />} />,
+  <Route key="/signup" path="/signup" element={<Signup />} />,
   <Route key="/unauthorized" path="/unauthorized" element={<Unauthorized />} />,
   <Route key="/password-reset" path="/password-reset" element={<PasswordReset />} />,
   <Route key="/*" path="/*" element={<NotFound />} />,

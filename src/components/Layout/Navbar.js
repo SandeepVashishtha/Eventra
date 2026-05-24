@@ -34,10 +34,10 @@ import {
 const getUserDisplayNames = (user) => {
   if (!user) return { primary: "User", secondary: null };
   const primary = (user.fullName?.trim()) || 
-                 [user.firstName, user.lastName].filter(Boolean).join(" ").trim() || 
-                 (user.username?.trim()) || 
-                 (user.email?.trim()) || 
-                 "User";
+                  [user.firstName, user.lastName].filter(Boolean).join(" ").trim() || 
+                  (user.username?.trim()) || 
+                  (user.email?.trim()) || 
+                  "User";
   const secondaryCand = (user.email?.trim()) || (user.username?.trim()) || "";
   const secondary = secondaryCand && secondaryCand !== primary ? secondaryCand : null;
   return { primary, secondary };
@@ -417,8 +417,6 @@ const MobileUserSection = ({
   </div>
 );
 
-// Top-level nav items kept lean so they never overflow at xl (1280px+).
-// About / FAQ / Contact are grouped under "More" to prevent collisions.
 const NAV_ITEMS = [
   { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
   { name: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
@@ -474,7 +472,7 @@ const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   const location = useLocation();
   return (
     // gap-4 keeps items from crowding; flex-1 lets this section grow/shrink naturally
-    <div className="hidden lg:flex items-center justify-center gap-4 2xl:gap-6 flex-1 min-w-0">
+    <div className="hidden xl:flex items-center justify-center gap-4 2xl:gap-6 flex-1 min-w-0">
       <NavList 
         location={location} 
         openDropdown={openDropdown} 
@@ -503,7 +501,11 @@ const MobileDrawerHeader = ({ closeBtnRef, closeAllMenus, isDarkMode }) => (
   </div>
 );
 
-const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeAllMenus, handleTouchStart, handleTouchMove, handleTouchEnd, closeBtnRef, toggleCursor, cursorEnabled, handleLogoutClick, primaryLine, secondaryLine }) => {
+const MobileDrawer = ({ 
+  isOpen, drawerRef, openDropdown, setOpenDropdown, closeAllMenus, 
+  handleTouchStart, handleTouchMove, handleTouchEnd, closeBtnRef, 
+  toggleCursor, cursorEnabled, handleLogoutClick, primaryLine, secondaryLine 
+}) => {
   const location = useLocation();
   const { isDarkMode, toggleTheme } = useTheme();
   const { user, isAuthenticated } = useAuth();
@@ -555,6 +557,7 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
     </AnimatePresence>
   );
 };
+
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -666,9 +669,8 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         data-aos-duration="1000"
         className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 transition-colors duration-300 relative"
       >
-        <div className="neon-navbar-border"></div>
-        <div className="max-w-screen-2xl mx-auto flex items-center h-[68px] px-6 xl:px-10 gap-6">
-          {/* ── Logo ── left-anchored, never squishes */}
+        <div className="max-w-7xl mx-auto flex items-center h-[72px] px-4 sm:px-6 xl:px-8 relative gap-4">
+          {/* Logo on the left — shrink-0 prevents logo from squishing */}
           <Link to="/" className="flex items-center shrink-0 z-20">
           <h2
   className="bg-gradient-to-r from-zinc-950 via-indigo-600 to-violet-600 dark:from-white dark:via-indigo-300 dark:to-indigo-500 bg-clip-text text-transparent"
@@ -686,27 +688,13 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 </h2>
           </Link>
 
-          {/* ── Nav links ── takes all remaining space, items centered */}
-          <div className="flex-1 min-w-0">
-            <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
-          </div>
+          {/* Centered nav links */}
+          <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
 
           {/* Right Group: Auth Controls and Mobile Toggle */}
-          <div className="hidden lg:flex items-center gap-2 shrink-0 justify-end">
-            <ThemeToggleButton
-              isDarkMode={isDarkMode}
-              toggleTheme={toggleTheme}
-              isMobile={false}
-            />
-
-            <CursorToggleButton
-              cursorEnabled={cursorEnabled}
-              toggleCursor={toggleCursor}
-              isMobile={false}
-            />
-
-            <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700"></div>
-
+          <div className="hidden xl:flex items-center gap-2 shrink-0 justify-end">
+            <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={false} />
+            <CursorToggleButton cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} isMobile={false} />
             {isAuthenticated() ? (
               <UserProfileDropdown
                 user={user}
@@ -723,7 +711,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           </div>
 
           {/* Mobile menu button */}
-          <div className="lg:hidden ml-auto">
+          <div className="xl:hidden ml-auto">
             <button 
               ref={toggleBtnRef} 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
@@ -757,17 +745,13 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         secondaryLine={secondaryLine}
       />
 
-
-      {/* Confirmation Modal */}
       <ConfirmationModal
         isOpen={showLogoutModal}
-        onClose={handleCancelLogout}
         onConfirm={handleConfirmLogout}
-        title="Logout Confirmation"
-        message="Are you sure you want to log out?"
+        onCancel={handleCancelLogout}
+        title="Confirm Logout"
+        message="Are you sure you want to log out of Eventra?"
       />
-
-      <div style={{ height: navHeight }} />
     </>
   );
 };
