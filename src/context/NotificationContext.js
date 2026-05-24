@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { apiUtils, API_ENDPOINTS } from '../config/api';
+import { useAuth } from './AuthContext'; 
 
 const NotificationContext = createContext();
 
@@ -15,7 +16,7 @@ export const NotificationProvider = ({ children }) => {
   });
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
-
+  const { token } = useAuth();
   /** Get JWT from storage — single source of truth */
   const getAuthToken = () => localStorage.getItem('token');
 
@@ -78,41 +79,46 @@ export const NotificationProvider = ({ children }) => {
   /** Mark ALL notifications as read in one shot */
   const markAllAsRead = useCallback(async () => {
     const token = getAuthToken();
-    if (!token || notifications.length === 0) return;
+    if (!token) return;
 
-    const unread = notifications.filter((n) => !n.isRead);
-    if (unread.length === 0) return;
+    let unreadToUpdate = [];
+
+    setNotifications((prev) => {
+      unreadToUpdate = prev.filter((n) => !n.isRead);
+      return prev.map((n) => ({ ...n, isRead: true }));
+    });
+
+    if (unreadToUpdate.length === 0) return;
+    setUnreadCount(0);
 
     try {
-      // Optimistic UI update first
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-      setUnreadCount(0);
-
       await Promise.allSettled(
-        unread.map((n) =>
+        unreadToUpdate.map((n) =>
           apiUtils.put(API_ENDPOINTS.NOTIFICATIONS.READ(n.id), {}, token)
         )
       );
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
-      // Re-fetch to restore accurate state
       fetchNotifications();
     }
-  }, [notifications, fetchNotifications]);
+  }, [fetchNotifications]);
 
-  // ── Initial fetch + polling ───────────────────────────────────────────────
+  // —— Initial fetch + polling —————————————————————————————————————————————
   useEffect(() => {
-    if (!getAuthToken()) return;
+    if (!token) {
+      setNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
 
     fetchNotifications();
     fetchAchievements();
 
-    // Poll for new notifications at a fixed interval
     const intervalId = setInterval(fetchNotifications, POLLING_INTERVAL_MS);
 
     return () => clearInterval(intervalId);
-  }, [fetchNotifications, fetchAchievements]);
-
+  }, [token, fetchNotifications, fetchAchievements]);
+  
   return (
     <NotificationContext.Provider
       value={{
