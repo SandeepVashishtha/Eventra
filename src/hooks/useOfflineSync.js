@@ -2,10 +2,9 @@ import { useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 import { API_ENDPOINTS, apiUtils } from '../config/api';
+import { getQueue, setQueue, clearQueue } from '../utils/offlineQueue';
 
 const QUEUE_KEY = 'eventra_offline_queue';
-import { API_ENDPOINTS } from '../config/api';
-import { getQueue, setQueue, clearQueue } from '../utils/offlineQueue';
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 1_000; // 1s → 2s → 4s per item
 
@@ -54,26 +53,6 @@ const useOfflineSync = () => {
           return true; // Treat as "handled" — bad data won't succeed on retry
         }
         throw error;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(authToken && { Authorization: `Bearer ${authToken}` }),
-        },
-        body: JSON.stringify(payload),
-      });
-
-      // 2xx → success; 4xx → bad request (don't retry); 5xx → may be transient
-      if (response.ok) return true;
-      if (response.status >= 400 && response.status < 500) {
-        console.warn(
-          `Offline queue: server rejected item with ${response.status} — dropping.`,
-          await response.text().catch((error) => {
-            console.error('Failed to parse error response text:', error);
-            return '';
-          })
-        );
-        return true; // Treat as "handled" — bad data won't succeed on retry
       }
     };
 
