@@ -107,8 +107,13 @@ const SearchFilter = () => {
     const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          event.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
-    const matchesLocation = selectedLocation === 'all' || 
-                           event.location.toLowerCase().replace(' ', '-') === selectedLocation;
+      const normalizedLocation = event.location
+        ?.toString()
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-');
+
+      const matchesLocation = selectedLocation === 'all' || (normalizedLocation === selectedLocation);
     const matchesPrice = priceFilter === 'all' || event.price === priceFilter;
     
     return matchesSearch && matchesCategory && matchesLocation && matchesPrice;
