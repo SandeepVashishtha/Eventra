@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { useState, useEffect, useRef, useCallback } from "react";
-=======
 import { useRef } from "react";
->>>>>>> f35178a86bcf2d8a09d2f9fa4a9f024ba75738b7
 import EventHero from "./EventHero";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
@@ -10,7 +6,6 @@ import EventCardSection from "./EventCardSection";
 import EventFiltersToolbar from "./EventFiltersToolbar";
 import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
->>>>>>> f35178a86bcf2d8a09d2f9fa4a9f024ba75738b7
 
 const EventsPage = () => {
   const cardSectionRef = useRef();
