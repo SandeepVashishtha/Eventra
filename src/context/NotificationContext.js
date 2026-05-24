@@ -23,7 +23,7 @@ export const NotificationProvider = ({ children }) => {
 
     try {
       setLoading(true);
-      const response = await apiUtils.get(API_ENDPOINTS.NOTIFICATIONS.BASE, token);
+      const response = await apiUtils.get(API_ENDPOINTS.NOTIFICATIONS.ALL, token);
       if (response.ok) {
         const data = await response.json();
         setNotifications(data);
@@ -73,27 +73,37 @@ export const NotificationProvider = ({ children }) => {
 
   /** Mark ALL notifications as read in one shot */
   const markAllAsRead = useCallback(async () => {
-    if (!token || notifications.length === 0) return;
+    if (!token) return;
 
-    const unread = notifications.filter((n) => !n.isRead);
-    if (unread.length === 0) return;
+    // Use a functional wrapper block to get access to current state safely without a dependency array trigger
+    let unread = [];
+    
+    setNotifications((prev) => {
+      unread = prev.filter((n) => !n.isRead);
+      if (unread.length === 0) return prev;
+      
+      // Return optimistically updated array
+      return prev.map((n) => ({ ...n, isRead: true }));
+    });
 
-    try {
-      // Optimistic UI update first
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-      setUnreadCount(0);
+    // If there were no unread items captured, stop execution early
+    setTimeout(async () => {
+      if (unread.length === 0) return;
 
-      await Promise.allSettled(
-        unread.map((n) =>
-          apiUtils.put(API_ENDPOINTS.NOTIFICATIONS.READ(n.id), {}, token)
-        )
-      );
-    } catch (error) {
-      console.error('Error marking all notifications as read:', error);
-      // Re-fetch to restore accurate state
-      fetchNotifications();
-    }
-  }, [token, notifications, fetchNotifications]);
+      try {
+        setUnreadCount(0);
+        await Promise.allSettled(
+          unread.map((n) =>
+            apiUtils.put(API_ENDPOINTS.NOTIFICATIONS.READ(n.id), {}, token)
+          )
+        );
+      } catch (error) {
+        console.error('Error marking all notifications as read:', error);
+        // Re-fetch to restore accurate state on server failure
+        fetchNotifications();
+      }
+    }, 0);
+  }, [token, fetchNotifications]);
 
   // ── Initial fetch + polling ───────────────────────────────────────────────
   useEffect(() => {

@@ -70,7 +70,7 @@ const EventCreation = () => {
     banner: null,
     bannerPreview: null,
   });
-  const [errors, setErrors] = useState("");
+const [errors, setErrors] = useState({});
   const [newTag, setNewTag] = useState("");
   // Track whether draft has been loaded to avoid overwriting on initial mount
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
@@ -122,10 +122,14 @@ const EventCreation = () => {
     if (
       !newErrors.startTime &&
       !newErrors.endTime &&
-      !formData.isMultiDay &&
-      formData.startTime >= formData.endTime
+      !formData.isMultiDay
     ) {
-      newErrors.endTime = "End time must be after start time";
+      // Convert time strings (HH:MM format) to minutes for proper comparison
+      const startMinutes = parseInt(formData.startTime.replace(":", ""));
+      const endMinutes = parseInt(formData.endTime.replace(":", ""));
+      if (startMinutes >= endMinutes) {
+        newErrors.endTime = "End time must be after start time";
+      }
     }
 
     if (!formData.isVirtual && !formData.location.name.trim()) {
@@ -155,17 +159,23 @@ const EventCreation = () => {
       }
     }
 
-    formData.ticketTiers.forEach((tier, index) => {
-      if (!tier.name.trim()) {
-        newErrors[`ticketTier_${index}_name`] = "Ticket name is required";
-      }
-      if (Number(tier.price) < 0) {
-        newErrors[`ticketTier_${index}_price`] = "Price cannot be negative";
-      }
-      if (tier.capacity !== "" && tier.capacity !== null && Number(tier.capacity) < 1) {
-        newErrors[`ticketTier_${index}_capacity`] = "Capacity must be at least 1";
-      }
-    });
+    // Validate ticket tiers
+    if (formData.ticketTiers && formData.ticketTiers.length > 0) {
+      formData.ticketTiers.forEach((tier, index) => {
+        if (tier.name && tier.name.trim()) {
+          const price = Number(tier.price);
+          if (price < 0) {
+            newErrors[`ticketPrice_${index}`] = "Ticket price cannot be negative";
+          }
+          if (tier.capacity) {
+            const capacity = Number(tier.capacity);
+            if (capacity <= 0) {
+              newErrors[`ticketCapacity_${index}`] = "Ticket capacity must be greater than 0";
+            }
+          }
+        }
+      });
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -442,12 +452,71 @@ const EventCreation = () => {
     }
   }, [successMessage, generalError]);
 
-  useEffect(() => {
-+    // Prevent saving before draft is loaded to avoid overwriting existing draft
-+    if (!isDraftLoaded) return;
-+    const { banner, bannerPreview, ...saveable } = formData;
-+    localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
-+  }, [formData, isDraftLoaded]);
+useEffect(() => {
+  // Prevent saving before draft restoration
+  if (!isDraftLoaded) return;
+
+  const { banner, bannerPreview, ...saveable } = formData;
+
+  localStorage.setItem(
+    DRAFT_KEY,
+    JSON.stringify(saveable)
+  );
+}, [formData, isDraftLoaded]);
+
+/**
+ * Warn user before accidental refresh,
+ * tab close, or browser close
+ */
+useEffect(() => {
+  const hasUnsavedChanges = Object.entries(formData).some(
+    ([key, value]) => {
+      // Ignore banner fields
+      if (key === "banner" || key === "bannerPreview") {
+        return false;
+      }
+
+      // Handle strings
+      if (typeof value === "string") {
+        return value.trim() !== "";
+      }
+
+      // Handle arrays
+      if (Array.isArray(value)) {
+        return value.length > 0;
+      }
+
+      // Handle objects
+      if (typeof value === "object" && value !== null) {
+        return JSON.stringify(value) !== "{}";
+      }
+
+      // Handle booleans/numbers
+      return Boolean(value);
+    }
+  );
+
+  const handleBeforeUnload = (e) => {
+    if (hasUnsavedChanges) {
+      e.preventDefault();
+
+      // Required for browser warning
+      e.returnValue = "";
+    }
+  };
+
+  window.addEventListener(
+    "beforeunload",
+    handleBeforeUnload
+  );
+
+  return () => {
+    window.removeEventListener(
+      "beforeunload",
+      handleBeforeUnload
+    );
+  };
+}, [formData]);
 
   const resetForm = () => {
     setFormData({

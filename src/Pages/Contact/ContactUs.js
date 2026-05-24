@@ -27,36 +27,34 @@ const FloatingField = ({
   return (
     <div className="space-y-1">
       <div
-        className={`relative rounded-2xl border bg-white/80 dark:bg-slate-900/70 backdrop-blur-sm transition-all duration-300 ${
-          error
+        className={`relative rounded-2xl border bg-white/80 dark:bg-slate-900/70 backdrop-blur-sm transition-all duration-300 ${error
             ? "border-red-400 bg-red-50/40 dark:border-red-500 dark:bg-red-950/20"
-            : isActive
-            ? "border-indigo-500 dark:border-indigo-400 shadow-[0_0_0_4px_rgba(99,102,241,0.16)] dark:shadow-[0_0_0_4px_rgba(99,102,241,0.22)]"
-            : "border-slate-200/90 dark:border-slate-700/90 hover:border-indigo-300 dark:hover:border-indigo-500/70"
-        }`}
+            : hasValue && !isFocused
+              ? "border-green-400 dark:border-green-500"
+              : isActive
+                ? "border-indigo-500 dark:border-indigo-400 shadow-[0_0_0_4px_rgba(99,102,241,0.16)] dark:shadow-[0_0_0_4px_rgba(99,102,241,0.22)]"
+                : "border-slate-200/90 dark:border-slate-700/90 hover:border-indigo-300 dark:hover:border-indigo-500/70"
+          }`}
       >
         {Icon && (
           <Icon
-            className={`pointer-events-none absolute left-4 h-5 w-5 text-slate-400 transition-colors duration-300 ${
-              isTextArea ? "top-5" : "top-1/2 -translate-y-1/2"
-            } ${
-              error
+            className={`pointer-events-none absolute left-4 h-5 w-5 text-slate-400 transition-colors duration-300 ${isTextArea ? "top-5" : "top-1/2 -translate-y-1/2"
+              } ${error
                 ? "text-red-500 dark:text-red-400"
                 : isActive
-                ? "text-indigo-500 dark:text-indigo-300"
-                : ""
-            }`}
+                  ? "text-indigo-500 dark:text-indigo-300"
+                  : ""
+              }`}
           />
         )}
         <label
           htmlFor={id}
-          className={`pointer-events-none absolute z-10 origin-left transition-all duration-300 ${
-            isActive
+          className={`pointer-events-none absolute z-10 origin-left transition-all duration-300 ${isActive
               ? "left-3 -top-2 rounded-md bg-white/95 px-2 text-xs font-semibold text-indigo-600 dark:bg-gray-900/95 dark:text-indigo-300"
               : isTextArea
-              ? "left-11 top-5 text-sm text-slate-500 dark:text-slate-400"
-              : "left-11 top-1/2 -translate-y-1/2 text-sm text-slate-500 dark:text-slate-400"
-          } ${error ? "text-red-500 dark:text-red-400" : ""}`}
+                ? "left-11 top-5 text-sm text-slate-500 dark:text-slate-400"
+                : "left-11 top-1/2 -translate-y-1/2 text-sm text-slate-500 dark:text-slate-400"
+            } ${error ? "text-red-500 dark:text-red-400" : ""}`}
         >
           {label} {required && <span className="text-red-500">*</span>}
         </label>
@@ -74,11 +72,10 @@ const FloatingField = ({
           autoComplete={autoComplete}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? `${id}-error` : undefined}
-          className={`block w-full appearance-none border-0 bg-transparent text-slate-900 outline-none shadow-none ring-0 transition-colors duration-200 placeholder-transparent focus:border-0 focus:outline-none focus:ring-0 dark:text-slate-100 ${
-            isTextArea
+          className={`block w-full appearance-none border-0 bg-transparent text-slate-900 outline-none shadow-none ring-0 transition-colors duration-200 placeholder-transparent focus:border-0 focus:outline-none focus:ring-0 dark:text-slate-100 ${isTextArea
               ? "min-h-[152px] resize-y pl-11 pr-4 pt-7 pb-4 leading-relaxed"
               : "h-14 pl-11 pr-4 pt-5 pb-2"
-          }`}
+            }`}
         />
       </div>
       {error && (
@@ -174,10 +171,14 @@ const ContactUs = () => {
 
     if (!validateForm()) {
       // Shake animation for invalid form
-      formRef.current.classList.add("animate-shake");
-      setTimeout(() => {
-        formRef.current.classList.remove("animate-shake");
-      }, 500);
+      if (formRef.current) {
+        formRef.current.classList.add("animate-shake");
+        setTimeout(() => {
+          if (formRef.current) {
+            formRef.current.classList.remove("animate-shake");
+          }
+        }, 500);
+      }
       return;
     }
 
@@ -386,7 +387,7 @@ const ContactUs = () => {
                   >
                     {isSubmitting ? (
                       <svg
-                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        className="animate-spin h-5 w-5 text-white mx-auto"
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
                         viewBox="0 0 24 24"

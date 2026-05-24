@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { syncSecureStorage } from '../utils/secureStorage';
 
 const SessionRecoveryContext = createContext();
 
@@ -63,13 +64,14 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(SESSION_KEY);
+      const saved = syncSecureStorage.getItem(SESSION_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         const now = Date.now();
 
         const isValidTimestamp =
           parsed &&
+          parsed.timestamp &&
           parsed.timestamp &&
           typeof parsed.timestamp === 'number' &&
           !isNaN(parsed.timestamp);
@@ -79,7 +81,7 @@ export const SessionRecoveryProvider = ({ children }) => {
           setHasSession(true);
           setShowRecoveryPrompt(true);
         } else {
-          localStorage.removeItem(SESSION_KEY);
+          syncSecureStorage.removeItem(SESSION_KEY);
         }
       }
     } catch (e) {
@@ -99,7 +101,7 @@ export const SessionRecoveryProvider = ({ children }) => {
           timestamp: Date.now(),
           lastActivity: lastActivityRef.current,
         };
-        localStorage.setItem(SESSION_KEY, JSON.stringify(currentSession));
+        syncSecureStorage.setItem(SESSION_KEY, JSON.stringify(currentSession));
         setSessionData(currentSession);
         setHasSession(true);
       } catch (e) {
@@ -110,7 +112,7 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   const clearSession = useCallback(() => {
     try {
-      localStorage.removeItem(SESSION_KEY);
+      syncSecureStorage.removeItem(SESSION_KEY);
       setSessionData(null);
       setHasSession(false);
       setShowRecoveryPrompt(false);
@@ -129,12 +131,6 @@ export const SessionRecoveryProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    const handleBeforeUnload = () => {};
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, []);
-
-  useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
       const inactiveTime = now - lastActivityRef.current;
@@ -148,9 +144,11 @@ export const SessionRecoveryProvider = ({ children }) => {
   }, [hasSession, clearSession]);
 
   useEffect(() => {
+    const saveTimeout = saveTimeoutRef.current;
+    const activityTimeout = activityTimeoutRef.current;
     return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      if (activityTimeoutRef.current) clearTimeout(activityTimeoutRef.current);
+      if (saveTimeout) clearTimeout(saveTimeout);
+      if (activityTimeout) clearTimeout(activityTimeout);
     };
   }, []);
 

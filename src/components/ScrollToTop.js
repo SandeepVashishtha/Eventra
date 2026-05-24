@@ -1,75 +1,133 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronUp } from "lucide-react";
 
 export default function ScrollToTopButton() {
   const { pathname } = useLocation();
+
   const [visible, setVisible] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
-  // Automatically scroll to top whenever the route changes
+  // Auto scroll to top on route change
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+    window.scrollTo({
+      top: 0,
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+    });
   }, [pathname]);
 
+  // Optimized scroll handling
+  const handleScroll = useCallback(() => {
+    requestAnimationFrame(() => {
+      const scrollTop = window.scrollY;
+      const docHeight =
+        document.documentElement.scrollHeight -
+        document.documentElement.clientHeight;
+
+      const progress = (scrollTop / docHeight) * 100;
+
+      setVisible(scrollTop > 300);
+      setScrollProgress(progress);
+    });
+  }, []);
+
   useEffect(() => {
-    const handleScroll = () => setVisible(window.scrollY > 50);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
     handleScroll();
-    window.addEventListener("scroll", handleScroll);
-    
-    // Listen for chatbot state changes
-    const handleChatbotState = () => {
-      setIsChatbotOpen(document.querySelector('[data-chatbot-open]') !== null);
-    };
-    
-    // Check initially and set up observer
-    handleChatbotState();
-    const observer = new MutationObserver(handleChatbotState);
-    observer.observe(document.body, { childList: true, subtree: true });
-    
+
     return () => {
       window.removeEventListener("scroll", handleScroll);
-      observer.disconnect();
     };
+  }, [handleScroll]);
+
+  // Lightweight chatbot detection
+  useEffect(() => {
+    const chatbot = document.querySelector("[data-chatbot-open]");
+    setIsChatbotOpen(!!chatbot);
   }, []);
 
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+    window.scrollTo({
+      top: 0,
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+    });
   };
 
-  // Position based on chatbot state
-  const positionClass = isChatbotOpen 
-    ? "bottom-24 left-6"  // When chatbot is open - bottom left
-    : "bottom-24 right-6"; // When chatbot is closed - bottom right
+  const positionClass = isChatbotOpen
+    ? "bottom-24 left-6"
+    : "bottom-24 right-6";
 
   return (
     <AnimatePresence>
       {visible && (
         <motion.button
           onClick={scrollToTop}
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 50 }}
-          transition={{ duration: 0.3 }}
+          initial={{ opacity: 0, scale: 0.7, y: 30 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.7, y: 30 }}
+          transition={{ duration: 0.25 }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          aria-label="Scroll back to top"
+          title="Back to Top"
           className={`
             fixed ${positionClass}
+            z-[9998]
             w-14 h-14
             rounded-full
-            border border-black/15 dark:border-white/20
-            bg-white dark:bg-black
-            text-black dark:text-white
-            shadow-lg
+            bg-white dark:bg-zinc-900
+            border border-black/10 dark:border-white/10
+            shadow-xl
+            backdrop-blur-md
             flex items-center justify-center
-            text-4xl
-            hover:scale-110
-            hover:border-black/30 dark:hover:border-white/40
+            text-black dark:text-white
+            focus:outline-none
+            focus:ring-2
+            focus:ring-blue-500
             transition-all
-            z-[9998]
           `}
-          title="Back to Top"
         >
-          <ChevronUp className="w-6 h-6" strokeWidth={2} />
+          {/* Progress Ring */}
+          <svg
+            className="absolute inset-0 w-full h-full -rotate-90"
+            viewBox="0 0 100 100"
+          >
+            <circle
+              cx="50"
+              cy="50"
+              r="46"
+              stroke="currentColor"
+              strokeWidth="4"
+              fill="none"
+              className="opacity-20"
+            />
+
+            <circle
+              cx="50"
+              cy="50"
+              r="46"
+              stroke="currentColor"
+              strokeWidth="4"
+              fill="none"
+              strokeDasharray={289}
+              strokeDashoffset={289 - (289 * scrollProgress) / 100}
+              strokeLinecap="round"
+              className="transition-all duration-150"
+            />
+          </svg>
+
+          <ChevronUp className="w-6 h-6 relative z-10" />
         </motion.button>
       )}
     </AnimatePresence>

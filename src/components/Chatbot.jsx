@@ -204,13 +204,16 @@ export default function Chatbot() {
       aria-label="Eventra assistant"
       className="
         fixed bottom-6 right-6 z-[100]
-        flex flex-col
-        w-[calc(100vw-2rem)] max-w-sm
+        flex flex-col                        /* KEY FIX: flex column layout */
+        w-[calc(100vw-2rem)] max-w-sm sm:max-w-sm
         rounded-2xl
         border border-slate-200 dark:border-slate-700
         bg-white dark:bg-slate-900
         shadow-2xl
-        max-h-[calc(100vh-5rem)]
+
+        /* KEY FIX: constrain total height to viewport so it never overflows.
+           bottom-6 = 1.5rem offset from bottom, so we subtract that + a little breathing room. */
+        max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-5rem)]
       "
     >
       {/* ── Header ── */}
@@ -255,6 +258,7 @@ export default function Chatbot() {
         role="log"
         aria-live="polite"
         aria-label="Chat messages"
+        data-lenis-prevent
       >
         {messages.map((message, index) => (
           <div
@@ -275,27 +279,32 @@ export default function Chatbot() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* ── Footer ── */}
+     {/* ── Footer — always visible, never scrolls ── */}
+      {/*
+        FIX #1 (desktop): flex-shrink-0 keeps the footer pinned at the bottom
+        of the constrained container regardless of message count.
+      */}
       <div className="
         flex-shrink-0
-        border-t border-slate-200 dark:border-slate-700
         px-4 py-3
         bg-white dark:bg-slate-900
         rounded-b-2xl
       ">
-        {/* Quick prompts */}
-        <div className="mb-3 flex flex-wrap gap-2">
-          {quickPrompts.map((prompt) => (
-            <button
-              key={prompt}
-              type="button"
-              onClick={() => sendMessage(prompt)}
-              className="rounded-full border border-slate-200 dark:border-slate-700 px-3 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-300 hover:text-indigo-600 transition-colors"
-            >
-              {prompt}
-            </button>
-          ))}
-        </div>
+    {/* Quick prompts */}
+      <div className="mb-3 flex flex-wrap gap-2">
+        {quickPrompts.map((prompt) => (
+          <button
+            key={prompt}
+            type="button"
+            onClick={() => sendMessage(prompt)}
+            /* Removed the scroll locks (flex-shrink-0, whitespace-nowrap, snap-start) */
+            className="rounded-full border border-slate-200 dark:border-slate-700 px-3 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-indigo-500 hover:text-white transition-all duration-200 transform hover:-translate-y-0.5"
+          >
+            {prompt}
+          </button>
+        ))}
+
+      </div>
 
         {/* Contextual action links */}
         {latestActions.length > 0 && (
