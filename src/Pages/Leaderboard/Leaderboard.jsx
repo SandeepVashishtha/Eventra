@@ -1,10 +1,15 @@
 import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   FaCode,
   FaStar,
   FaChevronLeft,
   FaChevronRight,
   FaUsers,
+  FaAward,
+  FaTrophy,
+  FaMedal,
+  FaFire,
 } from "react-icons/fa";
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
@@ -21,9 +26,9 @@ const LEADERBOARD_CACHE_KEY = "leaderboardData:v2";
 
 // Points mapping for PR labels (keeps scoring logic centralized)
 const POINTS = {
-  level1: 3,
-  level2: 7,
-  level3: 10,
+  gssoclevel1: 3,
+  gssoclevel2: 7,
+  gssoclevel3: 10,
 };
 const DEFAULT_MERGED_PR_POINTS = 1;
 
@@ -67,6 +72,15 @@ function LiveStatusBadge({ status }) {
   );
 }
 
+const getAchievementBadge = (rank, prs, points) => {
+  if (rank === 1) return { label: "Grandmaster", color: "from-amber-500 to-yellow-400 text-amber-950", icon: FaTrophy };
+  if (rank === 2) return { label: "Champion", color: "from-slate-300 to-zinc-400 text-slate-900", icon: FaAward };
+  if (rank === 3) return { label: "Elite", color: "from-amber-700 to-orange-600 text-orange-50", icon: FaMedal };
+  if (prs >= 10) return { label: "PR Machine", color: "from-indigo-600 to-purple-500 text-white", icon: FaFire };
+  if (points >= 25) return { label: "Expert Contributor", color: "from-emerald-500 to-teal-400 text-emerald-950", icon: FaAward };
+  return { label: "Active Contributor", color: "from-sky-100 to-blue-200 dark:from-slate-800 dark:to-slate-700 text-sky-800 dark:text-sky-300", icon: FaCode };
+};
+
 export default function LeaderBoard() {
   useDocumentTitle("Eventra | Leaderboard");
   // Local state: contributors list and UI state
@@ -84,9 +98,8 @@ export default function LeaderBoard() {
   // Constants for pagination and UI
   const CONTRIBUTORS_PER_PAGE = 10;
 
-  // 🎉 Confetti on page load — small celebratory effect
+  // 🎉 Confetti on page load
   useEffect(() => {
-    // Only visual — does not affect data or app logic
     confetti({
       particleCount: 150,
       spread: 80,
@@ -118,7 +131,6 @@ export default function LeaderBoard() {
     const cachedData = localStorage.getItem(LEADERBOARD_CACHE_KEY);
     const now = Date.now();
 
-    // If cached data exists and is fresh (1 hour), use it to avoid rate limits
     if (cachedData) {
       try {
         const { data, timestamp } = JSON.parse(cachedData);
@@ -131,22 +143,18 @@ export default function LeaderBoard() {
           return;
         }
       } catch (error) {
-        // If cache parse fails, proceed to fetch fresh data
         console.error("Error parsing cached data:", error);
       }
     }
     await fetchContributors();
   };
 
-  // Fetch contributors and PRs from GitHub REST API
   const fetchContributors = async () => {
     try {
-      // contributorsMap accumulates scoring per username
       let contributorsMap = {};
       let page = 1;
       let hasMore = true;
 
-      // Fetch contributor metadata (avatar, profile)
       const contributorsRes = await fetch(
         `https://api.github.com/repos/${GITHUB_REPO}/contributors`,
         { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} },
@@ -156,9 +164,7 @@ export default function LeaderBoard() {
       const contributorsData = await contributorsRes.json();
       const contributorsInfo = {};
 
-      // Store basic contributor info for later use when building the map
       contributorsData.forEach((contributor) => {
-        // Note: contributor.name might be undefined in this endpoint response
         contributorsInfo[contributor.login] = {
           name: contributor.name || contributor.login,
           avatar: contributor.avatar_url,
@@ -166,7 +172,6 @@ export default function LeaderBoard() {
         };
       });
 
-      // Paginate through closed PRs to find merged GSoc-related PRs
       while (hasMore) {
         const res = await fetch(
           `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`,
@@ -180,7 +185,7 @@ export default function LeaderBoard() {
         }
 
         const prs = await res.json();
-
+        
         // Ensure standard array shape to avoid runtime TypeError crash
         if (!Array.isArray(prs) || prs.length === 0) {
           hasMore = false;
@@ -188,21 +193,17 @@ export default function LeaderBoard() {
         }
 
         prs.forEach((pr) => {
-          // Only count merged PRs
           if (!pr.merged_at) return;
 
-          // Normalize labels for matching against POINTS map
           const labels = pr.labels.map((l) => l.name.toLowerCase());
           const hasGsocLabel = labels.some(
             (label) => label.includes("gssoc") || label.includes("gsoc"),
           );
-          // Skip PRs that are not GSoc-related
           if (!hasGsocLabel) return;
 
           const author = pr.user.login;
           const points = calculatePrPoints(labels);
 
-          // Initialize contributor entry if needed
           if (!contributorsMap[author]) {
             const contributorInfo = contributorsInfo[author] || {
               name: author,
@@ -219,21 +220,28 @@ export default function LeaderBoard() {
             };
           }
 
-          // Increment totals for this contributor
           contributorsMap[author].points += points;
           contributorsMap[author].prs += 1;
         });
 
-        // Proceed to next page of PRs
         page++;
       }
 
-      // Convert map to array and sort by points descending
+      // Add achievement-based bonus points to gamify contributors:
+      // +5 points for 5-9 PRs, +10 points for >= 10 PRs
+      Object.keys(contributorsMap).forEach((user) => {
+        const count = contributorsMap[user].prs;
+        if (count >= 10) {
+          contributorsMap[user].points += 10; // Mega bonus
+        } else if (count >= 5) {
+          contributorsMap[user].points += 5; // Mid bonus
+        }
+      });
+
       const sortedContributors = Object.values(contributorsMap).sort(
         (a, b) => b.points - a.points,
       );
 
-      // Update UI state and cache the results for future loads
       setContributors(sortedContributors);
       setLastUpdated(new Date().toLocaleString());
       localStorage.setItem(
@@ -241,22 +249,17 @@ export default function LeaderBoard() {
         JSON.stringify({ data: sortedContributors, timestamp: Date.now() }),
       );
     } catch (err) {
-      // Log errors but keep the app functional (shows empty state)
       console.error("Error fetching contributors:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Initial data load on component mount
   useEffect(() => {
     loadLeaderboardData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Filter & sort
   const filteredContributors = contributors.filter((c) => {
-    // Simple search across username and name
     const q = search.trim().toLowerCase();
     if (!q) return true;
     return (
@@ -266,14 +269,12 @@ export default function LeaderBoard() {
   });
 
   const sortedContributors = [...filteredContributors].sort((a, b) => {
-    // Sorting options: points, prs, username
     if (sortBy === "points") return b.points - a.points;
     if (sortBy === "prs") return b.prs - a.prs;
     if (sortBy === "username") return a.username.localeCompare(b.username);
     return 0;
   });
 
-  // Pagination calculations
   const indexOfLast = currentPage * CONTRIBUTORS_PER_PAGE;
   const indexOfFirst = indexOfLast - CONTRIBUTORS_PER_PAGE;
   const currentContributors = sortedContributors.slice(
@@ -284,13 +285,11 @@ export default function LeaderBoard() {
     sortedContributors.length / CONTRIBUTORS_PER_PAGE,
   );
 
-  // Build a quick lookup for ranks based on the original sorted list
   const ranksMap = {};
   contributors.forEach((c, i) => {
     ranksMap[c.username] = i + 1;
   });
 
-  // Calculate aggregate stats used in the dashboard cards
   const stats = {
     totalContributors: contributors.length,
     flooredTotalPRs: contributors.reduce((sum, c) => sum + c.prs, 0),
@@ -304,42 +303,44 @@ export default function LeaderBoard() {
   ];
 
   return (
-    <div className="bg-white dark:bg-black pt-20 md:pt-24 py-12 sm:py-16">
+    <div className="bg-slate-50 dark:bg-slate-950 pt-20 md:pt-24 py-12 sm:py-16 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          {/* UPDATED: Header text */}
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            <span className="block text-indigo-700 dark:text-indigo-400">
-              GSSoC'26
-            </span>
-            <span className="text-gray-800 dark:text-gray-200">
-              Contributor Leaderboard
-            </span>
+        
+        {/* HERO TITLE */}
+        <div className="text-center mb-12 space-y-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-widest"
+          >
+            🏆 GSSoC'26 Contribution Arena
+          </motion.div>
+          
+          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-950 dark:text-white">
+            Community <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">Leaderboard</span>
           </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Recognizing the amazing contributions from our open source community
+          
+          <p className="text-base sm:text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
+            Honoring our elite open-source creators driving the core features of Eventra with robust code and design improvements.
           </p>
         </div>
 
-        {/* Search + Modern Dropdown */}
-        <div className="flex justify-center items-end mb-6 space-x-4">
+        {/* SEARCH & FILTERS GRID */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8 bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800/40">
           <input
             type="text"
             value={search}
             onChange={(e) => {
-              // When searching, reset to first page to show results from start
               setSearch(e.target.value);
               setCurrentPage(1);
             }}
-            placeholder="Search contributors..."
-            className="w-full max-w-xs px-4 py-2 border border-gray-300 dark:border-gray-800 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+            placeholder="Search creators..."
+            className="w-full sm:max-w-xs px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-slate-950 dark:text-white"
           />
+          
           <StyledDropdown
-            label="Sort by"
-            value={
-              sortOptions.find((opt) => opt.value === sortBy)?.label ||
-              "Select Sort"
-            }
+            label="Filter & Sort"
+            value={sortOptions.find((opt) => opt.value === sortBy)?.label || "Select Sort"}
             options={sortOptions.map((opt) => opt.label)}
             onChange={(value) => {
               const selectedOption = sortOptions.find(
@@ -351,183 +352,193 @@ export default function LeaderBoard() {
           />
         </div>
 
-        {/* stats */}
+        {/* AGGREGATED STATS CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {/* Contributors Card */}
-          <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
-            <div className="flex items-center">
-              <div className="p-3 rounded-xl mr-4 bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
-                <FaUsers className="text-2xl" />
+          {[
+            {
+              title: "Active Contributors",
+              value: stats.totalContributors,
+              color: "from-blue-500/10 to-indigo-500/10 border-blue-100 dark:border-blue-900/30 text-blue-600 dark:text-blue-400",
+              icon: FaUsers,
+            },
+            {
+              title: "Merged Pull Requests",
+              value: stats.flooredTotalPRs,
+              color: "from-emerald-500/10 to-teal-500/10 border-emerald-100 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400",
+              icon: FaCode,
+            },
+            {
+              title: "Aggregated Arena Points",
+              value: stats.flooredTotalPoints,
+              color: "from-amber-500/10 to-orange-500/10 border-amber-100 dark:border-amber-900/30 text-amber-600 dark:text-amber-400",
+              icon: FaStar,
+            },
+          ].map((card, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.1 }}
+              className={`p-6 rounded-2xl bg-gradient-to-br ${card.color} border shadow-sm flex items-center gap-4`}
+            >
+              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 shadow-sm">
+                <card.icon className="text-2xl" />
               </div>
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Contributors
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  {card.title}
                 </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {loading ? "..." : stats.totalContributors}
-                </p>
-              </div>
-            </div>
-          </div>
-          {/* Pull Requests Card */}
-          <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
-            <div className="flex items-center">
-              <div className="p-3 rounded-xl mr-4 bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400">
-                <FaCode className="text-2xl" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Pull Requests
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {loading ? "..." : stats.flooredTotalPRs}
+                <p className="text-3xl font-extrabold text-slate-950 dark:text-white mt-1">
+                  {loading ? "..." : card.value}
                 </p>
               </div>
-            </div>
-          </div>
-          {/* Total Points Card */}
-          <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
-            <div className="flex items-center">
-              <div className="p-3 rounded-xl mr-4 bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-400">
-                <FaStar className="text-2xl" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Total Points
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {loading ? "..." : stats.flooredTotalPoints}
-                </p>
-              </div>
-            </div>
-          </div>
+            </motion.div>
+          ))}
         </div>
 
-        {/* UPDATED: Table container */}
-        <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl shadow-lg overflow-hidden">
+        {/* LEADERBOARD ARENA GRID */}
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden">
           {loading ? (
             <LeaderboardTableSkeleton rows={CONTRIBUTORS_PER_PAGE} />
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-500">
-                <thead className="bg-gray-50 dark:bg-gray-900">
+              <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
+                <thead className="bg-slate-50 dark:bg-slate-900/50">
                   <tr>
-                    <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
                       Rank
                     </th>
-                    <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
                       Contributor
                     </th>
-                    <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
+                      Achievement Badge
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
                       Points
                     </th>
-                    <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      PRs
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
+                      Merged PRs
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-gradient-to-b from-indigo-50 to-white dark:from-gray-900  dark:to-black  divide-y divide-gray-400 dark:divide-gray-500">
-                  {currentContributors.map((c) => {
-                    const rank = ranksMap[c.username];
-                    return (
-                      <tr
-                        key={c.username}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 border-b border-gray-100 dark:border-gray-700"
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            // UPDATED: Rank badges
-                            className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-medium ${
-                              rank === 1
-                                ? "bg-yellow-500 text-white"
-                                : rank === 2
-                                  ? "bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200"
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 bg-white dark:bg-slate-900">
+                  <AnimatePresence>
+                    {currentContributors.map((c, index) => {
+                      const rank = ranksMap[c.username];
+                      const badge = getAchievementBadge(rank, c.prs, c.points);
+                      return (
+                        <motion.tr
+                          key={c.username}
+                          initial={{ opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -12 }}
+                          transition={{ duration: 0.25, delay: index * 0.05 }}
+                          className="hover:bg-slate-50/50 dark:hover:bg-slate-950/20 transition-colors"
+                        >
+                          {/* RANK INDEX BADGES */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-xs ${
+                                rank === 1
+                                  ? "bg-yellow-400 text-yellow-950 shadow-md shadow-yellow-400/20"
+                                  : rank === 2
+                                  ? "bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                                   : rank === 3
-                                    ? "bg-amber-800 text-white"
-                                    : "bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300"
-                            }`}
-                          >
-                            {rank}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-<img
+                                  ? "bg-amber-600 text-white shadow-md shadow-amber-600/20"
+                                  : "bg-indigo-50/60 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400"
+                              }`}
+                            >
+                              {rank}
+                            </span>
+                          </td>
+
+                          {/* AVATAR + LINKS */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <img
                                 loading="lazy"
                                 decoding="async"
                                 width="40"
                                 height="40"
-                                className="h-10 w-10 rounded-full border-2 border-indigo-200 dark:border-gray-600"
+                                className="h-10 w-10 rounded-full border-2 border-indigo-100 dark:border-slate-800 bg-slate-100 shadow-sm"
                                 src={c.avatar}
                                 alt={c.username}
                               />
-                            </div>
-                            <div className="ml-4">
-                              <a
-                                href={c.profile}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                              >
-                                {c.username}
-                              </a>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">
-                                {c.name && c.name !== c.username ? c.name : ""}
+                              <div>
+                                <a
+                                  href={c.profile}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm font-semibold text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                                >
+                                  {c.username}
+                                </a>
+                                {c.name && c.name !== c.username && (
+                                  <div className="text-xs text-slate-400 mt-0.5">
+                                    {c.name}
+                                  </div>
+                                )}
                               </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <FaStar className="text-yellow-400 mr-1" />
-                            <span className="font-medium">{c.points}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <FaCode className="text-indigo-500 mr-1" />
-                            <span className="font-medium">{c.prs}</span>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          </td>
+
+                          {/* GAMIFICATION BADGES */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div
+                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r ${badge.color} border border-black/5 dark:border-white/5 shadow-sm`}
+                            >
+                              <badge.icon className="w-3.5 h-3.5" />
+                              {badge.label}
+                            </div>
+                          </td>
+
+                          {/* POINTS METRICS */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-1.5 text-sm font-bold text-slate-900 dark:text-white">
+                              <FaStar className="text-yellow-400 text-xs" />
+                              <span>{c.points}</span>
+                            </div>
+                          </td>
+
+                          {/* PR METRICS */}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-1.5 text-sm font-bold text-slate-900 dark:text-white">
+                              <FaCode className="text-indigo-500 text-xs" />
+                              <span>{c.prs}</span>
+                            </div>
+                          </td>
+                        </motion.tr>
+                      );
+                    })}
+                  </AnimatePresence>
                 </tbody>
               </table>
 
-              {/* Pagination */}
+              {/* PAGINATION BAR */}
               {totalPages > 1 && (
-                <div className="flex justify-center items-center space-x-2 py-4 bg-white dark:bg-black/80">
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                    disabled={currentPage === 1}
-                    className="px-3 py-1 text-sm rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-50 flex items-center bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                  >
-                    <FaChevronLeft />
-                  </button>
-                  {[...Array(totalPages)].map((_, i) => (
+                <div className="flex justify-between items-center py-4 px-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                  <span className="text-xs font-medium text-slate-500">
+                    Showing page {currentPage} of {totalPages}
+                  </span>
+                  
+                  <div className="flex items-center gap-2">
                     <button
-                      key={i}
-                      onClick={() => setCurrentPage(i + 1)}
-                      className={`px-3 py-1 text-sm rounded-lg border ${
-                        currentPage === i + 1
-                          ? "bg-indigo-500 text-white border-indigo-500"
-                          : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
-                      }`}
+                      onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-50 hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 bg-transparent transition-all"
                     >
-                      {i + 1}
+                      <FaChevronLeft className="w-3 h-3" />
                     </button>
-                  ))}
-                  <button
-                    onClick={() =>
-                      setCurrentPage((p) => Math.min(p + 1, totalPages))
-                    }
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-1 text-sm rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-50 flex items-center bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                  >
-                    <FaChevronRight />
-                  </button>
+                    
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-50 hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 bg-transparent transition-all"
+                    >
+                      <FaChevronRight className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -536,7 +547,7 @@ export default function LeaderBoard() {
           {/* Table footer: last updated + live connection badge */}
           <div className="bg-gray-50 dark:bg-black/70 px-6 py-2 flex items-center justify-between border-t border-gray-200 dark:border-gray-700">
             {lastUpdated && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+              <span className="text-xs font-medium text-slate-400">
                 {lastUpdated}
               </span>
             )}
