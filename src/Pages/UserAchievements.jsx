@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNotification } from '../context/NotificationContext';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import QuestCenter from '../components/gamification/QuestCenter';
 
 export default function UserAchievements() {
   useDocumentTitle("Eventra | Achievements");
@@ -56,7 +57,7 @@ export default function UserAchievements() {
       </div>
 
       {/* Badges Section */}
-      <section>
+      <section className="mb-12">
         <h2 className="text-xl font-bold text-gray-800 dark:text-slate-100 mb-4">Milestone Tokens & Badges</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {operationalBadges.map((badge) => (
@@ -82,6 +83,12 @@ export default function UserAchievements() {
           ))}
         </div>
       </section>
+
+      {/* ──────────────── Quest Center ──────────────── */}
+      <QuestCenter
+        totalEvents={achievements.totalEvents}
+        currentStreak={achievements.currentStreak}
+      />
     </div>
   );
 }
