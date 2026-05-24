@@ -60,6 +60,14 @@ The app runs on `http://localhost:3000`.
 git checkout -b feature/short-description
 ```
 
+**Branch Naming Conventions:**
+- Use lowercase only and separate words with hyphens (`-`).
+- Prefix branch names based on the type of work:
+  - `feat/` for new features (e.g., `feat/event-card-skeleton`)
+  - `fix/` for bug fixes (e.g., `fix/navbar-desktop-overlap`)
+  - `docs/` for documentation updates (e.g., `docs/fix-contributing-format`)
+  - `enhancement/` for visual/behavior improvements (e.g., `enhancement/dashboard-empty-state`)
+
 3. Make your changes in small, reviewable commits.
 4. Run quality checks locally:
 
