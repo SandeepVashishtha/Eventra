@@ -1,3 +1,4 @@
+import useRecentlyViewed from "../../hooks/useRecentlyViewed";  
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
@@ -27,6 +28,8 @@ const EventDetailsPage = () => {
 
   const navigate = useNavigate();
 
+  const { addRecentlyViewed } = useRecentlyViewed();
+
   const [loading, setLoading] =
     useState(true);
 
@@ -51,6 +54,16 @@ const EventDetailsPage = () => {
           );
 
         setEvent(foundEvent);
+        if (foundEvent) {
+          addRecentlyViewed({
+            id:       foundEvent.id,
+            title:    foundEvent.title,
+            date:     foundEvent.date,
+            location: foundEvent.location,
+            image:    foundEvent.image,
+            category: foundEvent.type,
+          });
+        }
       } catch (error) {
         console.error(error);
       } finally {
@@ -59,7 +72,7 @@ const EventDetailsPage = () => {
     };
 
     fetchEvent();
-  }, [eventId]);
+  }, [eventId , addRecentlyViewed]);
 
   // Loading State
   if (loading) {
