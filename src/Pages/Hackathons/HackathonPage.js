@@ -235,12 +235,10 @@ const HackathonHub = () => {
     }
     return sorted;
   };
-    const sortedFilteredHackathons = sortHackathons(filteredHackathons);
 
-  const 
-  
-  
-  dHackathons = [...hackathons]
+  const sortedFilteredHackathons = sortHackathons(filteredHackathons);
+
+  const featuredHackathons = [...hackathons]
     .filter((h) => h.featured)
     .slice(0, 3);
 
