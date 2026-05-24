@@ -29,7 +29,22 @@ const Hero = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
-  
+  const [statsReady, setStatsReady] = useState(false);
+  const [isDark, setIsDark] = useState(
+    document.documentElement.classList.contains("dark")
+  );
+
+  // Sync isDark with theme changes
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
 
   // Change phrase every 3 seconds
   useEffect(() => {
@@ -45,6 +60,10 @@ const Hero = () => {
     controls.start("show");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [controls]);
+
+  useEffect(() => {
+    setStatsReady(true);
+  }, []);
 
   // Global search functionality
   const createSearchItem = (item, type, searchType) => ({
@@ -136,9 +155,9 @@ const Hero = () => {
   };
 
   const stats = [
-    { value: "1500+", label: "Developers Joined" },
-    { value: "75",    label: "Events Organized"  },
-    { value: "30+",   label: "Partners & Sponsors" },
+    { value: 1500, label: "Developers Joined", suffix: "+" },
+    { value: 75, label: "Events Organized", suffix: "+" },
+    { value: 30, label: "Partners & Sponsors", suffix: "+" },
   ];
 
   return (
@@ -376,14 +395,21 @@ text-gray-600 dark:text-gray-300"
                   className="bg-white/90 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-xl shadow-blue-100/50 dark:shadow-none border border-blue-100 dark:border-gray-700 hover:shadow-blue-200/60 transition-shadow duration-300"
                 >
                   <p className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
-                    <CountUp
-                      start={0}
-                      end={stat.value}
-                      duration={2.5}
-                      suffix={stat.suffix}
-                      enableScrollSpy
-                      scrollSpyOnce
-                    />
+                    {statsReady ? (
+                      <CountUp
+                        start={0}
+                        end={Number.isFinite(stat.value) ? stat.value : 0}
+                        duration={2.5}
+                        suffix={stat.suffix || ""}
+                        enableScrollSpy
+                        scrollSpyOnce
+                      />
+                    ) : (
+                      <>
+                        {stat.value}
+                        {stat.suffix || ""}
+                      </>
+                    )}
                   </p>
                   <p className="text-gray-500 dark:text-gray-300 text-sm">
                     {stat.label}

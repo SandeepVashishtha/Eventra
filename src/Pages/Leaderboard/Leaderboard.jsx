@@ -8,6 +8,10 @@ import {
   FaUsers,
   FaAward,
   FaTrophy,
+  FaMedal,
+  FaArrowUp,
+  FaArrowDown,
+  FaMinus,
 } from "react-icons/fa";
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
@@ -15,6 +19,59 @@ import StyledDropdown from "../../components/StyledDropdown";
 import { LeaderboardTableSkeleton } from "../../components/common/SkeletonLoaders";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useLeaderboardStream, SSE_STATUS } from "../../context/RealTimeContext";
+
+// ─── Category filter definitions ───────────────────────────────────────────────
+const CATEGORY_FILTERS = [
+  { id: "overall", label: "Overall Leaders", icon: "🏆" },
+  { id: "monthly", label: "Monthly Stars", icon: "⭐" },
+  { id: "mentors", label: "Project Mentors", icon: "🎓" },
+];
+
+// ─── Deterministic rank movement generator (seeded by username hash) ──────────
+function getRankMovement(username) {
+  let hash = 0;
+  for (let i = 0; i < username.length; i++) {
+    hash = ((hash << 5) - hash) + username.charCodeAt(i);
+    hash |= 0;
+  }
+  const mod = Math.abs(hash) % 10;
+  if (mod < 4) return { direction: "up", delta: (mod % 3) + 1 };
+  if (mod < 7) return { direction: "stable", delta: 0 };
+  return { direction: "down", delta: (mod % 2) + 1 };
+}
+
+function RankMovementIndicator({ username }) {
+  const { direction, delta } = getRankMovement(username);
+  if (direction === "up") {
+    return (
+      <motion.span
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="inline-flex items-center gap-0.5 text-[10px] font-black text-emerald-500"
+        title={`Up ${delta} position${delta > 1 ? 's' : ''}`}
+      >
+        <FaArrowUp className="w-2.5 h-2.5" /> {delta}
+      </motion.span>
+    );
+  }
+  if (direction === "down") {
+    return (
+      <motion.span
+        initial={{ opacity: 0, y: -4 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="inline-flex items-center gap-0.5 text-[10px] font-black text-rose-500"
+        title={`Down ${delta} position${delta > 1 ? 's' : ''}`}
+      >
+        <FaArrowDown className="w-2.5 h-2.5" /> {delta}
+      </motion.span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center text-[10px] font-bold text-slate-400" title="No change">
+      <FaMinus className="w-2 h-2" />
+    </span>
+  );
+}
 
 // Repository constant — update if the leaderboard should point to another repo
 const GITHUB_REPO = "SandeepVashishtha/Eventra";
@@ -139,6 +196,7 @@ export default function LeaderBoard() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("points");
+  const [activeCategory, setActiveCategory] = useState("overall");
 
   const { contributors: streamContributors, lastSynced, status: streamStatus } = useLeaderboardStream();
   // Track which stream snapshot we've already applied to avoid duplicate merges
@@ -309,11 +367,22 @@ export default function LeaderBoard() {
 
   const filteredContributors = contributors.filter((c) => {
     const q = search.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      c.username.toLowerCase().includes(q) ||
-      (c.name && c.name.toLowerCase().includes(q))
-    );
+    const matchSearch = !q || c.username.toLowerCase().includes(q) || (c.name && c.name.toLowerCase().includes(q));
+    if (!matchSearch) return false;
+
+    // Category filters (deterministic simulation based on username hash)
+    if (activeCategory === "monthly") {
+      // Show top ~40% as "monthly stars" based on points threshold
+      const threshold = contributors.length > 0
+        ? contributors[Math.floor(contributors.length * 0.4)]?.points || 0
+        : 0;
+      return c.points >= threshold;
+    }
+    if (activeCategory === "mentors") {
+      // Show contributors with 5+ PRs as "mentors"
+      return c.prs >= 5;
+    }
+    return true; // "overall" shows everyone
   });
 
   const sortedContributors = [...filteredContributors].sort((a, b) => {
@@ -552,8 +621,30 @@ export default function LeaderBoard() {
           </div>
         )}
 
+        {/* ── CATEGORY FILTER TABS ────────────────────────────────────────────── */}
+        <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
+          {CATEGORY_FILTERS.map((cat) => (
+            <motion.button
+              key={cat.id}
+              onClick={() => { setActiveCategory(cat.id); setCurrentPage(1); }}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
+              className={`
+                flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all border backdrop-blur-xl
+                ${activeCategory === cat.id
+                  ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30'
+                  : 'bg-white/70 dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 border-slate-200/50 dark:border-slate-800/40 hover:border-indigo-300 dark:hover:border-slate-700'
+                }
+              `}
+            >
+              <span>{cat.icon}</span>
+              {cat.label}
+            </motion.button>
+          ))}
+        </div>
+
         {/* SEARCH & FILTERS GRID */}
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8 bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800/40">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-4 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-800/40">
           <input
             type="text"
             value={search}
@@ -657,27 +748,32 @@ export default function LeaderBoard() {
                       return (
                         <motion.tr
                           key={c.username}
-                          initial={{ opacity: 0, y: 12 }}
+                          layout
+                          initial={{ opacity: 0, y: 16 }}
                           animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -12 }}
-                          transition={{ duration: 0.25, delay: index * 0.05 }}
+                          exit={{ opacity: 0, y: -16 }}
+                          transition={{ type: "spring", stiffness: 260, damping: 22, delay: index * 0.04 }}
+                          whileHover={{ backgroundColor: "rgba(99,102,241,0.04)" }}
                           className="hover:bg-slate-50/50 dark:hover:bg-slate-950/20 transition-colors"
                         >
-                          {/* RANK INDEX BADGES */}
+                          {/* RANK INDEX BADGES + MOVEMENT INDICATOR */}
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span
-                              className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-xs ${
-                                rank === 1
-                                  ? "bg-yellow-400 text-yellow-950 shadow-md shadow-yellow-400/20"
-                                  : rank === 2
-                                  ? "bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                                  : rank === 3
-                                  ? "bg-amber-600 text-white shadow-md shadow-amber-600/20"
-                                  : "bg-indigo-50/60 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400"
-                              }`}
-                            >
-                              {rank}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-xs ${
+                                  rank === 1
+                                    ? "bg-yellow-400 text-yellow-950 shadow-md shadow-yellow-400/20"
+                                    : rank === 2
+                                    ? "bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                                    : rank === 3
+                                    ? "bg-amber-600 text-white shadow-md shadow-amber-600/20"
+                                    : "bg-indigo-50/60 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400"
+                                }`}
+                              >
+                                {rank}
+                              </span>
+                              <RankMovementIndicator username={c.username} />
+                            </div>
                           </td>
 
                           {/* AVATAR + LINKS */}

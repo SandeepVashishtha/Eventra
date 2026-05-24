@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronUp } from "lucide-react";
-import { scrollToTop as lenisScrollToTop, getScrollPosition } from "../utils/lenisUtils";
+import "./styles/scrolltotopButton.css";
+
+const getScrollPosition = () => (window.lenis ? window.lenis.scroll : window.scrollY || 0);
 
 export default function ScrollToTopButton() {
   const { pathname } = useLocation();
@@ -13,14 +15,11 @@ export default function ScrollToTopButton() {
 
   // Auto scroll to top on route change
   useEffect(() => {
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
-
-    window.scrollTo({
-      top: 0,
-      behavior: prefersReducedMotion ? "auto" : "smooth",
-    });
+    if (window.lenis) {
+      window.lenis.scrollTo(0, { immediate: true });
+    } else {
+      window.scrollTo(0, 0);
+    }
   }, [pathname]);
 
   // Optimized scroll handling
@@ -39,12 +38,36 @@ export default function ScrollToTopButton() {
   }, []);
 
   useEffect(() => {
-    window.addEventListener("scroll", handleScroll, { passive: true });
-
+    const handleScroll = () => {
+      const scrollY = window.lenis ? window.lenis.scroll : window.scrollY;
+      setVisible(scrollY > 50);
+    };
+    
     handleScroll();
-
+    
+    if (window.lenis) {
+      window.lenis.on('scroll', handleScroll);
+    } else {
+      window.addEventListener("scroll", handleScroll);
+    }
+    
+    // Listen for chatbot state changes
+    const handleChatbotState = () => {
+      setIsChatbotOpen(document.querySelector('[data-chatbot-open]') !== null);
+    };
+    
+    // Check initially and set up observer
+    handleChatbotState();
+    const observer = new MutationObserver(handleChatbotState);
+    observer.observe(document.body, { childList: true, subtree: true });
+    
     return () => {
-      window.removeEventListener("scroll", handleScroll);
+      if (window.lenis) {
+        window.lenis.off('scroll', handleScroll);
+      } else {
+        window.removeEventListener("scroll", handleScroll);
+      }
+      observer.disconnect();
     };
   }, [handleScroll]);
 
@@ -55,122 +78,48 @@ export default function ScrollToTopButton() {
   }, []);
 
   const scrollToTop = () => {
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
-
     if (window.lenis) {
-      // Use Lenis helper to respect smooth scrolling engine
-      lenisScrollToTop({ duration: prefersReducedMotion ? 0 : 1.2 });
+      window.lenis.scrollTo(0, { duration: 1.2 });
     } else {
-      window.scrollTo({
-        top: 0,
-        behavior: prefersReducedMotion ? "auto" : "smooth",
-      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
-  const positionClass = isChatbotOpen
-    ? "bottom-24 left-6"
-    : "bottom-24 right-6";
+  // Position based on chatbot state
+  const positionClass = isChatbotOpen 
+    ? "bottom-24 left-6"  // When chatbot is open - bottom left
+    : "bottom-6 right-6 sm:bottom-24 sm:right-6"; // When chatbot is closed - bottom right
 
   return (
     <AnimatePresence>
       {visible && (
-        <>
-          {/* Desktop / large screens button */}
-          <motion.button
-            onClick={scrollToTop}
-            initial={{ opacity: 0, scale: 0.7, y: 30 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.7, y: 30 }}
-            transition={{ duration: 0.25 }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            aria-label="Scroll back to top"
-            title="Back to Top"
-            className={
-              `hidden md:flex fixed ${positionClass} z-[9998] w-14 h-14 rounded-full bg-white dark:bg-zinc-900 border border-black/10 dark:border-white/10 shadow-xl backdrop-blur-md flex items-center justify-center text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all`
-            }
-          >
-            {/* Progress Ring */}
-            <svg
-              className="absolute inset-0 w-full h-full -rotate-90"
-              viewBox="0 0 100 100"
-            >
-              <circle
-                cx="50"
-                cy="50"
-                r="46"
-                stroke="currentColor"
-                strokeWidth="4"
-                fill="none"
-                className="opacity-20"
-              />
-
-              <circle
-                cx="50"
-                cy="50"
-                r="46"
-                stroke="currentColor"
-                strokeWidth="4"
-                fill="none"
-                strokeDasharray={289}
-                strokeDashoffset={289 - (289 * scrollProgress) / 100}
-                strokeLinecap="round"
-                className="transition-all duration-150"
-              />
-            </svg>
-
-            <ChevronUp className="w-6 h-6 relative z-10" />
-          </motion.button>
-
-          {/* Mobile-specific button (visible on small screens) */}
-          <motion.button
-            onClick={scrollToTop}
-            initial={{ opacity: 0, scale: 0.7, y: 30 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.7, y: 30 }}
-            transition={{ duration: 0.25 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            aria-label="Scroll back to top"
-            title="Back to Top"
-            className={
-              `md:hidden fixed ${isChatbotOpen ? 'bottom-24 left-6' : 'bottom-6 right-4'} z-[9998] w-12 h-12 rounded-full bg-white dark:bg-zinc-900 border border-black/10 dark:border-white/10 shadow-xl backdrop-blur-md flex items-center justify-center text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all`
-            }
-          >
-            <svg
-              className="absolute inset-0 w-full h-full -rotate-90"
-              viewBox="0 0 100 100"
-            >
-              <circle
-                cx="50"
-                cy="50"
-                r="46"
-                stroke="currentColor"
-                strokeWidth="4"
-                fill="none"
-                className="opacity-20"
-              />
-
-              <circle
-                cx="50"
-                cy="50"
-                r="46"
-                stroke="currentColor"
-                strokeWidth="4"
-                fill="none"
-                strokeDasharray={289}
-                strokeDashoffset={289 - (289 * scrollProgress) / 100}
-                strokeLinecap="round"
-                className="transition-all duration-150"
-              />
-            </svg>
-
-            <ChevronUp className="w-5 h-5 relative z-10" />
-          </motion.button>
-        </>
+        <motion.button
+          id="scrollToTopBtn"
+          onClick={scrollToTop}
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 50 }}
+          transition={{ duration: 0.3 }}
+          className={`
+            fixed ${positionClass}
+            w-14 h-14
+            rounded-full
+            border border-black/15 dark:border-white/20
+            bg-white dark:bg-black
+            text-black dark:text-white
+            shadow-lg
+            flex items-center justify-center
+            text-4xl
+            hover:scale-110
+            hover:border-black/30 dark:hover:border-white/40
+            transition-all
+            z-[9998]
+            show
+          `}
+          title="Back to Top"
+        >
+          <ChevronUp className="w-6 h-6" strokeWidth={2} />
+        </motion.button>
       )}
     </AnimatePresence>
   );

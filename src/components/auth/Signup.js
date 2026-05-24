@@ -232,37 +232,7 @@ const handleSubmit = async (e) => {
       }
     );
 
-    const responseText =
-      await response.text();
-
-    let data = null;
-
-    try {
-      data = responseText
-        ? JSON.parse(responseText)
-        : null;
-    } catch {
-      data = null;
-    }
-
-    if (!response.ok) {
-      const backendMessage =
-        data?.message ||
-        data?.error ||
-        "";
-
-      if (backendMessage) {
-        setError(
-          `${backendMessage} (${response.status})`
-        );
-      } else {
-        setError(
-          `Registration failed (${response.status})`
-        );
-      }
-
-      return;
-    }
+    const data = response.data;
 
     const sessionToken = data?.token;
 
@@ -311,8 +281,10 @@ const handleSubmit = async (e) => {
       1200
     );
   } catch (err) {
+    const backendMessage = err.response?.data?.message || err.response?.data?.error;
     setError(
-      err.message ||
+      backendMessage ||
+        err.message ||
         "Network error. Please try again."
     );
 
