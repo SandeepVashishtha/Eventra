@@ -161,7 +161,7 @@ const EditProfile = () => {
       localStorage.setItem("user", JSON.stringify(resolvedForm));
 
       setTimeout(() => {
-        navigate("/dashboard");
+        navigate("/dashboard/profile");
       }, 1000);
     }, 1500);
   };

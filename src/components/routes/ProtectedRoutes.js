@@ -6,6 +6,7 @@ import ProtectedRoute from "../auth/ProtectedRoute";
 import EventCreation from "../common/EventCreation";
 import HostHackathon from "../../Pages/Hackathons/HostHackathon";
 import EditProfile from "../user/EditProfile";
+import UserProfile from "../user/UserProfile";
 import Settings from "../../Pages/Settings";
 import AuthPage from "../auth/AuthPage";
 import Unauthorized from "../auth/Unauthorized";
@@ -66,11 +67,30 @@ export const getProtectedRoutes = () => [
     }
   />,
   <Route
+    key="/dashboard/profile"
+    path="/dashboard/profile"
+    element={
+      <ProtectedRoute>
+        <UserProfile />
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/profile/edit"
+    path="/profile/edit"
+    element={
+      <ProtectedRoute>
+        <EditProfile />
+      </ProtectedRoute>
+    }
+  />,
+  /* Keep legacy /profile route redirecting to view page */
+  <Route
     key="/profile"
     path="/profile"
     element={
       <ProtectedRoute>
-        <EditProfile />
+        <UserProfile />
       </ProtectedRoute>
     }
   />,
