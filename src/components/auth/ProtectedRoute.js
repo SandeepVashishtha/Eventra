@@ -8,9 +8,11 @@ const ProtectedRoute = ({
   requireAuth = true, 
   requiredRoles = [], 
   requiredPermissions = [],
+  requiredScopes = [],
+  validateContext = null,
   redirectTo = '/login' 
 }) => {
-  const { isAuthenticated, hasRole, hasPermission, loading } = useAuth();
+  const { isAuthenticated, hasRole, hasPermission, loading, user } = useAuth();
   const location = useLocation();
 
   // Show loading spinner while checking authentication
@@ -25,7 +27,8 @@ const ProtectedRoute = ({
   // Check if authentication is required
   if (requireAuth && !isAuthenticated()) {
      // ⬇️ preserve where the user wanted to go
-    return <Navigate to={redirectTo} replace state={{ from: location }} />;
+     // If `user` is still set, the token expired mid-session (not a fresh visit).
+    return <Navigate to={redirectTo} replace state={{ from: location, sessionExpired: !!user }} />;
   }
 
   // Check required roles
@@ -40,6 +43,23 @@ const ProtectedRoute = ({
   if (requiredPermissions.length > 0) {
     const hasRequiredPermission = requiredPermissions.some(permission => hasPermission(permission));
     if (!hasRequiredPermission) {
+      return <Navigate to="/unauthorized" replace state={{ from: location }} />;
+    }
+  }
+
+  // Check fine-grained scopes
+  if (requiredScopes.length > 0) {
+    const userScopes = user?.scopes || user?.scope?.split(' ') || [];
+    const hasRequiredScope = requiredScopes.every(scope => userScopes.includes(scope));
+    if (!hasRequiredScope) {
+      return <Navigate to="/unauthorized" replace state={{ from: location }} />;
+    }
+  }
+
+  // Dynamic context metadata/attributes validation
+  if (validateContext && typeof validateContext === 'function') {
+    const isContextValid = validateContext({ user, location });
+    if (!isContextValid) {
       return <Navigate to="/unauthorized" replace state={{ from: location }} />;
     }
   }

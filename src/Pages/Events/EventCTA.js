@@ -45,7 +45,7 @@ const EventCTA = () => {
         <div className="flex flex-col md:flex-row gap-4">
           <a
             href="/events"
-            className="inline-flex items-center justify-center gap-2 bg-white text-black font-semibold px-8 py-4 rounded-full shadow-lg hover:scale-105 hover:bg-gray-100 transition-transform duration-300"
+            className="inline-flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold px-8 py-4 rounded-lg shadow-lg hover:scale-105 hover:bg-blue-700 transition-transform duration-300"
           >
             Explore Events <CalendarDays size={20} />
           </a>
@@ -53,7 +53,7 @@ const EventCTA = () => {
           {/* UPDATED: The secondary button needs dark mode styles for when the main page is dark. */}
           <button
             onClick={() => setShowModal(true)}
-            className="relative inline-flex items-center px-8 py-4 rounded-full border  bg-white text-black font-semibold border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-semibold shadow hover:shadow-lg hover:bg-gray-100 hover:text-gray-900 hover:dark:bg-gray-700 hover:dark:text-white hover:scale-105 transition-all duration-300"
+            className="relative inline-flex items-center px-8 py-4 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-300 dark:hover:bg-slate-800 font-semibold shadow hover:shadow-lg hover:scale-105 transition-all duration-300"
           >
             <Users size={20} /> Participate
           </button>
@@ -72,7 +72,7 @@ const EventCTA = () => {
             </p>
             {/* The close button works well in both themes. */}
             <button
-              className="mt-6 px-6 py-2 rounded-lg bg-black text-white hover:bg-zinc-800 transition"
+              className="mt-6 px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
               onClick={() => setShowModal(false)}
             >
               Close

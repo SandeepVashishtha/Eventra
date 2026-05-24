@@ -1,5 +1,6 @@
 /* Fix: Removed 'Anton' decorative font — only 'Inter' is used for professionalism */
 /* Issue #828: Standardize and Professionalize Font Text and Size */
+@import url("https://fonts.googleapis.com/css2?family=Oxanium:wght@800&family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 
 @tailwind base;
@@ -18,18 +19,24 @@
   --bg-color: #ffffff;
   --text-color: #1a1a1a;
   --text-color-light: #4a4a4a;
-  --border-color: #e1e5e9;
+  --border-color: #e2e8f0;
   --card-bg-color: #ffffff;
 
   --scrollbar-track-color: #f1f1f1;
-  --scrollbar-thumb-color: #000000;
-  --scrollbar-thumb-hover-color: #262626;
+  --scrollbar-thumb-color: #cbd5e1;
+  --scrollbar-thumb-hover-color: #94a3b8;
 
   --btn-secondary-text: #4a4a4a;
 
-  /* Additional Light Theme Variables */
+  /* Additional Light Theme Variables & SaaS Aesthetics */
   --navbar-bg: #ffffff;
-  --sidebar-bg: #f9fafb;
+  --sidebar-bg: #f8fafc;
+  --bg-gradient: linear-gradient(135deg, #f0f4f8 0%, #ffffff 100%);
+  --bg-secondary: #f8fafc;
+  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --card-border: 1px solid #eef2f6;
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
 
   --input-bg: #ffffff;
   --input-text: #1a1a1a;
@@ -63,32 +70,33 @@
   --touch-target-gap: 0.75rem;
 }
 
-/* Fix #599: Changed from body.dark to .dark
-   ThemeToggleButton.js applies the dark class to document.documentElement (html),
-   not to body. Using body.dark meant these variables never activated in dark mode. */
 .dark {
   --bg-color: #0f172a;
   --text-color: #f8fafc;
   --text-color-light: #cbd5e1;
+  --border-color: #1e293b;
+  --card-bg-color: #1e293b;
 
-  --border-color: #334155;
-
-  --card-bg-color: #111827;
-
-  --scrollbar-track-color: #1e293b;
-  --scrollbar-thumb-color: #475569;
-  --scrollbar-thumb-hover-color: #64748b;
+  --scrollbar-track-color: #0f172a;
+  --scrollbar-thumb-color: #334155;
+  --scrollbar-thumb-hover-color: #475569;
 
   --btn-secondary-text: #f1f5f9;
 
-  /* Additional Dark Theme Colors */
-  --navbar-bg: #111827;
+  /* Additional Dark Theme Colors & SaaS Aesthetics */
+  --navbar-bg: #1e293b;
   --sidebar-bg: #0f172a;
+  --bg-gradient: linear-gradient(135deg, #0b0f19 0%, #0f172a 100%);
+  --bg-secondary: #0f172a;
+  --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --card-border: 1px solid #334155;
+  --color-primary: #60a5fa;
+  --color-primary-hover: #3b82f6;
 
   --input-bg: #1e293b;
   --input-text: #f8fafc;
 
-  --table-bg: #111827;
+  --table-bg: #1e293b;
   --modal-bg: #1e293b;
 }
 
@@ -96,6 +104,27 @@
 html {
   scroll-behavior: auto;
   font-size: 16px; /* Explicit root size for reliable rem calculations */
+}
+
+/* Lenis smooth scrolling styles */
+html.lenis {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
 }
 
 body {
@@ -183,7 +212,7 @@ code {
 .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
 .section-padding { padding: 80px 0; }
 .text-gradient {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--text-color) 0%, var(--text-color-light) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -191,7 +220,7 @@ code {
 
 /* Buttons */
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #5a67d8 100%);
+  background: var(--color-primary);
   color: white;
   padding: 12px 32px;
   border: none;
@@ -206,7 +235,8 @@ code {
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+  background: var(--color-primary-hover);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
   color: #ffffff;
 }
 
@@ -225,8 +255,8 @@ code {
 }
 
 .btn-secondary:hover {
-  border-color: #667eea;
-  color: #667eea;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
   transform: translateY(-2px);
 }
 
@@ -417,21 +447,32 @@ table {
    Advanced Theme Enhancements
 ========================================= */
 
-/* Smooth Global Theme Transitions */
+/* Disable transitions during initial load */
+
+.no-transition *,
+.no-transition *::before,
+.no-transition *::after {
+  transition: none !important;
+}
+
+/* Smooth Scrolling */
 
 html {
   scroll-behavior: smooth;
 }
 
-body {
-  transition:
-    background-color 0.3s ease,
-    color 0.3s ease,
-    border-color 0.3s ease,
-    box-shadow 0.3s ease;
-}
+/* Optimized Theme Transitions */
 
-* {
+body,
+button,
+input,
+textarea,
+select,
+.card-theme,
+.navbar-theme,
+.modal-theme,
+.section-theme,
+.input-theme {
   transition:
     background-color 0.3s ease,
     color 0.3s ease,
@@ -445,62 +486,80 @@ body {
 /* Reusable Theme Utility Classes */
 
 .card-theme {
-  background-color: var(--card-bg-color);
-  color: var(--text-color);
+  background-color: var(
+    --card-bg-color
+  );
 
-  border: 1px solid var(--border-color);
+  color: var(
+    --text-color
+  );
 
-  transition: all 0.3s ease;
+  border: 1px solid
+    var(--border-color);
 }
 
 .input-theme {
-  background-color: var(--input-bg);
+  background-color: var(
+    --input-bg
+  );
 
-  color: var(--input-text);
+  color: var(
+    --input-text
+  );
 
-  border: 1px solid var(--border-color);
-
-  transition: all 0.3s ease;
+  border: 1px solid
+    var(--border-color);
 }
 
 .section-theme {
-  background-color: var(--bg-color);
+  background-color: var(
+    --bg-color
+  );
 
-  color: var(--text-color);
-
-  transition: all 0.3s ease;
+  color: var(
+    --text-color
+  );
 }
 
 .navbar-theme {
-  background-color: var(--navbar-bg);
+  background-color: var(
+    --navbar-bg
+  );
 
-  color: var(--text-color);
-
-  transition: all 0.3s ease;
+  color: var(
+    --text-color
+  );
 }
 
 .modal-theme {
-  background-color: var(--modal-bg);
+  background-color: var(
+    --modal-bg
+  );
 
-  color: var(--text-color);
-
-  transition: all 0.3s ease;
+  color: var(
+    --text-color
+  );
 }
 
 /* Better Hover Effects */
 
 .hover-theme:hover {
-  transform: translateY(-2px);
-
-  transition: all 0.3s ease;
+  transform: translateY(
+    -2px
+  );
 }
 
-/* Better Shadows */
+/* Better Dark Shadows */
 
 .dark .shadow-theme {
   box-shadow:
     0 4px 20px
-    rgba(0, 0, 0, 0.4);
+    rgba(
+      0,
+      0,
+      0,
+      0.4
+    );
 }
 
 /* Better Focus States */
@@ -510,5 +569,10 @@ body {
 
   box-shadow:
     0 0 0 3px
-    rgba(59, 130, 246, 0.5);
+    rgba(
+      59,
+      130,
+      246,
+      0.5
+    );
 }

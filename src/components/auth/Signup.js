@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
-
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
 import { User, AtSign } from 'lucide-react'
 
@@ -34,6 +34,7 @@ const assessStrength = (password) => {
 };
 
 const Signup = () => {
+  useDocumentTitle("Sign Up | Eventra");
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -53,9 +54,11 @@ const Signup = () => {
   const [passwordMatchMessage, setPasswordMatchMessage] = useState("");
   const navigate = useNavigate();
   const { setAuthSession } = useAuth();
-
-
-
+  const introPoints = [
+    "Create your account to post events, join hackathons, and submit projects.",
+    "Track your activity, registrations, and community engagement from one profile.",
+    "Get quick access to the tools you need to start contributing immediately.",
+  ];
 
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -79,6 +82,9 @@ const Signup = () => {
         setPasswordMatchMessage("");
         if (e.target.name === "confirmPassword" && e.target.value) {
           setError("Passwords do not match");
+        } else {
+          // password field was cleared, reset error too
+          setError("");
         }
       }
     }
@@ -107,88 +113,186 @@ const Signup = () => {
       else setLastNameError("");
     }
 
-    if (error) setError("");
+    // FIX: Only clear the error when changing non-password fields,
+    // so the "Passwords do not match" error persists correctly.
+    if (error && e.target.name !== "password" && e.target.name !== "confirmPassword") {
+      setError("");
+    }
   };
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
   const toggleConfirmPasswordVisibility = () => setShowConfirmPassword(!showConfirmPassword);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  useEffect(() => {
+  const timer = setTimeout(() => {
+    const { password, confirmPassword } = formData;
 
-    if (!validateEmail(formData.email)) {
-      setEmailError("Invalid email format");
+    if (!password || !confirmPassword) {
+      setError("");
+      setPasswordMatchMessage("");
       return;
     }
 
-    if (formData.password !== formData.confirmPassword) {
+    if (password === confirmPassword) {
+      setError("");
+      setPasswordMatchMessage("Passwords match!");
+    } else {
       setError("Passwords do not match");
-      return;
+      setPasswordMatchMessage("");
     }
+  }, 1000);
 
-    const { criteriaMet } = assessStrength(formData.password);
-    if (criteriaMet < 5) {
-      setError("Password doesn't meet the security criteria (must meet all 5 requirements).");
-      return;
-    }
+  return () => clearTimeout(timer);
+}, [formData]);
 
-    setLoading(true);
-    
-    setError("");
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    try {
-      const response = await apiUtils.post(API_ENDPOINTS.AUTH.REGISTER, {
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
+  if (!formData.firstName.trim()) {
+    setError("First name is required");
+    return;
+  }
+
+  if (formData.firstName.trim().length < 2) {
+    setError("First name must be at least 2 characters");
+    return;
+  }
+
+  if (!formData.lastName.trim()) {
+    setError("Last name is required");
+    return;
+  }
+
+  if (formData.lastName.trim().length < 2) {
+    setError("Last name must be at least 2 characters");
+    return;
+  }
+
+  if (!formData.email.trim()) {
+    setError("Email is required");
+    return;
+  }
+
+  if (!validateEmail(formData.email)) {
+    setEmailError("Invalid email format");
+    return;
+  }
+
+  if (!formData.password.trim()) {
+    setError("Password is required");
+    return;
+  }
+
+  if (formData.password.length < 8) {
+    setError(
+      "Password must be at least 8 characters long"
+    );
+    return;
+  }
+
+  if (!formData.confirmPassword.trim()) {
+    setError("Confirm password is required");
+    return;
+  }
+
+  if (
+    formData.password !==
+    formData.confirmPassword
+  ) {
+    setError("Passwords do not match");
+    return;
+  }
+
+  const { criteriaMet } = assessStrength(
+    formData.password
+  );
+
+  if (criteriaMet < 5) {
+    setError(
+      "Password doesn't meet the security criteria (must meet all 5 requirements)."
+    );
+    return;
+  }
+
+  setLoading(true);
+  setError("");
+
+  try {
+    const response = await apiUtils.post(
+      API_ENDPOINTS.AUTH.SIGNUP,
+      {
+        firstName:
+          formData.firstName.trim(),
+        lastName:
+          formData.lastName.trim(),
         email: formData.email.trim(),
         password: formData.password,
-        confirmPassword: formData.confirmPassword,
-      });
-
-      const responseText = await response.text();
-      let data = null;
-      try {
-        data = responseText ? JSON.parse(responseText) : null;
-      } catch {
-        data = null;
+        confirmPassword:
+          formData.confirmPassword,
       }
+    );
 
-      if (!response.ok) {
-        const backendMessage = data?.message || data?.error || '';
-        if (backendMessage) {
-          setError(`${backendMessage} (${response.status})`);
-        } else {
-          setError(`Registration failed (${response.status})`);
-        }
-        return;
-      }
+    const data = response.data;
 
-      const sessionToken = data?.token;
-      const sessionUser = {
-        id: data?.id,
-        firstName: data?.firstName ?? formData.firstName.trim(),
-        lastName: data?.lastName ?? formData.lastName.trim(),
-        email: data?.email ?? formData.email.trim(),
-        username: data?.username ?? formData.email.trim(),
-        role: data?.role ?? "USER",
-        roles: data?.role ? [data.role] : ["USER"],
-        permissions: data?.permissions ?? [],
-      };
+    const sessionToken = data?.token;
 
-      if (!sessionToken) {
-        throw new Error("Token missing from signup response");
-      }
+    const sessionUser = {
+      id: data?.id,
+      firstName:
+        data?.firstName ??
+        formData.firstName.trim(),
+      lastName:
+        data?.lastName ??
+        formData.lastName.trim(),
+      email:
+        data?.email ??
+        formData.email.trim(),
+      username:
+        data?.username ??
+        formData.email.trim(),
+      role: data?.role ?? "USER",
+      roles: data?.role
+        ? [data.role]
+        : ["USER"],
+      permissions:
+        data?.permissions ?? [],
+    };
 
-      setAuthSession(sessionToken, sessionUser);
-      setSuccess("Account created successfully! Redirecting to dashboard...");
-      setTimeout(() => navigate("/dashboard", { replace: true }), 1200);
-    } catch (err) {
-      setError(err.message || "Network error. Please try again.");
-      console.error(err);
-    } finally {
-      setLoading(false);
+    if (!sessionToken) {
+      throw new Error(
+        "Token missing from signup response"
+      );
     }
-  };
+
+    setAuthSession(
+      sessionToken,
+      sessionUser
+    );
+
+    setSuccess(
+      "Account created successfully! Redirecting to dashboard..."
+    );
+
+    setTimeout(
+      () =>
+        navigate("/dashboard", {
+          replace: true,
+        }),
+      1200
+    );
+  } catch (err) {
+    const backendMessage = err.response?.data?.message || err.response?.data?.error;
+    setError(
+      backendMessage ||
+        err.message ||
+        "Network error. Please try again."
+    );
+
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <motion.div
@@ -197,40 +301,37 @@ const Signup = () => {
       transition={{ duration: 0.6 }}
       className="pastel-grid-bg  min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8"
     >
-       <div className="max-w-5xl w-full mx-auto">
+       <div className="max-w-4xl w-full mx-auto">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6 }}
-          className="bg-white dark:bg-gray-800 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700"
+          className="w-full pl-3 pr-4 py-3 my-14 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
         >
         <div className="md:flex">  
 
           {/* LEFT PANEL */}
           <div className="relative z-10 md:w-[38%] bg-gradient-to-br from-blue-100 via-yellow-50 to-pink-100 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900 text-gray-900 dark:text-white p-12 flex flex-col justify-between rounded-3xl">
             <div>
-              <h2 className="text-4xl font-extrabold mb-4" style={{ fontFamily: '"Anton", sans-serif' }}>
+              <h2 className="text-4xl text-center font-extrabold mb-5" style={{ fontFamily: '"Anton", sans-serif' }}>
                 Join Eventra
               </h2>
               
               <p className="mb-8 text-lg opacity-90 leading-relaxed">
                 Create your free account and start building amazing events.
               </p>
-            </div>
-       
-            {/* <div className="mt-8 flex items-center p-4 bg-white/10 rounded-2xl hover:bg-white/20 transition duration-300 ease-in-out">
-              <div className="bg-white/20 p-3 rounded-full mr-4 flex items-center justify-center flex-shrink-0">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                </svg>
+              <div className="space-y-3">
+                {introPoints.map((point) => (
+                  <div
+                    key={point}
+                    className="flex items-start gap-3 rounded-xl border border-white/20 bg-white/10 py-3 text-sm text-gray-800 dark:text-gray-100 backdrop-blur-sm"
+                  >
+                    <span className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-500 shrink-0" />
+                    <span className="leading-relaxed">{point}</span>
+                  </div>
+                ))}
               </div>
-              <p className="text-sm text-white/80">
-                Already have an account?{" "}
-                <Link to="/login" className="font-semibold text-white hover:text-white/80 transition-colors" style={{ color: 'white' }}>
-                  Sign in
-                </Link>
-              </p>
-            </div> */}
+            </div>
           </div>
           
            {/* RIGHT PANEL */}
@@ -259,7 +360,7 @@ const Signup = () => {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
               Create Your Account
             </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400 p-2">
+            <p className="text-sm text-gray-600 dark:text-gray-400 pt-2 pb-5">
               Join Eventra and start building amazing events
             </p>
           </div>
@@ -318,11 +419,9 @@ const Signup = () => {
               </label>
 
               <div className="relative">
-                {/* @ Icon */}
                 <AtSign
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-300 w-5 h-5 pointer-events-none"
                 />
-
                 <input
                   id="email"
                   name="email"
@@ -340,6 +439,7 @@ const Signup = () => {
                 <p className="text-red-500 text-xs mt-1">{emailError}</p>
               )}
             </div>
+
             <div>
               <label htmlFor="password" className="block text-sm text-gray-700 dark:text-gray-300">
                 Password <sup className="text-red-500">*</sup>
@@ -366,7 +466,14 @@ const Signup = () => {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Enter your password"
-                  className="w-full pl-10 pr-4 py-3 bg-white/60 dark:bg-gray-700/70 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                  // FIX: Border turns green when passwords match, red when they don't
+                  className={`w-full pl-10 pr-10 py-3 bg-white/60 dark:bg-gray-700/70 border rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white ${
+                    formData.password && formData.confirmPassword
+                      ? passwordMatchMessage
+                        ? "border-green-500"
+                        : "border-red-400"
+                      : "border-gray-200 dark:border-gray-600"
+                  }`}
                   required
                 />
                 <button
@@ -442,7 +549,14 @@ const Signup = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   placeholder="Confirm your password"
-                  className="w-full pl-10 pr-4 py-3 bg-white/60 dark:bg-gray-700/70 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                  // FIX: Border turns green when passwords match, red when they don't
+                  className={`w-full pl-10 pr-10 py-3 bg-white/60 dark:bg-gray-700/70 border rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white ${
+                    formData.confirmPassword
+                      ? passwordMatchMessage
+                        ? "border-green-500"
+                        : "border-red-400"
+                      : "border-gray-200 dark:border-gray-600"
+                  }`}
                   required
                 />
                 <button
@@ -510,12 +624,17 @@ const Signup = () => {
               </div>
             )}
 
+            {/* Smart Button Gating using password strength and required fields */}
             <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={formData.firstName && formData.lastName && formData.email && formData.password && formData.confirmPassword && (formData.password === formData.confirmPassword) && assessStrength(formData.password).criteriaMet === 5 && !loading ? { scale: 1.02 } : {}}
+              whileTap={formData.firstName && formData.lastName && formData.email && formData.password && formData.confirmPassword && (formData.password === formData.confirmPassword) && assessStrength(formData.password).criteriaMet === 5 && !loading ? { scale: 0.98 } : {}}
               type="submit"
-              disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-300 hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
+              disabled={loading || !formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim() || !formData.password.trim() || !formData.confirmPassword.trim() || (formData.password !== formData.confirmPassword) || assessStrength(formData.password).criteriaMet < 5}
+              className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-semibold transition-all duration-300 ${
+                loading || !formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim() || !formData.password.trim() || !formData.confirmPassword.trim() || (formData.password !== formData.confirmPassword) || assessStrength(formData.password).criteriaMet < 5
+                  ? "bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed opacity-60"
+                  : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md hover:shadow-lg focus:ring-2 focus:ring-blue-500/20 active:scale-98"
+              }`}
             >
               {loading ? (
                 <svg
@@ -562,8 +681,6 @@ const Signup = () => {
         </motion.div>
       </div>
     </motion.div>
-
-    
   );
 };
 

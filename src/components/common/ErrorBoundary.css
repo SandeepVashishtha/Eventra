@@ -223,3 +223,182 @@
     text-align: center;
   }
 }
+/* ============================================================
+   Advanced Recovery & Accessibility Enhancements
+============================================================ */
+
+/* Error ID */
+
+.eb-error-id {
+  margin-bottom: 24px;
+
+  font-size: 0.85rem;
+
+  color: var(
+    --text-color-light,
+    #6b7280
+  );
+
+  opacity: 0.9;
+}
+
+/* Copy Error Button */
+
+.eb-btn-copy {
+  background:
+    rgba(
+      239,
+      68,
+      68,
+      0.08
+    );
+
+  color: #ef4444;
+
+  padding: 12px 28px;
+
+  border: 1px solid
+    rgba(
+      239,
+      68,
+      68,
+      0.2
+    );
+
+  border-radius: 10px;
+
+  font-family: inherit;
+
+  font-size: var(
+    --font-body,
+    1rem
+  );
+
+  font-weight: var(
+    --fw-semibold,
+    600
+  );
+
+  cursor: pointer;
+
+  transition:
+    all 0.25s ease;
+}
+
+.eb-btn-copy:hover {
+  background:
+    rgba(
+      239,
+      68,
+      68,
+      0.15
+    );
+
+  transform:
+    translateY(-2px);
+}
+
+/* Better Focus Accessibility */
+
+.eb-btn-primary:focus-visible,
+.eb-btn-secondary:focus-visible,
+.eb-btn-copy:focus-visible {
+  outline: 3px solid
+    rgba(
+      102,
+      126,
+      234,
+      0.35
+    );
+
+  outline-offset: 3px;
+}
+
+/* Reduced Motion Accessibility */
+
+@media (
+  prefers-reduced-motion: reduce
+) {
+  .eb-card,
+  .eb-btn-primary,
+  .eb-btn-secondary,
+  .eb-btn-copy {
+    animation: none;
+
+    transition: none;
+  }
+}
+
+/* Glass Blur Enhancement */
+
+.eb-card {
+  backdrop-filter:
+    blur(14px);
+
+  -webkit-backdrop-filter:
+    blur(14px);
+}
+
+/* Inline Variant */
+
+.eb-inline {
+  position: relative;
+
+  min-height: 320px;
+
+  padding: 32px;
+}
+
+/* Card Variant */
+
+.eb-card-variant {
+  position: relative;
+
+  padding: 32px;
+}
+
+/* Better Dark Mode */
+
+.dark .eb-overlay {
+  background-image:
+    linear-gradient(
+      to right,
+      rgba(
+        59,
+        130,
+        246,
+        0.08
+      )
+      1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(
+        250,
+        204,
+        21,
+        0.06
+      )
+      1px,
+      transparent 1px
+    );
+}
+
+/* Better Scrollbar */
+
+.eb-stack::-webkit-scrollbar {
+  width: 8px;
+}
+
+.eb-stack::-webkit-scrollbar-thumb {
+  background:
+    rgba(
+      102,
+      126,
+      234,
+      0.45
+    );
+
+  border-radius: 999px;
+}

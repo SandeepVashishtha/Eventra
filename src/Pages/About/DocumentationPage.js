@@ -22,8 +22,9 @@ import {
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react"; // make sure these are imported
-
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 export default function DocumentationPage() {
+  useDocumentTitle("Documentation | Eventra");
   const sectionVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },

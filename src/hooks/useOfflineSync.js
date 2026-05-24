@@ -1,80 +1,114 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
-import { API_ENDPOINTS } from '../config/api';
+import { API_ENDPOINTS, apiUtils } from '../config/api';
+import { getQueue, setQueue, clearQueue } from '../utils/offlineQueue';
 
-const QUEUE_KEY = 'eventra_offline_queue';
+const MAX_RETRIES = 3;
+const BASE_BACKOFF_MS = 1_000;
 
 const useOfflineSync = () => {
   const { token } = useAuth();
+  const isSyncing = useRef(false);
 
   useEffect(() => {
-    const handleOnline = async () => {
-      const queueStr = localStorage.getItem(QUEUE_KEY);
-      if (!queueStr) return;
+    const postWithBackoff = async (url, payload, authToken, attempt = 0) => {
+      if (attempt > 0) {
+        const delayMs = BASE_BACKOFF_MS * Math.pow(2, attempt - 1);
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
 
-      let queue = [];
       try {
-        queue = JSON.parse(queueStr);
-      } catch (e) {
-        localStorage.removeItem(QUEUE_KEY);
-        return;
-      }
-
-      if (queue.length === 0) return;
-
-      // Notify user sync is starting
-      toast.info(`Syncing ${queue.length} offline registration(s)...`, { autoClose: 2000 });
-
-      const failedQueue = [];
-      let successCount = 0;
-
-      for (const item of queue) {
-        try {
-          const response = await fetch(API_ENDPOINTS.EVENTS.REGISTER(item.eventId), {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(token && { Authorization: `Bearer ${token}` }),
-            },
-            body: JSON.stringify(item.payload),
-          });
-
-          if (response.ok) {
-            successCount++;
-          } else {
-            // If the server rejected it (e.g. 400 Bad Request), we still drop it from the queue
-            // to avoid infinite retry loops on invalid data.
-            console.error('Registration rejected by server:', await response.text());
-          }
-        } catch (error) {
-          // Network error again, keep in queue
-          failedQueue.push(item);
+        const response = await apiUtils.post(url, payload, authToken);
+        return response.ok;
+      } catch (error) {
+        if (error.status >= 400 && error.status < 500) {
+          console.warn(
+            `Offline queue: server rejected item with ${error.status}, dropping.`,
+            error.data || "",
+          );
+          return true;
         }
-      }
 
-      if (failedQueue.length > 0) {
-        localStorage.setItem(QUEUE_KEY, JSON.stringify(failedQueue));
-        if (successCount > 0) {
-          toast.warning(`Synced ${successCount} registration(s). ${failedQueue.length} remain queued.`);
-        }
-      } else {
-        localStorage.removeItem(QUEUE_KEY);
-        if (successCount > 0) {
-          toast.success('Offline registrations synced successfully!');
-        }
+        throw error;
       }
     };
 
-    window.addEventListener('online', handleOnline);
+    const handleOnline = async () => {
+      if (isSyncing.current) {
+        return;
+      }
 
-    // Also run once on mount in case they came online before the app loaded
+      const queue = getQueue();
+      if (queue.length === 0) {
+        return;
+      }
+
+      isSyncing.current = true;
+
+      try {
+        toast.info(`Syncing ${queue.length} offline registration(s)...`, {
+          autoClose: 2000,
+        });
+
+        const failedQueue = [];
+        let successCount = 0;
+        let droppedCount = 0;
+
+        for (const item of queue) {
+          const retries = item.retries ?? 0;
+
+          if (retries >= MAX_RETRIES) {
+            droppedCount++;
+            continue;
+          }
+
+          try {
+            const ok = await postWithBackoff(
+              API_ENDPOINTS.EVENTS.REGISTER(item.eventId),
+              item.payload,
+              token,
+              retries,
+            );
+
+            if (ok) {
+              successCount++;
+            }
+          } catch (error) {
+            failedQueue.push({ ...item, retries: retries + 1 });
+          }
+        }
+
+        if (failedQueue.length > 0) {
+          setQueue(failedQueue);
+          toast.warning(
+            `Synced ${successCount} registration(s). ${failedQueue.length} still queued.`,
+          );
+        } else {
+          clearQueue();
+          if (successCount > 0) {
+            toast.success("All offline registrations synced!");
+          }
+        }
+
+        if (droppedCount > 0) {
+          toast.error(
+            `${droppedCount} registration(s) dropped after ${MAX_RETRIES} attempts.`,
+          );
+        }
+      } finally {
+        isSyncing.current = false;
+      }
+    };
+
+    window.addEventListener("online", handleOnline);
+
     if (navigator.onLine) {
       handleOnline();
     }
 
     return () => {
-      window.removeEventListener('online', handleOnline);
+      window.removeEventListener("online", handleOnline);
     };
   }, [token]);
 };

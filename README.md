@@ -45,6 +45,7 @@ This repository contains the React frontend application for Eventra. The backend
 
 - **Base URL**: [https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net](https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net)
 - **Swagger**: [https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html](https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html)
+- Capacity and registration availability endpoints are documented in Swagger UI.
 
 
 ## Project Insights
@@ -164,8 +165,10 @@ Eventra/
 │   │   ├── styles/
 │   │   └── user/
 │   ├── config/
-│   ├── context/
 │   ├── jhalak/
+│   │   ├── FluidCursor.js   # Fluid cursor animation effect (navbar)
+│   │   └── RespawningText.js # Animated respawning/typewriter text effect
+│   ├── context/
 │   ├── Pages/
 │   ├── utils/
 │   ├── App.js
@@ -220,6 +223,17 @@ We welcome contributions from the community! To get started, please follow these
 
 This project is licensed under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for details.
 
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=sandeepvashishtha%2Feventra&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=sandeepvashishtha/eventra&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=sandeepvashishtha/eventra&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=sandeepvashishtha/eventra&type=date&legend=top-left" />
+ </picture>
+</a>
+
 ## Contributors
 
 A huge thank you to everyone who has contributed to Eventra! Your efforts make this project possible.
@@ -257,6 +271,37 @@ A huge thank you to everyone who has contributed to Eventra! Your efforts make t
 </table>
 
 ---
+## Environment Variables Setup
+
+Create a `.env` file in the project root by copying `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+Then replace the placeholder values with your own local configuration.
+
+Example:
+
+```env
+REACT_APP_API_URL=http://localhost:8080/api
+REACT_APP_GITHUB_TOKEN=your_github_token
+```
+
+### Required Environment Variables
+
+| Variable                        | Description                    |
+| ------------------------------- | ------------------------------ |
+| `NODE_ENV`                      | Application environment        |
+| `REACT_APP_API_URL`             | Backend API base URL           |
+| `REACT_APP_GITHUB_TOKEN`        | GitHub API token               |
+| `REACT_APP_EMAILJS_PUBLIC_KEY`  | EmailJS public key             |
+| `REACT_APP_EMAILJS_SERVICE_ID`  | EmailJS service ID             |
+| `REACT_APP_EMAILJS_TEMPLATE_ID` | EmailJS template ID            |
+| `REACT_APP_FACEBOOK_APP_ID`     | Facebook authentication app ID |
+
+The `.env.example` file contains all required environment variable names needed to run the project locally.
+
 Built with care by the Eventra Team
 
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, useAnimation } from "framer-motion";
+import useDocumentTitle from "../hooks/useDocumentTitle";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 import {
   Search,
@@ -152,6 +153,7 @@ const faqs = [
 ];
 
 const HelpCenter = () => {
+  useDocumentTitle("Eventra | Help Center");
   const [expandedFAQ, setExpandedFAQ] = useState(null);
   const controls = useAnimation();
 
