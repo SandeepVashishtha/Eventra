@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiUser, FiMail, FiPhone, FiBriefcase, FiAward, FiMessageSquare, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
 import useDocumentTitle from "../hooks/useDocumentTitle";
@@ -8,10 +8,11 @@ import { toast } from "react-toastify";
 import {
   isAlreadyRegistered,
   saveRegistration,
-} from "../utils/registrationUtils";
+} from "../utils/registerUtils";
 const RegistrationPage = () => {
   useDocumentTitle("Eventra | Registration");
   const navigate = useNavigate();
+  const { eventId = "general" } = useParams();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -62,6 +63,38 @@ const RegistrationPage = () => {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrors((prev) => ({ ...prev, submit: "" }));
+
+    try {
+      if (isAlreadyRegistered(eventId, formData.email)) {
+        setErrors((prev) => ({
+          ...prev,
+          submit: "You have already registered with this email address.",
+        }));
+        return;
+      }
+
+      saveRegistration(eventId, formData.email);
+      setSubmitSuccess(true);
+      toast.success("Registration successful!");
+    } catch (error) {
+      setErrors((prev) => ({
+        ...prev,
+        submit: "Something went wrong. Please try again.",
+      }));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
 

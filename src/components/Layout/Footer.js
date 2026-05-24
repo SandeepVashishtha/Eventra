@@ -120,7 +120,7 @@ const externalLinkProps = {
 };
 
 const ExternalLink = ({
-  href,git add src/components/Layout/Footer.js
+  href,
   children,
   className,
   ...props

@@ -14,6 +14,17 @@ import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
 import { darkTheme } from "../../components/styles/theme";
 
+const containerVariants = {
+  hidden: { opacity: 0, y: 8 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      staggerChildren: 0.06,
+    },
+  },
+};
+
 const HackathonHub = () => {
   const [hackathons, setHackathons] = useState([]);
   const [activeTab, setActiveTab] = useState("all");
@@ -540,47 +551,51 @@ const HackathonHub = () => {
             )}
           </AnimatePresence>
 
-          <div className="flex flex-wrap gap-3">
-            {[
-              { key: "all", label: "All Hackathons" },
-              { key: "live", label: "Live Now" },
-              { key: "upcoming", label: "Upcoming" },
-              { key: "completed", label: "Completed" },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`
-                  px-5 py-2.5
-                  rounded-full
-                  text-sm font-medium
-                  transition-all duration-300
-                  ${
-                    activeTab === tab.key
-                      ? darkTheme.buttonPrimary
-                      : `${darkTheme.card} ${darkTheme.textSecondary}`
-                  }
-                `}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex flex-wrap gap-3">
+              {[
+                { key: "all", label: "All Hackathons" },
+                { key: "live", label: "Live Now" },
+                { key: "upcoming", label: "Upcoming" },
+                { key: "completed", label: "Completed" },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`
+                    px-5 py-2.5
+                    rounded-full
+                    text-sm font-medium
+                    transition-all duration-300
+                    ${
+                      activeTab === tab.key
+                        ? darkTheme.buttonPrimary
+                        : `${darkTheme.card} ${darkTheme.textSecondary}`
+                    }
+                  `}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Sort by:
+              </label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
               >
-                {tab.label}
-              </button>
-            ))}
+                <option value="newest">Newest</option>
+                <option value="deadline">Deadline</option>
+                <option value="popularity">Popularity</option>
+                <option value="prize">Prize Amount</option>
+              </select>
+            </div>
           </div>
         </div>
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Sort by:</label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
-            >
-              <option value="newest">Newest</option>
-              <option value="deadline">Deadline</option>
-              <option value="popularity">Popularity</option>
-              <option value="prize">Prize Amount</option>
-            </select>
-          </div>
-        </motion.div>
         
       {/* Hackathons Grid */}
 <AnimatePresence mode="wait">
