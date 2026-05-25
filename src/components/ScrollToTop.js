@@ -10,7 +10,6 @@ export default function ScrollToTopButton() {
   const { pathname } = useLocation();
 
   const [visible, setVisible] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
   // Auto scroll to top on route change
@@ -26,23 +25,11 @@ export default function ScrollToTopButton() {
   const handleScroll = useCallback(() => {
     requestAnimationFrame(() => {
       const scrollTop = getScrollPosition();
-      const docHeight =
-        document.documentElement.scrollHeight -
-        document.documentElement.clientHeight;
-
-      const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-
-      setVisible(scrollTop > 300);
-      setScrollProgress(progress);
+      setVisible(scrollTop > 50);
     });
   }, []);
 
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.lenis ? window.lenis.scroll : window.scrollY;
-      setVisible(scrollY > 50);
-    };
-    
     handleScroll();
     
     if (window.lenis) {
