@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { syncSecureStorage } from '../utils/secureStorage';
 
 const SessionRecoveryContext = createContext();
 
 const SESSION_KEY = 'eventra_session_state';
-const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+const SESSION_TIMEOUT = 30 * 60 * 1000;
 
 export const useSessionRecovery = () => {
   const context = useContext(SessionRecoveryContext);
@@ -20,10 +21,17 @@ export const SessionRecoveryProvider = ({ children }) => {
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [showRecoveryPrompt, setShowRecoveryPrompt] = useState(false);
   const [lastActivity, setLastActivity] = useState(Date.now());
+
+  const lastActivityRef = useRef(Date.now());
   const saveTimeoutRef = useRef(null);
   const activityTimeoutRef = useRef(null);
 
-  // Check network connectivity
+  const updateActivity = useCallback(() => {
+    const now = Date.now();
+    setLastActivity(now);
+    lastActivityRef.current = now;
+  }, []);
+
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
@@ -45,11 +53,6 @@ export const SessionRecoveryProvider = ({ children }) => {
     };
   }, []);
 
-  // Track user activity for timeout
-  const updateActivity = useCallback(() => {
-    setLastActivity(Date.now());
-  }, []);
-
   useEffect(() => {
     const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
     events.forEach(event => window.addEventListener(event, updateActivity));
@@ -59,22 +62,26 @@ export const SessionRecoveryProvider = ({ children }) => {
     };
   }, [updateActivity]);
 
-  // Load session on mount
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(SESSION_KEY);
+      const saved = syncSecureStorage.getItem(SESSION_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         const now = Date.now();
-        
-        // Check if session is still valid (not expired)
-        if (now - parsed.timestamp < SESSION_TIMEOUT) {
+
+        const isValidTimestamp =
+          parsed &&
+          parsed.timestamp &&
+          parsed.timestamp &&
+          typeof parsed.timestamp === 'number' &&
+          !isNaN(parsed.timestamp);
+
+        if (isValidTimestamp && now - parsed.timestamp < SESSION_TIMEOUT) {
           setSessionData(parsed);
           setHasSession(true);
           setShowRecoveryPrompt(true);
         } else {
-          // Session expired, clear it
-          localStorage.removeItem(SESSION_KEY);
+          syncSecureStorage.removeItem(SESSION_KEY);
         }
       }
     } catch (e) {
@@ -82,7 +89,6 @@ export const SessionRecoveryProvider = ({ children }) => {
     }
   }, []);
 
-  // Save session with debounce
   const saveSession = useCallback((state) => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
@@ -93,21 +99,20 @@ export const SessionRecoveryProvider = ({ children }) => {
         const currentSession = {
           ...state,
           timestamp: Date.now(),
-          lastActivity: Date.now(),
+          lastActivity: lastActivityRef.current,
         };
-        localStorage.setItem(SESSION_KEY, JSON.stringify(currentSession));
+        syncSecureStorage.setItem(SESSION_KEY, JSON.stringify(currentSession));
         setSessionData(currentSession);
         setHasSession(true);
       } catch (e) {
         console.error('Failed to save session:', e);
       }
-    }, 1000); // Debounce for 1 second
+    }, 1000);
   }, []);
 
-  // Clear session
   const clearSession = useCallback(() => {
     try {
-      localStorage.removeItem(SESSION_KEY);
+      syncSecureStorage.removeItem(SESSION_KEY);
       setSessionData(null);
       setHasSession(false);
       setShowRecoveryPrompt(false);
@@ -116,56 +121,34 @@ export const SessionRecoveryProvider = ({ children }) => {
     }
   }, []);
 
-  // Restore session
   const restoreSession = useCallback(() => {
     if (!sessionData) return null;
     return sessionData;
   }, [sessionData]);
 
-  // Dismiss recovery prompt
   const dismissRecoveryPrompt = useCallback(() => {
     setShowRecoveryPrompt(false);
   }, []);
 
-  // Handle tab close - save session
   useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      if (hasSession) {
-        // Session is already being saved automatically
-        // This is just a safety net
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [hasSession]);
-
-  // Check for inactivity timeout
-  useEffect(() => {
-    const checkInactivity = () => {
+    const interval = setInterval(() => {
       const now = Date.now();
-      const inactiveTime = now - lastActivity;
-      
-      // If inactive for more than session timeout, clear session
+      const inactiveTime = now - lastActivityRef.current;
+
       if (inactiveTime > SESSION_TIMEOUT && hasSession) {
         clearSession();
       }
-    };
-
-    const interval = setInterval(checkInactivity, 60000); // Check every minute
+    }, 60000);
 
     return () => clearInterval(interval);
-  }, [lastActivity, hasSession, clearSession]);
+  }, [hasSession, clearSession]);
 
-  // Cleanup on unmount
   useEffect(() => {
+    const saveTimeout = saveTimeoutRef.current;
+    const activityTimeout = activityTimeoutRef.current;
     return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-      if (activityTimeoutRef.current) {
-        clearTimeout(activityTimeoutRef.current);
-      }
+      if (saveTimeout) clearTimeout(saveTimeout);
+      if (activityTimeout) clearTimeout(activityTimeout);
     };
   }, []);
 
