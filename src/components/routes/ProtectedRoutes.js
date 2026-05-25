@@ -12,7 +12,6 @@ const Settings = lazy(() => import("../../Pages/Settings"));
 const AuthPage = lazy(() => import("../auth/AuthPage"));
 const Unauthorized = lazy(() => import("../auth/Unauthorized"));
 const PasswordReset = lazy(() => import("../auth/PasswordReset"));
-const NotFound = lazy(() => import("../NotFound"));
 const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
 
 export const getProtectedRoutes = () => [
