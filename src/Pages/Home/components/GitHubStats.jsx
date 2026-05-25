@@ -127,7 +127,7 @@ export default function GitHubStats() {
       } catch (err) {
         console.warn("GitHub stats fetch failed", err);
         if (!cached && mounted) {
-          setStats({ ...stats, stars: "—", forks: "—", issues: "—" });
+          setStats((s) => ({ ...s, stars: "—", forks: "—", issues: "—" }));
           setIsLoading(false);
         }
       }

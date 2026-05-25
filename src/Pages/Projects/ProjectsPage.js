@@ -9,9 +9,9 @@ import ProjectCTA from "./ProjectCTA";
 
 import mockProjects from "./mockProjectsData.json";
 
+import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
-import { apiUtils, API_ENDPOINTS } from "../../config/api";
 
 const ProjectGallery = () => {
   const [projects, setProjects] = useState([]);
@@ -40,11 +40,33 @@ const ProjectGallery = () => {
         setIsLoading(true);
         setError("");
 
-        const response = await apiUtils.get(API_ENDPOINTS.PROJECTS.ALL);
+        // --- PRODUCTION LOGIC: attempt real API call to Spring Boot backend ---
+        const response = await apiUtils.get(API_ENDPOINTS.PROJECTS.LIST);
         const projectsData = response.data;
 
-        setProjects(projectsData);
+        // only use API data if it is non-empty; otherwise fall back to mock
+        if (projectsData && projectsData.length > 0) {
+          setProjects(projectsData);
 
+          // Attempt to fetch categories from API
+          try {
+            const categoriesResponse = await apiUtils.get(
+              API_ENDPOINTS.PROJECTS.CATEGORIES
+            );
+            const categoriesData = categoriesResponse.data;
+            setCategories(["all", ...categoriesData]);
+          } catch {
+            // derive categories from API project data if categories endpoint throws
+            const uniqueCategories = [...new Set(projectsData.map(p => p.category))];
+            setCategories(["all", ...uniqueCategories]);
+          }
+          return; // exit successfully
+        }
+
+        // --- MOCK DATA FALLBACK: API returned empty array ---
+        console.warn("Projects API returned empty array — loading mock data.");
+        const projectsData = mockProjects;
+        setProjects(projectsData);
         const uniqueCategories = [
           ...new Set(projectsData.map((p) => p.category)),
         ];
