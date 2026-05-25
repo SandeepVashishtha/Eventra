@@ -4,57 +4,77 @@ import axios from "axios";
 // Base API URL
 // ---------------------------------------------------------------------------
 
-const getBaseUrl = () => {
-  const url = process.env.REACT_APP_API_URL;
-  if (!url) {
-    return "/api";
+const normalizeApiBaseUrl = (value = "") => {
+  if (!value) {
+    return "";
   }
-  return url.endsWith("/api") ? url : `${url}/api`;
+
+  const trimmed = value.replace(/\/+$/, "").replace(/\/api$/, "");
+
+  try {
+    const parsed = new URL(trimmed);
+    const hostname = parsed.hostname.toLowerCase();
+
+    if (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "0.0.0.0" ||
+      hostname === "::1"
+    ) {
+      return "";
+    }
+
+    return `${parsed.origin}${parsed.pathname === "/" ? "" : parsed.pathname}`;
+  } catch {
+    return /localhost|127\.0\.0\.1|0\.0\.0\.0|::1/i.test(trimmed) ? "" : trimmed;
+  }
 };
 
-const BASE_URL = getBaseUrl();
+const isDevelopment = process.env.NODE_ENV === "development";
+
+const resolveEnvApiBaseUrl = () => {
+  return normalizeApiBaseUrl(process.env.REACT_APP_API_URL || "http://localhost:8080");
+};
+
+export const API_BASE_URL = resolveEnvApiBaseUrl();
+
+const buildApiUrl = (path = "") => {
+  if (!path) {
+    return "";
+  }
+
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+  if (!API_BASE_URL) {
+    return normalizedPath;
+  }
+
+  return `${API_BASE_URL}${normalizedPath}`;
+};
 
 // ---------------------------------------------------------------------------
 // Network Resilience Configuration
 // ---------------------------------------------------------------------------
 
-/** Default request timeout in milliseconds (15 seconds). */
 const REQUEST_TIMEOUT_MS = 15_000;
-
-/** HTTP status codes that are safe to retry (transient server errors). */
 const RETRYABLE_STATUS_CODES = [502, 503, 504];
-
-/** Maximum number of automatic retries for retryable errors. */
 const MAX_RETRIES = 1;
-
-/** Base delay between retries in milliseconds. */
 const RETRY_DELAY_MS = 1_000;
-
-/**
- * isDev — true only in local development.
- * Used to gate verbose console.debug statements so they don't appear in production builds.
- */
-const isDev = process.env.NODE_ENV === "development";
+const isDev = isDevelopment;
 
 // ---------------------------------------------------------------------------
 // Normalized API Error
 // ---------------------------------------------------------------------------
 
-/**
- * A structured error class for consistent error handling across consumers.
- * Callers can check `isTimeout`, `isNetworkError`, or `status` to decide
- * how to respond without parsing raw axios error shapes.
- */
 export class ApiError extends Error {
-  /**
-   * @param {string} message          - Human-readable error description.
-   * @param {object} options
-   * @param {number|null} options.status        - HTTP status code (null for network/timeout).
-   * @param {*}           options.data          - Parsed response body if available.
-   * @param {boolean}     options.isTimeout     - True when the request was aborted by timeout.
-   * @param {boolean}     options.isNetworkError - True for connectivity failures.
-   */
-  constructor(message, { status = null, data = null, isTimeout = false, isNetworkError = false } = {}) {
+  constructor(
+    message,
+    { status = null, data = null, isTimeout = false, isNetworkError = false } = {}
+  ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
@@ -69,184 +89,42 @@ export class ApiError extends Error {
 // ---------------------------------------------------------------------------
 
 const API = axios.create({
-  baseURL: BASE_URL,
+  baseURL: API_BASE_URL || undefined,
+  timeout: REQUEST_TIMEOUT_MS,
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true, // Crucial for cookie-based auth/session handling
-  timeout: REQUEST_TIMEOUT_MS,
+  withCredentials: true,
 });
 
-// ---------------------------------------------------------------------------
-// Interceptors
-// ---------------------------------------------------------------------------
-
-// Request Interceptor: Ensures every request has the auth token (if available)
-API.interceptors.request.use(
-  (config) => {
-    // Attempt to get token from localStorage (adjust key name if your app uses a different one)
-    const token = localStorage.getItem("token"); 
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// Response Interceptor: Global 401 Unauthorized Handler
 let onUnauthorized = null;
 
-/**
- * Register unauthorized callback.
- * AuthContext sets this during initialization so that any 401 response
- * triggers a centralized logout + redirect.
- */
 export const setOnUnauthorizedHandler = (handler) => {
   onUnauthorized = handler;
 };
 
-// ---------------------------------------------------------------------------
-// Request Interceptor — per-request AbortController & debug logging
-// ---------------------------------------------------------------------------
+const normalizeRequestConfig = (configOrToken = {}, maybeToken) => {
+  const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
+  const token =
+    typeof configOrToken === "string"
+      ? configOrToken
+      : typeof maybeToken === "string"
+        ? maybeToken
+        : localStorage.getItem("token") || "";
 
-API.interceptors.request.use((config) => {
-  // Attach a per-request AbortController so callers can cancel if needed
-  if (!config.signal) {
-    const controller = new AbortController();
-    config.signal = controller.signal;
-    config._abortController = controller;
-  }
-
-  if (isDev) {
-    console.debug(`[API ${config.method?.toUpperCase()}]`, config.url);
+  if (token) {
+    config.headers = {
+      ...(config.headers || {}),
+      Authorization: `Bearer ${token}`,
+    };
   }
 
   return config;
-});
-
-// ---------------------------------------------------------------------------
-// Response Interceptor — 401 handling, retry, error normalization
-// ---------------------------------------------------------------------------
-
-API.interceptors.response.use(
-  // Success — pass through
-  (response) => response,
-  // Error — normalize and optionally retry
-  async (error) => {
-    const config = error.config || {};
-    const status = error?.response?.status;
-
-    // --- 401 Unauthorized: trigger session cleanup ---
-    if (status === 401) {
-      if (onUnauthorized) {
-        onUnauthorized();
-      }
-    }
-
-    // --- Automatic retry for transient 5xx errors ---
-    const retryCount = config._retryCount || 0;
-
-    if (
-      RETRYABLE_STATUS_CODES.includes(status) &&
-      retryCount < MAX_RETRIES
-    ) {
-      config._retryCount = retryCount + 1;
-
-      if (isDev) {
-        console.debug(
-          `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${RETRY_DELAY_MS}ms (attempt ${config._retryCount})…`
-        );
-      }
-
-      // Wait before retrying
-      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
-
-      return API(config);
-    }
-
-    // --- Normalize error into ApiError ---
-
-    // Timeout (axios uses ECONNABORTED code, AbortController uses AbortError)
-    if (error.code === "ECONNABORTED" || error.name === "AbortError" || error.message?.includes("timeout")) {
-      throw new ApiError(
-        `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
-        { isTimeout: true }
-      );
-    }
-
-    // Network error (offline, DNS failure, CORS, etc.)
-    if (!error.response) {
-      throw new ApiError(
-        error.message || `Network error: ${config.method?.toUpperCase()} ${config.url}`,
-        { isNetworkError: true }
-      );
-    }
-
-    // Server error with response body
-    throw new ApiError(
-      error.response?.data?.message || error.message || `Request failed with status ${status}`,
-      {
-        status: error.response.status,
-        data: error.response.data,
-      }
-    );
-  }
-);
-
-// ---------------------------------------------------------------------------
-// API Endpoints & Utilities
-// ---------------------------------------------------------------------------
-
-export const API_ENDPOINTS = {
-  AUTH: {
-    LOGIN: "/auth/login",
-    SIGNUP: "/auth/signup",
-    REGISTER: "/auth/signup",
-    LOGOUT: "/auth/logout",
-    RESET_PASSWORD: "/auth/reset-password",
-    GOOGLE: "/auth/google",
-  },
-  EVENTS: {
-    CREATE: "/events/create",
-    ALL: "/events",
-    LIST: "/events",
-    DETAIL: (id) => `/events/${id}`,
-    REGISTER: (id) => `/events/${id}/register`,
-  },
-  PROJECTS: {
-    ALL: "/projects",
-    LIST: "/projects",
-    DETAIL: (id) => `/projects/${id}`,
-    CATEGORIES: "/projects/categories",
-    SUBMIT: "/projects",
-  },
-  NOTIFICATIONS: {
-    ALL: "/notifications",
-    BASE: "/notifications",
-    READ: (id) => `/notifications/${id}/read`,
-    READ_ALL: "/notifications/read-all",
-  },
-  USERS: {
-    PROFILE: "/users/profile",
-    ACHIEVEMENTS: "/users/achievements",
-  },
-};
-
-const buildConfig = (configOrToken) => {
-  if (typeof configOrToken === 'string') {
-    return {
-      headers: {
-        Authorization: `Bearer ${configOrToken}`,
-      },
-    };
-  }
-  return configOrToken;
 };
 
 const wrapHeaders = (headers) => {
   if (!headers) return { get: () => null };
-  if (typeof headers.get === 'function') return headers;
+  if (typeof headers.get === "function") return headers;
   return {
     get: (key) => headers[key] || headers[key.toLowerCase()] || null,
   };
@@ -259,39 +137,127 @@ const wrapAxiosResponse = (response) => {
     headers: wrappedHeaders,
     ok: response.status >= 200 && response.status < 300,
     json: async () => response.data,
-    text: async () => typeof response.data === 'string' ? response.data : JSON.stringify(response.data),
+    text: async () =>
+      typeof response.data === "string" ? response.data : JSON.stringify(response.data),
   };
 };
 
-export const apiUtils = {
-  get: (url, configOrToken) => {
-    const config = buildConfig(configOrToken);
-    return API.get(url, config).then(wrapAxiosResponse);
-  },
+API.interceptors.request.use((config) => {
+  if (!config.signal) {
+    const controller = new AbortController();
+    config.signal = controller.signal;
+    config._abortController = controller;
+  }
 
-  post: (url, data = {}, configOrToken) => {
-    const config = buildConfig(configOrToken);
-    return API.post(url, data, config).then(wrapAxiosResponse);
-  },
+  if (isDev) {
+    console.debug(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
+  }
 
-  put: (url, data = {}, configOrToken) => {
-    const config = buildConfig(configOrToken);
-    return API.put(url, data, config).then(wrapAxiosResponse);
-  },
+  return config;
+});
 
-  patch: (url, data = {}, configOrToken) => {
-    const config = buildConfig(configOrToken);
-    return API.patch(url, data, config).then(wrapAxiosResponse);
-  },
+API.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config || {};
+    const status = error?.response?.status;
 
-  delete: (url, configOrToken) => {
-    const config = buildConfig(configOrToken);
-    return API.delete(url, config).then(wrapAxiosResponse);
+    if (status === 401 && onUnauthorized) {
+      onUnauthorized();
+    }
+
+    const retryCount = config._retryCount || 0;
+    if (RETRYABLE_STATUS_CODES.includes(status) && retryCount < MAX_RETRIES) {
+      config._retryCount = retryCount + 1;
+
+      if (isDev) {
+        console.debug(
+          `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${RETRY_DELAY_MS}ms (attempt ${config._retryCount})...`
+        );
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+      return API(config);
+    }
+
+    if (
+      error.code === "ECONNABORTED" ||
+      error.name === "AbortError" ||
+      error.message?.includes("timeout")
+    ) {
+      throw new ApiError(
+        `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
+        { isTimeout: true }
+      );
+    }
+
+    if (!error.response) {
+      throw new ApiError(
+        error.message || `Network error: ${config.method?.toUpperCase()} ${config.url}`,
+        { isNetworkError: true }
+      );
+    }
+
+    throw new ApiError(
+      error.response?.data?.message || error.message || `Request failed with status ${status}`,
+      {
+        status: error.response.status,
+        data: error.response.data,
+      }
+    );
+  }
+);
+
+// ---------------------------------------------------------------------------
+// API Endpoints
+// ---------------------------------------------------------------------------
+
+export const API_ENDPOINTS = {
+  AUTH: {
+    LOGIN: buildApiUrl("/api/auth/login"),
+    GOOGLE: buildApiUrl("/api/auth/google"),
+    REGISTER: buildApiUrl("/api/auth/signup"),
+    SIGNUP: buildApiUrl("/api/auth/signup"),
+    LOGOUT: buildApiUrl("/api/auth/logout"),
+    RESET_PASSWORD: buildApiUrl("/api/auth/reset-password"),
+  },
+  EVENTS: {
+    CREATE: buildApiUrl("/api/events/create"),
+    ALL: buildApiUrl("/api/events"),
+    LIST: buildApiUrl("/api/events"),
+    DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
+    REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
+  },
+  PROJECTS: {
+    ALL: buildApiUrl("/api/projects"),
+    LIST: buildApiUrl("/api/projects"),
+    DETAIL: (id) => buildApiUrl(`/api/projects/${id}`),
+    CATEGORIES: buildApiUrl("/api/projects/categories"),
+    SUBMIT: buildApiUrl("/api/projects"),
+  },
+  NOTIFICATIONS: {
+    ALL: buildApiUrl("/api/notifications"),
+    BASE: buildApiUrl("/api/notifications"),
+    READ: (id) => (id ? buildApiUrl(`/api/notifications/${id}/read`) : ""),
+    READ_ALL: buildApiUrl("/api/notifications/read-all"),
+  },
+  USERS: {
+    PROFILE: buildApiUrl("/api/users/profile"),
+    ACHIEVEMENTS: buildApiUrl("/api/users/achievements"),
   },
 };
 
-// ---------------------------------------------------------------------------
-// Default Export
-// ---------------------------------------------------------------------------
+export const apiUtils = {
+  get: (url, configOrToken = {}, maybeToken) =>
+    API.get(url, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
+  post: (url, data = {}, configOrToken = {}, maybeToken) =>
+    API.post(url, data, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
+  put: (url, data = {}, configOrToken = {}, maybeToken) =>
+    API.put(url, data, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
+  patch: (url, data = {}, configOrToken = {}, maybeToken) =>
+    API.patch(url, data, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
+  delete: (url, configOrToken = {}, maybeToken) =>
+    API.delete(url, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
+};
 
 export default API;

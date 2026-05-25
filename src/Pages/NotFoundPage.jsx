@@ -4,13 +4,21 @@ import { motion } from "framer-motion";
 
 const NotFoundPage = () => {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 text-center px-6">
-      
+    <div style={{
+      minHeight: "100vh",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      textAlign: "center",
+      padding: "24px"
+    }}>
       <motion.h1
         initial={{ opacity: 0, scale: 0.5 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6 }}
-        className="text-7xl md:text-9xl font-bold text-black dark:text-white"
+        style={{ fontSize: "8rem", fontWeight: "bold", color: "white", margin: "0" }}
       >
         404
       </motion.h1>
@@ -19,7 +27,7 @@ const NotFoundPage = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.6 }}
-        className="mt-4 text-2xl md:text-4xl font-semibold text-gray-800 dark:text-gray-200"
+        style={{ fontSize: "2rem", color: "white", marginTop: "10px" }}
       >
         Page Not Found
       </motion.h2>
@@ -28,10 +36,9 @@ const NotFoundPage = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4, duration: 0.6 }}
-        className="mt-4 text-gray-600 dark:text-gray-400 max-w-md"
+        style={{ color: "rgba(255,255,255,0.85)", marginTop: "16px", maxWidth: "400px" }}
       >
-        Sorry, the page you are looking for does not exist
-        or has been moved.
+        Sorry, the page you are looking for does not exist or has been moved.
       </motion.p>
 
       <motion.div
@@ -41,21 +48,17 @@ const NotFoundPage = () => {
       >
         <Link
           to="/"
-          className="
-            inline-block
-            mt-8
-            px-6
-            py-3
-            rounded-lg
-            bg-black
-            text-white
-            dark:bg-white
-            dark:text-black
-            font-medium
-            hover:scale-105
-            transition-transform
-            duration-300
-          "
+          style={{
+            display: "inline-block",
+            marginTop: "32px",
+            padding: "12px 30px",
+            borderRadius: "8px",
+            backgroundColor: "white",
+            color: "#764ba2",
+            fontWeight: "600",
+            textDecoration: "none",
+            fontSize: "1rem"
+          }}
         >
           Go Back Home
         </Link>

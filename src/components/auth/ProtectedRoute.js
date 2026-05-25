@@ -1,7 +1,8 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import Loading from '../common/Loading'; 
+import { isTokenValid } from '../../utils/auth';
+import Loading from '../common/Loading';
 
 const ProtectedRoute = ({ 
   children, 
@@ -12,7 +13,7 @@ const ProtectedRoute = ({
   validateContext = null,
   redirectTo = '/login' 
 }) => {
-  const { isAuthenticated, hasRole, hasPermission, loading, user } = useAuth();
+  const { isAuthenticated, hasRole, hasPermission, loading, user, token, logout } = useAuth();
   const location = useLocation();
 
   // Show loading spinner while checking authentication
@@ -26,8 +27,24 @@ const ProtectedRoute = ({
 
   // Check if authentication is required
   if (requireAuth && !isAuthenticated()) {
-     // ⬇️ preserve where the user wanted to go
-    return <Navigate to={redirectTo} replace state={{ from: location }} />;
+    // Distinguish between "never had a token" and "had a token that expired".
+    // Passing sessionExpired lets the Login page show a contextual banner
+    // instead of silently dropping the user on the login form.
+    const sessionExpired = !!token && !isTokenValid(token);
+
+    // Clean up stale session data so localStorage doesn't retain an
+    // expired token that would confuse subsequent checks.
+    if (sessionExpired) {
+      logout();
+    }
+
+    return (
+      <Navigate
+        to={redirectTo}
+        replace
+        state={{ from: location, sessionExpired }}
+      />
+    );
   }
 
   // Check required roles

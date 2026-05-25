@@ -2,41 +2,46 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/Eventra.png" />
 
+    <link rel="icon" href="%PUBLIC_URL%/favicon.png?v=2" />
+
+    <!-- Responsive -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
 
+    <!-- Theme -->
     <meta
       name="theme-color"
       content="#000000"
     />
 
+    <!-- Primary SEO -->
     <meta
       name="description"
       content="Open-source event management platform for communities, colleges, and organizations worldwide"
     />
 
-<link
+    <link
       rel="apple-touch-icon"
-      href="%PUBLIC_URL%/logo192.png"
+      href="%PUBLIC_URL%/Eventra.png?v=2"
     />
+
     <!-- Preconnect for faster external resource loading -->
     <link rel="preconnect" href="https://api.github.com" />
     <link rel="dns-prefetch" href="https://api.github.com" />
-    <link rel="preconnect" href="https://accounts.google.com" crossorigin />
-    <link rel="dns-prefetch" href="https://accounts.google.com" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
     <link
-      rel="manifest"
-      href="%PUBLIC_URL%/manifest.json"
+      rel="preconnect"
+      href="https://accounts.google.com"
+      crossorigin
+    />
+    <link
+      rel="dns-prefetch"
+      href="https://accounts.google.com"
     />
 
-    <!-- Preconnect -->
     <link
       rel="preconnect"
       href="https://fonts.googleapis.com"
@@ -46,6 +51,12 @@
       rel="preconnect"
       href="https://fonts.gstatic.com"
       crossorigin
+    />
+
+    <!-- Manifest -->
+    <link
+      rel="manifest"
+      href="%PUBLIC_URL%/manifest.json"
     />
 
     <!-- Fonts -->
@@ -70,44 +81,12 @@
       as="image"
     />
 
-  <!-- Prevent Theme Flickering -->
-<script>
-  document.documentElement.classList.add(
-    "no-transition"
-  );
+    <!-- Prevent Theme Flickering -->
+    <script>
 
-  (() => {
-    const savedTheme =
-      localStorage.getItem(
-        "theme"
-      );
+    </script>
 
-    const systemDark =
-      window.matchMedia(
-        "(prefers-color-scheme: dark)"
-      ).matches;
-
-    const theme =
-      savedTheme ||
-      (systemDark
-        ? "dark"
-        : "light");
-
-    document.documentElement.classList.add(
-      theme
-    );
-  })();
-
-  window.addEventListener(
-    "load",
-    () => {
-      document.documentElement.classList.remove(
-        "no-transition"
-      );
-    }
-  );
-</script>
-
+    <!-- Title -->
     <title>
       Eventra - Open Source Event Management Platform
     </title>
@@ -124,18 +103,17 @@
       defer
     ></script>
 
-    <!-- EmailJS for RSVP confirmation emails -->
+    <!-- EmailJS -->
     <script
       src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"
       async
     ></script>
   </head>
 
-  <body>
+  <body class="bg-white text-black dark:bg-gray-900 dark:text-white">
     <noscript>
       You need to enable JavaScript to run this app.
     </noscript>
-
     <div id="root"></div>
   </body>
 </html>

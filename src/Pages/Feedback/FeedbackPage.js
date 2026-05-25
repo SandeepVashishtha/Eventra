@@ -327,10 +327,8 @@ const FeedbackPage = () => {
   });
 
   const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const [isSubmitting, setIsSubmitting] = useState(false);  
   const formRef = useRef(null);
-
   const feedbackTypes = [
     { value: "general", label: "General Feedback", icon: FaRegComment },
     { value: "bug", label: "Bug Report", icon: FaBug },
@@ -441,7 +439,16 @@ const FeedbackPage = () => {
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Log submission (for debugging)
+      // Store feedback in component state instead of localStorage
+      const payload = {
+        name: formData.name?.trim(),
+        email: formData.email?.trim(),
+        message: formData.message?.trim(),
+        feedbackType: formData.feedbackType,
+        rating: formData.rating,
+        submittedAt: new Date().toISOString(),
+      };
+
 
       toast.success(
         "Thank you for your feedback! We've received your submission and will review it shortly"

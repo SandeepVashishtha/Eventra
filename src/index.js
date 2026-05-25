@@ -1,13 +1,9 @@
 import React from "react";
-import { GoogleOAuthProvider } from "@react-oauth/google";
 import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom"; // <-- 1. Added this import
 
 import "./index.css";
-
 import App from "./App";
-
-import { MotionConfig } from "framer-motion";
-
 import { ThemeProvider } from "./context/ThemeContext";
 import GlobalErrorBoundary from "./components/common/ErrorBoundary";
 import { initializeGlobalErrorHandling } from "./utils/globalErrorHandler";
@@ -16,24 +12,20 @@ import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 // Initialize Global Runtime Monitoring
 initializeGlobalErrorHandling();
 
-const root =
-  ReactDOM.createRoot(
-    document.getElementById(
-      "root"
-    )
-  );
+const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
-  <GlobalErrorBoundary>
-    <MotionConfig reducedMotion="user">
+  <React.StrictMode>
+    <GlobalErrorBoundary>
       <ThemeProvider>
-        <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
+        <BrowserRouter>
+          {" "}
+          {/* <-- 2. Wrapped the App here */}
           <App />
-        </GoogleOAuthProvider>
+        </BrowserRouter>
       </ThemeProvider>
-    </MotionConfig>
-  </GlobalErrorBoundary>
+    </GlobalErrorBoundary>
+  </React.StrictMode>
 );
 
-// Register the PWA service worker for robust offline performance and caching.
-serviceWorkerRegistration.register();
+serviceWorkerRegistration.unregister();
