@@ -940,17 +940,17 @@ const EventCreation = () => {
                   <ClipboardList className="w-5 h-5 text-indigo-500 inline-block mr-2" />
                   Description <span className="text-red-600">*</span>
                 </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  placeholder="Describe agenda / Mention speakers / Explain event goals"
-                  rows={4}
-                  maxLength={500}
-                  className={`w-full border ${
-                    errors.description ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-                  } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
-                />
+               <p
+  className={`text-sm text-right mt-1 ${
+    formData.description.length > 450
+      ? "text-red-500"
+      : formData.description.length > 350
+      ? "text-yellow-500"
+      : "text-gray-400"
+  }`}
+>
+  {formData.description.length}/500 characters
+</p>
 
                 {/* Character counter + error row */}
                 <div className="flex justify-between items-start mt-1">
