@@ -1,7 +1,16 @@
+<<<<<<< HEAD
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from "../config/api";
 import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils";
 import { toast } from "react-toastify";
+=======
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from '../config/api';
+import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
+import { syncSecureStorage } from '../utils/secureStorage';
+import { toast } from 'react-toastify';
+import { ROLES } from '../config/roles';
+>>>>>>> 9b32a1b6 (fix(auth): normalize RBAC handling and improve route protection)
 
 const AuthContext = createContext();
 
@@ -142,7 +151,17 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("token", sessionToken);
     localStorage.setItem("user", JSON.stringify(sessionUser));
   };
+  const normalizeRoles = (roles = []) => {
+    return roles.map((role) => {
+      const normalized = String(role).toUpperCase();
 
+      if (normalized === 'EVENT_MANAGER') {
+        return ROLES.ORGANIZER;
+      }
+
+      return normalized;
+    });
+  };
   const extractSession = (res, data, fallbackEmail) => {
     let sessionToken = data?.token ?? data?.accessToken ?? null;
 
@@ -154,7 +173,11 @@ export const AuthProvider = ({ children }) => {
     }
 
     const rawUser = data?.user ?? data?.data ?? data ?? null;
-    const resolvedRoles = rawUser?.roles ?? (rawUser?.role ? [rawUser.role] : []);
+    const rawRoles =
+      rawUser?.roles ??
+      (rawUser?.role ? [rawUser.role] : []);
+
+    const resolvedRoles = normalizeRoles(rawRoles);
     const sessionUser = {
       ...(rawUser || {}),
       firstName: rawUser?.firstName ?? "",
@@ -164,6 +187,7 @@ export const AuthProvider = ({ children }) => {
       role: rawUser?.role ?? resolvedRoles[0] ?? "",
       roles: resolvedRoles,
       permissions: rawUser?.permissions ?? [],
+<<<<<<< HEAD
       scopes:
         rawUser?.scopes ??
         (resolvedRoles.includes("ADMIN")
@@ -171,6 +195,15 @@ export const AuthProvider = ({ children }) => {
           : resolvedRoles.includes("EVENT_MANAGER")
             ? ["event:write", "event:read", "hackathon:write", "hackathon:read"]
             : ["event:read", "hackathon:read"]),
+=======
+      scopes: rawUser?.scopes ?? (
+        resolvedRoles.includes(ROLES.ADMIN)
+          ? ["admin:all", "event:write", "event:read", "hackathon:write", "hackathon:read"]
+          : resolvedRoles.includes(ROLES.ORGANIZER)
+            ? ["event:write", "event:read", "hackathon:write", "hackathon:read"]
+            : ["event:read", "hackathon:read"]
+      ),
+>>>>>>> 9b32a1b6 (fix(auth): normalize RBAC handling and improve route protection)
     };
 
     return { sessionToken, sessionUser };
@@ -265,7 +298,17 @@ export const AuthProvider = ({ children }) => {
     return true;
   }, [user, token]);
 
+<<<<<<< HEAD
   const hasRole = (roleName) => user?.roles?.includes(roleName) || false;
+=======
+  const hasRole = (roleName) => {
+    if (!user?.roles) return false;
+
+    return normalizeRoles(user.roles).includes(
+      String(roleName).toUpperCase()
+    );
+  };
+>>>>>>> 9b32a1b6 (fix(auth): normalize RBAC handling and improve route protection)
 
   const hasPermission = (permissionName) => user?.permissions?.includes(permissionName) || false;
 
@@ -274,12 +317,26 @@ export const AuthProvider = ({ children }) => {
   const hasAnyPermission = (...permissionNames) =>
     permissionNames.some((permission) => hasPermission(permission));
 
+<<<<<<< HEAD
   const isAdmin = () => hasRole("ADMIN");
   const isEventManager = () => hasRole("EVENT_MANAGER");
   const isSuperAdmin = () => hasRole("SUPER_ADMIN");
   const isOrganizer = () => hasRole("ORGANIZER");
   const isVolunteer = () => hasRole("VOLUNTEER");
   const isAttendee = () => hasRole("ATTENDEE");
+=======
+  const isAdmin = () => hasRole(ROLES.ADMIN);
+
+  const isEventManager = () => hasRole(ROLES.ORGANIZER);
+
+  const isSuperAdmin = () => hasRole(ROLES.SUPER_ADMIN);
+
+  const isOrganizer = () => hasRole(ROLES.ORGANIZER);
+
+  const isVolunteer = () => hasRole(ROLES.VOLUNTEER);
+
+  const isAttendee = () => hasRole(ROLES.ATTENDEE);
+>>>>>>> 9b32a1b6 (fix(auth): normalize RBAC handling and improve route protection)
 
   const value = {
     user,
