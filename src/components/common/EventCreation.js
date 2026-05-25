@@ -412,7 +412,7 @@ const [showRestoreModal, setShowRestoreModal] = useState(false);
       // Mock success if API inactive
       if (
         !API_ENDPOINTS.EVENTS.CREATE ||
-        process.env.NODE_ENV === "development"
+        (process.env.NODE_ENV === "development" && process.env.REACT_APP_USE_REAL_API === "true")
       ) {
         console.warn("⚠️ Mocking event creation success (API inactive)");
         await new Promise((resolve) => setTimeout(resolve, 1000));
