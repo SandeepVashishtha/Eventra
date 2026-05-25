@@ -322,7 +322,13 @@ const CollaborationHub = () => {
               
               <div className="form-group">
                 <label>Description</label>
-                <textarea rows="4" placeholder="Describe your collaboration opportunity..."></textarea>
+               <textarea
+  rows="4"
+  maxLength={300}
+  placeholder="Describe partnership goals / Sponsorship details / Collaboration ideas..."
+></textarea>
+
+
               </div>
               
               <div className="form-row">
