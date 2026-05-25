@@ -197,9 +197,9 @@ const registrationLocks = new Map();
 const EventRegistration = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated, token } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { addRegistration, myEvents } = useMyEvents();
-  const { saveSession, clearSession } = useSessionRecovery();
+  const { clearSession } = useSessionRecovery();
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);

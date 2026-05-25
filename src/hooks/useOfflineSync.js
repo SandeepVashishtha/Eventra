@@ -18,20 +18,26 @@ const useOfflineSync = () => {
         await new Promise((resolve) => setTimeout(resolve, delayMs));
       }
 
-      try {
-        const response = await apiUtils.post(url, payload, authToken);
-        return response.status === 200 || response.status === 201 || response.status === 204;
-      } catch (error) {
-        if (error.status >= 400 && error.status < 500) {
-          console.warn(
-            `Offline queue: server rejected item with ${error.status}, dropping.`,
-            error.data || "",
-          );
-          return true;
-        }
+      const headers = { 'Content-Type': 'application/json' };
+      if (authToken) headers.Authorization = `Bearer ${authToken}`;
 
-        throw error;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      // 2xx → success; 4xx → bad request (don't retry); 5xx → may be transient
+      if (response.ok) return true;
+      if (response.status >= 400 && response.status < 500) {
+        console.warn(
+          `Offline queue: server rejected item with ${response.status} — dropping.`,
+          await response.text().catch(() => '')
+        );
+        return true; // Treat as "handled" — bad data won't succeed on retry
       }
+
+      throw new Error(`Sync failed with status: ${response.status}`);
     };
 
     const handleOnline = async () => {

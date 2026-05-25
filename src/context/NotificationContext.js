@@ -18,7 +18,8 @@ export const NotificationProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = useCallback(async (options = { isBackground: false }) => {
+  const { isBackground } = options;
     if (!token) return;
 
     // Defensive check: safeguard against undefined/missing notification endpoints
@@ -29,7 +30,9 @@ export const NotificationProvider = ({ children }) => {
     }
 
     try {
-      setLoading(true);
+      if (!isBackground) {
+        setLoading(true);
+    }
       const response = await apiUtils.get(endpoint);
       const data = response.data;
       const normalizedData = Array.isArray(data) ? data : [];
@@ -38,8 +41,10 @@ export const NotificationProvider = ({ children }) => {
     } catch (error) {
       console.error('Error fetching notifications:', error);
     } finally {
-      setLoading(false);
-    }
+  if (!isBackground) {
+    setLoading(false);
+  }
+}
   }, [token]);
 
   const fetchAchievements = useCallback(async () => {
@@ -149,7 +154,10 @@ export const NotificationProvider = ({ children }) => {
     fetchAchievements();
 
     // Poll for new notifications at a fixed interval
-    const intervalId = setInterval(fetchNotifications, POLLING_INTERVAL_MS);
+    //  New line 152: Wrap it in an anonymous function to pass the flag
+const intervalId = setInterval(() => {
+  fetchNotifications({ isBackground: true });
+}, POLLING_INTERVAL_MS);
 
     return () => clearInterval(intervalId);
   }, [token, fetchNotifications, fetchAchievements]);

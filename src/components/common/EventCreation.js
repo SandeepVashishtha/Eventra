@@ -2,14 +2,9 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { Download } from "lucide-react";
-import {
-  
-} from "../../utils/eventDraftUtils";
-import { syncSecureStorage } from "../../utils/secureStorage";
+import {} from "../../utils/eventDraftUtils";
 
-
-import { exportAttendeesToCSV }
-from "../../utils/exportCsv";
+import { exportAttendeesToCSV } from "../../utils/exportCsv";
 import {
   ArrowRightIcon,
   CalendarIcon,
@@ -44,26 +39,26 @@ import {
 const DRAFT_KEY = "eventra_create_event_draft";
 
 const EventCreation = () => {
- const mockAttendees = [
-  {
-    name: "John Doe",
-    email: "john@example.com",
-    registrationDate: "2026-08-15",
-    ticketType: "VIP",
-  },
-  {
-    name: "Sarah Smith",
-    email: "sarah@example.com",
-    registrationDate: "2026-08-16",
-    ticketType: "General",
-  },
-  {
-    name: "Alex Johnson",
-    email: "alex@example.com",
-    registrationDate: "2026-08-17",
-    ticketType: "Workshop",
-  },
-];
+  const mockAttendees = [
+    {
+      name: "John Doe",
+      email: "john@example.com",
+      registrationDate: "2026-08-15",
+      ticketType: "VIP",
+    },
+    {
+      name: "Sarah Smith",
+      email: "sarah@example.com",
+      registrationDate: "2026-08-16",
+      ticketType: "General",
+    },
+    {
+      name: "Alex Johnson",
+      email: "alex@example.com",
+      registrationDate: "2026-08-17",
+      ticketType: "Workshop",
+    },
+  ];
   const [currentStep, setCurrentStep] = useState("form");
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -99,11 +94,11 @@ const EventCreation = () => {
     banner: null,
     bannerPreview: null,
   });
-const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState({});
   const [newTag, setNewTag] = useState("");
   // Track whether draft has been loaded to avoid overwriting on initial mount
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
-const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
   const categories = [
     { label: "Conference", value: "CONFERENCE" },
     { label: "Workshop", value: "WORKSHOP" },
@@ -128,8 +123,7 @@ const [showRestoreModal, setShowRestoreModal] = useState(false);
       newErrors.title = "Title must be between 3 and 200 characters";
     }
 
-    if (!formData.description.trim())
-      newErrors.description = "Event description is required";
+    if (!formData.description.trim()) newErrors.description = "Event description is required";
     if (!formData.category) newErrors.category = "Please select a category";
 
     if (formData.isMultiDay) {
@@ -148,11 +142,7 @@ const [showRestoreModal, setShowRestoreModal] = useState(false);
     if (!formData.startTime) newErrors.startTime = "Start time is required";
     if (!formData.endTime) newErrors.endTime = "End time is required";
 
-    if (
-      !newErrors.startTime &&
-      !newErrors.endTime &&
-      !formData.isMultiDay
-    ) {
+    if (!newErrors.startTime && !newErrors.endTime && !formData.isMultiDay) {
       // Convert time strings (HH:MM format) to minutes for proper comparison
       const parseTimeToMinutes = (timeStr) => {
         if (!timeStr) return 0;
@@ -184,12 +174,8 @@ const [showRestoreModal, setShowRestoreModal] = useState(false);
     }
 
     if (formData.registrationStart && formData.registrationEnd) {
-      if (
-        new Date(formData.registrationStart) >=
-        new Date(formData.registrationEnd)
-      ) {
-        newErrors.registrationEnd =
-          "Registration end must be after registration start";
+      if (new Date(formData.registrationStart) >= new Date(formData.registrationEnd)) {
+        newErrors.registrationEnd = "Registration end must be after registration start";
       }
     }
 
@@ -313,10 +299,7 @@ const [showRestoreModal, setShowRestoreModal] = useState(false);
 
   const addTag = () => {
     const trimmed = newTag.trim();
-    if (
-      trimmed &&
-      !formData.tags.some((tag) => tag.toLowerCase() === trimmed.toLowerCase())
-    ) {
+    if (trimmed && !formData.tags.some((tag) => tag.toLowerCase() === trimmed.toLowerCase())) {
       setFormData((prev) => ({
         ...prev,
         tags: [...prev.tags, trimmed],
@@ -347,10 +330,7 @@ const [showRestoreModal, setShowRestoreModal] = useState(false);
     setGeneralError("");
     try {
       let coordinates = null;
-      if (
-        formData.location.coordinates.latitude &&
-        formData.location.coordinates.longitude
-      ) {
+      if (formData.location.coordinates.latitude && formData.location.coordinates.longitude) {
         const lat = parseFloat(formData.location.coordinates.latitude);
         const lng = parseFloat(formData.location.coordinates.longitude);
 
@@ -360,12 +340,10 @@ const [showRestoreModal, setShowRestoreModal] = useState(false);
       }
 
       const eventStartDate = new Date(
-        `${formData.isMultiDay ? formData.startDate : formData.date}T${formData.startTime
-        }`
+        `${formData.isMultiDay ? formData.startDate : formData.date}T${formData.startTime}`
       );
       const eventEndDate = new Date(
-        `${formData.isMultiDay ? formData.endDate : formData.date}T${formData.endTime
-        }`
+        `${formData.isMultiDay ? formData.endDate : formData.date}T${formData.endTime}`
       );
 
       if (isNaN(eventStartDate.getTime()) || isNaN(eventEndDate.getTime())) {
@@ -381,10 +359,10 @@ const [showRestoreModal, setShowRestoreModal] = useState(false);
         location: formData.isVirtual
           ? null
           : {
-            name: formData.location.name.trim(),
-            address: formData.location.address?.trim() || "",
-            coordinates: coordinates,
-          },
+              name: formData.location.name.trim(),
+              address: formData.location.address?.trim() || "",
+              coordinates: coordinates,
+            },
         isVirtual: formData.isVirtual,
         virtualLink: formData.isVirtual ? formData.virtualLink.trim() : null,
         capacity: formData.capacity ? Number(formData.capacity) : null,
@@ -408,7 +386,7 @@ const [showRestoreModal, setShowRestoreModal] = useState(false);
           })),
       };
 
-      const token = syncSecureStorage.getItem("token");
+      const token = localStorage.getItem("token");
       if (!token) {
         toast.error("Authentication required. Please log in and try again.");
         setCurrentStep("form");
@@ -430,11 +408,7 @@ const [showRestoreModal, setShowRestoreModal] = useState(false);
         return;
       }
 
-      const response = await apiUtils.post(
-        API_ENDPOINTS.EVENTS.CREATE,
-        eventData,
-        token
-      );
+      const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData, token);
       const result = response.data;
 
       if (result.success) {
@@ -464,47 +438,44 @@ const [showRestoreModal, setShowRestoreModal] = useState(false);
     }
   };
 
- useEffect(() => {
-  const saved = localStorage.getItem(DRAFT_KEY);
-
-  if (saved) {
-    setShowRestoreModal(true);
-  }
-
-  setIsDraftLoaded(true);
-}, []);
-const handleRestoreDraft = () => {
-  try {
-    const saved =
-      localStorage.getItem(DRAFT_KEY);
+  useEffect(() => {
+    const saved = localStorage.getItem(DRAFT_KEY);
 
     if (saved) {
-      const parsed = JSON.parse(saved);
-
-      setFormData((prev) => ({
-        ...prev,
-        ...parsed,
-        banner: null,
-        bannerPreview: null,
-      }));
-
-      toast.success(
-        "Draft restored successfully!"
-      );
+      setShowRestoreModal(true);
     }
-  } catch (error) {
-    console.error(error);
-  }
 
-  setShowRestoreModal(false);
-};
-const handleDiscardDraft = () => {
-  localStorage.removeItem(DRAFT_KEY);
+    setIsDraftLoaded(true);
+  }, []);
+  const handleRestoreDraft = () => {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
 
-  setShowRestoreModal(false);
+      if (saved) {
+        const parsed = JSON.parse(saved);
 
-  toast.info("Saved draft discarded.");
-};
+        setFormData((prev) => ({
+          ...prev,
+          ...parsed,
+          banner: null,
+          bannerPreview: null,
+        }));
+
+        toast.success("Draft restored successfully!");
+      }
+    } catch (error) {
+      console.error(error);
+    }
+
+    setShowRestoreModal(false);
+  };
+  const handleDiscardDraft = () => {
+    localStorage.removeItem(DRAFT_KEY);
+
+    setShowRestoreModal(false);
+
+    toast.info("Saved draft discarded.");
+  };
   useEffect(() => {
     if (successMessage || generalError) {
       const timer = setTimeout(() => {
@@ -515,25 +486,21 @@ const handleDiscardDraft = () => {
     }
   }, [successMessage, generalError]);
 
-useEffect(() => {
-  // Prevent saving before draft restoration
-  if (!isDraftLoaded) return;
+  useEffect(() => {
+    // Prevent saving before draft restoration
+    if (!isDraftLoaded) return;
 
-  const { banner, bannerPreview, ...saveable } = formData;
+    const { banner, bannerPreview, ...saveable } = formData;
 
-  localStorage.setItem(
-    DRAFT_KEY,
-    JSON.stringify(saveable)
-  );
-}, [formData, isDraftLoaded]);
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
+  }, [formData, isDraftLoaded]);
 
-/**
- * Warn user before accidental refresh,
- * tab close, or browser close
- */
-useEffect(() => {
-  const hasUnsavedChanges = Object.entries(formData).some(
-    ([key, value]) => {
+  /**
+   * Warn user before accidental refresh,
+   * tab close, or browser close
+   */
+  useEffect(() => {
+    const hasUnsavedChanges = Object.entries(formData).some(([key, value]) => {
       // Ignore banner fields
       if (key === "banner" || key === "bannerPreview") {
         return false;
@@ -556,30 +523,23 @@ useEffect(() => {
 
       // Handle booleans/numbers
       return Boolean(value);
-    }
-  );
+    });
 
-  const handleBeforeUnload = (e) => {
-    if (hasUnsavedChanges) {
-      e.preventDefault();
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
 
-      // Required for browser warning
-      e.returnValue = "";
-    }
-  };
+        // Required for browser warning
+        e.returnValue = "";
+      }
+    };
 
-  window.addEventListener(
-    "beforeunload",
-    handleBeforeUnload
-  );
+    window.addEventListener("beforeunload", handleBeforeUnload);
 
-  return () => {
-    window.removeEventListener(
-      "beforeunload",
-      handleBeforeUnload
-    );
-  };
-}, [formData]);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [formData]);
 
   const resetForm = () => {
     setFormData({
@@ -602,9 +562,6 @@ useEffect(() => {
       virtualLink: "",
       capacity: "",
       isPublic: true,
-      isMultiDay: false,
-      startDate: "",
-      endDate: "",
       requiresApproval: false,
       registrationStart: "",
       registrationEnd: "",
@@ -645,17 +602,17 @@ useEffect(() => {
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-indigo-100 to-white dark:from-gray-900 dark:to-black flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-     {showRestoreModal && (
-  <div
-    className="
+      {showRestoreModal && (
+        <div
+          className="
       fixed inset-0 z-50
       flex items-center justify-center
       bg-black/50
       px-4
     "
-  >
-    <div
-      className="
+        >
+          <div
+            className="
         w-full max-w-md
         bg-white dark:bg-gray-900
         rounded-3xl
@@ -664,31 +621,30 @@ useEffect(() => {
         border border-gray-200
         dark:border-gray-700
       "
-    >
-      <h2
-        className="
+          >
+            <h2
+              className="
           text-2xl font-bold
           text-gray-900 dark:text-white
           mb-3
         "
-      >
-        Restore Draft?
-      </h2>
+            >
+              Restore Draft?
+            </h2>
 
-      <p
-        className="
+            <p
+              className="
           text-gray-600 dark:text-gray-400
           mb-6
         "
-      >
-        A previously saved event draft was found.
-        Would you like to restore it?
-      </p>
+            >
+              A previously saved event draft was found. Would you like to restore it?
+            </p>
 
-      <div className="flex justify-end gap-3">
-        <button
-          onClick={handleDiscardDraft}
-          className="
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={handleDiscardDraft}
+                className="
             px-4 py-2
             rounded-xl
             border border-gray-300
@@ -697,13 +653,13 @@ useEffect(() => {
             dark:hover:bg-gray-800
             transition
           "
-        >
-          Discard
-        </button>
+              >
+                Discard
+              </button>
 
-        <button
-          onClick={handleRestoreDraft}
-          className="
+              <button
+                onClick={handleRestoreDraft}
+                className="
             px-5 py-2
             rounded-xl
             bg-indigo-600
@@ -712,13 +668,13 @@ useEffect(() => {
             font-medium
             transition
           "
-        >
-          Restore Draft
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+              >
+                Restore Draft
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {successMessage && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -743,18 +699,13 @@ useEffect(() => {
         <>
           {/* Heading Section */}
           <div className="w-full max-w-4xl flex justify-end mb-6">
-  <button
-    onClick={() => {
-      exportAttendeesToCSV(
-        mockAttendees,
-        "event-attendees.csv"
-      );
+            <button
+              onClick={() => {
+                exportAttendeesToCSV(mockAttendees, "event-attendees.csv");
 
-      toast.success(
-        "CSV exported successfully!"
-      );
-    }}
-    className="
+                toast.success("CSV exported successfully!");
+              }}
+              className="
       inline-flex
       items-center
       gap-2
@@ -770,11 +721,11 @@ useEffect(() => {
       transition-all
       duration-300
     "
-  >
-    <Download size={18} />
-    Download CSV
-  </button>
-</div>
+            >
+              <Download size={18} />
+              Download CSV
+            </button>
+          </div>
           <motion.div
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -805,43 +756,36 @@ useEffect(() => {
             </div>
             <ul className="list-disc pl-6 space-y-3 text-gray-700 dark:text-gray-300 text-sm sm:text-base">
               <li>
-                Provide a{" "}
-                <span className="font-medium">clear and catchy title</span> that
+                Provide a <span className="font-medium">clear and catchy title</span> that
                 accurately represents your event (3-200 characters).
               </li>
               <li>
-                Write a{" "}
-                <span className="font-medium">detailed description</span>{" "}
-                explaining what attendees can expect and why they should join.
+                Write a <span className="font-medium">detailed description</span> explaining what
+                attendees can expect and why they should join.
               </li>
               <li>
-                Set{" "}
-                <span className="font-medium">accurate dates and times</span> to
-                avoid confusion. Make sure the end time is after the start time.
+                Set <span className="font-medium">accurate dates and times</span> to avoid
+                confusion. Make sure the end time is after the start time.
               </li>
               <li>
-                Choose between{" "}
-                <span className="font-medium">virtual or in-person</span> format
-                and provide the necessary details (link or location).
+                Choose between <span className="font-medium">virtual or in-person</span> format and
+                provide the necessary details (link or location).
               </li>
               <li>
-                Define <span className="font-medium">ticket tiers</span> if
-                applicable, with clear pricing and capacity limits.
+                Define <span className="font-medium">ticket tiers</span> if applicable, with clear
+                pricing and capacity limits.
               </li>
               <li>
-                Add relevant{" "}
-                <span className="font-medium">tags and categories</span> to help
-                people discover your event.
+                Add relevant <span className="font-medium">tags and categories</span> to help people
+                discover your event.
               </li>
               <li>
-                Upload an{" "}
-                <span className="font-medium">eye-catching banner image</span>{" "}
-                (max 5MB) to make your event stand out.
+                Upload an <span className="font-medium">eye-catching banner image</span> (max 5MB)
+                to make your event stand out.
               </li>
               <li>
-                Review all details in the{" "}
-                <span className="font-medium">preview</span> before publishing
-                your event.
+                Review all details in the <span className="font-medium">preview</span> before
+                publishing your event.
               </li>
             </ul>
           </motion.div>
@@ -872,16 +816,11 @@ useEffect(() => {
                   onChange={handleInputChange}
                   placeholder="Enter event title (3-200 characters)"
                   maxLength={200}
-                  className={`w-full border ${errors.title
-                      ? "border-red-500"
-                      : "border-gray-300 dark:border-gray-600"
-                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
+                  className={`w-full border ${
+                    errors.title ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                  } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
                 />
-                {errors.title && (
-                  <span className="text-red-500 text-sm mt-1">
-                    {errors.title}
-                  </span>
-                )}
+                {errors.title && <span className="text-red-500 text-sm mt-1">{errors.title}</span>}
               </motion.div>
 
               {/* Event Banner */}
@@ -974,16 +913,13 @@ useEffect(() => {
                   )}
 
                   {/* Error Message */}
-                  {errors.banner && (
-                    <span className="text-red-500 text-sm">
-                      {errors.banner}
-                    </span>
-                  )}
+                  {errors.banner && <span className="text-red-500 text-sm">{errors.banner}</span>}
 
                   {/* Preview Section */}
                   {formData.bannerPreview && (
                     <div className="rounded-lg overflow-hidden border border-indigo-200 dark:border-gray-700 shadow-md">
-                      <img loading="lazy"
+                      <img
+                        loading="lazy"
                         src={formData.bannerPreview}
                         alt="Banner preview"
                         className="w-full h-48 object-cover hover:scale-[1.02] transition-transform duration-300"
@@ -993,7 +929,7 @@ useEffect(() => {
                 </div>
               </motion.div>
 
-                            {/* Description */}
+              {/* Description */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -1011,19 +947,16 @@ useEffect(() => {
                   placeholder="Describe your event"
                   rows={4}
                   maxLength={500}
-                  className={`w-full border ${errors.description
-                      ? "border-red-500"
-                      : "border-gray-300 dark:border-gray-600"
-                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
+                  className={`w-full border ${
+                    errors.description ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                  } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
                 />
 
                 {/* Character counter + error row */}
                 <div className="flex justify-between items-start mt-1">
                   <div className="flex-1">
                     {errors.description && (
-                      <span className="text-red-500 text-sm">
-                        {errors.description}
-                      </span>
+                      <span className="text-red-500 text-sm">{errors.description}</span>
                     )}
                   </div>
                   {(() => {
@@ -1034,8 +967,8 @@ useEffect(() => {
                       ratio >= 0.95
                         ? "text-red-500"
                         : ratio >= 0.8
-                        ? "text-amber-500"
-                        : "text-gray-500 dark:text-gray-400";
+                          ? "text-amber-500"
+                          : "text-gray-500 dark:text-gray-400";
                     return (
                       <span
                         className={`text-xs font-medium ml-2 tabular-nums ${counterColor}`}
@@ -1063,10 +996,9 @@ useEffect(() => {
                   name="category"
                   value={formData.category}
                   onChange={handleInputChange}
-                  className={`w-full border ${errors.category
-                      ? "border-red-500"
-                      : "border-gray-300 dark:border-gray-600"
-                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
+                  className={`w-full border ${
+                    errors.category ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                  } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
                 >
                   <option value="">Select a category</option>
                   {categories.map((cat) => (
@@ -1076,9 +1008,7 @@ useEffect(() => {
                   ))}
                 </select>
                 {errors.category && (
-                  <span className="text-red-500 text-sm mt-1">
-                    {errors.category}
-                  </span>
+                  <span className="text-red-500 text-sm mt-1">{errors.category}</span>
                 )}
               </motion.div>
 
@@ -1161,15 +1091,12 @@ useEffect(() => {
                       value={formData.startDate}
                       onChange={handleInputChange}
                       min={todayString}
-                      className={`w-full border ${errors.startDate
-                          ? "border-red-500"
-                          : "border-gray-300 dark:border-gray-600"
-                        } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                      className={`w-full border ${
+                        errors.startDate ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.startDate && (
-                      <span className="text-red-500 text-sm mt-1 block">
-                        {errors.startDate}
-                      </span>
+                      <span className="text-red-500 text-sm mt-1 block">{errors.startDate}</span>
                     )}
                   </div>
 
@@ -1184,15 +1111,12 @@ useEffect(() => {
                       value={formData.endDate}
                       onChange={handleInputChange}
                       min={formData.startDate || todayString}
-                      className={`w-full border ${errors.endDate
-                          ? "border-red-500"
-                          : "border-gray-300 dark:border-gray-600"
-                        } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                      className={`w-full border ${
+                        errors.endDate ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.endDate && (
-                      <span className="text-red-500 text-sm mt-1 block">
-                        {errors.endDate}
-                      </span>
+                      <span className="text-red-500 text-sm mt-1 block">{errors.endDate}</span>
                     )}
                   </div>
 
@@ -1206,15 +1130,12 @@ useEffect(() => {
                       name="startTime"
                       value={formData.startTime}
                       onChange={handleInputChange}
-                      className={`w-full border ${errors.startTime
-                          ? "border-red-500"
-                          : "border-gray-300 dark:border-gray-600"
-                        } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                      className={`w-full border ${
+                        errors.startTime ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.startTime && (
-                      <span className="text-red-500 text-sm mt-1 block">
-                        {errors.startTime}
-                      </span>
+                      <span className="text-red-500 text-sm mt-1 block">{errors.startTime}</span>
                     )}
                   </div>
 
@@ -1228,15 +1149,12 @@ useEffect(() => {
                       name="endTime"
                       value={formData.endTime}
                       onChange={handleInputChange}
-                      className={`w-full border ${errors.endTime
-                          ? "border-red-500"
-                          : "border-gray-300 dark:border-gray-600"
-                        } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                      className={`w-full border ${
+                        errors.endTime ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.endTime && (
-                      <span className="text-red-500 text-sm mt-1 block">
-                        {errors.endTime}
-                      </span>
+                      <span className="text-red-500 text-sm mt-1 block">{errors.endTime}</span>
                     )}
                   </div>
                 </motion.div>
@@ -1260,15 +1178,12 @@ useEffect(() => {
                       value={formData.date}
                       onChange={handleInputChange}
                       min={todayString}
-                      className={`w-full border ${errors.date
-                          ? "border-red-500"
-                          : "border-gray-300 dark:border-gray-600"
-                        } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                      className={`w-full border ${
+                        errors.date ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.date && (
-                      <span className="text-red-500 text-sm mt-1 block">
-                        {errors.date}
-                      </span>
+                      <span className="text-red-500 text-sm mt-1 block">{errors.date}</span>
                     )}
                   </div>
 
@@ -1282,15 +1197,12 @@ useEffect(() => {
                       name="startTime"
                       value={formData.startTime}
                       onChange={handleInputChange}
-                      className={`w-full border ${errors.startTime
-                          ? "border-red-500"
-                          : "border-gray-300 dark:border-gray-600"
-                        } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                      className={`w-full border ${
+                        errors.startTime ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.startTime && (
-                      <span className="text-red-500 text-sm mt-1 block">
-                        {errors.startTime}
-                      </span>
+                      <span className="text-red-500 text-sm mt-1 block">{errors.startTime}</span>
                     )}
                   </div>
 
@@ -1304,15 +1216,12 @@ useEffect(() => {
                       name="endTime"
                       value={formData.endTime}
                       onChange={handleInputChange}
-                      className={`w-full border ${errors.endTime
-                          ? "border-red-500"
-                          : "border-gray-300 dark:border-gray-600"
-                        } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                      className={`w-full border ${
+                        errors.endTime ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.endTime && (
-                      <span className="text-red-500 text-sm mt-1 block">
-                        {errors.endTime}
-                      </span>
+                      <span className="text-red-500 text-sm mt-1 block">{errors.endTime}</span>
                     )}
                   </div>
                 </motion.div>
@@ -1356,15 +1265,12 @@ useEffect(() => {
                     value={formData.virtualLink}
                     onChange={handleInputChange}
                     placeholder="https://zoom.us/j/..."
-                    className={`w-full border ${errors.virtualLink
-                        ? "border-red-500"
-                        : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
+                    className={`w-full border ${
+                      errors.virtualLink ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
                   />
                   {errors.virtualLink && (
-                    <span className="text-red-500 text-sm mt-1">
-                      {errors.virtualLink}
-                    </span>
+                    <span className="text-red-500 text-sm mt-1">{errors.virtualLink}</span>
                   )}
                 </motion.div>
               ) : (
@@ -1385,15 +1291,12 @@ useEffect(() => {
                       value={formData.location.name}
                       onChange={handleInputChange}
                       placeholder="Convention Center, Community Hall, etc."
-                      className={`w-full border ${errors.location
-                          ? "border-red-500"
-                          : "border-gray-300 dark:border-gray-600"
-                        } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
+                      className={`w-full border ${
+                        errors.location ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                      } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
                     />
                     {errors.location && (
-                      <span className="text-red-500 text-sm mt-1">
-                        {errors.location}
-                      </span>
+                      <span className="text-red-500 text-sm mt-1">{errors.location}</span>
                     )}
                   </motion.div>
 
@@ -1478,15 +1381,12 @@ useEffect(() => {
                   placeholder="Leave empty for unlimited (max: 100,000)"
                   min="1"
                   max="100000"
-                  className={`w-full border ${errors.capacity
-                      ? "border-red-500"
-                      : "border-gray-300 dark:border-gray-600"
-                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
+                  className={`w-full border ${
+                    errors.capacity ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                  } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
                 />
                 {errors.capacity && (
-                  <span className="text-red-500 text-sm mt-1">
-                    {errors.capacity}
-                  </span>
+                  <span className="text-red-500 text-sm mt-1">{errors.capacity}</span>
                 )}
               </motion.div>
 
@@ -1522,15 +1422,14 @@ useEffect(() => {
                     name="registrationEnd"
                     value={formData.registrationEnd}
                     onChange={handleInputChange}
-                    className={`w-full border ${errors.registrationEnd
+                    className={`w-full border ${
+                      errors.registrationEnd
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
+                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
                   />
                   {errors.registrationEnd && (
-                    <span className="text-red-500 text-sm mt-1">
-                      {errors.registrationEnd}
-                    </span>
+                    <span className="text-red-500 text-sm mt-1">{errors.registrationEnd}</span>
                   )}
                 </div>
               </motion.div>
@@ -1619,9 +1518,7 @@ useEffect(() => {
                           type="text"
                           placeholder="Tier name"
                           value={tier.name}
-                          onChange={(e) =>
-                            handleTicketTierChange(index, "name", e.target.value)
-                          }
+                          onChange={(e) => handleTicketTierChange(index, "name", e.target.value)}
                           className={`w-full border ${errors[`ticketTier_${index}_name`] ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500`}
                         />
                         {errors[`ticketTier_${index}_name`] && (
@@ -1638,13 +1535,7 @@ useEffect(() => {
                             min="0"
                             step="0.01"
                             value={tier.price}
-                            onChange={(e) =>
-                              handleTicketTierChange(
-                                index,
-                                "price",
-                                e.target.value
-                              )
-                            }
+                            onChange={(e) => handleTicketTierChange(index, "price", e.target.value)}
                             className={`w-full border ${errors[`ticketTier_${index}_price`] ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500`}
                           />
                           {errors[`ticketTier_${index}_price`] && (
@@ -1660,11 +1551,7 @@ useEffect(() => {
                             min="1"
                             value={tier.capacity}
                             onChange={(e) =>
-                              handleTicketTierChange(
-                                index,
-                                "capacity",
-                                e.target.value
-                              )
+                              handleTicketTierChange(index, "capacity", e.target.value)
                             }
                             className={`w-full border ${errors[`ticketTier_${index}_capacity`] ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500`}
                           />
@@ -1679,11 +1566,7 @@ useEffect(() => {
                         placeholder="Description"
                         value={tier.description}
                         onChange={(e) =>
-                          handleTicketTierChange(
-                            index,
-                            "description",
-                            e.target.value
-                          )
+                          handleTicketTierChange(index, "description", e.target.value)
                         }
                         rows={2}
                         className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
@@ -1794,9 +1677,7 @@ useEffect(() => {
                 <h3 className="text-3xl font-bold text-indigo-700 dark:text-indigo-400">
                   {stat.number}
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400 mt-2">
-                  {stat.label}
-                </p>
+                <p className="text-gray-600 dark:text-gray-400 mt-2">{stat.label}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -1813,15 +1694,14 @@ useEffect(() => {
             <h1 className="text-4xl font-extrabold text-indigo-800 dark:text-indigo-300 mb-4">
               Preview Your Event
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Review all details before publishing
-            </p>
+            <p className="text-gray-600 dark:text-gray-400">Review all details before publishing</p>
           </div>
 
           <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl overflow-hidden border border-indigo-300 dark:border-gray-700">
             {formData.bannerPreview && (
               <div className="w-full h-64 overflow-hidden">
-                <img loading="lazy"
+                <img
+                  loading="lazy"
                   src={formData.bannerPreview}
                   alt="Event banner"
                   className="w-full h-full object-cover"
@@ -1841,15 +1721,9 @@ useEffect(() => {
                 <div className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg">
                   <TagIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
                   <div>
-                    <p className="font-semibold text-gray-700 dark:text-gray-300">
-                      Category
-                    </p>
+                    <p className="font-semibold text-gray-700 dark:text-gray-300">Category</p>
                     <p className="text-gray-600 dark:text-gray-400">
-                      {
-                        categories.find(
-                          (cat) => cat.value === formData.category
-                        )?.label
-                      }
+                      {categories.find((cat) => cat.value === formData.category)?.label}
                     </p>
                   </div>
                 </div>
@@ -1857,20 +1731,15 @@ useEffect(() => {
                 <div className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg">
                   <CalendarIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
                   <div>
-                    <p className="font-semibold text-gray-700 dark:text-gray-300">
-                      Date & Time
-                    </p>
+                    <p className="font-semibold text-gray-700 dark:text-gray-300">Date & Time</p>
                     <p className="text-gray-600 dark:text-gray-400">
                       {formData.isMultiDay
-                        ? `${formatDate(formData.startDate)} - ${formatDate(
-                          formData.endDate
-                        )}`
+                        ? `${formatDate(formData.startDate)} - ${formatDate(formData.endDate)}`
                         : formatDate(formData.date)}
                     </p>
 
                     <p className="text-gray-600 dark:text-gray-400">
-                      {formatTime(formData.startTime)} -{" "}
-                      {formatTime(formData.endTime)}
+                      {formatTime(formData.startTime)} - {formatTime(formData.endTime)}
                     </p>
                   </div>
                 </div>
@@ -1878,13 +1747,9 @@ useEffect(() => {
                 <div className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg">
                   <MapPinIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
                   <div>
-                    <p className="font-semibold text-gray-700 dark:text-gray-300">
-                      Location
-                    </p>
+                    <p className="font-semibold text-gray-700 dark:text-gray-300">Location</p>
                     <p className="text-gray-600 dark:text-gray-400">
-                      {formData.isVirtual
-                        ? "Virtual Event"
-                        : formData.location.name}
+                      {formData.isVirtual ? "Virtual Event" : formData.location.name}
                     </p>
                     {formData.location.address && !formData.isVirtual && (
                       <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -1897,13 +1762,9 @@ useEffect(() => {
                 <div className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg">
                   <UsersIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
                   <div>
-                    <p className="font-semibold text-gray-700 dark:text-gray-300">
-                      Capacity
-                    </p>
+                    <p className="font-semibold text-gray-700 dark:text-gray-300">Capacity</p>
                     <p className="text-gray-600 dark:text-gray-400">
-                      {formData.capacity === ""
-                        ? "Unlimited"
-                        : `${formData.capacity} attendees`}
+                      {formData.capacity === "" ? "Unlimited" : `${formData.capacity} attendees`}
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       {formData.isPublic ? "Public" : "Private"} Event
@@ -1912,46 +1773,43 @@ useEffect(() => {
                 </div>
               </div>
 
-              {formData.ticketTiers.length > 0 &&
-                formData.ticketTiers[0].name && (
-                  <div className="mb-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      <TicketIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                      <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
-                        Ticket Tiers
-                      </h3>
-                    </div>
-                    <div className="space-y-3">
-                      {formData.ticketTiers.map((tier, index) => (
-                        <div
-                          key={index}
-                          className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                        >
-                          <div>
-                            <p className="font-semibold text-gray-900 dark:text-white">
-                              {tier.name}
-                            </p>
-                            {tier.description && (
-                              <p className="text-sm text-gray-600 dark:text-gray-400">
-                                {tier.description}
-                              </p>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
-                              ₹{Number(tier.price).toFixed(2)}
-                            </p>
-                            {tier.capacity && (
-                              <p className="text-sm text-gray-500 dark:text-gray-400">
-                                {tier.capacity} available
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+              {formData.ticketTiers.length > 0 && formData.ticketTiers[0].name && (
+                <div className="mb-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <TicketIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
+                      Ticket Tiers
+                    </h3>
                   </div>
-                )}
+                  <div className="space-y-3">
+                    {formData.ticketTiers.map((tier, index) => (
+                      <div
+                        key={index}
+                        className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                      >
+                        <div>
+                          <p className="font-semibold text-gray-900 dark:text-white">{tier.name}</p>
+                          {tier.description && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {tier.description}
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                            ₹{Number(tier.price).toFixed(2)}
+                          </p>
+                          {tier.capacity && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              {tier.capacity} available
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {formData.tags.length > 0 && (
                 <div className="mb-6">
@@ -2002,10 +1860,7 @@ useEffect(() => {
             >
               {loading ? (
                 <>
-                  <svg
-                    className="animate-spin h-5 w-5 mr-2"
-                    viewBox="0 0 24 24"
-                  >
+                  <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
                     <circle
                       className="opacity-25"
                       cx="12"

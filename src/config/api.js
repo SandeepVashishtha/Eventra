@@ -1,6 +1,4 @@
 import axios from "axios";
-import { syncSecureStorage } from "../utils/secureStorage";
-
 
 // ---------------------------------------------------------------------------
 // Base API URL
@@ -34,12 +32,9 @@ const normalizeApiBaseUrl = (value = "") => {
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
-const resolveEnvApiBaseUrl = () =>
-  isDevelopment
-    ? ""
-    : normalizeApiBaseUrl(
-        process.env.REACT_APP_API_URL || process.env.VITE_API_URL || "",
-      );
+const resolveEnvApiBaseUrl = () => {
+  return normalizeApiBaseUrl(process.env.REACT_APP_API_URL || "http://localhost:8080");
+};
 
 export const API_BASE_URL = resolveEnvApiBaseUrl();
 
@@ -76,7 +71,10 @@ const isDev = isDevelopment;
 // ---------------------------------------------------------------------------
 
 export class ApiError extends Error {
-  constructor(message, { status = null, data = null, isTimeout = false, isNetworkError = false } = {}) {
+  constructor(
+    message,
+    { status = null, data = null, isTimeout = false, isNetworkError = false } = {}
+  ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
@@ -112,7 +110,7 @@ const normalizeRequestConfig = (configOrToken = {}, maybeToken) => {
       ? configOrToken
       : typeof maybeToken === "string"
         ? maybeToken
-        : syncSecureStorage.getItem("token") || "";
+        : localStorage.getItem("token") || "";
 
   if (token) {
     config.headers = {
@@ -140,9 +138,7 @@ const wrapAxiosResponse = (response) => {
     ok: response.status >= 200 && response.status < 300,
     json: async () => response.data,
     text: async () =>
-      typeof response.data === "string"
-        ? response.data
-        : JSON.stringify(response.data),
+      typeof response.data === "string" ? response.data : JSON.stringify(response.data),
   };
 };
 
@@ -176,7 +172,7 @@ API.interceptors.response.use(
 
       if (isDev) {
         console.debug(
-          `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${RETRY_DELAY_MS}ms (attempt ${config._retryCount})...`,
+          `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${RETRY_DELAY_MS}ms (attempt ${config._retryCount})...`
         );
       }
 
@@ -191,14 +187,14 @@ API.interceptors.response.use(
     ) {
       throw new ApiError(
         `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
-        { isTimeout: true },
+        { isTimeout: true }
       );
     }
 
     if (!error.response) {
       throw new ApiError(
         error.message || `Network error: ${config.method?.toUpperCase()} ${config.url}`,
-        { isNetworkError: true },
+        { isNetworkError: true }
       );
     }
 
@@ -207,9 +203,9 @@ API.interceptors.response.use(
       {
         status: error.response.status,
         data: error.response.data,
-      },
+      }
     );
-  },
+  }
 );
 
 // ---------------------------------------------------------------------------
@@ -242,7 +238,7 @@ export const API_ENDPOINTS = {
   NOTIFICATIONS: {
     ALL: buildApiUrl("/api/notifications"),
     BASE: buildApiUrl("/api/notifications"),
-    READ: (id) => id ? buildApiUrl(`/api/notifications/${id}/read`) : "",
+    READ: (id) => (id ? buildApiUrl(`/api/notifications/${id}/read`) : ""),
     READ_ALL: buildApiUrl("/api/notifications/read-all"),
   },
   USERS: {
