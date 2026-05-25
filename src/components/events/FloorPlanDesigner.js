@@ -132,25 +132,28 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
 
   const handleSeatAssign = (seatIndex, attendeeName) => {
     setElements(elements.map(el => {
+      // 1. Create a clean copy of the assignedAttendees object for this element
+      const nextAssignments = { ...el.assignedAttendees };
+      
+      // 2. Unassign this attendee if they are currently assigned to any seat on this table
+      Object.keys(nextAssignments).forEach(k => {
+        if (nextAssignments[k] === attendeeName) {
+          delete nextAssignments[k];
+        }
+      });
+
       if (el.id === selectedId) {
-        const nextAssignments = { ...el.assignedAttendees };
-        if (attendeeName === "") {
-          delete nextAssignments[seatIndex];
-        } else {
-          // Check if attendee is already assigned somewhere else, and unassign if so
-          elements.forEach(otherEl => {
-            Object.keys(otherEl.assignedAttendees).forEach(k => {
-              if (otherEl.assignedAttendees[k] === attendeeName) {
-                otherEl.assignedAttendees[k] = undefined;
-                delete otherEl.assignedAttendees[k];
-              }
-            });
-          });
+        // 3. If this is the selected table, assign the attendee to the new seat slot
+        if (attendeeName !== "") {
           nextAssignments[seatIndex] = attendeeName;
+        } else {
+          delete nextAssignments[seatIndex];
         }
         return { ...el, assignedAttendees: nextAssignments };
+      } else {
+        // 4. For other tables, just return the element with the attendee cleanly removed
+        return { ...el, assignedAttendees: nextAssignments };
       }
-      return el;
     }));
   };
 
