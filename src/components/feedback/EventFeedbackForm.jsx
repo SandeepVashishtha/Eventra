@@ -26,7 +26,6 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
       // Simulate API submit delay
       await new Promise((resolve) => setTimeout(resolve, 800));
       
-      console.log(`Feedback submitted for event ${eventId}:`, { rating, comment });
       setSubmitted(true);
       toast.success("Feedback submitted! Thank you for sharing your thoughts.");
     } catch (err) {
