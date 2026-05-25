@@ -1,6 +1,7 @@
 import React from 'react';
-import { AlertTriangle, Clock, Calendar, X, ArrowRight } from 'lucide-react';
+import { AlertTriangle, Clock, Calendar, X, ArrowRight, Globe } from 'lucide-react';
 import { formatTimeRange } from '../utils/conflictDetection';
+import { getUserTimezone } from '../utils/timezoneUtils';
 
 /**
  * EventConflictModal
@@ -28,6 +29,7 @@ const EventConflictModal = ({
   onSelectAlternative,
   strictMode = false,
 }) => {
+  const userTimezone = getUserTimezone();
   if (!isOpen) return null;
 
   return (
@@ -61,6 +63,10 @@ const EventConflictModal = ({
               <p className="mt-1 text-gray-600 dark:text-gray-400">
                 This event overlaps with one or more events you've already registered for.
               </p>
+              <span className="mt-2 inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                <Globe className="w-3 h-3" />
+                Times shown in: <strong>{userTimezone}</strong>
+              </span>
             </div>
           </div>
         </div>
@@ -85,7 +91,12 @@ const EventConflictModal = ({
                 </span>
                 <span className="flex items-center gap-1">
                   <Clock className="w-4 h-4" />
-                  {formatTimeRange(newEvent?.time)}
+                  {formatTimeRange(
+                    newEvent?.time,
+                    newEvent?.durationMinutes || 60,
+                    newEvent?.date,
+                    userTimezone
+                  )}
                 </span>
               </div>
             </div>
@@ -114,7 +125,12 @@ const EventConflictModal = ({
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock className="w-4 h-4" />
-                      {formatTimeRange(event.time)}
+                      {formatTimeRange(
+                        event.time,
+                        event.durationMinutes || 60,
+                        event.date,
+                        userTimezone
+                      )}
                     </span>
                   </div>
                 </div>
@@ -151,7 +167,12 @@ const EventConflictModal = ({
                           </span>
                           <span className="flex items-center gap-1">
                             <Clock className="w-4 h-4" />
-                            {formatTimeRange(event.time)}
+                            {formatTimeRange(
+                              event.time,
+                              event.durationMinutes || 60,
+                              event.date,
+                              userTimezone
+                            )}
                           </span>
                         </div>
                       </div>

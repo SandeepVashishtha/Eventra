@@ -1,21 +1,22 @@
 import React, { lazy } from 'react';
 import { Route } from 'react-router-dom';
 
-// --------------- COMPONENTS
 import ProtectedRoute from "../auth/ProtectedRoute";
-import EventCreation from "../common/EventCreation";
-import HostHackathon from "../../Pages/Hackathons/HostHackathon";
-import EditProfile from "../user/EditProfile";
-import UserProfile from "../user/UserProfile";
-import Settings from "../../Pages/Settings";
-import AuthPage from "../auth/AuthPage";
-import Unauthorized from "../auth/Unauthorized";
-import PasswordReset from "../auth/PasswordReset";
-import NotFound from "../NotFound";
-import SurveyEngine from "../../Pages/Feedback/SurveyEngine";
+
+//----------------Roles & Permissions
+import { ROLES, PERMISSIONS } from "../../config/roles";
 
 const AdminDashboard = lazy(() => import("../admin/AdminDashboard"));
 const Dashboard = lazy(() => import("../Dashboard"));
+const EventCreation = lazy(() => import("../common/EventCreation"));
+const HostHackathon = lazy(() => import("../../Pages/Hackathons/HostHackathon"));
+const UserProfile = lazy(() => import("../user/UserProfile"));
+const EditProfile = lazy(() => import("../user/EditProfile"));
+const Settings = lazy(() => import("../../Pages/Settings"));
+const AuthPage = lazy(() => import("../auth/AuthPage"));
+const Unauthorized = lazy(() => import("../auth/Unauthorized"));
+const PasswordReset = lazy(() => import("../auth/PasswordReset"));
+const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
 
 export const getProtectedRoutes = () => [
   <Route
@@ -23,9 +24,9 @@ export const getProtectedRoutes = () => [
     path="/create-event"
     element={
       <ProtectedRoute 
-        requiredPermissions={["CREATE_EVENT"]}
+        requiredPermissions={[PERMISSIONS.CREATE_EVENT]}
         requiredScopes={["event:write"]}
-        validateContext={({ user }) => user?.roles?.includes("ADMIN") || user?.roles?.includes("EVENT_MANAGER")}
+        validateContext={({ user }) => user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes(ROLES.ORGANIZER)}
       >
         <EventCreation />
       </ProtectedRoute>
@@ -36,7 +37,7 @@ export const getProtectedRoutes = () => [
     path="/admin"
     element={
       <ProtectedRoute 
-        requiredRoles={["ADMIN"]}
+        requiredRoles={[ROLES.ADMIN, ROLES.SUPER_ADMIN]}
         requiredScopes={["admin:all"]}
         validateContext={({ user }) => user?.status !== "Suspended"}
       >
@@ -49,9 +50,9 @@ export const getProtectedRoutes = () => [
     path="/host-hackathon"
     element={
       <ProtectedRoute 
-        requiredPermissions={["HOST_HACKATHON"]}
+        requiredPermissions={[PERMISSIONS.HOST_HACKATHON]}
         requiredScopes={["hackathon:write"]}
-        validateContext={({ user }) => user?.roles?.includes("ADMIN") || user?.roles?.includes("EVENT_MANAGER")}
+        validateContext={({ user }) => user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes(ROLES.ORGANIZER)}
       >
         <HostHackathon />
       </ProtectedRoute>
@@ -107,7 +108,10 @@ export const getProtectedRoutes = () => [
     key="/feedback/survey-builder"
     path="/feedback/survey-builder"
     element={
-      <ProtectedRoute requiredPermissions={["HOST_HACKATHON", "CREATE_EVENT"]}>
+      <ProtectedRoute requiredPermissions={[
+  PERMISSIONS.HOST_HACKATHON,
+  PERMISSIONS.CREATE_EVENT
+]}>
         <SurveyEngine />
       </ProtectedRoute>
     }
@@ -119,5 +123,5 @@ export const getAuthRoutes = () => [
   <Route key="/signup" path="/signup" element={<AuthPage />} />,
   <Route key="/unauthorized" path="/unauthorized" element={<Unauthorized />} />,
   <Route key="/password-reset" path="/password-reset" element={<PasswordReset />} />,
-  <Route key="/*" path="/*" element={<NotFound />} />,
+  // <Route key="/*" path="/*" element={<NotFound />} />,
 ];

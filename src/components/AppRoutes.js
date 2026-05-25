@@ -8,10 +8,8 @@ import {
 } from "./routes/ProtectedRoutes";
 
 import ProtectedRoute from "./auth/ProtectedRoute";
-
-import UserAchievements from "../Pages/UserAchievements";
-
-import NotFoundPage from "../Pages/NotFoundPage";
+const UserAchievements = React.lazy(() => import("../Pages/UserAchievements"));
+const NotFoundPage = React.lazy(() => import("../Pages/NotFoundPage"));
 
 const AppRoutes = () => {
   return (

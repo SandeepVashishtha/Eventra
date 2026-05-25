@@ -4,15 +4,14 @@ import { Link } from "react-router-dom";
 import mockHackathons from "./hackathonMockData.json";
 import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
-import FeedbackButton from "../../components/FeedbackButton";
 import { FiCode, FiRotateCw, FiCompass, FiChevronDown, FiX } from "react-icons/fi";
 import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
-import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 import BackToTopButton from "../../components/common/BackToTopButton";
 import PageLoader from "../../components/common/PageLoader";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { filterHackathons } from "./hackathonFilterUtils.mjs";
 
 // NEW: Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
@@ -154,39 +153,11 @@ const HackathonHub = () => {
     ? fuse.search(searchQuery).map((result) => result.item)
     : hackathons;
 
-  // UPDATED: Filter hackathons based on selected tags
-  const filteredHackathons = searchedHackathons
-    .filter((hackathon) => {
-      if (activeTab === "all") return true;
-      return hackathon.status === activeTab;
-    })
-    .filter((hackathon) => {
-      if (filters.difficulty && hackathon.difficulty !== filters.difficulty) {
-        return false;
-      }
-      if (
-        filters.prize &&
-        !hackathon.prize.toLowerCase().includes(filters.prize.toLowerCase())
-      ) {
-        return false;
-      }
-      if (
-        filters.location &&
-        !hackathon.location
-          .toLowerCase()
-          .includes(filters.location.toLowerCase())
-      ) {
-        return false;
-      }
-
-      // NEW: Filter by selected tags
-      if (selectedTags.length > 0) {
-        const hackathonTags = hackathon.techStack || [];
-        return selectedTags.some((tag) => hackathonTags.includes(tag));
-      }
-
-      return true;
-    });
+  const filteredHackathons = filterHackathons(searchedHackathons, {
+    activeTab,
+    filters,
+    selectedTags,
+  });
 
   const featuredHackathons = [...hackathons]
     .filter((h) => h.featured)
@@ -734,9 +705,6 @@ const HackathonHub = () => {
         </AnimatePresence>
       </div>
       <HackathonCTA></HackathonCTA>
-
-      {/* Feedback Button */}
-      <FeedbackButton />
       <BackToTopButton />
     </div>
   );

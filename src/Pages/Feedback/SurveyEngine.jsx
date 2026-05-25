@@ -141,7 +141,6 @@ const SurveyEngine = () => {
       createdAt: new Date().toISOString(),
     };
 
-    console.log("Survey created successfully:", payload);
     toast.success("Survey published and active for attendees!");
   };
 

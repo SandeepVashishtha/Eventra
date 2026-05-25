@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
 import GoogleLoginButton from './GoogleLoginButton';
+import '../../styles/auth.css';
 
 const Login = () => {
   useDocumentTitle("Login | Eventra");
@@ -15,7 +16,10 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
-  const { login, isAuthenticated } = useAuth();
+  const location = useLocation();
+  const { login, isAuthenticated, user, token } = useAuth();
+  // If ProtectedRoute redirected here because the JWT expired, show a notice.
+  const sessionExpired = location.state?.sessionExpired ?? false;
   const introPoints = [
     "Pick up where you left off with your dashboard and event tools.",
     "Stay in sync with registrations, submissions, and community updates.",
@@ -62,7 +66,7 @@ const Login = () => {
     if (isAuthenticated()) {
       navigate('/dashboard', { replace: true });
     }
-  }, [navigate, isAuthenticated]);
+  }, [navigate, isAuthenticated, user, token]);
 
 
   const handleSubmit = async (e) => {
@@ -132,7 +136,21 @@ const Login = () => {
             </div>
 
             {/* RIGHT PANEL */}
-            <div className="w-full md:w-[62%] p-6 sm:p-8 lg:p-10 space-y-6 bg-white/70 dark:bg-gray-900/90 backdrop-blur-xl rounded-2xl md:rounded-r-2xl md:rounded-l-none">
+            <div className="md:w-3/5 p-10 space-y-6 bg-white/70 dark:bg-gray-900/90 backdrop-blur-xl">
+
+              {/* ✅ Session-expired banner — shown only after an auto-logout */}
+              {sessionExpired && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="session-expired-banner"
+                  role="alert"
+                  aria-live="polite"
+                >
+                  ⚠️ Your session has expired. Please log in again.
+                </motion.div>
+              )}
               {/* Logo / Title */}
               <motion.div
                 initial={{ scale: 0 }}
@@ -191,7 +209,7 @@ const Login = () => {
                       onChange={handleChange}
                       required
                       disabled={loading}
-                      placeholder="Enter your email address or username"
+                      placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
                       className="w-full pl-3 pr-4 py-3 
 bg-white dark:bg-gray-800
 border border-gray-200 dark:border-gray-600
@@ -248,7 +266,7 @@ text-gray-900 dark:text-white"
                       onChange={handleChange}
                       required
                       disabled={loading}
-                      placeholder="Enter your password"
+                      placeholder="Enter secure password / Minimum 8 characters / Use strong password"
                       className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                     />
 

@@ -1,16 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { ChevronUp } from "lucide-react";
-import "./styles/scrolltotopButton.css";
-
-const getScrollPosition = () => (window.lenis ? window.lenis.scroll : window.scrollY || 0);
+import BackToTopButton from "./common/BackToTopButton";
 
 export default function ScrollToTopButton() {
   const { pathname } = useLocation();
 
-  const [visible, setVisible] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
   // Auto scroll to top on route change
@@ -22,35 +16,7 @@ export default function ScrollToTopButton() {
     }
   }, [pathname]);
 
-  // Optimized scroll handling
-  const handleScroll = useCallback(() => {
-    requestAnimationFrame(() => {
-      const scrollTop = window.lenis ? window.lenis.scroll : window.scrollY;
-      const docHeight =
-        document.documentElement.scrollHeight -
-        document.documentElement.clientHeight;
-
-      const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-
-      setVisible(scrollTop > 300);
-      setScrollProgress(progress);
-    });
-  }, []);
-
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.lenis ? window.lenis.scroll : window.scrollY;
-      setVisible(scrollY > 50);
-    };
-    
-    handleScroll();
-    
-    if (window.lenis) {
-      window.lenis.on('scroll', handleScroll);
-    } else {
-      window.addEventListener("scroll", handleScroll);
-    }
-    
     // Listen for chatbot state changes
     const handleChatbotState = () => {
       setIsChatbotOpen(document.querySelector('[data-chatbot-open]') !== null);
@@ -62,65 +28,14 @@ export default function ScrollToTopButton() {
     observer.observe(document.body, { childList: true, subtree: true });
     
     return () => {
-      if (window.lenis) {
-        window.lenis.off('scroll', handleScroll);
-      } else {
-        window.removeEventListener("scroll", handleScroll);
-      }
       observer.disconnect();
     };
-  }, [handleScroll]);
-
-  // Lightweight chatbot detection
-  useEffect(() => {
-    const chatbot = document.querySelector("[data-chatbot-open]");
-    setIsChatbotOpen(!!chatbot);
   }, []);
-
-  const scrollToTop = () => {
-    if (window.lenis) {
-      window.lenis.scrollTo(0, { duration: 1.2 });
-    } else {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
 
   // Position based on chatbot state
   const positionClass = isChatbotOpen 
     ? "bottom-24 left-6"  // When chatbot is open - bottom left
     : "bottom-6 right-6 sm:bottom-24 sm:right-6"; // When chatbot is closed - bottom right
 
-  return (
-    <AnimatePresence>
-      {visible && (
-        <motion.button
-          id="scrollToTopBtn"
-          onClick={scrollToTop}
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 50 }}
-          transition={{ duration: 0.3 }}
-          className={`
-            fixed ${positionClass}
-            w-14 h-14
-            rounded-full
-            border border-black/15 dark:border-white/20
-            bg-white dark:bg-black
-            text-black dark:text-white
-            shadow-lg
-            flex items-center justify-center
-            text-4xl
-            hover:scale-110
-            hover:border-black/30 dark:hover:border-white/40
-            transition-all
-            z-[9998]
-            show
-          `}
-          title="Back to Top"
-        >
-          <ChevronUp className="w-6 h-6" strokeWidth={2} />
-        </motion.button>
-      )}
-    </AnimatePresence>
-  );
+  return <BackToTopButton threshold={50} positionClass={positionClass} />;
 }
