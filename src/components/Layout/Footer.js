@@ -5,18 +5,16 @@ import {
   FaBookOpen,
   FaCalendarAlt,
   FaComments,
-  FaDiscord,
   FaEnvelope,
   FaFolder,
   FaGithub,
   FaHome,
   FaInfoCircle,
-  FaInstagram,
   FaLinkedin,
   FaPlus,
+  FaQuestion,
   FaQuestionCircle,
   FaStar,
-  FaTelegram,
   FaTrophy,
   FaUsers,
 } from "react-icons/fa";
@@ -68,6 +66,11 @@ const footerLinks = {
       name: "Help Center",
       href: "/helpcenter",
       icon: <FaQuestionCircle size={14} />,
+    },
+    {
+      name: "FAQ",
+      href: "/faq",
+      icon: <FaQuestion size={14} />,
     },
     {
       name: "Contact Us",
@@ -312,8 +315,8 @@ const FooterLinksRender = () => (
           key === "quick_links"
             ? "100"
             : key === "community"
-            ? "200"
-            : "300"
+              ? "200"
+              : "300"
         }
       >
         <h4 className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-widest mb-6">
@@ -346,8 +349,7 @@ const FooterLinksRender = () => (
 const Footer = () => {
   return (
     <footer
-      className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 transition-colors duration-500 hover:bg-indigo-50/40 dark:hover:bg-gray-800/80"
-      data-aos="fade-up"
+      className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 transition-colors duration-500"
       data-aos-duration="1000"
       data-aos-offset="100"
     >
@@ -378,17 +380,15 @@ const Footer = () => {
           <FooterLinksRender />
         </div>
       </div>
-
-      <div className="w-full overflow-hidden flex justify-center items-end mt-0 pointer-events-none select-none">
-        <h1
-          className="text-[20vw] sm:text-[21vw] font-black leading-none tracking-tighter whitespace-nowrap text-transparent bg-clip-text bg-gradient-to-b from-black via-black/80 to-transparent dark:from-white dark:via-white/80 dark:to-transparent opacity-90"
-          style={{
-            fontFamily: "Anton, sans-serif",
-            marginBottom: "-3%",
-          }}
-        >
-          EVENTRA
-        </h1>
+      {/* Bottom Bar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 border-t border-gray-100 dark:border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
+        <p className="text-gray-500 dark:text-gray-400 text-sm">
+          © {new Date().getFullYear()} Eventra. All rights reserved.
+        </p>
+        <div className="flex gap-6 text-sm text-gray-500 dark:text-gray-400">
+          <Link to="/privacy" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Privacy Policy</Link>
+          <Link to="/terms" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Terms of Service</Link>
+        </div>
       </div>
     </footer>
   );
