@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import mockHackathons from "./hackathonMockData.json";
 import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
-import FeedbackButton from "../../components/FeedbackButton";
 import { FiCode, FiRotateCw, FiCompass, FiChevronDown, FiX } from "react-icons/fi";
 import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
@@ -734,9 +733,6 @@ const HackathonHub = () => {
         </AnimatePresence>
       </div>
       <HackathonCTA></HackathonCTA>
-
-      {/* Feedback Button */}
-      <FeedbackButton />
       <BackToTopButton />
     </div>
   );
