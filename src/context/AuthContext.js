@@ -148,7 +148,7 @@ export const AuthProvider = ({ children }) => {
     let sessionToken = data?.token ?? data?.accessToken ?? null;
 
     if (!sessionToken) {
-      const authHeader = res.headers.get('Authorization') || res.headers.get('authorization');
+      const authHeader = res.headers?.['authorization'] || res.headers?.['Authorization'] || null;
       if (authHeader && authHeader.startsWith('Bearer ')) {
         sessionToken = authHeader.substring(7);
       }
@@ -186,16 +186,9 @@ export const AuthProvider = ({ children }) => {
       password,
     });
 
-    const data = await res.json().catch((error) => {
-      console.error('Failed to parse login response JSON:', error);
-      return null;
-    });
+    const data = res.data || {};
 
-    if (!res.ok) {
-      throw new Error(data?.message || data?.error || 'Invalid credentials');
-    }
-
-    const { sessionToken, sessionUser } = extractSession(res, data || {}, usernameOrEmail);
+    const { sessionToken, sessionUser } = extractSession(res, data, usernameOrEmail);
 
     if (!sessionToken) {
       throw new Error('Login failed: token missing from response');
