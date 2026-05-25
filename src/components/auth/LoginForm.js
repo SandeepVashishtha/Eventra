@@ -56,7 +56,10 @@ const LoginForm = () => {
         );
       }
     } catch (err) {
-      console.error("Login error:", err);
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.error("Login error:", err);
+      }
       setError({ general: err.message || "Invalid email or password" });
       toast.error(err.message || 'Login failed. Please check your credentials.');
     } finally {
