@@ -45,6 +45,12 @@ This repository contains the React frontend application for Eventra. The backend
 - **Swagger**: [https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html](https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html)
 - Capacity and registration availability endpoints are documented in Swagger UI.
 
+### Backend API Setup Note
+
+The frontend communicates with the Spring Boot backend through `/api` routes. For local full-stack testing, run the backend service separately and configure the frontend API URL accordingly.
+
+Backend repository: https://github.com/SandeepVashishtha/Eventra-Backend
+
 ## Project Insights
 
 <table align="center">
