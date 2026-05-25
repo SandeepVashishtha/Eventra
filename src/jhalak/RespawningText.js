@@ -7,31 +7,38 @@ const RespawningText = ({ texts = ["Discover & Join"], typingSpeed = 150, deleti
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
+    let timeout;
+    
     const handleTyping = () => {
       const fullText = texts[textIndex];
       
-      if (!isDeleting) {
-        setCurrentText(fullText.substring(0, currentText.length + 1));
-        
-        if (currentText === fullText) {
-          setTimeout(() => setIsDeleting(true), pauseTime);
+      setCurrentText((prev) => {
+        if (!isDeleting) {
+          const nextText = fullText.substring(0, prev.length + 1);
+          if (nextText === fullText) {
+            timeout = setTimeout(() => setIsDeleting(true), pauseTime);
+          } else {
+            timeout = setTimeout(handleTyping, typingSpeed);
+          }
+          return nextText;
+        } else {
+          const nextText = fullText.substring(0, prev.length - 1);
+          if (nextText === "") {
+            setIsDeleting(false);
+            setTextIndex((i) => (i + 1) % texts.length);
+            timeout = setTimeout(handleTyping, typingSpeed);
+          } else {
+            timeout = setTimeout(handleTyping, deletingSpeed);
+          }
+          return nextText;
         }
-      } else {
-        // Deleting
-        setCurrentText(fullText.substring(0, currentText.length - 1));
-        
-        if (currentText === "") {
-          setIsDeleting(false);
-          setTextIndex((prev) => (prev + 1) % texts.length);
-        }
-      }
+      });
     };
 
-    const speed = isDeleting ? deletingSpeed : typingSpeed;
-    const timeout = setTimeout(handleTyping, speed);
+    timeout = setTimeout(handleTyping, isDeleting ? deletingSpeed : typingSpeed);
 
     return () => clearTimeout(timeout);
-  }, [currentText, isDeleting, textIndex, texts, typingSpeed, deletingSpeed, pauseTime]);
+  }, [isDeleting, textIndex, texts, typingSpeed, deletingSpeed, pauseTime]);
 
   return (
     <span className="relative inline-block">
@@ -39,7 +46,7 @@ const RespawningText = ({ texts = ["Discover & Join"], typingSpeed = 150, deleti
       <motion.span
         animate={{ opacity: [1, 0] }}
         transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-        className="inline-block w-1 h-8 sm:h-12 md:h-16 lg:h-20 bg-black ml-1 align-middle"
+        className="inline-block w-1 h-8 sm:h-12 md:h-16 lg:h-20 bg-black dark:bg-white ml-1 align-middle"
         style={{ marginBottom: '0.1em' }}
       />
     </span>
