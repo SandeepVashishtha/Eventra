@@ -35,47 +35,6 @@ const SessionRecovery = () => {
     dismissRecoveryPrompt();
   };
 
-  if (!isOnline && !showRecoveryPrompt) {
-    return (
-      <div className="fixed bottom-4 right-4 z-50 animate-slide-up">
-        <div className="bg-red-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3">
-          <WifiOff size={20} className="animate-pulse" />
-          <div>
-            <p className="font-semibold text-sm">You're offline</p>
-            <p className="text-xs opacity-90">Changes will be saved locally</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isReconnecting && !showRecoveryPrompt) {
-    return (
-      <div className="fixed bottom-4 right-4 z-50 animate-slide-up">
-        <div className="bg-yellow-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3">
-          <RefreshCw size={20} className="animate-spin" />
-          <div>
-            <p className="font-semibold text-sm">Reconnecting...</p>
-            <p className="text-xs opacity-90">Attempting to restore connection</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isOnline && !showRecoveryPrompt && !isReconnecting) {
-    return (
-      <div className="fixed bottom-4 right-4 z-50 animate-slide-up">
-        <div className="bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3">
-          <Wifi size={20} />
-          <div>
-            <p className="font-semibold text-sm">You're back online</p>
-            <p className="text-xs opacity-90">Connection restored</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (showRecoveryPrompt && sessionData) {
     const isValidTimestamp =

@@ -42,10 +42,9 @@ const ProjectGallery = () => {
 
         // --- PRODUCTION LOGIC: attempt real API call to Spring Boot backend ---
         const response = await apiUtils.get(API_ENDPOINTS.PROJECTS.LIST);
-
         const projectsData = response.data;
 
-        // fix: only use API data if it is non-empty; otherwise fall back to mock
+        // only use API data if it is non-empty; otherwise fall back to mock
         if (projectsData && projectsData.length > 0) {
           setProjects(projectsData);
 
@@ -57,34 +56,35 @@ const ProjectGallery = () => {
             const categoriesData = categoriesResponse.data;
             setCategories(["all", ...categoriesData]);
           } catch {
-            // fix: derive categories from API project data if categories endpoint throws
+            // derive categories from API project data if categories endpoint throws
             const uniqueCategories = [...new Set(projectsData.map(p => p.category))];
             setCategories(["all", ...uniqueCategories]);
           }
-
-          setIsLoading(false);
-          return; // exit — API data loaded successfully
+          return; // exit successfully
         }
 
-        // --- MOCK DATA FALLBACK: API unavailable, not ok, or returned empty array ---
-        console.warn("Projects API unavailable or empty — loading mock data.");
-
-        setTimeout(() => {
-          const projectsData = mockProjects;
-
-          setProjects(projectsData);
-
-          const uniqueCategories = [
-            ...new Set(projectsData.map((p) => p.category)),
-          ];
-
-          setCategories(["all", ...uniqueCategories]);
-
-          setIsLoading(false);
-        }, 500);
+        // --- MOCK DATA FALLBACK: API returned empty array ---
+        console.warn("Projects API returned empty array — loading mock data.");
+        setProjects(mockProjects);
+        const mockUniqueCategories = [
+          ...new Set(mockProjects.map((p) => p.category)),
+        ];
+        setCategories(["all", ...mockUniqueCategories]);
       } catch (err) {
         console.error("Error fetching projects:", err);
-        setError("Failed to load projects. Please try again later.");
+
+        // Fall back to mock data in development so local work is unaffected
+        if (process.env.NODE_ENV === "development") {
+          console.warn("API unavailable — falling back to mock project data.");
+          setProjects(mockProjects);
+          const devUniqueCategories = [
+            ...new Set(mockProjects.map((p) => p.category)),
+          ];
+          setCategories(["all", ...devUniqueCategories]);
+        } else {
+          setError("Failed to load projects. Please try again later.");
+        }
+      } finally {
         setIsLoading(false);
       }
     };

@@ -1,4 +1,5 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import EventHero from "./EventHero";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
@@ -12,6 +13,27 @@ import BackToTopButton from "../../components/common/BackToTopButton";
 const EventsPage = () => {
   const cardSectionRef = useRef();
   const listing = useEventListing();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    const page = parseInt(searchParams.get("page")) || 1;
+    const perPage = parseInt(searchParams.get("perPage")) || 6;
+    const search = searchParams.get("search") || "";
+    const filter = searchParams.get("filter") || "all";
+    listing.setSafePage(page);
+    listing.setEventsPerPage(perPage);
+    listing.setSearchQuery(search);
+    listing.setFilterType(filter);
+  }, []);
+
+  useEffect(() => {
+    const params = {};
+    if (listing.currentPage > 1) params.page = listing.currentPage;
+    if (listing.eventsPerPage !== 6) params.perPage = listing.eventsPerPage;
+    if (listing.searchQuery) params.search = listing.searchQuery;
+    if (listing.filterType !== "all") params.filter = listing.filterType;
+    setSearchParams(params, { replace: true });
+  }, [listing.currentPage, listing.eventsPerPage, listing.searchQuery, listing.filterType]);
 
   const handleSearch = (query = "") => {
     listing.setSearchQuery(query);

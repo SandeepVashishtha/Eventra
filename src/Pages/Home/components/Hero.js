@@ -2,7 +2,7 @@ import { motion, useAnimation, AnimatePresence, MotionConfig } from "framer-moti
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
-import { Search, Calendar, Trophy, Code, ExternalLink } from "lucide-react";
+import { Search, Calendar, Trophy, Code, ExternalLink, ArrowRight } from "lucide-react";
 
 // Import mock data
 import eventsData from "../../Events/eventsMockData.json";
@@ -212,8 +212,8 @@ border-b border-gray-100 dark:border-slate-900">
           <MotionConfig reducedMotion="never">
             {/* Headline */}
             <motion.h1
-              className="mx-auto max-w-[92vw] mt-6 text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-5 sm:mb-6 leading-tight sm:leading-tight text-gray-900 dark:text-white break-words px-2 sm:px-0"
-              style={{ fontFamily: '"Anton", sans-serif' }}
+              className="mx-auto max-w-4xl mt-6 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-6 leading-tight tracking-tight text-gray-900 dark:text-white px-2 sm:px-0"
+              style={{ fontFamily: '"Inter", sans-serif' }}
             >
               <motion.span
                 className="block text-gray-900 dark:text-white mb-2 md:mb-0"
@@ -241,7 +241,7 @@ border-b border-gray-100 dark:border-slate-900">
                       transition: { duration: 0.5, ease: "easeIn" },
                     }}
                   >
-                    <span className="text-blue-600 dark:text-blue-500">
+                    <span className="text-indigo-600 dark:text-indigo-500 font-extrabold drop-shadow-sm">
                     {phrases[index]}
                     </span>
                   </motion.span>
@@ -259,8 +259,8 @@ border-b border-gray-100 dark:border-slate-900">
             the best tech events, hackathons, and workshops in your area.
           </motion.p>
 
-          {/* Global Search Bar */}
-          <div className="w-full max-w-2xl mx-auto mb-8 sm:mb-10">
+          {/* Global Search Bar (Glassmorphism) */}
+          <div className="w-full max-w-2xl mx-auto mb-10 p-2 sm:p-2.5 bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xl shadow-indigo-500/5">
             <ModernSearchInput
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
@@ -351,12 +351,11 @@ text-gray-600 dark:text-gray-300"
             </ModernSearchInput>
           </div>
 
-          {/* Buttons */}
+          {/* Professional Buttons */}
           <motion.div
             variants={container}
-            className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6 mb-12 sm:mb-16"
+            className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 mb-16"
           >
-            {/* Primary Button - Explore Events */}
             <motion.div variants={fadeUp}>
               <Link
                 to="/events"
@@ -381,7 +380,6 @@ text-gray-600 dark:text-gray-300"
               </Link>
             </motion.div>
 
-            {/* Secondary Button - Join Hackathons */}
             <motion.div variants={fadeUp}>
               <Link
                 to="/hackathons"
@@ -440,9 +438,9 @@ text-gray-600 dark:text-gray-300"
                 <motion.div
                   key={i}
                   variants={fadeUp}
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                  className="bg-white/90 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-xl shadow-blue-100/50 dark:shadow-none border border-blue-100 dark:border-gray-700 hover:shadow-blue-200/60 transition-shadow duration-300"
+                  whileHover={{ y: -5 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex flex-col items-center justify-center p-6 bg-white/60 dark:bg-gray-900/40 backdrop-blur-md rounded-2xl border border-gray-200/60 dark:border-gray-800/60 shadow-sm"
                 >
                   
                   <p className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
@@ -462,7 +460,7 @@ text-gray-600 dark:text-gray-300"
                       </>
                     )}
                   </p>
-                  <p className="text-gray-500 dark:text-gray-300 text-sm">
+                  <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-semibold uppercase tracking-wider">
                     {stat.label}
                   </p>
                 </motion.div>

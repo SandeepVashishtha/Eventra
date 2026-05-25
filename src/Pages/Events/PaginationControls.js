@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import {
   EVENTS_PER_PAGE_OPTIONS,
   getVisiblePaginationPages,
@@ -11,8 +11,8 @@ const PageButton = ({ children, isActive = false, onClick, ariaLabel }) => {
       onClick={onClick}
       className={`h-10 min-w-10 rounded-lg px-3 text-sm font-medium transition ${
         isActive
-          ? "bg-black text-white"
-          : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+          ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/30 scale-105"
+          : "border border-gray-200 bg-white text-gray-700 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
       }`}
       aria-current={isActive ? "page" : undefined}
       aria-label={ariaLabel}
@@ -36,7 +36,7 @@ const ArrowButton = ({ direction, disabled, onClick }) => {
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+      className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
       aria-label={`${direction === "previous" ? "Previous" : "Next"} page`}
     >
       <Icon size={18} />
@@ -55,7 +55,7 @@ const PageSizeSelector = ({ eventsPerPage, onPageSizeChange }) => {
         id="events-per-page"
         value={eventsPerPage}
         onChange={(event) => onPageSizeChange(Number(event.target.value))}
-        className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+        className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
       >
         {EVENTS_PER_PAGE_OPTIONS.map((option) => (
           <option key={option} value={option}>
@@ -126,7 +126,7 @@ const PaginationControls = ({
   return (
     <div className="mt-10 flex flex-col gap-4 border-t border-gray-200 pt-6 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Showing {startEvent}-{endEvent} of {totalEvents} events
+        Showing {startEvent}–{endEvent} of {totalEvents} events
       </p>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -136,21 +136,43 @@ const PaginationControls = ({
         />
 
         <nav className="flex items-center gap-2" aria-label="Event pagination">
+          <button
+            type="button"
+            onClick={() => onPageChange(1)}
+            disabled={currentPage === 1}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+            aria-label="First page"
+          >
+            <ChevronsLeft size={18} />
+          </button>
+
           <ArrowButton
             direction="previous"
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
           />
+
           <PageNumberControls
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={onPageChange}
           />
+
           <ArrowButton
             direction="next"
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
           />
+
+          <button
+            type="button"
+            onClick={() => onPageChange(totalPages)}
+            disabled={currentPage === totalPages}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+            aria-label="Last page"
+          >
+            <ChevronsRight size={18} />
+          </button>
         </nav>
       </div>
     </div>
