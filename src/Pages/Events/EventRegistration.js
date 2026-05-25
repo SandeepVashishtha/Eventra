@@ -24,9 +24,10 @@ import { validate } from "../../validation";
 import { toast } from "react-toastify";
 import mockEvents from "./eventsMockData.json";
 import { pushToQueue } from "../../utils/offlineQueue";
+import EventConflictModal from "../../components/EventConflictModal";
+
 const MAX_NOTES_CHARS = 500;
 const MAX_DESCRIPTION_CHARS = 1000; // Define limits as needed for other text areas
-import EventConflictModal from "../../components/EventConflictModal";
 
 const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
 const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
