@@ -60,6 +60,15 @@ export const getEventStatus = (event) => {
   return explicitStatus || "upcoming";
 };
 
+export const isEventRegistrationClosed = (eventOrStatus) => {
+  const status =
+    typeof eventOrStatus === "string"
+      ? mapStatusKey(eventOrStatus)
+      : getEventStatus(eventOrStatus);
+
+  return status === "past" || status === "ended";
+};
+
 export const normalizeEvent = (event) => ({
   ...event,
   status: getEventStatus(event),
