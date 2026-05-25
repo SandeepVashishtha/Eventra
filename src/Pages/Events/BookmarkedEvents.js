@@ -28,7 +28,14 @@ const BookmarkedEvents = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 text-slate-900 dark:text-gray-100 pt-28 pb-16">
+    <div className="min-h-screen dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 text-slate-900 dark:text-gray-100 pt-12 pb-16 bg-gradient-to-br from-[#f5f7ff] via-[#eef2ff] to-[#f3e8ff] " style={{
+    backgroundImage: "url('/assets/bookmarkbg.png')",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+    minHeight: "100vh",
+    width:"100vw"
+  }}>
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between mb-8">
           <div>

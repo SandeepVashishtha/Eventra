@@ -13,6 +13,7 @@ const AuthPage = lazy(() => import("../auth/AuthPage"));
 const Unauthorized = lazy(() => import("../auth/Unauthorized"));
 const PasswordReset = lazy(() => import("../auth/PasswordReset"));
 const NotFound = lazy(() => import("../NotFound"));
+const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
 
 export const getProtectedRoutes = () => [
   <Route
@@ -78,6 +79,15 @@ export const getProtectedRoutes = () => [
     element={
       <ProtectedRoute>
         <Settings />
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/feedback/survey-builder"
+    path="/feedback/survey-builder"
+    element={
+      <ProtectedRoute requiredPermissions={["HOST_HACKATHON", "CREATE_EVENT"]}>
+        <SurveyEngine />
       </ProtectedRoute>
     }
   />,

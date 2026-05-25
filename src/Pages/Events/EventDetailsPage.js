@@ -1,31 +1,20 @@
+import useRecentlyViewed from "../../hooks/useRecentlyViewed";  
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import CountdownTimer from "../../components/common/CountdownTimer";
-import {
-  Calendar,
-  MapPin,
-  Clock,
-  Users,
-  Tag,
-  Share2,
-  ArrowLeft,
-  LayoutTemplate,
-} from "lucide-react";
+import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft } from "lucide-react";
 
 import eventsMockData from "./eventsMockData.json";
 
-import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
-
-import ShareMenu from "../../components/common/ShareMenu";
-import CertificateDownload from "../../components/CertificateDownload";
-
-import { generateEventSharingData } from "../../utils/shareUtils";
+// Removed unused imports: addEventToGoogleCalendar, ShareMenu, CertificateDownload, generateEventSharingData
 
 const EventDetailsPage = () => {
   const { eventId } = useParams();
 
   const navigate = useNavigate();
+
+  const { addRecentlyViewed } = useRecentlyViewed();
 
   const [loading, setLoading] =
     useState(true);
@@ -51,6 +40,16 @@ const EventDetailsPage = () => {
           );
 
         setEvent(foundEvent);
+        if (foundEvent) {
+          addRecentlyViewed({
+            id:       foundEvent.id,
+            title:    foundEvent.title,
+            date:     foundEvent.date,
+            location: foundEvent.location,
+            image:    foundEvent.image,
+            category: foundEvent.type,
+          });
+        }
       } catch (error) {
         console.error(error);
       } finally {
@@ -59,7 +58,7 @@ const EventDetailsPage = () => {
     };
 
     fetchEvent();
-  }, [eventId]);
+  }, [eventId , addRecentlyViewed]);
 
   // Loading State
   if (loading) {
@@ -111,45 +110,7 @@ const EventDetailsPage = () => {
   const isPastEvent =
     eventDateTime < new Date();
 
-  const attendeePercentage =
-    (event.attendees /
-      event.maxAttendees) *
-    100;
-
-  const popularEvents =
-    eventsMockData
-      .filter(
-        (e) => e.id !== event.id
-      )
-      .sort(
-        (a, b) =>
-          b.attendees - a.attendees
-      )
-      .slice(0, 4);
-
-  const eventSharingData =
-    generateEventSharingData({
-      ...event,
-      title: event.title,
-      description:
-        event.description,
-      date: event.date,
-      id: event.id,
-    });
-
-  const handleCopyLink = (e) => {
-    e.preventDefault();
-
-    const shareUrl = `${window.location.origin}/events/${event.id}`;
-
-    navigator.clipboard
-      .writeText(shareUrl)
-      .then(() => {
-        alert(
-          "Event link copied to clipboard!"
-        );
-      });
-  };
+  // Removed unused derived values and handlers to satisfy linting rules
 
   return (
     <div className="min-h-screen mt-16 bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
@@ -168,7 +129,7 @@ const EventDetailsPage = () => {
         </div>
       </div>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
         <motion.div
           initial={{
             opacity: 0,
@@ -188,14 +149,14 @@ const EventDetailsPage = () => {
             {/* Hero Image */}
             <div className="relative rounded-2xl overflow-hidden mb-8 shadow-xl">
               <img
-                src={event.image}
-                alt={event.title}
-                className="w-full h-96 object-cover"
-              />
+  src={event.image}
+  alt={event.title}
+  className="w-full h-48 sm:h-64 md:h-96 object-cover"
+/>
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-              <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+              <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-6 text-white">
                 <div className="flex items-center gap-3 mb-4">
                   <span className="px-3 py-1 bg-indigo-600 rounded-full text-sm font-semibold">
                     {event.type
@@ -219,9 +180,9 @@ const EventDetailsPage = () => {
                   </span>
                 </div>
 
-                <h1 className="text-4xl font-bold">
-                  {event.title}
-                </h1>
+                <h1 className="text-xl sm:text-2xl md:text-4xl font-bold leading-tight">
+  {event.title}
+</h1>
               </div>
             </div>
 

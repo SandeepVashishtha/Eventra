@@ -53,7 +53,14 @@ const RemindersPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-white pt-28 pb-16 text-slate-900 dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 dark:text-gray-100">
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-white pt-12 pb-16 text-slate-900 dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 dark:text-gray-100" style={{
+    backgroundImage: "url('/assets/bookmarkbg.png')",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+    minHeight: "100vh",
+    width:"100vw"
+  }}>
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
