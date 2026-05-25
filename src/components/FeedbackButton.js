@@ -9,7 +9,7 @@ const FeedbackButton = () => {
     <motion.div
       layout 
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className={"fixed left-[1.625rem] z-[100] translate-y-1/2 bottom-6"}
+      className={"fixed left-[1.625rem] z-[100] translate-y-1/2 bottom-6 fixed-floating-widget transition-opacity duration-300"}
       initial={{ opacity: 0, scale: 0 }}
       animate={{ opacity: 1, scale: 1 }}
     >

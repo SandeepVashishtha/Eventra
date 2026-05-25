@@ -148,30 +148,24 @@ export default function Chatbot() {
     return createPortal(
       <>
         {/* Minimized strip — only on desktop when minimized */}
-        <AnimatePresence>
-          {isOpen && isMinimized && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="
-                fixed bottom-6 right-6 z-[100]
-                hidden sm:flex
-                items-center justify-between gap-3
-                w-72 rounded-2xl
-                border border-white/20 dark:border-slate-800/30
-                bg-slate-950/90 backdrop-blur-xl px-4 py-3
-                text-white shadow-2xl shadow-indigo-500/10
-              "
-              aria-label="Eventra assistant minimized"
-            >
-              <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-r from-indigo-500 to-pink-500 p-0.5">
-                  <div className="w-full h-full rounded-full bg-slate-950 flex items-center justify-center">
-                    <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
-                  </div>
-                </div>
-                <span className="text-sm font-bold tracking-tight">Eventra Assist</span>
+        {isOpen && isMinimized && (
+          <div
+            className="
+              fixed bottom-6 right-6 z-[100]
+              hidden sm:flex               /* hide strip on mobile, show FAB instead */
+              items-center justify-between gap-3
+              w-72 rounded-2xl
+              border border-slate-700
+              bg-slate-950 px-4 py-3
+              text-white shadow-2xl
+              fixed-floating-widget
+              transition-opacity duration-300
+            "
+            aria-label="Eventra assistant minimized"
+          >
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-500">
+                <Sparkles className="h-3.5 w-3.5" />
               </div>
               <div className="flex items-center gap-1">
                 <button
@@ -191,15 +185,13 @@ export default function Chatbot() {
                   <X className="h-4 w-4" />
                 </button>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          </div>
+        )}
 
         <motion.button
-          type="button"
           onClick={handleOpen}
           whileHover={{ scale: 1.1, rotate: 5 }}
-          whileTap={{ scale: 0.9 }}
           className={`
             fixed bottom-6 right-6 z-[100]
             flex h-14 w-14 items-center justify-center
@@ -207,7 +199,8 @@ export default function Chatbot() {
             shadow-[0_8px_30px_rgb(99,102,241,0.4)]
             hover:shadow-[0_8px_30px_rgb(236,72,153,0.5)]
             focus:outline-none focus:ring-4 focus:ring-indigo-300
-            transition-all duration-300
+            transition-all duration-200 hover:scale-110
+            fixed-floating-widget
             ${isMinimized ? "sm:hidden" : ""}
           `}
           aria-label="Open Eventra assistant"
@@ -222,67 +215,70 @@ export default function Chatbot() {
   // ── Fully expanded chat popup ───────────────────────────────────────────────
   return createPortal(
     <AnimatePresence>
-      {isOpen && (
-        <motion.section
-          initial={{ opacity: 0, scale: 0.9, y: 30 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 30 }}
-          transition={{ type: "spring", stiffness: 280, damping: 25 }}
-          data-chatbot-open
-          aria-label="Eventra assistant"
-          className="
-            fixed bottom-6 right-6 z-[100]
-            flex flex-col
-            w-[calc(100vw-2rem)] max-w-sm sm:max-w-sm
-            rounded-[2rem]
-            border border-white/20 dark:border-slate-800/30
-            bg-white/75 dark:bg-slate-900/75 backdrop-blur-xl
-            shadow-2xl shadow-slate-950/20 dark:shadow-black/40
-            max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-5rem)]
-            overflow-hidden
-          "
-        >
-          {/* Header */}
-          <header className="
-            flex flex-shrink-0 items-center justify-between gap-3
-            border-b border-slate-200/50 dark:border-slate-800/40
-            bg-slate-950/90 dark:bg-slate-950 px-4 py-3.5 text-white
-          ">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                {/* Glowing breathing ring */}
-                <span className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-pink-500 blur opacity-75 animate-pulse" />
-                <div className="relative flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 border border-white/10 text-indigo-400">
-                  <Sparkles className="h-4.5 w-4.5" />
-                </div>
-              </div>
-              <div>
-                <h2 className="text-sm font-extrabold tracking-tight">Eventra Assist</h2>
-                <div className="flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
-                  <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Active Now</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={handleMinimize}
-                className="rounded-xl p-2 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
-                aria-label="Minimize assistant"
-              >
-                <Minus className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={handleClose}
-                className="rounded-xl p-2 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
-                aria-label="Close assistant"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </header>
+      <motion.section
+      data-chatbot-open
+      data-lenis-prevent
+      aria-label="Eventra assistant"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 12 }}
+      transition={{ duration: 0.2 }}
+      className="
+        fixed bottom-6 right-6 z-[100]
+        flex flex-col                        /* KEY FIX: flex column layout */
+        w-[calc(100vw-2rem)] max-w-sm sm:max-w-sm
+        rounded-2xl
+        border border-slate-200 dark:border-slate-700
+        bg-white dark:bg-slate-900
+        shadow-2xl
+        fixed-floating-widget
+        transition-opacity duration-300
+
+        /* KEY FIX: constrain total height to viewport so it never overflows.
+           bottom-6 = 1.5rem offset from bottom, so we subtract that + a little breathing room. */
+        max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-5rem)]
+      "
+      >
+      {/* ── Header — always visible, never scrolls away ── */}
+      {/*
+        FIX #1 (desktop): header is a flex-shrink-0 child so it is always
+        rendered at the top of the constrained container. It will never be
+        pushed out of the viewport.
+      */}
+      <header className="
+        flex flex-shrink-0 items-center justify-between gap-3
+        border-b border-slate-200 dark:border-slate-700
+        bg-slate-950 px-4 py-3 text-white
+        rounded-t-2xl
+      ">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-500">
+            <Sparkles className="h-4 w-4" />
+          </div>
+          <div>
+            <h2 className="text-sm font-bold">Eventra Assist</h2>
+            <p className="text-xs text-slate-300">Events, workshops, and support</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={handleMinimize}
+            className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white"
+            aria-label="Minimize assistant"
+          >
+            <Minus className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={handleClose}
+            className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white"
+            aria-label="Close assistant"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      </header>
 
           {/* Messages list */}
           <div
@@ -404,7 +400,6 @@ export default function Chatbot() {
             </form>
           </div>
         </motion.section>
-      )}
     </AnimatePresence>,
     document.body
   );

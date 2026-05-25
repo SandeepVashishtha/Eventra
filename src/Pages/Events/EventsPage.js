@@ -7,6 +7,7 @@ import EventFiltersToolbar from "./EventFiltersToolbar";
 import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
 import { darkTheme } from "../../components/styles/theme";
+import BackToTopButton from "../../components/common/BackToTopButton";
 
 const EventsPage = () => {
   const cardSectionRef = useRef();
@@ -63,7 +64,6 @@ const EventsPage = () => {
             </button>
           </div>
         ) : null}
-
         <EventFiltersToolbar
           filterType={listing.filterType}
           onFilterChange={listing.setFilterType}
@@ -75,18 +75,18 @@ const EventsPage = () => {
           onSearchChange={listing.setSearchQuery}
         />
 
-{!listing.loadError && (
-  <EventCardSection
-    isLoading={listing.isLoading}
-    events={listing.paginatedEvents}
-    viewMode={listing.viewMode}
-    filterType={listing.filterType}
-    onClearFilters={() => {
-      listing.setSearchQuery("");
-      listing.setFilterType("all");
-    }}
-  />
-)}
+        {!listing.loadError && (
+          <EventCardSection
+            isLoading={listing.isLoading}
+            events={listing.paginatedEvents}
+            viewMode={listing.viewMode}
+            filterType={listing.filterType}
+            onClearFilters={() => {
+              listing.setSearchQuery("");
+              listing.setFilterType("all");
+            }}
+          />
+        )}
         {!listing.isLoading && !listing.loadError && (
           <PaginationControls
             currentPage={listing.currentPage}
@@ -101,6 +101,7 @@ const EventsPage = () => {
 
       <EventCTA />
       <FeedbackButton />
+      <BackToTopButton />
     </div>
   );
 };
