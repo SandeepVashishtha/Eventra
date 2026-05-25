@@ -103,19 +103,19 @@ const SearchFilter = () => {
     },
   ];
 
-  const filteredEvents = mockEvents.filter((event) => {
-    const matchesSearch =
-      (event.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        event.description?.toLowerCase().includes(searchTerm.toLowerCase())) ??
-      false;
-    const matchesCategory =
-      selectedCategory === "all" || event.category === selectedCategory;
-    const matchesLocation =
-      selectedLocation === "all" ||
-      (event.location?.toLowerCase().replace(" ", "-") === selectedLocation ??
-        false);
-    const matchesPrice = priceFilter === "all" || event.price === priceFilter;
+  const filteredEvents = mockEvents.filter(event => {
+    const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         event.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
+      const normalizedLocation = event.location
+        ?.toString()
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-');
 
+      const matchesLocation = selectedLocation === 'all' || (normalizedLocation === selectedLocation);
+    const matchesPrice = priceFilter === 'all' || event.price === priceFilter;
+    
     return matchesSearch && matchesCategory && matchesLocation && matchesPrice;
   });
 
