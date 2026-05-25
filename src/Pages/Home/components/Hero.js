@@ -216,7 +216,7 @@ border-b border-gray-100 dark:border-slate-900">
               style={{ fontFamily: '"Inter", sans-serif' }}
             >
               <motion.span
-                className="block text-gray-900 dark:text-white mb-2 md:mb-0"
+                className="block text-gray-900 dark:text-gray-400 mb-2 md:mb-0"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
@@ -253,7 +253,7 @@ border-b border-gray-100 dark:border-slate-900">
           {/* Subtext */}
           <motion.p
             variants={fadeUp}
-            className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
+            className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-800 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
           >
             Connect with developers, learn new skills, and grow your network at
             the best tech events, hackathons, and workshops in your area.
@@ -460,7 +460,7 @@ text-gray-600 dark:text-gray-300"
                       </>
                     )}
                   </p>
-                  <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-semibold uppercase tracking-wider">
+                  <p className="text-gray-500 dark:text-gray-600 text-xs sm:text-sm font-semibold uppercase tracking-wider">
                     {stat.label}
                   </p>
                 </motion.div>
