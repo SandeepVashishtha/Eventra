@@ -14,7 +14,9 @@ import {
   Ticket,
   X,
   ChevronUp,
+  Trash2,
 } from "lucide-react";
+import useLocalStorage from "../hooks/useLocalStorage";
 
 // ─── Knowledge base ────────────────------------------------------------------
 
@@ -76,22 +78,45 @@ function getAssistantReply(input) {
 
 // ─── Component ────────────────-----------------------------------------------
 
+const INITIAL_MESSAGES = [
+  {
+    role: "assistant",
+    content:
+      "Hi, I am Eventra Assist. Ask me about events, workshops, registration, hosting, or platform help.",
+    actions: [
+      { label: "Events", to: "/events", icon: CalendarDays },
+      { label: "FAQ", to: "/faq", icon: HelpCircle },
+    ],
+  },
+];
+
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [draft, setDraft] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      role: "assistant",
-      content:
-        "Hi, I am Eventra Assist. Ask me about events, workshops, registration, hosting, or platform help.",
-      actions: [
-        { label: "Events", to: "/events", icon: CalendarDays },
-        { label: "FAQ", to: "/faq", icon: HelpCircle },
-      ],
-    },
-  ]);
+  const [messages, setMessages] = useLocalStorage("eventra_chatbot_history", INITIAL_MESSAGES);
+
+  // Expiration check on mount (2 hours threshold)
+  useEffect(() => {
+    const lastActive = localStorage.getItem("eventra_chatbot_last_active");
+    const twoHours = 2 * 60 * 60 * 1000;
+    if (lastActive && Date.now() - parseInt(lastActive) > twoHours) {
+      setMessages(INITIAL_MESSAGES);
+    }
+    localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
+  }, []);
+
+  // Sync last active timestamp when messages change
+  useEffect(() => {
+    localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
+  }, [messages]);
+
+  const handleClearConversation = () => {
+    if (window.confirm("Are you sure you want to clear your conversation history?")) {
+      setMessages(INITIAL_MESSAGES);
+    }
+  };
 
   // Auto-scroll messages to bottom when new ones arrive
   const messagesEndRef = useRef(null);
@@ -256,6 +281,15 @@ export default function Chatbot() {
                 </div>
               </div>
               <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={handleClearConversation}
+                  className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-red-400 transition-colors"
+                  title="Clear conversation"
+                  aria-label="Clear conversation"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
                 <button
                   type="button"
                   onClick={handleMinimize}
