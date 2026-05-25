@@ -3,9 +3,7 @@ import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { Download } from "lucide-react";
 import {
-  saveDraft,
-  getDraft,
-  clearDraft,
+  
 } from "../../utils/eventDraftUtils";
 
 
@@ -431,23 +429,23 @@ const [showRestoreModal, setShowRestoreModal] = useState(false);
         eventData,
         token
       );
-      const result = await response.json();
+      const result = response.data;
 
-      if (response.ok && result.success) {
+      if (result.success) {
         toast.success("Event created successfully!");
         resetForm();
         setCurrentStep("form");
       } else {
-        const errorMessage =
-          result.message || result.error || `Server error: ${response.status}`;
+        const errorMessage = result.message || result.error || "Event creation failed.";
         toast.error(`❌ Error creating event: ${errorMessage}`);
         setCurrentStep("form");
       }
     } catch (error) {
       console.error("Error creating event:", error);
+      const backendMessage = error.response?.data?.message || error.response?.data?.error;
       let errorMessage = "Failed to create event. ";
-      if (error.name === "TypeError" && error.message.includes("fetch")) {
-        errorMessage += "Network error - please check your connection.";
+      if (backendMessage) {
+        errorMessage += backendMessage;
       } else if (error.message.includes("Invalid date")) {
         errorMessage += "Please check your date and time values.";
       } else {
@@ -582,7 +580,10 @@ useEffect(() => {
       title: "",
       description: "",
       category: "",
+      isMultiDay: false,
       date: "",
+      startDate: "",
+      endDate: "",
       startTime: "",
       endTime: "",
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,

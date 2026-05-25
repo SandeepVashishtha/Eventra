@@ -10,7 +10,6 @@ import {
   ExternalLink,
   Download,
   AlertCircle,
-  List,
   Grid,
   Filter,
   Activity,

@@ -7,10 +7,10 @@ const CertificateDownload = ({ eventName, eventDate, eventType }) => {
 
   if (!user) {
     return (
-      <span className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-500 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400">
-        Login to Download Certificate
-      </span>
-    );
+  <span className="inline-flex items-center justify-center">
+    {"🔒"} Login to Download Certificate
+  </span>
+);
   }
 
   const generateCertificate = () => {
@@ -52,14 +52,10 @@ const CertificateDownload = ({ eventName, eventDate, eventType }) => {
   };
 
   return (
-    <button
-      type="button"
-      onClick={generateCertificate}
-      className="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 transition"
-    >
-      Download Certificate
-    </button>
-  );
+  <button onClick={generateCertificate}>
+    📜 Download Certificate
+  </button>
+);
 };
 
 export default CertificateDownload;

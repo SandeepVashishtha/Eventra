@@ -138,7 +138,7 @@ export default function FAQSection() {
     setCardStyles(
       filteredFaqs.map(() => ({ transform: "scale(1)", filter: "none" }))
     );
-  }, [searchTerm, selectedCategory, filteredFaqs.length]);
+  }, [searchTerm, selectedCategory, filteredFaqs]);
 
   useEffect(() => {
     if (headerRef.current) {
