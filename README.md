@@ -91,8 +91,6 @@ This repository contains the React frontend application for Eventra. The backend
 
 ## Tech Stack
 
-## Tech Stack
-
 | Frontend                         | DevOps & Infrastructure              |
 | :------------------------------- | :----------------------------------- |
 | **React 18.2**                   | **Git & GitHub** for Version Control |
@@ -154,33 +152,33 @@ The repository is organized into modular frontend components, contexts, configur
 
 ```text
 Eventra/
-├── public/
-├── src/
-│   ├── assets/
-│   ├── components/
-│   │   ├── admin/
-│   │   ├── auth/
-│   │   ├── common/
-│   │   ├── Layout/
-│   │   ├── routes/
-│   │   ├── styles/
-│   │   └── user/
-│   ├── config/
-│   ├── jhalak/
-│   │   ├── FluidCursor.js   # Fluid cursor animation effect (navbar)
-│   │   └── RespawningText.js # Animated respawning/typewriter text effect
-│   ├── context/
-│   ├── Pages/
-│   ├── utils/
-│   ├── App.js
-│   ├── App.css
-│   ├── index.js
-│   └── index.css
-├── tests/
-├── .env.example
-├── package.json
-├── tailwind.config.js
-└── README.md
+|-- public/
+|-- src/
+|   |-- assets/
+|   |-- components/
+|   |   |-- admin/
+|   |   |-- auth/
+|   |   |-- common/
+|   |   |-- Layout/
+|   |   |-- routes/
+|   |   |-- styles/
+|   |   `-- user/
+|   |-- config/
+|   |-- jhalak/
+|   |   |-- FluidCursor.js   # Fluid cursor animation effect (navbar)
+|   |   `-- RespawningText.js # Animated respawning/typewriter text effect
+|   |-- context/
+|   |-- Pages/
+|   |-- utils/
+|   |-- App.js
+|   |-- App.css
+|   |-- index.js
+|   `-- index.css
+|-- tests/
+|-- .env.example
+|-- package.json
+|-- tailwind.config.js
+`-- README.md
 ```
 
 ## Deployment
