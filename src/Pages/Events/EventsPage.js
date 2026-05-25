@@ -39,7 +39,13 @@ listing.setViewMode(view);
     if (listing.sortType !== "latest") params.sort = listing.sortType;
 if (listing.viewMode !== "grid") params.view = listing.viewMode;
     setSearchParams(params, { replace: true });
-  }, [listing.currentPage, listing.eventsPerPage, listing.searchQuery, listing.filterType, setSearchParams]);
+  }, [ listing.currentPage,
+  listing.eventsPerPage,
+  listing.searchQuery,
+  listing.filterType,
+  listing.sortType,
+  listing.viewMode,
+  setSearchParams]);
 
   const handleSearch = (query = "") => {
     listing.setSearchQuery(query);
@@ -109,10 +115,12 @@ if (listing.viewMode !== "grid") params.view = listing.viewMode;
             events={listing.paginatedEvents}
             viewMode={listing.viewMode}
             filterType={listing.filterType}
-            onClearFilters={() => {
-              listing.setSearchQuery("");
-              listing.setFilterType("all");
-            }}
+          onClearFilters={() => {
+  listing.setSearchQuery("");
+  listing.setFilterType("all");
+  listing.setSortType("latest");
+  listing.setViewMode("grid");
+}}
           />
         )}
         {!listing.isLoading && !listing.loadError && (
