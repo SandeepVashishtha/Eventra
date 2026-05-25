@@ -1,16 +1,9 @@
-<<<<<<< HEAD
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
-import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from "../config/api";
-import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils";
-import { toast } from "react-toastify";
-=======
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from '../config/api';
 import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
 import { syncSecureStorage } from '../utils/secureStorage';
 import { toast } from 'react-toastify';
 import { ROLES } from '../config/roles';
->>>>>>> 9b32a1b6 (fix(auth): normalize RBAC handling and improve route protection)
 
 const AuthContext = createContext();
 
@@ -187,15 +180,6 @@ export const AuthProvider = ({ children }) => {
       role: rawUser?.role ?? resolvedRoles[0] ?? "",
       roles: resolvedRoles,
       permissions: rawUser?.permissions ?? [],
-<<<<<<< HEAD
-      scopes:
-        rawUser?.scopes ??
-        (resolvedRoles.includes("ADMIN")
-          ? ["admin:all", "event:write", "event:read", "hackathon:write", "hackathon:read"]
-          : resolvedRoles.includes("EVENT_MANAGER")
-            ? ["event:write", "event:read", "hackathon:write", "hackathon:read"]
-            : ["event:read", "hackathon:read"]),
-=======
       scopes: rawUser?.scopes ?? (
         resolvedRoles.includes(ROLES.ADMIN)
           ? ["admin:all", "event:write", "event:read", "hackathon:write", "hackathon:read"]
@@ -203,7 +187,6 @@ export const AuthProvider = ({ children }) => {
             ? ["event:write", "event:read", "hackathon:write", "hackathon:read"]
             : ["event:read", "hackathon:read"]
       ),
->>>>>>> 9b32a1b6 (fix(auth): normalize RBAC handling and improve route protection)
     };
 
     return { sessionToken, sessionUser };
@@ -298,9 +281,6 @@ export const AuthProvider = ({ children }) => {
     return true;
   }, [user, token]);
 
-<<<<<<< HEAD
-  const hasRole = (roleName) => user?.roles?.includes(roleName) || false;
-=======
   const hasRole = (roleName) => {
     if (!user?.roles) return false;
 
@@ -308,7 +288,6 @@ export const AuthProvider = ({ children }) => {
       String(roleName).toUpperCase()
     );
   };
->>>>>>> 9b32a1b6 (fix(auth): normalize RBAC handling and improve route protection)
 
   const hasPermission = (permissionName) => user?.permissions?.includes(permissionName) || false;
 
@@ -317,14 +296,6 @@ export const AuthProvider = ({ children }) => {
   const hasAnyPermission = (...permissionNames) =>
     permissionNames.some((permission) => hasPermission(permission));
 
-<<<<<<< HEAD
-  const isAdmin = () => hasRole("ADMIN");
-  const isEventManager = () => hasRole("EVENT_MANAGER");
-  const isSuperAdmin = () => hasRole("SUPER_ADMIN");
-  const isOrganizer = () => hasRole("ORGANIZER");
-  const isVolunteer = () => hasRole("VOLUNTEER");
-  const isAttendee = () => hasRole("ATTENDEE");
-=======
   const isAdmin = () => hasRole(ROLES.ADMIN);
 
   const isEventManager = () => hasRole(ROLES.ORGANIZER);
@@ -336,7 +307,6 @@ export const AuthProvider = ({ children }) => {
   const isVolunteer = () => hasRole(ROLES.VOLUNTEER);
 
   const isAttendee = () => hasRole(ROLES.ATTENDEE);
->>>>>>> 9b32a1b6 (fix(auth): normalize RBAC handling and improve route protection)
 
   const value = {
     user,
