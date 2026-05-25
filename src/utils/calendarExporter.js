@@ -106,3 +106,60 @@ export const generateOutlookLink = (event) => {
 
   return `${baseUrl}?${params.toString()}`;
 };
+
+/**
+ * Downloads a single .ics file containing multiple events.
+ * Supports both flat event objects and nested registration objects.
+ * @param {Array} events - List of event/registration objects to export
+ * @param {string} filename - Custom filename for the downloaded file
+ */
+export const downloadBulkICSFile = (events, filename = "registered-events") => {
+  if (!Array.isArray(events) || events.length === 0) return;
+
+  const createdDate = formatToICSDate(new Date());
+  
+  const icsLines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Eventra//Event Organizer Platform//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH"
+  ];
+
+  events.forEach((item) => {
+    const eventObj = item.event ? item.event : item;
+    const { title, description, date, endDate, location, id } = eventObj;
+    
+    const formattedStart = formatToICSDate(date);
+    const formattedEnd = endDate ? formatToICSDate(endDate) : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
+
+    icsLines.push(
+      "BEGIN:VEVENT",
+      `UID:eventra-${id || Math.random().toString(36).substring(2, 9)}@eventra.com`,
+      `DTSTAMP:${createdDate}`,
+      `DTSTART:${formattedStart}`,
+      `DTEND:${formattedEnd}`,
+      `SUMMARY:${escapeICSText(title || "Eventra Scheduled Event")}`,
+      `DESCRIPTION:${escapeICSText(description || "Event organized through the Eventra Platform.")}`,
+      `LOCATION:${escapeICSText(location || "Virtual / Online Event")}`,
+      "STATUS:CONFIRMED",
+      "SEQUENCE:0",
+      "END:VEVENT"
+    );
+  });
+
+  icsLines.push("END:VCALENDAR");
+
+  const icsString = icsLines.join("\r\n");
+  const blob = new Blob([icsString], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", `${filename.toLowerCase().replace(/[^a-z0-9]/g, "-")}.ics`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
