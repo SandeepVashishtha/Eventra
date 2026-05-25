@@ -5,6 +5,7 @@ import { Download } from "lucide-react";
 import {
   
 } from "../../utils/eventDraftUtils";
+import { syncSecureStorage } from "../../utils/secureStorage";
 
 
 import { exportAttendeesToCSV }
@@ -402,7 +403,7 @@ const [showRestoreModal, setShowRestoreModal] = useState(false);
           })),
       };
 
-      const token = localStorage.getItem("token");
+      const token = syncSecureStorage.getItem("token");
       if (!token) {
         toast.error("Authentication required. Please log in and try again.");
         setCurrentStep("form");
