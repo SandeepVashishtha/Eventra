@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useInView } from "react-intersection-observer";
 import { HomeCardSkeleton } from "../../../components/common/SkeletonLoaders";
+import { CheckCircle2, Hourglass } from "lucide-react";
 
 // Import mock data
 import eventsData from "../../Events/eventsMockData.json";
@@ -187,10 +188,10 @@ border-t border-gray-100 dark:border-slate-800/80"
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-black dark:text-gray-900">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-black dark:text-white">
             What's Happening Now
           </h2>
-          <p className="mt-2 sm:mt-3 max-w-xl mx-auto text-sm sm:text-lg text-black dark:text-gray-800">
+          <p className="mt-2 sm:mt-3 max-w-xl mx-auto text-sm sm:text-lg text-black dark:text-gray-300">
             Stay updated with {upcomingEvents.length} upcoming events, community
             programs, and opportunities to contribute to Eventra
           </p>
@@ -316,109 +317,138 @@ border-t border-gray-100 dark:border-slate-800/80"
                         // FIX 4: min-h-[360px] → min-h-[300px] sm:min-h-[360px]
                         <div
                           key={event.id}
-                          className="flex flex-col rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 bg-white dark:bg-black/60 transform hover:scale-105 min-h-[300px] sm:min-h-[360px] ring-2 ring-sky-200 dark:ring-sky-700/60"
+                          className="group relative w-full min-h-[300px] sm:min-h-[360px]"
+                          style={{ perspective: "1000px" }}
+                          onMouseEnter={() => setIsAutoPlaying(false)}
+                          onMouseLeave={() => setIsAutoPlaying(true)}
                         >
-                          <div className="p-4 sm:p-6 flex-1 flex flex-col">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
-                              <span
-                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs sm:text-sm font-medium ${
-                                  statusColors[event.status] ||
-                                  "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300"
+                          <div
+                            className="w-full h-full absolute transition-transform duration-700 group-hover:[transform:rotateY(180deg)]"
+                            style={{ transformStyle: "preserve-3d" }}
+                          >
+                            {/* Front Face */}
+                            <div
+                              className="absolute inset-0 w-full h-full flex flex-col rounded-xl overflow-hidden shadow-md bg-white dark:bg-black/80 ring-2 ring-sky-200 dark:ring-sky-700/60"
+                              style={{ backfaceVisibility: "hidden" }}
+                            >
+                              <div className="p-4 sm:p-6 flex-1 flex flex-col">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
+                                  <span
+                                    className={`inline-flex items-center px-2 py-1 rounded-full text-xs sm:text-sm font-medium ${
+                                      statusColors[event.status] ||
+                                      "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300"
+                                    }`}
+                                  >
+                                    {event.status}
+                                  </span>
+                                  <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                                    {event.type}
+                                  </span>
+                                </div>
+
+                                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                  {event.title}
+                                </h3>
+                                <p className="text-gray-600 dark:text-gray-400 flex-1 mb-3 sm:mb-4 text-sm sm:text-base line-clamp-3">
+                                  {event.description}
+                                </p>
+
+                                {event.prize && (
+                                  <div className="flex items-center text-xs sm:text-sm text-rose-500 dark:text-rose-300 mb-2">
+                                    <svg
+                                      className="w-4 h-4 mr-1.5"
+                                      fill="currentColor"
+                                      viewBox="0 0 20 20"
+                                    >
+                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00 .95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00 -.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00 -1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00 -.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00 .951-.69l1.07-3.292z" />
+                                    </svg>
+                                    {event.prize}
+                                  </div>
+                                )}
+
+                                {(event.participants || event.attendees) && (
+                                  <div className="flex items-center text-xs sm:text-sm text-blue-600 dark:text-blue-400 mb-2">
+                                    <svg
+                                      className="w-4 h-4 mr-1.5"
+                                      fill="currentColor"
+                                      viewBox="0 0 20 20"
+                                    >
+                                      <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                                    </svg>
+                                    {event.participants
+                                      ? `${event.participants} participants`
+                                      : `${event.attendees} attendees`}
+                                  </div>
+                                )}
+
+                                <div className="flex items-center text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-2 sm:mt-4">
+                                  <svg
+                                    className="flex-shrink-0 mr-1.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 dark:text-gray-500"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                    />
+                                  </svg>
+                                  {event.date}
+                                </div>
+                              </div>
+                              <div className="mt-auto ml-3 mb-4 flex flex-col gap-2">
+                                <div className="inline-flex items-center gap-1.5 w-fit px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-xs font-semibold shadow-sm">
+                                  {event.timeLeft === "Ended" ? (
+                                    <>
+                                      <CheckCircle2 className="w-3.5 h-3.5" /> Ended
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Hourglass className="w-3.5 h-3.5" /> Starts in {event.timeLeft}
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Back Face */}
+                            <div
+                              className="absolute inset-0 w-full h-full bg-gradient-to-br from-indigo-600 to-purple-700 rounded-xl shadow-lg flex flex-col items-center justify-center p-6 text-white text-center ring-2 ring-indigo-400"
+                              style={{
+                                backfaceVisibility: "hidden",
+                                transform: "rotateY(180deg)",
+                              }}
+                            >
+                              <h3 className="text-xl sm:text-2xl font-bold mb-4 px-2">
+                                {event.title}
+                              </h3>
+                              <p className="text-indigo-100 text-sm mb-8 px-4">
+                                Don't miss out on this amazing opportunity. Connect with the community and learn something new!
+                              </p>
+                              <Link
+                                to={event.link}
+                                className={`inline-flex items-center justify-center px-6 py-2.5 rounded-full shadow-lg font-bold transition-all duration-300 hover:scale-105 ${
+                                  event.featured
+                                    ? "bg-white text-indigo-600 hover:bg-indigo-50"
+                                    : "bg-black/30 text-white hover:bg-black/50 border border-white/20"
                                 }`}
                               >
-                                {event.status}
-                              </span>
-                              <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                                {event.type}
-                              </span>
-                            </div>
-
-                            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                              {event.title}
-                            </h3>
-                            <p className="text-gray-600 dark:text-gray-400 flex-1 mb-3 sm:mb-4 text-sm sm:text-base line-clamp-3">
-                              {event.description}
-                            </p>
-
-                            {event.prize && (
-                              <div className="flex items-center text-xs sm:text-sm text-rose-500 dark:text-rose-300 mb-2">
+                                {event.featured ? "Join Now" : "Learn More"}
                                 <svg
-                                  className="w-4 h-4 mr-1.5"
+                                  className="ml-2 -mr-1 w-4 h-4"
                                   fill="currentColor"
                                   viewBox="0 0 20 20"
                                 >
-                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 00.951-.69l1.07-3.292z" />
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                                    clipRule="evenodd"
+                                  />
                                 </svg>
-                                {event.prize}
-                              </div>
-                            )}
-
-                            {(event.participants || event.attendees) && (
-                              <div className="flex items-center text-xs sm:text-sm text-blue-600 dark:text-blue-400 mb-2">
-                                <svg
-                                  className="w-4 h-4 mr-1.5"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-                                </svg>
-                                {event.participants
-                                  ? `${event.participants} participants`
-                                  : `${event.attendees} attendees`}
-                              </div>
-                            )}
-
-                            <div className="flex items-center text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-2 sm:mt-4">
-                              <svg
-                                className="flex-shrink-0 mr-1.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 dark:text-gray-500"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                />
-                              </svg>
-                              {event.date}
+                              </Link>
                             </div>
-                          </div>
-
-<div className="mt-4 ml-3 flex flex-col gap-2">
-  <div className="inline-flex items-center gap-1.5 w-fit px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-xs font-semibold shadow-sm">
-
-  {event.timeLeft === "Ended"
-  ? "✅ Ended"
-  : `⏳ Starts in ${event.timeLeft}`}
-</div>
-
-</div>
-                          
-
-                          <div className="bg-gray-50 dark:bg-gray-700/50 px-4 sm:px-6 py-3 sm:py-4">
-                            <Link
-                              to={event.link}
-                              className={`w-full inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 border border-transparent rounded-md shadow-sm text-xs sm:text-sm font-medium transition-colors ${
-                                event.featured
-                                  ? "bg-black text-white hover:bg-sky-100 hover:text-black"
-                                  : "bg-black text-white hover:bg-emerald-100 hover:text-black"
-                              }`}
-                            >
-                              {event.featured ? "Join Now" : "Learn More"}
-                              <svg
-                                className="ml-1 sm:ml-2 -mr-1 w-3 h-3 sm:w-4 sm:h-4"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                            </Link>
                           </div>
                         </div>
                       ))}

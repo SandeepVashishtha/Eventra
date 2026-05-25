@@ -1,20 +1,19 @@
 import React, { lazy } from 'react';
 import { Route } from 'react-router-dom';
 
-// --------------- COMPONENTS
 import ProtectedRoute from "../auth/ProtectedRoute";
-import EventCreation from "../common/EventCreation";
-import HostHackathon from "../../Pages/Hackathons/HostHackathon";
-import EditProfile from "../user/EditProfile";
-import Settings from "../../Pages/Settings";
-import Login from "../auth/Login";
-import Signup from "../auth/Signup";
-import Unauthorized from "../auth/Unauthorized";
-import PasswordReset from "../auth/PasswordReset";
-import NotFound from "../NotFound";
 
 const AdminDashboard = lazy(() => import("../admin/AdminDashboard"));
 const Dashboard = lazy(() => import("../Dashboard"));
+const EventCreation = lazy(() => import("../common/EventCreation"));
+const HostHackathon = lazy(() => import("../../Pages/Hackathons/HostHackathon"));
+const EditProfile = lazy(() => import("../user/EditProfile"));
+const Settings = lazy(() => import("../../Pages/Settings"));
+const AuthPage = lazy(() => import("../auth/AuthPage"));
+const Unauthorized = lazy(() => import("../auth/Unauthorized"));
+const PasswordReset = lazy(() => import("../auth/PasswordReset"));
+const NotFound = lazy(() => import("../NotFound"));
+const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
 
 export const getProtectedRoutes = () => [
   <Route
@@ -83,12 +82,21 @@ export const getProtectedRoutes = () => [
       </ProtectedRoute>
     }
   />,
+  <Route
+    key="/feedback/survey-builder"
+    path="/feedback/survey-builder"
+    element={
+      <ProtectedRoute requiredPermissions={["HOST_HACKATHON", "CREATE_EVENT"]}>
+        <SurveyEngine />
+      </ProtectedRoute>
+    }
+  />,
 ];
 
 export const getAuthRoutes = () => [
-  <Route key="/login" path="/login" element={<Login />} />,
-  <Route key="/signup" path="/signup" element={<Signup />} />,
+  <Route key="/login" path="/login" element={<AuthPage />} />,
+  <Route key="/signup" path="/signup" element={<AuthPage />} />,
   <Route key="/unauthorized" path="/unauthorized" element={<Unauthorized />} />,
   <Route key="/password-reset" path="/password-reset" element={<PasswordReset />} />,
-  <Route key="/*" path="/*" element={<NotFound />} />,
+  // <Route key="/*" path="/*" element={<NotFound />} />,
 ];

@@ -2,27 +2,33 @@ import React, { lazy } from 'react';
 import { Route } from 'react-router-dom';
 import PageLayout from '../Layout/PageLayout';
 
-// --------------- PAGES
-import HomePage from "../../Pages/Home/HomePage";
-import EventDetails from "../../Pages/Events/EventDetails";
-import EventRegistration from "../../Pages/Events/EventRegistration";
-import BookmarkedEvents from "../../Pages/Events/BookmarkedEvents";
-import Contributors from "../Contributors";
-import CommunityEvent from "../CommunityEvent";
-import LeaderBoard from "../../Pages/Leaderboard/Leaderboard";
-import ContributorGuide from "../../Pages/Leaderboard/ContributorGuide";
-import AboutPage from "../../Pages/About/AboutPage";
-import FAQPage from "../../Pages/FAQ/FAQPage";
-import Terms from "../../Pages/Terms";
-import { Privacy } from "../../Pages/Privacy";
-import ApiDocs from "../../Pages/ApiDocs";
-import HelpCenter from "../../Pages/HelpCenter";
-import ContactUs from "../../Pages/Contact/ContactUs";
-import FeedbackPage from "../../Pages/Feedback/FeedbackPage";
-import FloorPlanDesignerPage from "../../Pages/Events/FloorPlanDesignerPage";
-import DocumentationPage from "../../Pages/About/DocumentationPage";
-import SubmitProject from "../../Pages/Projects/SubmitProject";
-import MockApiResponse from "../MockApiResponse";
+const MockApiResponse = lazy(() => import("../MockApiResponse"));
+
+const HomePage = lazy(() => import("../../Pages/Home/HomePage"));
+const EventDetails = lazy(() => import("../../Pages/Events/EventDetails"));
+const EventRegistration = lazy(() => import("../../Pages/Events/EventRegistration"));
+const BookmarkedEvents = lazy(() => import("../../Pages/Events/BookmarkedEvents"));
+const RemindersPage = lazy(() => import("../../Pages/Events/RemindersPage"));
+const HackathonLifecycle = lazy(() => import("../../Pages/Hackathons/HackathonLifecycle"));
+const Contributors = lazy(() => import("../Contributors"));
+const CommunityEvent = lazy(() => import("../CommunityEvent"));
+const LeaderBoard = lazy(() => import("../../Pages/Leaderboard/Leaderboard"));
+const ContributorGuide = lazy(() => import("../../Pages/Leaderboard/ContributorGuide"));
+const AboutPage = lazy(() => import("../../Pages/About/AboutPage"));
+const FAQPage = lazy(() => import("../../Pages/FAQ/FAQPage"));
+const Terms = lazy(() => import("../../Pages/Terms"));
+const Privacy = lazy(() =>
+  import("../../Pages/Privacy").then((module) => ({
+    default: module.Privacy,
+  }))
+);
+const ApiDocs = lazy(() => import("../../Pages/ApiDocs"));
+const HelpCenter = lazy(() => import("../../Pages/HelpCenter"));
+const ContactUs = lazy(() => import("../../Pages/Contact/ContactUs"));
+const FeedbackPage = lazy(() => import("../../Pages/Feedback/FeedbackPage"));
+const FloorPlanDesignerPage = lazy(() => import("../../Pages/Events/FloorPlanDesignerPage"));
+const DocumentationPage = lazy(() => import("../../Pages/About/DocumentationPage"));
+const SubmitProject = lazy(() => import("../../Pages/Projects/SubmitProject"));
 
 const EventsPage = lazy(() => import("../../Pages/Events/EventsPage"));
 const HackathonPage = lazy(() => import("../../Pages/Hackathons/HackathonPage"));
@@ -34,10 +40,12 @@ export const getPublicRoutes = () => [
   <Route key="/" path="/" element={<HomePage />} />,
   <Route key="/events" path="/events" element={<EventsPage />} />,
   <Route key="/bookmarks" path="/bookmarks" element={<BookmarkedEvents />} />,
+  <Route key="/reminders" path="/reminders" element={<RemindersPage />} />,
   <Route key="/event-details" path="/events/:eventId" element={<EventDetails />} />,
   <Route key="/register" path="/events/:eventId/register" element={<EventRegistration />} />,
   <Route key="/hackathons" path="/hackathons" element={<HackathonPage />} />,
   <Route key="/hackathon-details" path="/hackathons/:hackathonId" element={<HackathonDetailsPage />} />,
+  <Route key="/hackathons-lifecycle" path="/hackathons/:id/lifecycle" element={<HackathonLifecycle />} />,
   <Route key="/projects" path="/projects" element={<ProjectsPage />} />,
   <Route key="/api/hackathons" path="/api/hackathons" element={<MockApiResponse />} />,
   <Route key="/api/projects" path="/api/projects" element={<MockApiResponse />} />,
