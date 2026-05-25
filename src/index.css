@@ -1,5 +1,6 @@
 /* Fix: Removed 'Anton' decorative font — only 'Inter' is used for professionalism */
 /* Issue #828: Standardize and Professionalize Font Text and Size */
+@import url("https://fonts.googleapis.com/css2?family=Oxanium:wght@800&family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 
 @tailwind base;
@@ -18,6 +19,7 @@
   --bg-color: #ffffff;
   --text-color: #1a1a1a;
   --text-color-light: #4a4a4a;
+
   --border-color: #e1e5e9;
   --card-bg-color: #ffffff;
 
@@ -85,10 +87,12 @@
   --navbar-bg: #111827;
   --sidebar-bg: #0f172a;
 
+
   --input-bg: #1e293b;
   --input-text: #f8fafc;
 
   --table-bg: #111827;
+
   --modal-bg: #1e293b;
 }
 
@@ -98,10 +102,32 @@ html {
   font-size: 16px; /* Explicit root size for reliable rem calculations */
 }
 
+/* Lenis smooth scrolling styles */
+html.lenis {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
+
 body {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
     "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
+
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: var(--lh-body);
@@ -112,6 +138,7 @@ body {
   font-size: var(--font-body);
   font-weight: var(--fw-regular);
 }
+
 .dark .pastel-grid-bg {
   /* Use a solid dark background in dark mode and remove the light pastel grid image
      which remains visible otherwise. This ensures pages that use the pastel grid
@@ -153,7 +180,9 @@ code {
 .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
 .section-padding { padding: 80px 0; }
 .text-gradient {
+
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -161,7 +190,9 @@ code {
 
 /* Buttons */
 .btn-primary {
+
   background: linear-gradient(135deg, #667eea 0%, #5a67d8 100%);
+
   color: white;
   padding: 12px 32px;
   border: none;
@@ -177,6 +208,7 @@ code {
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+
   color: #ffffff;
 }
 
@@ -197,6 +229,7 @@ code {
 .btn-secondary:hover {
   border-color: #667eea;
   color: #667eea;
+
   transform: translateY(-2px);
 }
 
@@ -213,6 +246,7 @@ code {
   }
 
   .container { padding: 0 16px; }
+
   .section-padding { padding: 60px 0; }
   .btn-primary, .btn-secondary { padding: 10px 24px; font-size: 0.875rem; }
 }
@@ -383,9 +417,6 @@ table {
 .theme-sidebar {
   background-color: var(--sidebar-bg);
 }
-/* =========================================
-   Advanced Theme Enhancements
-========================================= */
 
 /* Disable transitions during initial load */
 
@@ -513,3 +544,13 @@ select,
       0.5
     );
 }
+
+/* navbar updates */
+nav {
+  overflow-x: hidden;
+}
+
+.neon-logo {
+  white-space: nowrap;
+}
+

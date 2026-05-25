@@ -90,21 +90,17 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
         token
       );
 
-      if (response.ok) {
-        const result = await response.json();
-        setSuccess(
-          "Project submitted successfully! It will be reviewed by administrators."
-        );
-        onSubmit && onSubmit(result);
-        setTimeout(() => {
-          onClose && onClose();
-        }, 2000);
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to submit project");
-      }
+      const result = response.data;
+      setSuccess(
+        "Project submitted successfully! It will be reviewed by administrators."
+      );
+      onSubmit && onSubmit(result);
+      setTimeout(() => {
+        onClose && onClose();
+      }, 2000);
     } catch (err) {
-      setError(err.message || "An error occurred while submitting the project");
+      const backendMessage = err.response?.data?.message;
+      setError(backendMessage || err.message || "An error occurred while submitting the project");
     } finally {
       setIsSubmitting(false);
     }

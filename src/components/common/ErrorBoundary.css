@@ -21,6 +21,9 @@
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   z-index: 9999;
 }
+.dark .eb-overlay {
+  background-color: #0f172a;
+}
 
 /* Central card */
 .eb-card {
@@ -130,6 +133,10 @@
   cursor: pointer;
   transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
+.dark .eb-btn-secondary {
+  color: #e2e8f0;
+  border-color: #475569;
+}
 
 .eb-btn-secondary:hover {
   border-color: #667eea;
@@ -140,6 +147,12 @@
 .eb-btn-secondary:active {
   transform: translateY(0);
 }
+.eb-btn-primary:focus,
+.eb-btn-secondary:focus {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
+}
+
 
 /* Collapsible dev-only error details */
 .eb-details {
@@ -176,9 +189,15 @@
   max-height: 200px;
   overflow-y: auto;
 }
+.dark .eb-stack {
+  background: #0f172a;
+  color: #f8fafc;
+}
 
 /* Dark mode overrides */
 .dark .eb-card {
+  background: #1e293b;
+  border-color: #334155;
   box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.3),
     0 20px 60px -10px rgba(102, 126, 234, 0.1);
