@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { getSmartDateLabel } from "../../utils/relativeTime";
 import {
   Calendar, Trophy, FolderOpen, Users, Settings,
   Clock, MapPin, Zap, Activity, Bell, ChevronRight,
@@ -308,7 +309,7 @@ export default function UserDashboard() {
                       <div key={ev.id} className="ud-list-item">
                         <div>
                           <p className="ud-list-title">{ev.title}</p>
-                          <p className="ud-list-meta"><Calendar size={12} /> {ev.date} · <MapPin size={12} /> {ev.location}</p>
+                          <p className="ud-list-meta"><Calendar size={12} /> {getSmartDateLabel(ev.date)} · <MapPin size={12} /> {ev.location}</p>
                         </div>
                         {/* ✅ StatusBadge replaces ud-badge span */}
                         <StatusBadge status={ev.participationType} />
@@ -330,7 +331,7 @@ export default function UserDashboard() {
                       <div key={h.id} className="ud-list-item">
                         <div>
                           <p className="ud-list-title">{h.title}</p>
-                          <p className="ud-list-meta"><Calendar size={12} /> {h.date} · <MapPin size={12} /> {h.location}</p>
+                          <p className="ud-list-meta"><Calendar size={12} /> {getSmartDateLabel(h.date)} · <MapPin size={12} /> {h.location}</p>
                         </div>
                         <StatusBadge status={h.participationType} />
                       </div>
@@ -488,7 +489,7 @@ export default function UserDashboard() {
                         <tr key={item.id}>
                           <td><span className="ud-table-type">{TYPE_ICON[item.type]}{item.type}</span></td>
                           <td className="ud-table-title" title={item.title}>{item.title}</td>
-                          <td>{item.date || "—"}</td>
+                          <td title={item.date || ""}>{item.date ? getSmartDateLabel(item.date) : "—"}</td>
                           <td title={item.location || item.lastUpdate || "—"}>{item.location || item.lastUpdate || "—"}</td>
                           <td>
                             <StatusBadge status={item.projectStatus !== "-" ? item.projectStatus : item.status} />
