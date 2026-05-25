@@ -372,7 +372,8 @@ const CollaborationHub = () => {
                   value={newRequest.description}
                   onChange={handleRequestChange}
                   rows="4" 
-                  placeholder="Describe your collaboration opportunity..."
+                  maxLength={300}
+                  placeholder="Describe partnership goals / Sponsorship details / Collaboration ideas..."
                   required
                 ></textarea>
               </div>
