@@ -29,6 +29,7 @@ const Hero = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
+  const [statsReady, setStatsReady] = useState(false);
   const [isDark, setIsDark] = useState(
     document.documentElement.classList.contains("dark")
   );
@@ -59,6 +60,10 @@ const Hero = () => {
     controls.start("show");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [controls]);
+
+  useEffect(() => {
+    setStatsReady(true);
+  }, []);
 
   // Global search functionality
   const createSearchItem = (item, type, searchType) => ({
@@ -149,20 +154,52 @@ const Hero = () => {
     show: { y: 0, opacity: 1, transition: { duration: 0.8, ease: "easeOut" } },
   };
 
+  const floatShape = (i) => ({
+    y: [0, -20 - i * 5, 0],
+    x: [0, 20 + i * 5, 0],
+    rotate: [0, 15, -15, 0],
+    transition: { duration: 4.4 + i * 0.7, repeat: Infinity, ease: "easeInOut" },
+  });
+
+  // Vibrant colors for light mode, soft pastels for dark mode
+  const shapes = [
+    { size: 42, pos: { top: "10%", left: "5%" }, lightColor: "#3b82f6", darkColor: "#dbeafe" },
+    { size: 54, pos: { top: "14%", left: "20%" }, lightColor: "#f59e0b", darkColor: "#fde68a" },
+    { size: 30, pos: { top: "24%", left: "42%" }, lightColor: "#22c55e", darkColor: "#dcfce7" },
+    { size: 50, pos: { top: "30%", left: "70%" }, lightColor: "#0ea5e9", darkColor: "#bae6fd" },
+    { size: 40, pos: { top: "52%", left: "10%" }, lightColor: "#ec4899", darkColor: "#fbcfe8" },
+    { size: 26, pos: { top: "42%", left: "32%" }, lightColor: "#8b5cf6", darkColor: "#c7d2fe" },
+    { size: 68, pos: { top: "68%", left: "24%" }, lightColor: "#f43f5e", darkColor: "#fecdd3" },
+    { size: 50, pos: { top: "72%", left: "64%" }, lightColor: "#10b981", darkColor: "#bbf7d0" },
+    { size: 34, pos: { top: "48%", left: "80%" }, lightColor: "#eab308", darkColor: "#fde68a" },
+  ];
+
   const stats = [
-    { value: "1500+", label: "Developers Joined" },
-    { value: "75",    label: "Events Organized"  },
-    { value: "30+",   label: "Partners & Sponsors" },
+    { value: 1500, label: "Developers Joined", suffix: "+" },
+    { value: 75, label: "Events Organized", suffix: "+" },
+    { value: 30, label: "Partners & Sponsors", suffix: "+" },
   ];
 
   return (
-    <section className="relative overflow-hidden bg-white dark:bg-[#0a0a0a] text-slate-900 dark:text-gray-100 pb-16 sm:pb-24 pt-12 sm:pt-16 border-b border-gray-200 dark:border-gray-900">
-      {/* Professional Background Elements */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-      <div className="absolute left-0 right-0 top-[-10%] -z-10 m-auto h-[300px] w-[300px] sm:h-[500px] sm:w-[500px] rounded-full bg-indigo-500 opacity-20 dark:opacity-10 blur-[100px]"></div>
-
+    <section
+      aria-label="Hero section"
+      className="relative overflow-hidden 
+bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white
+dark:from-slate-950 dark:via-slate-900 dark:to-black
+text-slate-900 dark:text-gray-100 
+pb-16 sm:pb-20 md:pb-24
+border-b border-gray-100 dark:border-slate-900">
       {/* Hero Content */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10 pt-16 sm:pt-20">
+      <div className=" mx-auto px-6 lg:px-8 relative z-10 pt-20"
+      style={{
+    backgroundImage: "url('/background.png')",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+    minHeight: "100vh",
+    width:"100vw"
+  }}
+      >
         <motion.div
           className="text-center"
           variants={container}
@@ -322,20 +359,69 @@ text-gray-600 dark:text-gray-300"
             <motion.div variants={fadeUp}>
               <Link
                 to="/events"
-                className="group relative inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 w-full sm:w-auto"
+                aria-label="Explore upcoming tech events"
+                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-500 dark:bg-blue-900 text-white dark:text-white font-bold shadow-md shadow-blue-200 dark:shadow-none overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-600 dark:hover:bg-blue-800"
               >
-                Explore Events
-                <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+                <span className="relative z-10 flex items-center">
+                  <img src="/assets/events.svg" alt="" className="mr-2"/>
+                  Explore Events
+                  <svg
+                    className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </span>
               </Link>
             </motion.div>
 
             <motion.div variants={fadeUp}>
               <Link
                 to="/hackathons"
-                className="group inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white font-semibold shadow-sm hover:shadow-md transition-all duration-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:-translate-y-1 w-full sm:w-auto"
+                aria-label="Join upcoming hackathons"
+                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-amber-400 dark:bg-yellow-900 border border-amber-300 dark:border-yellow-700 text-white dark:text-white font-semibold shadow-md shadow-amber-100 dark:shadow-none hover:shadow-lg hover:bg-amber-500 dark:hover:bg-yellow-800 hover:scale-105 transition-all duration-300"
               >
-                <Trophy className="mr-2 w-4 h-4 text-indigo-500 transition-transform group-hover:scale-110" />
+                <img src="/assets/hackathons.svg" alt="" className="mr-2"/>
                 Join Hackathons
+                <svg
+                    className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+              </Link>
+            </motion.div>
+
+            {/* Tertiary Button - Learn More */}
+            <motion.div variants={fadeUp}>
+              <Link
+                to="/about"
+                aria-label="Learn more about Eventra"
+                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-pink-500 dark:bg-pink-900 text-white dark:text-white font-semibold shadow-md shadow-pink-100 dark:shadow-none transform transition-all duration-300 hover:scale-105 hover:bg-pink-600 dark:hover:bg-pink-800"
+              >
+                <img src="/assets/learnmore.svg" alt="" className="mr-2"/>
+                Learn More
+                <svg
+                  className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
               </Link>
             </motion.div>
           </motion.div>
@@ -345,6 +431,8 @@ text-gray-600 dark:text-gray-300"
             <motion.div
               variants={fadeUp}
               className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
+              role="region"
+              aria-label="Platform statistics"
             >
               {stats.map((stat, i) => (
                 <motion.div
@@ -354,13 +442,23 @@ text-gray-600 dark:text-gray-300"
                   transition={{ duration: 0.2 }}
                   className="flex flex-col items-center justify-center p-6 bg-white/60 dark:bg-gray-900/40 backdrop-blur-md rounded-2xl border border-gray-200/60 dark:border-gray-800/60 shadow-sm"
                 >
-                  <p className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white mb-2">
-                    <CountUp
-                      start={0}
-                      end={parseFloat(stat.value)}
-                      duration={2.5}
-                      suffix={stat.value.includes('+') ? '+' : ''}
-                    />
+                  
+                  <p className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
+                    {statsReady ? (
+                      <CountUp
+                        start={0}
+                        end={Number.isFinite(stat.value) ? stat.value : 0}
+                        duration={2.5}
+                        suffix={stat.suffix || ""}
+                        enableScrollSpy
+                        scrollSpyOnce
+                      />
+                    ) : (
+                      <>
+                        {stat.value}
+                        {stat.suffix || ""}
+                      </>
+                    )}
                   </p>
                   <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-semibold uppercase tracking-wider">
                     {stat.label}
