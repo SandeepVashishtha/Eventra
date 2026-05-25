@@ -289,7 +289,7 @@ Example:
 
 ```env
 REACT_APP_API_URL=http://localhost:8080/api
-REACT_APP_GITHUB_TOKEN=your_github_token
+GITHUB_TOKEN=your_github_token
 ```
 
 ### Required Environment Variables
@@ -298,7 +298,7 @@ REACT_APP_GITHUB_TOKEN=your_github_token
 | ------------------------------- | ------------------------------ |
 | `NODE_ENV`                      | Application environment        |
 | `REACT_APP_API_URL`             | Backend API base URL           |
-| `REACT_APP_GITHUB_TOKEN`        | GitHub API token               |
+| `GITHUB_TOKEN`                  | GitHub API token               |
 | `REACT_APP_EMAILJS_PUBLIC_KEY`  | EmailJS public key             |
 | `REACT_APP_EMAILJS_SERVICE_ID`  | EmailJS service ID             |
 | `REACT_APP_EMAILJS_TEMPLATE_ID` | EmailJS template ID            |
