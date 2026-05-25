@@ -98,5 +98,5 @@ export const getAuthRoutes = () => [
   <Route key="/signup" path="/signup" element={<AuthPage />} />,
   <Route key="/unauthorized" path="/unauthorized" element={<Unauthorized />} />,
   <Route key="/password-reset" path="/password-reset" element={<PasswordReset />} />,
-  <Route key="/*" path="/*" element={<NotFound />} />,
+  // <Route key="/*" path="/*" element={<NotFound />} />,
 ];

@@ -440,7 +440,11 @@ const EventRegistration = () => {
           title: event.title,
           text: shareText,
           url: shareUrl,
-        }).catch((err) => console.log(err));
+        }).catch((err) => {
+          if (err.name !== "AbortError") {
+            toast.error("Unable to share event. Try copying the link instead.");
+          }
+        });
       } else {
         navigator.clipboard.writeText(shareUrl).then(() => {
           toast.success("Event link copied to clipboard!");

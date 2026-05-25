@@ -1,4 +1,6 @@
 import axios from "axios";
+import { syncSecureStorage } from "../utils/secureStorage";
+
 
 // ---------------------------------------------------------------------------
 // Base API URL
@@ -110,7 +112,7 @@ const normalizeRequestConfig = (configOrToken = {}, maybeToken) => {
       ? configOrToken
       : typeof maybeToken === "string"
         ? maybeToken
-        : localStorage.getItem("token") || "";
+        : syncSecureStorage.getItem("token") || "";
 
   if (token) {
     config.headers = {
