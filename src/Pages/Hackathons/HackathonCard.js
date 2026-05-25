@@ -8,7 +8,6 @@ import {
   UserGroupIcon,
   TrophyIcon,
   BuildingLibraryIcon,
-  DocumentTextIcon,
   ShareIcon,
 } from "@heroicons/react/24/outline";
 
@@ -20,14 +19,12 @@ import { generateEventSharingData } from "../../utils/shareUtils";
 const useCountdown = (targetDate) => {
   const calculateTimeLeft = useCallback(() => {
     const difference = new Date(targetDate) - new Date();
-
     if (difference <= 0) return null;
 
     return {
       days: Math.floor(difference / (1000 * 60 * 60 * 24)),
       hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
       minutes: Math.floor((difference / 1000 / 60) % 60),
-      seconds: Math.floor((difference / 1000) % 60),
     };
   }, [targetDate]);
 
@@ -37,7 +34,6 @@ const useCountdown = (targetDate) => {
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
     }, 1000);
-
     return () => clearInterval(timer);
   }, [calculateTimeLeft]);
 
@@ -50,65 +46,28 @@ const CountdownTimer = ({ targetDate, label }) => {
 
   if (!timeLeft) {
     return (
-      <span className="text-red-500 font-semibold text-xs">
+      <span className="text-red-500 font-semibold text-xs tracking-wide">
         Deadline passed
       </span>
     );
   }
 
   const isUrgent = timeLeft.days < 3;
-  const isVerySoon = timeLeft.days === 0;
 
   return (
     <div
-      className={`flex items-center gap-2 ${
-        isUrgent ? "text-red-500" : "text-blue-500"
+      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md border ${
+        isUrgent
+          ? "bg-red-50 dark:bg-red-950/20 border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400"
+          : "bg-blue-50 dark:bg-blue-950/20 border-blue-100 dark:border-blue-900/30 text-blue-600 dark:text-blue-400"
       }`}
     >
-      <ClockIcon className={`w-4 h-4 ${isUrgent ? "animate-pulse" : ""}`} />
-
-      <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-        {label}:
-      </span>
-
-      <div className="flex items-center gap-1 font-mono text-xs font-bold">
-        {timeLeft.days > 0 && (
-          <span
-            className={`px-1.5 py-0.5 rounded ${
-              isUrgent
-                ? "bg-red-100 dark:bg-red-900/50 text-red-600"
-                : "bg-blue-100 dark:bg-blue-900/50 text-blue-600"
-            }`}
-          >
-            {timeLeft.days}d
-          </span>
-        )}
-
-        <span
-          className={`px-1.5 py-0.5 rounded ${
-            isUrgent
-              ? "bg-red-100 dark:bg-red-900/50 text-red-600"
-              : "bg-blue-100 dark:bg-blue-900/50 text-blue-600"
-          }`}
-        >
-          {String(timeLeft.hours).padStart(2, "0")}h
-        </span>
-
-        <span
-          className={`px-1.5 py-0.5 rounded ${
-            isUrgent
-              ? "bg-red-100 dark:bg-red-900/50 text-red-600"
-              : "bg-blue-100 dark:bg-blue-900/50 text-blue-600"
-          }`}
-        >
-          {String(timeLeft.minutes).padStart(2, "0")}m
-        </span>
-
-        {isVerySoon && (
-          <span className="px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/50 text-red-600">
-            {String(timeLeft.seconds).padStart(2, "0")}s
-          </span>
-        )}
+      <ClockIcon className={`w-3.5 h-3.5 shrink-0 ${isUrgent ? "animate-pulse" : ""}`} />
+      <span className="text-[11px] font-medium opacity-80">{label}:</span>
+      <div className="flex items-center gap-0.5 font-mono text-[11px] font-bold">
+        {timeLeft.days > 0 && <span>{timeLeft.days}d</span>}
+        <span>{String(timeLeft.hours).padStart(2, "0")}h</span>
+        <span>{String(timeLeft.minutes).padStart(2, "0")}m</span>
       </div>
     </div>
   );
@@ -117,30 +76,25 @@ const CountdownTimer = ({ targetDate, label }) => {
 // Urgency Badge
 const UrgencyBadge = ({ startDate, endDate, status }) => {
   const timeLeft = useCountdown(status === "upcoming" ? startDate : endDate);
-
-  if (status === "completed") return null;
-  if (!timeLeft) return null;
+  if (status === "completed" || !timeLeft) return null;
 
   if (timeLeft.days < 1) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500 text-white text-xs font-bold animate-pulse">
-        🔥 Closing Today!
+      <span className="inline-flex items-center px-2 py-0.5 rounded bg-red-500 text-white text-[10px] font-bold uppercase tracking-wider animate-pulse">
+        🔥 Closing Today
       </span>
     );
   }
-
   if (timeLeft.days < 3) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-400 text-white text-xs font-bold">
+      <span className="inline-flex items-center px-2 py-0.5 rounded bg-amber-500 text-white text-[10px] font-bold uppercase tracking-wider">
         ⚡ Closing Soon
       </span>
     );
   }
-
   return null;
 };
 
-// FIX 3: Compute status dynamically from dates instead of relying on hardcoded JSON field
 const computeStatus = (startDate, endDate) => {
   const now = new Date();
   const start = new Date(startDate);
@@ -161,32 +115,14 @@ const HackathonCard = ({ hackathon = {}, isFeatured = false, ...props }) => {
     organizer: hackathon?.organizer || "Eventra Community",
     location: hackathon?.location || "Location TBA",
     prize: hackathon?.prize || "Prize TBA",
-    techStack:
-      Array.isArray(hackathon?.techStack) && hackathon.techStack.length > 0
-        ? hackathon.techStack
-        : ["General"],
-    rules:
-      Array.isArray(hackathon?.rules) && hackathon.rules.length > 0
-        ? hackathon.rules
-        : ["Rules will be shared before the hackathon starts."],
+    techStack: Array.isArray(hackathon?.techStack) && hackathon.techStack.length > 0 ? hackathon.techStack : ["General"],
     participants: hackathon?.participants ?? 0,
     teams: hackathon?.teams ?? 0,
     submissions: hackathon?.submissions ?? 0,
     winner: hackathon?.winner || "",
   };
 
-  // FIX 3: Use computed status everywhere instead of hackathon.status
-  const status = computeStatus(
-    normalizedHackathon.startDate,
-    normalizedHackathon.endDate,
-  );
-
-  // Show real stats for ALL statuses (live, upcoming, completed)
-  const stats = {
-    participants: normalizedHackathon.participants,
-    teams: normalizedHackathon.teams,
-    submissions: normalizedHackathon.submissions,
-  };
+  const status = computeStatus(normalizedHackathon.startDate, normalizedHackathon.endDate);
 
   const hackathonSharingData = generateEventSharingData({
     ...normalizedHackathon,
@@ -196,316 +132,183 @@ const HackathonCard = ({ hackathon = {}, isFeatured = false, ...props }) => {
     id: normalizedHackathon.id,
   });
 
-  // FIX 3: Pass computed status (not hackathon.status) to UrgencyBadge
-  // (used below in JSX)
-
   return (
     <motion.div
-      initial={{
-        opacity: 0,
-        y: 50,
-        rotateX: 15,
-        scale: 0.95,
-      }}
-      whileInView={{
-        opacity: 1,
-        y: 0,
-        rotateX: 0,
-        scale: 1,
-      }}
-      transition={{
-        duration: 0.6,
-        ease: "easeOut",
-      }}
-      viewport={{
-        once: true,
-        amount: 0.3,
-      }}
-      whileHover={{
-        y: -4,
-        scale: 1.02,
-      }}
+      initial={{ opacity: 0, y: 15 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      viewport={{ once: true, amount: 0.1 }}
+      whileHover={{ y: -4 }}
       className={`
-        h-full
-        bg-gradient-to-br
-        from-white
-        to-white
-        dark:from-gray-800
-        dark:to-black
-        rounded-xl
-        shadow-sm
-        hover:shadow-md
-        transition-all
-        duration-300
-        border
-        border-blue-200
-        dark:border-gray-700
-        relative
-        flex
-        flex-col
-        card-with-floating-elements
-        ${isFeatured ? "ring-2 ring-blue-300 dark:ring-blue-400" : ""}
+        w-full max-w-sm h-full
+        bg-white dark:bg-gray-900
+        rounded-xl shadow-sm hover:shadow-md
+        transition-all duration-200
+        border border-gray-200/80 dark:border-gray-800
+        relative flex flex-col overflow-hidden
+        ${isFeatured ? "ring-2 ring-blue-500 dark:ring-blue-400" : ""}
       `}
       {...props}
     >
-      {/* Featured Ribbon */}
-      {isFeatured && (
-        <div className="absolute top-0 right-0 bg-black text-white text-xs font-semibold px-3 py-1 rounded-bl-lg">
-          Featured
-        </div>
-      )}
+      {/* Structural Accent Top line */}
+      <div className={`h-1 w-full ${
+        status === 'live' ? 'bg-red-500' : status === 'upcoming' ? 'bg-blue-500' : 'bg-emerald-500'
+      }`} />
 
-      {/* Share Button */}
-      <div className="absolute -top-4 -right-4 z-[200]">
-        <ShareMenu
-          shareData={hackathonSharingData}
-          position="bottom-right"
-          menuClassName="!z-[999] shadow-2xl"
-          buttonClassName=""
-        >
-          <motion.div
-            className="bg-white dark:bg-gray-800 rounded-full p-3 shadow-lg cursor-pointer hover:shadow-xl border border-gray-200 dark:border-gray-600 group/share"
-            whileHover={{ scale: 1.1 }}
-            transition={{
-              type: "spring",
-              stiffness: 400,
-              damping: 10,
-            }}
-          >
-            <ShareIcon className="w-4 h-4 text-gray-400" />
-          </motion.div>
-        </ShareMenu>
-      </div>
-
-      {/* Main Content */}
-      <div className="p-6 flex flex-col gap-5 h-full min-h-[500px]">
-        {/* Header */}
-        <div className="flex justify-between items-center flex-wrap gap-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span
-              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                status === "live"
-                  ? "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
-                  : status === "upcoming"
-                    ? "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300"
-                    : "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
-              }`}
-            >
-              {/* FIX 3: Use computed status label */}
-              {status.charAt(0).toUpperCase() + status.slice(1)}
+      {/* Main Container */}
+      <div className="p-5 flex flex-col flex-1 gap-4">
+        
+        {/* Top Badges Header row */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5">
+            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+              status === "live" ? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400" :
+              status === "upcoming" ? "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400" :
+              "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+            }`}>
+              {status}
             </span>
-
-            <span className="px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 text-xs font-medium">
+            <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-[10px] font-bold uppercase tracking-wider">
               {normalizedHackathon.difficulty}
             </span>
-
-            {/* FIX 3: Pass computed status to UrgencyBadge */}
-            <UrgencyBadge
-              startDate={normalizedHackathon.startDate}
-              endDate={normalizedHackathon.endDate}
-              status={status}
-            />
+            <UrgencyBadge startDate={normalizedHackathon.startDate} endDate={normalizedHackathon.endDate} status={status} />
           </div>
 
-          <span className="text-white text-sm font-semibold px-3 py-1 rounded-full bg-black">
-            {normalizedHackathon.prize}
-          </span>
+          <ShareMenu shareData={hackathonSharingData} position="bottom-right">
+            <button className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+              <ShareIcon className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+            </button>
+          </ShareMenu>
         </div>
 
-        <div className="border-b border-gray-300 dark:border-gray-700" />
-
-        {/* Title */}
-        <div className="min-h-[72px]">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+        {/* Title & Creator Core Space */}
+        <div>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white line-clamp-1 mb-0.5">
             {normalizedHackathon.title}
           </h3>
-
-          <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 min-h-[40px]">
-            {normalizedHackathon.description}
-          </p>
+          <div className="flex items-center text-gray-500 dark:text-gray-400 text-xs gap-1">
+            <BuildingLibraryIcon className="w-3.5 h-3.5 shrink-0 text-gray-400" />
+            <span className="truncate font-medium">{normalizedHackathon.organizer}</span>
+          </div>
         </div>
 
-        <div className="border-b border-gray-300 dark:border-gray-700" />
-
-        {/* Organizer */}
-        <div className="flex items-center text-gray-600 dark:text-gray-400 text-sm gap-1.5 min-h-[32px]">
-          <BuildingLibraryIcon className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-          <span>{normalizedHackathon.organizer}</span>
+        {/* Primary High-Priority Data Split View Block */}
+        <div className="grid grid-cols-2 gap-2 bg-gray-50 dark:bg-gray-800/40 p-2.5 rounded-lg border border-gray-100 dark:border-gray-800/60">
+          <div>
+            <div className="text-[10px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 mb-0.5">Prize Pool</div>
+            <div className="text-sm font-extrabold text-gray-900 dark:text-white truncate">
+              {normalizedHackathon.prize}
+            </div>
+          </div>
+          <div className="border-l border-gray-200 dark:border-gray-700 pl-3">
+            <div className="text-[10px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 mb-0.5">Format</div>
+            <div className="flex items-center gap-1 text-sm font-bold text-gray-800 dark:text-gray-200">
+              <MapPinIcon className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <span className="truncate">{normalizedHackathon.location}</span>
+            </div>
+          </div>
         </div>
 
-        <div className="border-b border-gray-300 dark:border-gray-700" />
+        {/* Description Text */}
+        <p className="text-gray-600 dark:text-gray-400 text-xs leading-relaxed line-clamp-2">
+          {normalizedHackathon.description}
+        </p>
 
-        {/* Date & Location */}
-        <div className="flex flex-col gap-3 text-gray-600 dark:text-gray-400 text-sm min-h-[120px]">
-          <div className="flex items-center gap-2">
-            <CalendarIcon className="w-4 h-4 text-sky-500" />
-            {new Date(hackathon.startDate).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            })}{" "}
-            -{" "}
-            {new Date(hackathon.endDate).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
+        {/* Timeline Row Group */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-1 border-t border-gray-100 dark:border-gray-800/60">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400">
+            <CalendarIcon className="w-4 h-4 text-gray-400 shrink-0" />
+            <span>
+              {new Date(hackathon.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              {" - "}
+              {new Date(hackathon.endDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+            </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <MapPinIcon className="w-4 h-4 text-green-500" />
-            {normalizedHackathon.location}
-          </div>
-
-          {/* FIX 3: Use computed status for countdown logic */}
           {status === "upcoming" && hackathon.startDate && (
-            <CountdownTimer
-              targetDate={hackathon.startDate}
-              label="Starts in"
-            />
+            <CountdownTimer targetDate={hackathon.startDate} label="Starts in" />
           )}
-
           {status === "live" && hackathon.endDate && (
             <CountdownTimer targetDate={hackathon.endDate} label="Ends in" />
           )}
         </div>
 
-        <div className="border-b border-gray-300 dark:border-gray-700" />
+        {/* Minimal Stack Badge Tags */}
+        <div className="flex flex-wrap gap-1">
+          {(hackathon.techStack || []).slice(0, 3).map((tech, index) => (
+            <span key={index} className="px-2 py-0.5 bg-gray-50/50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-[10px] font-medium rounded">
+              {tech}
+            </span>
+          ))}
+          {(hackathon.techStack || []).length > 3 && (
+            <span className="px-1.5 py-0.5 text-gray-400 text-[10px] font-medium">
+              +{hackathon.techStack.length - 3}
+            </span>
+          )}
+        </div>
 
-        {/* Tech Stack */}
-        <div className="min-h-[72px]">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-            Tech Stack:
-          </h4>
-
-          <div className="flex flex-wrap gap-2">
-            {(hackathon.techStack || []).map((tech, index) => (
-              <span
-                key={index}
-                className="px-3 py-1 border border-blue-200 dark:border-blue-700 bg-blue-100 dark:bg-blue-900/60 text-gray-800 dark:text-gray-200 text-xs font-medium rounded-full"
-              >
-                {tech}
-              </span>
-            ))}
+        {/* Engagement Stats Stripe */}
+        <div className="flex items-center justify-between py-2 px-1 bg-gray-50/40 dark:bg-gray-800/20 rounded-md border border-gray-100/40 dark:border-gray-800/30 text-center">
+          <div className="flex-1">
+            <div className="text-xs font-bold text-gray-800 dark:text-gray-200">{normalizedHackathon.participants || "0"}</div>
+            <div className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Joiners</div>
+          </div>
+          <div className="w-px h-6 bg-gray-200 dark:bg-gray-800" />
+          <div className="flex-1">
+            <div className="text-xs font-bold text-gray-800 dark:text-gray-200">{normalizedHackathon.teams || "0"}</div>
+            <div className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Teams</div>
+          </div>
+          <div className="w-px h-6 bg-gray-200 dark:bg-gray-800" />
+          <div className="flex-1">
+            <div className="text-xs font-bold text-gray-800 dark:text-gray-200">{normalizedHackathon.submissions || "0"}</div>
+            <div className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Builds</div>
           </div>
         </div>
 
-        <div className="border-b border-gray-300 dark:border-gray-700" />
-
-        {/* Rules */}
-        <div className="text-gray-600 dark:text-gray-400 text-sm min-h-[100px]">
-          <h4 className="font-medium mb-1 flex items-center gap-1.5">
-            <DocumentTextIcon className="w-4 h-4 text-blue-500" />
-            Rules
-          </h4>
-
-          <ul className="list-disc list-inside text-xs line-clamp-3 min-h-[60px]">
-            {(hackathon.rules || []).map((rule, index) => (
-              <li key={index}>{rule}</li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="border-b border-gray-300 dark:border-gray-700" />
-
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg min-h-[90px]">
-          <div className="text-center">
-            <UserGroupIcon className="w-5 h-5 text-red-500 mx-auto mb-1" />
-
-            <div className="text-lg font-bold text-red-500">
-              {stats.participants || "--"}
-            </div>
-
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              Participants
-            </div>
+        {/* Completed Winner Banner */}
+        {status === "completed" && (
+          <div className="flex items-center gap-1.5 bg-amber-50/40 dark:bg-amber-950/10 px-2.5 py-1.5 rounded-lg border border-amber-100/50 dark:border-amber-900/30 text-xs">
+            <TrophyIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+            <span className="font-bold text-amber-800 dark:text-amber-400">Winner:</span>
+            <span className="text-gray-600 dark:text-gray-300 truncate font-medium">{normalizedHackathon.winner || "TBA"}</span>
           </div>
+        )}
 
-          <div className="text-center">
-            <UserGroupIcon className="w-5 h-5 text-green-500 mx-auto mb-1 rotate-90" />
-
-            <div className="text-lg font-bold text-green-500">
-              {stats.teams || "--"}
-            </div>
-
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              Teams
-            </div>
-          </div>
-
-          <div className="text-center">
-            <UserGroupIcon className="w-5 h-5 text-blue-500 mx-auto mb-1" />
-
-            <div className="text-lg font-bold text-blue-500">
-              {stats.submissions || "--"}
-            </div>
-
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              Submissions
-            </div>
-          </div>
-        </div>
-
-        <div className="border-b border-gray-300 dark:border-gray-700" />
-
-        {/* Winner */}
-        <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/40 p-3 rounded-lg border border-yellow-100 dark:border-yellow-800 min-h-[60px]">
-          <TrophyIcon className="w-5 h-5 text-yellow-500" />
-
-          <span className="text-sm font-medium">Winner:</span>
-
-          <span className="text-sm text-gray-700 dark:text-gray-300">
-            {/* FIX 3: Use computed status for winner display */}
-            {status === "completed" && normalizedHackathon.winner
-              ? normalizedHackathon.winner
-              : "Announced soon"}
-          </span>
-        </div>
-
-        {/* Buttons */}
-        <div className="pt-3 mt-auto">
-          {/* FIX 3: Use computed status for button rendering */}
+        {/* Smart Button/Action Area */}
+        <div className="mt-auto pt-1">
           {status === "live" ? (
-            <div className="grid grid-cols-2 gap-3">
-              <button className="px-4 py-2 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white text-sm font-medium rounded-lg">
+            <div className="flex items-center gap-2">
+              <button className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors">
                 Join Now
               </button>
-
-              <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg">
-                Submit Project
+              <button className="px-3 py-2 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 text-xs font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                Submit
               </button>
             </div>
           ) : status === "upcoming" ? (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => navigate(`/register/${hackathon.id}`)}
-                className="..."
+                className="flex-1 py-2 bg-gray-900 hover:bg-black dark:bg-gray-100 dark:hover:bg-white dark:text-gray-900 text-white text-xs font-bold rounded-lg transition-colors"
               >
                 Register
               </button>
-
               <a
                 href={addHackathonToGoogleCalendar(normalizedHackathon)}
                 target="_blank"
                 rel="noopener noreferrer"
+                className="px-2.5 py-2 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-xs rounded-lg text-center hover:bg-gray-50 dark:hover:bg-gray-800"
               >
-                <button className="w-full px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg">
-                  Reminder
-                </button>
+                Remind Me
               </a>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
-              <button className="px-4 py-2 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white text-sm font-medium rounded-lg">
-                View Results
-              </button>
-
-              <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg">
-                Resources
-              </button>
-            </div>
+            <button className="w-full py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs font-bold rounded-lg transition-colors">
+              View Results
+            </button>
           )}
         </div>
+
       </div>
     </motion.div>
   );
