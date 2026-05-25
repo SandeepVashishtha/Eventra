@@ -836,51 +836,32 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         onClick={closeAllMenus}
       />
       <nav
+        ref={navRef}
+        data-aos="fade-down"
+        data-aos-once="true"
+        data-aos-duration="1000"
+        className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 transition-colors duration-300"
+      >
+        <div className="neon-navbar-border"></div>
 
-  ref={navRef}
-  data-aos="fade-down"
-  data-aos-once="true"
-  data-aos-duration="1000"
-  className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 transition-colors duration-300"
->
-  <div className="neon-navbar-border"></div>
+        <div className="max-w-screen-2xl mx-auto flex items-center justify-between h-[68px] px-4 md:px-6 xl:px-10 gap-4 w-full overflow-hidden">
+          
+          {/* Logo */}
+          <Link
+            to="/"
+            className="flex items-center shrink-0 z-20 mr-2"
+          >
+            <img
+              src="/Eventra.png"
+              alt="Eventra Logo"
+              className="h-9 w-auto object-contain"
+            />
+          </Link>
 
-  <div className="max-w-screen-2xl mx-auto flex items-center justify-between h-[68px] px-4 md:px-6 xl:px-10 gap-4 w-full overflow-hidden">
-
-{/* Logo */}
-<Link
-  to="/"
-  className="flex items-center shrink-0 z-20 mr-2"
->
-  <img
-    src="/Eventra.png"
-    alt="Eventra Logo"
-    className="h-9 w-auto object-contain"
-  />
-</Link>
-
-    {/* Desktop Nav */}
-    <div className="hidden lg:flex items-center justify-center gap-3 xl:gap-4 flex-1 min-w-0">
-      <NavList
-        location={location}
-        openDropdown={openDropdown}
-        onToggleGroup={(name) =>
-          setOpenDropdown(openDropdown === name ? null : name)
-        }
-        isMobile={false}
-      />
-    </div>
-
-    {/* Right Controls */}
-    <div className="hidden lg:flex items-center gap-2 shrink-0 pl-2">
-      <ThemeToggleButton
-        isDarkMode={isDarkMode}
-        toggleTheme={toggleTheme}
-        isMobile={false}
-      />
-
+          {/* Desktop Nav Links */}
           <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
 
+          {/* Right Controls */}
           <div className="hidden lg:flex items-center gap-2 shrink-0 pl-2">
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -924,7 +905,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               <AuthButtons isMobile={false} />
             )}
           </div>
-    
 
           {/* Mobile Menu Button */}
           <div className="lg:hidden ml-auto">
