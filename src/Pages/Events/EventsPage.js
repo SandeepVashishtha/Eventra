@@ -18,11 +18,15 @@ const EventsPage = () => {
     const page = parseInt(searchParams.get("page")) || 1;
     const perPage = parseInt(searchParams.get("perPage")) || 6;
     const search = searchParams.get("search") || "";
-    const filter = searchParams.get("filter") || "all";
+   const filter = searchParams.get("filter") || "all";
+const sort = searchParams.get("sort") || "latest";
+const view = searchParams.get("view") || "grid";
     listing.setSafePage(page);
     listing.setEventsPerPage(perPage);
     listing.setSearchQuery(search);
     listing.setFilterType(filter);
+    listing.setSortType(sort);
+listing.setViewMode(view);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -32,6 +36,8 @@ const EventsPage = () => {
     if (listing.eventsPerPage !== 6) params.perPage = listing.eventsPerPage;
     if (listing.searchQuery) params.search = listing.searchQuery;
     if (listing.filterType !== "all") params.filter = listing.filterType;
+    if (listing.sortType !== "latest") params.sort = listing.sortType;
+if (listing.viewMode !== "grid") params.view = listing.viewMode;
     setSearchParams(params, { replace: true });
   }, [listing.currentPage, listing.eventsPerPage, listing.searchQuery, listing.filterType, setSearchParams]);
 
