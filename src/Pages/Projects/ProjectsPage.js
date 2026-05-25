@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiAlertCircle, FiChevronDown, FiSearch, FiX } from "react-icons/fi";
 
@@ -44,8 +44,7 @@ const ProjectGallery = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
       try {
         setIsLoading(true);
         setError("");
@@ -97,10 +96,11 @@ const ProjectGallery = () => {
       } finally {
         setIsLoading(false);
       }
-    };
-
-    fetchProjects();
   }, []);
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   const filteredAndSortedProjects = projects
     .filter((project) => {
@@ -393,8 +393,10 @@ const ProjectGallery = () => {
               </p>
 
               <button
-                onClick={() => window.location.reload()}
-                className="mt-6 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white"
+                type="button"
+                onClick={fetchProjects}
+                disabled={isLoading}
+                className="mt-6 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 Try Again
               </button>
