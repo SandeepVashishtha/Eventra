@@ -2,7 +2,7 @@ import { motion, useAnimation, AnimatePresence, MotionConfig } from "framer-moti
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
-import { Search, Calendar, Trophy, Code, ExternalLink, ArrowRight } from "lucide-react";
+import { Search, Calendar, Trophy, Code, ExternalLink } from "lucide-react";
 
 // Import mock data
 import eventsData from "../../Events/eventsMockData.json";

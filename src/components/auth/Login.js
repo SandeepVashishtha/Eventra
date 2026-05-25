@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
+import GoogleLoginButton from './GoogleLoginButton';
 import '../../styles/auth.css';
 
 const Login = () => {
@@ -16,7 +17,7 @@ const Login = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user, token } = useAuth();
   // If ProtectedRoute redirected here because the JWT expired, show a notice.
   const sessionExpired = location.state?.sessionExpired ?? false;
   const introPoints = [
@@ -65,7 +66,7 @@ const Login = () => {
     if (isAuthenticated()) {
       navigate('/dashboard', { replace: true });
     }
-  }, [navigate, isAuthenticated]);
+  }, [navigate, isAuthenticated, user, token]);
 
 
   const handleSubmit = async (e) => {
@@ -208,7 +209,7 @@ const Login = () => {
                       onChange={handleChange}
                       required
                       disabled={loading}
-                      placeholder="Enter your email address or username"
+                      placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
                       className="w-full pl-3 pr-4 py-3 
 bg-white dark:bg-gray-800
 border border-gray-200 dark:border-gray-600
@@ -265,7 +266,7 @@ text-gray-900 dark:text-white"
                       onChange={handleChange}
                       required
                       disabled={loading}
-                      placeholder="Enter your password"
+                      placeholder="Enter secure password / Minimum 8 characters / Use strong password"
                       className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                     />
 
