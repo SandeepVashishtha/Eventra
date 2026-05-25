@@ -2,7 +2,7 @@ import StatusBadge from "../common/StatusBadge";
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import {
   Users, Calendar, Activity, Shield, LogOut, Plus,
   Search, ChevronRight, BarChart2,
@@ -18,6 +18,8 @@ import './AdminDashboard.css';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import { toast } from 'react-toastify';
 
+import { ROLES,PERMISSIONS } from "../../config/roles";
+
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
   visible: (i = 0) => ({
@@ -32,14 +34,65 @@ const stagger = {
 };
 
 /* ─── Mock data (replace with real API calls when endpoints are ready) ─── */
+// const MOCK_USERS = [
+//   { id: 1, firstName: 'Aarav', lastName: 'Sharma', email: 'aarav@example.com', roles: ['USER'], createdAt: '2025-01-15', status: 'Active' },
+//   { id: 2, firstName: 'Priya', lastName: 'Mehta',  email: 'priya@example.com', roles: ['EVENT_MANAGER'], createdAt: '2025-02-20', status: 'Active' },
+//   { id: 3, firstName: 'Rohan', lastName: 'Verma',  email: 'rohan@example.com', roles: ['USER'], createdAt: '2025-03-05', status: 'Inactive' },
+//   { id: 4, firstName: 'Sneha', lastName: 'Patel',  email: 'sneha@example.com', roles: ['USER'], createdAt: '2025-04-12', status: 'Active' },
+//   { id: 5, firstName: 'Karan', lastName: 'Joshi',  email: 'karan@example.com', roles: ['EVENT_MANAGER'], createdAt: '2025-05-01', status: 'Active' },
+// ];
+/* ─── Mock data (replace with real API calls when endpoints are ready) ─── */
 const MOCK_USERS = [
-  { id: 1, firstName: 'Aarav', lastName: 'Sharma', email: 'aarav@example.com', roles: ['USER'], createdAt: '2025-01-15', status: 'Active' },
-  { id: 2, firstName: 'Priya', lastName: 'Mehta',  email: 'priya@example.com', roles: ['EVENT_MANAGER'], createdAt: '2025-02-20', status: 'Active' },
-  { id: 3, firstName: 'Rohan', lastName: 'Verma',  email: 'rohan@example.com', roles: ['USER'], createdAt: '2025-03-05', status: 'Inactive' },
-  { id: 4, firstName: 'Sneha', lastName: 'Patel',  email: 'sneha@example.com', roles: ['USER'], createdAt: '2025-04-12', status: 'Active' },
-  { id: 5, firstName: 'Karan', lastName: 'Joshi',  email: 'karan@example.com', roles: ['EVENT_MANAGER'], createdAt: '2025-05-01', status: 'Active' },
-];
+  {
+    id: 1,
+    firstName: 'Aarav',
+    lastName: 'Sharma',
+    email: 'aarav@example.com',
+    roles: [ROLES.ATTENDEE],
+    createdAt: '2025-01-15',
+    status: 'Active'
+  },
 
+  {
+    id: 2,
+    firstName: 'Priya',
+    lastName: 'Mehta',
+    email: 'priya@example.com',
+    roles: [ROLES.ORGANIZER],
+    createdAt: '2025-02-20',
+    status: 'Active'
+  },
+
+  {
+    id: 3,
+    firstName: 'Rohan',
+    lastName: 'Verma',
+    email: 'rohan@example.com',
+    roles: [ROLES.ATTENDEE],
+    createdAt: '2025-03-05',
+    status: 'Inactive'
+  },
+
+  {
+    id: 4,
+    firstName: 'Sneha',
+    lastName: 'Patel',
+    email: 'sneha@example.com',
+    roles: [ROLES.VOLUNTEER],
+    createdAt: '2025-04-12',
+    status: 'Active'
+  },
+
+  {
+    id: 5,
+    firstName: 'Karan',
+    lastName: 'Joshi',
+    email: 'karan@example.com',
+    roles: [ROLES.ADMIN],
+    createdAt: '2025-05-01',
+    status: 'Active'
+  },
+];
 const MOCK_EVENTS = [
   { id: 1, title: 'Tech Talk: AI in 2025', date: '2025-06-15', participantCount: 120, status: 'Completed', type: 'Event' },
   { id: 2, title: 'Web Dev Workshop',       date: '2025-09-10', participantCount: 45,  status: 'Upcoming',  type: 'Event' },
@@ -75,7 +128,16 @@ function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
 /* ─── Main Component ─── */
 const AdminDashboard = () => {
   const { user, logout, hasPermission } = useAuth();
+  const userRoles = user?.roles || [];
   const navigate = useNavigate();
+  const isAdmin =
+    userRoles.includes(ROLES.ADMIN) ||
+    userRoles.includes(ROLES.SUPER_ADMIN);
+
+  if (!isAdmin) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+ 
 
   const [activeTab, setActiveTab] = useState('overview');
   const [users,  setUsers]  = useState(MOCK_USERS);
@@ -179,7 +241,7 @@ const AdminDashboard = () => {
             </h1>
           </div>
           <div className="ad-topbar-right">
-            {activeTab === 'events' && hasPermission('CREATE_EVENT') && (
+            {activeTab === 'events' && hasPermission(PERMISSIONS.CREATE_EVENT) && (
               <button className="ad-btn-primary" onClick={() => navigate('/create-event')}>
                 <Plus size={15} /> New Event
               </button>
@@ -322,12 +384,12 @@ const AdminDashboard = () => {
                             <td><StatusBadge status={u.status} /></td>
                             <td>
                               <div className="ad-action-btns">
-                                {hasPermission('EDIT_USER') && (
+                                {hasPermission(PERMISSIONS.EDIT_USER) && (
                                   <button className="ad-icon-action" title="Edit" onClick={() => toast.info('Edit coming soon')}>
                                     <Edit2 size={14} />
                                   </button>
                                 )}
-                                {hasPermission('DELETE_USER') && (
+                                {hasPermission(PERMISSIONS.DELETE_USER) && (
                                   <button className="ad-icon-action ad-icon-danger" title="Delete" onClick={() => confirmDelete('user', u.id)}>
                                     <Trash2 size={14} />
                                   </button>
@@ -390,12 +452,12 @@ const AdminDashboard = () => {
                             <td><StatusBadge status={ev.status} /></td>
                             <td>
                               <div className="ad-action-btns">
-                                {hasPermission('EDIT_EVENT') && (
+                                {hasPermission(PERMISSIONS.EDIT_EVENT) && (
                                   <button className="ad-icon-action" title="Edit" onClick={() => toast.info('Edit coming soon')}>
                                     <Edit2 size={14} />
                                   </button>
                                 )}
-                                {hasPermission('DELETE_EVENT') && (
+                                {hasPermission(PERMISSIONS.DELETE_EVENT) && (
                                   <button className="ad-icon-action ad-icon-danger" title="Delete" onClick={() => confirmDelete('event', ev.id)}>
                                     <Trash2 size={14} />
                                   </button>
