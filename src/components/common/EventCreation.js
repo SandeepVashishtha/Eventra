@@ -99,7 +99,7 @@ const EventCreation = () => {
     banner: null,
     bannerPreview: null,
   });
-const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState({});
   const [newTag, setNewTag] = useState("");
   // Track whether draft has been loaded to avoid overwriting on initial mount
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
