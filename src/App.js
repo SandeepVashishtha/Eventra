@@ -40,7 +40,6 @@ function App() {
   const [cursorEnabled, setCursorEnabled] = useState(
     localStorage.getItem("cursor") !== "off"
   );
-
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
 
   useLenis();
@@ -124,7 +123,6 @@ function App() {
                   cursorEnabled={cursorEnabled}
                   toggleCursor={toggleCursor}
                 />
-
                 <KeyboardShortcutsModal
                   isOpen={showKeyboardModal}
                   onClose={() => setShowKeyboardModal(false)}
@@ -165,7 +163,6 @@ function App() {
                   <Chatbot />
                   <Footer />
                 </Suspense>
-
                 <FeedbackButton />
                 <ThemeCustomizerDrawer />
                 <SessionRecovery />
