@@ -112,7 +112,6 @@ function App() {
       <NotificationProvider>
         <MyEventsProvider>
           <SessionRecoveryProvider>
-            <NotificationProvider />
             <ReminderChecker />
             <NotificationToastContainer />
             <OfflineSyncManager />
