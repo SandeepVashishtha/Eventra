@@ -36,6 +36,7 @@ const HackathonPage = lazy(() => import("../../Pages/Hackathons/HackathonPage"))
 const HackathonDetailsPage = lazy(() => import("../../Pages/Hackathons/HackathonDetailsPage"));
 const ProjectsPage = lazy(() => import("../../Pages/Projects/ProjectsPage"));
 const EventAnalyticsDashboard = lazy(() => import("../../Pages/Events/EventAnalyticsDashboard"));
+const MyCalendar = lazy(() => import("../../Pages/Calendar/MyCalendar"));
 
 export const getPublicRoutes = () => [
   <Route key="/" path="/" element={<HomePage />} />,
@@ -43,6 +44,7 @@ export const getPublicRoutes = () => [
   <Route key="/calendar" path="/calendar" element={<CalendarPage />} />,
   <Route key="/bookmarks" path="/bookmarks" element={<BookmarkedEvents />} />,
   <Route key="/reminders" path="/reminders" element={<RemindersPage />} />,
+  <Route key="/calendar" path="/calendar" element={<MyCalendar />} />,
   <Route key="/event-details" path="/events/:eventId" element={<EventDetails />} />,
   <Route key="/register" path="/events/:eventId/register" element={<EventRegistration />} />,
   <Route key="/hackathons" path="/hackathons" element={<HackathonPage />} />,

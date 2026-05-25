@@ -554,11 +554,13 @@ const NAV_ITEMS = [
   { name: "Bookmarks", href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
   { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
   {
-    name: "Bookmarks",
-    icon: <Bookmark className="w-5 h-5" />,
+    name: "Events",
+    icon: <Calendar className="w-5 h-5" />,
     subItems: [
-      { name: "Saved Events", href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
-      { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
+      { name: "Explore Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
+      { name: "Event Calendar", href: "/calendar", icon: <CalendarDays className="w-5 h-5" /> },
+      { name: "Saved Events",   href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
+      { name: "Reminders",      href: "/reminders", icon: <Bell className="w-5 h-5" /> },
     ],
   },
   { name: "Hackathons", href: "/hackathons", icon: <Trophy className="w-5 h-5" /> },
@@ -601,7 +603,7 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
       return isMobile ? (
         <MobileNavLink key={item.name} item={item} isActive={isActive} onClick={onLinkClick} />
       ) : (
-        <DesktopNavLink key={item.name} item={item} nowisActive={isActive} />
+        <DesktopNavLink key={item.name} item={item} isActive={isActive} />
       );
     })}
   </>
@@ -834,31 +836,48 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         onClick={closeAllMenus}
       />
       <nav
-        ref={navRef}
-        data-aos="fade-down"
-        data-aos-once="true"
-        data-aos-duration="1000"
-        className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 transition-colors duration-300"
-      >
-        <div className="neon-navbar-border"></div>
 
-        <div className="max-w-screen-2xl mx-auto flex items-center justify-between h-[68px] px-4 md:px-6 xl:px-10 gap-4 w-full overflow-hidden">
-          <Link to="/" className="flex items-center shrink-0 z-20 pr-2">
-            <h2
-              className="bg-gradient-to-r from-zinc-950 via-indigo-600 to-violet-600 dark:from-white dark:via-indigo-300 dark:to-indigo-500 bg-clip-text text-transparent"
-              style={{
-                fontFamily: "'Oxanium', monospace",
-                fontSize: "1.44rem",
-                fontWeight: 800,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                margin: 0,
-                lineHeight: 1,
-              }}
-            >
-              Eventra
-            </h2>
-          </Link>
+  ref={navRef}
+  data-aos="fade-down"
+  data-aos-once="true"
+  data-aos-duration="1000"
+  className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 transition-colors duration-300"
+>
+  <div className="neon-navbar-border"></div>
+
+  <div className="max-w-screen-2xl mx-auto flex items-center justify-between h-[68px] px-4 md:px-6 xl:px-10 gap-4 w-full overflow-hidden">
+
+{/* Logo */}
+<Link
+  to="/"
+  className="flex items-center shrink-0 z-20 mr-2"
+>
+  <img
+    src="/Eventra.png"
+    alt="Eventra Logo"
+    className="h-9 w-auto object-contain"
+  />
+</Link>
+
+    {/* Desktop Nav */}
+    <div className="hidden lg:flex items-center justify-center gap-3 xl:gap-4 flex-1 min-w-0">
+      <NavList
+        location={location}
+        openDropdown={openDropdown}
+        onToggleGroup={(name) =>
+          setOpenDropdown(openDropdown === name ? null : name)
+        }
+        isMobile={false}
+      />
+    </div>
+
+    {/* Right Controls */}
+    <div className="hidden lg:flex items-center gap-2 shrink-0 pl-2">
+      <ThemeToggleButton
+        isDarkMode={isDarkMode}
+        toggleTheme={toggleTheme}
+        isMobile={false}
+      />
 
           <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
 
@@ -905,33 +924,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               <AuthButtons isMobile={false} />
             )}
           </div>
-    {/* Mobile Menu Button */}
-    <div className="lg:hidden ml-auto">
-      <button
-        ref={toggleBtnRef}
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        aria-expanded={isMobileMenuOpen}
-        aria-controls="mobile-drawer"
-        aria-label={
-          isMobileMenuOpen ? "Close navigation" : "Open navigation"
-        }
-        className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10"
-      >
-        <svg
-          className="h-5 w-5 sm:h-6 sm:w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 6h16M4 12h16M4 18h16"
-          />
-        </svg>
-      </button>
-    </div>
+    
 
           {/* Mobile Menu Button */}
           <div className="lg:hidden ml-auto">
