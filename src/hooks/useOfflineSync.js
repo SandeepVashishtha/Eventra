@@ -20,7 +20,7 @@ const useOfflineSync = () => {
 
       try {
         const response = await apiUtils.post(url, payload, authToken);
-        return response.ok;
+        return response.status === 200 || response.status === 201 || response.status === 204;
       } catch (error) {
         if (error.status >= 400 && error.status < 500) {
           console.warn(
