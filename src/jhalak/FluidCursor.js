@@ -1,11 +1,31 @@
 "use client";
 import React, { useEffect, useRef } from "react";
+import { useState } from "react";
 
 const FluidCursor = ({ enabled = true }) => {
   const canvasRef = useRef(null);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
 
   useEffect(() => {
-    if (!enabled) {
+    const mediaQuery = window.matchMedia("(max-width: 768px), (pointer: coarse)");
+
+    const updateViewportState = () => {
+      setIsMobileViewport(mediaQuery.matches);
+    };
+
+    updateViewportState();
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener("change", updateViewportState);
+      return () => mediaQuery.removeEventListener("change", updateViewportState);
+    }
+
+    mediaQuery.addListener(updateViewportState);
+    return () => mediaQuery.removeListener(updateViewportState);
+  }, []);
+
+  useEffect(() => {
+    if (!enabled || isMobileViewport) {
       return undefined;
     }
 
@@ -16,15 +36,15 @@ const FluidCursor = ({ enabled = true }) => {
 
     let config = {
       SIM_RESOLUTION: 128,
-      DYE_RESOLUTION: 1440,
+      DYE_RESOLUTION: 512,
       CAPTURE_RESOLUTION: 512,
-      DENSITY_DISSIPATION: 3.5,
-      VELOCITY_DISSIPATION: 2,
+      DENSITY_DISSIPATION: 6,
+      VELOCITY_DISSIPATION: 4,
       PRESSURE: 0.1,
-      PRESSURE_ITERATIONS: 20,
-      CURL: 3,
-      SPLAT_RADIUS: 0.2,
-      SPLAT_FORCE: 6000,
+      PRESSURE_ITERATIONS: 6,
+      CURL: 1,
+      SPLAT_RADIUS: 0.12,
+      SPLAT_FORCE: 2500,
       SHADING: true,
       COLOR_UPDATE_SPEED: 10,
       PAUSED: false,
@@ -1023,9 +1043,9 @@ const FluidCursor = ({ enabled = true }) => {
 
     function clickSplat(pointer) {
       const color = generateColor();
-      color.r *= 10.0;
-      color.g *= 10.0;
-      color.b *= 10.0;
+      color.r *= 4;
+      color.g *= 4;
+      color.b *= 4.0;
       let dx = 10 * (Math.random() - 0.5);
       let dy = 30 * (Math.random() - 0.5);
       splat(pointer.texcoordX, pointer.texcoordY, dx, dy, color);
@@ -1093,58 +1113,15 @@ const FluidCursor = ({ enabled = true }) => {
     }
 
     function generateColor() {
-      let c = HSVtoRGB(Math.random(), 1.0, 1.0);
-      c.r *= 0.15;
-      c.g *= 0.15;
-      c.b *= 0.15;
-      return c;
+      // Premium sky blue / deep ocean cyan (#00A3FF)
+      // Scaled by 0.15 to maintain the perfect density in the fluid solver and prevent over-saturation
+      return {
+        r: 0.0 * 0.07,
+        g: (163 / 255) * 0.07,
+        b: (255 / 255) * 0.07
+      };
     }
 
-    function HSVtoRGB(h, s, v) {
-      let r, g, b, i, f, p, q, t;
-      i = Math.floor(h * 6);
-      f = h * 6 - i;
-      p = v * (1 - s);
-      q = v * (1 - f * s);
-      t = v * (1 - (1 - f) * s);
-
-      switch (i % 6) {
-        case 0:
-          r = v;
-          g = t;
-          b = p;
-          break;
-        case 1:
-          r = q;
-          g = v;
-          b = p;
-          break;
-        case 2:
-          r = p;
-          g = v;
-          b = t;
-          break;
-        case 3:
-          r = p;
-          g = q;
-          b = v;
-          break;
-        case 4:
-          r = t;
-          g = p;
-          b = v;
-          break;
-        case 5:
-          r = v;
-          g = p;
-          b = q;
-          break;
-        default:
-          break;
-      }
-
-      return { r, g, b };
-    }
 
     function updatePointerDownData(pointer, id, posX, posY) {
       pointer.id = id;
@@ -1186,7 +1163,10 @@ const FluidCursor = ({ enabled = true }) => {
     // Returns true if the real element under the cursor belongs to a nav or footer.
     // Uses document.elementFromPoint to see through the pointer-events-none canvas
     // and detect the actual DOM element beneath it.
-    function isExcludedZone(clientX, clientY) {
+    function isExcludedZone(clientX, clientY, target) {
+      if (target && (target.closest("nav") !== null || target.closest("footer") !== null || target.closest("a") !== null || target.closest("button") !== null)) {
+        return true;
+      }
       const el = document.elementFromPoint(clientX, clientY);
       if (!el) return false;
       return el.closest("nav") !== null || el.closest("footer") !== null;
@@ -1194,7 +1174,7 @@ const FluidCursor = ({ enabled = true }) => {
 
     // Skip click splat when mouse is over navbar or footer
     const handleMouseDown = (e) => {
-      if (isExcludedZone(e.clientX, e.clientY)) return;
+      if (isExcludedZone(e.clientX, e.clientY, e.target)) return;
       let pointer = pointers[0];
       let posX = e.clientX * (canvas.width / canvas.clientWidth);
       let posY = e.clientY * (canvas.height / canvas.clientHeight);
@@ -1204,7 +1184,7 @@ const FluidCursor = ({ enabled = true }) => {
 
     // Skip fluid trail generation when mouse is over navbar or footer
     const handleMouseMove = (e) => {
-      if (isExcludedZone(e.clientX, e.clientY)) return;
+      if (isExcludedZone(e.clientX, e.clientY, e.target)) return;
       let pointer = pointers[0];
       let posX = e.clientX * (canvas.width / canvas.clientWidth);
       let posY = e.clientY * (canvas.height / canvas.clientHeight);
@@ -1217,7 +1197,7 @@ const FluidCursor = ({ enabled = true }) => {
       const touches = e.targetTouches;
       let pointer = pointers[0];
       for (let i = 0; i < touches.length; i++) {
-        if (isExcludedZone(touches[i].clientX, touches[i].clientY)) continue;
+        if (isExcludedZone(touches[i].clientX, touches[i].clientY, e.target)) continue;
         let posX = scaleByPixelRatio(touches[i].clientX);
         let posY = scaleByPixelRatio(touches[i].clientY);
         updatePointerDownData(pointer, touches[i].identifier, posX, posY);
@@ -1229,7 +1209,7 @@ const FluidCursor = ({ enabled = true }) => {
       const touches = e.targetTouches;
       let pointer = pointers[0];
       for (let i = 0; i < touches.length; i++) {
-        if (isExcludedZone(touches[i].clientX, touches[i].clientY)) continue;
+        if (isExcludedZone(touches[i].clientX, touches[i].clientY, e.target)) continue;
         let posX = scaleByPixelRatio(touches[i].clientX);
         let posY = scaleByPixelRatio(touches[i].clientY);
         updatePointerMoveData(pointer, posX, posY, pointer.color);
@@ -1259,15 +1239,15 @@ const FluidCursor = ({ enabled = true }) => {
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [enabled]);
+  }, [enabled, isMobileViewport]);
 
-  if (!enabled) {
+  if (!enabled || isMobileViewport) {
     return null;
   }
 
   return (
-    <div className="fixed top-0 left-0 z-[40] pointer-events-none">
-      <canvas ref={canvasRef} id="fluid" className="w-screen h-screen" />
+    <div className="fixed inset-0 z-[40] pointer-events-none overflow-hidden">
+      <canvas ref={canvasRef} id="fluid" className="w-full h-full" />
     </div>
   );
 };
