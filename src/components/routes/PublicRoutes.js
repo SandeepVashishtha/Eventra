@@ -58,14 +58,18 @@ export const getPublicRoutes = () => [
   <Route key="page-layout" element={<PageLayout />}>
     <Route key="/contributors" path="/contributors" element={<Contributors />} />
     <Route key="/communityEvent" path="/communityEvent" element={<CommunityEvent />} />
+    <Route key="/community-event" path="/community-event" element={<CommunityEvent />} />
     <Route key="/leaderBoard" path="/leaderBoard" element={<LeaderBoard />} />
+    <Route key="/leaderboard" path="/leaderboard" element={<LeaderBoard />} />
     <Route key="/contributorguide" path="/contributorguide" element={<ContributorGuide />} />
+    <Route key="/contributor-guide" path="/contributor-guide" element={<ContributorGuide />} />
     <Route key="/about" path="/about" element={<AboutPage />} />
     <Route key="/about-fallback" path="/about/*" element={<AboutPage />} />
     <Route key="/faq" path="/faq" element={<FAQPage />} />
     <Route key="/terms" path="/terms" element={<Terms />} />
     <Route key="/privacy" path="/privacy" element={<Privacy />} />
     <Route key="/apiDocs" path="/apiDocs" element={<ApiDocs />} />
+    <Route key="/api-docs" path="/api-docs" element={<ApiDocs />} />
     <Route key="/helpcenter" path="/helpcenter" element={<HelpCenter />} />
     <Route key="/contact" path="/contact" element={<ContactUs />} />
     <Route key="/feedback" path="/feedback" element={<FeedbackPage />} />
