@@ -814,7 +814,7 @@ const EventCreation = () => {
                   name="title"
                   value={formData.title}
                   onChange={handleInputChange}
-                  placeholder="Enter event title (3-200 characters)"
+                  placeholder="React Summit 2026 / AI Hackathon Gujarat / Open Source Meetup"
                   maxLength={200}
                   className={`w-full border ${
                     errors.title ? "border-red-500" : "border-gray-300 dark:border-gray-600"
@@ -944,7 +944,7 @@ const EventCreation = () => {
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
-                  placeholder="Describe your event"
+                  placeholder="Describe agenda / Mention speakers / Explain event goals"
                   rows={4}
                   maxLength={500}
                   className={`w-full border ${
