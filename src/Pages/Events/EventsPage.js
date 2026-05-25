@@ -4,6 +4,7 @@ import EventHero from "./EventHero";
 import EventCTA from "./EventCTA";
 import EventCardSection from "./EventCardSection";
 import EventFiltersToolbar from "./EventFiltersToolbar";
+import ActiveFilters from "./ActiveFilters";
 import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
 import { darkTheme } from "../../components/styles/theme";
@@ -54,6 +55,14 @@ if (listing.viewMode !== "grid") params.view = listing.viewMode;
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const handleClearFilters = () => {
+    listing.setSearchQuery("");
+    listing.setFilterType("all");
+    listing.setSortType("Newest");
+    listing.setViewMode("grid");
+    listing.setAdvancedFilters({});
+  };
+
   return (
     <div
       className={`
@@ -75,6 +84,7 @@ if (listing.viewMode !== "grid") params.view = listing.viewMode;
         ref={cardSectionRef}
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 w-full"
       >
+        {/* Advanced Filters and Toolbar */}
         {listing.loadError && !listing.isLoading ? (
           <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-red-100 dark:border-red-900/40 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
             <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
@@ -99,6 +109,38 @@ if (listing.viewMode !== "grid") params.view = listing.viewMode;
           onSortChange={listing.setSortType}
           viewMode={listing.viewMode}
           onViewModeChange={listing.setViewMode}
+          advancedFilters={listing.advancedFilters}
+          onAdvancedFiltersChange={listing.setAdvancedFilters}
+          isAdvancedFiltersOpen={listing.isAdvancedFiltersOpen}
+          onToggleAdvancedFilters={listing.setIsAdvancedFiltersOpen}
+          priceStats={listing.priceStats}
+          dateRangeStats={listing.dateRangeStats}
+        />
+
+        {/* Active Filters Display */}
+        <ActiveFilters
+          searchQuery={listing.searchQuery}
+          setSearchQuery={listing.setSearchQuery}
+          filterType={listing.filterType}
+          setFilterType={listing.setFilterType}
+          sortType={listing.sortType}
+          setSortType={listing.setSortType}
+          viewMode={listing.viewMode}
+          setViewMode={listing.setViewMode}
+          advancedFilters={listing.advancedFilters}
+          onAdvancedFiltersChange={listing.setAdvancedFilters}
+        />
+
+        {/* Events Display */}
+        <EventCardSection
+          isLoading={listing.isLoading}
+          events={listing.paginatedEvents}
+          viewMode={listing.viewMode}
+          filterType={listing.filterType}
+          onClearFilters={handleClearFilters}
+        />
+
+        {!listing.isLoading && (
           searchQuery={listing.searchQuery}
           onSearchChange={listing.setSearchQuery}
         />
