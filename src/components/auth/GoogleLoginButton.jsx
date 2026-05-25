@@ -2,6 +2,7 @@ import { GoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { toast } from "react-toastify";
 
 const GoogleLoginButton = () => {
 
@@ -28,10 +29,7 @@ const GoogleLoginButton = () => {
         data
       );
 
-      console.log(
-        "Google Login Success:",
-        data
-      );
+
 
       navigate("/dashboard", {
         replace: true
@@ -50,7 +48,7 @@ const GoogleLoginButton = () => {
     <GoogleLogin
       onSuccess={handleSuccess}
       onError={() =>
-        console.log("Login Failed")
+        toast.error("Google Sign-In failed. Please try again.")
       }
     />
   );
