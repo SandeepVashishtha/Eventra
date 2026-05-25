@@ -17,7 +17,7 @@ const Login = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user, token } = useAuth();
   // If ProtectedRoute redirected here because the JWT expired, show a notice.
   const sessionExpired = location.state?.sessionExpired ?? false;
   const introPoints = [
@@ -66,7 +66,7 @@ const Login = () => {
     if (isAuthenticated()) {
       navigate('/dashboard', { replace: true });
     }
-  }, [navigate, isAuthenticated]);
+  }, [navigate, isAuthenticated, user, token]);
 
 
   const handleSubmit = async (e) => {
