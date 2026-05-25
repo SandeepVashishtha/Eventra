@@ -228,7 +228,7 @@ function MissionSection({ anim, prefersReducedMotion }) {
                 variants={staggerItem}
                 whileHover={prefersReducedMotion ? {} : { y: -4, scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                className="rounded-2xl border p-5 cursor-default bg-gradient-to-b from-white via-white to-slate-50 border-slate-100 shadow-xl shadow-slate-100/70 dark:bg-gray-800/50 transition-transform duration-300"
+                className="rounded-2xl border p-5 cursor-default bg-gradient-to-b from-white via-white to-slate-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-900 border-slate-100 dark:border-gray-700 shadow-xl shadow-slate-100/70 dark:shadow-none transition-transform duration-300"
               >
                 <h4 className="font-bold text-sm text-black dark:text-white mb-2">{v.title}</h4>
                 <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{v.desc}</p>

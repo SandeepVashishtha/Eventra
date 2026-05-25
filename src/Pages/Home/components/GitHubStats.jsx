@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { GitHubStatCardSkeleton } from "../../../components/common/SkeletonLoaders";
 import {
   Star,
   GitFork,
@@ -51,11 +52,15 @@ export default function GitHubStats() {
     watchers: 0,
     languages: {},
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
     const cached = readCache();
-    if (cached && mounted) setStats(cached);
+    if (cached && mounted) {
+      setStats(cached);
+      setIsLoading(false);
+    }
 
     (async () => {
       try {
@@ -65,20 +70,14 @@ export default function GitHubStats() {
           ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}),
         };
 
-        const repoRes = await fetch(
-          `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}`,
-          { headers }
-        );
+        const repoRes = await fetch(`${process.env.REACT_APP_API_URL}/github/repo`);
         if (!repoRes.ok) throw new Error(`Repo ${repoRes.status}`);
         const repoData = await repoRes.json();
 
         // contributors
         let contribCount = "—";
         try {
-          const cRes = await fetch(
-            `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contributors?per_page=100`,
-            { headers }
-          );
+          const cRes = await fetch(`${process.env.REACT_APP_API_URL}/github/contributors`);
           if (cRes.ok) {
             const cData = await cRes.json();
             if (Array.isArray(cData)) contribCount = cData.length;
@@ -88,10 +87,7 @@ export default function GitHubStats() {
         // pull requests
         let prCount = "—";
         try {
-          const pRes = await fetch(
-            `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/pulls?state=open`,
-            { headers }
-          );
+          const pRes = await fetch(`${process.env.REACT_APP_API_URL}/github/pulls`);
           if (pRes.ok) {
             const pData = await pRes.json();
             if (Array.isArray(pData)) prCount = pData.length;
@@ -117,11 +113,14 @@ export default function GitHubStats() {
         if (mounted) {
           setStats(next);
           writeCache(next);
+          setIsLoading(false);
         }
       } catch (err) {
         console.warn("GitHub stats fetch failed", err);
-        if (!cached && mounted)
-          setStats({ ...stats, stars: "—", forks: "—", issues: "—" });
+        if (!cached && mounted) {
+          setStats((s) => ({ ...s, stars: "—", forks: "—", issues: "—" }));
+          setIsLoading(false);
+        }
       }
     })();
 
@@ -215,42 +214,44 @@ export default function GitHubStats() {
           animate="show"
           className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 max-w-6xl mx-auto"
         >
-          {statCards.map(({ label, value, icon, link }, index) => (
-            <motion.a
-              key={label}
-              href={link}
-              target="_blank"
-              rel="noopener noreferrer"
-              whileHover={{ scale: 1.1, rotate: 1 }}
-              whileTap={{ scale: 0.95 }}
-              // UPDATED: Card background, border, and responsive sizing
-              className="group flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-2xl px-3 py-4 sm:px-6 sm:py-6 md:px-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 relative overflow-hidden"
-            >
-              {/* Glow effect */}
-              {/* UPDATED: Glow effect for dark mode */}
-              <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition duration-700 blur-3xl rounded-2xl"></div>
+          {isLoading
+            ? [...Array(10)].map((_, i) => <GitHubStatCardSkeleton key={`skeleton-${i}`} />)
+            : statCards.map(({ label, value, icon, link }, index) => (
+                <motion.a
+                  key={label}
+                  href={link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  whileHover={{ scale: 1.1, rotate: 1 }}
+                  whileTap={{ scale: 0.95 }}
+                  // UPDATED: Card background, border, and responsive sizing
+                  className="group flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-2xl px-3 py-4 sm:px-6 sm:py-6 md:px-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 relative overflow-hidden"
+                >
+                  {/* Glow effect */}
+                  {/* UPDATED: Glow effect for dark mode */}
+                  <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition duration-700 blur-3xl rounded-2xl"></div>
 
-              <div className="z-10 flex flex-col items-center space-y-2 sm:space-y-3">
-                {/* UPDATED: Icon wrapper background with responsive sizing */}
-                <div className="p-2 sm:p-3 md:p-4 bg-gray-50 dark:bg-gray-700 rounded-full shadow-inner [&>svg]:w-7 [&>svg]:h-7 sm:[&>svg]:w-9 sm:[&>svg]:h-9 md:[&>svg]:w-10 md:[&>svg]:h-10">
-                  {icon}
-                </div>
-                {/* UPDATED: Text colors with responsive sizing */}
-                <p className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 text-center break-words px-1">
-                  {value}
-                </p>
-                <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 text-center px-1">
-                  {label}
-                </p>
-              </div>
+                  <div className="z-10 flex flex-col items-center space-y-2 sm:space-y-3">
+                    {/* UPDATED: Icon wrapper background with responsive sizing */}
+                    <div className="p-2 sm:p-3 md:p-4 bg-gray-50 dark:bg-gray-700 rounded-full shadow-inner [&>svg]:w-7 [&>svg]:h-7 sm:[&>svg]:w-9 sm:[&>svg]:h-9 md:[&>svg]:w-10 md:[&>svg]:h-10">
+                      {icon}
+                    </div>
+                    {/* UPDATED: Text colors with responsive sizing */}
+                    <p className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 text-center break-words px-1">
+                      {value}
+                    </p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 text-center px-1">
+                      {label}
+                    </p>
+                  </div>
 
-              {/* UPDATED: Icon color */}
-              <ExternalLink
-                size={16}
-                className="absolute top-3 right-3 text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition duration-300"
-              />
-            </motion.a>
-          ))}
+                  {/* UPDATED: Icon color */}
+                  <ExternalLink
+                    size={16}
+                    className="absolute top-3 right-3 text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition duration-300"
+                  />
+                </motion.a>
+              ))}
         </motion.div>
       </div>
     </section>
