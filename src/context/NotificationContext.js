@@ -119,15 +119,26 @@ export const NotificationProvider = ({ children }) => {
 
       try {
         setUnreadCount(0);
-        await Promise.allSettled(
-          unread.map((n) => {
-            const endpoint = endpointGetter(n.id);
-            if (!endpoint || typeof endpoint !== "string" || endpoint.includes("undefined")) {
-              return Promise.reject("Invalid endpoint");
-            }
-            return apiUtils.put(endpoint, {});
-          })
-        );
+
+        // Helper to slice the unread notifications into smaller batch sizes
+        const BATCH_SIZE = 5;
+        const chunks = [];
+        for (let i = 0; i < unread.length; i += BATCH_SIZE) {
+          chunks.push(unread.slice(i, i + BATCH_SIZE));
+        }
+
+        // Process each chunk sequentially to respect browser connection limits
+        for (const chunk of chunks) {
+          await Promise.allSettled(
+            chunk.map((n) => {
+              const endpoint = endpointGetter(n.id);
+              if (!endpoint || typeof endpoint !== "string" || endpoint.includes("undefined")) {
+                return Promise.reject("Invalid endpoint");
+              }
+              return apiUtils.put(endpoint, {});
+            })
+          );
+        }
       } catch (error) {
         console.error('Error marking all notifications as read:', error);
         // Re-fetch to restore accurate state on server failure
@@ -135,7 +146,7 @@ export const NotificationProvider = ({ children }) => {
       }
     }, 0);
   }, [token, fetchNotifications]);
-
+  
   // ── Initial fetch + polling ───────────────────────────────────────────────
   useEffect(() => {
     if (!token) {
