@@ -4,6 +4,7 @@ import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
 import EventCardSection from "./EventCardSection";
 import EventFiltersToolbar from "./EventFiltersToolbar";
+import ActiveFilters from "./ActiveFilters";
 import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
 
@@ -24,6 +25,14 @@ const EventsPage = () => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const handleClearFilters = () => {
+    listing.setSearchQuery("");
+    listing.setFilterType("all");
+    listing.setSortType("Newest");
+    listing.setViewMode("grid");
+    listing.setAdvancedFilters({});
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 overflow-x-hidden">
       <EventHero
@@ -38,6 +47,7 @@ const EventsPage = () => {
         ref={cardSectionRef}
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12"
       >
+        {/* Advanced Filters and Toolbar */}
         <EventFiltersToolbar
           filterType={listing.filterType}
           onFilterChange={listing.setFilterType}
@@ -45,13 +55,35 @@ const EventsPage = () => {
           onSortChange={listing.setSortType}
           viewMode={listing.viewMode}
           onViewModeChange={listing.setViewMode}
+          advancedFilters={listing.advancedFilters}
+          onAdvancedFiltersChange={listing.setAdvancedFilters}
+          isAdvancedFiltersOpen={listing.isAdvancedFiltersOpen}
+          onToggleAdvancedFilters={listing.setIsAdvancedFiltersOpen}
+          priceStats={listing.priceStats}
+          dateRangeStats={listing.dateRangeStats}
         />
 
+        {/* Active Filters Display */}
+        <ActiveFilters
+          searchQuery={listing.searchQuery}
+          setSearchQuery={listing.setSearchQuery}
+          filterType={listing.filterType}
+          setFilterType={listing.setFilterType}
+          sortType={listing.sortType}
+          setSortType={listing.setSortType}
+          viewMode={listing.viewMode}
+          setViewMode={listing.setViewMode}
+          advancedFilters={listing.advancedFilters}
+          onAdvancedFiltersChange={listing.setAdvancedFilters}
+        />
+
+        {/* Events Display */}
         <EventCardSection
           isLoading={listing.isLoading}
           events={listing.paginatedEvents}
           viewMode={listing.viewMode}
           filterType={listing.filterType}
+          onClearFilters={handleClearFilters}
         />
 
         {!listing.isLoading && (
