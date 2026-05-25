@@ -1,0 +1,46 @@
+/* ===========================================
+   Auth Component Styles
+   =========================================== */
+
+/**
+ * Session-expired banner — displayed above the login form after
+ * ProtectedRoute redirects due to an expired JWT.
+ *
+ * Accessible contrast:
+ *   - Light mode: dark amber text (#92400e) on light amber background (#fffbeb)
+ *   - Dark mode:  light amber text (#fde68a) on dark amber-tinted background (#451a03)
+ *   - Both combinations exceed WCAG AA 4.5:1 contrast ratio.
+ */
+.session-expired-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+
+  /* Light mode */
+  background-color: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fbbf24;
+}
+
+/* Dark mode override */
+.dark .session-expired-banner {
+  background-color: #451a03;
+  color: #fde68a;
+  border-color: #b45309;
+}
+
+/* Responsive: stack content vertically on very small screens */
+@media (max-width: 480px) {
+  .session-expired-banner {
+    flex-direction: column;
+    text-align: center;
+    padding: 0.625rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+}
