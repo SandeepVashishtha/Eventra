@@ -28,6 +28,8 @@ import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 const Footer = lazy(() => import("./components/Layout/Footer"));
 const Chatbot = lazy(() => import("./components/Chatbot"));
 const AppRoutes = lazy(() => import("./components/AppRoutes"));
+const RegistrationPage = lazy(() => import("./Pages/RegistrationPage"));
+const NotFoundPage = lazy(() => import("./Pages/NotFoundPage"));
 
 const OfflineSyncManager = () => {
   useOfflineSync();
@@ -116,7 +118,7 @@ function App() {
             <NotificationToastContainer />
             <OfflineSyncManager />
 
-            
+            <Router>
               <div className="App">
                 <Navbar
                   cursorEnabled={cursorEnabled}
@@ -150,20 +152,18 @@ function App() {
                       }
                     >
                       <Routes>
-                        <Route
-                          path="/register/:id"
-                          element={<RegistrationPage />}
-                        />
-                        <Route path="*" element={<AppRoutes />} />
+                        <Route path="/register/:id" element={<RegistrationPage />} />
+                        <Route path="/*" element={<AppRoutes />} />
+                        <Route path="*" element={<NotFoundPage />} />
                       </Routes>
                     </Suspense>
                   </PageTransition>
                 </main>
 
+                <ScrollToTop />
                 <Suspense fallback={null}>
-                 
+                  <Chatbot />
                   <Footer />
-                   <Chatbot />
                 </Suspense>
 
                 <FeedbackButton />
@@ -171,7 +171,7 @@ function App() {
                 <SessionRecovery />
                 <FluidCursor enabled={cursorEnabled} />
               </div>
-            
+            </Router>
           </SessionRecoveryProvider>
         </MyEventsProvider>
       </NotificationProvider>
