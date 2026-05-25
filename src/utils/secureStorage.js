@@ -21,3 +21,9 @@ export const removeToken = () => {
   // Using the exact key name from your screenshot.
   localStorage.removeItem("ENCRYPTION_KEY_KEY");
 };
+
+export const syncSecureStorage = {
+  getItem: (key) => localStorage.getItem(key),
+  setItem: (key, value) => localStorage.setItem(key, value),
+  removeItem: (key) => localStorage.removeItem(key),
+};
