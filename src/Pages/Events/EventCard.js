@@ -2,6 +2,7 @@ import { useEffect, useState, memo } from "react";
 import { getUserTimezone } from "../../utils/timezoneUtils";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { getSmartDateLabel } from "../../utils/relativeTime";
 import {
   Bookmark,
   BookmarkCheck,
@@ -302,16 +303,13 @@ const EventCard = ({ event }) => {
           <Calendar size={14} className="text-indigo-500 flex-shrink-0 mt-0.5" />
           <div className="flex flex-col">
             <span className="truncate">
-              {new Date(event.date).toLocaleDateString(
-                "en-US",
-                {
-                  weekday: "short",
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                }
-              )}
-            </span>
+  {getSmartDateLabel(event.date, event.time)}
+</span>
+<span className="text-[11px] text-gray-500 dark:text-gray-400">
+  {new Date(event.date).toLocaleDateString("en-US", {
+    weekday: "short", day: "numeric", month: "short", year: "numeric",
+  })}
+</span>
             <span className="text-[11px] text-gray-500 dark:text-gray-400">
               Localized Event Time
             </span>
