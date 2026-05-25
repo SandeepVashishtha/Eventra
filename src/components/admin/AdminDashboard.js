@@ -33,14 +33,7 @@ const stagger = {
   visible: { transition: { staggerChildren: 0.07 } }
 };
 
-/* ─── Mock data (replace with real API calls when endpoints are ready) ─── */
-// const MOCK_USERS = [
-//   { id: 1, firstName: 'Aarav', lastName: 'Sharma', email: 'aarav@example.com', roles: ['USER'], createdAt: '2025-01-15', status: 'Active' },
-//   { id: 2, firstName: 'Priya', lastName: 'Mehta',  email: 'priya@example.com', roles: ['EVENT_MANAGER'], createdAt: '2025-02-20', status: 'Active' },
-//   { id: 3, firstName: 'Rohan', lastName: 'Verma',  email: 'rohan@example.com', roles: ['USER'], createdAt: '2025-03-05', status: 'Inactive' },
-//   { id: 4, firstName: 'Sneha', lastName: 'Patel',  email: 'sneha@example.com', roles: ['USER'], createdAt: '2025-04-12', status: 'Active' },
-//   { id: 5, firstName: 'Karan', lastName: 'Joshi',  email: 'karan@example.com', roles: ['EVENT_MANAGER'], createdAt: '2025-05-01', status: 'Active' },
-// ];
+
 /* ─── Mock data (replace with real API calls when endpoints are ready) ─── */
 const MOCK_USERS = [
   {
@@ -134,9 +127,7 @@ const AdminDashboard = () => {
     userRoles.includes(ROLES.ADMIN) ||
     userRoles.includes(ROLES.SUPER_ADMIN);
 
-  if (!isAdmin) {
-    return <Navigate to="/unauthorized" replace />;
-  }
+  
  
 
   const [activeTab, setActiveTab] = useState('overview');
@@ -154,6 +145,9 @@ const AdminDashboard = () => {
     return () => window.clearTimeout(timer);
   }, []);
 
+  if (!isAdmin) {
+    return <Navigate to="/unauthorized" replace />;
+  }
   /* Stats */
   const totalUsers  = users.length;
   const activeUsers = users.filter(u => u.status === 'Active').length;
