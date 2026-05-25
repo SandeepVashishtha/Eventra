@@ -1,0 +1,243 @@
+﻿diff --git a/src/components/Layout/Navbar.js b/src/components/Layout/Navbar.js
+index 7762f41..782599c 100644
+--- a/src/components/Layout/Navbar.js
++++ b/src/components/Layout/Navbar.js
+@@ -28,8 +28,10 @@ import {
+   Moon,
+   Sun,
+   MoreHorizontal,
+-  X
++  Search,
++  Palette
+ } from "lucide-react";
++import CommandPalette from "../common/CommandPalette";
+ 
+ // --- Helpers to reduce complexity ---
+ const getUserDisplayNames = (user) => {
+@@ -57,40 +59,64 @@ const setBodyScrollStyles = (top) => {
+ };
+ 
+ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
++  const { setIsCustomizerOpen } = useTheme();
++
+   if (isMobile) {
+     return (
++      <div className="flex flex-col gap-2.5 w-full">
++        <motion.button
++          whileTap={{ scale: 0.95 }}
++          onClick={toggleTheme}
++          className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-xl bg-zinc-100 dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 font-semibold border border-zinc-200 dark:border-zinc-700/50 hover:bg-zinc-200 dark:hover:bg-zinc-700/80 transition-all cursor-pointer"
++        >
++          {isDarkMode ? <Sun className="w-5 h-5 text-amber-500" /> : <Moon className="w-5 h-5 text-indigo-500" />}
++          <span>{isDarkMode ? "Switch to Light" : "Switch to Dark"}</span>
++        </motion.button>
++        <motion.button
++          whileTap={{ scale: 0.95 }}
++          onClick={() => setIsCustomizerOpen(true)}
++          className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-pink-500 text-white font-semibold border-none shadow-md hover:shadow-lg transition-all cursor-pointer"
++        >
++          <Palette className="w-5 h-5" />
++          <span>Theme Skins Panel</span>
++        </motion.button>
++      </div>
++    );
++  }
++  return (
++    <div className="flex items-center gap-2">
+       <motion.button
++        whileHover={{ scale: 1.05 }}
+         whileTap={{ scale: 0.95 }}
+         onClick={toggleTheme}
+-        className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-xl bg-zinc-100 dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 font-semibold border border-zinc-200 dark:border-zinc-700/50 hover:bg-zinc-200 dark:hover:bg-zinc-700/80 transition-all"
++        title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
++        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group cursor-pointer"
+       >
+-        {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+-        <span>{isDarkMode ? "Dark Mode OFF" : "Dark Mode ON"}</span>
++        <motion.span
++          key={isDarkMode ? "sun" : "moon"}
++          initial={{ rotate: -90, opacity: 0 }}
++          animate={{ rotate: 0, opacity: 1 }}
++          exit={{ rotate: 90, opacity: 0 }}
++          transition={{ duration: 0.3 }}
++          className="text-zinc-600 group-hover:text-indigo-500 dark:text-zinc-400 dark:group-hover:text-indigo-400"
++        >
++          {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
++        </motion.span>
++        <span className="text-[10px] font-bold tracking-widest text-zinc-500 dark:text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 uppercase">
++          {isDarkMode ? "LIGHT" : "DARK"}
++        </span>
+       </motion.button>
+-    );
+-  }
+-  return (
+-    <motion.button
+-      whileHover={{ scale: 1.05 }}
+-      whileTap={{ scale: 0.95 }}
+-      onClick={toggleTheme}
+-      title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group"
+-    >
+-      <motion.span
+-        key={isDarkMode ? "sun" : "moon"}
+-        initial={{ rotate: -90, opacity: 0 }}
+-        animate={{ rotate: 0, opacity: 1 }}
+-        exit={{ rotate: 90, opacity: 0 }}
+-        transition={{ duration: 0.3 }}
+-        className="text-zinc-600 group-hover:text-indigo-500 dark:text-zinc-400 dark:group-hover:text-indigo-400"
++
++      <motion.button
++        whileHover={{ scale: 1.08 }}
++        whileTap={{ scale: 0.92 }}
++        onClick={() => setIsCustomizerOpen(true)}
++        title="Open Theme Customizer"
++        className="flex items-center justify-center p-2 rounded-full transition-all duration-300 focus:outline-none bg-gradient-to-r from-indigo-500/10 to-pink-500/10 hover:from-indigo-500/20 hover:to-pink-500/20 border border-indigo-200/50 dark:border-indigo-800/40 hover:shadow-[0_0_12px_rgba(236,72,153,0.3)] text-indigo-550 dark:text-indigo-400 cursor-pointer"
+       >
+-        {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+-      </motion.span>
+-      <span className="text-[10px] font-bold tracking-widest text-zinc-500 dark:text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 uppercase">
+-        {isDarkMode ? "LIGHT" : "DARK"}
+-      </span>
+-    </motion.button>
++        <Palette className="w-4 h-4 animate-pulse text-indigo-500 dark:text-indigo-400" />
++      </motion.button>
++    </div>
+   );
+ };
+ 
+@@ -138,7 +164,7 @@ const AuthButtons = ({ isMobile, closeAllMenus }) => (
+       onClick={isMobile ? closeAllMenus : undefined} 
+       className={isMobile 
+         ? "flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-white bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200 transition-all duration-300"
+-        : "text-[13px] font-semibold text-zinc-600 hover:text-indigo-600 dark:text-zinc-300 dark:hover:text-indigo-400 transition-colors whitespace-nowrap"
++        : "text-sm font-semibold text-zinc-600 hover:text-indigo-600 dark:text-zinc-300 dark:hover:text-indigo-400 transition-colors whitespace-nowrap"
+       }
+     >
+       {isMobile && <LogIn className="w-5 h-5" />}Sign In
+@@ -304,8 +330,6 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
+     )}
+   </div>
+ );
+-
+-
+ const MobileDrawerFooter = ({ 
+   isAuthenticated, user, primaryLine, secondaryLine, closeAllMenus, location, 
+   handleLogoutClick, isDarkMode, toggleTheme, cursorEnabled, toggleCursor 
+@@ -420,6 +444,8 @@ const MobileUserSection = ({
+   </div>
+ );
+ 
++// Top-level nav items kept lean so they never overflow at xl (1280px+).
++// About / FAQ / Contact are grouped under "More" to prevent collisions.
+ const NAV_ITEMS = [
+   { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
+   { name: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
+@@ -443,6 +469,15 @@ const NAV_ITEMS = [
+       { name: "Community Events",  href: "/communityEvent", icon: <Users        className="w-5 h-5" /> },
+     ],
+   },
++  {
++    name: "More",
++    icon: <MoreHorizontal className="w-5 h-5" />,
++    subItems: [
++      { name: "About",   href: "/about",   icon: <Info          className="w-5 h-5" /> },
++      { name: "FAQ",     href: "/faq",     icon: <HelpCircle    className="w-5 h-5" /> },
++      { name: "Contact", href: "/contact", icon: <MessageSquare className="w-5 h-5" /> },
++    ],
++  },
+ ];
+ 
+ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile }) => (
+@@ -483,6 +518,24 @@ const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
+   );
+ };
+ 
++const MobileDrawerHeader = ({ closeBtnRef, closeAllMenus, isDarkMode }) => (
++  <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-zinc-800/50">
++    <div className="flex items-center gap-2">
++      <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
++        <Sparkles className="w-5 h-5 text-white" />
++      </div>
++      <span className="font-bold text-gray-900 dark:text-white">Menu</span>
++    </div>
++    <button
++      ref={closeBtnRef}
++      onClick={closeAllMenus}
++      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-gray-400 transition-colors"
++    >
++      <ChevronDown className="w-6 h-6 rotate-90" />
++    </button>
++  </div>
++);
++
+ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeAllMenus, handleTouchStart, handleTouchMove, handleTouchEnd, closeBtnRef, toggleCursor, cursorEnabled, handleLogoutClick, primaryLine, secondaryLine }) => {
+   const location = useLocation();
+   const { isDarkMode, toggleTheme } = useTheme();
+@@ -541,6 +594,18 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
+   const [openDropdown, setOpenDropdown] = useState(null);
+   const [showLogoutModal, setShowLogoutModal] = useState(false);
+   const [navHeight, setNavHeight] = useState(0);
++  const [showCommandPalette, setShowCommandPalette] = useState(false);
++
++  useEffect(() => {
++    const handleKeyDown = (e) => {
++      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
++        e.preventDefault();
++        setShowCommandPalette((prev) => !prev);
++      }
++    };
++    window.addEventListener("keydown", handleKeyDown);
++    return () => window.removeEventListener("keydown", handleKeyDown);
++  }, []);
+ 
+   const drawerRef = useRef(null);
+   const closeBtnRef = useRef(null);
+@@ -673,6 +738,21 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
+ 
+           {/* Right Group: Auth Controls and Mobile Toggle */}
+           <div className="hidden xl:flex items-center gap-2 shrink-0 justify-end">
++            {/* Command Palette Trigger Button */}
++            <motion.button
++              whileHover={{ scale: 1.05 }}
++              whileTap={{ scale: 0.95 }}
++              onClick={() => setShowCommandPalette(true)}
++              title="Open Command Palette (ΓîÿK)"
++              className="flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group mr-1"
++            >
++              <Search className="w-4 h-4 text-zinc-500 dark:text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400" />
++              <div className="flex items-center gap-0.5 text-[9px] font-black tracking-widest text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 uppercase">
++                <span>Γîÿ</span>
++                <span>K</span>
++              </div>
++            </motion.button>
++
+             <ThemeToggleButton
+               isDarkMode={isDarkMode}
+               toggleTheme={toggleTheme}
+@@ -701,7 +781,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
+               <AuthButtons isMobile={false} />
+             )}
+           </div>
+-         
+ 
+           {/* Mobile menu button */}
+           <div className="xl:hidden ml-auto">
+@@ -748,6 +827,18 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
+         message="Are you sure you want to log out?"
+       />
+ 
++      {/* Global Command Palette */}
++      <CommandPalette
++        isOpen={showCommandPalette}
++        onClose={() => setShowCommandPalette(false)}
++        isDarkMode={isDarkMode}
++        toggleTheme={toggleTheme}
++        cursorEnabled={cursorEnabled}
++        toggleCursor={toggleCursor}
++        isAuthenticated={isAuthenticated}
++        handleLogoutClick={handleLogoutClick}
++      />
++
+       <div style={{ height: navHeight }} />
+     </>
+   );

@@ -1,8 +1,5 @@
 import { useEffect, useState, memo } from "react";
-import {
-  formatEventDateTime,
-  getUserTimezone,
-} from "../../utils/timezoneUtils";
+import { getUserTimezone } from "../../utils/timezoneUtils";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -10,7 +7,7 @@ import {
   BookmarkCheck,
   Calendar,
   MapPin,
-  Clock,
+  
   Tag,
   Star,
   Heart,
@@ -18,6 +15,7 @@ import {
   BookOpen,
   Gift,
   Share2,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
@@ -33,12 +31,12 @@ import {
   removeBookmarkedEvent,
   subscribeToBookmarkChanges,
 } from "../../utils/bookmarkUtils";
-import { CountdownBadge } from "../../components/common/CountdownTimer";
+import { checkRegistrationConflict } from "../../utils/conflictDetection";
 
 const EventCard = ({ event }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const [showBookmarkTooltip, setShowBookmarkTooltip] = useState(false);
-  const { isRegistered } = useMyEvents();
+  const { myEvents, isRegistered } = useMyEvents();
   const [randomIcon] = useState(() => {
     const icons = [
       <Star size={16} className="text-yellow-500" />,
@@ -50,6 +48,11 @@ const EventCard = ({ event }) => {
 
     return icons[Math.floor(Math.random() * icons.length)];
   });
+
+  // Check if this event conflicts with registered events
+  const conflictCheck = checkRegistrationConflict(event, myEvents);
+  const hasConflict = conflictCheck.hasConflict;
+  const isUserRegistered = isRegistered(event.id);
 
   const eventDateTime = new Date(`${event.date} ${event.time}`);
   const isPastEvent = eventDateTime < new Date();
@@ -227,7 +230,31 @@ const EventCard = ({ event }) => {
         <h3 className="text-gray-900 dark:text-white font-bold text-lg tracking-tight truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300 flex-1">
           {event.title}
         </h3>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          {/* Conflict Indicator */}
+          {hasConflict && !isUserRegistered && (
+            <div
+              className="flex items-center gap-1 px-2 py-1 bg-amber-100 dark:bg-amber-900/30 rounded-full border border-amber-300 dark:border-amber-700"
+              title="This event conflicts with your registered events"
+            >
+              <AlertTriangle size={12} className="text-amber-600 dark:text-amber-400" />
+              <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">
+                Conflict
+              </span>
+            </div>
+          )}
+          {/* Registered Indicator */}
+          {isUserRegistered && (
+            <div
+              className="flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 rounded-full border border-green-300 dark:border-green-700"
+              title="You are registered for this event"
+            >
+              <BookmarkCheck size={12} className="text-green-600 dark:text-green-400" />
+              <span className="text-xs font-semibold text-green-700 dark:text-green-300">
+                Registered
+              </span>
+            </div>
+          )}
           <StatusBadge status={computedStatus} />
         </div>
       </div>

@@ -34,32 +34,13 @@ const PasswordReset = () => {
   setLoading(true);
 
   try {
-    const response = await apiUtils.post(
-      "/api/auth/password-reset",
-      { email }
-    );
-
-    const data = await response.json();
-
-    if (response.ok) {
-      setMessage(
-        "Password reset link sent! Check your email."
-      );
-
-      setTimeout(
-        () => navigate("/login"),
-        3000
-      );
-    } else {
-      setError(
-        data.message ||
-          "Failed to send reset link. Please try again."
-      );
-    }
-  } catch (error) {
-    setError(
-      "Network error. Please check your connection and try again."
-    );
+    const response = await apiUtils.post('/api/auth/password-reset', { email });
+    // Axios throws on non-2xx, so if we're here the request succeeded
+    setMessage(response.data?.message || 'Password reset link sent! Check your email.');
+    setTimeout(() => navigate('/login'), 3000);
+  } catch (err) {
+    const backendMessage = err.response?.data?.message;
+    setError(backendMessage || 'Failed to send reset link. Please try again.');
   } finally {
     setLoading(false);
   }
