@@ -171,7 +171,7 @@ const ProjectCard = ({ project, index }) => {
   // Mouse Tracking state for dynamic light glow bubble
   const cardRef = useRef(null);
   const [coords, setCoords] = useState({ x: 0, y: 0 });
-  const [isHovered, setIsHovered] = useState(false);
+  
 
   const handleMouseMove = (e) => {
     if (!cardRef.current) return;
@@ -264,8 +264,6 @@ const ProjectCard = ({ project, index }) => {
     <motion.div
       ref={cardRef}
       onMouseMove={handleMouseMove}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
       initial={{ opacity: 0, y: 30, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       whileHover={{ y: -8, scale: 1.01 }}

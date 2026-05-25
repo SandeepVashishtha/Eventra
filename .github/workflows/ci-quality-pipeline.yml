@@ -32,6 +32,9 @@ jobs:
         env:
           CI: true
 
+      - name: Run utility unit tests
+        run: npm run test:unit
+
       - name: Production build verification
         run: CI=false npm run build
         env:

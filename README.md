@@ -5,8 +5,6 @@
 Eventra is a comprehensive, open-source platform designed to empower organizers to create, manage, and track events seamlessly. Built with a modern tech stack featuring a React frontend and Spring Boot backend, Eventra provides a full suite of tools for running successful events, from initial creation to post-event analytics.
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://openjdk.java.net/projects/jdk/17/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.1-green.svg)](https://spring.io/projects/spring-boot)
 [![React](https://img.shields.io/badge/React-18.2.0-blue.svg)](https://reactjs.org/)
 
 ---
@@ -47,7 +45,6 @@ This repository contains the React frontend application for Eventra. The backend
 - **Swagger**: [https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html](https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html)
 - Capacity and registration availability endpoints are documented in Swagger UI.
 
-
 ## Project Insights
 
 <table align="center">
@@ -78,12 +75,14 @@ This repository contains the React frontend application for Eventra. The backend
 ## Features
 
 ### Core Functionality
+
 - **Event Creation & Management**: Easily create and customize events with rich details.
 - **User Authentication**: Secure JWT-based authentication with role-based access control.
 - **Admin & User Dashboards**: Personalized dashboards for seamless management and tracking.
 - **Real-time Analytics**: Track event performance and attendee engagement.
 
 ### Platform Features
+
 - **Hackathon Hub**: Specialized features for managing hackathons.
 - **Project Gallery**: Showcase community projects and foster collaboration.
 - **Community Leaderboards**: Gamify participation and recognize top contributors.
@@ -92,22 +91,22 @@ This repository contains the React frontend application for Eventra. The backend
 
 ## Tech Stack
 
-| Frontend | Backend | DevOps & Infrastructure |
-| :--- | :--- | :--- |
-| **React 18.2** | **Spring Boot 3.3.1** | **Git & GitHub** for Version Control |
-| **React Router** for Routing | **Java 17** | **Vercel** for Frontend Hosting |
-| **Framer Motion** for Animations | **Spring Security & JWT** | **Maven** for Build Automation |
-| **Tailwind CSS** (or CSS) for Styling | **MySQL & H2** Databases | **OpenAPI 3.0** for API Docs |
-| **Create React App** | **Spring Data JPA** | **Azure App Service** for Backend Hosting |
+| Frontend                         | DevOps & Infrastructure              |
+| :------------------------------- | :----------------------------------- |
+| **React 18.2**                   | **Git & GitHub** for Version Control |
+| **React Router** for Routing     | **Vercel** for Frontend Hosting      |
+| **Framer Motion** for Animations | **npm** for Package Management       |
+| **Tailwind CSS** for Styling     |                                      |
+| **Create React App**             |                                      |
 
-> **Note:** This repository mainly contains the frontend implementation. Backend APIs and services are maintained separately in the [Eventra-Backend](https://github.com/SandeepVashishtha/Eventra-Backend) repository.
-
+> **Note:** This repository strictly contains the frontend React application. The backend APIs, databases (MySQL/H2), and Java/Spring Boot services are maintained separately in the [Eventra-Backend](https://github.com/SandeepVashishtha/Eventra-Backend) repository.
 
 ## Getting Started
 
 Follow these steps to set up and run the frontend application on your local machine.
 
 ### Prerequisites
+
 - **Node.js**: Version 16.x or higher
 - **npm**: (usually comes with Node.js)
 - **Git**
@@ -115,28 +114,28 @@ Follow these steps to set up and run the frontend application on your local mach
 ### Installation & Setup
 
 1.  **Clone the Repository:**
+
     ```bash
     git clone https://github.com/SandeepVashishtha/Eventra.git
     cd Eventra
     ```
 
 2.  **Install Dependencies:**
+
     ```bash
     npm install
     ```
 
 3.  **Configure Environment Variables:**
-  Set up your local `.env` file as described in the [Environment Variables](#environment-variables) section. The backend server runs on port `8080` by default.
+    Set up your local `.env` file as described in the [Environment Variables](#environment-variables) section. The backend server runs on port `8080` by default.
 
-  > **Note:** For the backend setup instructions, please refer to the [backend repository's README](https://github.com/SandeepVashishtha/Eventra-Backend).
+> **Note:** For the backend setup instructions, please refer to the [backend repository's README](https://github.com/SandeepVashishtha/Eventra-Backend).
 
 4.  **Run the Development Server:**
     ```bash
     npm start
     ```
     The application will be available at `http://localhost:3000`.
-
-
 
 ## Environment Variables
 
@@ -153,33 +152,33 @@ The repository is organized into modular frontend components, contexts, configur
 
 ```text
 Eventra/
-├── public/
-├── src/
-│   ├── assets/
-│   ├── components/
-│   │   ├── admin/
-│   │   ├── auth/
-│   │   ├── common/
-│   │   ├── Layout/
-│   │   ├── routes/
-│   │   ├── styles/
-│   │   └── user/
-│   ├── config/
-│   ├── jhalak/
-│   │   ├── FluidCursor.js   # Fluid cursor animation effect (navbar)
-│   │   └── RespawningText.js # Animated respawning/typewriter text effect
-│   ├── context/
-│   ├── Pages/
-│   ├── utils/
-│   ├── App.js
-│   ├── App.css
-│   ├── index.js
-│   └── index.css
-├── tests/
-├── .env.example
-├── package.json
-├── tailwind.config.js
-└── README.md
+|-- public/
+|-- src/
+|   |-- assets/
+|   |-- components/
+|   |   |-- admin/
+|   |   |-- auth/
+|   |   |-- common/
+|   |   |-- Layout/
+|   |   |-- routes/
+|   |   |-- styles/
+|   |   `-- user/
+|   |-- config/
+|   |-- jhalak/
+|   |   |-- FluidCursor.js   # Fluid cursor animation effect (navbar)
+|   |   `-- RespawningText.js # Animated respawning/typewriter text effect
+|   |-- context/
+|   |-- Pages/
+|   |-- utils/
+|   |-- App.js
+|   |-- App.css
+|   |-- index.js
+|   `-- index.css
+|-- tests/
+|-- .env.example
+|-- package.json
+|-- tailwind.config.js
+`-- README.md
 ```
 
 ## Deployment
@@ -199,6 +198,7 @@ This project is configured for easy deployment on **Vercel**.
 We welcome contributions from the community! To get started, please follow these guidelines.
 
 ### Development Workflow
+
 1.  **Fork** the repository.
 2.  **Create a new branch** for your feature or bug fix:
     ```bash
@@ -215,6 +215,7 @@ We welcome contributions from the community! To get started, please follow these
 5.  **Open a Pull Request** to the `master` branch of the original repository.
 
 ### Issue Assignment Policy
+
 - To ensure active development, issues are **automatically unassigned after 7 days** of inactivity.
 - To keep your assignment, please **open a draft Pull Request** within the 7-day period to show progress.
 - For more details, see our [Auto-unassign Documentation](.github/AUTO_UNASSIGN.md).
@@ -222,7 +223,6 @@ We welcome contributions from the community! To get started, please follow these
 ## License
 
 This project is licensed under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for details.
-
 
 ## Star History
 
@@ -245,6 +245,7 @@ A huge thank you to everyone who has contributed to Eventra! Your efforts make t
 </p>
 
 ### Maintainers
+
 <table>
 <tr>
 <td align="center">
@@ -271,6 +272,7 @@ A huge thank you to everyone who has contributed to Eventra! Your efforts make t
 </table>
 
 ---
+
 ## Environment Variables Setup
 
 Create a `.env` file in the project root by copying `.env.example`:
@@ -284,24 +286,32 @@ Then replace the placeholder values with your own local configuration.
 Example:
 
 ```env
-REACT_APP_API_URL=http://localhost:5000
+REACT_APP_API_URL=http://localhost:8080/api
+REACT_APP_USE_REAL_API=false
 REACT_APP_GITHUB_TOKEN=your_github_token
+REACT_APP_EMAILJS_PUBLIC_KEY=your_emailjs_public_key
+REACT_APP_EMAILJS_SERVICE_ID=your_emailjs_service_id
+REACT_APP_EMAILJS_TEMPLATE_ID=your_emailjs_template_id
+REACT_APP_FACEBOOK_APP_ID=your_facebook_app_id_here
+REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id
+DAYS_THRESHOLD=30
 ```
 
 ### Required Environment Variables
 
-| Variable                        | Description                    |
-| ------------------------------- | ------------------------------ |
-| `NODE_ENV`                      | Application environment        |
-| `REACT_APP_API_URL`             | Backend API base URL           |
-| `REACT_APP_GITHUB_TOKEN`        | GitHub API token               |
-| `REACT_APP_EMAILJS_PUBLIC_KEY`  | EmailJS public key             |
-| `REACT_APP_EMAILJS_SERVICE_ID`  | EmailJS service ID             |
-| `REACT_APP_EMAILJS_TEMPLATE_ID` | EmailJS template ID            |
-| `REACT_APP_FACEBOOK_APP_ID`     | Facebook authentication app ID |
+| Variable | Required | Description |
+| --- | --- | --- |
+| `NODE_ENV` | Yes | Application environment |
+| `REACT_APP_API_URL` | Yes | Backend API base URL |
+| `REACT_APP_USE_REAL_API` | No | Enables real API calls in selected development flows |
+| `DAYS_THRESHOLD` | No | Threshold days configuration used by date-based features |
+| `REACT_APP_GITHUB_TOKEN` | No | GitHub API token for higher rate limits on contributor and repository stats |
+| `REACT_APP_EMAILJS_PUBLIC_KEY` | No | EmailJS public key for event registration emails |
+| `REACT_APP_EMAILJS_SERVICE_ID` | No | EmailJS service ID for event registration emails |
+| `REACT_APP_EMAILJS_TEMPLATE_ID` | No | EmailJS template ID for event registration emails |
+| `REACT_APP_FACEBOOK_APP_ID` | No | Facebook authentication/share dialog app ID |
+| `REACT_APP_GOOGLE_CLIENT_ID` | No | Google authentication client ID |
 
 The `.env.example` file contains all required environment variable names needed to run the project locally.
 
 Built with care by the Eventra Team
-
-

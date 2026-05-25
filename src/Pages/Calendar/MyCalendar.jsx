@@ -10,7 +10,6 @@ import {
   ExternalLink,
   Download,
   AlertCircle,
-  List,
   Grid,
   Filter,
   Activity,
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 import {
   downloadICSFile,
+  downloadBulkICSFile,
   generateGoogleCalendarLink,
   generateOutlookLink,
 } from "../../utils/calendarExporter";
@@ -151,32 +151,46 @@ const MyCalendar = () => {
             </p>
           </div>
 
-          {/* VIEW SWITCHER */}
-          <div className="flex items-center gap-2 bg-slate-150/80 dark:bg-slate-900/60 p-1.5 rounded-2xl self-start md:self-auto border border-slate-200/40 dark:border-slate-800/30 backdrop-blur-xs shadow-inner">
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`p-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
-                viewMode === "grid"
-                  ? "bg-white dark:bg-slate-800 shadow-md text-indigo-650 dark:text-indigo-400"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-              }`}
-              aria-label="Grid calendar view"
-            >
-              <Grid className="w-3.5 h-3.5" />
-              Calendar Grid
-            </button>
-            <button
-              onClick={() => setViewMode("timeline")}
-              className={`p-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
-                viewMode === "timeline"
-                  ? "bg-white dark:bg-slate-800 shadow-md text-indigo-650 dark:text-indigo-400"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-              }`}
-              aria-label="Chronological timeline view"
-            >
-              <Activity className="w-3.5 h-3.5" />
-              Timeline View ({timelineEvents.length})
-            </button>
+          <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
+            {/* VIEW SWITCHER */}
+            <div className="flex items-center gap-2 bg-slate-150/80 dark:bg-slate-900/60 p-1.5 rounded-2xl border border-slate-200/40 dark:border-slate-800/30 backdrop-blur-xs shadow-inner">
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`p-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
+                  viewMode === "grid"
+                    ? "bg-white dark:bg-slate-800 shadow-md text-indigo-650 dark:text-indigo-400"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                }`}
+                aria-label="Grid calendar view"
+              >
+                <Grid className="w-3.5 h-3.5" />
+                Calendar Grid
+              </button>
+              <button
+                onClick={() => setViewMode("timeline")}
+                className={`p-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
+                  viewMode === "timeline"
+                    ? "bg-white dark:bg-slate-800 shadow-md text-indigo-650 dark:text-indigo-400"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                }`}
+                aria-label="Chronological timeline view"
+              >
+                <Activity className="w-3.5 h-3.5" />
+                Timeline View ({timelineEvents.length})
+              </button>
+            </div>
+
+            {/* BULK EXPORT BUTTON */}
+            {myEvents.length > 0 && (
+              <button
+                onClick={() => downloadBulkICSFile(myEvents)}
+                className="p-2.5 px-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white shadow-md hover:shadow-lg hover:scale-102"
+                aria-label="Export all events as ICS"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Export All ({myEvents.length})
+              </button>
+            )}
           </div>
         </div>
 

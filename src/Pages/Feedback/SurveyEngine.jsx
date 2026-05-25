@@ -4,9 +4,6 @@ import {
   FiPlus,
   FiTrash2,
   FiEye,
-  FiCheckCircle,
-  FiSettings,
-  FiChevronDown,
   FiPlusCircle,
   FiSave,
 } from "react-icons/fi";
@@ -45,7 +42,7 @@ const SurveyEngine = () => {
     },
   ]);
 
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  
   const [activeTab, setActiveTab] = useState("builder"); // "builder" | "preview"
 
   // Question type configuration
@@ -144,7 +141,6 @@ const SurveyEngine = () => {
       createdAt: new Date().toISOString(),
     };
 
-    console.log("Survey created successfully:", payload);
     toast.success("Survey published and active for attendees!");
   };
 

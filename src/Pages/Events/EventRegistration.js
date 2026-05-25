@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Calendar,
   MapPin,
@@ -14,6 +14,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { getEventStatus } from "../../utils/eventUtils";
+import { checkRegistrationConflict, suggestAlternativeEvents } from "../../utils/conflictDetection";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
@@ -23,6 +24,7 @@ import { validate } from "../../validation";
 import { toast } from "react-toastify";
 import mockEvents from "./eventsMockData.json";
 import { pushToQueue } from "../../utils/offlineQueue";
+import EventConflictModal from "../../components/EventConflictModal";
 
 const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
 const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
@@ -191,23 +193,26 @@ const ConfettiCanvas = () => {
 // Registration lock map to prevent concurrent registrations for the same event
 const registrationLocks = new Map();
 
-const isCapacityMessage = (message = "") => {
-  const normalized = String(message).toLowerCase();
-  return normalized.includes("capacity") || normalized.includes("full");
-};
 
 const EventRegistration = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated, token } = useAuth();
-  const { addRegistration } = useMyEvents();
-  const { saveSession, clearSession } = useSessionRecovery();
+  const { user, isAuthenticated } = useAuth();
+  const { addRegistration, myEvents } = useMyEvents();
+  const { clearSession } = useSessionRecovery();
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);
   const isSubmittingRef = useRef(false);
+
+  // Conflict detection state
+  const [showConflictModal, setShowConflictModal] = useState(false);
+  const [conflictData, setConflictData] = useState({
+    conflicts: [],
+    suggestions: [],
+  });
 
   const validationRules = {
     fullName: validate.fullName,
@@ -289,13 +294,36 @@ const EventRegistration = () => {
       return;
     }
 
+    // Check for scheduling conflicts
+    const conflictCheck = checkRegistrationConflict(event, myEvents);
+    
+    if (conflictCheck.hasConflict) {
+      // Get alternative suggestions
+      const suggestions = suggestAlternativeEvents(event, mockEvents, myEvents);
+      setConflictData({
+        conflicts: conflictCheck.conflicts,
+        suggestions,
+      });
+      setShowConflictModal(true);
+      return;
+    }
+
+    // Proceed with registration if no conflicts
+    proceedWithRegistration();
+  };
+
+  // Proceed with registration after conflict check or user confirmation
+  const proceedWithRegistration = async () => {
+    // Close modal if open
+    setShowConflictModal(false);
+    
     // Set lock and submission state
     registrationLocks.set(eventId, true);
     isSubmittingRef.current = true;
     setSubmitting(true);
 
     try {
-      const response = await apiUtils.post(
+      await apiUtils.post(
         API_ENDPOINTS.EVENTS.REGISTER(eventId),
         {
           ...formData,
@@ -332,6 +360,22 @@ const EventRegistration = () => {
       isSubmittingRef.current = false;
       setSubmitting(false);
     }
+  };
+
+  // Handle conflict modal actions
+  const handleConflictCancel = () => {
+    setShowConflictModal(false);
+    toast.info("Registration cancelled due to scheduling conflict.");
+  };
+
+  const handleConflictProceed = () => {
+    proceedWithRegistration();
+  };
+
+  const handleSelectAlternative = (alternativeEvent) => {
+    setShowConflictModal(false);
+    navigate(`/events/${alternativeEvent.id}/register`);
+    toast.info(`Redirecting to ${alternativeEvent.title}`);
   };
 
   if (loading) {
@@ -396,7 +440,11 @@ const EventRegistration = () => {
           title: event.title,
           text: shareText,
           url: shareUrl,
-        }).catch((err) => console.log(err));
+        }).catch((err) => {
+          if (err.name !== "AbortError") {
+            toast.error("Unable to share event. Try copying the link instead.");
+          }
+        });
       } else {
         navigator.clipboard.writeText(shareUrl).then(() => {
           toast.success("Event link copied to clipboard!");
@@ -796,6 +844,18 @@ const EventRegistration = () => {
           </div>
         </div>
       </div>
+
+      {/* Conflict Detection Modal */}
+      <EventConflictModal
+        isOpen={showConflictModal}
+        newEvent={event}
+        conflictingEvents={conflictData.conflicts}
+        suggestedEvents={conflictData.suggestions}
+        onCancel={handleConflictCancel}
+        onProceed={handleConflictProceed}
+        onSelectAlternative={handleSelectAlternative}
+        strictMode={false}
+      />
     </div>
   );
 };

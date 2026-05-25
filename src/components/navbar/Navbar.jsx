@@ -50,20 +50,50 @@ const Navbar = ({
     <>
       <nav
         ref={navRef}
-        className="fixed top-0 left-0 w-full h-20 bg-white dark:bg-gray-900 border-b border-border z-[200] transition-all duration-300"
+        className="sticky top-0 left-0 w-full h-20 bg-white dark:bg-gray-900 border-b border-border z-[200] transition-all duration-300"
       >
-        <div className="h-full px-6 flex items-center justify-between">
+        <div
+          className="
+            h-full
+            px-4
+            flex
+            items-center
+            justify-between
+          "
+        >
+          
           {/* Logo */}
-          <Link to="/">
-            <div className="flex items-center justify-center gap-2">
-              <img
-                src="/Eventra.png"
-                alt="Eventra Logo"
-                className="h-8 w-8 rounded-xl object-contain bg-gray-200 dark:bg-transparent p-1"
-              />
-              <h1 className="text-xl font-bold text-text">Eventra</h1>
-            </div>
-          </Link>
+<Link to="/">
+  <div
+    className="
+      flex
+      items-center
+      justify-center
+      gap-3
+    "
+  >
+    <img
+      src="/Eventra.png"
+      alt="Eventra Logo"
+      className="
+        h-12
+        w-auto
+        object-contain
+      "
+    />
+
+    <h1
+      className="
+        text-2xl
+        font-bold
+        text-text
+      "
+    >
+      Eventra
+    </h1>
+  </div>
+</Link>
+
 
           {/* Right Side */}
           <div className="flex items-center gap-4">

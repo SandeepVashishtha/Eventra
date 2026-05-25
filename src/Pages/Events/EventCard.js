@@ -1,8 +1,5 @@
 import { useEffect, useState, memo } from "react";
-import {
-  formatEventDateTime,
-  getUserTimezone,
-} from "../../utils/timezoneUtils";
+import { getUserTimezone } from "../../utils/timezoneUtils";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -10,7 +7,7 @@ import {
   BookmarkCheck,
   Calendar,
   MapPin,
-  Clock,
+  
   Tag,
   Star,
   Heart,
@@ -18,6 +15,7 @@ import {
   BookOpen,
   Gift,
   Share2,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
@@ -33,12 +31,12 @@ import {
   removeBookmarkedEvent,
   subscribeToBookmarkChanges,
 } from "../../utils/bookmarkUtils";
-import { CountdownBadge } from "../../components/common/CountdownTimer";
+import { checkRegistrationConflict } from "../../utils/conflictDetection";
 
 const EventCard = ({ event }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const [showBookmarkTooltip, setShowBookmarkTooltip] = useState(false);
-  const { isRegistered } = useMyEvents();
+  const { myEvents, isRegistered } = useMyEvents();
   const [randomIcon] = useState(() => {
     const icons = [
       <Star size={16} className="text-yellow-500" />,
@@ -50,6 +48,11 @@ const EventCard = ({ event }) => {
 
     return icons[Math.floor(Math.random() * icons.length)];
   });
+
+  // Check if this event conflicts with registered events
+  const conflictCheck = checkRegistrationConflict(event, myEvents);
+  const hasConflict = conflictCheck.hasConflict;
+  const isUserRegistered = isRegistered(event.id);
 
   const eventDateTime = new Date(`${event.date} ${event.time}`);
   const isPastEvent = eventDateTime < new Date();
@@ -121,7 +124,7 @@ const EventCard = ({ event }) => {
     <div
       data-aos="zoom-in"
       data-aos-duration="800"
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm transition-all duration-300 flex flex-col z-10 hover:z-50 hover:shadow-2xl hover:-translate-y-2 overflow-hidden border border-gray-100 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-700"
+      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm transition-all duration-300 flex flex-col z-10 hover:z-50 hover:shadow-2xl hover:-translate-y-2 border border-gray-100 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-700"
     >
       {/* Action buttons */}
       <div className="absolute top-[5.5rem] right-3 z-[200] flex space-x-1.5 items-center">
@@ -219,7 +222,7 @@ const EventCard = ({ event }) => {
       </div>
 
       {/* Header */}
-      <div className="flex items-center px-5 py-4 gap-4 bg-gradient-to-r from-white/80 to-indigo-50/60 dark:from-gray-900/80 dark:to-indigo-950/60 border-b border-gray-100 dark:border-gray-800">
+      <div className="flex items-center px-5 py-4 gap-4 bg-gradient-to-r from-white/80 to-indigo-50/60 dark:from-gray-900/80 dark:to-indigo-950/60 border-b border-gray-100 dark:border-gray-800 rounded-t-3xl">
         <div className="p-2 bg-gradient-to-br from-gray-100 to-white dark:from-gray-800 dark:to-gray-700 rounded-xl shadow-inner flex-shrink-0">
           {randomIcon}
         </div>
@@ -227,7 +230,31 @@ const EventCard = ({ event }) => {
         <h3 className="text-gray-900 dark:text-white font-bold text-lg tracking-tight truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300 flex-1">
           {event.title}
         </h3>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          {/* Conflict Indicator */}
+          {hasConflict && !isUserRegistered && (
+            <div
+              className="flex items-center gap-1 px-2 py-1 bg-amber-100 dark:bg-amber-900/30 rounded-full border border-amber-300 dark:border-amber-700"
+              title="This event conflicts with your registered events"
+            >
+              <AlertTriangle size={12} className="text-amber-600 dark:text-amber-400" />
+              <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">
+                Conflict
+              </span>
+            </div>
+          )}
+          {/* Registered Indicator */}
+          {isUserRegistered && (
+            <div
+              className="flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 rounded-full border border-green-300 dark:border-green-700"
+              title="You are registered for this event"
+            >
+              <BookmarkCheck size={12} className="text-green-600 dark:text-green-400" />
+              <span className="text-xs font-semibold text-green-700 dark:text-green-300">
+                Registered
+              </span>
+            </div>
+          )}
           <StatusBadge status={computedStatus} />
         </div>
       </div>
