@@ -5,6 +5,7 @@ import { Download } from "lucide-react";
 import {
   
 } from "../../utils/eventDraftUtils";
+import { syncSecureStorage } from "../../utils/secureStorage";
 
 
 import { exportAttendeesToCSV }
@@ -98,7 +99,7 @@ const EventCreation = () => {
     banner: null,
     bannerPreview: null,
   });
-const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState({});
   const [newTag, setNewTag] = useState("");
   // Track whether draft has been loaded to avoid overwriting on initial mount
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
@@ -153,8 +154,13 @@ const [showRestoreModal, setShowRestoreModal] = useState(false);
       !formData.isMultiDay
     ) {
       // Convert time strings (HH:MM format) to minutes for proper comparison
-      const startMinutes = parseInt(formData.startTime.replace(":", ""));
-      const endMinutes = parseInt(formData.endTime.replace(":", ""));
+      const parseTimeToMinutes = (timeStr) => {
+        if (!timeStr) return 0;
+        const [hours, minutes] = timeStr.split(":").map(Number);
+        return (hours || 0) * 60 + (minutes || 0);
+      };
+      const startMinutes = parseTimeToMinutes(formData.startTime);
+      const endMinutes = parseTimeToMinutes(formData.endTime);
       if (startMinutes >= endMinutes) {
         newErrors.endTime = "End time must be after start time";
       }
@@ -402,7 +408,7 @@ const [showRestoreModal, setShowRestoreModal] = useState(false);
           })),
       };
 
-      const token = localStorage.getItem("token");
+      const token = syncSecureStorage.getItem("token");
       if (!token) {
         toast.error("Authentication required. Please log in and try again.");
         setCurrentStep("form");
@@ -412,7 +418,7 @@ const [showRestoreModal, setShowRestoreModal] = useState(false);
       // Mock success if API inactive
       if (
         !API_ENDPOINTS.EVENTS.CREATE ||
-        process.env.NODE_ENV === "development"
+        (process.env.NODE_ENV === "development" && process.env.REACT_APP_USE_REAL_API === "true")
       ) {
         console.warn("⚠️ Mocking event creation success (API inactive)");
         await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -596,6 +602,9 @@ useEffect(() => {
       virtualLink: "",
       capacity: "",
       isPublic: true,
+      isMultiDay: false,
+      startDate: "",
+      endDate: "",
       requiresApproval: false,
       registrationStart: "",
       registrationEnd: "",
