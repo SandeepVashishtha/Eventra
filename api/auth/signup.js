@@ -5,7 +5,6 @@ import { createRateLimiter } from "../lib/rateLimiter.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { assertPersistentStorageConfigured, isInMemoryStorageAllowed } from "./storage-config.js";
 
-
 // ---------------------------------------------------------------------------
 // In-memory user storage
 // ---------------------------------------------------------------------------
@@ -67,8 +66,9 @@ const validateName = (name) => {
 
 const validatePassword = (password) => {
   if (!password) return { valid: false, message: "Password is required" };
-  if (password.length < 8) return { valid: false, message: "Password must be at least 8 characters long" };
-  
+  if (password.length < 8)
+    return { valid: false, message: "Password must be at least 8 characters long" };
+
   // Check password strength (must meet all 5 criteria)
   const criteria = [
     { test: /.{8,}/, name: "8+ characters" },
@@ -77,15 +77,16 @@ const validatePassword = (password) => {
     { test: /\d/, name: "number" },
     { test: /[!@#$%^&*(),.?":{}|<>]/, name: "special character" },
   ];
-  
-  const metCriteria = criteria.filter(c => c.test.test(password));
+
+  const metCriteria = criteria.filter((c) => c.test.test(password));
   if (metCriteria.length < 5) {
     return {
       valid: false,
-      message: "Password must meet all 5 security criteria: 8+ characters, uppercase, lowercase, number, and special character"
+      message:
+        "Password must meet all 5 security criteria: 8+ characters, uppercase, lowercase, number, and special character",
     };
   }
-  
+
   return { valid: true };
 };
 
@@ -201,10 +202,11 @@ async function handler(req, res) {
     // Run after input validation so malformed requests don't burn the budget.
     // -----------------------------------------------------------------------
 
-    const clientIp = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
-      || req.headers?.["x-real-ip"]
-      || req.socket?.remoteAddress
-      || "unknown";
+    const clientIp =
+      req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim() ||
+      req.headers?.["x-real-ip"] ||
+      req.socket?.remoteAddress ||
+      "unknown";
 
     if (!signupRateLimiter.check(clientIp).allowed) {
       return corsResponse(req, res, 429, {
@@ -281,15 +283,15 @@ async function handler(req, res) {
     };
 
     const isProd = process.env.NODE_ENV === "production";
-    const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=Strict${isProd ? '; Secure' : ''}`;
+    const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=Strict${isProd ? "; Secure" : ""}`;
     // Set cookie compatibly across test mocks (which may provide `set` instead of `setHeader`)
     try {
-      if (typeof res.setHeader === 'function') {
-        res.setHeader('Set-Cookie', cookieValue);
-      } else if (typeof res.set === 'function') {
-        res.set({ 'Set-Cookie': cookieValue });
-      } else if (res.headers && typeof res.headers === 'object') {
-        res.headers['Set-Cookie'] = cookieValue;
+      if (typeof res.setHeader === "function") {
+        res.setHeader("Set-Cookie", cookieValue);
+      } else if (typeof res.set === "function") {
+        res.set({ "Set-Cookie": cookieValue });
+      } else if (res.headers && typeof res.headers === "object") {
+        res.headers["Set-Cookie"] = cookieValue;
       }
     } catch (e) {
       // Ignore write errors on test response objects
@@ -299,7 +301,6 @@ async function handler(req, res) {
       message: "Account created successfully",
       ...userResponse,
     });
-
   } catch (error) {
     console.error("Signup Error:", error);
     return corsResponse(req, res, 500, { error: "Internal server error. Please try again later." });
@@ -313,4 +314,3 @@ async function handler(req, res) {
 
 export default handler;
 export { users, usersById, usersByUsername };
-
