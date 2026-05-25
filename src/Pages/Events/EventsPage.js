@@ -24,6 +24,7 @@ const EventsPage = () => {
     listing.setEventsPerPage(perPage);
     listing.setSearchQuery(search);
     listing.setFilterType(filter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -33,7 +34,7 @@ const EventsPage = () => {
     if (listing.searchQuery) params.search = listing.searchQuery;
     if (listing.filterType !== "all") params.filter = listing.filterType;
     setSearchParams(params, { replace: true });
-  }, [listing.currentPage, listing.eventsPerPage, listing.searchQuery, listing.filterType]);
+  }, [listing.currentPage, listing.eventsPerPage, listing.searchQuery, listing.filterType, setSearchParams]);
 
   const handleSearch = (query = "") => {
     listing.setSearchQuery(query);
