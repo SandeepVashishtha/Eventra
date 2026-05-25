@@ -93,9 +93,8 @@ export const AuthProvider = ({ children }) => {
 
   // --- Smart Token Expiry Timeout ---
   // Instead of polling every 15 s, compute the exact remaining TTL from the
-  // token's `exp` claim and schedule a single timeout.  Falls back to a 60 s
+  // token's `exp` claim and schedule a single timeout. Falls back to a 60 s
   // interval if `exp` is missing or unparseable.
-  // --- Periodic Token Expiry Check ---
   useEffect(() => {
     if (!token) return;
 
@@ -167,9 +166,9 @@ export const AuthProvider = ({ children }) => {
       roles: resolvedRoles,
       permissions: rawUser?.permissions ?? [],
       scopes: rawUser?.scopes ?? (
-        resolvedRoles.includes('ADMIN') ? ["admin:all", "event:write", "event:read", "hackathon:write", "hackathon:read"] :
-        resolvedRoles.includes('EVENT_MANAGER') ? ["event:write", "event:read", "hackathon:write", "hackathon:read"] :
-        ["event:read", "hackathon:read"]
+        resolvedRoles.includes('ADMIN') ? ['admin:all', 'event:write', 'event:read', 'hackathon:write', 'hackathon:read'] :
+        resolvedRoles.includes('EVENT_MANAGER') ? ['event:write', 'event:read', 'hackathon:write', 'hackathon:read'] :
+        ['event:read', 'hackathon:read']
       ),
     };
 
@@ -265,21 +264,13 @@ export const AuthProvider = ({ children }) => {
     return true;
   }, [user, token]);
 
-  const hasRole = (roleName) => {
-    return user?.roles?.includes(roleName) || false;
-  };
+  const hasRole = (roleName) => user?.roles?.includes(roleName) || false;
 
-  const hasPermission = (permissionName) => {
-    return user?.permissions?.includes(permissionName) || false;
-  };
+  const hasPermission = (permissionName) => user?.permissions?.includes(permissionName) || false;
 
-  const hasAnyRole = (...roleNames) => {
-    return roleNames.some(role => hasRole(role));
-  };
+  const hasAnyRole = (...roleNames) => roleNames.some(role => hasRole(role));
 
-  const hasAnyPermission = (...permissionNames) => {
-    return permissionNames.some(permission => hasPermission(permission));
-  };
+  const hasAnyPermission = (...permissionNames) => permissionNames.some(permission => hasPermission(permission));
 
   const isAdmin = () => hasRole('ADMIN');
   const isEventManager = () => hasRole('EVENT_MANAGER');
@@ -310,10 +301,9 @@ export const AuthProvider = ({ children }) => {
     isAttendee,
   };
 
-
   return (
     <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
-};
+};

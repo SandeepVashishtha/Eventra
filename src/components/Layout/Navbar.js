@@ -315,7 +315,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 10, scale: 0.95 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        className="absolute left-1/2 -translate-x-1/2 mt-4 w-60 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-3xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(99,102,241,0.1)] rounded-2xl z-50 border border-white/40 dark:border-zinc-700/40 p-2 overflow-hidden"
+        className="absolute left-1/2 -translate-x-1/2 mt-4 w-60 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-3xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(99,102,241,0.1)] rounded-2xl z-50 border border-white/40 dark:border-zinc-700/40 p-2 overflow-hidden"
       >
         {item.subItems.map((sub) => (
           <Link
@@ -551,6 +551,14 @@ const NAV_ITEMS = [
   { name: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
   { name: "Bookmarks", href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
   { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
+  {
+    name: "Bookmarks",
+    icon: <Bookmark className="w-5 h-5" />,
+    subItems: [
+      { name: "Saved Events", href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
+      { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
+    ],
+  },
   { name: "Hackathons", href: "/hackathons", icon: <Trophy className="w-5 h-5" /> },
   { name: "Projects", href: "/projects", icon: <FolderKanban className="w-5 h-5" /> },
   {
@@ -577,41 +585,17 @@ const NAV_ITEMS = [
 const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile }) => (
   <>
     {NAV_ITEMS.map((item) => {
-      const isActive = item.href
-        ? item.href === "/"
-          ? location.pathname === "/"
-          : location.pathname.startsWith(item.href)
-        : item.subItems?.some((s) => location.pathname.startsWith(s.href));
+        const isActive = item.href
+          ? (item.href === "/" ? location.pathname === "/" : location.pathname.startsWith(item.href))
+          : item.subItems?.some(s => location.pathname.startsWith(s.href));
 
-      // 1. If it has dropdown items, return the NavGroup components
-      if (item.subItems) {
-        return isMobile ? (
-          <MobileNavGroup
-            key={item.name}
-            item={item}
-            isActive={isActive}
-            isOpen={openDropdown === item.name}
-            onToggle={() => onToggleGroup(item.name)}
-            closeAllMenus={onLinkClick}
-            location={location}
-          />
-        ) : (
-          <DesktopNavGroup
-            key={item.name}
-            item={item}
-            isActive={isActive}
-            isOpen={openDropdown === item.name}
-            onToggle={(e) => {
-              e.stopPropagation();
-              onToggleGroup(item.name);
-            }}
-            setOpenDropdown={onToggleGroup}
-            location={location}
-          />
-        );
-      }
-
-      // 2. If it is a normal link, return the NavLink components
+        if (item.subItems) {
+          return isMobile ? (
+            <MobileNavGroup key={item.name} item={item} isActive={isActive} isOpen={openDropdown === item.name} onToggle={() => onToggleGroup(item.name)} closeAllMenus={onLinkClick} location={location} />
+          ) : (
+            <DesktopNavGroup key={item.name} item={item} isActive={isActive} isOpen={openDropdown === item.name} onToggle={(e) => { e.stopPropagation(); onToggleGroup(item.name); }} setOpenDropdown={onToggleGroup} location={location} />
+          );
+        }
       return isMobile ? (
         <MobileNavLink key={item.name} item={item} isActive={isActive} onClick={onLinkClick} />
       ) : (
@@ -624,20 +608,18 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
 const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   const location = useLocation();
   return (
-    // gap-4 keeps items from crowding; flex-1 lets this section grow/shrink naturally
-
     <div className="hidden lg:flex items-center justify-center flex-1 min-w-0 pl-6">
-      <NavList
-        location={location}
-        openDropdown={openDropdown}
-        onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)}
-        isMobile={false}
+      <NavList 
+        location={location} 
+        openDropdown={openDropdown} 
+        onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)} 
+        isMobile={false} 
       />
     </div>
   );
 };
 
-const MobileDrawerHeader = ({ closeBtnRef, closeAllMenus, isDarkMode }) => (
+const MobileDrawerHeader = ({ closeBtnRef, closeAllMenus }) => (
   <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-zinc-800/50">
     <div className="flex items-center gap-2">
       <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
@@ -655,22 +637,7 @@ const MobileDrawerHeader = ({ closeBtnRef, closeAllMenus, isDarkMode }) => (
   </div>
 );
 
-const MobileDrawer = ({
-  isOpen,
-  drawerRef,
-  openDropdown,
-  setOpenDropdown,
-  closeAllMenus,
-  handleTouchStart,
-  handleTouchMove,
-  handleTouchEnd,
-  closeBtnRef,
-  toggleCursor,
-  cursorEnabled,
-  handleLogoutClick,
-  primaryLine,
-  secondaryLine,
-}) => {
+const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeAllMenus, handleTouchStart, handleTouchMove, handleTouchEnd, closeBtnRef, handleLogoutClick, primaryLine, secondaryLine, cursorEnabled, toggleCursor }) => {
   const location = useLocation();
   const { isDarkMode, toggleTheme } = useTheme();
   const { user, isAuthenticated } = useAuth();
@@ -692,11 +659,7 @@ const MobileDrawer = ({
           exit={{ x: "100%" }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
         >
-          <MobileDrawerHeader
-            closeBtnRef={closeBtnRef}
-            closeAllMenus={closeAllMenus}
-            isDarkMode={isDarkMode}
-          />
+          <MobileDrawerHeader closeBtnRef={closeBtnRef} closeAllMenus={closeAllMenus} />
 
           <div className="flex-grow p-3.5 sm:p-4 space-y-2 overflow-y-auto">
             <NavList
@@ -868,7 +831,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         }`}
         onClick={closeAllMenus}
       />
-
       <nav
         ref={navRef}
         data-aos="fade-down"
@@ -879,12 +841,15 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         <div className="neon-navbar-border"></div>
 
         <div className="max-w-screen-2xl mx-auto flex items-center justify-between h-[68px] px-4 md:px-6 xl:px-10 gap-4 w-full overflow-hidden">
-          {/* Logo */}
           <Link to="/" className="flex items-center shrink-0 z-20 pr-2">
             <h2
-              className="neon-logo text-2xl font-extrabold tracking-widest uppercase"
+              className="bg-gradient-to-r from-zinc-950 via-indigo-600 to-violet-600 dark:from-white dark:via-indigo-300 dark:to-indigo-500 bg-clip-text text-transparent"
               style={{
                 fontFamily: "'Oxanium', monospace",
+                fontSize: "1.44rem",
+                fontWeight: 800,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
                 margin: 0,
                 lineHeight: 1,
               }}
@@ -893,19 +858,28 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             </h2>
           </Link>
 
-          {/* Desktop Nav */}
-          <div className="hidden lg:flex items-center justify-center gap-3 xl:gap-4 flex-1 min-w-0">
-            <NavList
-              location={location}
-              openDropdown={openDropdown}
-              onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)}
+          <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
+
+          <div className="hidden lg:flex items-center gap-2 shrink-0 pl-2">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowCommandPalette(true)}
+              title="Open Command Palette (⌘K)"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group mr-1"
+            >
+              <Search className="w-4 h-4 text-zinc-500 dark:text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400" />
+              <div className="flex items-center gap-0.5 text-[9px] font-black tracking-widest text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 uppercase">
+                <span>⌘</span>
+                <span>K</span>
+              </div>
+            </motion.button>
+
+            <ThemeToggleButton
+              isDarkMode={isDarkMode}
+              toggleTheme={toggleTheme}
               isMobile={false}
             />
-          </div>
-
-          {/* Right Controls */}
-          <div className="hidden lg:flex items-center gap-2 shrink-0 pl-2">
-            <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={false} />
 
             <CursorToggleButton
               cursorEnabled={cursorEnabled}
@@ -929,6 +903,33 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               <AuthButtons isMobile={false} />
             )}
           </div>
+    {/* Mobile Menu Button */}
+    <div className="lg:hidden ml-auto">
+      <button
+        ref={toggleBtnRef}
+        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        aria-expanded={isMobileMenuOpen}
+        aria-controls="mobile-drawer"
+        aria-label={
+          isMobileMenuOpen ? "Close navigation" : "Open navigation"
+        }
+        className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10"
+      >
+        <svg
+          className="h-5 w-5 sm:h-6 sm:w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 6h16M4 12h16M4 18h16"
+          />
+        </svg>
+      </button>
+    </div>
 
           {/* Mobile Menu Button */}
           <div className="lg:hidden ml-auto">
@@ -968,11 +969,11 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         handleTouchMove={handleTouchMove}
         handleTouchEnd={handleTouchEnd}
         closeBtnRef={closeBtnRef}
-        toggleCursor={toggleCursor}
-        cursorEnabled={cursorEnabled}
         handleLogoutClick={handleLogoutClick}
         primaryLine={primaryLine}
         secondaryLine={secondaryLine}
+        cursorEnabled={cursorEnabled}
+        toggleCursor={toggleCursor}
       />
 
       {/* Confirmation Modal */}
@@ -990,8 +991,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         onClose={() => setShowCommandPalette(false)}
         isDarkMode={isDarkMode}
         toggleTheme={toggleTheme}
-        cursorEnabled={cursorEnabled}
-        toggleCursor={toggleCursor}
         isAuthenticated={isAuthenticated}
         handleLogoutClick={handleLogoutClick}
       />
