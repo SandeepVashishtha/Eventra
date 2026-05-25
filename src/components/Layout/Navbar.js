@@ -9,6 +9,7 @@ import { UserCog } from "lucide-react";
 import {
   Home,
   Calendar,
+  CalendarDays,
   Sparkles,
   FolderKanban,
   Trophy,
@@ -549,6 +550,7 @@ const MobileUserSection = ({
 const NAV_ITEMS = [
   { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
   { name: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
+  { name: "Calendar", href: "/calendar", icon: <CalendarDays className="w-5 h-5" /> },
   { name: "Bookmarks", href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
   { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
   {
