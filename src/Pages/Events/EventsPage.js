@@ -1,7 +1,6 @@
 import { useRef, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import EventHero from "./EventHero";
-import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
 import EventCardSection from "./EventCardSection";
 import EventFiltersToolbar from "./EventFiltersToolbar";
@@ -123,7 +122,6 @@ const EventsPage = () => {
       </div>
 
       <EventCTA />
-      <FeedbackButton />
       <BackToTopButton />
     </div>
   );

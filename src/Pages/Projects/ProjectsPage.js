@@ -4,7 +4,6 @@ import { FiAlertCircle, FiChevronDown, FiSearch, FiX } from "react-icons/fi";
 
 import ProjectHero from "./ProjectHero";
 import ProjectCard from "./ProjectCard";
-import FeedbackButton from "../../components/FeedbackButton";
 import ProjectCTA from "./ProjectCTA";
 
 import mockProjects from "./mockProjectsData.json";
@@ -479,8 +478,6 @@ const ProjectGallery = () => {
       </div>
 
       <ProjectCTA />
-
-      <FeedbackButton />
     </div>
   );
 };
