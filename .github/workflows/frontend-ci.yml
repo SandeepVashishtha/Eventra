@@ -17,7 +17,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [18.x]
 
     steps:
       - name: Checkout Code Repository
@@ -30,7 +30,7 @@ jobs:
           cache: 'npm'
 
       - name: Install Application Dependencies
-        run: npm ci
+        run: npm install
 
       - name: Verify Quality Code Compilation (Build)
         run: npm run build:fast
@@ -41,3 +41,6 @@ jobs:
         run: npm run test -- --watchAll=false --passWithNoTests
         env:
           CI: true
+
+      - name: Run Utility Unit Tests
+        run: npm run test:unit

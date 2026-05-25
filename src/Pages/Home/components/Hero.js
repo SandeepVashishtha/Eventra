@@ -24,10 +24,12 @@ const Hero = () => {
     "Cutting-Edge Tech Meetups",
   ];
 
+
   const [index, setIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
+  const [statsReady, setStatsReady] = useState(false);
   const [isDark, setIsDark] = useState(
     document.documentElement.classList.contains("dark")
   );
@@ -58,6 +60,10 @@ const Hero = () => {
     controls.start("show");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [controls]);
+
+  useEffect(() => {
+    setStatsReady(true);
+  }, []);
 
   // Global search functionality
   const createSearchItem = (item, type, searchType) => ({
@@ -157,32 +163,43 @@ const Hero = () => {
 
   // Vibrant colors for light mode, soft pastels for dark mode
   const shapes = [
-    { size: 42,  pos: { top: "10%", left: "5%"  }, lightColor: "#3b82f6", darkColor: "#dbeafe" },
-    { size: 54,  pos: { top: "14%", left: "20%" }, lightColor: "#f59e0b", darkColor: "#fde68a" },
-    { size: 30,  pos: { top: "24%", left: "42%" }, lightColor: "#22c55e", darkColor: "#dcfce7" },
-    { size: 50,  pos: { top: "30%", left: "70%" }, lightColor: "#0ea5e9", darkColor: "#bae6fd" },
-    { size: 40,  pos: { top: "52%", left: "10%" }, lightColor: "#ec4899", darkColor: "#fbcfe8" },
-    { size: 26,  pos: { top: "42%", left: "32%" }, lightColor: "#8b5cf6", darkColor: "#c7d2fe" },
-    { size: 68,  pos: { top: "68%", left: "24%" }, lightColor: "#f43f5e", darkColor: "#fecdd3" },
-    { size: 50,  pos: { top: "72%", left: "64%" }, lightColor: "#10b981", darkColor: "#bbf7d0" },
-    { size: 34,  pos: { top: "48%", left: "80%" }, lightColor: "#eab308", darkColor: "#fde68a" },
+    { size: 42, pos: { top: "10%", left: "5%" }, lightColor: "#3b82f6", darkColor: "#dbeafe" },
+    { size: 54, pos: { top: "14%", left: "20%" }, lightColor: "#f59e0b", darkColor: "#fde68a" },
+    { size: 30, pos: { top: "24%", left: "42%" }, lightColor: "#22c55e", darkColor: "#dcfce7" },
+    { size: 50, pos: { top: "30%", left: "70%" }, lightColor: "#0ea5e9", darkColor: "#bae6fd" },
+    { size: 40, pos: { top: "52%", left: "10%" }, lightColor: "#ec4899", darkColor: "#fbcfe8" },
+    { size: 26, pos: { top: "42%", left: "32%" }, lightColor: "#8b5cf6", darkColor: "#c7d2fe" },
+    { size: 68, pos: { top: "68%", left: "24%" }, lightColor: "#f43f5e", darkColor: "#fecdd3" },
+    { size: 50, pos: { top: "72%", left: "64%" }, lightColor: "#10b981", darkColor: "#bbf7d0" },
+    { size: 34, pos: { top: "48%", left: "80%" }, lightColor: "#eab308", darkColor: "#fde68a" },
   ];
 
   const stats = [
-    { value: "1500+", label: "Developers Joined" },
-    { value: "75",    label: "Events Organized"  },
-    { value: "30+",   label: "Partners & Sponsors" },
+    { value: 1500, label: "Developers Joined", suffix: "+" },
+    { value: 75, label: "Events Organized", suffix: "+" },
+    { value: 30, label: "Partners & Sponsors", suffix: "+" },
   ];
 
   return (
-    <section className="relative overflow-hidden 
-bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white 
+    <section
+      aria-label="Hero section"
+      className="relative overflow-hidden 
+bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white
 dark:from-slate-950 dark:via-slate-900 dark:to-black
 text-slate-900 dark:text-gray-100 
-pb-16 sm:pb-20 md:pb-24 pt-6 sm:pt-10 
+pb-16 sm:pb-20 md:pb-24
 border-b border-gray-100 dark:border-slate-900">
       {/* Hero Content */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10 pt-20">
+      <div className=" mx-auto px-6 lg:px-8 relative z-10 pt-20"
+      style={{
+    backgroundImage: "url('/background.png')",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+    minHeight: "100vh",
+    width:"100vw"
+  }}
+      >
         <motion.div
           className="text-center"
           variants={container}
@@ -195,8 +212,8 @@ border-b border-gray-100 dark:border-slate-900">
           <MotionConfig reducedMotion="never">
             {/* Headline */}
             <motion.h1
-              className="mx-auto max-w-[92vw] mt-6 text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-5 sm:mb-6 leading-tight sm:leading-tight text-gray-900 dark:text-white break-words px-2 sm:px-0"
-              style={{ fontFamily: '"Anton", sans-serif' }}
+              className="mx-auto max-w-4xl mt-6 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-6 leading-tight tracking-tight text-gray-900 dark:text-white px-2 sm:px-0"
+              style={{ fontFamily: '"Inter", sans-serif' }}
             >
               <motion.span
                 className="block text-gray-900 dark:text-white mb-2 md:mb-0"
@@ -224,7 +241,9 @@ border-b border-gray-100 dark:border-slate-900">
                       transition: { duration: 0.5, ease: "easeIn" },
                     }}
                   >
+                    <span className="text-indigo-600 dark:text-indigo-500 font-extrabold drop-shadow-sm">
                     {phrases[index]}
+                    </span>
                   </motion.span>
                 </AnimatePresence>
               </div>
@@ -240,8 +259,8 @@ border-b border-gray-100 dark:border-slate-900">
             the best tech events, hackathons, and workshops in your area.
           </motion.p>
 
-          {/* Global Search Bar */}
-          <div className="w-full max-w-2xl mx-auto mb-8 sm:mb-10">
+          {/* Global Search Bar (Glassmorphism) */}
+          <div className="w-full max-w-2xl mx-auto mb-10 p-2 sm:p-2.5 bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xl shadow-indigo-500/5">
             <ModernSearchInput
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
@@ -332,18 +351,19 @@ text-gray-600 dark:text-gray-300"
             </ModernSearchInput>
           </div>
 
-          {/* Buttons */}
+          {/* Professional Buttons */}
           <motion.div
             variants={container}
-            className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6 mb-12 sm:mb-16"
+            className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 mb-16"
           >
-            {/* Primary Button - Explore Events */}
             <motion.div variants={fadeUp}>
               <Link
                 to="/events"
+                aria-label="Explore upcoming tech events"
                 className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-500 dark:bg-blue-900 text-white dark:text-white font-bold shadow-md shadow-blue-200 dark:shadow-none overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-600 dark:hover:bg-blue-800"
               >
                 <span className="relative z-10 flex items-center">
+                  <img src="/assets/events.svg" alt="" className="mr-2"/>
                   Explore Events
                   <svg
                     className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
@@ -360,13 +380,25 @@ text-gray-600 dark:text-gray-300"
               </Link>
             </motion.div>
 
-            {/* Secondary Button - Join Hackathons */}
             <motion.div variants={fadeUp}>
               <Link
                 to="/hackathons"
+                aria-label="Join upcoming hackathons"
                 className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-amber-400 dark:bg-yellow-900 border border-amber-300 dark:border-yellow-700 text-white dark:text-white font-semibold shadow-md shadow-amber-100 dark:shadow-none hover:shadow-lg hover:bg-amber-500 dark:hover:bg-yellow-800 hover:scale-105 transition-all duration-300"
               >
+                <img src="/assets/hackathons.svg" alt="" className="mr-2"/>
                 Join Hackathons
+                <svg
+                    className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
               </Link>
             </motion.div>
 
@@ -374,8 +406,10 @@ text-gray-600 dark:text-gray-300"
             <motion.div variants={fadeUp}>
               <Link
                 to="/about"
+                aria-label="Learn more about Eventra"
                 className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-pink-500 dark:bg-pink-900 text-white dark:text-white font-semibold shadow-md shadow-pink-100 dark:shadow-none transform transition-all duration-300 hover:scale-105 hover:bg-pink-600 dark:hover:bg-pink-800"
               >
+                <img src="/assets/learnmore.svg" alt="" className="mr-2"/>
                 Learn More
                 <svg
                   className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
@@ -397,26 +431,36 @@ text-gray-600 dark:text-gray-300"
             <motion.div
               variants={fadeUp}
               className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
+              role="region"
+              aria-label="Platform statistics"
             >
               {stats.map((stat, i) => (
                 <motion.div
                   key={i}
                   variants={fadeUp}
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                  className="bg-white/90 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-xl shadow-blue-100/50 dark:shadow-none border border-blue-100 dark:border-gray-700 hover:shadow-blue-200/60 transition-shadow duration-300"
+                  whileHover={{ y: -5 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex flex-col items-center justify-center p-6 bg-white/60 dark:bg-gray-900/40 backdrop-blur-md rounded-2xl border border-gray-200/60 dark:border-gray-800/60 shadow-sm"
                 >
+                  
                   <p className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
-                    <CountUp
-                      start={0}
-                      end={stat.value}
-                      duration={2.5}
-                      suffix={stat.suffix}
-                      enableScrollSpy
-                      scrollSpyOnce
-                    />
+                    {statsReady ? (
+                      <CountUp
+                        start={0}
+                        end={Number.isFinite(stat.value) ? stat.value : 0}
+                        duration={2.5}
+                        suffix={stat.suffix || ""}
+                        enableScrollSpy
+                        scrollSpyOnce
+                      />
+                    ) : (
+                      <>
+                        {stat.value}
+                        {stat.suffix || ""}
+                      </>
+                    )}
                   </p>
-                  <p className="text-gray-500 dark:text-gray-300 text-sm">
+                  <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-semibold uppercase tracking-wider">
                     {stat.label}
                   </p>
                 </motion.div>
