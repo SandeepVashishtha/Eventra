@@ -12,19 +12,22 @@
     "axios": "^1.16.1",
     "canvas-confetti": "^1.9.3",
     "crypto-js": "^4.2.0",
+    "framer-motion": "^8.5.5",
+    "date-fns": "^4.3.0",
     "framer-motion": "^8.5.2",
     "fuse.js": "^7.1.0",
     "jspdf": "^4.2.1",
     "lucide-react": "^0.542.0",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
+    "react-big-calendar": "^1.19.4",
     "react-countup": "^6.5.3",
     "react-dom": "^18.2.0",
     "react-hot-toast": "^2.6.0",
     "react-icons": "^5.6.0",
     "react-intersection-observer": "^9.4.1",
-    "react-router-dom": "^6.8.0",
-    "react-toastify": "^11.0.5",
+    "react-router-dom": "^6.30.3",
+    "react-toastify": "^11.1.0",
     "recharts": "^3.8.1"
   },
   "scripts": {
@@ -34,6 +37,7 @@
     "build:fast": "cross-env GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true vite build",
     "preview": "vite preview",
     "test": "echo \"Testing with Vite to be configured\" && exit 0",
+    "test:unit": "node tests/eventPaginationUtils.test.mjs && node tests/routeSearchUtils.test.mjs && node tests/userNameUtils.test.mjs",
     "lint": "eslint src --ext .js,.jsx --max-warnings=-1",
     "lint:fix": "eslint src --ext .js,.jsx --fix",
     "format": "prettier --write \"src/**/*.{js,jsx,css}\"",
@@ -57,7 +61,6 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net",
   "devDependencies": {
     "@tailwindcss/line-clamp": "^0.4.4",
     "@vitejs/plugin-react": "^6.0.2",

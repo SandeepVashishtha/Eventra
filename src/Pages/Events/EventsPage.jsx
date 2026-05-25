@@ -1,7 +1,6 @@
 import { useRef, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import EventHero from "./EventHero";
-import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
 import EventCardSection from "./EventCardSection";
 import EventFiltersToolbar from "./EventFiltersToolbar";
@@ -24,6 +23,7 @@ const EventsPage = () => {
     listing.setEventsPerPage(perPage);
     listing.setSearchQuery(search);
     listing.setFilterType(filter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -33,7 +33,7 @@ const EventsPage = () => {
     if (listing.searchQuery) params.search = listing.searchQuery;
     if (listing.filterType !== "all") params.filter = listing.filterType;
     setSearchParams(params, { replace: true });
-  }, [listing.currentPage, listing.eventsPerPage, listing.searchQuery, listing.filterType]);
+  }, [listing.currentPage, listing.eventsPerPage, listing.searchQuery, listing.filterType, setSearchParams]);
 
   const handleSearch = (query = "") => {
     listing.setSearchQuery(query);
@@ -122,7 +122,6 @@ const EventsPage = () => {
       </div>
 
       <EventCTA />
-      <FeedbackButton />
       <BackToTopButton />
     </div>
   );
