@@ -8,6 +8,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
 import FluidCursor from "./jhalak/FluidCursor";
 import PageTransition from "./components/common/PageTransition";
+import PageLoader from "./components/common/PageLoader";
 import ReminderChecker from "./components/reminders/ReminderChecker";
 import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
 import ThemeCustomizerDrawer from "./components/common/ThemeCustomizerDrawer";
@@ -125,13 +126,7 @@ function App() {
                 "
               >
                 <PageTransition>
-                  <Suspense
-                    fallback={
-                      <div className="flex items-center justify-center min-h-screen">
-                        Loading...
-                      </div>
-                    }
-                  >
+                  <Suspense fallback={<PageLoader text="Loading page..." />}>
                     <Routes>
                       <Route path="/register/:id" element={<RegistrationPage />} />
                       <Route path="/*" element={<AppRoutes />} />
