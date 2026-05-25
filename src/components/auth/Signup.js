@@ -288,6 +288,7 @@ const handleSubmit = async (e) => {
         "Network error. Please try again."
     );
 
+    // eslint-disable-next-line no-console
     console.error(err);
   } finally {
     setLoading(false);
