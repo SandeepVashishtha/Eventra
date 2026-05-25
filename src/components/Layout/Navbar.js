@@ -554,11 +554,13 @@ const NAV_ITEMS = [
   { name: "Bookmarks", href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
   { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
   {
-    name: "Bookmarks",
-    icon: <Bookmark className="w-5 h-5" />,
+    name: "Events",
+    icon: <Calendar className="w-5 h-5" />,
     subItems: [
-      { name: "Saved Events", href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
-      { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
+      { name: "Explore Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
+      { name: "Event Calendar", href: "/calendar", icon: <CalendarDays className="w-5 h-5" /> },
+      { name: "Saved Events",   href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
+      { name: "Reminders",      href: "/reminders", icon: <Bell className="w-5 h-5" /> },
     ],
   },
   { name: "Hackathons", href: "/hackathons", icon: <Trophy className="w-5 h-5" /> },
@@ -601,7 +603,7 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
       return isMobile ? (
         <MobileNavLink key={item.name} item={item} isActive={isActive} onClick={onLinkClick} />
       ) : (
-        <DesktopNavLink key={item.name} item={item} nowisActive={isActive} />
+        <DesktopNavLink key={item.name} item={item} isActive={isActive} />
       );
     })}
   </>
@@ -905,33 +907,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               <AuthButtons isMobile={false} />
             )}
           </div>
-    {/* Mobile Menu Button */}
-    <div className="lg:hidden ml-auto">
-      <button
-        ref={toggleBtnRef}
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        aria-expanded={isMobileMenuOpen}
-        aria-controls="mobile-drawer"
-        aria-label={
-          isMobileMenuOpen ? "Close navigation" : "Open navigation"
-        }
-        className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10"
-      >
-        <svg
-          className="h-5 w-5 sm:h-6 sm:w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 6h16M4 12h16M4 18h16"
-          />
-        </svg>
-      </button>
-    </div>
+    
 
           {/* Mobile Menu Button */}
           <div className="lg:hidden ml-auto">
