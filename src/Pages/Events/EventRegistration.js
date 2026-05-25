@@ -24,6 +24,8 @@ import { validate } from "../../validation";
 import { toast } from "react-toastify";
 import mockEvents from "./eventsMockData.json";
 import { pushToQueue } from "../../utils/offlineQueue";
+const MAX_NOTES_CHARS = 500;
+const MAX_DESCRIPTION_CHARS = 1000; // Define limits as needed for other text areas
 import EventConflictModal from "../../components/EventConflictModal";
 
 const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
@@ -782,6 +784,31 @@ const EventRegistration = () => {
               </div>
 
               {/* Additional Info */}
+              <div>
+                <label
+                  htmlFor="additionalInfo"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  Additional Information (Optional)
+                </label>
+                <textarea
+                    id="additionalInfo"
+                    name="additionalInfo"
+                    value={formData.additionalInfo}
+                    onChange={handleChange}
+                    maxLength={MAX_NOTES_CHARS} // 👈 Limits characters strictly
+                    rows="4"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
+                    placeholder="Any special requirements or questions?"
+                  ></textarea>
+
+                  {/* 👈 Dynamic counter box directly below */}
+                  <div className="flex justify-end text-xs mt-1 text-gray-400 dark:text-gray-500">
+                    <span className={(formData.additionalInfo?.length || 0) >= MAX_NOTES_CHARS - 20 ? "text-red-500 font-medium animate-pulse" : ""}>
+                      {formData.additionalInfo?.length || 0} / {MAX_NOTES_CHARS} characters
+                    </span>
+                  </div>
+              </div>
              {/* Additional Info */}
 <div>
   <label
