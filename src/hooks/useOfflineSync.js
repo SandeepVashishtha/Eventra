@@ -37,8 +37,7 @@ const useOfflineSync = () => {
         return true; // Treat as "handled" — bad data won't succeed on retry
       }
 
-        throw error;
-      }
+      throw new Error(`Sync failed with status: ${response.status}`);
     };
 
     const handleOnline = async () => {
