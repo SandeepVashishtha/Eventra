@@ -147,8 +147,8 @@ export const AuthProvider = ({ children }) => {
     let sessionToken = data?.token ?? data?.accessToken ?? null;
 
     if (!sessionToken) {
-      const authHeader = res.headers.get("Authorization") || res.headers.get("authorization");
-      if (authHeader && authHeader.startsWith("Bearer ")) {
+      const authHeader = res.headers?.['authorization'] || res.headers?.['Authorization'] || null;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
         sessionToken = authHeader.substring(7);
       }
     }
@@ -196,7 +196,7 @@ export const AuthProvider = ({ children }) => {
       throw new Error(data?.message || data?.error || "Invalid credentials");
     }
 
-    const { sessionToken, sessionUser } = extractSession(res, data || {}, usernameOrEmail);
+    const { sessionToken, sessionUser } = extractSession(res, data, usernameOrEmail);
 
     if (!sessionToken) {
       throw new Error("Login failed: token missing from response");
