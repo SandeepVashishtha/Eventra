@@ -214,8 +214,17 @@ const Login = () => {
                       onChange={handleChange}
                       required
                       disabled={loading}
-                      placeholder="Enter your email address or username"
-                      className="w-full pl-3 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md input-theme"
+                      placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
+                      className="w-full pl-3 pr-4 py-3 
+bg-white dark:bg-gray-800
+border border-gray-200 dark:border-gray-600
+rounded-xl 
+placeholder:text-gray-400 dark:placeholder:text-gray-500
+focus:ring-2 focus:ring-blue-500/20 
+focus:border-blue-500
+transition-all duration-200 
+hover:shadow-md 
+text-gray-900 dark:text-white"
                     />
                   </div>
                   {error.usernameOrEmail && (
@@ -263,8 +272,8 @@ const Login = () => {
                       onChange={handleChange}
                       required
                       disabled={loading}
-                      placeholder="Enter your password"
-                      className="w-full pl-10 pr-4 py-3 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md input-theme"
+                      placeholder="Enter secure password / Minimum 8 characters / Use strong password"
+                      className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                     />
 
                     <button
