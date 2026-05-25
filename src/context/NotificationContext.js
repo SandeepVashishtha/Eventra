@@ -137,9 +137,10 @@ export const NotificationProvider = ({ children }) => {
   }, [token, fetchNotifications]);
 
   // ── Initial fetch + polling ───────────────────────────────────────────────
+  // ── Initial fetch + polling ───────────────────────────────────────────────
   useEffect(() => {
+    // 1. Handle Logout: Wipe data clean instantly
     if (!token) {
-      // Reset state on logout
       setNotifications([]);
       setUnreadCount(0);
       setAchievements({
@@ -147,20 +148,25 @@ export const NotificationProvider = ({ children }) => {
         currentStreak: 0,
         badges: [],
       });
-      return;
+      return; // Exit early, no interval will be created
     }
 
+    // 2. Handle Login: Trigger instant data load
     fetchNotifications();
     fetchAchievements();
 
-    // Poll for new notifications at a fixed interval
-    //  New line 152: Wrap it in an anonymous function to pass the flag
-const intervalId = setInterval(() => {
-  fetchNotifications({ isBackground: true });
-}, POLLING_INTERVAL_MS);
+    // 3. Set up background polling
+    const intervalId = setInterval(() => {
+      fetchNotifications({ isBackground: true });
+    }, POLLING_INTERVAL_MS);
 
-    return () => clearInterval(intervalId);
-  }, [token, fetchNotifications, fetchAchievements]);
+    // 4. Clean Destruction: Guaranteed removal of the ghost worker
+    return () => {
+      clearInterval(intervalId);
+    };
+    
+    // CRITICAL FIX: Only run this effect when the actual authentication token changes
+  }, [token]);
 
   return (
     <NotificationContext.Provider
