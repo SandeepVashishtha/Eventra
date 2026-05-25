@@ -4,11 +4,14 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import ConfirmationModal from "../common/ConfirmationModal";
+import CommandPalette from "../common/CommandPalette";
 import { toast } from "react-toastify";
-import { UserCog } from "lucide-react";
 import {
-  Home,
+  Bell,
+  Book,
+  Bookmark,
   Calendar,
+<<<<<<< Updated upstream
   Sparkles,
   FolderKanban,
   Trophy,
@@ -19,16 +22,13 @@ import {
   LogIn,
   Bookmark,
   Bell,
+=======
+  CalendarDays,
+>>>>>>> Stashed changes
   ChevronDown,
-  MousePointer,
-  Moon,
-  Sun,
-  Search,
-  Palette,
-  Book,
-  MoreHorizontal,
-  Info,
+  FolderKanban,
   HelpCircle,
+<<<<<<< Updated upstream
   MessageSquare
 } from "lucide-react";
 import CommandPalette from "../common/CommandPalette";
@@ -53,9 +53,44 @@ const clearBodyScrollStyles = () => {
     if (stored) window.scrollTo(0, parseInt(stored, 10) * -1 || 0);
   } catch (e) { /* ignore */ }
 };
+=======
+  Home,
+  Info,
+  LayoutDashboard,
+  LogIn,
+  LogOut,
+  MessageSquare,
+  Moon,
+  MoreHorizontal,
+  MousePointer,
+  Palette,
+  Search,
+  Sparkles,
+  Sun,
+  Trophy,
+  UserCog,
+  UserIcon,
+  Users,
+} from "lucide-react";
+import { getUserDisplayNames } from "../navbar/utils/navbarsHelpers";
+>>>>>>> Stashed changes
 
 const setBodyScrollStyles = (top) => {
   Object.assign(document.body.style, { position: "fixed", top: `-${top}px`, left: "0", right: "0", width: "100%" });
+};
+
+const clearBodyScrollStyles = () => {
+  const top = Math.abs(parseInt(document.body.style.top || "0", 10));
+  Object.assign(document.body.style, {
+    position: "",
+    top: "",
+    left: "",
+    right: "",
+    width: "",
+  });
+  if (top) {
+    window.scrollTo(0, top);
+  }
 };
 
 const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
@@ -743,6 +778,25 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
     {/* Right Controls */}
     <div className="hidden lg:flex items-center gap-2 shrink-0 pl-2">
+      <DesktopNavLinks
+        openDropdown={openDropdown}
+        setOpenDropdown={setOpenDropdown}
+      />
+
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setShowCommandPalette(true)}
+        title="Open Command Palette (⌘K)"
+        className="flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group mr-1"
+      >
+        <Search className="w-4 h-4 text-zinc-500 dark:text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400" />
+        <div className="flex items-center gap-0.5 text-[9px] font-black tracking-widest text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 uppercase">
+          <span>⌘</span>
+          <span>K</span>
+        </div>
+      </motion.button>
+
       <ThemeToggleButton
         isDarkMode={isDarkMode}
         toggleTheme={toggleTheme}
@@ -773,6 +827,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
     </div>
 
     {/* Mobile Menu Button */}
+<<<<<<< Updated upstream
     <div className="lg:hidden ml-auto">
       <button
         ref={toggleBtnRef}
@@ -802,6 +857,34 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
   </div>
 </nav>
+=======
+          <div className="lg:hidden ml-auto">
+            <button
+              ref={toggleBtnRef}
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-drawer"
+              aria-label={isMobileMenuOpen ? "Close navigation" : "Open navigation"}
+              className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10"
+            >
+              <svg
+                className="h-5 w-5 sm:h-6 sm:w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </nav>
+>>>>>>> Stashed changes
 
       <MobileDrawer
         isOpen={isMobileMenuOpen}
