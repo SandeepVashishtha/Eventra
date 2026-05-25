@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { useRef, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import EventHero from "./EventHero";

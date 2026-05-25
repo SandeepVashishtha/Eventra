@@ -1,20 +1,19 @@
 import React, { lazy } from 'react';
 import { Route } from 'react-router-dom';
 
-// --------------- COMPONENTS
 import ProtectedRoute from "../auth/ProtectedRoute";
-import EventCreation from "../common/EventCreation";
-import HostHackathon from "../../Pages/Hackathons/HostHackathon";
-import EditProfile from "../user/EditProfile";
-import Settings from "../../Pages/Settings";
-import AuthPage from "../auth/AuthPage";
-import Unauthorized from "../auth/Unauthorized";
-import PasswordReset from "../auth/PasswordReset";
-import NotFound from "../NotFound";
-import SurveyEngine from "../../Pages/Feedback/SurveyEngine";
 
 const AdminDashboard = lazy(() => import("../admin/AdminDashboard"));
 const Dashboard = lazy(() => import("../Dashboard"));
+const EventCreation = lazy(() => import("../common/EventCreation"));
+const HostHackathon = lazy(() => import("../../Pages/Hackathons/HostHackathon"));
+const EditProfile = lazy(() => import("../user/EditProfile"));
+const Settings = lazy(() => import("../../Pages/Settings"));
+const AuthPage = lazy(() => import("../auth/AuthPage"));
+const Unauthorized = lazy(() => import("../auth/Unauthorized"));
+const PasswordReset = lazy(() => import("../auth/PasswordReset"));
+const NotFound = lazy(() => import("../NotFound"));
+const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
 
 export const getProtectedRoutes = () => [
   <Route
