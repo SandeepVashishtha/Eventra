@@ -9,9 +9,9 @@ import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
 import BackToTopButton from "../../components/common/BackToTopButton";
-import PageLoader from "../../components/common/PageLoader";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { filterHackathons } from "./hackathonFilterUtils.mjs";
+import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 
 // NEW: Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
@@ -571,9 +571,13 @@ const HackathonHub = () => {
 
         {/* Hackathons Grid */}
         <AnimatePresence mode="wait">
-          {isLoading ? (
-            <PageLoader text="Loading hackathons..." />
-          ) : filteredHackathons.length > 0 ? (
+         {isLoading ? (
+  <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+    {[...Array(6)].map((_, i) => (
+      <HackathonCardSkeleton key={`skeleton-${i}`} />
+    ))}
+  </div>
+) : filteredHackathons.length > 0 ? (
             <motion.div
               key={activeTab}
               className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
