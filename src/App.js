@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import Navbar from "./components/Layout/Navbar";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 import FluidCursor from "./jhalak/FluidCursor";
 import PageTransition from "./components/common/PageTransition";
 import PageLoader from "./components/common/PageLoader";
@@ -128,7 +129,14 @@ function App() {
                 <PageTransition>
                   <Suspense fallback={<PageLoader text="Loading page..." />}>
                     <Routes>
-                      <Route path="/register/:id" element={<RegistrationPage />} />
+                      <Route
+                        path="/register/:id"
+                        element={
+                          <ProtectedRoute>
+                            <RegistrationPage />
+                          </ProtectedRoute>
+                        }
+                      />
                       <Route path="/*" element={<AppRoutes />} />
                       <Route path="*" element={<NotFoundPage />} />
                     </Routes>
