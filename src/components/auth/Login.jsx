@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
+import GoogleLoginButton from "./GoogleLoginButton";
 import '../../styles/auth.css';
 
 const Login = () => {
