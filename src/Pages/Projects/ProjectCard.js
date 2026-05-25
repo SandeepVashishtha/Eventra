@@ -295,7 +295,7 @@ const ProjectCard = ({ project, index }) => {
       <div className="relative aspect-video overflow-hidden border-b border-slate-100 dark:border-slate-800/45 bg-slate-100 dark:bg-slate-900 z-10">
         <img
           src={project.lowResImage || project.image}
-          alt=""
+          alt="project"
           aria-hidden="true"
           className={`absolute inset-0 w-full h-full object-cover blur-xl scale-110 transition-opacity duration-500 z-0 ${
             isLoaded ? "opacity-0" : "opacity-100"
