@@ -30,7 +30,7 @@ export const NotificationProvider = ({ children }) => {
 
     try {
       setLoading(true);
-      const response = await apiUtils.get(endpoint, token);
+      const response = await apiUtils.get(endpoint);
       const data = response.data;
       const normalizedData = Array.isArray(data) ? data : [];
       setNotifications(normalizedData);
@@ -52,7 +52,7 @@ export const NotificationProvider = ({ children }) => {
     }
 
     try {
-      const response = await apiUtils.get(endpoint, token);
+      const response = await apiUtils.get(endpoint);
       setAchievements(response.data);
     } catch (error) {
       console.error('Error fetching achievements:', error);
@@ -77,11 +77,7 @@ export const NotificationProvider = ({ children }) => {
     }
 
     try {
-      await apiUtils.put(
-        endpoint,
-        {},
-        token
-      );
+      await apiUtils.put(endpoint, {});
       setNotifications((prev) =>
         prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n))
       );
@@ -124,7 +120,7 @@ export const NotificationProvider = ({ children }) => {
             if (!endpoint || typeof endpoint !== "string" || endpoint.includes("undefined")) {
               return Promise.reject("Invalid endpoint");
             }
-            return apiUtils.put(endpoint, {}, token);
+            return apiUtils.put(endpoint, {});
           })
         );
       } catch (error) {
