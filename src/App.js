@@ -11,6 +11,7 @@ import PageTransition from "./components/common/PageTransition";
 import ReminderChecker from "./components/reminders/ReminderChecker";
 import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
 import ThemeCustomizerDrawer from "./components/common/ThemeCustomizerDrawer";
+import SessionRecovery from "./components/SessionRecovery";
 
 import RegistrationPage from "./Pages/RegistrationPage";
 
@@ -166,7 +167,8 @@ function App() {
                 </Suspense>
 
                 <FeedbackButton />
-                  
+                <ThemeCustomizerDrawer />
+                <SessionRecovery />
                 <FluidCursor enabled={cursorEnabled} />
               </div>
             
