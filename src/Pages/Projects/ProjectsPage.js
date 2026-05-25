@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiAlertCircle, FiSearch, FiX } from "react-icons/fi";
+import { FiAlertCircle, FiChevronDown, FiSearch, FiX } from "react-icons/fi";
 
 import ProjectHero from "./ProjectHero";
 import ProjectCard from "./ProjectCard";
@@ -32,6 +32,16 @@ const ProjectGallery = () => {
     stars: "Most Stars",
     forks: "Most Forks",
     issues: "Most Issues",
+  };
+
+  const handleOptionKeyDown = (event, onSelect, onClose) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onSelect();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      onClose();
+    }
   };
 
   useEffect(() => {
@@ -192,6 +202,14 @@ const ProjectGallery = () => {
                     onClick={() =>
                       setCategoryOpen((prev) => !prev)
                     }
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") {
+                        setCategoryOpen(false);
+                      }
+                    }}
+                    aria-haspopup="listbox"
+                    aria-expanded={categoryOpen}
+                    aria-controls="project-category-options"
                   >
                     <span className="text-gray-700 dark:text-gray-200">
                       {filterCategory === "all"
@@ -199,31 +217,52 @@ const ProjectGallery = () => {
                         : filterCategory}
                     </span>
 
-                    <FiX className="ml-2 text-gray-400 dark:text-gray-500" />
+                    <FiChevronDown
+                      className={`ml-2 text-gray-400 dark:text-gray-500 transition-transform ${
+                        categoryOpen ? "rotate-180" : ""
+                      }`}
+                      aria-hidden="true"
+                    />
                   </button>
 
                   <AnimatePresence>
                     {categoryOpen && (
                       <motion.ul
+                        id="project-category-options"
+                        role="listbox"
+                        aria-label="Project category"
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         className="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
                       >
-                        {categories.map((cat) => (
-                          <li
-                            key={cat}
-                            onClick={() => {
-                              setFilterCategory(cat);
-                              setCategoryOpen(false);
-                            }}
-                            className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-gray-700 dark:text-gray-300"
-                          >
-                            {cat === "all"
-                              ? "All Categories"
-                              : cat}
-                          </li>
-                        ))}
+                        {categories.map((cat) => {
+                          const selectCategory = () => {
+                            setFilterCategory(cat);
+                            setCategoryOpen(false);
+                          };
+                          return (
+                            <li
+                              key={cat}
+                              role="option"
+                              tabIndex={0}
+                              aria-selected={filterCategory === cat}
+                              onClick={selectCategory}
+                              onKeyDown={(event) =>
+                                handleOptionKeyDown(
+                                  event,
+                                  selectCategory,
+                                  () => setCategoryOpen(false)
+                                )
+                              }
+                              className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none cursor-pointer text-gray-700 dark:text-gray-300"
+                            >
+                              {cat === "all"
+                                ? "All Categories"
+                                : cat}
+                            </li>
+                          );
+                        })}
                       </motion.ul>
                     )}
                   </AnimatePresence>
@@ -243,35 +282,64 @@ const ProjectGallery = () => {
                     type="button"
                     className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-700 hover:ring-2 hover:ring-black/20 transition-all min-w-[200px]"
                     onClick={() => setSortOpen((prev) => !prev)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") {
+                        setSortOpen(false);
+                      }
+                    }}
+                    aria-haspopup="listbox"
+                    aria-expanded={sortOpen}
+                    aria-controls="project-sort-options"
                   >
                     <span className="text-gray-700 dark:text-gray-300">
                       {sortByLabels[sortBy]}
                     </span>
 
-                    <FiX className="ml-2 text-gray-400 dark:text-gray-500" />
+                    <FiChevronDown
+                      className={`ml-2 text-gray-400 dark:text-gray-500 transition-transform ${
+                        sortOpen ? "rotate-180" : ""
+                      }`}
+                      aria-hidden="true"
+                    />
                   </button>
 
                   <AnimatePresence>
                     {sortOpen && (
                       <motion.ul
+                        id="project-sort-options"
+                        role="listbox"
+                        aria-label="Sort projects"
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         className="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
                       >
                         {Object.entries(sortByLabels).map(
-                          ([key, label]) => (
-                            <li
-                              key={key}
-                              onClick={() => {
-                                setSortBy(key);
-                                setSortOpen(false);
-                              }}
-                              className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-gray-700 dark:text-gray-300"
-                            >
-                              {label}
-                            </li>
-                          )
+                          ([key, label]) => {
+                            const selectSort = () => {
+                              setSortBy(key);
+                              setSortOpen(false);
+                            };
+                            return (
+                              <li
+                                key={key}
+                                role="option"
+                                tabIndex={0}
+                                aria-selected={sortBy === key}
+                                onClick={selectSort}
+                                onKeyDown={(event) =>
+                                  handleOptionKeyDown(
+                                    event,
+                                    selectSort,
+                                    () => setSortOpen(false)
+                                  )
+                                }
+                                className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none cursor-pointer text-gray-700 dark:text-gray-300"
+                              >
+                                {label}
+                              </li>
+                            );
+                          }
                         )}
                       </motion.ul>
                     )}
