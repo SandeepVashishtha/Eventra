@@ -36,6 +36,7 @@
     "build": "react-scripts build",
     "build:fast": "cross-env GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true NODE_OPTIONS=\"--no-deprecation --max-old-space-size=4096\" react-scripts build",
     "test": "react-scripts test",
+    "test:unit": "node tests/eventPaginationUtils.test.mjs && node tests/routeSearchUtils.test.mjs",
     "eject": "react-scripts eject",
     "lint": "eslint src --ext .js,.jsx --max-warnings=-1",
     "lint:fix": "eslint src --ext .js,.jsx --fix",
