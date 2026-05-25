@@ -32,7 +32,7 @@ export const generateSharingUrl = (shareData, platform) => {
       return `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
       
     case 'messenger':
-      return `https://www.facebook.com/dialog/send?link=${encodedUrl}&app_id=${process.env.REACT_APP_FACEBOOK_APP_ID || '1061800788374065'}&redirect_uri=${encodedUrl}`;
+      return `https://www.facebook.com/dialog/send?link=${encodedUrl}&app_id=${import.meta.env.REACT_APP_FACEBOOK_APP_ID || '1061800788374065'}&redirect_uri=${encodedUrl}`;
       
     case 'linkedin':
       return `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}&title=${encodedTitle}&summary=${encodedDescription}`;

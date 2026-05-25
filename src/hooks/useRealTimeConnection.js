@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const SSE_BASE_URL =
-  process.env.REACT_APP_API_URL || "http://localhost:8080/api/v1";
+  import.meta.env.REACT_APP_API_URL || "http://localhost:8080/api/v1";
 
 const BACKOFF_CAP_MS = 30_000;
 
@@ -100,3 +100,4 @@ export default function useRealTimeConnection(path, { onMessage, enabled = true 
 
   return { status, reconnect };
 }
+

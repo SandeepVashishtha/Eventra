@@ -63,14 +63,14 @@ export default function GitHubStats() {
 
     (async () => {
       try {
-        const repoRes = await fetch(`${process.env.REACT_APP_API_URL}/github/repo`);
+        const repoRes = await fetch(`${import.meta.env.REACT_APP_API_URL}/github/repo`);
         if (!repoRes.ok) throw new Error(`Repo ${repoRes.status}`);
         const repoData = await repoRes.json();
 
         // contributors
         let contribCount = "—";
         try {
-          const cRes = await fetch(`${process.env.REACT_APP_API_URL}/github/contributors`);
+          const cRes = await fetch(`${import.meta.env.REACT_APP_API_URL}/github/contributors`);
           if (cRes.ok) {
             const cData = await cRes.json();
             if (Array.isArray(cData)) contribCount = cData.length;
@@ -80,7 +80,7 @@ export default function GitHubStats() {
         // pull requests
         let prCount = "—";
         try {
-          const pRes = await fetch(`${process.env.REACT_APP_API_URL}/github/pulls`);
+          const pRes = await fetch(`${import.meta.env.REACT_APP_API_URL}/github/pulls`);
           if (pRes.ok) {
             const pData = await pRes.json();
             if (Array.isArray(pData)) prCount = pData.length;
@@ -250,3 +250,4 @@ export default function GitHubStats() {
     </section>
   );
 }
+

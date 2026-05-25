@@ -37,7 +37,7 @@ const endpoints = [
     desc: "Retrieve projects submitted to hackathons.",
     method: "GET",
     url: "/api/projects?hackathonId=<id>",
-example: `curl -X GET ${process.env.REACT_APP_API_URL}/projects?hackathonId=1`,
+example: `curl -X GET ${import.meta.env.REACT_APP_API_URL}/projects?hackathonId=1`,
     response: `[
   {
     "id": 42,
@@ -53,7 +53,7 @@ example: `curl -X GET ${process.env.REACT_APP_API_URL}/projects?hackathonId=1`,
     desc: "Get a list of top contributors and GSOC participants.",
     method: "GET",
     url: "/api/contributors",
-  example: `fetch("${process.env.REACT_APP_API_URL}/contributors", {
+  example: `fetch("${import.meta.env.REACT_APP_API_URL}/contributors", {
   headers: { Authorization: "Bearer <API_KEY>" }
 })`,
     response: `[
@@ -71,7 +71,7 @@ example: `curl -X GET ${process.env.REACT_APP_API_URL}/projects?hackathonId=1`,
     desc: "Fetch leaderboard rankings of participants.",
     method: "GET",
     url: "/api/leaderboard?limit=10",
-    example: `curl -X GET \${process.env.REACT_APP_API_URL}/leaderboard?limit=10`,
+    example: `curl -X GET \${import.meta.env.REACT_APP_API_URL}/leaderboard?limit=10`,
     response: `[
   {
     "rank": 1,

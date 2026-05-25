@@ -38,7 +38,7 @@ const resolveEnvApiBaseUrl = () =>
   isDevelopment
     ? ""
     : normalizeApiBaseUrl(
-        process.env.REACT_APP_API_URL || process.env.VITE_API_URL || "",
+        import.meta.env.REACT_APP_API_URL || process.env.VITE_API_URL || "",
       );
 
 export const API_BASE_URL = resolveEnvApiBaseUrl();
@@ -265,3 +265,4 @@ export const apiUtils = {
 };
 
 export default API;
+
