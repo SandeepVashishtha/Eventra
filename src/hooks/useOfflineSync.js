@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 import { API_ENDPOINTS, apiUtils } from '../config/api';
 import { getQueue, setQueue, clearQueue } from '../utils/offlineQueue';
+import { isTokenValid } from '../utils/tokenUtils';
 
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 1_000;
@@ -42,6 +43,10 @@ const useOfflineSync = () => {
 
     const handleOnline = async () => {
       if (isSyncing.current) {
+        return;
+      }
+
+      if (!token || !isTokenValid(token)) {
         return;
       }
 
