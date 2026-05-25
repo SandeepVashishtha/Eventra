@@ -31,16 +31,20 @@ const DocumentationPage = lazy(() => import("../../Pages/About/DocumentationPage
 const SubmitProject = lazy(() => import("../../Pages/Projects/SubmitProject"));
 
 const EventsPage = lazy(() => import("../../Pages/Events/EventsPage"));
+const CalendarPage = lazy(() => import("../../Pages/Calendar/CalendarPage"));
 const HackathonPage = lazy(() => import("../../Pages/Hackathons/HackathonPage"));
 const HackathonDetailsPage = lazy(() => import("../../Pages/Hackathons/HackathonDetailsPage"));
 const ProjectsPage = lazy(() => import("../../Pages/Projects/ProjectsPage"));
 const EventAnalyticsDashboard = lazy(() => import("../../Pages/Events/EventAnalyticsDashboard"));
+const MyCalendar = lazy(() => import("../../Pages/Calendar/MyCalendar"));
 
 export const getPublicRoutes = () => [
   <Route key="/" path="/" element={<HomePage />} />,
   <Route key="/events" path="/events" element={<EventsPage />} />,
+  <Route key="/calendar" path="/calendar" element={<CalendarPage />} />,
   <Route key="/bookmarks" path="/bookmarks" element={<BookmarkedEvents />} />,
   <Route key="/reminders" path="/reminders" element={<RemindersPage />} />,
+  <Route key="/calendar" path="/calendar" element={<MyCalendar />} />,
   <Route key="/event-details" path="/events/:eventId" element={<EventDetails />} />,
   <Route key="/register" path="/events/:eventId/register" element={<EventRegistration />} />,
   <Route key="/hackathons" path="/hackathons" element={<HackathonPage />} />,
@@ -54,14 +58,18 @@ export const getPublicRoutes = () => [
   <Route key="page-layout" element={<PageLayout />}>
     <Route key="/contributors" path="/contributors" element={<Contributors />} />
     <Route key="/communityEvent" path="/communityEvent" element={<CommunityEvent />} />
+    <Route key="/community-event" path="/community-event" element={<CommunityEvent />} />
     <Route key="/leaderBoard" path="/leaderBoard" element={<LeaderBoard />} />
+    <Route key="/leaderboard" path="/leaderboard" element={<LeaderBoard />} />
     <Route key="/contributorguide" path="/contributorguide" element={<ContributorGuide />} />
+    <Route key="/contributor-guide" path="/contributor-guide" element={<ContributorGuide />} />
     <Route key="/about" path="/about" element={<AboutPage />} />
     <Route key="/about-fallback" path="/about/*" element={<AboutPage />} />
     <Route key="/faq" path="/faq" element={<FAQPage />} />
     <Route key="/terms" path="/terms" element={<Terms />} />
     <Route key="/privacy" path="/privacy" element={<Privacy />} />
     <Route key="/apiDocs" path="/apiDocs" element={<ApiDocs />} />
+    <Route key="/api-docs" path="/api-docs" element={<ApiDocs />} />
     <Route key="/helpcenter" path="/helpcenter" element={<HelpCenter />} />
     <Route key="/contact" path="/contact" element={<ContactUs />} />
     <Route key="/feedback" path="/feedback" element={<FeedbackPage />} />
