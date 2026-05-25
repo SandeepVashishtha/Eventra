@@ -12,6 +12,7 @@
     "axios": "^1.16.1",
     "canvas-confetti": "^1.9.3",
     "crypto-js": "^4.2.0",
+    "framer-motion": "^8.5.5",
     "date-fns": "^4.3.0",
     "framer-motion": "^8.5.2",
     "fuse.js": "^7.1.0",
@@ -25,9 +26,9 @@
     "react-hot-toast": "^2.6.0",
     "react-icons": "^5.6.0",
     "react-intersection-observer": "^9.4.1",
-    "react-router-dom": "^6.8.0",
+    "react-router-dom": "^6.30.3",
     "react-scripts": "^5.0.1",
-    "react-toastify": "^11.0.5",
+    "react-toastify": "^11.1.0",
     "recharts": "^3.8.1"
   },
   "scripts": {
