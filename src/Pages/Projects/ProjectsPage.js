@@ -65,24 +65,22 @@ const ProjectGallery = () => {
 
         // --- MOCK DATA FALLBACK: API returned empty array ---
         console.warn("Projects API returned empty array — loading mock data.");
-        const projectsData = mockProjects;
-        setProjects(projectsData);
-        const uniqueCategories = [
-          ...new Set(projectsData.map((p) => p.category)),
+        setProjects(mockProjects);
+        const mockUniqueCategories = [
+          ...new Set(mockProjects.map((p) => p.category)),
         ];
-        setCategories(["all", ...uniqueCategories]);
+        setCategories(["all", ...mockUniqueCategories]);
       } catch (err) {
         console.error("Error fetching projects:", err);
 
         // Fall back to mock data in development so local work is unaffected
         if (process.env.NODE_ENV === "development") {
           console.warn("API unavailable — falling back to mock project data.");
-          const projectsData = mockProjects;
-          setProjects(projectsData);
-          const uniqueCategories = [
-            ...new Set(projectsData.map((p) => p.category)),
+          setProjects(mockProjects);
+          const devUniqueCategories = [
+            ...new Set(mockProjects.map((p) => p.category)),
           ];
-          setCategories(["all", ...uniqueCategories]);
+          setCategories(["all", ...devUniqueCategories]);
         } else {
           setError("Failed to load projects. Please try again later.");
         }
