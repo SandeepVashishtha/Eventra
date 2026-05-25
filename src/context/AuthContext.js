@@ -57,13 +57,34 @@ export const AuthProvider = ({ children }) => {
       if (isTokenValid(storedToken)) {
         setToken(storedToken);
         try {
-          setUser(JSON.parse(storedUser));
+          const parsedUser = JSON.parse(storedUser);
+
+          // Normalize roles on restore so server aliases like EVENT_MANAGER
+          // are always mapped to their canonical equivalent (ORGANIZER).
+          // This prevents ORGANIZER users from being blocked by role guards
+          // after a page reload.
+          const normalizedRoles = (parsedUser?.roles ?? []).map((role) => {
+            const upper = String(role).toUpperCase();
+            return upper === "EVENT_MANAGER" ? ROLES.ORGANIZER : upper;
+          });
+          parsedUser.roles = normalizedRoles;
+
+          // Recompute scopes from the normalized roles instead of trusting
+          // whatever is stored in localStorage. A user could otherwise elevate
+          // their own scopes by editing the "user" key in localStorage.
+          parsedUser.scopes = normalizedRoles.includes(ROLES.ADMIN)
+            ? ["admin:all", "event:write", "event:read", "hackathon:write", "hackathon:read"]
+            : normalizedRoles.includes(ROLES.ORGANIZER)
+              ? ["event:write", "event:read", "hackathon:write", "hackathon:read"]
+              : ["event:read", "hackathon:read"];
+
+          setUser(parsedUser);
         } catch {
-          // Corrupted user data in localStorage — clear everything.
+          // Corrupted user data in localStorage -- clear everything.
           clearSession();
         }
       } else {
-        // Token is expired or invalid — clean up stale session data.
+        // Token is expired or invalid -- clean up stale session data.
         clearSession();
       }
     }
