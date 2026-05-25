@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FiUser, FiMail, FiPhone, FiBriefcase, FiAward, FiMessageSquare, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { toast } from "react-toastify";
+import { API_ENDPOINTS, apiUtils } from "../config/api";
 
 import {
   isAlreadyRegistered,
@@ -12,7 +13,7 @@ import {
 const RegistrationPage = () => {
   useDocumentTitle("Eventra | Registration");
   const navigate = useNavigate();
-  const { eventId = "general" } = useParams();
+  const { id: eventId = "general" } = useParams();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -84,13 +85,23 @@ const RegistrationPage = () => {
         return;
       }
 
+      const res = await apiUtils.post(
+        API_ENDPOINTS.EVENTS.REGISTER(eventId),
+        formData
+      );
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.message || data?.error || "Registration failed. Please try again.");
+      }
+
       saveRegistration(eventId, formData.email);
       setSubmitSuccess(true);
       toast.success("Registration successful!");
     } catch (error) {
       setErrors((prev) => ({
         ...prev,
-        submit: "Something went wrong. Please try again.",
+        submit: error.message || "Something went wrong. Please try again.",
       }));
     } finally {
       setIsSubmitting(false);
@@ -120,7 +131,7 @@ const RegistrationPage = () => {
           </div>
           <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-3">Registration Successful!</h2>
           <p className="text-slate-600 dark:text-slate-300 mb-8 leading-relaxed">
-            Thank you for registering, <span className="font-semibold">{formData.fullName}</span>. A confirmation email has been sent to <span className="font-semibold">{formData.email}</span> with further details.
+            Thank you for registering, <span className="font-semibold">{formData.fullName}</span>. Your spot has been confirmed. Check your dashboard for event details and updates.
           </p>
           <div className="flex flex-col gap-3">
             <button
