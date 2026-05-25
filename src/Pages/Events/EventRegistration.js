@@ -290,10 +290,25 @@ const EventRegistration = () => {
       return;
     }
 
-    // Atomic capacity check - re-check immediately before submission
-    if (event.attendees >= event.maxAttendees) {
-      toast.error("This event has reached maximum capacity.");
-      return;
+    // Re-fetch the event to get the latest attendee count before checking capacity.
+    // Using the stale value from initial page load creates a race window where
+    // two users can both pass the check and both register past the limit.
+    try {
+      const freshRes = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
+      if (freshRes.ok) {
+        const freshEvent = await freshRes.json();
+        if (freshEvent.attendees >= freshEvent.maxAttendees) {
+          toast.error("This event has reached maximum capacity.");
+          return;
+        }
+      }
+    } catch {
+      // If the re-fetch fails, fall back to the cached value so the user
+      // can still attempt registration rather than being silently blocked.
+      if (event.attendees >= event.maxAttendees) {
+        toast.error("This event has reached maximum capacity.");
+        return;
+      }
     }
 
     // Check for scheduling conflicts
@@ -345,12 +360,13 @@ const EventRegistration = () => {
       console.error("Registration error:", error);
       
       // ── Offline Sync Queue Fallback ──
+      // Only persist the identifiers needed to retry the request -- never
+      // store PII (name, email, phone) in localStorage.
       const payload = {
-        ...formData,
         eventId: parseInt(eventId),
         userId: user?.id || null,
       };
-      
+
       pushToQueue({ eventId: parseInt(eventId), payload });
 
       setRegistered(true);
