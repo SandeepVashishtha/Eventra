@@ -58,7 +58,7 @@ const QUICK_ACTIONS = [
   { label: "Events", icon: <Calendar size={22} />, to: "/events", color: "#6366f1" },
   { label: "Hackathons", icon: <Trophy size={22} />, to: "/hackathons", color: "#ec4899" },
   { label: "Projects", icon: <FolderOpen size={22} />, to: "/projects", color: "#8b5cf6" },
-  { label: "Profile", icon: <User size={22} />, to: "/profile", color: "#10b981" },
+  { label: "Profile", icon: <User size={22} />, to: "/dashboard/profile", color: "#10b981" },
   { label: "Settings", icon: <Settings size={22} />, to: "/settings", color: "#f59e0b" },
 ];
 
@@ -167,7 +167,7 @@ export default function UserDashboard() {
         </nav>
 
         <div className="ud-sidebar-bottom">
-          <Link to="/profile" className="ud-nav-item">
+          <Link to="/dashboard/profile" className="ud-nav-item" id="sidebar-profile-link">
             <User size={18} /><span>Profile</span>
           </Link>
           <button className="ud-nav-item ud-nav-logout" onClick={() => { logout(); navigate("/"); }}>
