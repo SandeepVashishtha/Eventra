@@ -1,8 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { GoogleOAuthProvider } from "@react-oauth/google";
-import { MotionConfig } from "framer-motion";
-import { Toaster } from "react-hot-toast";
+
 
 import "./index.css";
 
@@ -16,8 +14,7 @@ import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 // Initialize Global Runtime Monitoring
 initializeGlobalErrorHandling();
 
-const root = ReactDOM.createRoot(
-  document.getElementById("root")
+
 );
 
 root.render(

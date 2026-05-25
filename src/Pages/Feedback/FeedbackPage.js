@@ -450,6 +450,7 @@ const FeedbackPage = () => {
       };
 
       // Log submission (for debugging)
+      console.log('Feedback payload:', payload);
 
       toast.success(
         "Thank you for your feedback! We've received your submission and will review it shortly"

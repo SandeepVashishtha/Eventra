@@ -9,7 +9,7 @@
     <!-- Responsive -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
 
     <!-- Theme -->
@@ -158,40 +158,7 @@
 
     <!-- Prevent Theme Flickering -->
     <script>
-      document.documentElement.classList.add(
-        "no-transition"
-      );
 
-      (() => {
-        const savedTheme =
-          localStorage.getItem(
-            "theme"
-          );
-
-        const systemDark =
-          window.matchMedia(
-            "(prefers-color-scheme: dark)"
-          ).matches;
-
-        const theme =
-          savedTheme ||
-          (systemDark
-            ? "dark"
-            : "light");
-
-        document.documentElement.classList.add(
-          theme
-        );
-      })();
-
-      window.addEventListener(
-        "load",
-        () => {
-          document.documentElement.classList.remove(
-            "no-transition"
-          );
-        }
-      );
     </script>
 
     <!-- Title -->
@@ -218,11 +185,10 @@
     ></script>
   </head>
 
-  <body>
+  <body class="bg-white text-black dark:bg-gray-900 dark:text-white">
     <noscript>
       You need to enable JavaScript to run this app.
     </noscript>
-
     <div id="root"></div>
   </body>
 </html>
