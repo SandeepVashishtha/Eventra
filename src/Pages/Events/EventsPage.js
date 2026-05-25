@@ -115,6 +115,8 @@ if (listing.viewMode !== "grid") params.view = listing.viewMode;
           onSortChange={listing.setSortType}
           viewMode={listing.viewMode}
           onViewModeChange={listing.setViewMode}
+          searchQuery={listing.searchQuery}
+          onSearchChange={listing.setSearchQuery}
           advancedFilters={listing.advancedFilters}
           onAdvancedFiltersChange={listing.setAdvancedFilters}
           isAdvancedFiltersOpen={listing.isAdvancedFiltersOpen}
@@ -145,26 +147,6 @@ if (listing.viewMode !== "grid") params.view = listing.viewMode;
           filterType={listing.filterType}
           onClearFilters={handleClearFilters}
         />
-
-        {!listing.isLoading && (
-          searchQuery={listing.searchQuery}
-          onSearchChange={listing.setSearchQuery}
-        />
-
-        {!listing.loadError && (
-          <EventCardSection
-            isLoading={listing.isLoading}
-            events={listing.paginatedEvents}
-            viewMode={listing.viewMode}
-            filterType={listing.filterType}
-          onClearFilters={() => {
-  listing.setSearchQuery("");
-  listing.setFilterType("all");
-  listing.setSortType("latest");
-  listing.setViewMode("grid");
-}}
-          />
-        )}
         {!listing.isLoading && !listing.loadError && (
           <PaginationControls
             currentPage={listing.currentPage}

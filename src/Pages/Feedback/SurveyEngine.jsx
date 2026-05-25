@@ -44,6 +44,12 @@ const SurveyEngine = () => {
 
   
   const [activeTab, setActiveTab] = useState("builder"); // "builder" | "preview"
+  const [confirmModal, setConfirmModal] = useState({
+    open: false,
+    type: null,
+    questionId: null,
+    optionIndex: null,
+  });
 
   // Question type configuration
   const questionTypes = [
