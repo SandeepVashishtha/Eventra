@@ -154,8 +154,13 @@ const [showRestoreModal, setShowRestoreModal] = useState(false);
       !formData.isMultiDay
     ) {
       // Convert time strings (HH:MM format) to minutes for proper comparison
-      const startMinutes = parseInt(formData.startTime.replace(":", ""));
-      const endMinutes = parseInt(formData.endTime.replace(":", ""));
+      const parseTimeToMinutes = (timeStr) => {
+        if (!timeStr) return 0;
+        const [hours, minutes] = timeStr.split(":").map(Number);
+        return (hours || 0) * 60 + (minutes || 0);
+      };
+      const startMinutes = parseTimeToMinutes(formData.startTime);
+      const endMinutes = parseTimeToMinutes(formData.endTime);
       if (startMinutes >= endMinutes) {
         newErrors.endTime = "End time must be after start time";
       }
