@@ -150,7 +150,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
   // FIX 3: Use computed status everywhere instead of hackathon.status
 
   const status = computeStatus(hackathon.startDate, hackathon.endDate);
-  const style = statusStyles[status] || statusStyles.upcoming;
+  const style = statusStyles[status];
   const safeTechStack = hackathon?.techStack || [];
   const safeRules = hackathon?.rules || [];
   

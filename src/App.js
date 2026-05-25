@@ -11,6 +11,10 @@ import PageTransition from "./components/common/PageTransition";
 import ReminderChecker from "./components/reminders/ReminderChecker";
 import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
 import ThemeCustomizerDrawer from "./components/common/ThemeCustomizerDrawer";
+import SessionRecovery from "./components/SessionRecovery";
+
+import RegistrationPage from "./Pages/RegistrationPage";
+
 import NotificationToastContainer from "./components/common/NotificationProvider";
 import { NotificationProvider } from "./context/NotificationContext";
 import { AuthProvider } from "./context/AuthContext";
@@ -108,7 +112,6 @@ function App() {
       <NotificationProvider>
         <MyEventsProvider>
           <SessionRecoveryProvider>
-            <NotificationProvider />
             <ReminderChecker />
             <NotificationToastContainer />
             <OfflineSyncManager />
@@ -160,6 +163,8 @@ function App() {
                   <Footer />
                 </Suspense>
                 <FeedbackButton />
+                <ThemeCustomizerDrawer />
+                <SessionRecovery />
                 <FluidCursor enabled={cursorEnabled} />
               </div>
             </Router>
