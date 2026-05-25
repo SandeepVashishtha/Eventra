@@ -289,20 +289,30 @@ Example:
 
 ```env
 REACT_APP_API_URL=http://localhost:8080/api
+REACT_APP_USE_REAL_API=false
 REACT_APP_GITHUB_TOKEN=your_github_token
+REACT_APP_EMAILJS_PUBLIC_KEY=your_emailjs_public_key
+REACT_APP_EMAILJS_SERVICE_ID=your_emailjs_service_id
+REACT_APP_EMAILJS_TEMPLATE_ID=your_emailjs_template_id
+REACT_APP_FACEBOOK_APP_ID=your_facebook_app_id_here
+REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id
+DAYS_THRESHOLD=30
 ```
 
 ### Required Environment Variables
 
-| Variable                        | Description                    |
-| ------------------------------- | ------------------------------ |
-| `NODE_ENV`                      | Application environment        |
-| `REACT_APP_API_URL`             | Backend API base URL           |
-| `REACT_APP_GITHUB_TOKEN`        | GitHub API token               |
-| `REACT_APP_EMAILJS_PUBLIC_KEY`  | EmailJS public key             |
-| `REACT_APP_EMAILJS_SERVICE_ID`  | EmailJS service ID             |
-| `REACT_APP_EMAILJS_TEMPLATE_ID` | EmailJS template ID            |
-| `REACT_APP_FACEBOOK_APP_ID`     | Facebook authentication app ID |
+| Variable | Required | Description |
+| --- | --- | --- |
+| `NODE_ENV` | Yes | Application environment |
+| `REACT_APP_API_URL` | Yes | Backend API base URL |
+| `REACT_APP_USE_REAL_API` | No | Enables real API calls in selected development flows |
+| `DAYS_THRESHOLD` | No | Threshold days configuration used by date-based features |
+| `REACT_APP_GITHUB_TOKEN` | No | GitHub API token for higher rate limits on contributor and repository stats |
+| `REACT_APP_EMAILJS_PUBLIC_KEY` | No | EmailJS public key for event registration emails |
+| `REACT_APP_EMAILJS_SERVICE_ID` | No | EmailJS service ID for event registration emails |
+| `REACT_APP_EMAILJS_TEMPLATE_ID` | No | EmailJS template ID for event registration emails |
+| `REACT_APP_FACEBOOK_APP_ID` | No | Facebook authentication/share dialog app ID |
+| `REACT_APP_GOOGLE_CLIENT_ID` | No | Google authentication client ID |
 
 The `.env.example` file contains all required environment variable names needed to run the project locally.
 
