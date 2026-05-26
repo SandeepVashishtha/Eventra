@@ -9,35 +9,30 @@ import {
 export const ThemeContext =
   createContext(null);
 
+// Helper functions
+const getSystemTheme = () =>
+  window.matchMedia(
+    "(prefers-color-scheme: dark)"
+  ).matches
+    ? "dark"
+    : "light";
+
+const getInitialTheme = () =>
+  localStorage.getItem("theme") ||
+  "system";
+
 export const ThemeProvider = ({
   children,
 }) => {
-  // Get System Theme
-  const getSystemTheme = () =>
-    window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches
-      ? "dark"
-      : "light";
-
-  // Get Initial Theme
-  const getInitialTheme = () => {
-    const savedTheme =
-      localStorage.getItem("theme");
-
-    return savedTheme || "system";
-  };
-
   const [theme, setTheme] =
     useState(getInitialTheme);
 
-  // Resolve Actual Theme
   const resolvedTheme =
     theme === "system"
       ? getSystemTheme()
       : theme;
 
-  // Apply Theme
+  // Apply theme + sync localStorage
   useEffect(() => {
     const root =
       document.documentElement;
@@ -51,7 +46,6 @@ export const ThemeProvider = ({
       resolvedTheme
     );
 
-    // Save Theme
     if (theme === "system") {
       localStorage.removeItem(
         "theme"
@@ -63,7 +57,6 @@ export const ThemeProvider = ({
       );
     }
 
-    // Update Browser Theme Color
     const metaTheme =
       document.querySelector(
         'meta[name="theme-color"]'
@@ -79,7 +72,7 @@ export const ThemeProvider = ({
     }
   }, [theme, resolvedTheme]);
 
-  // Detect System Theme Changes
+  // Detect system theme changes
   useEffect(() => {
     const mediaQuery =
       window.matchMedia(
@@ -101,39 +94,32 @@ export const ThemeProvider = ({
       handleChange
     );
 
-    return () => {
+    return () =>
       mediaQuery.removeEventListener(
         "change",
         handleChange
       );
-    };
   }, []);
-
-  // Toggle Theme
-  const toggleTheme = () => {
-    if (
-      resolvedTheme === "dark"
-    ) {
-      setTheme("light");
-    } else {
-      setTheme("dark");
-    }
-  };
 
   const value = useMemo(
     () => ({
       theme,
       resolvedTheme,
       isDarkMode:
-        resolvedTheme ===
-        "dark",
+        resolvedTheme === "dark",
       setTheme,
-      toggleTheme,
+
+      toggleTheme: () =>
+        setTheme((current) =>
+          current === "dark" ||
+          (current === "system" &&
+            getSystemTheme() ===
+              "dark")
+            ? "light"
+            : "dark"
+        ),
     }),
-    [
-      theme,
-      resolvedTheme,
-    ]
+    [theme, resolvedTheme]
   );
 
   return (
@@ -145,7 +131,7 @@ export const ThemeProvider = ({
   );
 };
 
-// Custom Hook
+// Custom hook
 export const useTheme = () => {
   const context =
     useContext(ThemeContext);

@@ -18,8 +18,8 @@
  *   const { myEvents, addRegistration, isRegistered, removeRegistration } = useMyEvents();
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useAuth } from './AuthContext';
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { useAuth } from "./AuthContext";
 
 const MyEventsContext = createContext(null);
 
@@ -53,10 +53,13 @@ export const MyEventsProvider = ({ children }) => {
   const userId = user?.id || user?.email || null; // use email as fallback id
 
   const [myEvents, setMyEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Load from localStorage whenever the logged-in user changes
   useEffect(() => {
+    setLoading(true);
     setMyEvents(loadFromStorage(userId));
+    setLoading(false);
   }, [userId]);
 
   // Persist to localStorage whenever myEvents changes
@@ -104,7 +107,13 @@ export const MyEventsProvider = ({ children }) => {
 
   return (
     <MyEventsContext.Provider
-      value={{ myEvents, addRegistration, removeRegistration, isRegistered }}
+      value={{
+        myEvents,
+        addRegistration,
+        removeRegistration,
+        isRegistered,
+        loading,
+      }}
     >
       {children}
     </MyEventsContext.Provider>
@@ -113,6 +122,6 @@ export const MyEventsProvider = ({ children }) => {
 
 export const useMyEvents = () => {
   const ctx = useContext(MyEventsContext);
-  if (!ctx) throw new Error('useMyEvents must be used inside <MyEventsProvider>');
+  if (!ctx) throw new Error("useMyEvents must be used inside <MyEventsProvider>");
   return ctx;
 };

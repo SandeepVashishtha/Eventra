@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { 
-  Plus, Minus, Trash2, Save, RotateCcw, 
-  Move, Grid, Users, Layout, MapPin, Minimize2 
+import ConfirmationModal from "../common/ConfirmationModal";
+import {
+  Plus, Minus, Trash2, Save, RotateCcw,
+  Move, Grid, Users, Layout, MapPin, Minimize2,
+  Download, Upload, Image, FileJson, AlertTriangle
 } from "lucide-react";
+import { toast } from "react-toastify";
 import "./FloorPlanDesigner.css";
-
 // Preset layouts
 const PRESETS = {
   empty: [],
@@ -34,15 +36,28 @@ const PRESETS = {
 
 // Available registered mock attendees
 const MOCK_ATTENDEES = [
-  "Amit Sharma", "Priya Singh", "Rohit Verma", "Neha Kapoor", 
+  "Amit Sharma", "Priya Singh", "Rohit Verma", "Neha Kapoor",
   "Vikram Rathore", "Siddharth Malhotra", "Kriti Sanon", "Varun Dhawan",
   "Aditi Rao", "Ranbir Kapoor", "Deepika Padukone", "Ranveer Singh",
   "Alia Bhatt", "Ayushmann Khurrana", "Rajkummar Rao", "Shraddha Kapoor"
 ];
 
+// Simple bounding box intersection (AABB) collision algorithm
+const checkCollision = (el1, el2) => {
+  if (!el1 || !el2 || el1.id === el2.id) return false;
+  const buffer = 4; // allow tiny safe overlap margin
+  return (
+    el1.x < el2.x + el2.width - buffer &&
+    el1.x + el1.width > el2.x + buffer &&
+    el1.y < el2.y + el2.height - buffer &&
+    el1.y + el1.height > el2.y + buffer
+  );
+};
+
 const FloorPlanDesigner = ({ eventId = "default" }) => {
   const [elements, setElements] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   
   // Canvas Zoom / Pan
   const [zoom, setZoom] = useState(0.8);
@@ -74,7 +89,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
 
   const saveLayout = () => {
     localStorage.setItem(`eventra_floorplan_${eventId}`, JSON.stringify(elements));
-    alert("Venue floor plan successfully saved!");
+    toast.success("Venue floor plan successfully saved!");
   };
 
   const loadPreset = (presetName) => {
@@ -82,6 +97,167 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
       setElements(PRESETS[presetName]);
       setSelectedId(null);
     }
+  };
+
+  // Helper to prepare the SVG for export by cloning and stripping specific attributes/styles
+  const getCleanExportSvgString = () => {
+    const svgElement = canvasRef.current;
+    if (!svgElement) return "";
+
+    const clonedSvg = svgElement.cloneNode(true);
+
+    // Reset transform style so export is the full canvas without panning and zooming
+    clonedSvg.style.transform = "none";
+    clonedSvg.style.transformOrigin = "initial";
+    clonedSvg.style.transition = "none";
+
+    // Set width and height explicitly to matching the viewBox dimensions for high resolution
+    clonedSvg.setAttribute("width", "1000");
+    clonedSvg.setAttribute("height", "800");
+
+    // Restore selected shape's default stroke so it looks clean in the exported snapshot
+    const selectedShape = clonedSvg.querySelector(".fp-svg-element-selected");
+    if (selectedShape) {
+      selectedShape.classList.remove("fp-svg-element-selected");
+    }
+
+    const serializer = new XMLSerializer();
+    return serializer.serializeToString(clonedSvg);
+  };
+
+  // Export as SVG
+  const handleExportSVG = () => {
+    try {
+      const svgString = getCleanExportSvgString();
+      if (!svgString) return;
+
+      const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `eventra-floorplan-${eventId}.svg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("SVG Export failed:", error);
+      toast.error("Failed to export as SVG. Please try again.");
+    }
+  };
+
+  // Export as PNG
+  const handleExportPNG = () => {
+    try {
+      const svgElement = canvasRef.current;
+      if (!svgElement) return;
+
+      const svgString = getCleanExportSvgString();
+      if (!svgString) return;
+
+      // Get computed background color of the SVG to draw on the canvas
+      const computedStyle = window.getComputedStyle(svgElement);
+      const bgColor = computedStyle.backgroundColor || "#0b0b14";
+
+      const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 1000;
+        canvas.height = 800;
+        const ctx = canvas.getContext("2d");
+
+        // Fill background first
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, 1000, 800);
+
+        // Draw image onto canvas
+        ctx.drawImage(img, 0, 0, 1000, 800);
+
+        // Convert canvas to png and trigger download
+        canvas.toBlob((pngBlob) => {
+          if (!pngBlob) {
+            toast.error("Failed to generate PNG image.");
+            return;
+          }
+          const pngUrl = URL.createObjectURL(pngBlob);
+          const link = document.createElement("a");
+          link.href = pngUrl;
+          link.download = `eventra-floorplan-${eventId}.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(pngUrl);
+          URL.revokeObjectURL(url);
+        }, "image/png");
+      };
+
+      img.onerror = () => {
+        toast.error("Failed to render floor plan workspace onto image canvas.");
+        URL.revokeObjectURL(url);
+      };
+
+      img.src = url;
+    } catch (error) {
+      console.error("PNG Export failed:", error);
+      toast.error("Failed to export as PNG. Please try again.");
+    }
+  };
+
+  // Download Layout JSON
+  const handleDownloadJSON = () => {
+    try {
+      const jsonBlob = new Blob([JSON.stringify(elements, null, 2)], { type: "application/json" });
+      const jsonUrl = URL.createObjectURL(jsonBlob);
+
+      const link = document.createElement("a");
+      link.href = jsonUrl;
+      link.download = `eventra-floorplan-${eventId}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(jsonUrl);
+    } catch (error) {
+      console.error("JSON Export failed:", error);
+      toast.error("Failed to download layout configuration.");
+    }
+  };
+
+  // Import Layout JSON
+  const handleImportJSON = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const importedData = JSON.parse(event.target.result);
+
+        if (!Array.isArray(importedData)) {
+          throw new Error("Floor plan config layout must be a valid JSON array.");
+        }
+
+        // Schema validation
+        const isValid = importedData.every(el =>
+          el && typeof el === "object" && "id" in el && "type" in el && "x" in el && "y" in el
+        );
+
+        if (!isValid) {
+          throw new Error("One or more grid elements are missing mandatory properties (id, type, x, y).");
+        }
+
+        setElements(importedData);
+        setSelectedId(null);
+        toast.success("Floor plan layout imported successfully!");
+      } catch (err) {
+        toast.error(`Failed to import floor plan: ${err.message}`);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ""; // Reset input
   };
 
   const handleAddElement = (type) => {
@@ -104,53 +280,67 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
   };
 
   const handleDeleteSelected = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteSelected = () => {
     if (selectedId) {
       setElements(elements.filter(el => el.id !== selectedId));
       setSelectedId(null);
+      toast.success("Element deleted successfully!");
     }
+
+    setIsDeleteModalOpen(false);
   };
 
   const updateSelectedElement = (key, value) => {
-    setElements(elements.map(el => {
-      if (el.id === selectedId) {
-        let updated = { ...el, [key]: value };
-        // Reset assigned attendees if seats decrease
-        if (key === "seatsCount") {
-          const freshAssigned = {};
-          Object.keys(el.assignedAttendees).forEach(k => {
-            if (parseInt(k) < value) {
-              freshAssigned[k] = el.assignedAttendees[k];
-            }
-          });
-          updated.assignedAttendees = freshAssigned;
+    const updates = typeof key === "object" ? key : { [key]: value };
+    setElements((prevElements) =>
+      prevElements.map((el) => {
+        if (el.id === selectedId) {
+          let updated = { ...el, ...updates };
+          // Reset assigned attendees if seats decrease
+          if ("seatsCount" in updates) {
+            const seatsCountVal = updates.seatsCount;
+            const freshAssigned = {};
+            Object.keys(el.assignedAttendees).forEach((k) => {
+              if (parseInt(k) < seatsCountVal) {
+                freshAssigned[k] = el.assignedAttendees[k];
+              }
+            });
+            updated.assignedAttendees = freshAssigned;
+          }
+          return updated;
         }
-        return updated;
-      }
-      return el;
-    }));
+        return el;
+      })
+    );
   };
 
   const handleSeatAssign = (seatIndex, attendeeName) => {
     setElements(elements.map(el => {
+      // 1. Create a clean copy of the assignedAttendees object for this element
+      const nextAssignments = { ...el.assignedAttendees };
+
+      // 2. Unassign this attendee if they are currently assigned to any seat on this table
+      Object.keys(nextAssignments).forEach(k => {
+        if (nextAssignments[k] === attendeeName) {
+          delete nextAssignments[k];
+        }
+      });
+
       if (el.id === selectedId) {
-        const nextAssignments = { ...el.assignedAttendees };
-        if (attendeeName === "") {
-          delete nextAssignments[seatIndex];
-        } else {
-          // Check if attendee is already assigned somewhere else, and unassign if so
-          elements.forEach(otherEl => {
-            Object.keys(otherEl.assignedAttendees).forEach(k => {
-              if (otherEl.assignedAttendees[k] === attendeeName) {
-                otherEl.assignedAttendees[k] = undefined;
-                delete otherEl.assignedAttendees[k];
-              }
-            });
-          });
+        // 3. If this is the selected table, assign the attendee to the new seat slot
+        if (attendeeName !== "") {
           nextAssignments[seatIndex] = attendeeName;
+        } else {
+          delete nextAssignments[seatIndex];
         }
         return { ...el, assignedAttendees: nextAssignments };
+      } else {
+        // 4. For other tables, just return the element with the attendee cleanly removed
+        return { ...el, assignedAttendees: nextAssignments };
       }
-      return el;
     }));
   };
 
@@ -165,7 +355,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
     } else if (elementId) {
       setSelectedId(elementId);
       isDraggingRef.current = true;
-      
+
       const el = elements.find(item => item.id === elementId);
       if (el) {
         // Convert screen delta to actual SVG coordinates
@@ -222,10 +412,13 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
     const count = el.seatsCount;
     if (count <= 0) return positions;
 
+    // Apply offset for 2.5D visual projection top coordinates
+    const projOffset = 10;
+
     if (el.type === "round-table") {
       const radius = el.width / 2;
-      const centerX = el.x + radius;
-      const centerY = el.y + radius;
+      const centerX = el.x + radius - projOffset;
+      const centerY = el.y + radius - projOffset;
       const chairDistance = radius + 22; // Distance of seats outside table boundary
 
       for (let i = 0; i < count; i++) {
@@ -242,8 +435,10 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
       const height = el.height;
       const halfW = width / 2;
       const halfH = height / 2;
-      const cX = el.x + halfW;
-      const cY = el.y + halfH;
+
+      // Calculate top face projection center
+      const cX = el.x + halfW - projOffset;
+      const cY = el.y + halfH - projOffset;
 
       const seatsPerSide = Math.ceil(count / 2);
       const spacingX = width / (seatsPerSide + 1);
@@ -264,14 +459,14 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
         const side = i < seatsPerSide ? "top" : "bottom";
         const sideIndex = i % seatsPerSide;
         const relativeX = spacingX * (sideIndex + 1) - halfW;
-        
+
         let p;
         if (side === "top") {
-          p = rotatePt(el.x + halfW + relativeX, el.y - 18);
+          p = rotatePt(el.x - projOffset + halfW + relativeX, el.y - projOffset - 18);
         } else {
-          p = rotatePt(el.x + halfW + relativeX, el.y + height + 18);
+          p = rotatePt(el.x - projOffset + halfW + relativeX, el.y - projOffset + height + 18);
         }
-        
+
         positions.push({ x: p.x, y: p.y, index: i });
       }
     }
@@ -287,6 +482,11 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
     return acc + (el.seatsCount || 0);
   }, 0);
 
+  // Computes whether there is ANY overlap / collision currently detected on the canvas
+  const anyCollision = elements.some(el =>
+    elements.some(other => other.id !== el.id && checkCollision(el, other))
+  );
+
   return (
     <div className="fp-container">
       {/* Top action controls */}
@@ -295,7 +495,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
           <Layout className="text-indigo-500" size={24} />
           <div>
             <div className="fp-topbar-title">Interactive Venue Seating & Floor Planner</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Design floors, place elements, and organize attendee seating slots</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">Design floors, place elements, and organize attendee seating slots</div>
           </div>
         </div>
 
@@ -318,29 +518,32 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
 
       <div className="fp-workspace" onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
         {/* Left Toolbox */}
-        <div className="fp-sidebar fp-sidebar-left">
+        <aside
+          className="fp-sidebar fp-sidebar-left"
+          aria-label="Floor plan designer tools sidebar"
+        >
           <div className="fp-sidebar-section">
             <div className="fp-section-title">Object Toolbox</div>
             <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Click items to add them directly onto the seating designer grid canvas.</p>
-            
+
             <div className="fp-tool-grid">
-              <button className="fp-tool-item" onClick={() => handleAddElement("stage")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("stage")}>
                 <Layout className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Stage</span>
               </button>
-              <button className="fp-tool-item" onClick={() => handleAddElement("round-table")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("round-table")}>
                 <Users className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Round Table</span>
               </button>
-              <button className="fp-tool-item" onClick={() => handleAddElement("rect-table")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("rect-table")}>
                 <Grid className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Rect Table</span>
               </button>
-              <button className="fp-tool-item" onClick={() => handleAddElement("booth")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("booth")}>
                 <MapPin className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Stand/Booth</span>
               </button>
-              <button className="fp-tool-item" onClick={() => handleAddElement("barrier")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("barrier")}>
                 <Minimize2 className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Barrier</span>
               </button>
@@ -353,7 +556,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
 
           <div className="fp-sidebar-section">
             <div className="fp-section-title">Designer Settings</div>
-            
+
             <div className="fp-toggle-container mb-4">
               <span className="text-xs font-semibold text-gray-300 dark:text-gray-400">Snap to 20px Grid</span>
               <label className="fp-switch">
@@ -374,6 +577,43 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
             </div>
           </div>
 
+          <div className="fp-sidebar-section fp-portability-section">
+            <div className="fp-section-title">Export & Portability</div>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">
+              Export high-resolution images or portable layout configurations for sharing.
+            </p>
+
+            <div className="fp-portability-grid mb-4">
+              <button className="fp-portability-btn font-semibold" onClick={handleExportPNG} title="Export as high-res PNG image">
+                <Image className="fp-portability-icon" size={16} />
+                <span>Export PNG</span>
+              </button>
+              <button className="fp-portability-btn font-semibold" onClick={handleExportSVG} title="Export as vector SVG image">
+                <Download className="fp-portability-icon" size={16} />
+                <span>Export SVG</span>
+              </button>
+            </div>
+
+            <button className="fp-btn fp-btn-secondary w-full justify-center mb-3 text-xs" onClick={handleDownloadJSON} title="Download backup config JSON file">
+              <FileJson size={14} className="text-indigo-400" />
+              <span>Backup Layout JSON</span>
+            </button>
+
+            <div className="fp-import-zone">
+              <label className="fp-import-label cursor-pointer">
+                <Upload size={18} className="text-indigo-400 mb-1.5" />
+                <span className="text-[11px] font-bold text-gray-300 dark:text-gray-400">Restore Layout JSON</span>
+                <span className="text-[9px] text-gray-500 dark:text-gray-500 mt-0.5 text-center">Click to browse and upload</span>
+                <input
+                  type="file"
+                  accept=".json"
+                  className="hidden"
+                  onChange={handleImportJSON}
+                />
+              </label>
+            </div>
+          </div>
+
           <div className="fp-sidebar-section mt-auto border-t border-gray-800">
             <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
               <div className="text-xs font-bold text-indigo-400 mb-1 flex items-center gap-1.5">
@@ -384,16 +624,24 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
               </p>
             </div>
           </div>
-        </div>
+        </aside>
 
         {/* Dynamic Canvas Workspace */}
         <div className="fp-canvas-wrapper" onMouseDown={(e) => handleMouseDown(e, null)}>
-          
+
+          {/* Real-time active collision notification */}
+          {anyCollision && (
+            <div className="fp-collision-warning-badge">
+              <AlertTriangle size={14} className="animate-pulse" />
+              <span>OVERLAP COLLISION DETECTED</span>
+            </div>
+          )}
+
           {/* Zoom & Pan floating controls */}
           <div className="fp-controls-floating">
-            <button 
+            <button
               className={`fp-control-btn ${isPanMode ? 'fp-control-btn-active' : ''}`}
-              title="Pan Tool (Move screen)" 
+              title="Pan Tool (Move screen)"
               onClick={() => setIsPanMode(!isPanMode)}
             >
               <Move size={16} />
@@ -425,140 +673,177 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
               transition: isDraggingRef.current || isPanningRef.current ? "none" : "transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94)"
             }}
           >
-            {/* Grid background pattern */}
+            {/* Grid background pattern & Dynamic visual themes */}
             <defs>
               <pattern id="canvas-grid" width="40" height="40" patternUnits="userSpaceOnUse">
                 <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(99, 102, 241, 0.04)" strokeWidth="1" />
                 <path d="M 80 0 L 0 0 0 80" fill="none" stroke="rgba(99, 102, 241, 0.08)" strokeWidth="1.5" />
               </pattern>
+
+              {/* Dynamic Gradients for premium 2.5D visual depth */}
+              <radialGradient id="seat-occupied" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#818cf8" />
+                <stop offset="100%" stopColor="#4f46e5" />
+              </radialGradient>
+              <radialGradient id="seat-empty" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#2e2b5c" />
+                <stop offset="100%" stopColor="#12102e" />
+              </radialGradient>
+
+              <linearGradient id="stage-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#374151" />
+                <stop offset="100%" stopColor="#111827" />
+              </linearGradient>
+              <linearGradient id="table-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#2e2b54" />
+                <stop offset="100%" stopColor="#16133a" />
+              </linearGradient>
+              <linearGradient id="booth-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#065f46" />
+                <stop offset="100%" stopColor="#022c22" />
+              </linearGradient>
+              <linearGradient id="barrier-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#dc2626" />
+                <stop offset="100%" stopColor="#7f1d1d" />
+              </linearGradient>
+              <linearGradient id="exit-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#b91c1c" />
+                <stop offset="100%" stopColor="#7f1d1d" />
+              </linearGradient>
             </defs>
+
             <rect width="100%" height="100%" fill="url(#canvas-grid)" />
 
             {/* Elements render */}
             {elements.map((el) => {
               const isSelected = el.id === selectedId;
-              
-              // Helper components for element render inside SVG
+              const isColliding = elements.some(other => other.id !== el.id && checkCollision(el, other));
+
+              // 2.5D visual projection offsets
+              const projOffset = 10;
+
               return (
-                <g 
-                  key={el.id} 
+                <g
+                  key={el.id}
+                  data-element-id={el.id}
+                  data-element-type={el.type}
                   transform={`rotate(${el.rotation}, ${el.x + el.width / 2}, ${el.y + el.height / 2})`}
                   onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, el.id); }}
+                  className="fp-element-group"
                 >
                   {/* Chairs rendered around tables */}
                   {getSeatPositions(el).map((seat) => {
                     const isOccupied = el.assignedAttendees[seat.index];
                     return (
-                      <circle
-                        key={`seat-${el.id}-${seat.index}`}
-                        cx={seat.x}
-                        cy={seat.y}
-                        r={12}
-                        fill={isOccupied ? "#6366f1" : "#1e1b4b"}
-                        stroke={isOccupied ? "#818cf8" : "#4338ca"}
-                        strokeWidth={1.5}
-                        className="transition-colors duration-200"
-                        title={isOccupied ? `Seat ${seat.index + 1}: ${isOccupied}` : `Seat ${seat.index + 1}: Empty`}
-                      />
+                      <g key={`seat-${el.id}-${seat.index}`} className="fp-seat-25d">
+                        {/* 2.5D Chair shadow/extrusion base */}
+                        <circle
+                          cx={seat.x}
+                          cy={seat.y + 3}
+                          r={11}
+                          fill="rgba(0, 0, 0, 0.4)"
+                        />
+                        {/* Chair top face */}
+                        <circle
+                          cx={seat.x}
+                          cy={seat.y}
+                          r={11}
+                          fill={isOccupied ? "url(#seat-occupied)" : "url(#seat-empty)"}
+                          stroke={isOccupied ? "#a5b4fc" : "#3b3870"}
+                          strokeWidth={1.5}
+                          className="transition-colors duration-200"
+                        />
+                      </g>
                     );
                   })}
 
-                  {/* Main Element Shape */}
+                  {/* 2.5D Extrusions base and side projections */}
                   {el.type === "round-table" ? (
-                    <circle
-                      cx={el.x + el.width / 2}
-                      cy={el.y + el.height / 2}
-                      r={el.width / 2}
-                      fill="rgba(30, 27, 75, 0.8)"
-                      stroke={isSelected ? "#818cf8" : "#4f46e5"}
-                      strokeWidth={2}
-                      className={`fp-svg-element ${isSelected ? "fp-svg-element-selected" : ""}`}
-                    />
-                  ) : el.type === "stage" ? (
-                    <rect
-                      x={el.x}
-                      y={el.y}
-                      width={el.width}
-                      height={el.height}
-                      rx={8}
-                      fill="rgba(17, 24, 39, 0.95)"
-                      stroke={isSelected ? "#818cf8" : "#374151"}
-                      strokeWidth={2.5}
-                      className={`fp-svg-element ${isSelected ? "fp-svg-element-selected" : ""}`}
-                    />
-                  ) : el.type === "rect-table" ? (
-                    <rect
-                      x={el.x}
-                      y={el.y}
-                      width={el.width}
-                      height={el.height}
-                      rx={6}
-                      fill="rgba(30, 27, 75, 0.8)"
-                      stroke={isSelected ? "#818cf8" : "#4f46e5"}
-                      strokeWidth={2}
-                      className={`fp-svg-element ${isSelected ? "fp-svg-element-selected" : ""}`}
-                    />
-                  ) : el.type === "booth" ? (
-                    <rect
-                      x={el.x}
-                      y={el.y}
-                      width={el.width}
-                      height={el.height}
-                      rx={4}
-                      fill="rgba(6, 78, 59, 0.8)"
-                      stroke={isSelected ? "#34d399" : "#059669"}
-                      strokeWidth={2}
-                      className={`fp-svg-element ${isSelected ? "fp-svg-element-selected" : ""}`}
-                    />
-                  ) : el.type === "barrier" ? (
-                    <rect
-                      x={el.x}
-                      y={el.y}
-                      width={el.width}
-                      height={el.height}
-                      rx={2}
-                      fill="#b91c1c"
-                      opacity={0.8}
-                      stroke={isSelected ? "#f87171" : "#991b1b"}
-                      strokeWidth={1.5}
-                      className={`fp-svg-element ${isSelected ? "fp-svg-element-selected" : ""}`}
-                    />
+                    <>
+                      {/* Cylindrical extrusion side wall */}
+                      <path
+                        d={`M ${el.x + el.width / 2 - el.width / 2} ${el.y + el.height / 2} 
+                            A ${el.width / 2} ${el.height / 2} 0 0 0 ${el.x + el.width / 2 + el.width / 2} ${el.y + el.height / 2} 
+                            L ${el.x + el.width / 2 + el.width / 2 - projOffset} ${el.y + el.height / 2 + projOffset} 
+                            A ${el.width / 2} ${el.height / 2} 0 0 1 ${el.x + el.width / 2 - el.width / 2 - projOffset} ${el.y + el.height / 2 + projOffset} Z`}
+                        fill="rgba(10, 8, 30, 0.95)"
+                        stroke="rgba(255, 255, 255, 0.05)"
+                      />
+                      {/* Circular Table Top Face */}
+                      <circle
+                        cx={el.x + el.width / 2 - projOffset}
+                        cy={el.y + el.height / 2 - projOffset}
+                        r={el.width / 2}
+                        fill="url(#table-grad)"
+                        stroke={isColliding ? "#ef4444" : (isSelected ? "#818cf8" : "#4f46e5")}
+                        strokeWidth={2}
+                        className={`fp-svg-element ${isSelected ? "fp-svg-element-selected" : ""} ${isColliding ? "fp-svg-element-colliding" : ""}`}
+                      />
+                    </>
                   ) : (
-                    // Exit Route shape
-                    <rect
-                      x={el.x}
-                      y={el.y}
-                      width={el.width}
-                      height={el.height}
-                      rx={4}
-                      fill="rgba(127, 29, 29, 0.7)"
-                      stroke={isSelected ? "#f87171" : "#ef4444"}
-                      strokeWidth={2}
-                      className={`fp-svg-element ${isSelected ? "fp-svg-element-selected" : ""}`}
-                    />
+                    // Rectangular visual elements (Stage, Booth, Barrier, Rect table, Exit)
+                    <>
+                      {/* Oblique extrusion base walls */}
+                      {/* Front Extrusion Face */}
+                      <path
+                        d={`M ${el.x} ${el.y + el.height} 
+                            L ${el.x - projOffset} ${el.y + el.height - projOffset} 
+                            L ${el.x + el.width - projOffset} ${el.y + el.height - projOffset} 
+                            L ${el.x + el.width} ${el.y + el.height} Z`}
+                        fill="rgba(15, 12, 28, 0.95)"
+                        stroke="rgba(255, 255, 255, 0.05)"
+                      />
+                      {/* Side Extrusion Face */}
+                      <path
+                        d={`M ${el.x + el.width} ${el.y} 
+                            L ${el.x + el.width - projOffset} ${el.y - projOffset} 
+                            L ${el.x + el.width - projOffset} ${el.y + el.height - projOffset} 
+                            L ${el.x + el.width} ${el.y + el.height} Z`}
+                        fill="rgba(8, 6, 18, 0.95)"
+                        stroke="rgba(255, 255, 255, 0.05)"
+                      />
+
+                      {/* Top Face element rendering */}
+                      <rect
+                        x={el.x - projOffset}
+                        y={el.y - projOffset}
+                        width={el.width}
+                        height={el.height}
+                        rx={el.type === "stage" ? 8 : (el.type === "barrier" ? 2 : 6)}
+                        fill={
+                          el.type === "stage" ? "url(#stage-grad)" :
+                            el.type === "booth" ? "url(#booth-grad)" :
+                              el.type === "barrier" ? "url(#barrier-grad)" :
+                                el.type === "exit" ? "url(#exit-grad)" : "url(#table-grad)"
+                        }
+                        stroke={isColliding ? "#ef4444" : (isSelected ? "#818cf8" : "#4f46e5")}
+                        strokeWidth={el.type === "stage" ? 2.5 : 2}
+                        className={`fp-svg-element ${isSelected ? "fp-svg-element-selected" : ""} ${isColliding ? "fp-svg-element-colliding" : ""}`}
+                      />
+                    </>
                   )}
 
                   {/* Element Inner Label Text */}
                   <text
-                    x={el.x + el.width / 2}
-                    y={el.y + el.height / 2 + 4}
+                    x={el.x + el.width / 2 - projOffset}
+                    y={el.y + el.height / 2 - projOffset + 4}
                     textAnchor="middle"
-                    fill="#e5e7eb"
+                    fill="#f3f4f6"
                     fontSize={el.type === "stage" ? "14" : "11"}
                     fontWeight="700"
                     pointerEvents="none"
-                    style={{ userSelect: "none" }}
+                    style={{ userSelect: "none", textShadow: "0 2px 4px rgba(0,0,0,0.8)" }}
                   >
                     {el.label}
                   </text>
-                  
+
                   {/* Visual indication of occupied seating capacity */}
                   {el.seatsCount > 0 && (
                     <text
-                      x={el.x + el.width / 2}
-                      y={el.y + el.height / 2 + 18}
+                      x={el.x + el.width / 2 - projOffset}
+                      y={el.y + el.height / 2 - projOffset + 18}
                       textAnchor="middle"
-                      fill="#818cf8"
+                      fill="#a5b4fc"
                       fontSize="9"
                       fontWeight="600"
                       pointerEvents="none"
@@ -567,6 +852,14 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
                       {Object.keys(el.assignedAttendees).length} / {el.seatsCount} Seats
                     </text>
                   )}
+
+                  {/* Overlay warning icon if colliding */}
+                  {isColliding && (
+                    <g transform={`translate(${el.x + el.width - projOffset - 24}, ${el.y - projOffset + 6})`}>
+                      <circle cx={8} cy={8} r={9} fill="#ef4444" />
+                      <text x={8} y={11} textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold">!</text>
+                    </g>
+                  )}
                 </g>
               );
             })}
@@ -574,7 +867,10 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
         </div>
 
         {/* Right Details Panel / Seating inspector */}
-        <div className="fp-sidebar fp-sidebar-right">
+        <aside
+          className="fp-sidebar fp-sidebar-right"
+          aria-label="Element properties and seating configuration sidebar"
+        >
           {activeElement ? (
             <>
               {/* Properties Section */}
@@ -582,7 +878,9 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
                 <div className="flex items-center justify-between mb-4">
                   <div className="fp-section-title">Element Details</div>
                   <button 
+                    <button
                     onClick={handleDeleteSelected}
+                    aria-label="Delete selected floor plan element"
                     className="p-1.5 text-red-400 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 rounded-lg transition-colors cursor-pointer"
                     title="Delete item"
                   >
@@ -695,7 +993,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
                       return (
                         <div key={seatIdx} className="fp-seat-row">
                           <span className="fp-seat-number">Seat {seatIdx + 1}</span>
-                          
+
                           <select
                             className="fp-attendee-select"
                             value={currentAssignee || ""}
@@ -705,12 +1003,12 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
                             {MOCK_ATTENDEES.map((attName) => {
                               // Enable choosing the attendee if they aren't assigned to another table or if they are assigned to THIS seat
                               const isAssignedElsewhere = elements.some(
-                                el => Object.values(el.assignedAttendees).includes(attName) && 
-                                !(el.id === activeElement.id && el.assignedAttendees[seatIdx] === attName)
+                                el => Object.values(el.assignedAttendees).includes(attName) &&
+                                  !(el.id === activeElement.id && el.assignedAttendees[seatIdx] === attName)
                               );
                               return (
-                                <option 
-                                  key={attName} 
+                                <option
+                                  key={attName}
                                   value={attName}
                                   disabled={isAssignedElsewhere}
                                 >
@@ -740,8 +1038,17 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
               <p className="text-xs">Click on any stage, booth, table, or exit shape inside the canvas grid to edit its details and manage seat registrations.</p>
             </div>
           )}
-        </div>
+        </aside>
       </div>
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDeleteSelected}
+        title="Delete Element"
+        message="Are you sure you want to delete this floor plan element? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </div>
   );
 };
