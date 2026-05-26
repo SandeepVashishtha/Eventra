@@ -16,7 +16,9 @@ import {
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
 import StyledDropdown from "../../components/StyledDropdown";
-import { LeaderboardTableSkeleton } from "../../components/common/SkeletonLoaders";
+import SkeletonLeaderboard, {
+  LeaderboardStatCardSkeleton,
+} from "../../components/common/SkeletonLeaderboard";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useLeaderboardStream, SSE_STATUS } from "../../context/RealTimeContext";
 
@@ -664,55 +666,63 @@ export default function LeaderBoard() {
             placeholder="Sort by"
           />
         </div>
+{/* AGGREGATED STATS CARDS */}
+<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+  {[
+    {
+      title: "Active Contributors",
+      value: stats.totalContributors,
+      color:
+        "from-blue-500/10 to-indigo-500/10 border-blue-100 dark:border-blue-900/30 text-blue-600 dark:text-blue-400",
+      icon: FaUsers,
+    },
+    {
+      title: "Merged Pull Requests",
+      value: stats.flooredTotalPRs,
+      color:
+        "from-emerald-500/10 to-teal-500/10 border-emerald-100 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400",
+      icon: FaCode,
+    },
+    {
+      title: "Aggregated Arena Points",
+      value: stats.flooredTotalPoints,
+      color:
+        "from-amber-500/10 to-orange-500/10 border-amber-100 dark:border-amber-900/30 text-amber-600 dark:text-amber-400",
+      icon: FaStar,
+    },
+  ].map((card, idx) => (
+    <motion.div
+      key={idx}
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: idx * 0.1 }}
+      className={`p-6 rounded-2xl bg-gradient-to-br ${card.color} border shadow-sm flex items-center gap-4`}
+    >
+      <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 shadow-sm">
+        <card.icon className="text-2xl" />
+      </div>
 
-        {/* AGGREGATED STATS CARDS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {[
-            {
-              title: "Active Contributors",
-              value: stats.totalContributors,
-              color: "from-blue-500/10 to-indigo-500/10 border-blue-100 dark:border-blue-900/30 text-blue-600 dark:text-blue-400",
-              icon: FaUsers,
-            },
-            {
-              title: "Merged Pull Requests",
-              value: stats.flooredTotalPRs,
-              color: "from-emerald-500/10 to-teal-500/10 border-emerald-100 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400",
-              icon: FaCode,
-            },
-            {
-              title: "Aggregated Arena Points",
-              value: stats.flooredTotalPoints,
-              color: "from-amber-500/10 to-orange-500/10 border-amber-100 dark:border-amber-900/30 text-amber-600 dark:text-amber-400",
-              icon: FaStar,
-            },
-          ].map((card, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              className={`p-6 rounded-2xl bg-gradient-to-br ${card.color} border shadow-sm flex items-center gap-4`}
-            >
-              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 shadow-sm">
-                <card.icon className="text-2xl" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  {card.title}
-                </p>
-                <p className="text-3xl font-extrabold text-slate-950 dark:text-white mt-1">
-                  {loading ? "..." : <AnimatedCounter value={card.value} />}
-                </p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          {card.title}
+        </p>
+
+        <p className="text-3xl font-extrabold text-slate-950 dark:text-white mt-1">
+          {loading ? (
+            "..."
+          ) : (
+            <AnimatedCounter value={card.value} />
+          )}
+        </p>
+      </div>
+    </motion.div>
+  ))}
+</div>
 
         {/* LEADERBOARD ARENA GRID */}
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden">
           {loading ? (
-            <LeaderboardTableSkeleton rows={CONTRIBUTORS_PER_PAGE} />
+            <SkeletonLeaderboard rows={CONTRIBUTORS_PER_PAGE} />
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">

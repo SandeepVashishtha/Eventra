@@ -43,13 +43,13 @@ const RespawningText = ({ texts = ["Discover & Join"], typingSpeed = 150, deleti
   }, [isDeleting, textIndex, texts, typingSpeed, deletingSpeed, pauseTime]);
 
   return (
-    <span className="relative inline-block">
-      {currentText}
+    <span className="inline-block relative whitespace-normal mb-1">
+      <span className="inline-flex items-center leading-snug pr-6">{currentText}</span>
       <motion.span
+        aria-hidden="true"
         animate={{ opacity: [1, 0] }}
-        transition={{ duration: prefersReducedMotion ? 0 : 0.8, repeat: Infinity, ease: "linear" }}
-        className="inline-block w-1 h-8 sm:h-12 md:h-16 lg:h-20 bg-black dark:bg-white ml-1 align-middle"
-        style={{ marginBottom: '0.1em' }}
+        transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+        className="absolute left-full ml-1 top-1/2 -translate-y-1/2 w-1 h-4 sm:h-6 md:h-8 lg:h-10 bg-black dark:bg-white"
       />
     </span>
   );

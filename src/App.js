@@ -141,6 +141,7 @@ function App() {
                     }
                   >
                     <Routes>
+                      <Route path="/register/:id" element={<RegistrationPage />} />
                       <Route
                         path="/register/:id"
                         element={<RegistrationPage />}

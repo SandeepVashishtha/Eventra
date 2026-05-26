@@ -106,12 +106,20 @@ export const AuthProvider = ({ children }) => {
   // When isAuthenticated() detects an expired token during a render, it
   // sets needsExpiryCleanupRef. This effect runs AFTER render finishes
   // and performs the actual state cleanup + toast.
+  //
+  // FIX: Added [clearExpiredSession] dependency array.
+  // Without a dependency array this effect ran after EVERY render of the
+  // entire React tree (AuthProvider wraps everything). While the ref guard
+  // prevented duplicate cleanups, the unnecessary post-render calls added
+  // overhead and made the effect semantically misleading.
+  // With [clearExpiredSession] it only re-runs when that stable callback
+  // reference changes — which is effectively once on mount.
   useEffect(() => {
     if (needsExpiryCleanupRef.current) {
       needsExpiryCleanupRef.current = false;
       clearExpiredSession();
     }
-  });
+  }, [clearExpiredSession]);
 
   // --- Smart Token Expiry Timeout ---
   // Instead of polling every 15 s, compute the exact remaining TTL from the
