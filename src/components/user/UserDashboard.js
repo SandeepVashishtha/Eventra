@@ -370,6 +370,7 @@ export default function UserDashboard() {
           {activeTab === "events" && (
             <EventsTab
               hostedEvents={MOCK_DATA.filter((d) => d.type === "Event" && d.participationType === "Hosted")}
+              onViewTicket={setSelectedTicketEvent}
             />
           )}
 
@@ -472,7 +473,7 @@ export default function UserDashboard() {
                           <td>
                             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                               <StatusBadge status={item.participationType} />
-                              {item.type === "Event" && item.participationType === "Registered" && (
+                              {(item.type === "Event" || item.type === "Hackathon") && item.participationType === "Registered" && (
                                 <button
                                   onClick={() => setSelectedTicketEvent(item)}
                                   className="ud-btn-ticket"

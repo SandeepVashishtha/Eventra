@@ -152,10 +152,6 @@ const EventDetailsPage = () => {
                 alt={`${event.title} event banner`}
                 className="w-full h-96 object-cover"
               />
-  src={event.image}
-  alt={event.title}
-  className="w-full h-48 sm:h-64 md:h-96 object-cover"
-/>
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
@@ -186,9 +182,6 @@ const EventDetailsPage = () => {
                 <h1 id="event-details-title" className="text-4xl font-bold">
                   {event.title}
                 </h1>
-                <h1 className="text-xl sm:text-2xl md:text-4xl font-bold leading-tight">
-  {event.title}
-</h1>
               </div>
             </div>
 
@@ -203,9 +196,7 @@ const EventDetailsPage = () => {
               </p>
             </section>
           </section>
-            </div>
-          </div>
-        {/* Sidebar */}
+          {/* Sidebar */}
           <div className="lg:col-span-1 flex flex-col gap-6">
             {/* Countdown Timer */}
             {!isPastEvent && (
