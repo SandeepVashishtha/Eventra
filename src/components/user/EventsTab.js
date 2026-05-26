@@ -87,10 +87,10 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel }) => {
   const status = getEventStatus(event);
   const shortDate = event?.date
     ? new Date(event.date).toLocaleDateString("en-US", {
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-      })
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    })
     : "—";
 
   return (
@@ -211,6 +211,8 @@ const EventsTab = ({ hostedEvents = [] }) => {
   const [sortBy, setSortBy] = useState("soonest");
   const [cancelTarget, setCancelTarget] = useState(null);
 
+  const [recentSearches,
+    setRecentSearches] = useState([]);
   const registeredEvents = useMemo(
     () =>
       myEvents.map((registration) => ({
@@ -220,6 +222,16 @@ const EventsTab = ({ hostedEvents = [] }) => {
       })),
     [myEvents]
   );
+  useEffect(() => {
+    const saved =
+      JSON.parse(
+        localStorage.getItem(
+          "recentSearches"
+        )
+      ) || [];
+
+    setRecentSearches(saved);
+  }, []);
 
   const availableTypes = useMemo(() => {
     const types = [...new Set([...registeredEvents, ...hostedEvents].map((event) => event?.type).filter(Boolean))];
@@ -468,6 +480,18 @@ const EventsTab = ({ hostedEvents = [] }) => {
             exit={{ opacity: 0 }}
             onClick={handleCancelDismiss}
           >
+            <button
+              onClick={() => {
+                localStorage.removeItem(
+                  "recentSearches"
+                );
+
+                setRecentSearches([]);
+              }}
+              className="text-sm text-red-500 hover:underline mt-2"
+            >
+              Clear History
+            </button>
             <motion.div
               className="my-events-dialog"
               initial={{ scale: 0.95, opacity: 0 }}

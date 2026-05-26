@@ -195,6 +195,10 @@ export default function LeaderBoard() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState("");
   const [search, setSearch] = useState("");
+  const [
+  recentSearches,
+  setRecentSearches,
+] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("points");
   const [activeCategory, setActiveCategory] = useState("overall");
@@ -233,6 +237,18 @@ export default function LeaderBoard() {
     );
   }, [streamContributors, lastSynced]);
 
+  useEffect(() => {
+  const savedSearches =
+    JSON.parse(
+      localStorage.getItem(
+        "recentSearches"
+      )
+    ) || [];
+
+  setRecentSearches(
+    savedSearches
+  );
+}, []);
   // Load data from cache or network will be handled by effect below
 
   const fetchContributors = async () => {
@@ -362,6 +378,28 @@ export default function LeaderBoard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchContributors is stable across renders
   }, []);
 
+  const saveRecentSearch =
+  (query) => {
+    if (!query.trim()) return;
+
+    const updatedSearches = [
+      query,
+      ...recentSearches.filter(
+        (item) => item !== query
+      ),
+    ].slice(0, 5);
+
+    setRecentSearches(
+      updatedSearches
+    );
+
+    localStorage.setItem(
+      "recentSearches",
+      JSON.stringify(
+        updatedSearches
+      )
+    );
+  };
   const filteredContributors = contributors.filter((c) => {
     const q = search.trim().toLowerCase();
     const matchSearch = !q || c.username.toLowerCase().includes(q) || (c.name && c.name.toLowerCase().includes(q));
@@ -644,11 +682,17 @@ export default function LeaderBoard() {
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-4 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-800/40">
           <input
             type="text"
+            
             value={search}
             onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
+  setSearch(e.target.value);
+
+  saveRecentSearch(
+    e.target.value
+  );
+
+  setCurrentPage(1);
+}}
             placeholder="Search creators..."
             className="w-full sm:max-w-xs px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-slate-950 dark:text-white"
           />
