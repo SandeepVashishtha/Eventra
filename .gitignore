@@ -24,3 +24,7 @@ diff.txt
 diff-utf8.txt
 devserver.out.log
 devserver.err.log
+
+*storybook.log
+storybook-static
+.storybook/cache/
