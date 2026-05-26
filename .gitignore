@@ -15,3 +15,12 @@ build
 
 /.metadata/
 backend/azure-environment-variables.json
+
+# Dev artifacts & junk files
+*.log
+*.stackdump
+*.txt.bak
+diff.txt
+diff-utf8.txt
+devserver.out.log
+devserver.err.log
