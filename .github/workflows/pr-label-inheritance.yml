@@ -22,6 +22,23 @@ jobs:
 
             console.log(`Processing PR #${prNumber}`);
 
+            // ── Label categories managed by dedicated workflows ─────────────
+            // These are intentionally excluded from inheritance to avoid
+            // conflicts with difficulty.yml, type-labeler.yml, quality-labeler.yml,
+            // and pr-auto-assign.yml (gssoc:approved).
+            // Each of those workflows manages its own label namespace exclusively.
+            const MANAGED_PREFIXES = [
+              'level:',       // owned by difficulty.yml
+              'type:',        // owned by type-labeler.yml
+              'quality:',     // owned by quality-labeler.yml
+              'gssoc:',       // owned by pr-auto-assign.yml
+              'mentor:',      // managed manually by mentors
+            ];
+
+            function isManagedLabel(name) {
+              return MANAGED_PREFIXES.some(prefix => name.startsWith(prefix));
+            }
+
             // 1. Extract linked issue numbers using regex
             // Matching keywords: Fixes, Closes, Resolves, Fixed, Closed, Resolved followed by #<number>
             const regex = /(?:fixes|closes|resolves|fixed|closed|resolved)\s+#(\d+)/gi;
@@ -32,7 +49,7 @@ jobs:
 
             const labelsToAdd = new Set();
 
-            // 2. Fetch labels from linked issues
+            // 2. Fetch labels from linked issues (skip managed-prefix labels)
             for (const issueNumber of linkedIssues) {
               try {
                 const { data: issue } = await github.rest.issues.get({
@@ -40,12 +57,16 @@ jobs:
                   repo: context.repo.repo,
                   issue_number: issueNumber
                 });
-                
+
                 if (issue.labels && issue.labels.length > 0) {
                   for (const label of issue.labels) {
                     const labelName = typeof label === 'string' ? label : label.name;
+                    if (isManagedLabel(labelName)) {
+                      console.log(`Skipping managed label "${labelName}" from issue #${issueNumber} (handled by dedicated workflow)`);
+                      continue;
+                    }
                     labelsToAdd.add(labelName);
-                    console.log(`Found label "${labelName}" from issue #${issueNumber}`);
+                    console.log(`Inheriting label "${labelName}" from issue #${issueNumber}`);
                   }
                 }
               } catch (error) {
@@ -54,24 +75,35 @@ jobs:
             }
 
             // 3. Hacktoberfest Label Check
-            // If PR is created in October, add hacktoberfest-accepted
             const createdAt = new Date(pr.created_at);
             if (createdAt.getMonth() === 9) { // 9 is October (0-indexed)
               labelsToAdd.add('hacktoberfest-accepted');
               console.log('PR created in October. Adding "hacktoberfest-accepted" label.');
             }
 
-            // 4. Apply Labels if there are any to add
+            // 4. Apply labels — only add ones not already on the PR (idempotency guard)
             if (labelsToAdd.size > 0) {
-              const labelList = Array.from(labelsToAdd);
-              console.log(`Applying labels to PR #${prNumber}: ${labelList.join(', ')}`);
-              
-              await github.rest.issues.addLabels({
+              // Fetch current PR labels to avoid re-adding existing ones
+              const { data: currentIssue } = await github.rest.issues.get({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: prNumber,
-                labels: labelList
+                issue_number: prNumber
               });
+              const currentLabels = new Set(currentIssue.labels.map(l => (typeof l === 'string' ? l : l.name)));
+
+              const newLabels = [...labelsToAdd].filter(l => !currentLabels.has(l));
+
+              if (newLabels.length > 0) {
+                console.log(`Applying inherited labels to PR #${prNumber}: ${newLabels.join(', ')}`);
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  labels: newLabels
+                });
+              } else {
+                console.log('All inherited labels are already present on this PR — skipping.');
+              }
             } else {
-              console.log('No labels to add to this PR.');
+              console.log('No labels to inherit for this PR.');
             }
