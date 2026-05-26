@@ -113,6 +113,9 @@ const ApiDocs = () => {
     setIsLoading(true);
     setTerminalOutput("");
     
+    // Track execution for onboarding checklist
+    localStorage.setItem("eventra_sandbox_executed", "true");
+    
     setTimeout(() => {
       let data = [];
       const headers = {
