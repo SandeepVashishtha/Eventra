@@ -2,7 +2,7 @@ import StatusBadge from "../common/StatusBadge";
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate, Navigate,useLocation } from 'react-router-dom';
 import {
   Users, Calendar, Activity, Shield, LogOut, Plus,
   Search, ChevronRight, BarChart2,
@@ -123,6 +123,7 @@ const AdminDashboard = () => {
   const { user, logout, hasPermission } = useAuth();
   const userRoles = user?.roles || [];
   const navigate = useNavigate();
+  const location = useLocation();
   const isAdmin =
     userRoles.includes(ROLES.ADMIN) ||
     userRoles.includes(ROLES.SUPER_ADMIN);
@@ -144,6 +145,9 @@ const AdminDashboard = () => {
     const timer = window.setTimeout(() => setLoading(false), 700);
     return () => window.clearTimeout(timer);
   }, []);
+  useEffect(() => {
+  setActiveTab('overview');
+}, [location.pathname]);
 
   if (!isAdmin) {
     return <Navigate to="/unauthorized" replace />;

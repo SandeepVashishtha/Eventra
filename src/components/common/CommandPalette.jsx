@@ -6,7 +6,7 @@ import {
   Search,
   Sparkles,
   Command,
-  
+
   Sun,
   Moon,
   MousePointer,
@@ -229,8 +229,23 @@ export default function CommandPalette({
             </div>
           </div>
 
+          ```jsx
           {/* Quick filter tags */}
-          <div className="px-4 py-2 border-b border-slate-200/30 dark:border-slate-800/20 bg-slate-50/50 dark:bg-slate-950/20 overflow-x-auto whitespace-nowrap scrollbar-none flex gap-2">
+          <div
+            className="
+    px-4 py-2
+    border-b border-slate-200/30 dark:border-slate-800/20
+    bg-slate-50/50 dark:bg-slate-950/20
+    overflow-x-auto whitespace-nowrap
+    scrollbar-none
+    flex gap-2
+    scroll-smooth
+    snap-x snap-mandatory
+    touch-pan-x
+    overscroll-x-contain
+    [-webkit-overflow-scrolling:touch]
+  "
+          >
             {trendTags.map(tag => (
               <button
                 key={tag}
@@ -239,12 +254,22 @@ export default function CommandPalette({
                   setQuery(tag);
                   inputRef.current?.focus();
                 }}
-                className="px-3 py-1 rounded-full text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors"
+                className="
+        snap-start shrink-0
+        px-3 py-1 rounded-full text-xs font-bold
+        bg-white dark:bg-slate-900
+        border border-slate-200 dark:border-slate-800
+        text-slate-600 dark:text-slate-400
+        hover:border-indigo-500 dark:hover:border-indigo-400
+        transition-colors
+      "
               >
                 #{tag}
               </button>
             ))}
           </div>
+          ```
+
 
           {/* Results container */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4" data-lenis-prevent>

@@ -1,4 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
+// Calendar URL helpers — import from the timezone-aware utility instead of
+// using the old inline implementations (which were UTC-blind and hardcoded
+// a 1-hour event duration — fixed in issue #2015).
+import { getGoogleCalendarUrl, getOutlookCalendarUrl } from "../../utils/calendarUrlUtils";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -24,8 +28,8 @@ import { validate } from "../../validation";
 import { toast } from "react-toastify";
 import mockEvents from "./eventsMockData.json";
 import { pushToQueue } from "../../utils/offlineQueue";
-
 import EventConflictModal from "../../components/EventConflictModal";
+
 const MAX_NOTES_CHARS = 500;
 const MAX_DESCRIPTION_CHARS = 1000; // Define limits as needed for other text areas
 
@@ -45,65 +49,13 @@ function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
   }
 }
 
-const formatDateForGoogle = (dateStr, timeStr) => {
-  try {
-    const [year, month, day] = dateStr.split("-");
-    let [time, modifier] = timeStr.split(" ");
-    let [hours, minutes] = time.split(":");
-    
-    if (hours === "12") {
-      hours = "00";
-    }
-    if (modifier && modifier.toUpperCase() === "PM") {
-      hours = String(parseInt(hours, 10) + 12);
-    }
-    
-    const paddedHours = hours.padStart(2, "0");
-    const paddedMinutes = minutes.padStart(2, "0");
-    
-    return `${year}${month}${day}T${paddedHours}${paddedMinutes}00Z`;
-  } catch (e) {
-    return (dateStr || "").replace(/-/g, "") + "T000000Z";
-  }
-};
-
-const getGoogleCalendarUrl = (event) => {
-  if (!event) return "";
-  const start = formatDateForGoogle(event.date, event.time);
-  let end = start;
-  try {
-    const year = start.substring(0,4);
-    const month = start.substring(4,6);
-    const day = start.substring(6,8);
-    const timePart = start.substring(9,13);
-    const hr = parseInt(timePart.substring(0,2), 10);
-    const newHr = String((hr + 1) % 24).padStart(2, "0");
-    end = `${year}${month}${day}T${newHr}${timePart.substring(2,4)}00Z`;
-  } catch (e) {}
-  
-  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title || "")}&dates=${start}/${end}&details=${encodeURIComponent(event.description || "")}&location=${encodeURIComponent(event.location || "")}`;
-};
-
-const getOutlookCalendarUrl = (event) => {
-  if (!event) return "";
-  const start = formatDateForGoogle(event.date, event.time);
-  let end = start;
-  try {
-    const year = start.substring(0,4);
-    const month = start.substring(4,6);
-    const day = start.substring(6,8);
-    const timePart = start.substring(9,13);
-    const hr = parseInt(timePart.substring(0,2), 10);
-    const newHr = String((hr + 1) % 24).padStart(2, "0");
-    end = `${year}${month}${day}T${newHr}${timePart.substring(2,4)}00Z`;
-  } catch (e) {}
-
-  const formatISO = (str) => {
-    return `${str.substring(0,4)}-${str.substring(4,6)}-${str.substring(6,8)}T${str.substring(9,11)}:${str.substring(11,13)}:00`;
-  };
-
-  return `https://outlook.live.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent&subject=${encodeURIComponent(event.title || "")}&startdt=${formatISO(start)}&enddt=${formatISO(end)}&body=${encodeURIComponent(event.description || "")}&location=${encodeURIComponent(event.location || "")}`;
-};
+// NOTE: getGoogleCalendarUrl and getOutlookCalendarUrl are now imported from
+// src/utils/calendarUrlUtils.js at the top of this file. The old inline
+// implementations (formatDateForGoogle, getGoogleCalendarUrl,
+// getOutlookCalendarUrl) have been removed because they:
+//   1. Treated local event times as UTC (no timezone conversion).
+//   2. Always generated a 1-hour end time, ignoring event.durationMinutes.
+// See issue #2015 for details.
 
 const ConfettiCanvas = () => {
   const canvasRef = useRef(null);
