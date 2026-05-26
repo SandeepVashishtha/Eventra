@@ -19,7 +19,7 @@ const normalizeApiBaseUrl = (value = "") => {
   }
 };
 
-const isDevelopment = process.env.NODE_ENV === "development";
+const isDev = process.env.NODE_ENV === "development";
 
 const resolveEnvApiBaseUrl = () => {
   return normalizeApiBaseUrl(process.env.REACT_APP_API_URL || "http://localhost:8080");
@@ -53,7 +53,6 @@ const REQUEST_TIMEOUT_MS = 15_000;
 const RETRYABLE_STATUS_CODES = [502, 503, 504];
 const MAX_RETRIES = 1;
 const RETRY_DELAY_MS = 1_000;
-const isDev = isDevelopment;
 
 // ---------------------------------------------------------------------------
 // Normalized API Error
