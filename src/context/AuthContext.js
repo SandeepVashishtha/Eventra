@@ -3,6 +3,8 @@ import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from '../config/api
 import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
 import { toast } from 'react-toastify';
 import { ROLES } from '../config/roles';
+import { clearQueue } from '../utils/offlineQueue';
+
 
 const AuthContext = createContext();
 
@@ -302,6 +304,12 @@ export const AuthProvider = ({ children }) => {
     // ── Step 2: Parse the backend response ───────────────────────────────────
     const data = await res.json().catch(() => null);
 
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    clearQueue();
     if (!res.ok) {
       // The backend rejected the credential (bad token, wrong audience, etc.)
       throw new Error(
