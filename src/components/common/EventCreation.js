@@ -917,12 +917,25 @@ const EventCreation = () => {
                   {/* Preview Section */}
                   {formData.bannerPreview && (
                     <div className="rounded-lg overflow-hidden border border-indigo-200 dark:border-gray-700 shadow-md">
-                      <img
-                        loading="lazy"
-                        src={formData.bannerPreview}
-                        alt="Banner preview"
-                        className="w-full h-48 object-cover hover:scale-[1.02] transition-transform duration-300"
-                      />
+                     <img
+  loading="lazy"
+  decoding="async"
+  src={formData.bannerPreview}
+  alt="Banner preview"
+  className="
+    w-full
+    h-48
+    sm:h-56
+    md:h-64
+    object-cover
+    rounded-xl
+    hover:scale-[1.02]
+    transition-all
+    duration-300
+    bg-slate-200
+    dark:bg-slate-800
+  "
+/>
                     </div>
                   )}
                 </div>
