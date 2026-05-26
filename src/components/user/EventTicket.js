@@ -309,7 +309,7 @@ const EventTicket = ({ event, user, onClose }) => {
                       })} 
                       size={90} 
                       bgColor="transparent" 
-                      fgColor="currentColor"
+                      fgColor="#ffffff"
                       className="ud-ticket-qr"
                     />
                   </div>

@@ -877,8 +877,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
               <div className="fp-sidebar-section">
                 <div className="flex items-center justify-between mb-4">
                   <div className="fp-section-title">Element Details</div>
-                  <button 
-                    <button
+                  <button
                     onClick={handleDeleteSelected}
                     aria-label="Delete selected floor plan element"
                     className="p-1.5 text-red-400 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 rounded-lg transition-colors cursor-pointer"
