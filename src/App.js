@@ -19,6 +19,7 @@ import ReminderChecker from "./components/reminders/ReminderChecker";
 import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
 import ThemeCustomizerDrawer from "./components/common/ThemeCustomizerDrawer";
 import SessionRecovery from "./components/SessionRecovery";
+import OnboardingChecklist from "./components/user/OnboardingChecklist";
 
 import NotificationToastContainer from "./components/common/NotificationProvider";
 import { NotificationProvider } from "./context/NotificationContext";
@@ -124,6 +125,7 @@ function App() {
                 isOpen={showKeyboardModal}
                 onClose={() => setShowKeyboardModal(false)}
               />
+              <OnboardingChecklist />
 
               <main
                 className="

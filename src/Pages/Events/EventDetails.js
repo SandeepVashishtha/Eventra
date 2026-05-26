@@ -23,7 +23,9 @@ const EventDetails = () => {
     ? { ...foundEvent, status: getEventStatus(foundEvent) }
     : null;
 
-  
+  const [copied,
+setCopied] =
+useState(false);
 
   if (!event) {
     return (
@@ -40,6 +42,28 @@ const EventDetails = () => {
       </div>
     );
   }
+  const handleCopy = async () => {
+  try {
+    await navigator.clipboard.writeText(
+      window.location.href
+    );
+
+    setCopied(true);
+
+    toast.success(
+      "Event link copied!"
+    );
+
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+
+  } catch (err) {
+    toast.error(
+      "Failed to copy link"
+    );
+  }
+};
 
   const canSetReminder = isEventBookmarked(event.id) || isRegistered(event.id);
   const isRegistrationClosed = useEffect(() => {
