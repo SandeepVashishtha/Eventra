@@ -3,6 +3,8 @@ import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from '../config/api
 import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
 import { toast } from 'react-toastify';
 import { ROLES } from '../config/roles';
+import { clearQueue } from '../utils/offlineQueue';
+
 
 const AuthContext = createContext();
 
@@ -28,7 +30,7 @@ export const AuthProvider = ({ children }) => {
   const clearSession = useCallback(() => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem("token");
+    sessionStorage.removeItem("token");
     localStorage.removeItem("user");
   }, []);
 
@@ -48,7 +50,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check for existing authentication on app start
-    const storedToken = localStorage.getItem("token");
+    const storedToken = sessionStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
 
     if (storedToken && storedUser) {
@@ -170,7 +172,7 @@ export const AuthProvider = ({ children }) => {
     setToken(sessionToken);
     setUser(sessionUser);
     try {
-      localStorage.setItem("token", sessionToken);
+      sessionStorage.setItem("token", sessionToken);
       localStorage.setItem("user", JSON.stringify(sessionUser));
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -302,6 +304,12 @@ export const AuthProvider = ({ children }) => {
     // ── Step 2: Parse the backend response ───────────────────────────────────
     const data = await res.json().catch(() => null);
 
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    clearQueue();
     if (!res.ok) {
       // The backend rejected the credential (bad token, wrong audience, etc.)
       throw new Error(

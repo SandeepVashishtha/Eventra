@@ -51,7 +51,6 @@ const Navbar = ({
       <nav
         ref={navRef}
         aria-label="Primary navigation"
-        className="fixed top-0 left-0 w-full h-20 bg-white dark:bg-gray-900 border-b border-border z-[200] transition-all duration-300"
         className="sticky top-0 left-0 w-full h-20 bg-white dark:bg-gray-900 border-b border-border z-[200] transition-all duration-300"
       >
         <div
@@ -63,7 +62,6 @@ const Navbar = ({
             justify-between
           "
         >
-          
           {/* Logo */}
           <Link to="/" aria-label="Eventra home">
             <div
@@ -100,37 +98,6 @@ const Navbar = ({
               </h1>
             </div>
           </Link>
-<Link to="/">
-  <div
-    className="
-      flex
-      items-center
-      justify-center
-      gap-3
-    "
-  >
-    <img
-      src="/Eventra.png"
-      alt="Eventra Logo"
-      className="
-        h-12
-        w-auto
-        object-contain
-      "
-    />
-
-    <h1
-      className="
-        text-2xl
-        font-bold
-        text-text
-      "
-    >
-      Eventra
-    </h1>
-  </div>
-</Link>
-
 
           {/* Right Side */}
           <div className="flex items-center gap-4">
@@ -146,39 +113,6 @@ const Navbar = ({
               onClick={toggleTheme}
               aria-label={isDarkMode ? "Switch to light theme" : "Switch to dark theme"}
               aria-pressed={isDarkMode}
-              className="
-                theme-toggle
-
-                relative
-
-                flex
-                items-center
-                justify-center
-
-                w-11
-                h-11
-
-                rounded-full
-
-                bg-gray-200
-                dark:bg-gray-800
-
-                text-black
-                dark:text-white
-
-                shadow-md
-
-                hover:scale-110
-                hover:shadow-lg
-
-                transition-all
-                duration-300
-
-                focus:outline-none
-                focus:ring-2
-                focus:ring-blue-500
-              "
-              aria-label="Toggle Theme"
               className="theme-toggle relative flex items-center justify-center w-11 h-11 rounded-full bg-gray-200 dark:bg-gray-800 text-black dark:text-white shadow-md hover:scale-110 hover:shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <div className="transition-transform duration-500">

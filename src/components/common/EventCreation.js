@@ -67,7 +67,7 @@ const EventCreation = () => {
   const [currentStep, setCurrentStep] = useState("form");
 
   const { handleSubmit: submitEventForm, isSubmitting, error: submitError, success: submitSuccess } = useFormSubmit(async (eventData) => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     if (!token) {
       throw new Error("Authentication required. Please log in and try again.");
     }

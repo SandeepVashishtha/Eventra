@@ -68,30 +68,7 @@ const setBodyScrollStyles = (top) => {
   });
 };
 
-const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => (
-  <button
-    type="button"
-    onClick={toggleTheme}
-    data-testid="navbar-theme-toggle"
-    aria-label={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-    title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-    className={isMobile
-      ? "navbar-theme-toggle flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 font-medium text-sm"
-      : "navbar-theme-toggle flex items-center gap-1.5 px-2.5 py-1 mr-2 text-xs font-medium border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
-    }
-  >
-    {isDarkMode ? (
-      <Sun aria-hidden="true" className={isMobile ? "w-5 h-5 text-amber-500" : "w-4 h-4 text-amber-500"} />
-    ) : (
-      <Moon aria-hidden="true" className={isMobile ? "w-5 h-5 text-indigo-500" : "w-4 h-4 text-indigo-500"} />
-    )}
-    <span>{isMobile
-      ? (isDarkMode ? "Light Mode" : "Dark Mode")
-      : (isDarkMode ? "LIGHT" : "DARK")
-    }</span>
-  </button>
-);
-
+const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile, setIsCustomizerOpen }) => {
   if (isMobile) {
     return (
       <div className="flex flex-col gap-2.5 w-full">
@@ -109,11 +86,11 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => (
         </motion.button>
         <motion.button
           whileTap={{ scale: 0.95 }}
-          onClick={() => setIsCustomizerOpen(true)}
+          onClick={() => setIsCustomizerOpen && setIsCustomizerOpen(true)}
           className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-pink-500 text-white font-semibold border-none shadow-md hover:shadow-lg transition-all cursor-pointer"
         >
           <Palette className="w-5 h-5" />
-          <span>Theme Customizer</span>
+          <span>THEME Customizer</span>
         </motion.button>
       </div>
     );
@@ -121,19 +98,11 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => (
   return (
     <div className="flex items-center gap-1">
       <motion.button
-         whileHover={{ scale: 1.05 }}
-  whileTap={{ scale: 0.95 }}
-  onClick={toggleTheme}
-  title={
-    isDarkMode
-      ? "Switch to Light Mode"
-      : "Switch to Dark Mode"
-  }
-  aria-label={
-    isDarkMode
-      ? "Switch to Light Mode"
-      : "Switch to Dark Mode"
-  }
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={toggleTheme}
+        title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        aria-label={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
       >
         <motion.span
           key={isDarkMode ? "sun" : "moon"}
@@ -150,7 +119,7 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => (
       <motion.button
         whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.92 }}
-        onClick={() => setIsCustomizerOpen(true)}
+        onClick={() => setIsCustomizerOpen && setIsCustomizerOpen(true)}
         title="Open Theme Customizer"
         className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 focus:outline-none bg-gradient-to-r from-indigo-500/10 to-pink-500/10 hover:from-indigo-500/20 hover:to-pink-500/20 border border-indigo-200/50 dark:border-indigo-800/40 hover:shadow-[0_0_12px_rgba(236,72,153,0.3)] text-indigo-550 dark:text-indigo-400 cursor-pointer"
       >
@@ -995,6 +964,8 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         onClose={() => setShowCommandPalette(false)}
         isDarkMode={isDarkMode}
         toggleTheme={toggleTheme}
+        cursorEnabled={cursorEnabled}
+        toggleCursor={toggleCursor}
         isAuthenticated={isAuthenticated}
         handleLogoutClick={handleLogoutClick}
       />

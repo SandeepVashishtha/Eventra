@@ -128,6 +128,11 @@ const Signup = () => {
       return;
     }
 
+    if (!formData.firstName.trim() || !formData.lastName.trim() || firstNameError || lastNameError) {
+      setError("Please fix all name errors before submitting.");
+      return;
+    }
+
     setLoading(true);
     setError("");
 

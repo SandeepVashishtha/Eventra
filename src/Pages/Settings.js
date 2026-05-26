@@ -330,17 +330,34 @@ const Settings = () => {
             <div>
               <h2 className="text-lg font-semibold">Account Settings</h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                Quick access to profile settings and privacy documentation.
+                Quick access to profile settings, checklist reset, and privacy documentation.
               </p>
             </div>
-            <Link
-              to="/profile"
-              aria-label="Go to Edit Profile page"
-              className="inline-flex items-center gap-2 rounded-2xl bg-black text-white px-4 py-3 text-sm font-medium hover:bg-slate-900 transition"
-            >
-              Edit Profile
-              <ArrowRight className="w-4 h-4" aria-hidden="true" />
-            </Link>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.removeItem("eventra_onboarding_dismissed");
+                  localStorage.removeItem("eventra_onboarding_completed_fired");
+                  localStorage.removeItem("eventra_sandbox_executed");
+                  localStorage.removeItem("eventra_ai_recommendation_generated");
+                  toast.success("Onboarding checklist reset successfully!");
+                  // Dispatch custom event to let widget know immediately if settings resets it
+                  window.dispatchEvent(new CustomEvent("eventraOnboardingReset"));
+                }}
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-sm font-medium hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition cursor-pointer text-slate-800 dark:text-slate-100"
+              >
+                Reset Onboarding
+              </button>
+              <Link
+                to="/profile"
+                aria-label="Go to Edit Profile page"
+                className="inline-flex items-center gap-2 rounded-2xl bg-black text-white px-4 py-3 text-sm font-medium hover:bg-slate-900 transition"
+              >
+                Edit Profile
+                <ArrowRight className="w-4 h-4" aria-hidden="true" />
+              </Link>
+            </div>
           </div>
         </div>
       </div>

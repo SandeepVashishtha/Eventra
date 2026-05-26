@@ -22,7 +22,15 @@ const normalizeApiBaseUrl = (value = "") => {
 const isDev = process.env.NODE_ENV === "development";
 
 const resolveEnvApiBaseUrl = () => {
-  return normalizeApiBaseUrl(process.env.REACT_APP_API_URL || "http://localhost:8080");
+  const envUrl = process.env.REACT_APP_API_URL;
+  if (envUrl) {
+    return normalizeApiBaseUrl(envUrl);
+  }
+  if (process.env.NODE_ENV === "production") {
+    console.warn("REACT_APP_API_URL environment variable is missing in production. Defaulting to relative API requests.");
+    return "";
+  }
+  return "http://localhost:8080";
 };
 
 export const API_BASE_URL = resolveEnvApiBaseUrl();
@@ -98,7 +106,7 @@ const normalizeRequestConfig = (configOrToken = {}, maybeToken) => {
       ? configOrToken
       : typeof maybeToken === "string"
         ? maybeToken
-        : localStorage.getItem("token") || "";
+        : sessionStorage.getItem("token") || "";
 
   if (token) {
     config.headers = {
@@ -220,6 +228,11 @@ export const API_ENDPOINTS = {
     DETAIL: (id) => buildApiUrl(`/api/projects/${id}`),
     CATEGORIES: buildApiUrl("/api/projects/categories"),
     SUBMIT: buildApiUrl("/api/projects"),
+  },
+  HACKATHONS: {
+    LIST: buildApiUrl("/api/hackathons"),
+    DETAIL: (id) => buildApiUrl(`/api/hackathons/${id}`),
+    HOST: buildApiUrl("/api/hackathons"),
   },
   NOTIFICATIONS: {
     BASE: buildApiUrl("/api/notifications"),

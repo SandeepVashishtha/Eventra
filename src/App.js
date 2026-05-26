@@ -19,6 +19,7 @@ import ReminderChecker from "./components/reminders/ReminderChecker";
 import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
 import ThemeCustomizerDrawer from "./components/common/ThemeCustomizerDrawer";
 import SessionRecovery from "./components/SessionRecovery";
+import OnboardingChecklist from "./components/user/OnboardingChecklist";
 
 import NotificationToastContainer from "./components/common/NotificationProvider";
 import { NotificationProvider } from "./context/NotificationContext";
@@ -51,6 +52,7 @@ function App() {
   useKeyboardShortcuts({
     onOpenHelp: () => setShowKeyboardModal(true),
     onCloseHelp: () => setShowKeyboardModal(false),
+    isOpen: showKeyboardModal,
   });
 
   const toggleCursor = () => {
@@ -108,78 +110,77 @@ function App() {
   }, []); // <--- The missing bracket and closure are fixed!
 
   return (
-    <GlobalErrorBoundary>
-      <AuthProvider>
-        <NotificationProvider>
-          <MyEventsProvider>
-            <SessionRecoveryProvider>
-              <ReminderChecker />
-              <NotificationToastContainer />
-              <OfflineSyncManager />
+    <AuthProvider>
+      <NotificationProvider>
+        <MyEventsProvider>
+          <SessionRecoveryProvider>
+            <ReminderChecker />
+            <NotificationToastContainer />
+            <OfflineSyncManager />
 
-              <div className="App">
-                <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
-                <OfflineBanner />
-                <OfflineConflictModal />
-                <KeyboardShortcutsModal
-                  isOpen={showKeyboardModal}
-                  onClose={() => setShowKeyboardModal(false)}
-                />
+            <div className="App">
+              <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+              <OfflineBanner />
+              <OfflineConflictModal />
+              <KeyboardShortcutsModal
+                isOpen={showKeyboardModal}
+                onClose={() => setShowKeyboardModal(false)}
+              />
+              <OnboardingChecklist />
 
-                <main
-                  className="
-                    relative
-                    z-10
-                    min-h-[85vh]
-                    bg-white
-                    dark:bg-slate-950
-                    text-black
-                    dark:text-white
-                    transition-colors
-                    duration-300
-                  "
-                >
-                  <PageTransition>
-                    <Suspense
-                      fallback={
-                        <div className="flex items-center justify-center min-h-screen">
-                          Loading...
-                        </div>
-                      }
-                    >
-                      <Routes>
-                        <Route path="/register/:id" element={<RegistrationPage />} />
+              <main
+                className="
+                  relative
+                  z-10
+                  min-h-[85vh]
+                  bg-white
+                  dark:bg-slate-950
+                  text-black
+                  dark:text-white
+                  transition-colors
+                  duration-300
+                "
+              >
+                <PageTransition>
+                  <Suspense
+                    fallback={
+                      <div className="flex items-center justify-center min-h-screen">
+                        Loading...
+                      </div>
+                    }
+                  >
+                    <Routes>
+                      <Route path="/register/:id" element={<RegistrationPage />} />
 
-                        <Route
-                          path="/event-recommendation"
-                          element={<EventRecommendation />}
-                        />
+                      <Route
+                        path="/event-recommendation"
+                        element={<EventRecommendation />}
+                      />
 
-                        <Route
-                          path="*"
-                          element={<AppRoutes />}
-                        />
-                      </Routes>
-                    </Suspense>
-                  </PageTransition>
-                </main>
+                      <Route
+                        path="*"
+                        element={<AppRoutes />}
+                      />
+                    </Routes>
+                  </Suspense>
+                </PageTransition>
+              </main>
 
-                <ScrollToTop />
-                <Suspense fallback={null}>
-                  <Chatbot />
-                  <Footer />
-                </Suspense>
-                <BackToTopButton />
-                <FeedbackButton />
-                <ThemeCustomizerDrawer />
-                <SessionRecovery />
-                <FluidCursor enabled={cursorEnabled} />
-              </div>
-            </SessionRecoveryProvider>
-          </MyEventsProvider>
-        </NotificationProvider>
-      </AuthProvider>
-    </GlobalErrorBoundary>
+              <ScrollToTop />
+              <Suspense fallback={null}>
+                <Chatbot />
+                <Footer />
+              </Suspense>
+              <BackToTopButton />
+              <FeedbackButton />
+              <ThemeCustomizerDrawer />
+              <SessionRecovery />
+              <FluidCursor enabled={cursorEnabled} />
+            </div>
+          </SessionRecoveryProvider>
+        </MyEventsProvider>
+      </NotificationProvider>
+    </AuthProvider>
   );
 }
 
