@@ -66,13 +66,13 @@ export default function CommandPalette({
       type: "action",
       icon: MousePointer
     },
-    {
-      name: "Sign Out / Logout of Account",
-      action: "logout",
-      category: "System Actions",
-      type: "action",
-      icon: LogOut
-    },
+    ...(isAuthenticated ? [{
+  name: "Sign Out / Logout of Account",
+  action: "logout",
+  category: "System Actions",
+  type: "action",
+  icon: LogOut
+}] : []),
 
     // ── Sample Events ────────────────────────────────────────────────────────
     { name: "Web3 Buildathon 2026", href: "/hackathons", category: "Hackathons", type: "nav", icon: Sparkles },
@@ -80,7 +80,7 @@ export default function CommandPalette({
     { name: "React Advanced Core Workshop", href: "/events", category: "Events", type: "nav", icon: Calendar },
     { name: "Next.js Fullstack Sprint", href: "/events", category: "Events", type: "nav", icon: Calendar },
     { name: "Global Open Source Hackfest", href: "/hackathons", category: "Hackathons", type: "nav", icon: Sparkles }
-  ], [isDarkMode, cursorEnabled]);
+  ], [isDarkMode, cursorEnabled, isAuthenticated]);
 
   // Fuzzy match query ranking helper
   const getFuzzyScore = (text, queryStr) => {
