@@ -789,70 +789,8 @@ export default function LeaderBoard() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-500">
-                <caption className="sr-only">
-                  GSSoC 2026 contributors ranked by contribution points and pull requests.
-                </caption>
-                <thead className="bg-gray-50 dark:bg-gray-900">
-                  <tr>
-                    <th scope="col" className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Rank
-                    </th>
-                    <th scope="col" className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Contributor
-                    </th>
-                    <th scope="col" className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Points
-                    </th>
-                    <th scope="col" className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      PRs
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-gradient-to-b from-indigo-50 to-white dark:from-gray-900  dark:to-black  divide-y divide-gray-400 dark:divide-gray-500">
-                  {currentContributors.map((c) => {
-                    const rank = ranksMap[c.username];
-                    return (
-                      <tr
-                        key={c.username}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 border-b border-gray-100 dark:border-gray-700"
-                      >
-                        <th scope="row" className="px-6 py-4 whitespace-nowrap text-left">
-                          <span
-                            // UPDATED: Rank badges
-                            className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-medium ${
-                              rank === 1
-                                ? "bg-yellow-500 text-white"
-                                : rank === 2
-                                  ? "bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200"
-                                  : rank === 3
-                                    ? "bg-amber-800 text-white"
-                                    : "bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300"
-                            }`}
-                          >
-                            {rank}
-                          </span>
-                        </th>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-<img
-                                loading="lazy"
-                                decoding="async"
-                                width="40"
-                                height="40"
-                                className="h-10 w-10 rounded-full border-2 border-indigo-200 dark:border-gray-600"
-                                src={c.avatar}
-                                alt={`${c.username} GitHub avatar`}
-                              />
-                            </div>
-                            <div className="ml-4">
-                              <a
-                                href={c.profile}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
               <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
+
                 <thead className="bg-slate-50 dark:bg-slate-900/50">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -987,26 +925,6 @@ export default function LeaderBoard() {
 
               {/* PAGINATION BAR */}
               {totalPages > 1 && (
-                <div className="flex justify-center items-center space-x-2 py-4 bg-white dark:bg-black/80">
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                    disabled={currentPage === 1}
-                    aria-label="Go to previous leaderboard page"
-                    className="px-3 py-1 text-sm rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-50 flex items-center bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                  >
-                    <FaChevronLeft />
-                  </button>
-                  {[...Array(totalPages)].map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setCurrentPage(i + 1)}
-                      aria-label={`Go to leaderboard page ${i + 1}`}
-                      aria-current={currentPage === i + 1 ? "page" : undefined}
-                      className={`px-3 py-1 text-sm rounded-lg border ${
-                        currentPage === i + 1
-                          ? "bg-indigo-500 text-white border-indigo-500"
-                          : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
-                      }`}
                 <div className="flex justify-between items-center py-4 px-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
                   <span className="text-xs font-medium text-slate-500">
                     Showing page {currentPage} of {totalPages}
@@ -1020,18 +938,6 @@ export default function LeaderBoard() {
                     >
                       <FaChevronLeft className="w-3 h-3" />
                     </button>
-                  ))}
-                  <button
-                    onClick={() =>
-                      setCurrentPage((p) => Math.min(p + 1, totalPages))
-                    }
-                    disabled={currentPage === totalPages}
-                    aria-label="Go to next leaderboard page"
-                    className="px-3 py-1 text-sm rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-50 flex items-center bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                  >
-                    <FaChevronRight />
-                  </button>
-                    
                     <button
                       onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                       disabled={currentPage === totalPages}
@@ -1042,8 +948,10 @@ export default function LeaderBoard() {
                   </div>
                 </div>
               )}
+
             </div>
           )}
+        </div>
 
           {/* Table footer: last updated + live connection badge */}
           <div className="bg-gray-50 dark:bg-black/70 px-6 py-2 flex items-center justify-between border-t border-gray-200 dark:border-gray-700">
