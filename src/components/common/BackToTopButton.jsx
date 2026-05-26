@@ -39,6 +39,7 @@ const BackToTopButton = () => {
     <button
       onClick={scrollToTop}
       aria-label="Back to top"
+      title="Back to top"
       className={`
         fixed
         bottom-6
@@ -53,6 +54,11 @@ const BackToTopButton = () => {
         hover:shadow-xl
         transition-all
         duration-300
+        focus:outline-none
+        focus:ring-2
+        focus:ring-indigo-500
+        focus:ring-offset-2
+        active:scale-95
         ${
           visible
             ? "opacity-100 translate-y-0"
