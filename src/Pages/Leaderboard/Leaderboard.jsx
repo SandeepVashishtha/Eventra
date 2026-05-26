@@ -9,7 +9,9 @@ import {
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
 import StyledDropdown from "../../components/StyledDropdown";
-import { LeaderboardTableSkeleton } from "../../components/common/SkeletonLoaders";
+import SkeletonLeaderboard, {
+  LeaderboardStatCardSkeleton,
+} from "../../components/common/SkeletonLeaderboard";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 // Repository constant — update if the leaderboard should point to another repo
@@ -306,6 +308,9 @@ export default function LeaderBoard() {
         {/* stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Contributors Card */}
+          {loading ? (
+            <LeaderboardStatCardSkeleton />
+          ) : (
           <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
             <div className="flex items-center">
               <div className="p-3 rounded-xl mr-4 bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
@@ -316,12 +321,16 @@ export default function LeaderBoard() {
                   Contributors
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {loading ? "..." : stats.totalContributors}
+                  {stats.totalContributors}
                 </p>
               </div>
             </div>
           </div>
+          )}
           {/* Pull Requests Card */}
+          {loading ? (
+            <LeaderboardStatCardSkeleton />
+          ) : (
           <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
             <div className="flex items-center">
               <div className="p-3 rounded-xl mr-4 bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400">
@@ -332,12 +341,16 @@ export default function LeaderBoard() {
                   Pull Requests
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {loading ? "..." : stats.flooredTotalPRs}
+                  {stats.flooredTotalPRs}
                 </p>
               </div>
             </div>
           </div>
+          )}
           {/* Total Points Card */}
+          {loading ? (
+            <LeaderboardStatCardSkeleton />
+          ) : (
           <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
             <div className="flex items-center">
               <div className="p-3 rounded-xl mr-4 bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-400">
@@ -348,17 +361,18 @@ export default function LeaderBoard() {
                   Total Points
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {loading ? "..." : stats.flooredTotalPoints}
+                  {stats.flooredTotalPoints}
                 </p>
               </div>
             </div>
           </div>
+          )}
         </div>
 
         {/* UPDATED: Table container */}
         <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl shadow-lg overflow-hidden">
           {loading ? (
-            <LeaderboardTableSkeleton rows={CONTRIBUTORS_PER_PAGE} />
+            <SkeletonLeaderboard rows={CONTRIBUTORS_PER_PAGE} />
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-500">

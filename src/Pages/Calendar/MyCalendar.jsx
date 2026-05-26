@@ -17,9 +17,10 @@ import {
   generateGoogleCalendarLink,
   generateOutlookLink
 } from "../../utils/calendarExporter";
+import SkeletonCalendar from "../../components/common/SkeletonCalendar";
 
 const MyCalendar = () => {
-  const { myEvents } = useMyEvents();
+  const { myEvents, loading } = useMyEvents();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState("grid"); // "grid" or "list"
@@ -131,7 +132,12 @@ const MyCalendar = () => {
           </div>
         </div>
 
-        {viewMode === "grid" ? (
+        {loading ? (
+          <div role="status" aria-live="polite" aria-label="Loading calendar">
+            <span className="sr-only">Loading calendar registrations...</span>
+            <SkeletonCalendar />
+          </div>
+        ) : viewMode === "grid" ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
             {/* GRID CALENDAR (COLSPAN: 2) */}
