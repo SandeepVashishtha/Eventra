@@ -30,6 +30,9 @@ const Hero = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [statsReady, setStatsReady] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(
+    typeof window !== "undefined" ? window.innerWidth <= 420 : false
+  );
   const [isDark, setIsDark] = useState(
     document.documentElement.classList.contains("dark")
   );
@@ -62,6 +65,12 @@ const Hero = () => {
   }, [controls]);
 
   useEffect(() => {
+    const onResize = () => setIsMobileView(window.innerWidth <= 420);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
     setStatsReady(true);
   }, []);
 
@@ -76,7 +85,6 @@ const Hero = () => {
     category: item.category,
     author: item.author,
     organizer: item.organizer,
-    type,
     searchType,
   });
 
@@ -212,11 +220,11 @@ border-b border-gray-100 dark:border-slate-900">
           <MotionConfig reducedMotion="never">
             {/* Headline */}
             <motion.h1
-              className="mx-auto max-w-4xl mt-6 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-6 leading-tight tracking-tight text-gray-900 dark:text-white px-2 sm:px-0"
+              className="mx-auto max-w-4xl mt-6 flex flex-col items-center gap-5 sm:gap-6 text-lg sm:text-xl md:text-4xl lg:text-5xl font-black mb-6 leading-relaxed tracking-tight text-gray-900 dark:text-white px-2 sm:px-0 text-center"
               style={{ fontFamily: '"Inter", sans-serif' }}
             >
               <motion.span
-                className="block text-gray-900 dark:text-gray-400 mb-2 md:mb-0"
+                className="block text-gray-900 dark:text-gray-400"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
@@ -224,25 +232,26 @@ border-b border-gray-100 dark:border-slate-900">
                 <RespawningText texts={["Discover & Join", "Innovate & Create", "Learn & Grow"]} />
               </motion.span>
 
-              <div className="relative mx-auto h-14 sm:h-24 md:h-28 lg:h-32 overflow-hidden flex justify-center items-center max-w-full">
+              {/* Static phrase for smallest screens (no motion) */}
+              <span className="block sm:hidden text-indigo-600 dark:text-indigo-500 font-extrabold drop-shadow-sm mt-3 text-lg text-center">
+                {phrases[index]}
+              </span>
+
+              <div className="relative mx-auto w-full min-h-[7.5rem] sm:min-h-[9rem] md:min-h-[10rem] lg:min-h-[11rem] overflow-hidden flex justify-center items-center max-w-full px-1 mt-2">
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={index}
-                    className="block mt-2 text-gray-900 dark:text-white mb-4 pb-2 whitespace-normal text-center px-1"
-                    initial={{ opacity: 0, y: 40 }}
-                    animate={{
-                      opacity: 1,
-                      y: 0,
-                      transition: { duration: 0.8, ease: "easeOut" },
-                    }}
-                    exit={{
-                      opacity: 0,
-                      y: -40,
-                      transition: { duration: 0.5, ease: "easeIn" },
-                    }}
+                    className="hidden sm:block text-gray-900 dark:text-white whitespace-normal text-center px-1 leading-snug mt-3 sm:mt-4"
+                    initial={isMobileView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+                    animate={
+                      isMobileView
+                        ? { opacity: 1, y: 0 }
+                        : { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } }
+                    }
+                    exit={isMobileView ? { opacity: 0 } : { opacity: 0, y: -40, transition: { duration: 0.5, ease: "easeIn" } }}
                   >
-                    <span className="text-indigo-600 dark:text-indigo-500 font-extrabold drop-shadow-sm">
-                    {phrases[index]}
+                    <span className="text-indigo-600 dark:text-indigo-500 font-extrabold drop-shadow-sm text-2xl sm:text-3xl md:text-5xl lg:text-6xl">
+                      {phrases[index]}
                     </span>
                   </motion.span>
                 </AnimatePresence>

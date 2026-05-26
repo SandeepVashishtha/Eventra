@@ -130,36 +130,27 @@ function App() {
                   transition-colors
                   duration-300
                 "
+              >
+                <PageTransition>
+                  <Suspense
+                    fallback={
+                      <div className="flex items-center justify-center min-h-screen">
+                        Loading...
+                      </div>
+                    }
+                  >
+                    <Routes>
+                      <Route path="/register/:id" element={<RegistrationPage />} />
 
-              <PageTransition>
-  <Suspense
-    fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        Loading...
-      </div>
-    }
-  >
-    <Routes>
+                      <Route
+                        path="/event-recommendation"
+                        element={<EventRecommendation />}
+                      />
 
-      <Route
-        path="/register/:id"
-        element={<RegistrationPage />}
-      />
-
-      <Route
-        path="/event-recommendation"
-        element={<EventRecommendation />}
-      />
-
-      <Route
-        path="*"
-        element={<AppRoutes />}
-      />
-
-    </Routes>
-  </Suspense>
-</PageTransition>
-
+                      <Route path="*" element={<AppRoutes />} />
+                    </Routes>
+                  </Suspense>
+                </PageTransition>
               </main>
 
               <ScrollToTop />
