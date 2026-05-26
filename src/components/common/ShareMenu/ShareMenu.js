@@ -127,14 +127,23 @@ const ShareMenu = ({
         setIsOpen(false);
       }
     };
+
+    const handleEscapeKey = (event) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+        buttonRef.current?.focus();
+      }
+    };
     
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscapeKey);
       window.addEventListener('resize', handleResize);
     }
     
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscapeKey);
       window.removeEventListener('resize', handleResize);
     };
   }, [isOpen, menuRef]);
@@ -155,16 +164,21 @@ const ShareMenu = ({
   return (
     <div className={`relative inline-block z-[200] share-menu-container ${className}`} ref={menuRef}>
       {/* Share Button */}
-      <div className="cursor-pointer" onClick={toggleMenu} ref={buttonRef}>
+      <button
+        type="button"
+        className={`cursor-pointer ${buttonClassName}`}
+        onClick={toggleMenu}
+        ref={buttonRef}
+        aria-label={isOpen ? 'Close sharing options' : 'Open sharing options'}
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
+      >
         {children || (
-          <button 
-            className={`p-2.5 rounded-full shadow-sm hover:shadow-md active:shadow-inner flex items-center justify-center bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 transition-all ${buttonClassName}`}
-            aria-label="Share"
-          >
-            <Share2 className="w-4 h-4" />
-          </button>
+          <span className="p-2.5 rounded-full shadow-sm hover:shadow-md active:shadow-inner flex items-center justify-center bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 transition-all">
+            <Share2 className="w-4 h-4" aria-hidden="true" />
+          </span>
         )}
-      </div>
+      </button>
       
       <AnimatePresence>
         {isOpen && (
@@ -174,12 +188,15 @@ const ShareMenu = ({
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.15 }}
             className={`share-menu-dropdown absolute z-[9999] ${positionClasses[currentPosition]} shadow-xl rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 ${menuClassName}`}
+            role="menu"
+            aria-label="Sharing options"
           >
             <div className="py-2 w-64">
               {/* Native System Share (Only shows if browser supports it) */}
               {navigator.share && (
                 <button
                 onClick={() => handleShare('system')}
+                role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-800"
                 >
                   <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
@@ -194,6 +211,7 @@ const ShareMenu = ({
               {/* Copy Link Button */}
               <button
                 onClick={handleCopyLink}
+                role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
@@ -211,6 +229,7 @@ const ShareMenu = ({
               {/* Email */}
               <button
                 onClick={() => handleShare('email')}
+                role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
@@ -222,6 +241,7 @@ const ShareMenu = ({
               {/* WhatsApp */}
               <button
                 onClick={() => handleShare('whatsapp')}
+                role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -233,6 +253,7 @@ const ShareMenu = ({
               {/* Twitter/X */}
               <button
                 onClick={() => handleShare('twitter')}
+                role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-black dark:bg-gray-700 flex items-center justify-center">
@@ -247,6 +268,7 @@ const ShareMenu = ({
               {/* Facebook */}
               <button
                 onClick={() => handleShare('facebook')}
+                role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
@@ -258,6 +280,7 @@ const ShareMenu = ({
               {/* LinkedIn */}
               <button
                 onClick={() => handleShare('linkedin')}
+                role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
@@ -269,6 +292,7 @@ const ShareMenu = ({
               {/* Telegram */}
               <button
                 onClick={() => handleShare('telegram')}
+                role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">

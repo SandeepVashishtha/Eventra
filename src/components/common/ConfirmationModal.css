@@ -64,6 +64,11 @@
   transition: all 0.2s ease;
 }
 
+.confirmation-modal-btn:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+}
+
 .confirmation-modal-btn-cancel {
   background: #e5e7eb;
   color: #111827;
