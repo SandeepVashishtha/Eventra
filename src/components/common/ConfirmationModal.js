@@ -52,6 +52,16 @@ const ConfirmationModal = ({
     };
   }, [isOpen, onClose]);
 
+  useEffect(() => {
+  document.body.style.overflow =
+    "hidden";
+
+  return () => {
+    document.body.style.overflow =
+      "";
+  };
+}, []);
+
   if (!isOpen) return null;
 
   const handleOverlayClick = (e) => {
@@ -59,34 +69,6 @@ const ConfirmationModal = ({
       onClose();
     }
   };
-  useEffect(() => {
-  document.body.style.overflow =
-    "hidden";
-
-  return () => {
-    document.body.style.overflow =
-      "auto";
-  };
-}, []);
-useEffect(() => {
-  const handleKeyDown =
-    (e) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
-    };
-
-  window.addEventListener(
-    "keydown",
-    handleKeyDown
-  );
-
-  return () =>
-    window.removeEventListener(
-      "keydown",
-      handleKeyDown
-    );
-}, [onClose]);
 
   return (
     <div
