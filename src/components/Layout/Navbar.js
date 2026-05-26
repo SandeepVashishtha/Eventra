@@ -613,13 +613,15 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
 const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   const location = useLocation();
   return (
-    <div className="hidden lg:flex items-center justify-center flex-1 min-w-0 pl-6">
-      <NavList 
-        location={location} 
-        openDropdown={openDropdown} 
-        onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)} 
-        isMobile={false} 
-      />
+    <div className="hidden lg:flex items-center flex-1 min-w-0 pl-4 overflow-x-auto navbar-links-scroll">
+      <div className="flex items-center gap-0.5 flex-nowrap w-max">
+        <NavList 
+          location={location} 
+          openDropdown={openDropdown} 
+          onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)} 
+          isMobile={false} 
+        />
+      </div>
     </div>
   );
 };
@@ -845,7 +847,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       >
         <div className="neon-navbar-border"></div>
 
-        <div className="max-w-screen-2xl mx-auto flex items-center justify-between min-h-[68px] px-4 md:px-6 xl:px-10 gap-4 w-full overflow-visible">
+        <div className="max-w-screen-2xl mx-auto flex items-center justify-between min-h-[68px] px-4 md:px-6 xl:px-10 gap-2 w-full">
           
           {/* Logo */}
           <Link
