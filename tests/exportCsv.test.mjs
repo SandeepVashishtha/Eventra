@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 
 let blobContent = "";
 let clicked = false;
+let revokedUrl = "";
 
 globalThis.Blob = class {
   constructor(parts) {
@@ -14,7 +15,14 @@ globalThis.window = {
     createObjectURL() {
       return "blob:csv";
     },
+    revokeObjectURL(url) {
+      revokedUrl = url;
+    },
   },
+};
+
+globalThis.setTimeout = (callback) => {
+  callback();
 };
 
 globalThis.document = {
@@ -53,6 +61,7 @@ exportAttendeesToCSV([
 ]);
 
 assert.equal(clicked, true);
+assert.equal(revokedUrl, "blob:csv");
 assert.ok(blobContent.includes(`"'=HYPERLINK(""http://evil.com"",""click"")"`));
 assert.ok(blobContent.includes(`"'+user""quote@example.com"`));
 assert.ok(blobContent.includes(`"'-2026-05-26"`));
