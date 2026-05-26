@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import ConfirmationModal from "../common/ConfirmationModal";
 import { 
   Plus, Minus, Trash2, Save, RotateCcw, 
   Move, Grid, Users, Layout, MapPin, Minimize2,
@@ -6,7 +7,8 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import "./FloorPlanDesigner.css";
-
+const [selectedId, setSelectedId] = useState(null);
+const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 // Preset layouts
 const PRESETS = {
   empty: [],
@@ -279,11 +281,18 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
   };
 
   const handleDeleteSelected = () => {
-    if (selectedId) {
-      setElements(elements.filter(el => el.id !== selectedId));
-      setSelectedId(null);
-    }
-  };
+  setIsDeleteModalOpen(true);
+};
+
+const confirmDeleteSelected = () => {
+  if (selectedId) {
+    setElements(elements.filter(el => el.id !== selectedId));
+    setSelectedId(null);
+    toast.success("Element deleted successfully!");
+  }
+
+  setIsDeleteModalOpen(false);
+};
 
   const updateSelectedElement = (key, value) => {
     setElements(elements.map(el => {
@@ -1020,6 +1029,15 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
           )}
         </div>
       </div>
+      <ConfirmationModal
+  isOpen={isDeleteModalOpen}
+  onClose={() => setIsDeleteModalOpen(false)}
+  onConfirm={confirmDeleteSelected}
+  title="Delete Element"
+  message="Are you sure you want to delete this floor plan element? This action cannot be undone."
+  confirmText="Delete"
+  cancelText="Cancel"
+/>
     </div>
   );
 };
