@@ -9,6 +9,7 @@ import {
   FaMedal,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import { ContributorCardSkeleton } from "./common/SkeletonLoaders";
 
 // GitHub repo
@@ -74,6 +75,7 @@ const cacheContributors = (data) => {
 };
 
 const Contributors = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -190,11 +192,11 @@ const Contributors = () => {
   // Filter contributors based on search term
   const filteredContributors = contributors.filter(
     (c) =>
-      c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.login?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.role?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.company?.toLowerCase().includes(searchTerm.toLowerCase()),
+      (c.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.login || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.role || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.location || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.company || "").toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   // UPDATED: Loading skeleton grid
@@ -252,7 +254,7 @@ const Contributors = () => {
           style={{ fontFamily: '"Anton", sans-serif' }}
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" }}
         >
           🌟 Our Amazing {/* UPDATED: Gradient text for dark mode */}
           <span className="text-black dark:text-white animate-pulse">

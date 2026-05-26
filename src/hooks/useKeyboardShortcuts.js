@@ -18,22 +18,27 @@ const useKeyboardShortcuts = ({
 
       if (isTyping) return;
 
+      // Safe normalized key
+      const key = String(e?.key || "").toLowerCase();
+
+      if (!key) return;
+
       // Open modal
-      if (e.shiftKey && e.key === "?") {
+      if (e.shiftKey && key === "?") {
         e.preventDefault();
-        onOpenHelp();
+        onOpenHelp?.();
         return;
       }
 
       // Close modal
-      if (e.key === "Escape") {
+      if (key === "escape") {
         e.preventDefault();
-        onCloseHelp();
+        onCloseHelp?.();
         keyBuffer.current = [];
         return;
       }
 
-      keyBuffer.current.push(e.key.toLowerCase());
+      keyBuffer.current.push(key);
 
       if (keyBuffer.current.length > 2) {
         keyBuffer.current.shift();

@@ -7,11 +7,62 @@ import ProjectCard from "./ProjectCard";
 import ProjectCTA from "./ProjectCTA";
 
 import mockProjects from "./mockProjectsData.json";
-
-
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
-import ModernSearchInput from "../../components/common/ModernSearchInput";
-import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
+
+
+// Modern custom styled search input
+const ModernSearchInput = ({ value, onChange, placeholder }) => (
+  <div className="relative flex items-center w-full">
+    <FiSearch className="absolute left-4 text-gray-400 dark:text-gray-500 w-5 h-5 pointer-events-none" />
+    <input
+      type="text"
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      className="w-full pl-12 pr-10 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black dark:focus:border-white transition-all shadow-sm"
+    />
+    {value && (
+      <button
+        onClick={() => onChange({ target: { value: "" } })}
+        className="absolute right-4 text-gray-400 dark:text-gray-500 hover:text-black dark:hover:text-white transition-colors"
+      >
+        <FiX className="w-4 h-4" />
+      </button>
+    )}
+  </div>
+);
+
+// Skeleton loader for project cards while data is loading
+const ProjectCardSkeleton = () => (
+  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden animate-pulse">
+    <div className="h-40 bg-gray-100 dark:bg-gray-700"></div>
+    <div className="p-6">
+      <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded w-3/4 mb-4"></div>
+      <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-full mb-2"></div>
+      <div className="h-4 w-5/6 bg-gray-100 dark:bg-gray-600 rounded w-5/6 mb-4"></div>
+      <div className="flex flex-wrap gap-2 mb-4">
+        <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-16"></div>
+        <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-24"></div>
+      </div>
+      <div className="flex items-center justify-between mb-4">
+        <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700"></div>
+        <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-1/3"></div>
+      </div>
+      <div className="flex flex-wrap gap-2 mb-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-16"></div>
+        ))}
+      </div>
+      <div className="flex items-center justify-between mt-4">
+        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg w-1/3"></div>
+        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg w-1/3"></div>
+      </div>
+    </div>
+  </div>
+);
+
+// import ModernSearchInput from "../../components/common/ModernSearchInput";
+
 
 const ProjectGallery = () => {
   const [projects, setProjects] = useState([]);
@@ -24,6 +75,25 @@ const ProjectGallery = () => {
 
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
+
+  const [bookmarks, setBookmarks] = useState(() => {
+    try {
+      const saved = localStorage.getItem("eventra_bookmarked_projects");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const handleBookmarkToggle = (projectId) => {
+    setBookmarks((prev) => {
+      const updated = prev.includes(projectId)
+        ? prev.filter((id) => id !== projectId)
+        : [...prev, projectId];
+      localStorage.setItem("eventra_bookmarked_projects", JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   const cardSectionRef = useRef(null);
 
@@ -104,7 +174,11 @@ const ProjectGallery = () => {
 
   const filteredAndSortedProjects = projects
     .filter((project) => {
-      if (
+      if (filterCategory === "bookmarked") {
+        if (!bookmarks.includes(project.id)) {
+          return false;
+        }
+      } else if (
         filterCategory !== "all" &&
         project.category !== filterCategory
       ) {
@@ -214,6 +288,8 @@ const ProjectGallery = () => {
                     <span className="text-gray-700 dark:text-gray-200">
                       {filterCategory === "all"
                         ? "All Categories"
+                        : filterCategory === "bookmarked"
+                        ? "Saved Projects"
                         : filterCategory}
                     </span>
 
@@ -236,7 +312,7 @@ const ProjectGallery = () => {
                         exit={{ opacity: 0, y: -10 }}
                         className="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
                       >
-                        {categories.map((cat) => {
+                        {["all", "bookmarked", ...categories.filter(c => c !== "all")].map((cat) => {
                           const selectCategory = () => {
                             setFilterCategory(cat);
                             setCategoryOpen(false);
@@ -259,6 +335,8 @@ const ProjectGallery = () => {
                             >
                               {cat === "all"
                                 ? "All Categories"
+                                : cat === "bookmarked"
+                                ? "★ Saved Projects"
                                 : cat}
                             </li>
                           );
@@ -424,6 +502,8 @@ const ProjectGallery = () => {
                     key={project.id}
                     project={project}
                     index={index}
+                    isBookmarked={bookmarks.includes(project.id)}
+                    onBookmarkToggle={handleBookmarkToggle}
                   />
                 )
               )}
