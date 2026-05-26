@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from '../config/api';
 import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
-import { syncSecureStorage } from '../utils/secureStorage';
 import { toast } from 'react-toastify';
 import { ROLES } from '../config/roles';
 
@@ -111,7 +110,7 @@ export const AuthProvider = ({ children }) => {
       needsExpiryCleanupRef.current = false;
       clearExpiredSession();
     }
-  });
+  }, [clearExpiredSession]);
 
   // --- Smart Token Expiry Timeout ---
   // Instead of polling every 15 s, compute the exact remaining TTL from the
@@ -166,6 +165,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("token", sessionToken);
       localStorage.setItem("user", JSON.stringify(sessionUser));
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error persisting session:', error);
     }
   };
@@ -229,6 +229,7 @@ export const AuthProvider = ({ children }) => {
     });
 
     const data = await res.json().catch((error) => {
+      // eslint-disable-next-line no-console
       console.error("Failed to parse login response JSON:", error);
       return null;
     });
