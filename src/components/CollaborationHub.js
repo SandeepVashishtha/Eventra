@@ -1,10 +1,43 @@
 import StatusBadge from "./common/StatusBadge";
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { toast } from 'react-toastify';
 import './components.css';
 
 const CollaborationHub = () => {
   const [activeSection, setActiveSection] = useState('opportunities');
+  const [newRequest, setNewRequest] = useState({
+    title: '',
+    type: '',
+    description: '',
+    budget: '',
+    deadline: '',
+    skills: ''
+  });
+
+  const handleRequestChange = (e) => {
+    const { name, value } = e.target;
+    setNewRequest(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleRequestSubmit = (e) => {
+    e.preventDefault();
+    if (!newRequest.title.trim() || !newRequest.type || !newRequest.description.trim()) {
+      toast.error('Please fill in all required fields (Title, Type, and Description)');
+      return;
+    }
+    
+    toast.success('Collaboration request created successfully!');
+    setNewRequest({
+      title: '',
+      type: '',
+      description: '',
+      budget: '',
+      deadline: '',
+      skills: ''
+    });
+    setActiveSection('opportunities');
+  };
 
   const collaborationOpportunities = [
     {
@@ -303,54 +336,89 @@ const CollaborationHub = () => {
         {activeSection === 'create-request' && (
           <div className="create-request-section">
             <h2>Create Collaboration Request</h2>
-            <div className="request-form">
+            <form onSubmit={handleRequestSubmit} className="request-form">
               <div className="form-group">
-                <label>Project Title</label>
-                <input type="text" placeholder="Enter your collaboration project title" />
+                <label>Project Title *</label>
+                <input 
+                  type="text" 
+                  name="title"
+                  value={newRequest.title}
+                  onChange={handleRequestChange}
+                  placeholder="Enter your collaboration project title" 
+                  required
+                />
               </div>
               
               <div className="form-group">
-                <label>Collaboration Type</label>
-                <select>
-                  <option>Select type</option>
-                  <option>Sponsorship</option>
-                  <option>Content Partnership</option>
-                  <option>Venue Partnership</option>
-                  <option>Technical Support</option>
+                <label>Collaboration Type *</label>
+                <select 
+                  name="type"
+                  value={newRequest.type}
+                  onChange={handleRequestChange}
+                  required
+                >
+                  <option value="">Select type</option>
+                  <option value="Sponsorship">Sponsorship</option>
+                  <option value="Content Partnership">Content Partnership</option>
+                  <option value="Venue Partnership">Venue Partnership</option>
+                  <option value="Technical Support">Technical Support</option>
                 </select>
               </div>
               
               <div className="form-group">
-                <label>Description</label>
-                <textarea rows="4" placeholder="Describe your collaboration opportunity..."></textarea>
+                <label>Description *</label>
+                <textarea 
+                  name="description"
+                  value={newRequest.description}
+                  onChange={handleRequestChange}
+                  rows="4" 
+                  maxLength={300}
+                  placeholder="Describe partnership goals / Sponsorship details / Collaboration ideas..."
+                  required
+                ></textarea>
               </div>
               
               <div className="form-row">
                 <div className="form-group">
                   <label>Budget Range</label>
-                  <select>
-                    <option>Select budget</option>
-                    <option>$1,000 - $5,000</option>
-                    <option>$5,000 - $10,000</option>
-                    <option>$10,000 - $25,000</option>
-                    <option>$25,000+</option>
-                    <option>Revenue Share</option>
+                  <select 
+                    name="budget"
+                    value={newRequest.budget}
+                    onChange={handleRequestChange}
+                  >
+                    <option value="">Select budget</option>
+                    <option value="$1,000 - $5,000">$1,000 - $5,000</option>
+                    <option value="$5,000 - $10,000">$5,000 - $10,000</option>
+                    <option value="$10,000 - $25,000">$10,000 - $25,000</option>
+                    <option value="$25,000+">$25,000+</option>
+                    <option value="Revenue Share">Revenue Share</option>
                   </select>
                 </div>
                 
                 <div className="form-group">
                   <label>Deadline</label>
-                  <input type="date" />
+                  <input 
+                    type="date" 
+                    name="deadline"
+                    value={newRequest.deadline}
+                    onChange={handleRequestChange}
+                  />
                 </div>
               </div>
               
               <div className="form-group">
                 <label>Required Skills</label>
-                <input type="text" placeholder="e.g., Event Management, Marketing, Design" />
+                <input 
+                  type="text" 
+                  name="skills"
+                  value={newRequest.skills}
+                  onChange={handleRequestChange}
+                  placeholder="e.g., Event Management, Marketing, Design" 
+                />
               </div>
               
-              <button className="btn-primary submit-btn">Create Collaboration Request</button>
-            </div>
+              <button type="submit" className="btn-primary submit-btn">Create Collaboration Request</button>
+            </form>
           </div>
         )}
       </motion.div>

@@ -3,7 +3,7 @@
   "outputDirectory": "build",
   "framework": "create-react-app",
   "env": {
-    "REACT_APP_API_URL": "https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net"
+    "REACT_APP_API_URL": "/api"
   },
   "rewrites": [
     {
@@ -66,7 +66,11 @@
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
-          "value": "*"
+          "value": "https://eventra-psi.vercel.app"
+        },
+        {
+          "key": "Access-Control-Allow-Credentials",
+          "value": "true"
         },
         {
           "key": "Access-Control-Allow-Methods",

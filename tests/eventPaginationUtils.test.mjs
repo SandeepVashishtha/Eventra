@@ -8,7 +8,7 @@ import {
   getTotalPages,
   getVisiblePaginationPages,
   sortEventsByDate,
-} from "../src/Pages/Events/eventPaginationUtils.js";
+} from "../src/Pages/Events/eventPaginationUtils.mjs";
 
 const sampleEvents = [
   {
