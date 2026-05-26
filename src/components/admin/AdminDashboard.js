@@ -1,13 +1,22 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Users, Calendar, Activity, Shield, LogOut, Plus,
-  Search, ChevronRight, BarChart2,
-  Trash2, Edit2, CheckCircle, AlertCircle,
-  TrendingUp
+  Activity,
+  AlertCircle,
+  BarChart2,
+  Calendar,
+  CheckCircle,
+  ChevronRight,
+  Edit2,
+  LogOut, Plus,
+  Search,
+  Shield,
+  Trash2,
+  TrendingUp,
+  Users
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import './AdminDashboard.css';
 
 const fadeUp = {
@@ -46,24 +55,79 @@ const STATUS_COLORS = {
   USER: 'ad-badge-gray', EVENT_MANAGER: 'ad-badge-blue', ADMIN: 'ad-badge-purple',
 };
 
+
 /* ─── Confirmation Modal ─── */
 function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
+
+useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') {
+        onCancel();
+      }
+    };
+
+    document.addEventListener('keydown', handleEsc);
+
+    return () => {
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [onCancel]);
+
+
+
   if (!open) return null;
+
   return (
-    <div className="ad-modal-overlay" onClick={onCancel}>
+    <div
+      className="ad-modal-overlay"
+      onClick={onCancel}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          onCancel();
+        }
+      }}
+      tabIndex={0}
+    >
       <motion.div
         className="ad-modal"
+        tabIndex={0}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="ad-modal-icon"><AlertCircle size={28} color="#ef4444" /></div>
+        <div className="ad-modal-icon">
+          <AlertCircle size={28} color="#ef4444" />
+        </div>
+
         <h3 className="ad-modal-title">{title}</h3>
+
         <p className="ad-modal-msg">{message}</p>
+
         <div className="ad-modal-actions">
-          <button className="ad-btn-ghost" onClick={onCancel}>Cancel</button>
-          <button className="ad-btn-danger" onClick={onConfirm}>Confirm</button>
+          <button
+            className="ad-btn-ghost"
+            onClick={onCancel}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                onCancel();
+              }
+            }}
+          >
+            Cancel
+          </button>
+
+          <button
+            className="ad-btn-danger"
+            onClick={onConfirm}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                onConfirm();
+              }
+            }}
+          >
+            Confirm
+          </button>
         </div>
       </motion.div>
     </div>
