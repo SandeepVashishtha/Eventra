@@ -27,9 +27,16 @@ const CertificateDownload = ({ eventName, eventDate, eventType }) => {
     doc.setFontSize(15);
     doc.text("This is proudly presented to", 148, 70, { align: "center" });
 
+    const sanitizeText = (text, maxLength) => {
+      const clean = String(text ?? "")
+        .replace(/[\u200B-\u200D\uFEFF\u202A-\u202E]/g, "")
+        .trim();
+      return clean.length > maxLength ? clean.substring(0, maxLength) + "..." : clean;
+    };
+
     const firstName = user.firstName || "";
     const lastName = user.lastName || "";
-    const participantName = `${firstName} ${lastName}`.trim() || "Guest Participant";
+    const participantName = sanitizeText(`${firstName} ${lastName}`.trim() || "Guest Participant", 40);
 
     doc.setFontSize(26);
     doc.setTextColor(99, 102, 241);
@@ -40,7 +47,7 @@ const CertificateDownload = ({ eventName, eventDate, eventType }) => {
     doc.text("for active participation in the event", 148, 112, { align: "center" });
     doc.setFontSize(24);
     doc.setTextColor(99, 102, 241);
-    doc.text(eventName, 148, 130, { align: "center" });
+    doc.text(sanitizeText(eventName, 50), 148, 130, { align: "center" });
     doc.setFontSize(12);
     doc.setTextColor(255, 255, 255);
     doc.text(`Event Type: ${eventType}`, 148, 150, { align: "center" });
