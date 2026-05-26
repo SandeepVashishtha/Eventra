@@ -229,7 +229,6 @@ export default function CommandPalette({
             </div>
           </div>
 
-          ```jsx
           {/* Quick filter tags */}
           <div
             className="
@@ -268,7 +267,6 @@ export default function CommandPalette({
               </button>
             ))}
           </div>
-          ```
 
 
           {/* Results container */}
