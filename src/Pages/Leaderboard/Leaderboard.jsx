@@ -196,6 +196,10 @@ export default function LeaderBoard() {
   const [lastUpdated, setLastUpdated] = useState("");
   const [search, setSearch] = useState("");
   const [
+  debouncedSearch,
+  setDebouncedSearch,
+] = useState(search);
+  const [
   recentSearches,
   setRecentSearches,
 ] = useState([]);
@@ -210,6 +214,14 @@ export default function LeaderBoard() {
   // Constants for pagination and UI
   const CONTRIBUTORS_PER_PAGE = 10;
 
+  useEffect(() => {
+  const timer = setTimeout(() => {
+    setDebouncedSearch(search);
+  }, 400);
+
+  return () =>
+    clearTimeout(timer);
+}, [search]);
   // 🎉 Celebratory confetti on load
   useEffect(() => {
     confetti({
