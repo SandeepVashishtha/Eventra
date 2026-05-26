@@ -368,8 +368,9 @@ const CollaborationHub = () => {
               </div>
               
               <div className="form-group">
-                <label>Description *</label>
+                <label htmlFor="collab-desc">Description *</label>
                 <textarea 
+                  id="collab-desc"
                   name="description"
                   value={newRequest.description}
                   onChange={handleRequestChange}
@@ -695,8 +696,7 @@ export default CollaborationHub;
 /*
  * ============================================================================
  * ACCESSIBILITY & QUALITY ASSURANCE DOCUMENTATION
- * COMPONENT: fix/collaboration-form-deadline-accessibility
- * COMPONENT: fix/collaboration-form-type-accessibility
+
  * STANDARDS: WCAG 2.1 / 2.2 AA Compliance Checklist
  * ============================================================================
  *
