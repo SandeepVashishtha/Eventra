@@ -26,6 +26,7 @@ import { NotificationProvider } from "./context/NotificationContext";
 import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
 import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
+import GlobalErrorBoundary from "./components/common/ErrorBoundary";
 
 import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
