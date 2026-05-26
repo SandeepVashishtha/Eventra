@@ -15,26 +15,9 @@ const EventsPage = () => {
     listing.setSearchQuery(query);
   };
 
-<<<<<<< fix/eslint-warnings
-  useEffect(() => {
-    handleSearch(searchQuery);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [events, filterType]);
-
-  const handleSortChange = (type) => {
-    setSortType(type);
-    let sorted = [...filteredEvents];
-    if (type === "Newest") {
-      sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
-    } else if (type === "upcoming") {
-      sorted.sort((a, b) => new Date(a.date) - new Date(b.date));
-    }
-    setFilteredEvents(sorted);
-=======
   const handlePageChange = (page) => {
     listing.setSafePage(page);
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
->>>>>>> master
   };
 
   const scrollToCard = () => {

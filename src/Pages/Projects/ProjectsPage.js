@@ -8,8 +8,30 @@ import ProjectCTA from "./ProjectCTA";
 // Import mock data directly (assuming it's named mockProjectsData.json in the same folder as ProjectsPage.js)
 import mockProjects from "./mockProjectsData.json";
 
+// Modern custom styled search input
+const ModernSearchInput = ({ value, onChange, placeholder }) => (
+  <div className="relative flex items-center w-full">
+    <FiSearch className="absolute left-4 text-gray-400 dark:text-gray-500 w-5 h-5 pointer-events-none" />
+    <input
+      type="text"
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      className="w-full pl-12 pr-10 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black dark:focus:border-white transition-all shadow-sm"
+    />
+    {value && (
+      <button
+        onClick={() => onChange({ target: { value: "" } })}
+        className="absolute right-4 text-gray-400 dark:text-gray-500 hover:text-black dark:hover:text-white transition-colors"
+      >
+        <FiX className="w-4 h-4" />
+      </button>
+    )}
+  </div>
+);
+
 // Skeleton loader for project cards while data is loading
-const SkeletonCard = () => (
+const ProjectCardSkeleton = () => (
   <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden animate-pulse">
     <div className="h-40 bg-gray-100 dark:bg-gray-700"></div>
     <div className="p-6">

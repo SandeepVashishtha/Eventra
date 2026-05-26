@@ -8,6 +8,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import "./UserDashboard.css";
+import EventTicket from "./EventTicket";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -67,6 +68,7 @@ export default function UserDashboard() {
   const [filterStatus, setFilterStatus] = useState("All");
   const [greeting, setGreeting] = useState("");
   const [notifOpen, setNotifOpen] = useState(false);
+  const [selectedTicketEvent, setSelectedTicketEvent] = useState(null);
 
   const firstName = user?.firstName || user?.username || "there";
 
@@ -400,6 +402,14 @@ export default function UserDashboard() {
                       <span className={`ud-badge ${STATUS_COLORS[ev.participationType] || "ud-badge-gray"}`}>
                         {ev.participationType}
                       </span>
+                      {ev.participationType === "Registered" && (
+                        <button
+                          onClick={() => setSelectedTicketEvent(ev)}
+                          className="ud-btn-ticket"
+                        >
+                          View Ticket
+                        </button>
+                      )}
                     </div>
                   </motion.div>
                 ))}
@@ -517,9 +527,19 @@ export default function UserDashboard() {
                             </span>
                           </td>
                           <td>
-                            <span className={`ud-badge ${STATUS_COLORS[item.participationType] || "ud-badge-gray"}`}>
-                              {item.participationType}
-                            </span>
+                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                              <span className={`ud-badge ${STATUS_COLORS[item.participationType] || "ud-badge-gray"}`}>
+                                {item.participationType}
+                              </span>
+                              {item.type === "Event" && item.participationType === "Registered" && (
+                                <button
+                                  onClick={() => setSelectedTicketEvent(item)}
+                                  className="ud-btn-ticket"
+                                >
+                                  View Ticket
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -531,6 +551,15 @@ export default function UserDashboard() {
           )}
         </AnimatePresence>
       </main>
+
+      {/* Futuristic Ticket Preview Modal */}
+      {selectedTicketEvent && (
+        <EventTicket
+          event={selectedTicketEvent}
+          user={user}
+          onClose={() => setSelectedTicketEvent(null)}
+        />
+      )}
     </div>
   );
 }
