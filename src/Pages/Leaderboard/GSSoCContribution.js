@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
   Lightbulb,
   Code2,
@@ -12,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 const GSSoCContribution = () => {
+  const prefersReducedMotion = useReducedMotion();
   useDocumentTitle("Eventra | GSSoC Contribution")
   const navigate = useNavigate();
 
@@ -21,7 +23,7 @@ const GSSoCContribution = () => {
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" }}
         // UPDATED: Section background and border
         className="p-10 rounded-3xl shadow-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
       >

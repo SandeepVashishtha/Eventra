@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiArrowUp } from "react-icons/fi";
 import { getScrollPosition, scrollToTop as scrollPageToTop } from "../../utils/lenisUtils";
+import useReducedMotion from "../../hooks/useReducedMotion";
 
 /**
  * Floating "Back to Top" button.
@@ -14,6 +15,7 @@ const BackToTopButton = ({
   ariaLabel = "Back to top",
   positionClass = "bottom-6 right-6",
 }) => {
+  const prefersReducedMotion = useReducedMotion();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -42,7 +44,7 @@ const BackToTopButton = ({
 
   const scrollToTop = () => {
     if (window.lenis) {
-      window.lenis.scrollTo(0, { duration: 1.2 });
+      window.lenis.scrollTo(0, { duration: prefersReducedMotion ? 0 : 1.2 });
       return;
     }
 
@@ -60,7 +62,7 @@ const BackToTopButton = ({
           initial={{ opacity: 0, y: 20, scale: 0.9 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.9 }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.25, ease: "easeOut" }}
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.95 }}
           className={`fixed ${positionClass} z-50 flex items-center justify-center w-12 h-12 rounded-full bg-black text-white shadow-lg hover:bg-zinc-800 border-2 border-white dark:border-gray-800 transition-colors ${className}`}

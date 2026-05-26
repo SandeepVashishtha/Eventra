@@ -68,8 +68,29 @@ const setBodyScrollStyles = (top) => {
   });
 };
 
-const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
-  const { setIsCustomizerOpen } = useTheme();
+const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => (
+  <button
+    type="button"
+    onClick={toggleTheme}
+    data-testid="navbar-theme-toggle"
+    aria-label={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+    title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+    className={isMobile
+      ? "navbar-theme-toggle flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 font-medium text-sm"
+      : "navbar-theme-toggle flex items-center gap-1.5 px-2.5 py-1 mr-2 text-xs font-medium border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
+    }
+  >
+    {isDarkMode ? (
+      <Sun aria-hidden="true" className={isMobile ? "w-5 h-5 text-amber-500" : "w-4 h-4 text-amber-500"} />
+    ) : (
+      <Moon aria-hidden="true" className={isMobile ? "w-5 h-5 text-indigo-500" : "w-4 h-4 text-indigo-500"} />
+    )}
+    <span>{isMobile
+      ? (isDarkMode ? "Light Mode" : "Dark Mode")
+      : (isDarkMode ? "LIGHT" : "DARK")
+    }</span>
+  </button>
+);
 
   if (isMobile) {
     return (
@@ -92,7 +113,7 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
           className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-pink-500 text-white font-semibold border-none shadow-md hover:shadow-lg transition-all cursor-pointer"
         >
           <Palette className="w-5 h-5" />
-          <span>Theme Skins Panel</span>
+          <span>Theme Customizer</span>
         </motion.button>
       </div>
     );
@@ -100,11 +121,19 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
   return (
     <div className="flex items-center gap-1">
       <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={toggleTheme}
-        title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-        className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group cursor-pointer"
+         whileHover={{ scale: 1.05 }}
+  whileTap={{ scale: 0.95 }}
+  onClick={toggleTheme}
+  title={
+    isDarkMode
+      ? "Switch to Light Mode"
+      : "Switch to Dark Mode"
+  }
+  aria-label={
+    isDarkMode
+      ? "Switch to Light Mode"
+      : "Switch to Dark Mode"
+  }
       >
         <motion.span
           key={isDarkMode ? "sun" : "moon"}
@@ -144,7 +173,7 @@ const CursorToggleButton = ({ cursorEnabled, toggleCursor, isMobile }) => {
         ) : (
           <MousePointer className="w-5 h-5 text-zinc-400" />
         )}
-        <span>{cursorEnabled ? "Cursor: FLUID" : "Cursor: STATIC"}</span>
+        <span>{cursorEnabled ? "Fluid Cursor" : "Static Cursor"}</span>
       </motion.button>
     );
   }
