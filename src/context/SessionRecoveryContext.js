@@ -1,14 +1,14 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 
 const SessionRecoveryContext = createContext();
 
-const SESSION_KEY = 'eventra_session_state';
+const SESSION_KEY = "eventra_session_state";
 const SESSION_TIMEOUT = 30 * 60 * 1000;
 
 export const useSessionRecovery = () => {
   const context = useContext(SessionRecoveryContext);
   if (!context) {
-    throw new Error('useSessionRecovery must be used within a SessionRecoveryProvider');
+    throw new Error("useSessionRecovery must be used within a SessionRecoveryProvider");
   }
   return context;
 };
@@ -43,21 +43,21 @@ export const SessionRecoveryProvider = ({ children }) => {
     };
 
     setIsOnline(navigator.onLine);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
   useEffect(() => {
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-    events.forEach(event => window.addEventListener(event, updateActivity));
+    const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click"];
+    events.forEach((event) => window.addEventListener(event, updateActivity));
 
     return () => {
-      events.forEach(event => window.removeEventListener(event, updateActivity));
+      events.forEach((event) => window.removeEventListener(event, updateActivity));
     };
   }, [updateActivity]);
 
@@ -71,7 +71,8 @@ export const SessionRecoveryProvider = ({ children }) => {
         const isValidTimestamp =
           parsed &&
           parsed.timestamp &&
-          typeof parsed.timestamp === 'number' &&
+          parsed.timestamp &&
+          typeof parsed.timestamp === "number" &&
           !isNaN(parsed.timestamp);
 
         if (isValidTimestamp && now - parsed.timestamp < SESSION_TIMEOUT) {
@@ -83,7 +84,7 @@ export const SessionRecoveryProvider = ({ children }) => {
         }
       }
     } catch (e) {
-      console.error('Failed to load session:', e);
+      console.error("Failed to load session:", e);
     }
   }, []);
 
@@ -103,7 +104,7 @@ export const SessionRecoveryProvider = ({ children }) => {
         setSessionData(currentSession);
         setHasSession(true);
       } catch (e) {
-        console.error('Failed to save session:', e);
+        console.error("Failed to save session:", e);
       }
     }, 1000);
   }, []);
@@ -115,7 +116,7 @@ export const SessionRecoveryProvider = ({ children }) => {
       setHasSession(false);
       setShowRecoveryPrompt(false);
     } catch (e) {
-      console.error('Failed to clear session:', e);
+      console.error("Failed to clear session:", e);
     }
   }, []);
 
@@ -126,12 +127,6 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   const dismissRecoveryPrompt = useCallback(() => {
     setShowRecoveryPrompt(false);
-  }, []);
-
-  useEffect(() => {
-    const handleBeforeUnload = () => {};
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
 
   useEffect(() => {
@@ -168,8 +163,6 @@ export const SessionRecoveryProvider = ({ children }) => {
   };
 
   return (
-    <SessionRecoveryContext.Provider value={value}>
-      {children}
-    </SessionRecoveryContext.Provider>
+    <SessionRecoveryContext.Provider value={value}>{children}</SessionRecoveryContext.Provider>
   );
 };

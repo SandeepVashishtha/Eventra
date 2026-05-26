@@ -4,6 +4,10 @@
   padding: 20px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
+.dark .event-creation-container {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
 
 .event-form h1,
 .event-preview h1 {
@@ -29,6 +33,9 @@
   font-weight: 600;
   color: #555;
 }
+.dark .form-group label {
+  color: #e2e8f0;
+}
 
 .form-group input,
 .form-group textarea,
@@ -39,6 +46,18 @@
   border-radius: 4px;
   font-size: 14px;
   transition: border-color 0.3s ease;
+}
+.dark .form-group input,
+.dark .form-group textarea,
+.dark .form-group select {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+.dark .form-group input::placeholder,
+.dark .form-group textarea::placeholder {
+  color: #94a3b8;
 }
 
 .form-group input:focus,
@@ -135,6 +154,11 @@
   gap: 5px;
   border: 1px solid #b0b0b0;
 }
+.dark .tag {
+  background-color: #334155;
+  color: #f8fafc;
+  border-color: #475569;
+}
 
 .remove-tag-btn {
   background: none;
@@ -157,6 +181,10 @@
   border-radius: 8px;
   background-color: #f8f9fa;
 }
+.dark .ticket-tier {
+  background-color: #1e293b;
+  border-color: #334155;
+}
 
 .tier-header {
   display: flex;
@@ -169,6 +197,9 @@
   margin: 0;
   color: #555;
   font-size: 16px;
+}
+.dark .tier-header h4 {
+  color: #f8fafc;
 }
 
 .remove-tier-btn {
@@ -277,6 +308,9 @@
   border-radius: 8px;
   overflow: hidden;
 }
+.dark .event-preview {
+  background-color: #1e293b;
+}
 
 .preview-content {
   padding: 30px;
@@ -305,7 +339,17 @@
   line-height: 1.6;
   margin-bottom: 20px;
 }
+.dark .preview-details h2,
+.dark .tier-name,
+.dark .info-item strong {
+  color: #f8fafc;
+}
 
+.dark .preview-description,
+.dark .tier-capacity,
+.dark .location-address {
+  color: #cbd5e1;
+}
 .preview-info {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -319,7 +363,10 @@
   border-radius: 4px;
   border-left: 4px solid #6c5ce7;
 }
-
+.dark .info-item {
+  background-color: #334155;
+  border-left-color: #818cf8;
+}
 .info-item strong {
   color: #111; 
 }
@@ -349,6 +396,9 @@
   display: flex;
   justify-content: center;
   gap: 15px;
+}
+.dark .preview-actions {
+  background-color: #1e293b;
 }
 
 .edit-btn {
@@ -389,6 +439,15 @@
 .publish-btn:disabled {
   background-color: #6c757d;
   cursor: not-allowed;
+}
+.add-tag-btn:focus,
+.add-tier-btn:focus,
+.preview-btn:focus,
+.edit-btn:focus,
+.publish-btn:focus,
+.remove-tier-btn:focus {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
 }
 
 /* Responsive Design */
