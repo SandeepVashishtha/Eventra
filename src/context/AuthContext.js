@@ -238,13 +238,9 @@ export const AuthProvider = ({ children }) => {
       password,
     });
 
-    const data = await res.json().catch((error) => {
-      // eslint-disable-next-line no-console
-      console.error("Failed to parse login response JSON:", error);
-      return null;
-    });
+    const data = res.data;
 
-    if (!res.ok) {
+    if (res.status !== 200) {
       throw new Error(data?.message || data?.error || "Invalid credentials");
     }
 
@@ -302,15 +298,9 @@ export const AuthProvider = ({ children }) => {
     }
 
     // ── Step 2: Parse the backend response ───────────────────────────────────
-    const data = await res.json().catch(() => null);
+    const data = res.data;
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    clearQueue();
-    if (!res.ok) {
+    if (res.status !== 200) {
       // The backend rejected the credential (bad token, wrong audience, etc.)
       throw new Error(
         data?.message ||

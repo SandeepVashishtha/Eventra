@@ -79,9 +79,9 @@ const EventCreation = () => {
     }
 
     const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData, token);
-    const result = await response.json();
+    const result = response.data;
 
-    if (!(response.ok && result.success)) {
+    if (!(response.status === 200 && result.success)) {
       const errorMessage = result.message || result.error || `Server error: ${response.status}`;
       throw new Error(errorMessage);
     }

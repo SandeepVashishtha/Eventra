@@ -145,15 +145,9 @@ const Signup = () => {
         confirmPassword: formData.confirmPassword,
       });
 
-      const responseText = await response.text();
-      let data = null;
-      try {
-        data = responseText ? JSON.parse(responseText) : null;
-      } catch {
-        data = null;
-      }
+      const data = response.data;
 
-      if (!response.ok) {
+      if (response.status !== 200) {
         const backendMessage = data?.message || data?.error || "";
         setError(
           backendMessage
