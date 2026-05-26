@@ -183,7 +183,11 @@ const SubmitProject = () => {
           ...formData,
           submittedBy: user?.id,
         },
-        token
+        {
+          headers: {
+            Authorization: token
+          }
+        }
       );
 
       toast.success("Project submitted successfully!");

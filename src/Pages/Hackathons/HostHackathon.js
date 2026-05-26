@@ -182,7 +182,11 @@ const HostHackathon = () => {
           ...formData,
           hostUserId: user?.id,
         },
-        token
+        {
+          headers: {
+            Authorization: token
+          }
+        }
       );
 
       toast.success("Hackathon submitted successfully! It will be reviewed before going live.");
