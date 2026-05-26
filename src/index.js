@@ -8,6 +8,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 import GlobalErrorBoundary from "./components/common/ErrorBoundary";
 import { initializeGlobalErrorHandling } from "./utils/globalErrorHandler";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
+import { RealTimeProvider } from "./context/RealTimeContext";
 
 // Initialize Global Runtime Monitoring
 initializeGlobalErrorHandling();
@@ -18,11 +19,13 @@ root.render(
   <React.StrictMode>
     <GlobalErrorBoundary>
       <ThemeProvider>
+        <RealTimeProvider>
         <BrowserRouter>
           {" "}
           {/* <-- 2. Wrapped the App here */}
           <App />
         </BrowserRouter>
+        </RealTimeProvider>
       </ThemeProvider>
     </GlobalErrorBoundary>
   </React.StrictMode>

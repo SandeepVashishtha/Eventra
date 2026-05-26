@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { Download } from "lucide-react";
+import useReducedMotion from "../../hooks/useReducedMotion";
 import {} from "../../utils/eventDraftUtils";
-
+import CharacterCounter
+from "../../components/common/CharacterCounter";
 import { exportAttendeesToCSV } from "../../utils/exportCsv";
 import {
   ArrowRightIcon,
@@ -41,6 +43,7 @@ import { LoadingButton } from "../ui/LoadingButton";
 const DRAFT_KEY = "eventra_create_event_draft";
 
 const EventCreation = () => {
+  const prefersReducedMotion = useReducedMotion();
   const mockAttendees = [
     {
       name: "John Doe",
@@ -725,7 +728,7 @@ const EventCreation = () => {
           <motion.div
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
             className="text-center mb-10"
           >
             <h1 className="text-4xl sm:text-5xl font-extrabold text-indigo-800 dark:text-indigo-300 mb-4">
@@ -741,7 +744,7 @@ const EventCreation = () => {
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
             className="w-full max-w-4xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-2xl p-6 mb-10"
           >
             <div className="flex items-center gap-2 mb-3">
@@ -790,7 +793,7 @@ const EventCreation = () => {
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
             className="w-full max-w-4xl bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 border border-indigo-300 dark:border-gray-700"
           >
             <div className="space-y-6">
@@ -799,7 +802,7 @@ const EventCreation = () => {
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
               >
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <FileText className="w-5 h-5 text-indigo-500 inline-block mr-2" />
@@ -824,7 +827,7 @@ const EventCreation = () => {
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.1 }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.1 }}
               >
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
                   <Image className="w-5 h-5 text-indigo-500 inline-block mr-2" />
@@ -1074,7 +1077,7 @@ const EventCreation = () => {
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.1 }}
                 >
                   {/* Start Date */}
                   <div>
@@ -1161,7 +1164,7 @@ const EventCreation = () => {
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.1 }}
                 >
                   {/* Event Date */}
                   <div>
@@ -1300,7 +1303,7 @@ const EventCreation = () => {
                     initial={{ opacity: 0, x: -20 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: 0.1 }}
+                    transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.1 }}
                   >
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       <Map className="w-5 h-5 text-indigo-500 inline-block mr-2" />
@@ -1558,15 +1561,42 @@ const EventCreation = () => {
                           )}
                         </div>
                       </div>
-                      <textarea
-                        placeholder="Description"
-                        value={tier.description}
-                        onChange={(e) =>
-                          handleTicketTierChange(index, "description", e.target.value)
-                        }
-                        rows={2}
-                        className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                      />
+                     <div className="space-y-2">
+  <textarea
+    placeholder="Description"
+    value={tier.description}
+    onChange={(e) =>
+      handleTicketTierChange(
+        index,
+        "description",
+        e.target.value
+      )
+    }
+    rows={2}
+    maxLength={200}
+    className="
+      w-full
+      border border-gray-300
+      dark:border-gray-600
+      rounded-lg
+      p-3
+      bg-white dark:bg-gray-600
+      text-gray-900 dark:text-gray-100
+      focus:outline-none
+      focus:ring-1
+      focus:ring-indigo-500
+    "
+  />
+
+  <div className="flex justify-end">
+    <CharacterCounter
+      current={
+        tier.description.length
+      }
+      max={200}
+    />
+  </div>
+</div>
                     </div>
                   </div>
                 ))}

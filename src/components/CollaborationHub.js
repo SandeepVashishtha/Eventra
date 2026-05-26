@@ -1,14 +1,14 @@
 import StatusBadge from "./common/StatusBadge";
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import { toast } from 'react-toastify';
-import { 
-  Search, Filter, Briefcase, Calendar, DollarSign, Users, Award, 
-  MapPin, Send, Plus, Check, ArrowRight, X, User, MessageSquare, BriefcaseIcon
-} from "lucide-react";
-import './styles/components.css';
+import './components.css';
+import CharacterCounter
+from "../../components/common/CharacterCounter";
 
 const CollaborationHub = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [activeSection, setActiveSection] = useState('opportunities');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('All');
@@ -172,8 +172,8 @@ const CollaborationHub = () => {
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="collaboration-title text-4xl sm:text-5xl font-black text-slate-900 dark:text-white mb-4"
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
+          className="collaboration-title"
         >
           Collaboration Hub 🤝
         </motion.h1>
@@ -213,8 +213,8 @@ const CollaborationHub = () => {
         key={activeSection}
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.3 }}
-        className="tab-content max-w-5xl mx-auto px-4"
+        transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
+        className="tab-content"
       >
         {activeSection === 'opportunities' && (
           <div className="opportunities-section">
@@ -251,49 +251,46 @@ const CollaborationHub = () => {
               />
             </div>
             
-            <div className="opportunities-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredOpportunities.length > 0 ? (
-                filteredOpportunities.map((opportunity, index) => (
-                  <motion.div
-                    key={opportunity.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1, duration: 0.6 }}
-                    className="opportunity-card p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-2xl shadow-sm flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="opportunity-header flex items-start justify-between mb-4">
-                        <h3 className="opportunity-title text-base font-extrabold text-slate-900 dark:text-white leading-snug">
-                          {opportunity.title}
-                        </h3>
-                        <StatusBadge status={opportunity.status} />
-                      </div>
-                      
-                      <div className="opportunity-meta flex flex-col gap-1.5 text-xs text-slate-500 dark:text-slate-400 mb-4">
-                        <span className="organizer flex items-center gap-1.5">
-                          <User className="w-3.5 h-3.5" />
-                          {opportunity.organizer}
-                        </span>
-                        <span className="type flex items-center gap-1.5">
-                          <Briefcase className="w-3.5 h-3.5" />
-                          {opportunity.type}
-                        </span>
-                      </div>
-                      
-                      <p className="opportunity-description text-xs text-slate-650 dark:text-slate-450 leading-relaxed mb-4">
-                        {opportunity.description}
-                      </p>
-                      
-                      <div className="opportunity-skills mb-4">
-                        <strong className="block text-[10px] uppercase tracking-wider text-slate-400 mb-2">Required Skills:</strong>
-                        <div className="skills-tags flex flex-wrap gap-1.5">
-                          {opportunity.skills.map((skill) => (
-                            <span key={skill} className="skill-tag px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-400">
-                              {skill}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
+            <div className="opportunities-grid">
+              {collaborationOpportunities.map((opportunity, index) => (
+                <motion.div
+                  key={opportunity.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: prefersReducedMotion ? 0 : index * 0.1, duration: prefersReducedMotion ? 0 : 0.6 }}
+                  className="opportunity-card"
+                >
+                  <div className="opportunity-header">
+                    <h3 className="opportunity-title">{opportunity.title}</h3>
+                    
+                      <StatusBadge status={opportunity.status} />
+                    
+                  </div>
+                  
+                  <div className="opportunity-meta">
+                    <span className="organizer">🏢 {opportunity.organizer}</span>
+                    <span className="type">📋 {opportunity.type}</span>
+                  </div>
+                  
+                  <p className="opportunity-description">{opportunity.description}</p>
+                  
+                  <div className="opportunity-skills">
+                    <strong>Required Skills:</strong>
+                    <div className="skills-tags">
+                      {opportunity.skills.map((skill) => (
+                        <span key={skill} className="skill-tag">{skill}</span>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="opportunity-details">
+                    <div className="detail-item">
+                      <span className="label">Budget:</span>
+                      <span className="value">{opportunity.budget}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Deadline:</span>
+                      <span className="value">{new Date(opportunity.deadline).toLocaleDateString()}</span>
                     </div>
                     
                     <div>
@@ -349,8 +346,8 @@ const CollaborationHub = () => {
                   key={collab.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1, duration: 0.6 }}
-                  className="collaboration-card p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl"
+                  transition={{ delay: prefersReducedMotion ? 0 : index * 0.1, duration: prefersReducedMotion ? 0 : 0.6 }}
+                  className="collaboration-card"
                 >
                   <div className="collaboration-header flex justify-between items-center mb-3">
                     <h3 className="text-base font-bold text-slate-900 dark:text-white">{collab.title}</h3>
@@ -416,40 +413,21 @@ const CollaborationHub = () => {
               />
             </div>
             
-            <div className="networking-requests grid grid-cols-1 md:grid-cols-2 gap-6">
-              {filteredNetworking.length > 0 ? (
-                filteredNetworking.map((request, index) => (
-                  <motion.div
-                    key={request.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1, duration: 0.6 }}
-                    className="networking-card p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="networking-header mb-4">
-                        <div className="profile-info flex items-center gap-3">
-                          <span className="avatar w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-lg">{request.avatar}</span>
-                          <div className="name-role">
-                            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">{request.name}</h3>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">{request.role} at {request.company}</p>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <p className="networking-message text-xs italic text-slate-650 dark:text-slate-350 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl mb-4">
-                        "{request.message}"
-                      </p>
-                      
-                      <div className="networking-skills mb-5">
-                        <strong className="block text-[10px] uppercase text-slate-400 mb-2">Skills:</strong>
-                        <div className="skills-tags flex flex-wrap gap-1.5">
-                          {request.skills.map((skill) => (
-                            <span key={skill} className="skill-tag px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-400">
-                              {skill}
-                            </span>
-                          ))}
-                        </div>
+            <div className="networking-requests">
+              {networkingRequests.map((request, index) => (
+                <motion.div
+                  key={request.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: prefersReducedMotion ? 0 : index * 0.1, duration: prefersReducedMotion ? 0 : 0.6 }}
+                  className="networking-card"
+                >
+                  <div className="networking-header">
+                    <div className="profile-info">
+                      <span className="avatar">{request.avatar}</span>
+                      <div className="name-role">
+                        <h3>{request.name}</h3>
+                        <p>{request.role} at {request.company}</p>
                       </div>
                     </div>
                     
@@ -508,19 +486,42 @@ const CollaborationHub = () => {
                 </select>
               </div>
               
-              <div className="form-group flex flex-col gap-2">
-                <label htmlFor="collab-desc" className="text-xs font-bold text-slate-700 dark:text-slate-300">Description *</label>
-                <textarea 
-                  id="collab-desc"
-                  name="description"
-                  value={newRequest.description}
-                  onChange={handleRequestChange}
-                  rows="4" 
-                  maxLength={300}
-                  placeholder="Describe partnership goals / Sponsorship details / Collaboration ideas..."
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
-                  required
-                ></textarea>
+              <div className="form-group">
+                <label htmlFor="collab-desc">Description *</label>
+              <div className="space-y-2">
+  <textarea
+    id="collab-desc"
+    name="description"
+    value={newRequest.description}
+    onChange={handleRequestChange}
+    rows="4"
+    maxLength={300}
+    placeholder="Describe partnership goals / Sponsorship details / Collaboration ideas..."
+    required
+    className="
+      w-full
+      rounded-xl
+      border border-gray-300
+      dark:border-gray-700
+      bg-white dark:bg-gray-900
+      px-4 py-3
+      text-gray-900 dark:text-white
+      focus:outline-none
+      focus:ring-2
+      focus:ring-indigo-500
+      transition
+    "
+  />
+
+  <div className="flex justify-end">
+    <CharacterCounter
+      current={
+        newRequest.description.length
+      }
+      max={300}
+    />
+  </div>
+</div>
               </div>
               
               <div className="form-row grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -5,11 +5,13 @@ import { useInView } from "react-intersection-observer";
 import { HomeCardSkeleton } from "../../../components/common/SkeletonLoaders";
 import { CheckCircle2, Hourglass } from "lucide-react";
 
+import useReducedMotion from "../../../hooks/useReducedMotion.js";
 // Import mock data
 import eventsData from "../../Events/eventsMockData.json";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 
 const WhatsHappening = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [ref, inView] = useInView({
     triggerOnce: true,
     threshold: 0.1,
@@ -186,7 +188,7 @@ border-t border-gray-100 dark:border-slate-800/80"
           className="text-center mb-8 sm:mb-12"
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
         >
           <h2 className="text-2xl sm:text-3xl font-extrabold text-black dark:text-white">
             What's Happening Now
@@ -281,7 +283,7 @@ border-t border-gray-100 dark:border-slate-800/80"
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ duration: 0.4, ease: "easeInOut" }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.4, ease: "easeInOut" }}
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pointer-events-auto relative z-[50]"
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}

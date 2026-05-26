@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { useRef } from "react";
 
+import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
   ArrowRightIcon,
   ChartBarIcon,
@@ -20,6 +21,7 @@ import {
 } from "@heroicons/react/24/solid";
 
 const HostHackathon = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     hackathonName: "",
@@ -224,7 +226,7 @@ const HostHackathon = () => {
       <motion.div
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
         className="text-center mb-10"
         data-aos="fade-down"
         data-aos-once="true"
@@ -243,7 +245,7 @@ const HostHackathon = () => {
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.7 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
         className="w-full max-w-4xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-2xl p-6 mb-10"
         data-aos="fade-up"
         data-aos-delay="200"
@@ -312,7 +314,7 @@ const HostHackathon = () => {
       <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
         className="w-full max-w-4xl bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 border border-indigo-300 dark:border-gray-700"
         data-aos="fade-up"
         data-aos-delay="400"
@@ -324,7 +326,7 @@ const HostHackathon = () => {
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
               data-aos="fade-right"
               data-aos-delay={index * 50 + 500}
             >
@@ -392,7 +394,7 @@ const HostHackathon = () => {
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: 0.2 }}
             data-aos="fade-up"
             data-aos-delay="1000"
           >
@@ -429,7 +431,7 @@ const HostHackathon = () => {
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.7 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
         className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-4xl mb-8 mt-12"
         data-aos="fade-up"
         data-aos-delay="1200"
@@ -467,7 +469,7 @@ const HostHackathon = () => {
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.7 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
         className="w-full max-w-4xl mt-10 text-center bg-black border border-black rounded-2xl p-10 shadow-2xl"
         data-aos="fade-up"
         data-aos-delay="1600"
