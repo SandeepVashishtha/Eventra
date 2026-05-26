@@ -53,14 +53,33 @@ const renderCardSection = (
   onClearSearch,
 ) => {
   if (isLoading) {
-    return (
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+  return (
+    <div>
+      <div className="mb-4 text-sm text-gray-500 dark:text-gray-400">
+        Loading events...
+      </div>
+
+      <div
+        className="
+          animate-pulse
+          grid
+          gap-6
+          grid-cols-1
+          sm:grid-cols-2
+          lg:grid-cols-3
+        "
+        role="status"
+        aria-label="Loading events"
+      >
         {[1, 2, 3, 4, 5, 6].map((i) => (
-          <EventCardSkeleton key={`skeleton-${i}`} />
+          <EventCardSkeleton
+            key={`skeleton-${i}`}
+          />
         ))}
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   if (filteredEvents.length === 0) {
     return (

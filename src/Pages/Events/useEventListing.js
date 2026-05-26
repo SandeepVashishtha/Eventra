@@ -65,7 +65,7 @@ const useEventListing = () => {
     setLoadError("");
 
     try {
-      const response = await apiUtils.get(API_ENDPOINTS.EVENTS.ALL);
+      const response = await apiUtils.get(API_ENDPOINTS.EVENTS.LIST);
       const apiEvents = Array.isArray(response.data) ? response.data : [];
       setEvents(apiEvents.map((event) => ({ ...event, status: getEventStatus(event) })));
     } catch (error) {

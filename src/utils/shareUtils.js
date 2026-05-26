@@ -10,7 +10,7 @@
  * @param {string} shareData.description - The description of the content
  * @param {string} shareData.url - The URL to the content
  * @param {string} shareData.hashtags - Comma-separated list of hashtags (no # symbol)
- * @param {string} platform - The platform to share on ('email', 'twitter', 'facebook', 'linkedin', 'whatsapp', 'telegram')
+ * @param {string} platform - The platform to share on ('email', 'twitter', 'facebook', 'messenger', 'linkedin', 'whatsapp', 'telegram')
  * @returns {string} The sharing URL for the specified platform
  */
 export const generateSharingUrl = (shareData, platform) => {
@@ -35,11 +35,7 @@ export const generateSharingUrl = (shareData, platform) => {
       const appId = process.env.REACT_APP_FACEBOOK_APP_ID;
 
       if (!appId) {
-        // eslint-disable-next-line no-console
-        console.warn(
-          'REACT_APP_FACEBOOK_APP_ID is not set - Messenger sharing disabled'
-        );
-        return url;
+        return '';
       }
 
       return `https://www.facebook.com/dialog/send?link=${encodedUrl}&app_id=${appId}&redirect_uri=${encodedUrl}`;

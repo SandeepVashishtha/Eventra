@@ -76,6 +76,25 @@ const ProjectGallery = () => {
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
 
+  const [bookmarks, setBookmarks] = useState(() => {
+    try {
+      const saved = localStorage.getItem("eventra_bookmarked_projects");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const handleBookmarkToggle = (projectId) => {
+    setBookmarks((prev) => {
+      const updated = prev.includes(projectId)
+        ? prev.filter((id) => id !== projectId)
+        : [...prev, projectId];
+      localStorage.setItem("eventra_bookmarked_projects", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const cardSectionRef = useRef(null);
 
   const sortByLabels = {
@@ -155,7 +174,11 @@ const ProjectGallery = () => {
 
   const filteredAndSortedProjects = projects
     .filter((project) => {
-      if (
+      if (filterCategory === "bookmarked") {
+        if (!bookmarks.includes(project.id)) {
+          return false;
+        }
+      } else if (
         filterCategory !== "all" &&
         project.category !== filterCategory
       ) {
@@ -265,6 +288,8 @@ const ProjectGallery = () => {
                     <span className="text-gray-700 dark:text-gray-200">
                       {filterCategory === "all"
                         ? "All Categories"
+                        : filterCategory === "bookmarked"
+                        ? "Saved Projects"
                         : filterCategory}
                     </span>
 
@@ -287,7 +312,7 @@ const ProjectGallery = () => {
                         exit={{ opacity: 0, y: -10 }}
                         className="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
                       >
-                        {categories.map((cat) => {
+                        {["all", "bookmarked", ...categories.filter(c => c !== "all")].map((cat) => {
                           const selectCategory = () => {
                             setFilterCategory(cat);
                             setCategoryOpen(false);
@@ -310,6 +335,8 @@ const ProjectGallery = () => {
                             >
                               {cat === "all"
                                 ? "All Categories"
+                                : cat === "bookmarked"
+                                ? "★ Saved Projects"
                                 : cat}
                             </li>
                           );
@@ -475,6 +502,8 @@ const ProjectGallery = () => {
                     key={project.id}
                     project={project}
                     index={index}
+                    isBookmarked={bookmarks.includes(project.id)}
+                    onBookmarkToggle={handleBookmarkToggle}
                   />
                 )
               )}

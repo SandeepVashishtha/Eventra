@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { 
-  Plus, Minus, Trash2, Save, RotateCcw, 
+import ConfirmationModal from "../common/ConfirmationModal";
+import {
+  Plus, Minus, Trash2, Save, RotateCcw,
   Move, Grid, Users, Layout, MapPin, Minimize2,
   Download, Upload, Image, FileJson, AlertTriangle
 } from "lucide-react";
 import { toast } from "react-toastify";
 import "./FloorPlanDesigner.css";
-
 // Preset layouts
 const PRESETS = {
   empty: [],
@@ -36,7 +36,7 @@ const PRESETS = {
 
 // Available registered mock attendees
 const MOCK_ATTENDEES = [
-  "Amit Sharma", "Priya Singh", "Rohit Verma", "Neha Kapoor", 
+  "Amit Sharma", "Priya Singh", "Rohit Verma", "Neha Kapoor",
   "Vikram Rathore", "Siddharth Malhotra", "Kriti Sanon", "Varun Dhawan",
   "Aditi Rao", "Ranbir Kapoor", "Deepika Padukone", "Ranveer Singh",
   "Alia Bhatt", "Ayushmann Khurrana", "Rajkummar Rao", "Shraddha Kapoor"
@@ -57,6 +57,7 @@ const checkCollision = (el1, el2) => {
 const FloorPlanDesigner = ({ eventId = "default" }) => {
   const [elements, setElements] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   
   // Canvas Zoom / Pan
   const [zoom, setZoom] = useState(0.8);
@@ -104,12 +105,12 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
     if (!svgElement) return "";
 
     const clonedSvg = svgElement.cloneNode(true);
-    
+
     // Reset transform style so export is the full canvas without panning and zooming
     clonedSvg.style.transform = "none";
     clonedSvg.style.transformOrigin = "initial";
     clonedSvg.style.transition = "none";
-    
+
     // Set width and height explicitly to matching the viewBox dimensions for high resolution
     clonedSvg.setAttribute("width", "1000");
     clonedSvg.setAttribute("height", "800");
@@ -129,10 +130,10 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
     try {
       const svgString = getCleanExportSvgString();
       if (!svgString) return;
-      
+
       const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
       const url = URL.createObjectURL(blob);
-      
+
       const link = document.createElement("a");
       link.href = url;
       link.download = `eventra-floorplan-${eventId}.svg`;
@@ -161,7 +162,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
 
       const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
       const url = URL.createObjectURL(blob);
-      
+
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement("canvas");
@@ -193,12 +194,12 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
           URL.revokeObjectURL(url);
         }, "image/png");
       };
-      
+
       img.onerror = () => {
         toast.error("Failed to render floor plan workspace onto image canvas.");
         URL.revokeObjectURL(url);
       };
-      
+
       img.src = url;
     } catch (error) {
       console.error("PNG Export failed:", error);
@@ -211,7 +212,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
     try {
       const jsonBlob = new Blob([JSON.stringify(elements, null, 2)], { type: "application/json" });
       const jsonUrl = URL.createObjectURL(jsonBlob);
-      
+
       const link = document.createElement("a");
       link.href = jsonUrl;
       link.download = `eventra-floorplan-${eventId}.json`;
@@ -234,13 +235,13 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
     reader.onload = (event) => {
       try {
         const importedData = JSON.parse(event.target.result);
-        
+
         if (!Array.isArray(importedData)) {
           throw new Error("Floor plan config layout must be a valid JSON array.");
         }
 
         // Schema validation
-        const isValid = importedData.every(el => 
+        const isValid = importedData.every(el =>
           el && typeof el === "object" && "id" in el && "type" in el && "x" in el && "y" in el
         );
 
@@ -279,37 +280,48 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
   };
 
   const handleDeleteSelected = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteSelected = () => {
     if (selectedId) {
       setElements(elements.filter(el => el.id !== selectedId));
       setSelectedId(null);
+      toast.success("Element deleted successfully!");
     }
+
+    setIsDeleteModalOpen(false);
   };
 
   const updateSelectedElement = (key, value) => {
-    setElements(elements.map(el => {
-      if (el.id === selectedId) {
-        let updated = { ...el, [key]: value };
-        // Reset assigned attendees if seats decrease
-        if (key === "seatsCount") {
-          const freshAssigned = {};
-          Object.keys(el.assignedAttendees).forEach(k => {
-            if (parseInt(k) < value) {
-              freshAssigned[k] = el.assignedAttendees[k];
-            }
-          });
-          updated.assignedAttendees = freshAssigned;
+    const updates = typeof key === "object" ? key : { [key]: value };
+    setElements((prevElements) =>
+      prevElements.map((el) => {
+        if (el.id === selectedId) {
+          let updated = { ...el, ...updates };
+          // Reset assigned attendees if seats decrease
+          if ("seatsCount" in updates) {
+            const seatsCountVal = updates.seatsCount;
+            const freshAssigned = {};
+            Object.keys(el.assignedAttendees).forEach((k) => {
+              if (parseInt(k) < seatsCountVal) {
+                freshAssigned[k] = el.assignedAttendees[k];
+              }
+            });
+            updated.assignedAttendees = freshAssigned;
+          }
+          return updated;
         }
-        return updated;
-      }
-      return el;
-    }));
+        return el;
+      })
+    );
   };
 
   const handleSeatAssign = (seatIndex, attendeeName) => {
     setElements(elements.map(el => {
       // 1. Create a clean copy of the assignedAttendees object for this element
       const nextAssignments = { ...el.assignedAttendees };
-      
+
       // 2. Unassign this attendee if they are currently assigned to any seat on this table
       Object.keys(nextAssignments).forEach(k => {
         if (nextAssignments[k] === attendeeName) {
@@ -343,7 +355,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
     } else if (elementId) {
       setSelectedId(elementId);
       isDraggingRef.current = true;
-      
+
       const el = elements.find(item => item.id === elementId);
       if (el) {
         // Convert screen delta to actual SVG coordinates
@@ -423,7 +435,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
       const height = el.height;
       const halfW = width / 2;
       const halfH = height / 2;
-      
+
       // Calculate top face projection center
       const cX = el.x + halfW - projOffset;
       const cY = el.y + halfH - projOffset;
@@ -447,14 +459,14 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
         const side = i < seatsPerSide ? "top" : "bottom";
         const sideIndex = i % seatsPerSide;
         const relativeX = spacingX * (sideIndex + 1) - halfW;
-        
+
         let p;
         if (side === "top") {
           p = rotatePt(el.x - projOffset + halfW + relativeX, el.y - projOffset - 18);
         } else {
           p = rotatePt(el.x - projOffset + halfW + relativeX, el.y - projOffset + height + 18);
         }
-        
+
         positions.push({ x: p.x, y: p.y, index: i });
       }
     }
@@ -471,7 +483,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
   }, 0);
 
   // Computes whether there is ANY overlap / collision currently detected on the canvas
-  const anyCollision = elements.some(el => 
+  const anyCollision = elements.some(el =>
     elements.some(other => other.id !== el.id && checkCollision(el, other))
   );
 
@@ -506,29 +518,32 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
 
       <div className="fp-workspace" onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
         {/* Left Toolbox */}
-        <div className="fp-sidebar fp-sidebar-left">
+        <aside
+          className="fp-sidebar fp-sidebar-left"
+          aria-label="Floor plan designer tools sidebar"
+        >
           <div className="fp-sidebar-section">
             <div className="fp-section-title">Object Toolbox</div>
             <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Click items to add them directly onto the seating designer grid canvas.</p>
-            
+
             <div className="fp-tool-grid">
-              <button className="fp-tool-item" onClick={() => handleAddElement("stage")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("stage")}>
                 <Layout className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Stage</span>
               </button>
-              <button className="fp-tool-item" onClick={() => handleAddElement("round-table")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("round-table")}>
                 <Users className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Round Table</span>
               </button>
-              <button className="fp-tool-item" onClick={() => handleAddElement("rect-table")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("rect-table")}>
                 <Grid className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Rect Table</span>
               </button>
-              <button className="fp-tool-item" onClick={() => handleAddElement("booth")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("booth")}>
                 <MapPin className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Stand/Booth</span>
               </button>
-              <button className="fp-tool-item" onClick={() => handleAddElement("barrier")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("barrier")}>
                 <Minimize2 className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Barrier</span>
               </button>
@@ -541,7 +556,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
 
           <div className="fp-sidebar-section">
             <div className="fp-section-title">Designer Settings</div>
-            
+
             <div className="fp-toggle-container mb-4">
               <span className="text-xs font-semibold text-gray-300 dark:text-gray-400">Snap to 20px Grid</span>
               <label className="fp-switch">
@@ -589,11 +604,11 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
                 <Upload size={18} className="text-indigo-400 mb-1.5" />
                 <span className="text-[11px] font-bold text-gray-300 dark:text-gray-400">Restore Layout JSON</span>
                 <span className="text-[9px] text-gray-500 dark:text-gray-500 mt-0.5 text-center">Click to browse and upload</span>
-                <input 
-                  type="file" 
-                  accept=".json" 
-                  className="hidden" 
-                  onChange={handleImportJSON} 
+                <input
+                  type="file"
+                  accept=".json"
+                  className="hidden"
+                  onChange={handleImportJSON}
                 />
               </label>
             </div>
@@ -609,11 +624,11 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
               </p>
             </div>
           </div>
-        </div>
+        </aside>
 
         {/* Dynamic Canvas Workspace */}
         <div className="fp-canvas-wrapper" onMouseDown={(e) => handleMouseDown(e, null)}>
-          
+
           {/* Real-time active collision notification */}
           {anyCollision && (
             <div className="fp-collision-warning-badge">
@@ -624,9 +639,9 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
 
           {/* Zoom & Pan floating controls */}
           <div className="fp-controls-floating">
-            <button 
+            <button
               className={`fp-control-btn ${isPanMode ? 'fp-control-btn-active' : ''}`}
-              title="Pan Tool (Move screen)" 
+              title="Pan Tool (Move screen)"
               onClick={() => setIsPanMode(!isPanMode)}
             >
               <Move size={16} />
@@ -696,25 +711,25 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
                 <stop offset="100%" stopColor="#7f1d1d" />
               </linearGradient>
             </defs>
-            
+
             <rect width="100%" height="100%" fill="url(#canvas-grid)" />
 
             {/* Elements render */}
             {elements.map((el) => {
               const isSelected = el.id === selectedId;
               const isColliding = elements.some(other => other.id !== el.id && checkCollision(el, other));
-              
+
               // 2.5D visual projection offsets
               const projOffset = 10;
 
               return (
-                <g 
-                   key={el.id} 
-                   data-element-id={el.id}
-                   data-element-type={el.type}
-                   transform={`rotate(${el.rotation}, ${el.x + el.width / 2}, ${el.y + el.height / 2})`}
-                   onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, el.id); }}
-                   className="fp-element-group"
+                <g
+                  key={el.id}
+                  data-element-id={el.id}
+                  data-element-type={el.type}
+                  transform={`rotate(${el.rotation}, ${el.x + el.width / 2}, ${el.y + el.height / 2})`}
+                  onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, el.id); }}
+                  className="fp-element-group"
                 >
                   {/* Chairs rendered around tables */}
                   {getSeatPositions(el).map((seat) => {
@@ -787,7 +802,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
                         fill="rgba(8, 6, 18, 0.95)"
                         stroke="rgba(255, 255, 255, 0.05)"
                       />
-                      
+
                       {/* Top Face element rendering */}
                       <rect
                         x={el.x - projOffset}
@@ -797,9 +812,9 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
                         rx={el.type === "stage" ? 8 : (el.type === "barrier" ? 2 : 6)}
                         fill={
                           el.type === "stage" ? "url(#stage-grad)" :
-                          el.type === "booth" ? "url(#booth-grad)" :
-                          el.type === "barrier" ? "url(#barrier-grad)" :
-                          el.type === "exit" ? "url(#exit-grad)" : "url(#table-grad)"
+                            el.type === "booth" ? "url(#booth-grad)" :
+                              el.type === "barrier" ? "url(#barrier-grad)" :
+                                el.type === "exit" ? "url(#exit-grad)" : "url(#table-grad)"
                         }
                         stroke={isColliding ? "#ef4444" : (isSelected ? "#818cf8" : "#4f46e5")}
                         strokeWidth={el.type === "stage" ? 2.5 : 2}
@@ -821,7 +836,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
                   >
                     {el.label}
                   </text>
-                  
+
                   {/* Visual indication of occupied seating capacity */}
                   {el.seatsCount > 0 && (
                     <text
@@ -852,7 +867,10 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
         </div>
 
         {/* Right Details Panel / Seating inspector */}
-        <div className="fp-sidebar fp-sidebar-right">
+        <aside
+          className="fp-sidebar fp-sidebar-right"
+          aria-label="Element properties and seating configuration sidebar"
+        >
           {activeElement ? (
             <>
               {/* Properties Section */}
@@ -860,7 +878,9 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
                 <div className="flex items-center justify-between mb-4">
                   <div className="fp-section-title">Element Details</div>
                   <button 
+                    <button
                     onClick={handleDeleteSelected}
+                    aria-label="Delete selected floor plan element"
                     className="p-1.5 text-red-400 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 rounded-lg transition-colors cursor-pointer"
                     title="Delete item"
                   >
@@ -973,7 +993,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
                       return (
                         <div key={seatIdx} className="fp-seat-row">
                           <span className="fp-seat-number">Seat {seatIdx + 1}</span>
-                          
+
                           <select
                             className="fp-attendee-select"
                             value={currentAssignee || ""}
@@ -983,12 +1003,12 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
                             {MOCK_ATTENDEES.map((attName) => {
                               // Enable choosing the attendee if they aren't assigned to another table or if they are assigned to THIS seat
                               const isAssignedElsewhere = elements.some(
-                                el => Object.values(el.assignedAttendees).includes(attName) && 
-                                !(el.id === activeElement.id && el.assignedAttendees[seatIdx] === attName)
+                                el => Object.values(el.assignedAttendees).includes(attName) &&
+                                  !(el.id === activeElement.id && el.assignedAttendees[seatIdx] === attName)
                               );
                               return (
-                                <option 
-                                  key={attName} 
+                                <option
+                                  key={attName}
                                   value={attName}
                                   disabled={isAssignedElsewhere}
                                 >
@@ -1018,8 +1038,17 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
               <p className="text-xs">Click on any stage, booth, table, or exit shape inside the canvas grid to edit its details and manage seat registrations.</p>
             </div>
           )}
-        </div>
+        </aside>
       </div>
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDeleteSelected}
+        title="Delete Element"
+        message="Are you sure you want to delete this floor plan element? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </div>
   );
 };

@@ -107,6 +107,9 @@ export default function FAQSection() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
+  // Search Suggestions State
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
   const filteredFaqs = faqs.filter((faq) => {
     const matchesCategory =
       selectedCategory === "All" ||
@@ -121,6 +124,62 @@ export default function FAQSection() {
 
     return matchesCategory && matchesSearch;
   });
+
+  const suggestions = faqs.filter(faq => {
+    const q = searchTerm.toLowerCase().trim();
+    return q.length >= 2 && faq.question.toLowerCase().includes(q);
+  }).slice(0, 5);
+
+  // Helpfulness Ratings State
+  const [ratings, setRatings] = useState(() => {
+    try {
+      const saved = localStorage.getItem("eventra_faq_ratings");
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error(e);
+    }
+    
+    const initial = {};
+    faqs.forEach((faq, idx) => {
+      const yes = 12 + (idx * 9) % 38;
+      const no = 1 + (idx * 2) % 6;
+      initial[faq.question] = { yes, no, voted: null };
+    });
+    return initial;
+  });
+
+  const handleVote = (question, voteType) => {
+    setRatings(prev => {
+      const current = prev[question] || { yes: 10, no: 2, voted: null };
+      let newYes = current.yes;
+      let newNo = current.no;
+      let newVoted = voteType;
+
+      if (current.voted === voteType) {
+        if (voteType === "yes") newYes = Math.max(0, newYes - 1);
+        if (voteType === "no") newNo = Math.max(0, newNo - 1);
+        newVoted = null;
+      } else {
+        if (current.voted === "yes") newYes = Math.max(0, newYes - 1);
+        if (current.voted === "no") newNo = Math.max(0, newNo - 1);
+        
+        if (voteType === "yes") newYes += 1;
+        if (voteType === "no") newNo += 1;
+      }
+
+      const updated = {
+        ...prev,
+        [question]: { yes: newYes, no: newNo, voted: newVoted }
+      };
+      
+      try {
+        localStorage.setItem("eventra_faq_ratings", JSON.stringify(updated));
+      } catch (err) {
+        console.error(err);
+      }
+      return updated;
+    });
+  };
 
   const [cardStyles, setCardStyles] = useState(() =>
     faqs.map(() => ({ transform: "scale(1)", filter: "none" }))
@@ -399,17 +458,40 @@ export default function FAQSection() {
                 placeholder="Search hackathons, bookmarks, accounts..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 250)}
                 aria-label="Search FAQs"
                 className="w-full pl-11 pr-10 py-2.5 text-sm rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-950/80 backdrop-blur-md text-slate-900 dark:text-gray-100 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10"
               />
               {searchTerm && (
                 <button
-                  onClick={() => setSearchTerm("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setShowSuggestions(false);
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 cursor-pointer"
                   aria-label="Clear search"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
+              )}
+
+              {/* Suggestions Dropdown Overlay */}
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="absolute left-0 right-0 mt-2 bg-white/95 dark:bg-slate-950/95 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 max-h-60 overflow-y-auto backdrop-blur-xs text-left">
+                  {suggestions.map((sug, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setSearchTerm(sug.question);
+                        setShowSuggestions(false);
+                      }}
+                      className="w-full text-left px-4 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-xs font-semibold text-slate-700 dark:text-slate-350 border-b border-slate-100 dark:border-slate-800 last:border-0 cursor-pointer"
+                    >
+                      💡 {sug.question}
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
 
@@ -480,6 +562,35 @@ export default function FAQSection() {
                   </div>
                   <h3>{faq.question}</h3>
                   <p>{faq.answer}</p>
+                  
+                  {/* Helpfulness Rating Widget */}
+                  <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row gap-3 items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                      Was this answer helpful?
+                    </span>
+                    <div className="flex gap-2 w-full sm:w-auto justify-end">
+                      <button
+                        onClick={() => handleVote(faq.question, "yes")}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 border cursor-pointer hover:scale-105 active:scale-95 ${
+                          ratings[faq.question]?.voted === "yes"
+                            ? "bg-green-50 border-green-200 text-green-600 dark:bg-green-950/20 dark:border-green-900/30 dark:text-green-400"
+                            : "bg-slate-50/50 border-slate-200/50 text-slate-500 hover:text-slate-700 dark:bg-slate-900/40 dark:border-slate-800 dark:text-slate-400 dark:hover:text-slate-350"
+                        }`}
+                      >
+                        👍 Yes ({ratings[faq.question]?.yes || 0})
+                      </button>
+                      <button
+                        onClick={() => handleVote(faq.question, "no")}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 border cursor-pointer hover:scale-105 active:scale-95 ${
+                          ratings[faq.question]?.voted === "no"
+                            ? "bg-rose-50 border-rose-200 text-rose-600 dark:bg-rose-950/20 dark:border-rose-900/30 dark:text-rose-400"
+                            : "bg-slate-50/50 border-slate-200/50 text-slate-500 hover:text-slate-700 dark:bg-slate-900/40 dark:border-slate-800 dark:text-slate-400 dark:hover:text-slate-350"
+                        }`}
+                      >
+                        👎 No ({ratings[faq.question]?.no || 0})
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))

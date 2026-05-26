@@ -2,9 +2,13 @@ import EventRecommendation from "./Pages/EventRecommendation/EventRecommendation
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom"; // Added this back for your routing!
 import "./App.css";
+import "./styles/reduced-motion.css";
 import { toast } from "react-toastify";
-
+import BackToTopButton
+from "./components/common/BackToTopButton";
 import Navbar from "./components/Layout/Navbar";
+import OfflineBanner from "./components/common/OfflineBanner";
+import OfflineConflictModal from "./components/common/OfflineConflictModal";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -113,6 +117,8 @@ function App() {
 
             <div className="App">
               <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+              <OfflineBanner />
+              <OfflineConflictModal />
               <KeyboardShortcutsModal
                 isOpen={showKeyboardModal}
                 onClose={() => setShowKeyboardModal(false)}
@@ -141,10 +147,6 @@ function App() {
                   >
                     <Routes>
                       <Route path="/register/:id" element={<RegistrationPage />} />
-                      <Route
-                        path="/register/:id"
-                        element={<RegistrationPage />}
-                      />
 
                       <Route
                         path="/event-recommendation"
@@ -158,7 +160,6 @@ function App() {
                     </Routes>
                   </Suspense>
                 </PageTransition>
-
               </main>
 
               <ScrollToTop />
@@ -166,6 +167,7 @@ function App() {
                 <Chatbot />
                 <Footer />
               </Suspense>
+              <BackToTopButton />
               <FeedbackButton />
               <ThemeCustomizerDrawer />
               <SessionRecovery />

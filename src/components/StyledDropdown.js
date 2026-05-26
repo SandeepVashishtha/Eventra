@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiChevronDown } from "react-icons/fi";
+import useReducedMotion from "../hooks/useReducedMotion";
 
 const Dropdown = ({
   label,
@@ -9,6 +10,7 @@ const Dropdown = ({
   onChange,
   placeholder = "Select",
 }) => {
+  const prefersReducedMotion = useReducedMotion();
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
   const listboxId = `dropdown-${label || placeholder}`.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
@@ -86,7 +88,7 @@ const Dropdown = ({
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
           >
             {[placeholder, ...options].map((opt) => (
               <li
