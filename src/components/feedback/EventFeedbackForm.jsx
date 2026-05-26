@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiStar, FiMessageSquare, FiSend, FiCheckCircle } from "react-icons/fi";
+import {
+  FiStar,
+  FiMessageSquare,
+  FiSend,
+  FiCheckCircle,
+} from "react-icons/fi";
+
+import { Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 
 const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
@@ -137,8 +144,18 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
               className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-lg shadow-indigo-600/15 disabled:opacity-75 transition-all"
             >
               {isSubmitting ? (
-                "Submitting..."
-              ) : (
+  <>
+    <Loader2
+      className="
+        w-4
+        h-4
+        animate-spin
+      "
+    />
+
+    Submitting...
+  </>
+) : (
                 <>
                   <FiSend className="w-4 h-4" />
                   Submit Feedback
