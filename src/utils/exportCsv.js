@@ -1,3 +1,10 @@
+const sanitizeCSVField = (field) => {
+  const value = String(field ?? "");
+  const safeValue = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+
+  return `"${safeValue.replace(/"/g, '""')}"`;
+};
+
 export const exportAttendeesToCSV = (
   attendees,
   filename = "event-attendees.csv"
@@ -22,7 +29,7 @@ export const exportAttendeesToCSV = (
 
   const csvContent = [headers, ...rows]
     .map((row) =>
-      row.map((field) => `"${field}"`).join(",")
+      row.map(sanitizeCSVField).join(",")
     )
     .join("\n");
 
