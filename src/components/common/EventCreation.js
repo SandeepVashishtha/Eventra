@@ -3,7 +3,8 @@ import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { Download } from "lucide-react";
 import {} from "../../utils/eventDraftUtils";
-
+import CharacterCounter
+from "../../components/common/CharacterCounter";
 import { exportAttendeesToCSV } from "../../utils/exportCsv";
 import {
   ArrowRightIcon,
@@ -1558,15 +1559,42 @@ const EventCreation = () => {
                           )}
                         </div>
                       </div>
-                      <textarea
-                        placeholder="Description"
-                        value={tier.description}
-                        onChange={(e) =>
-                          handleTicketTierChange(index, "description", e.target.value)
-                        }
-                        rows={2}
-                        className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                      />
+                     <div className="space-y-2">
+  <textarea
+    placeholder="Description"
+    value={tier.description}
+    onChange={(e) =>
+      handleTicketTierChange(
+        index,
+        "description",
+        e.target.value
+      )
+    }
+    rows={2}
+    maxLength={200}
+    className="
+      w-full
+      border border-gray-300
+      dark:border-gray-600
+      rounded-lg
+      p-3
+      bg-white dark:bg-gray-600
+      text-gray-900 dark:text-gray-100
+      focus:outline-none
+      focus:ring-1
+      focus:ring-indigo-500
+    "
+  />
+
+  <div className="flex justify-end">
+    <CharacterCounter
+      current={
+        tier.description.length
+      }
+      max={200}
+    />
+  </div>
+</div>
                     </div>
                   </div>
                 ))}

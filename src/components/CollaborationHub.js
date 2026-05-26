@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import './components.css';
+import CharacterCounter
+from "../../components/common/CharacterCounter";
 
 const CollaborationHub = () => {
   const [activeSection, setActiveSection] = useState('opportunities');
@@ -369,16 +371,40 @@ const CollaborationHub = () => {
               
               <div className="form-group">
                 <label htmlFor="collab-desc">Description *</label>
-                <textarea 
-                  id="collab-desc"
-                  name="description"
-                  value={newRequest.description}
-                  onChange={handleRequestChange}
-                  rows="4" 
-                  maxLength={300}
-                  placeholder="Describe partnership goals / Sponsorship details / Collaboration ideas..."
-                  required
-                ></textarea>
+              <div className="space-y-2">
+  <textarea
+    id="collab-desc"
+    name="description"
+    value={newRequest.description}
+    onChange={handleRequestChange}
+    rows="4"
+    maxLength={300}
+    placeholder="Describe partnership goals / Sponsorship details / Collaboration ideas..."
+    required
+    className="
+      w-full
+      rounded-xl
+      border border-gray-300
+      dark:border-gray-700
+      bg-white dark:bg-gray-900
+      px-4 py-3
+      text-gray-900 dark:text-white
+      focus:outline-none
+      focus:ring-2
+      focus:ring-indigo-500
+      transition
+    "
+  />
+
+  <div className="flex justify-end">
+    <CharacterCounter
+      current={
+        newRequest.description.length
+      }
+      max={300}
+    />
+  </div>
+</div>
               </div>
               
               <div className="form-row">
