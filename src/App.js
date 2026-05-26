@@ -13,7 +13,6 @@ import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
 import ThemeCustomizerDrawer from "./components/common/ThemeCustomizerDrawer";
 import SessionRecovery from "./components/SessionRecovery";
 
-import RegistrationPage from "./Pages/RegistrationPage";
 
 import NotificationToastContainer from "./components/common/NotificationProvider";
 import { NotificationProvider } from "./context/NotificationContext";
@@ -36,7 +35,7 @@ const OfflineSyncManager = () => {
   return null;
 };
 
-function App() {
+const AppContent = () => {
   const [cursorEnabled, setCursorEnabled] = useState(
     localStorage.getItem("cursor") !== "off"
   );
@@ -77,20 +76,78 @@ function App() {
     };
   }, []);
 
+  return (
+    <div className="App">
+      <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+      <KeyboardShortcutsModal
+        isOpen={showKeyboardModal}
+        onClose={() => setShowKeyboardModal(false)}
+      />
+
+      <main
+        className="
+          relative
+          z-10
+          min-h-[85vh]
+          bg-white
+          dark:bg-slate-950
+          text-black
+          dark:text-white
+          transition-colors
+          duration-300
+        "
+      >
+        <PageTransition>
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center min-h-screen">
+                Loading...
+              </div>
+            }
+          >
+            <Routes>
+              <Route path="/register/:id" element={<RegistrationPage />} />
+              <Route path="/*" element={<AppRoutes />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Suspense>
+        </PageTransition>
+      </main>
+
+      <ScrollToTop />
+      <Suspense fallback={null}>
+        <Chatbot />
+        <Footer />
+      </Suspense>
+      <FeedbackButton />
+      <ThemeCustomizerDrawer />
+      <SessionRecovery />
+      <FluidCursor enabled={cursorEnabled} />
+    </div>
+  );
+};
+
+function App() {
   // Handle Online/Offline Status Notification
   useEffect(() => {
     const handleOnline = () => {
-      toast.success("Back online! Your connections have been restored and sync is complete.", {
-        position: "bottom-right",
-        autoClose: 4000,
-      });
+      toast.success(
+        "Back online! Your connections have been restored and sync is complete.",
+        {
+          position: "bottom-right",
+          autoClose: 4000,
+        }
+      );
     };
 
     const handleOffline = () => {
-      toast.warning("You are currently offline. Running in secure local offline caching mode.", {
-        position: "bottom-right",
-        autoClose: 5000,
-      });
+      toast.warning(
+        "You are currently offline. Running in secure local offline caching mode.",
+        {
+          position: "bottom-right",
+          autoClose: 5000,
+        }
+      );
     };
 
     window.addEventListener("online", handleOnline);
@@ -117,56 +174,7 @@ function App() {
             <OfflineSyncManager />
 
             <Router>
-              <div className="App">
-                <Navbar
-                  cursorEnabled={cursorEnabled}
-                  toggleCursor={toggleCursor}
-                />
-                <KeyboardShortcutsModal
-                  isOpen={showKeyboardModal}
-                  onClose={() => setShowKeyboardModal(false)}
-                />
-
-                <main
-                  className="
-                    relative
-                    z-10
-                    min-h-[85vh]
-                    bg-white
-                    dark:bg-slate-950
-                    text-black
-                    dark:text-white
-                    transition-colors
-                    duration-300
-                  "
-                >
-                  <PageTransition>
-                    <Suspense
-                      fallback={
-                        <div className="flex items-center justify-center min-h-screen">
-                          Loading...
-                        </div>
-                      }
-                    >
-                      <Routes>
-                        <Route path="/register/:id" element={<RegistrationPage />} />
-                        <Route path="/*" element={<AppRoutes />} />
-                        <Route path="*" element={<NotFoundPage />} />
-                      </Routes>
-                    </Suspense>
-                  </PageTransition>
-                </main>
-
-                <ScrollToTop />
-                <Suspense fallback={null}>
-                  <Chatbot />
-                  <Footer />
-                </Suspense>
-                <FeedbackButton />
-                <ThemeCustomizerDrawer />
-                <SessionRecovery />
-                <FluidCursor enabled={cursorEnabled} />
-              </div>
+              <AppContent />
             </Router>
           </SessionRecoveryProvider>
         </MyEventsProvider>

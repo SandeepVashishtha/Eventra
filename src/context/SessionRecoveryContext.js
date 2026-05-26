@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { syncSecureStorage } from '../utils/secureStorage';
+
 
 const SessionRecoveryContext = createContext();
 
@@ -64,26 +64,7 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   useEffect(() => {
     try {
-      const saved = syncSecureStorage.getItem(SESSION_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        const now = Date.now();
-
-        const isValidTimestamp =
-          parsed &&
-          parsed.timestamp &&
-          parsed.timestamp &&
-          typeof parsed.timestamp === 'number' &&
-          !isNaN(parsed.timestamp);
-
-        if (isValidTimestamp && now - parsed.timestamp < SESSION_TIMEOUT) {
-          setSessionData(parsed);
-          setHasSession(true);
-          setShowRecoveryPrompt(true);
-        } else {
-          syncSecureStorage.removeItem(SESSION_KEY);
-        }
-      }
+      // Session loading from storage has been removed.
     } catch (e) {
       console.error('Failed to load session:', e);
     }
@@ -101,7 +82,7 @@ export const SessionRecoveryProvider = ({ children }) => {
           timestamp: Date.now(),
           lastActivity: lastActivityRef.current,
         };
-        syncSecureStorage.setItem(SESSION_KEY, JSON.stringify(currentSession));
+        // syncSecureStorage.setItem(SESSION_KEY, JSON.stringify(currentSession));
         setSessionData(currentSession);
         setHasSession(true);
       } catch (e) {
@@ -112,7 +93,7 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   const clearSession = useCallback(() => {
     try {
-      syncSecureStorage.removeItem(SESSION_KEY);
+      // syncSecureStorage.removeItem(SESSION_KEY);
       setSessionData(null);
       setHasSession(false);
       setShowRecoveryPrompt(false);

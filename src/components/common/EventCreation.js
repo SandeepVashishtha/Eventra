@@ -5,7 +5,7 @@ import { Download } from "lucide-react";
 import {
   
 } from "../../utils/eventDraftUtils";
-import { syncSecureStorage } from "../../utils/secureStorage";
+
 
 
 import { exportAttendeesToCSV }
@@ -408,17 +408,10 @@ const [showRestoreModal, setShowRestoreModal] = useState(false);
           })),
       };
 
-      const token = syncSecureStorage.getItem("token");
-      if (!token) {
-        toast.error("Authentication required. Please log in and try again.");
-        setCurrentStep("form");
-        return;
-      }
-
       // Mock success if API inactive
       if (
         !API_ENDPOINTS.EVENTS.CREATE ||
-        (process.env.NODE_ENV === "development" && process.env.REACT_APP_USE_REAL_API === "true")
+        !(process.env.NODE_ENV === "development" && process.env.REACT_APP_USE_REAL_API === "true")
       ) {
         console.warn("⚠️ Mocking event creation success (API inactive)");
         await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -430,10 +423,17 @@ const [showRestoreModal, setShowRestoreModal] = useState(false);
         return;
       }
 
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Authentication required. Please log in and try again.");
+        setCurrentStep("form");
+        return;
+      }
+
       const response = await apiUtils.post(
         API_ENDPOINTS.EVENTS.CREATE,
         eventData,
-        token
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       const result = response.data;
 

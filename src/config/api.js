@@ -1,5 +1,5 @@
 import axios from "axios";
-import { syncSecureStorage } from "../utils/secureStorage";
+import { getToken } from "../utils/secureStorage";
 
 
 // ---------------------------------------------------------------------------
@@ -112,7 +112,7 @@ const normalizeRequestConfig = (configOrToken = {}, maybeToken) => {
       ? configOrToken
       : typeof maybeToken === "string"
         ? maybeToken
-        : syncSecureStorage.getItem("token") || "";
+        : getToken() || "";
 
   if (token) {
     config.headers = {

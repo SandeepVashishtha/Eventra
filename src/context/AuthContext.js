@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from '../config/api';
 import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
-import { syncSecureStorage } from '../utils/secureStorage';
+
 import { toast } from 'react-toastify';
 
 const AuthContext = createContext();
@@ -28,8 +28,8 @@ export const AuthProvider = ({ children }) => {
   const clearSession = useCallback(() => {
     setUser(null);
     setToken(null);
-    syncSecureStorage.removeItem('token');
-    syncSecureStorage.removeItem('user');
+    // syncSecureStorage.removeItem('token');
+    // syncSecureStorage.removeItem('user');
   }, []);
 
   /**
@@ -48,8 +48,8 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check for existing authentication on app start
-    const storedToken = syncSecureStorage.getItem('token');
-    const storedUser = syncSecureStorage.getItem('user');
+    const storedToken = null; // syncSecureStorage.getItem('token');
+    const storedUser = null; // syncSecureStorage.getItem('user');
 
     if (storedToken && storedUser) {
       // --- Security fix: validate token before restoring session ---
@@ -140,8 +140,8 @@ export const AuthProvider = ({ children }) => {
   const persistSession = (sessionToken, sessionUser) => {
     setToken(sessionToken);
     setUser(sessionUser);
-    syncSecureStorage.setItem('token', sessionToken);
-    syncSecureStorage.setItem('user', JSON.stringify(sessionUser));
+    // syncSecureStorage.setItem('token', sessionToken);
+    // syncSecureStorage.setItem('user', JSON.stringify(sessionUser));
   };
 
   const extractSession = (res, data, fallbackEmail) => {
