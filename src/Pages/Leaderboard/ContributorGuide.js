@@ -601,7 +601,7 @@ const ContributorGuide = () => {
           initial={{ opacity: 0, y: -20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          style={{fontFamily: '"Big Shoulders Display", sans-seri'}}
+          style={{fontFamily: '"Big Shoulders Display", sans-serif'}}
           className="relative text-3xl md:text-4xl font-extrabold tracking-tight text-black dark:text-white mb-10 text-center"
         >
           Frequently Asked Questions
