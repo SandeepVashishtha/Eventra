@@ -1,40 +1,20 @@
-## Which issue does this PR close?
+## 🛠️ GSSoC 2026 Pull Request: Bug Fix & Optimization
 
-<!--
-We generally require a GitHub issue to be filed for all bug fixes and enhancements and this helps us generate change logs for our releases. You can link an issue to this PR using the GitHub syntax. For example `Closes #123` indicates that this PR will close issue #123.
--->
+### 📝 Description / Rationale
+<!-- Resolves the issue where form states, database actions, or UI configurations encountered unexpected crashes, layout shifts, or race conditions. This patch ensures proper type validations, resilient exception handling, and optimized state management. -->
 
-- Closes #.
+### 💡 Proposed Technical Changes
+- **Target File:** [Specify path, e.g., src/components/Layout/Navbar.js]
+- **Logic Implemented:**
+  - [Outline exact logic change]
+- **Safeguards Added:** [Outline edge cases handled]
 
-## Rationale for this change
+### 🧪 Local Quality Assurance & Verification
+- [ ] Verified code compilation and dynamic asset rendering locally.
+- [ ] Tested layout boundaries across responsive mobile, tablet, and desktop viewports.
+- [ ] Verified that this change introduces zero breaking mutations to adjacent components.
 
-<!--
- Why are you proposing this change? If this is already explained clearly in the issue then this section is not needed.
- Explaining clearly why changes are proposed helps reviewers understand your changes and offer better suggestions for fixes.  
--->
+Closes #.
+CC: @gssoc-maintainer
 
-## What changes are included in this PR?
-
-<!--
-There is no need to duplicate the description in the issue here but it is sometimes worth providing a summary of the individual changes in this PR.
--->
-
-## Are these changes tested?
-
-<!--
-We typically require tests for all PRs in order to:
-1. Prevent the code from being accidentally broken by subsequent changes
-2. Serve as another way to document the expected behavior of the code
-
-If tests are not included in your PR, please explain why (for example, are they covered by existing tests)?
--->
-
-## Are there any user-facing changes?
-
-<!--
-If there are user-facing changes then we may require documentation to be updated before approving the PR.
--->
-
-<!--
-If there are any breaking changes to public APIs, please add the `api change` label.
--->
+Signed-off-by: 
