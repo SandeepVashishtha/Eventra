@@ -18,7 +18,6 @@ import {
 const GITHUB_USER = "SandeepVashishtha";
 const GITHUB_REPO = "Eventra";
 
-const TOKEN = process.env.REACT_APP_GITHUB_TOKEN || ""; // optional
 const LS_KEY = "eventra:repoStats";
 const CACHE_MS = 30 * 60 * 1000; // 30 min
 
@@ -64,26 +63,14 @@ export default function GitHubStats() {
 
     (async () => {
       try {
-        const headers = {
-          Accept: "application/vnd.github+json",
-          "X-GitHub-Api-Version": "2022-11-28",
-          ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}),
-        };
-
-        const repoRes = await fetch(
-          `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}`,
-          { headers },
-        );
+        const repoRes = await fetch(`${process.env.REACT_APP_API_URL}/github/repo`);
         if (!repoRes.ok) throw new Error(`Repo ${repoRes.status}`);
         const repoData = await repoRes.json();
 
         // contributors
         let contribCount = "—";
         try {
-          const cRes = await fetch(
-            `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contributors?per_page=100`,
-            { headers },
-          );
+          const cRes = await fetch(`${process.env.REACT_APP_API_URL}/github/contributors`);
           if (cRes.ok) {
             const cData = await cRes.json();
             if (Array.isArray(cData)) contribCount = cData.length;
@@ -93,10 +80,7 @@ export default function GitHubStats() {
         // pull requests
         let prCount = "—";
         try {
-          const pRes = await fetch(
-            `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/pulls?state=open`,
-            { headers },
-          );
+          const pRes = await fetch(`${process.env.REACT_APP_API_URL}/github/pulls`);
           if (pRes.ok) {
             const pData = await pRes.json();
             if (Array.isArray(pData)) prCount = pData.length;
@@ -127,7 +111,7 @@ export default function GitHubStats() {
       } catch (err) {
         console.warn("GitHub stats fetch failed", err);
         if (!cached && mounted) {
-          setStats({ ...stats, stars: "—", forks: "—", issues: "—" });
+          setStats((s) => ({ ...s, stars: "—", forks: "—", issues: "—" }));
           setIsLoading(false);
         }
       }
@@ -224,9 +208,7 @@ export default function GitHubStats() {
           className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 max-w-6xl mx-auto"
         >
           {isLoading
-            ? [...Array(10)].map((_, i) => (
-                <GitHubStatCardSkeleton key={`skeleton-${i}`} />
-              ))
+            ? [...Array(10)].map((_, i) => <GitHubStatCardSkeleton key={`skeleton-${i}`} />)
             : statCards.map(({ label, value, icon, link }, index) => (
                 <motion.a
                   key={label}

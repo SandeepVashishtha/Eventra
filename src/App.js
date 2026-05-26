@@ -1,31 +1,35 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom"; // Added this back for your routing!
 import "./App.css";
+import { toast } from "react-toastify";
 
-// Layout & Components
 import Navbar from "./components/Layout/Navbar";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 import FluidCursor from "./jhalak/FluidCursor";
 import PageTransition from "./components/common/PageTransition";
+import PageLoader from "./components/common/PageLoader";
 import ReminderChecker from "./components/reminders/ReminderChecker";
+import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
+import ThemeCustomizerDrawer from "./components/common/ThemeCustomizerDrawer";
+import SessionRecovery from "./components/SessionRecovery";
 
-// Pages
-import RegistrationPage from "./Pages/RegistrationPage";
-
-// Context & Hooks
 import NotificationToastContainer from "./components/common/NotificationProvider";
 import { NotificationProvider } from "./context/NotificationContext";
 import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
 import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
+
 import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
+import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 
-// Lazy load heavy components
 const Footer = lazy(() => import("./components/Layout/Footer"));
 const Chatbot = lazy(() => import("./components/Chatbot"));
 const AppRoutes = lazy(() => import("./components/AppRoutes"));
+const RegistrationPage = lazy(() => import("./Pages/RegistrationPage"));
+const NotFoundPage = lazy(() => import("./Pages/NotFoundPage"));
 
 const OfflineSyncManager = () => {
   useOfflineSync();
@@ -33,74 +37,91 @@ const OfflineSyncManager = () => {
 };
 
 function App() {
-  const [cursorEnabled, setCursorEnabled] =
-    useState(
-      localStorage.getItem("cursor") !== "off"
-    );
+  const [cursorEnabled, setCursorEnabled] = useState(localStorage.getItem("cursor") !== "off");
+  const [showKeyboardModal, setShowKeyboardModal] = useState(false);
 
-  // Initialize Lenis smooth scrolling
   useLenis();
 
-  // Toggle Cursor
+  useKeyboardShortcuts({
+    onOpenHelp: () => setShowKeyboardModal(true),
+    onCloseHelp: () => setShowKeyboardModal(false),
+  });
+
   const toggleCursor = () => {
     const newValue = !cursorEnabled;
-
     setCursorEnabled(newValue);
-
-    localStorage.setItem(
-      "cursor",
-      newValue ? "on" : "off"
-    );
+    try {
+      localStorage.setItem("cursor", newValue ? "on" : "off");
+    } catch (error) {
+      console.error('Error setting cursor preference:', error);
+    }
   };
 
-  // Listen For Cursor Preference Changes
   useEffect(() => {
     const handleCursorPreference = (event) => {
-      if (
-        event?.detail?.cursorEnabled !== undefined
-      ) {
-        setCursorEnabled(
-          event.detail.cursorEnabled
-        );
+      if (event?.detail?.cursorEnabled !== undefined) {
+        setCursorEnabled(event.detail.cursorEnabled);
       }
     };
 
-    window.addEventListener(
-      "cursorPreferenceChanged",
-      handleCursorPreference
-    );
+    window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
 
     return () => {
-      window.removeEventListener(
-        "cursorPreferenceChanged",
-        handleCursorPreference
-      );
+      window.removeEventListener("cursorPreferenceChanged", handleCursorPreference);
     };
   }, []);
+
+  // Handle Online/Offline Status Notification
+  useEffect(() => {
+    const handleOnline = () => {
+      toast.success("Back online! Your connections have been restored and sync is complete.", {
+        position: "bottom-right",
+        autoClose: 4000,
+      });
+    };
+
+    const handleOffline = () => {
+      toast.warning("You are currently offline. Running in secure local offline caching mode.", {
+        position: "bottom-right",
+        autoClose: 5000,
+      });
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    // Initial check on mount
+    if (!navigator.onLine) {
+      handleOffline();
+    }
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []); // <--- The missing bracket and closure are fixed!
 
   return (
     <AuthProvider>
       <NotificationProvider>
         <MyEventsProvider>
           <SessionRecoveryProvider>
-            <NotificationProvider />
             <ReminderChecker />
             <NotificationToastContainer />
-
             <OfflineSyncManager />
 
-            <Router>
             <div className="App">
-              <Navbar
-                cursorEnabled={cursorEnabled}
-                toggleCursor={toggleCursor}
+              <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+              <KeyboardShortcutsModal
+                isOpen={showKeyboardModal}
+                onClose={() => setShowKeyboardModal(false)}
               />
 
               <main
                 className="
                   relative
                   z-10
-                min-h-[85vh]
+                  min-h-[85vh]
                   bg-white
                   dark:bg-slate-950
                   text-black
@@ -110,10 +131,18 @@ function App() {
                 "
               >
                 <PageTransition>
-                  <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+                  <Suspense fallback={<PageLoader text="Loading page..." />}>
                     <Routes>
-                      <Route path="/register/:id" element={<RegistrationPage />} />
-                      <Route path="*" element={<AppRoutes />} />
+                      <Route
+                        path="/register/:id"
+                        element={
+                          <ProtectedRoute>
+                            <RegistrationPage />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route path="/*" element={<AppRoutes />} />
+                      <Route path="*" element={<NotFoundPage />} />
                     </Routes>
                   </Suspense>
                 </PageTransition>
@@ -125,9 +154,10 @@ function App() {
                 <Footer />
               </Suspense>
               <FeedbackButton />
+              <ThemeCustomizerDrawer />
+              <SessionRecovery />
               <FluidCursor enabled={cursorEnabled} />
             </div>
-          </Router>
           </SessionRecoveryProvider>
         </MyEventsProvider>
       </NotificationProvider>

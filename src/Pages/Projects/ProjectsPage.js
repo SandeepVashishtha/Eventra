@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiAlertCircle, FiSearch, FiX } from "react-icons/fi";
+import { FiAlertCircle, FiChevronDown, FiSearch, FiX } from "react-icons/fi";
 
 import ProjectHero from "./ProjectHero";
 import ProjectCard from "./ProjectCard";
-import FeedbackButton from "../../components/FeedbackButton";
 import ProjectCTA from "./ProjectCTA";
 
 import mockProjects from "./mockProjectsData.json";
 
+
+import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
 
@@ -33,34 +34,73 @@ const ProjectGallery = () => {
     issues: "Most Issues",
   };
 
-  useEffect(() => {
-    const fetchProjects = async () => {
+  const handleOptionKeyDown = (event, onSelect, onClose) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onSelect();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      onClose();
+    }
+  };
+
+  const fetchProjects = useCallback(async () => {
       try {
         setIsLoading(true);
         setError("");
 
-        setTimeout(() => {
-          const projectsData = mockProjects;
+        // --- PRODUCTION LOGIC: attempt real API call to Spring Boot backend ---
+        const response = await apiUtils.get(API_ENDPOINTS.PROJECTS.LIST);
+        const projectsData = response.data;
 
+        // only use API data if it is non-empty; otherwise fall back to mock
+        if (projectsData && projectsData.length > 0) {
           setProjects(projectsData);
 
-          const uniqueCategories = [
-            ...new Set(projectsData.map((p) => p.category)),
-          ];
+          // Attempt to fetch categories from API
+          try {
+            const categoriesResponse = await apiUtils.get(
+              API_ENDPOINTS.PROJECTS.CATEGORIES
+            );
+            const categoriesData = categoriesResponse.data;
+            setCategories(["all", ...categoriesData]);
+          } catch {
+            // derive categories from API project data if categories endpoint throws
+            const uniqueCategories = [...new Set(projectsData.map(p => p.category))];
+            setCategories(["all", ...uniqueCategories]);
+          }
+          return; // exit successfully
+        }
 
-          setCategories(["all", ...uniqueCategories]);
-
-          setIsLoading(false);
-        }, 500);
+        // --- MOCK DATA FALLBACK: API returned empty array ---
+        console.warn("Projects API returned empty array — loading mock data.");
+        setProjects(mockProjects);
+        const mockUniqueCategories = [
+          ...new Set(mockProjects.map((p) => p.category)),
+        ];
+        setCategories(["all", ...mockUniqueCategories]);
       } catch (err) {
         console.error("Error fetching projects:", err);
-        setError("Failed to load projects. Please try again later.");
+
+        // Fall back to mock data in development so local work is unaffected
+        if (process.env.NODE_ENV === "development") {
+          console.warn("API unavailable — falling back to mock project data.");
+          setProjects(mockProjects);
+          const devUniqueCategories = [
+            ...new Set(mockProjects.map((p) => p.category)),
+          ];
+          setCategories(["all", ...devUniqueCategories]);
+        } else {
+          setError("Failed to load projects. Please try again later.");
+        }
+      } finally {
         setIsLoading(false);
       }
-    };
-
-    fetchProjects();
   }, []);
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   const filteredAndSortedProjects = projects
     .filter((project) => {
@@ -162,6 +202,14 @@ const ProjectGallery = () => {
                     onClick={() =>
                       setCategoryOpen((prev) => !prev)
                     }
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") {
+                        setCategoryOpen(false);
+                      }
+                    }}
+                    aria-haspopup="listbox"
+                    aria-expanded={categoryOpen}
+                    aria-controls="project-category-options"
                   >
                     <span className="text-gray-700 dark:text-gray-200">
                       {filterCategory === "all"
@@ -169,31 +217,52 @@ const ProjectGallery = () => {
                         : filterCategory}
                     </span>
 
-                    <FiX className="ml-2 text-gray-400 dark:text-gray-500" />
+                    <FiChevronDown
+                      className={`ml-2 text-gray-400 dark:text-gray-500 transition-transform ${
+                        categoryOpen ? "rotate-180" : ""
+                      }`}
+                      aria-hidden="true"
+                    />
                   </button>
 
                   <AnimatePresence>
                     {categoryOpen && (
                       <motion.ul
+                        id="project-category-options"
+                        role="listbox"
+                        aria-label="Project category"
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         className="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
                       >
-                        {categories.map((cat) => (
-                          <li
-                            key={cat}
-                            onClick={() => {
-                              setFilterCategory(cat);
-                              setCategoryOpen(false);
-                            }}
-                            className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-gray-700 dark:text-gray-300"
-                          >
-                            {cat === "all"
-                              ? "All Categories"
-                              : cat}
-                          </li>
-                        ))}
+                        {categories.map((cat) => {
+                          const selectCategory = () => {
+                            setFilterCategory(cat);
+                            setCategoryOpen(false);
+                          };
+                          return (
+                            <li
+                              key={cat}
+                              role="option"
+                              tabIndex={0}
+                              aria-selected={filterCategory === cat}
+                              onClick={selectCategory}
+                              onKeyDown={(event) =>
+                                handleOptionKeyDown(
+                                  event,
+                                  selectCategory,
+                                  () => setCategoryOpen(false)
+                                )
+                              }
+                              className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none cursor-pointer text-gray-700 dark:text-gray-300"
+                            >
+                              {cat === "all"
+                                ? "All Categories"
+                                : cat}
+                            </li>
+                          );
+                        })}
                       </motion.ul>
                     )}
                   </AnimatePresence>
@@ -213,35 +282,64 @@ const ProjectGallery = () => {
                     type="button"
                     className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-700 hover:ring-2 hover:ring-black/20 transition-all min-w-[200px]"
                     onClick={() => setSortOpen((prev) => !prev)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") {
+                        setSortOpen(false);
+                      }
+                    }}
+                    aria-haspopup="listbox"
+                    aria-expanded={sortOpen}
+                    aria-controls="project-sort-options"
                   >
                     <span className="text-gray-700 dark:text-gray-300">
                       {sortByLabels[sortBy]}
                     </span>
 
-                    <FiX className="ml-2 text-gray-400 dark:text-gray-500" />
+                    <FiChevronDown
+                      className={`ml-2 text-gray-400 dark:text-gray-500 transition-transform ${
+                        sortOpen ? "rotate-180" : ""
+                      }`}
+                      aria-hidden="true"
+                    />
                   </button>
 
                   <AnimatePresence>
                     {sortOpen && (
                       <motion.ul
+                        id="project-sort-options"
+                        role="listbox"
+                        aria-label="Sort projects"
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         className="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
                       >
                         {Object.entries(sortByLabels).map(
-                          ([key, label]) => (
-                            <li
-                              key={key}
-                              onClick={() => {
-                                setSortBy(key);
-                                setSortOpen(false);
-                              }}
-                              className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-gray-700 dark:text-gray-300"
-                            >
-                              {label}
-                            </li>
-                          )
+                          ([key, label]) => {
+                            const selectSort = () => {
+                              setSortBy(key);
+                              setSortOpen(false);
+                            };
+                            return (
+                              <li
+                                key={key}
+                                role="option"
+                                tabIndex={0}
+                                aria-selected={sortBy === key}
+                                onClick={selectSort}
+                                onKeyDown={(event) =>
+                                  handleOptionKeyDown(
+                                    event,
+                                    selectSort,
+                                    () => setSortOpen(false)
+                                  )
+                                }
+                                className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none cursor-pointer text-gray-700 dark:text-gray-300"
+                              >
+                                {label}
+                              </li>
+                            );
+                          }
                         )}
                       </motion.ul>
                     )}
@@ -295,8 +393,10 @@ const ProjectGallery = () => {
               </p>
 
               <button
-                onClick={() => window.location.reload()}
-                className="mt-6 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white"
+                type="button"
+                onClick={fetchProjects}
+                disabled={isLoading}
+                className="mt-6 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 Try Again
               </button>
@@ -379,8 +479,6 @@ const ProjectGallery = () => {
       </div>
 
       <ProjectCTA />
-
-      <FeedbackButton />
     </div>
   );
 };

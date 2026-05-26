@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNotification } from '../../context/NotificationContext';
-
+import { getRelativeTime } from '../../utils/relativeTime';
 export default function NotificationBell() {
   const { notifications, unreadCount, markAsRead } = useNotification();
   const [isOpen, setIsOpen] = useState(false);
@@ -41,9 +41,9 @@ export default function NotificationBell() {
                   className={`p-3 border-b border-gray-50 cursor-pointer transition-colors ${!notif.isRead ? 'bg-blue-50/60 hover:bg-blue-50' : 'hover:bg-gray-50'}`}
                 >
                   <p className={`text-sm text-gray-800 ${!notif.isRead ? 'font-medium' : ''}`}>{notif.message}</p>
-                  <span className="text-xs text-gray-400 block mt-1">
-                    {new Date(notif.timestamp).toLocaleDateString()}
-                  </span>
+                  <span className="text-xs text-gray-400 block mt-1" title={new Date(notif.timestamp).toLocaleDateString()}>
+  {getRelativeTime(notif.timestamp) || new Date(notif.timestamp).toLocaleDateString()}
+</span>
                 </div>
               ))
             )}
