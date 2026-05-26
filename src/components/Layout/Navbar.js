@@ -113,7 +113,7 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => (
           className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-pink-500 text-white font-semibold border-none shadow-md hover:shadow-lg transition-all cursor-pointer"
         >
           <Palette className="w-5 h-5" />
-          <span>Theme Customizer</span>
+          <span>THEME Customizer</span>
         </motion.button>
       </div>
     );
