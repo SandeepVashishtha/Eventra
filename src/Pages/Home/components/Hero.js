@@ -2,7 +2,7 @@ import { motion, useAnimation, AnimatePresence, MotionConfig } from "framer-moti
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
-import { Search, Calendar, Trophy, Code, ExternalLink, ArrowRight } from "lucide-react";
+import { Search, Calendar, Trophy, Code, ExternalLink } from "lucide-react";
 
 // Import mock data
 import eventsData from "../../Events/eventsMockData.json";
@@ -216,7 +216,7 @@ border-b border-gray-100 dark:border-slate-900">
               style={{ fontFamily: '"Inter", sans-serif' }}
             >
               <motion.span
-                className="block text-gray-900 dark:text-white mb-2 md:mb-0"
+                className="block text-gray-900 dark:text-gray-400 mb-2 md:mb-0"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
@@ -253,7 +253,7 @@ border-b border-gray-100 dark:border-slate-900">
           {/* Subtext */}
           <motion.p
             variants={fadeUp}
-            className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
+            className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-800 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
           >
             Connect with developers, learn new skills, and grow your network at
             the best tech events, hackathons, and workshops in your area.
@@ -363,7 +363,7 @@ text-gray-600 dark:text-gray-300"
                 className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-500 dark:bg-blue-900 text-white dark:text-white font-bold shadow-md shadow-blue-200 dark:shadow-none overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-600 dark:hover:bg-blue-800"
               >
                 <span className="relative z-10 flex items-center">
-                  <img src="/assets/events.svg" alt="" className="mr-2"/>
+                  <img src="/assets/events.svg" alt="events" className="mr-2"/>
                   Explore Events
                   <svg
                     className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
@@ -386,7 +386,7 @@ text-gray-600 dark:text-gray-300"
                 aria-label="Join upcoming hackathons"
                 className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-amber-400 dark:bg-yellow-900 border border-amber-300 dark:border-yellow-700 text-white dark:text-white font-semibold shadow-md shadow-amber-100 dark:shadow-none hover:shadow-lg hover:bg-amber-500 dark:hover:bg-yellow-800 hover:scale-105 transition-all duration-300"
               >
-                <img src="/assets/hackathons.svg" alt="" className="mr-2"/>
+                <img src="/assets/hackathons.svg" alt="hackaton" className="mr-2"/>
                 Join Hackathons
                 <svg
                     className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
@@ -409,7 +409,7 @@ text-gray-600 dark:text-gray-300"
                 aria-label="Learn more about Eventra"
                 className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-pink-500 dark:bg-pink-900 text-white dark:text-white font-semibold shadow-md shadow-pink-100 dark:shadow-none transform transition-all duration-300 hover:scale-105 hover:bg-pink-600 dark:hover:bg-pink-800"
               >
-                <img src="/assets/learnmore.svg" alt="" className="mr-2"/>
+                <img src="/assets/learnmore.svg" alt="learnmore" className="mr-2"/>
                 Learn More
                 <svg
                   className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
@@ -460,7 +460,7 @@ text-gray-600 dark:text-gray-300"
                       </>
                     )}
                   </p>
-                  <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-semibold uppercase tracking-wider">
+                  <p className="text-gray-500 dark:text-gray-600 text-xs sm:text-sm font-semibold uppercase tracking-wider">
                     {stat.label}
                   </p>
                 </motion.div>

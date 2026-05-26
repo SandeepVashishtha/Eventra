@@ -91,8 +91,6 @@ This repository contains the React frontend application for Eventra. The backend
 
 ## Tech Stack
 
-## Tech Stack
-
 | Frontend                         | DevOps & Infrastructure              |
 | :------------------------------- | :----------------------------------- |
 | **React 18.2**                   | **Git & GitHub** for Version Control |
@@ -154,33 +152,33 @@ The repository is organized into modular frontend components, contexts, configur
 
 ```text
 Eventra/
-├── public/
-├── src/
-│   ├── assets/
-│   ├── components/
-│   │   ├── admin/
-│   │   ├── auth/
-│   │   ├── common/
-│   │   ├── Layout/
-│   │   ├── routes/
-│   │   ├── styles/
-│   │   └── user/
-│   ├── config/
-│   ├── jhalak/
-│   │   ├── FluidCursor.js   # Fluid cursor animation effect (navbar)
-│   │   └── RespawningText.js # Animated respawning/typewriter text effect
-│   ├── context/
-│   ├── Pages/
-│   ├── utils/
-│   ├── App.js
-│   ├── App.css
-│   ├── index.js
-│   └── index.css
-├── tests/
-├── .env.example
-├── package.json
-├── tailwind.config.js
-└── README.md
+|-- public/
+|-- src/
+|   |-- assets/
+|   |-- components/
+|   |   |-- admin/
+|   |   |-- auth/
+|   |   |-- common/
+|   |   |-- Layout/
+|   |   |-- routes/
+|   |   |-- styles/
+|   |   `-- user/
+|   |-- config/
+|   |-- jhalak/
+|   |   |-- FluidCursor.js   # Fluid cursor animation effect (navbar)
+|   |   `-- RespawningText.js # Animated respawning/typewriter text effect
+|   |-- context/
+|   |-- Pages/
+|   |-- utils/
+|   |-- App.js
+|   |-- App.css
+|   |-- index.js
+|   `-- index.css
+|-- tests/
+|-- .env.example
+|-- package.json
+|-- tailwind.config.js
+`-- README.md
 ```
 
 ## Deployment
@@ -289,20 +287,30 @@ Example:
 
 ```env
 REACT_APP_API_URL=http://localhost:8080/api
+REACT_APP_USE_REAL_API=false
 GITHUB_TOKEN=your_github_token
+REACT_APP_EMAILJS_PUBLIC_KEY=your_emailjs_public_key
+REACT_APP_EMAILJS_SERVICE_ID=your_emailjs_service_id
+REACT_APP_EMAILJS_TEMPLATE_ID=your_emailjs_template_id
+REACT_APP_FACEBOOK_APP_ID=your_facebook_app_id_here
+REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id
+DAYS_THRESHOLD=30
 ```
 
 ### Required Environment Variables
 
-| Variable                        | Description                    |
-| ------------------------------- | ------------------------------ |
-| `NODE_ENV`                      | Application environment        |
-| `REACT_APP_API_URL`             | Backend API base URL           |
-| `GITHUB_TOKEN`                  | GitHub API token               |
-| `REACT_APP_EMAILJS_PUBLIC_KEY`  | EmailJS public key             |
-| `REACT_APP_EMAILJS_SERVICE_ID`  | EmailJS service ID             |
-| `REACT_APP_EMAILJS_TEMPLATE_ID` | EmailJS template ID            |
-| `REACT_APP_FACEBOOK_APP_ID`     | Facebook authentication app ID |
+| Variable | Required | Description |
+| --- | --- | --- |
+| `NODE_ENV` | Yes | Application environment |
+| `REACT_APP_API_URL` | Yes | Backend API base URL |
+| `REACT_APP_USE_REAL_API` | No | Enables real API calls in selected development flows |
+| `DAYS_THRESHOLD` | No | Threshold days configuration used by date-based features |
+| `GITHUB_TOKEN` | No | GitHub API token for higher rate limits on contributor and repository stats (configured in Vercel environment variables, not exposed to the client) |
+| `REACT_APP_EMAILJS_PUBLIC_KEY` | No | EmailJS public key for event registration emails |
+| `REACT_APP_EMAILJS_SERVICE_ID` | No | EmailJS service ID for event registration emails |
+| `REACT_APP_EMAILJS_TEMPLATE_ID` | No | EmailJS template ID for event registration emails |
+| `REACT_APP_FACEBOOK_APP_ID` | No | Facebook authentication/share dialog app ID |
+| `REACT_APP_GOOGLE_CLIENT_ID` | No | Google authentication client ID |
 
 The `.env.example` file contains all required environment variable names needed to run the project locally.
 

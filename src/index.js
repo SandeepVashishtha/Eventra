@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom"; // <-- 1. Added this import
 
 import "./index.css";
 import App from "./App";
@@ -17,7 +18,11 @@ root.render(
   <React.StrictMode>
     <GlobalErrorBoundary>
       <ThemeProvider>
-        <App />
+        <BrowserRouter>
+          {" "}
+          {/* <-- 2. Wrapped the App here */}
+          <App />
+        </BrowserRouter>
       </ThemeProvider>
     </GlobalErrorBoundary>
   </React.StrictMode>
