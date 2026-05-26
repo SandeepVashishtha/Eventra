@@ -190,11 +190,11 @@ const Contributors = () => {
   // Filter contributors based on search term
   const filteredContributors = contributors.filter(
     (c) =>
-      c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.login?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.role?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.company?.toLowerCase().includes(searchTerm.toLowerCase()),
+      (c.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.login || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.role || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.location || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.company || "").toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   // UPDATED: Loading skeleton grid
