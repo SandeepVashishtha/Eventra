@@ -106,7 +106,7 @@ const SignupForm = () => {
       }
     }, 1000);
     return () => clearTimeout(timer);
-  }, [formData.password, formData.confirmPassword]);
+  }, [formData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -140,15 +140,7 @@ const SignupForm = () => {
         confirmPassword: formData.confirmPassword,
       });
 
-      const responseText = await response.text();
-      let data = null;
-      try { data = responseText ? JSON.parse(responseText) : null; } catch { data = null; }
-
-      if (!response.ok) {
-        const backendMessage = data?.message || data?.error || "";
-        setError(backendMessage ? `${backendMessage} (${response.status})` : `Registration failed (${response.status})`);
-        return;
-      }
+      const data = response.data || {};
 
       const sessionToken = data?.token;
       const sessionUser = {

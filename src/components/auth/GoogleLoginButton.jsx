@@ -1,7 +1,8 @@
 import { GoogleLogin } from "@react-oauth/google";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { toast } from "react-toastify";
 
 const GoogleLoginButton = () => {
 
@@ -14,24 +15,21 @@ const GoogleLoginButton = () => {
   ) => {
 
     try {
-
-      const res = await axios.post(
-        `${process.env.REACT_APP_API_URL}/auth/google`,
+      const res = await apiUtils.post(
+        API_ENDPOINTS.AUTH.GOOGLE,
         {
           token: credentialResponse.credential,
         }
       );
+      const data = await res.json();
 
       // Use AuthContext session handler
       setAuthSession(
-        res.data.token,
-        res.data
+        data.token,
+        data
       );
 
-      console.log(
-        "Google Login Success:",
-        res.data
-      );
+
 
       navigate("/dashboard", {
         replace: true
@@ -50,7 +48,7 @@ const GoogleLoginButton = () => {
     <GoogleLogin
       onSuccess={handleSuccess}
       onError={() =>
-        console.log("Login Failed")
+        toast.error("Google Sign-In failed. Please try again.")
       }
     />
   );

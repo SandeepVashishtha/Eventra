@@ -2,41 +2,71 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/Eventra.png" />
 
+    <!-- Favicons -->
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="%PUBLIC_URL%/favicon.ico"
+    />
+
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="%PUBLIC_URL%/favicon-32x32.png"
+    />
+
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="%PUBLIC_URL%/favicon-16x16.png"
+    />
+
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="%PUBLIC_URL%/apple-touch-icon.png"
+    />
+
+    <link
+      rel="manifest"
+      href="%PUBLIC_URL%/site.webmanifest"
+    />
+
+    <!-- Responsive -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
 
+    <!-- Theme -->
     <meta
       name="theme-color"
-      content="#000000"
+      content="#0f172a"
     />
 
+    <!-- Primary SEO -->
     <meta
       name="description"
       content="Open-source event management platform for communities, colleges, and organizations worldwide"
     />
 
-<link
-      rel="apple-touch-icon"
-      href="%PUBLIC_URL%/logo192.png"
-    />
     <!-- Preconnect for faster external resource loading -->
     <link rel="preconnect" href="https://api.github.com" />
     <link rel="dns-prefetch" href="https://api.github.com" />
-    <link rel="preconnect" href="https://accounts.google.com" crossorigin />
-    <link rel="dns-prefetch" href="https://accounts.google.com" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
     <link
-      rel="manifest"
-      href="%PUBLIC_URL%/manifest.json"
+      rel="preconnect"
+      href="https://accounts.google.com"
+      crossorigin
+    />
+    <link
+      rel="dns-prefetch"
+      href="https://accounts.google.com"
     />
 
-    <!-- Preconnect -->
     <link
       rel="preconnect"
       href="https://fonts.googleapis.com"
@@ -70,44 +100,29 @@
       as="image"
     />
 
-  <!-- Prevent Theme Flickering -->
-<script>
-  document.documentElement.classList.add(
-    "no-transition"
-  );
+    <!-- Prevent Theme Flickering -->
+    <script>
+      (() => {
+        try {
+          const savedTheme = localStorage.getItem("theme");
+          const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          const theme = savedTheme || (systemDark ? "dark" : "light");
 
-  (() => {
-    const savedTheme =
-      localStorage.getItem(
-        "theme"
-      );
+          document.documentElement.classList.add("no-transition");
+          document.documentElement.classList.remove("light", "dark");
+          document.documentElement.classList.add(theme);
+          document.documentElement.style.colorScheme = theme;
 
-    const systemDark =
-      window.matchMedia(
-        "(prefers-color-scheme: dark)"
-      ).matches;
+          window.addEventListener("load", () => {
+            document.documentElement.classList.remove("no-transition");
+          });
+        } catch (e) {
+          console.error("Theme initialization failed:", e);
+        }
+      })();
+    </script>
 
-    const theme =
-      savedTheme ||
-      (systemDark
-        ? "dark"
-        : "light");
-
-    document.documentElement.classList.add(
-      theme
-    );
-  })();
-
-  window.addEventListener(
-    "load",
-    () => {
-      document.documentElement.classList.remove(
-        "no-transition"
-      );
-    }
-  );
-</script>
-
+    <!-- Title -->
     <title>
       Eventra - Open Source Event Management Platform
     </title>
@@ -124,14 +139,14 @@
       defer
     ></script>
 
-    <!-- EmailJS for RSVP confirmation emails -->
+    <!-- EmailJS -->
     <script
       src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"
       async
     ></script>
   </head>
 
-  <body>
+  <body class="bg-white text-black dark:bg-gray-900 dark:text-white">
     <noscript>
       You need to enable JavaScript to run this app.
     </noscript>

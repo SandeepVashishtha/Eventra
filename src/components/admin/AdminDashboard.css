@@ -7,6 +7,7 @@
   display: flex;
   min-height: 100vh;
   background: #f8fafc;
+  color: #111827;
   font-family: 'Inter', system-ui, sans-serif;
   --ad-space-xxs: 0.25rem;
   --ad-space-xs: 0.5rem;
@@ -16,7 +17,10 @@
   --ad-space-xl: 2rem;
 }
 
-.dark .ad-root { background: #0f1117; }
+.dark .ad-root {
+  background: #0f1117;
+  color: #f9fafb;
+}
 
 /* ── Sidebar ── */
 .ad-sidebar {
@@ -177,6 +181,10 @@
   margin: 0;
 }
 
+.dark .ad-admin-role {
+  color: #9ca3af;
+}
+
 /* ── Main ── */
 .ad-main {
   flex: 1;
@@ -210,6 +218,10 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.dark .ad-greeting {
+  color: #d1d5db;
 }
 
 .ad-page-heading {
@@ -571,7 +583,7 @@
 
 .ad-search:focus {
   border-color: #6366f1;
-  background: #fff;
+  background: transparent;
   box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1), 0 4px 12px rgba(0, 0, 0, 0.05);
   width: 300px;
 }
@@ -592,6 +604,10 @@
   font-size: 0.8rem;
   color: #9ca3af;
   margin-left: auto;
+}
+
+.dark .ad-count {
+  color: #d1d5db;
 }
 
 /* ── Table ── */
@@ -825,6 +841,10 @@
   font-size: 0.8rem;
   color: #6b7280;
   font-weight: 500;
+}
+
+.dark .ad-role-count {
+  color: #d1d5db;
 }
 
 /* ── Confirm Modal ── */

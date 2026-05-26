@@ -25,6 +25,7 @@ export const ThemeProvider = ({ children }) => {
     } else {
       localStorage.setItem("theme", theme);
     }
+    localStorage.setItem("activeThemeId", activeThemeId);
 
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) {
@@ -33,7 +34,7 @@ export const ThemeProvider = ({ children }) => {
         resolvedTheme === "dark" ? "#0f172a" : "#ffffff"
       );
     }
-  }, [theme, resolvedTheme]);
+  }, [theme, resolvedTheme, activeThemeId]);
 
   // Detect system theme changes and re-resolve when no saved preference
   useEffect(() => {

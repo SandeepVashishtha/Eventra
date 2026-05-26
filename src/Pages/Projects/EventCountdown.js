@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 const EventCountdown = ({ eventDate }) => {
  const [timeLeft, setTimeLeft] = useState(() => {
@@ -30,7 +30,7 @@ const EventCountdown = ({ eventDate }) => {
       setTimeLeft(calculateTimeLeft());
     }, 1000);
     return () => clearInterval(timer);
-  }, [eventDate]);
+  }, [eventDate, calculateTimeLeft]);
 
   const formatNumber = (num) => String(num).padStart(2, '0');
 
