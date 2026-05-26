@@ -383,8 +383,9 @@ const CollaborationHub = () => {
               
               <div className="form-row">
                 <div className="form-group">
-                  <label>Budget Range</label>
+                  <label htmlFor="collab-budget">Budget Range</label>
                   <select 
+                    id="collab-budget"
                     name="budget"
                     value={newRequest.budget}
                     onChange={handleRequestChange}
@@ -696,6 +697,10 @@ export default CollaborationHub;
 /*
  * ============================================================================
  * ACCESSIBILITY & QUALITY ASSURANCE DOCUMENTATION
+
+
+
+
 
  * STANDARDS: WCAG 2.1 / 2.2 AA Compliance Checklist
  * ============================================================================
