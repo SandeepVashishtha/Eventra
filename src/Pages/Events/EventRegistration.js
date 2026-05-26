@@ -374,7 +374,7 @@ const EventRegistration = () => {
     );
   }
 
-  const isPastEvent = new Date(`${event.date} ${event.time}`) < new Date();
+  const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
   const isEventFull = event.attendees >= event.maxAttendees;
 
   if (isPastEvent || isEventFull) {

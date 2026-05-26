@@ -172,3 +172,23 @@ export const parseEventToUTC = (dateStr, timeStr, timezone) => {
     return new Date(year, month - 1, day, hours, minutes).getTime();
   }
 };
+
+/**
+ * Parse an event's local date + time string into a native Date object in local time.
+ * Safe for cross-browser parsing (e.g. Safari / iOS WebKit).
+ *
+ * @param {string} dateStr
+ * @param {string} [timeStr]
+ * @returns {Date|null}
+ */
+export const parseEventDateTimeLocal = (dateStr, timeStr) => {
+  const normalizedDate = normalizeDateString(dateStr);
+  const parsedTime = parseTimeString(timeStr || "12:00 AM");
+
+  if (!normalizedDate || !parsedTime) return null;
+
+  const [year, month, day] = normalizedDate.split('-').map(Number);
+  const { hours, minutes } = parsedTime;
+
+  return new Date(year, month - 1, day, hours, minutes);
+};

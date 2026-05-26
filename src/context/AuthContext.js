@@ -162,8 +162,12 @@ export const AuthProvider = ({ children }) => {
   const persistSession = (sessionToken, sessionUser) => {
     setToken(sessionToken);
     setUser(sessionUser);
-    localStorage.setItem("token", sessionToken);
-    localStorage.setItem("user", JSON.stringify(sessionUser));
+    try {
+      localStorage.setItem("token", sessionToken);
+      localStorage.setItem("user", JSON.stringify(sessionUser));
+    } catch (error) {
+      console.error('Error persisting session:', error);
+    }
   };
   const normalizeRoles = (roles = []) => {
     return roles.map((role) => {

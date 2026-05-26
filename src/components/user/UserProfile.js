@@ -52,9 +52,14 @@ export default function UserProfile() {
   /* Load profile from localStorage (same source as EditProfile) */
   useEffect(() => {
     const saved = localStorage.getItem("user");
-    const merged = saved
-      ? { ...user, ...JSON.parse(saved) }
-      : user || {};
+    let merged = user || {};
+    if (saved) {
+      try {
+        merged = { ...user, ...JSON.parse(saved) };
+      } catch (error) {
+        console.error('Error parsing user profile from localStorage:', error);
+      }
+    }
     setProfile(merged);
     const t = setTimeout(() => setLoading(false), 600);
     return () => clearTimeout(t);
