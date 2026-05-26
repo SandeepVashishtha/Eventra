@@ -1,0 +1,340 @@
+
+> eventra-website@1.0.0 start
+> react-scripts start
+
+Starting the development server...
+
+Compiled with warnings.
+
+[eslint] 
+src\Pages\Events\EventHero.js
+  Line 4:10:  'motion' is defined but never used  no-unused-vars
+
+src\Pages\Feedback\FeedbackPage.js
+  Line 344:10:  'submittedFeedback' is assigned a value but never used  no-unused-vars
+
+src\Pages\Hackathons\HackathonHero.js
+  Line 3:10:  'useMemo' is defined but never used  no-unused-vars
+
+src\Pages\Home\components\Hero.js
+  Line 136:9:  'floatShape' is assigned a value but never used  no-unused-vars
+  Line 143:9:  'shapes' is assigned a value but never used      no-unused-vars
+
+src\components\SessionRecovery.js
+  Line 1:27:  'useEffect' is defined but never used  no-unused-vars
+
+src\components\auth\Signup.js
+  Line 121:4:  React Hook useEffect has a missing dependency: 'formData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\config\api.js
+  Line 41:7:  'isDev' is assigned a value but never used  no-unused-vars
+
+src\context\SessionRecoveryContext.js
+  Line 167:41:  The ref value 'activityTimeoutRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'activityTimeoutRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+src\context\ThemeContext.js
+  Line 133:5:  React Hook useMemo has a missing dependency: 'toggleTheme'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+[1m[33mWARNING[39m[22m in [1m[eslint] 
+src\Pages\Events\EventHero.js
+  Line 4:10:  'motion' is defined but never used  no-unused-vars
+
+src\Pages\Feedback\FeedbackPage.js
+  Line 344:10:  'submittedFeedback' is assigned a value but never used  no-unused-vars
+
+src\Pages\Hackathons\HackathonHero.js
+  Line 3:10:  'useMemo' is defined but never used  no-unused-vars
+
+src\Pages\Home\components\Hero.js
+  Line 136:9:  'floatShape' is assigned a value but never used  no-unused-vars
+  Line 143:9:  'shapes' is assigned a value but never used      no-unused-vars
+
+src\components\SessionRecovery.js
+  Line 1:27:  'useEffect' is defined but never used  no-unused-vars
+
+src\components\auth\Signup.js
+  Line 121:4:  React Hook useEffect has a missing dependency: 'formData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\config\api.js
+  Line 41:7:  'isDev' is assigned a value but never used  no-unused-vars
+
+src\context\SessionRecoveryContext.js
+  Line 167:41:  The ref value 'activityTimeoutRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'activityTimeoutRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+src\context\ThemeContext.js
+  Line 133:5:  React Hook useMemo has a missing dependency: 'toggleTheme'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+[39m[22m
+
+webpack compiled with [1m[33m1 warning[39m[22m
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src\Pages\Events\EventHero.js
+  Line 4:10:  'motion' is defined but never used  no-unused-vars
+
+src\Pages\Feedback\FeedbackPage.js
+  Line 344:10:  'submittedFeedback' is assigned a value but never used  no-unused-vars
+
+src\Pages\Hackathons\HackathonHero.js
+  Line 3:10:  'useMemo' is defined but never used  no-unused-vars
+
+src\Pages\Home\components\Hero.js
+  Line 136:9:  'floatShape' is assigned a value but never used  no-unused-vars
+  Line 143:9:  'shapes' is assigned a value but never used      no-unused-vars
+
+src\components\SessionRecovery.js
+  Line 1:27:  'useEffect' is defined but never used  no-unused-vars
+
+src\components\auth\Signup.js
+  Line 121:4:  React Hook useEffect has a missing dependency: 'formData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\config\api.js
+  Line 41:7:  'isDev' is assigned a value but never used  no-unused-vars
+
+src\context\SessionRecoveryContext.js
+  Line 167:41:  The ref value 'activityTimeoutRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'activityTimeoutRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+src\context\ThemeContext.js
+  Line 133:5:  React Hook useMemo has a missing dependency: 'toggleTheme'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+[1m[33mWARNING[39m[22m in [1m[eslint] 
+src\Pages\Events\EventHero.js
+  Line 4:10:  'motion' is defined but never used  no-unused-vars
+
+src\Pages\Feedback\FeedbackPage.js
+  Line 344:10:  'submittedFeedback' is assigned a value but never used  no-unused-vars
+
+src\Pages\Hackathons\HackathonHero.js
+  Line 3:10:  'useMemo' is defined but never used  no-unused-vars
+
+src\Pages\Home\components\Hero.js
+  Line 136:9:  'floatShape' is assigned a value but never used  no-unused-vars
+  Line 143:9:  'shapes' is assigned a value but never used      no-unused-vars
+
+src\components\SessionRecovery.js
+  Line 1:27:  'useEffect' is defined but never used  no-unused-vars
+
+src\components\auth\Signup.js
+  Line 121:4:  React Hook useEffect has a missing dependency: 'formData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\config\api.js
+  Line 41:7:  'isDev' is assigned a value but never used  no-unused-vars
+
+src\context\SessionRecoveryContext.js
+  Line 167:41:  The ref value 'activityTimeoutRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'activityTimeoutRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+src\context\ThemeContext.js
+  Line 133:5:  React Hook useMemo has a missing dependency: 'toggleTheme'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+[39m[22m
+
+webpack compiled with [1m[33m1 warning[39m[22m
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src\Pages\Events\EventHero.js
+  Line 4:10:  'motion' is defined but never used  no-unused-vars
+
+src\Pages\Feedback\FeedbackPage.js
+  Line 344:10:  'submittedFeedback' is assigned a value but never used  no-unused-vars
+
+src\Pages\Hackathons\HackathonHero.js
+  Line 3:10:  'useMemo' is defined but never used  no-unused-vars
+
+src\Pages\Home\components\Hero.js
+  Line 136:9:  'floatShape' is assigned a value but never used  no-unused-vars
+  Line 143:9:  'shapes' is assigned a value but never used      no-unused-vars
+
+src\components\SessionRecovery.js
+  Line 1:27:  'useEffect' is defined but never used  no-unused-vars
+
+src\components\auth\Signup.js
+  Line 121:4:  React Hook useEffect has a missing dependency: 'formData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\config\api.js
+  Line 41:7:  'isDev' is assigned a value but never used  no-unused-vars
+
+src\context\SessionRecoveryContext.js
+  Line 167:41:  The ref value 'activityTimeoutRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'activityTimeoutRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+src\context\ThemeContext.js
+  Line 133:5:  React Hook useMemo has a missing dependency: 'toggleTheme'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+[1m[33mWARNING[39m[22m in [1m[eslint] 
+src\Pages\Events\EventHero.js
+  Line 4:10:  'motion' is defined but never used  no-unused-vars
+
+src\Pages\Feedback\FeedbackPage.js
+  Line 344:10:  'submittedFeedback' is assigned a value but never used  no-unused-vars
+
+src\Pages\Hackathons\HackathonHero.js
+  Line 3:10:  'useMemo' is defined but never used  no-unused-vars
+
+src\Pages\Home\components\Hero.js
+  Line 136:9:  'floatShape' is assigned a value but never used  no-unused-vars
+  Line 143:9:  'shapes' is assigned a value but never used      no-unused-vars
+
+src\components\SessionRecovery.js
+  Line 1:27:  'useEffect' is defined but never used  no-unused-vars
+
+src\components\auth\Signup.js
+  Line 121:4:  React Hook useEffect has a missing dependency: 'formData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\config\api.js
+  Line 41:7:  'isDev' is assigned a value but never used  no-unused-vars
+
+src\context\SessionRecoveryContext.js
+  Line 167:41:  The ref value 'activityTimeoutRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'activityTimeoutRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+src\context\ThemeContext.js
+  Line 133:5:  React Hook useMemo has a missing dependency: 'toggleTheme'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+[39m[22m
+
+webpack compiled with [1m[33m1 warning[39m[22m
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src\Pages\Events\EventHero.js
+  Line 4:10:  'motion' is defined but never used  no-unused-vars
+
+src\Pages\Feedback\FeedbackPage.js
+  Line 344:10:  'submittedFeedback' is assigned a value but never used  no-unused-vars
+
+src\Pages\Hackathons\HackathonHero.js
+  Line 3:10:  'useMemo' is defined but never used  no-unused-vars
+
+src\Pages\Home\components\Hero.js
+  Line 136:9:  'floatShape' is assigned a value but never used  no-unused-vars
+  Line 143:9:  'shapes' is assigned a value but never used      no-unused-vars
+
+src\components\SessionRecovery.js
+  Line 1:27:  'useEffect' is defined but never used  no-unused-vars
+
+src\components\auth\Signup.js
+  Line 121:4:  React Hook useEffect has a missing dependency: 'formData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\config\api.js
+  Line 41:7:  'isDev' is assigned a value but never used  no-unused-vars
+
+src\context\SessionRecoveryContext.js
+  Line 167:41:  The ref value 'activityTimeoutRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'activityTimeoutRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+src\context\ThemeContext.js
+  Line 133:5:  React Hook useMemo has a missing dependency: 'toggleTheme'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+[1m[33mWARNING[39m[22m in [1m[eslint] 
+src\Pages\Events\EventHero.js
+  Line 4:10:  'motion' is defined but never used  no-unused-vars
+
+src\Pages\Feedback\FeedbackPage.js
+  Line 344:10:  'submittedFeedback' is assigned a value but never used  no-unused-vars
+
+src\Pages\Hackathons\HackathonHero.js
+  Line 3:10:  'useMemo' is defined but never used  no-unused-vars
+
+src\Pages\Home\components\Hero.js
+  Line 136:9:  'floatShape' is assigned a value but never used  no-unused-vars
+  Line 143:9:  'shapes' is assigned a value but never used      no-unused-vars
+
+src\components\SessionRecovery.js
+  Line 1:27:  'useEffect' is defined but never used  no-unused-vars
+
+src\components\auth\Signup.js
+  Line 121:4:  React Hook useEffect has a missing dependency: 'formData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\config\api.js
+  Line 41:7:  'isDev' is assigned a value but never used  no-unused-vars
+
+src\context\SessionRecoveryContext.js
+  Line 167:41:  The ref value 'activityTimeoutRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'activityTimeoutRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+src\context\ThemeContext.js
+  Line 133:5:  React Hook useMemo has a missing dependency: 'toggleTheme'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+[39m[22m
+
+webpack compiled with [1m[33m1 warning[39m[22m
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src\Pages\Events\EventHero.js
+  Line 4:10:  'motion' is defined but never used  no-unused-vars
+
+src\Pages\Feedback\FeedbackPage.js
+  Line 344:10:  'submittedFeedback' is assigned a value but never used  no-unused-vars
+
+src\Pages\Hackathons\HackathonHero.js
+  Line 3:10:  'useMemo' is defined but never used  no-unused-vars
+
+src\Pages\Home\components\Hero.js
+  Line 136:9:  'floatShape' is assigned a value but never used  no-unused-vars
+  Line 143:9:  'shapes' is assigned a value but never used      no-unused-vars
+
+src\components\SessionRecovery.js
+  Line 1:27:  'useEffect' is defined but never used  no-unused-vars
+
+src\components\auth\Signup.js
+  Line 121:4:  React Hook useEffect has a missing dependency: 'formData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\config\api.js
+  Line 41:7:  'isDev' is assigned a value but never used  no-unused-vars
+
+src\context\SessionRecoveryContext.js
+  Line 167:41:  The ref value 'activityTimeoutRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'activityTimeoutRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+src\context\ThemeContext.js
+  Line 133:5:  React Hook useMemo has a missing dependency: 'toggleTheme'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+[1m[33mWARNING[39m[22m in [1m[eslint] 
+src\Pages\Events\EventHero.js
+  Line 4:10:  'motion' is defined but never used  no-unused-vars
+
+src\Pages\Feedback\FeedbackPage.js
+  Line 344:10:  'submittedFeedback' is assigned a value but never used  no-unused-vars
+
+src\Pages\Hackathons\HackathonHero.js
+  Line 3:10:  'useMemo' is defined but never used  no-unused-vars
+
+src\Pages\Home\components\Hero.js
+  Line 136:9:  'floatShape' is assigned a value but never used  no-unused-vars
+  Line 143:9:  'shapes' is assigned a value but never used      no-unused-vars
+
+src\components\SessionRecovery.js
+  Line 1:27:  'useEffect' is defined but never used  no-unused-vars
+
+src\components\auth\Signup.js
+  Line 121:4:  React Hook useEffect has a missing dependency: 'formData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\config\api.js
+  Line 41:7:  'isDev' is assigned a value but never used  no-unused-vars
+
+src\context\SessionRecoveryContext.js
+  Line 167:41:  The ref value 'activityTimeoutRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'activityTimeoutRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+src\context\ThemeContext.js
+  Line 133:5:  React Hook useMemo has a missing dependency: 'toggleTheme'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+[39m[22m
+
+webpack compiled with [1m[33m1 warning[39m[22m
