@@ -60,7 +60,13 @@ export const exportAttendeesToCSV = (
 
   document.body.appendChild(link);
 
-  link.click();
+  try {
+    link.click();
+  } finally {
+    document.body.removeChild(link);
 
-  document.body.removeChild(link);
+    setTimeout(() => {
+      window.URL.revokeObjectURL(url);
+    }, 100);
+  }
 };
