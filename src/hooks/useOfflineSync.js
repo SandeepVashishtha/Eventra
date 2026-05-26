@@ -78,6 +78,17 @@ const useOfflineSync = () => {
         return;
       }
 
+      // Refuse to replay queued actions under an expired or missing token.
+      // The queue was saved under a previous session; firing it now could
+      // attach those actions to whichever user happens to be logged in.
+      if (!token || !isTokenValid(token)) {
+        toast.warning(
+          "Offline actions are pending but your session has expired. Please log in again to sync them.",
+          { autoClose: 6000 }
+        );
+        return;
+      }
+
       isSyncing.current = true;
 
       try {
