@@ -3,7 +3,11 @@ import mockEvents from "./eventsMockData.json";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
 import { getEventStatus } from "../../utils/eventUtils";
-import { Grid, List } from "lucide-react";
+import {
+  Grid,
+  List,
+  Loader2,
+} from "lucide-react";
 import { useLocation } from "react-router-dom";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
@@ -87,7 +91,9 @@ const renderCardSection = (
 
       <div
         className="
-          animate-pulse
+  animate-pulse
+  transition-all
+  duration-300
           grid
           gap-6
           grid-cols-1
