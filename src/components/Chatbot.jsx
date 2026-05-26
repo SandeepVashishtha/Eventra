@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -96,6 +96,14 @@ export default function Chatbot() {
   const [draft, setDraft] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [messages, setMessages] = useLocalStorage("eventra_chatbot_history", INITIAL_MESSAGES);
+  const replyTimerRef = useRef(null);
+
+  const clearReplyTimer = useCallback(() => {
+    if (replyTimerRef.current) {
+      clearTimeout(replyTimerRef.current);
+      replyTimerRef.current = null;
+    }
+  }, []);
 
   // Expiration check on mount (2 hours threshold)
   useEffect(() => {
@@ -106,6 +114,12 @@ export default function Chatbot() {
     }
     localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
   }, []);
+
+  useEffect(() => {
+    return () => {
+      clearReplyTimer();
+    };
+  }, [clearReplyTimer]);
 
   // Sync last active timestamp when messages change
   useEffect(() => {
@@ -146,13 +160,15 @@ export default function Chatbot() {
     setIsTyping(true);
 
     // Simulated network/AI response latency
-    setTimeout(() => {
+    clearReplyTimer();
+    replyTimerRef.current = setTimeout(() => {
       const reply = getAssistantReply(cleanMessage);
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: reply.answer, actions: reply.actions }
       ]);
       setIsTyping(false);
+      replyTimerRef.current = null;
     }, 850);
   };
 
@@ -162,6 +178,8 @@ export default function Chatbot() {
   };
 
   const handleClose = () => {
+    clearReplyTimer();
+    setIsTyping(false);
     setIsOpen(false);
     setIsMinimized(false);
   };
