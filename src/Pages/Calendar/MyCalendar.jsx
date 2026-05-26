@@ -43,6 +43,37 @@ const MyCalendar = () => {
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
 
+  const handleMonthChange = (e) => {
+    setCurrentDate(new Date(currentYear, parseInt(e.target.value), 1));
+  };
+
+  const handleYearChange = (e) => {
+    setCurrentDate(new Date(parseInt(e.target.value), currentMonth, 1));
+  };
+
+  // Detect scheduling conflicts (overlapping time slots on the same day)
+  const hasOverlappingEvents = (events) => {
+    if (events.length <= 1) return false;
+    
+    // Sort events by their date/time
+    const sorted = [...events]
+      .filter(item => item.event?.date)
+      .sort((a, b) => new Date(a.event.date) - new Date(b.event.date));
+    
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const current = new Date(sorted[i].event.date);
+      const currentDuration = sorted[i].event.durationMinutes || 60;
+      const currentEnd = new Date(current.getTime() + currentDuration * 60000);
+      
+      const next = new Date(sorted[i + 1].event.date);
+      
+      if (next < currentEnd) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   // Calendar Date Calculations
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
@@ -251,11 +282,33 @@ const MyCalendar = () => {
               {/* GRID CALENDAR (COLSPAN: 2) */}
               <div className="lg:col-span-2 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-250/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-md space-y-6">
                 
-                {/* MONTH CONTROLS */}
-                <div className="flex items-center justify-between border-b border-slate-100/80 dark:border-slate-850/50 pb-4">
-                  <h2 className="text-lg font-black text-slate-850 dark:text-slate-100 tracking-tight flex items-center gap-2">
-                    {monthNames[currentMonth]} {currentYear}
-                  </h2>
+                {/* MONTH/YEAR SELECT CONTROLS */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100/80 dark:border-slate-850/50 pb-4">
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={currentMonth}
+                      onChange={handleMonthChange}
+                      className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-750 rounded-xl px-3 py-1.5 text-xs font-black text-slate-850 dark:text-slate-250 outline-none cursor-pointer hover:border-slate-350 dark:hover:border-slate-650"
+                    >
+                      {monthNames.map((name, i) => (
+                        <option key={name} value={i}>{name}</option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={currentYear}
+                      onChange={handleYearChange}
+                      className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-750 rounded-xl px-3 py-1.5 text-xs font-black text-slate-850 dark:text-slate-250 outline-none cursor-pointer hover:border-slate-350 dark:hover:border-slate-650"
+                    >
+                      {Array.from({ length: 11 }).map((_, idx) => {
+                        const yearOption = new Date().getFullYear() - 5 + idx;
+                        return (
+                          <option key={yearOption} value={yearOption}>{yearOption}</option>
+                        );
+                      })}
+                    </select>
+                  </div>
+
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={prevMonth}
@@ -300,6 +353,7 @@ const MyCalendar = () => {
                       const day = idx + 1;
                       const cellDate = new Date(currentYear, currentMonth, day);
                       const dayEvents = getEventsForDate(day);
+                      const isConflict = hasOverlappingEvents(dayEvents);
                       const selected = isSelected(day);
                       const isToday =
                         new Date().getDate() === day &&
@@ -316,13 +370,21 @@ const MyCalendar = () => {
                             selected
                               ? "bg-indigo-650 border-indigo-600 text-white shadow-lg shadow-indigo-600/10 scale-102"
                               : isToday
-                              ? "bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900 text-indigo-750 dark:text-indigo-400 font-extrabold"
+                              ? "bg-indigo-55/90 dark:bg-indigo-950/25 border-indigo-250 dark:border-indigo-900/80 text-indigo-750 dark:text-indigo-400 font-extrabold"
                               : "bg-white dark:bg-slate-900 border-slate-200/60 dark:border-slate-800/70 hover:border-slate-350 dark:hover:border-slate-700"
                           }`}
                         >
-                          <span className={`text-[11px] font-black ${selected ? "text-white" : "text-slate-400 dark:text-slate-500"}`}>
-                            {day}
-                          </span>
+                          <div className="w-full flex items-center justify-between">
+                            <span className={`text-[11px] font-black ${selected ? "text-white" : "text-slate-400 dark:text-slate-500"}`}>
+                              {day}
+                            </span>
+                            {isConflict && (
+                              <AlertCircle 
+                                className={`w-3.5 h-3.5 animate-pulse ${selected ? "text-white" : "text-rose-500"}`} 
+                                title="Time block conflict detected" 
+                              />
+                            )}
+                          </div>
 
                           {dayEvents.length > 0 && (
                             <div className="w-full flex items-center justify-end gap-1">
