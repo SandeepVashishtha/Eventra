@@ -91,6 +91,9 @@ const EventRecommendation = () => {
 
     setLoading(true);
     setShowOtherEvents(false);
+    
+    // Track execution for onboarding checklist
+    localStorage.setItem("eventra_ai_recommendation_generated", "true");
 
     setTimeout(() => {
       const totalWeight = (interest ? interestWeight : 0) + (level ? levelWeight : 0) + (eventType ? typeWeight : 0);
