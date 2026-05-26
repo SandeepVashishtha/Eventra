@@ -7,6 +7,14 @@ const http = require("http");
 
 const PORT = 4001;
 
+const enableLogs = process.env.NODE_ENV !== "production";
+
+const log = (...args) => {
+  if (enableLogs) {
+    console.log(...args);
+  }
+};
+
 const MOCK_CONTRIBUTORS = [
   { username: "alice", name: "Alice Dev", avatar: "https://avatars.githubusercontent.com/u/1?v=4", profile: "https://github.com/alice", points: 42, prs: 6 },
   { username: "bob", name: "Bob Coder", avatar: "https://avatars.githubusercontent.com/u/2?v=4", profile: "https://github.com/bob", points: 35, prs: 5 },
@@ -44,7 +52,7 @@ const server = http.createServer((req, res) => {
 
   if (req.url === "/stream/leaderboard") {
     sseHeaders(res);
-    console.log("[SSE] leaderboard client connected");
+    log("[SSE] leaderboard client connected");
 
     // Send initial snapshot immediately
     send(res, MOCK_CONTRIBUTORS);
@@ -57,19 +65,19 @@ const server = http.createServer((req, res) => {
         prs: c.prs + (Math.random() > 0.7 ? 1 : 0),
       })).sort((a, b) => b.points - a.points);
       send(res, updated);
-      console.log("[SSE] leaderboard update sent");
+      log("[SSE] leaderboard update sent");
     }, 8000);
 
     req.on("close", () => {
       clearInterval(interval);
-      console.log("[SSE] leaderboard client disconnected");
+      log("[SSE] leaderboard client disconnected");
     });
     return;
   }
 
   if (req.url === "/stream/analytics") {
     sseHeaders(res);
-    console.log("[SSE] analytics client connected");
+    log("[SSE] analytics client connected");
 
     // Push a new check-in every 5 seconds
     const interval = setInterval(() => {
@@ -78,12 +86,12 @@ const server = http.createServer((req, res) => {
       const status = Math.random() > 0.1 ? "Verified" : "Flagged";
       const checkin = { id: `sse-${Date.now()}`, name, event, time: "Just now", status };
       send(res, checkin);
-      console.log(`[SSE] analytics check-in: ${name} → ${status}`);
+      log(`[SSE] analytics check-in: ${name} → ${status}`);
     }, 5000);
 
     req.on("close", () => {
       clearInterval(interval);
-      console.log("[SSE] analytics client disconnected");
+      log("[SSE] analytics client disconnected");
     });
     return;
   }

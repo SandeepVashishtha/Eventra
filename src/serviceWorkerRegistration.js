@@ -9,6 +9,14 @@ const isLocalhost = Boolean(
     window.location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/)
 );
 
+const isDev = process.env.NODE_ENV === 'development';
+
+const log = (...args) => {
+  if (isDev) {
+    console.log(...args);
+  }
+};
+
 export function register(config) {
   if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
     // The URL constructor is available in all browsers that support SW.
@@ -27,7 +35,7 @@ export function register(config) {
 
         // Add logging to localhost, welcoming developers
         navigator.serviceWorker.ready.then(() => {
-          console.log(
+          log(
             'This web app is being served cache-first by a service worker. To learn more, visit https://cra.link/pwa'
           );
         });
@@ -54,7 +62,7 @@ function registerValidSW(swUrl, config) {
               // At this point, the updated precached content has been fetched,
               // but the previous service worker will still serve the older
               // content until all client tabs are closed.
-              console.log(
+              log(
                 'New content is available and will be used when all tabs for this page are closed. See https://cra.link/pwa.'
               );
 
@@ -65,7 +73,7 @@ function registerValidSW(swUrl, config) {
             } else {
               // At this point, everything has been precached.
               // It's the perfect time to display a "Content is cached for offline use!" message.
-              console.log('Content is cached for offline use.');
+              log('Content is cached for offline use.');
 
               // Execute callback
               if (config && config.onSuccess) {
@@ -105,7 +113,7 @@ function checkValidServiceWorker(swUrl, config) {
       }
     })
     .catch(() => {
-      console.log('No internet connection found. App is running in offline mode.');
+      log('No internet connection found. App is running in offline mode.');
     });
 }
 
