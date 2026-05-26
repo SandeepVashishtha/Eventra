@@ -59,6 +59,34 @@ const ConfirmationModal = ({
       onClose();
     }
   };
+  useEffect(() => {
+  document.body.style.overflow =
+    "hidden";
+
+  return () => {
+    document.body.style.overflow =
+      "auto";
+  };
+}, []);
+useEffect(() => {
+  const handleKeyDown =
+    (e) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+  window.addEventListener(
+    "keydown",
+    handleKeyDown
+  );
+
+  return () =>
+    window.removeEventListener(
+      "keydown",
+      handleKeyDown
+    );
+}, [onClose]);
 
   return (
     <div
