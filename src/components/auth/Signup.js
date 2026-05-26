@@ -83,13 +83,13 @@ const Signup = () => {
     }
 
     if (e.target.name === "lastName") {
-      if (!e.target.value.trim())
+      if (!e.target.value.trim()) {
         setLastNameError("Last name is required");
-      else if (e.target.value.length < 2)
-        setLastNameError("At least 2 characters");
-      else if (e.target.value.length > 50)
+      } else if (e.target.value.trim().length > 50) {
         setLastNameError("Less than 50 characters");
-      else setLastNameError("");
+      } else {
+        setLastNameError("");  
+      } 
     }
 
     if (error) setError("");
