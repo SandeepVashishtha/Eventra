@@ -4,6 +4,7 @@ import {
   Move, Grid, Users, Layout, MapPin, Minimize2,
   Download, Upload, Image, FileJson
 } from "lucide-react";
+import { toast } from "react-toastify";
 import "./FloorPlanDesigner.css";
 
 // Preset layouts
@@ -75,7 +76,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
 
   const saveLayout = () => {
     localStorage.setItem(`eventra_floorplan_${eventId}`, JSON.stringify(elements));
-    alert("Venue floor plan successfully saved!");
+    toast.success("Venue floor plan successfully saved!");
   };
 
   const loadPreset = (presetName) => {
@@ -150,7 +151,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error("SVG Export failed:", error);
-      alert("Failed to export as SVG. Please try again.");
+      toast.error("Failed to export as SVG. Please try again.");
     }
   };
 
@@ -187,7 +188,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
         // Convert canvas to png and trigger download
         canvas.toBlob((pngBlob) => {
           if (!pngBlob) {
-            alert("Failed to generate PNG image.");
+            toast.error("Failed to generate PNG image.");
             return;
           }
           const pngUrl = URL.createObjectURL(pngBlob);
@@ -203,14 +204,14 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
       };
       
       img.onerror = () => {
-        alert("Failed to render floor plan workspace onto image canvas.");
+        toast.error("Failed to render floor plan workspace onto image canvas.");
         URL.revokeObjectURL(url);
       };
       
       img.src = url;
     } catch (error) {
       console.error("PNG Export failed:", error);
-      alert("Failed to export as PNG. Please try again.");
+      toast.error("Failed to export as PNG. Please try again.");
     }
   };
 
@@ -229,7 +230,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
       URL.revokeObjectURL(jsonUrl);
     } catch (error) {
       console.error("JSON Export failed:", error);
-      alert("Failed to download layout configuration.");
+      toast.error("Failed to download layout configuration.");
     }
   };
 
@@ -258,9 +259,9 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
 
         setElements(importedData);
         setSelectedId(null);
-        alert("Floor plan layout imported successfully!");
+        toast.success("Floor plan layout imported successfully!");
       } catch (err) {
-        alert(`Failed to import floor plan: ${err.message}`);
+        toast.error(`Failed to import floor plan: ${err.message}`);
       }
     };
     reader.readAsText(file);
