@@ -1,6 +1,7 @@
-import React from "react";
+
 import { motion } from "framer-motion";
 import useDocumentTitle from "../hooks/useDocumentTitle";
+import useReducedMotion from "../hooks/useReducedMotion.js";
 import {
   Server,
   AlertCircle,
@@ -83,6 +84,7 @@ example: `curl -X GET ${process.env.REACT_APP_API_URL}/projects?hackathonId=1`,
 ];
 
 const ApiDocs = () => {
+  const prefersReducedMotion = useReducedMotion();
   useDocumentTitle("Eventra | API Docs");
 
   return (
@@ -94,7 +96,7 @@ const ApiDocs = () => {
           style={{ fontFamily: '"Anton", sans-serif' }}
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
         >
           API Documentation
         </motion.h1>

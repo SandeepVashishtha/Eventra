@@ -1,10 +1,47 @@
 import StatusBadge from "./common/StatusBadge";
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useReducedMotion } from '../hooks/useReducedMotion';
+import { toast } from 'react-toastify';
 import './components.css';
+import CharacterCounter
+from "../../components/common/CharacterCounter";
 
 const CollaborationHub = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [activeSection, setActiveSection] = useState('opportunities');
+  const [newRequest, setNewRequest] = useState({
+    title: '',
+    type: '',
+    description: '',
+    budget: '',
+    deadline: '',
+    skills: ''
+  });
+
+  const handleRequestChange = (e) => {
+    const { name, value } = e.target;
+    setNewRequest(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleRequestSubmit = (e) => {
+    e.preventDefault();
+    if (!newRequest.title.trim() || !newRequest.type || !newRequest.description.trim()) {
+      toast.error('Please fill in all required fields (Title, Type, and Description)');
+      return;
+    }
+    
+    toast.success('Collaboration request created successfully!');
+    setNewRequest({
+      title: '',
+      type: '',
+      description: '',
+      budget: '',
+      deadline: '',
+      skills: ''
+    });
+    setActiveSection('opportunities');
+  };
 
   const collaborationOpportunities = [
     {
@@ -93,7 +130,7 @@ const CollaborationHub = () => {
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
           className="collaboration-title"
         >
           Collaboration Hub 🤝
@@ -125,7 +162,7 @@ const CollaborationHub = () => {
         key={activeSection}
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
         className="tab-content"
       >
         {activeSection === 'opportunities' && (
@@ -146,7 +183,7 @@ const CollaborationHub = () => {
                   key={opportunity.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1, duration: 0.6 }}
+                  transition={{ delay: prefersReducedMotion ? 0 : index * 0.1, duration: prefersReducedMotion ? 0 : 0.6 }}
                   className="opportunity-card"
                 >
                   <div className="opportunity-header">
@@ -210,7 +247,7 @@ const CollaborationHub = () => {
                   key={collab.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1, duration: 0.6 }}
+                  transition={{ delay: prefersReducedMotion ? 0 : index * 0.1, duration: prefersReducedMotion ? 0 : 0.6 }}
                   className="collaboration-card"
                 >
                   <div className="collaboration-header">
@@ -265,7 +302,7 @@ const CollaborationHub = () => {
                   key={request.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1, duration: 0.6 }}
+                  transition={{ delay: prefersReducedMotion ? 0 : index * 0.1, duration: prefersReducedMotion ? 0 : 0.6 }}
                   className="networking-card"
                 >
                   <div className="networking-header">
@@ -303,54 +340,119 @@ const CollaborationHub = () => {
         {activeSection === 'create-request' && (
           <div className="create-request-section">
             <h2>Create Collaboration Request</h2>
-            <div className="request-form">
+            <form onSubmit={handleRequestSubmit} className="request-form">
               <div className="form-group">
-                <label>Project Title</label>
-                <input type="text" placeholder="Enter your collaboration project title" />
+                <label htmlFor="collab-title">Project Title *</label>
+                <input 
+                  id="collab-title"
+                  type="text" 
+                  name="title"
+                  value={newRequest.title}
+                  onChange={handleRequestChange}
+                  placeholder="Enter your collaboration project title" 
+                  required
+                />
               </div>
               
               <div className="form-group">
-                <label>Collaboration Type</label>
-                <select>
-                  <option>Select type</option>
-                  <option>Sponsorship</option>
-                  <option>Content Partnership</option>
-                  <option>Venue Partnership</option>
-                  <option>Technical Support</option>
+                <label htmlFor="collab-type">Collaboration Type *</label>
+                <select 
+                  id="collab-type"
+                  name="type"
+                  value={newRequest.type}
+                  onChange={handleRequestChange}
+                  required
+                >
+                  <option value="">Select type</option>
+                  <option value="Sponsorship">Sponsorship</option>
+                  <option value="Content Partnership">Content Partnership</option>
+                  <option value="Venue Partnership">Venue Partnership</option>
+                  <option value="Technical Support">Technical Support</option>
                 </select>
               </div>
               
               <div className="form-group">
-                <label>Description</label>
-                <textarea rows="4" placeholder="Describe your collaboration opportunity..."></textarea>
+                <label htmlFor="collab-desc">Description *</label>
+              <div className="space-y-2">
+  <textarea
+    id="collab-desc"
+    name="description"
+    value={newRequest.description}
+    onChange={handleRequestChange}
+    rows="4"
+    maxLength={300}
+    placeholder="Describe partnership goals / Sponsorship details / Collaboration ideas..."
+    required
+    className="
+      w-full
+      rounded-xl
+      border border-gray-300
+      dark:border-gray-700
+      bg-white dark:bg-gray-900
+      px-4 py-3
+      text-gray-900 dark:text-white
+      focus:outline-none
+      focus:ring-2
+      focus:ring-indigo-500
+      transition
+    "
+  />
+
+  <div className="flex justify-end">
+    <CharacterCounter
+      current={
+        newRequest.description.length
+      }
+      max={300}
+    />
+  </div>
+</div>
               </div>
               
               <div className="form-row">
                 <div className="form-group">
-                  <label>Budget Range</label>
-                  <select>
-                    <option>Select budget</option>
-                    <option>$1,000 - $5,000</option>
-                    <option>$5,000 - $10,000</option>
-                    <option>$10,000 - $25,000</option>
-                    <option>$25,000+</option>
-                    <option>Revenue Share</option>
+                  <label htmlFor="collab-budget">Budget Range</label>
+                  <select 
+                    id="collab-budget"
+                    name="budget"
+                    value={newRequest.budget}
+                    onChange={handleRequestChange}
+                  >
+                    <option value="">Select budget</option>
+                    <option value="$1,000 - $5,000">$1,000 - $5,000</option>
+                    <option value="$5,000 - $10,000">$5,000 - $10,000</option>
+                    <option value="$10,000 - $25,000">$10,000 - $25,000</option>
+                    <option value="$25,000+">$25,000+</option>
+                    <option value="Revenue Share">Revenue Share</option>
                   </select>
                 </div>
                 
                 <div className="form-group">
-                  <label>Deadline</label>
-                  <input type="date" />
+                  <label htmlFor="collab-deadline">Deadline</label>
+                  <input 
+                    id="collab-deadline"
+                    type="date" 
+                    name="deadline"
+                    value={newRequest.deadline}
+                    onChange={handleRequestChange}
+                  />
                 </div>
               </div>
               
               <div className="form-group">
-                <label>Required Skills</label>
-                <input type="text" placeholder="e.g., Event Management, Marketing, Design" />
+                <label htmlFor="collab-skills">Required Skills</label>
+                <input 
+                  id="collab-skills"
+                  type="text" 
+                  name="skills"
+                  value={newRequest.skills}
+                  onChange={handleRequestChange}
+                  placeholder="e.g., Event Management, Marketing, Design" 
+                />
               </div>
               
-              <button className="btn-primary submit-btn">Create Collaboration Request</button>
-            </div>
+              <button type="submit" className="btn-primary submit-btn">Create Collaboration Request</button>
+            </form>
           </div>
         )}
       </motion.div>
@@ -359,3 +461,4 @@ const CollaborationHub = () => {
 };
 
 export default CollaborationHub;
+

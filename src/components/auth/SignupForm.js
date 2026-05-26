@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
@@ -18,6 +19,7 @@ const assessStrength = (password) => {
 };
 
 const SignupForm = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -106,7 +108,7 @@ const SignupForm = () => {
       }
     }, 1000);
     return () => clearTimeout(timer);
-  }, [formData.password, formData.confirmPassword]);
+  }, [formData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -140,15 +142,7 @@ const SignupForm = () => {
         confirmPassword: formData.confirmPassword,
       });
 
-      const responseText = await response.text();
-      let data = null;
-      try { data = responseText ? JSON.parse(responseText) : null; } catch { data = null; }
-
-      if (!response.ok) {
-        const backendMessage = data?.message || data?.error || "";
-        setError(backendMessage ? `${backendMessage} (${response.status})` : `Registration failed (${response.status})`);
-        return;
-      }
+      const data = response.data || {};
 
       const sessionToken = data?.token;
       const sessionUser = {

@@ -31,8 +31,19 @@ export const generateSharingUrl = (shareData, platform) => {
     case 'facebook':
       return `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
       
-    case 'messenger':
-      return `https://www.facebook.com/dialog/send?link=${encodedUrl}&app_id=${process.env.REACT_APP_FACEBOOK_APP_ID || '1061800788374065'}&redirect_uri=${encodedUrl}`;
+    case 'messenger': {
+      const appId = process.env.REACT_APP_FACEBOOK_APP_ID;
+
+      if (!appId) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          'REACT_APP_FACEBOOK_APP_ID is not set - Messenger sharing disabled'
+        );
+        return url;
+      }
+
+      return `https://www.facebook.com/dialog/send?link=${encodedUrl}&app_id=${appId}&redirect_uri=${encodedUrl}`;
+    }
       
     case 'linkedin':
       return `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}&title=${encodedTitle}&summary=${encodedDescription}`;
@@ -119,6 +130,7 @@ export const copyToClipboard = async (text) => {
       return successful;
     }
   } catch (err) {
+    // eslint-disable-next-line no-console
     console.error('Failed to copy text: ', err);
     return false;
   }

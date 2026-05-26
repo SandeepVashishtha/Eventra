@@ -5,8 +5,10 @@ import { useAuth } from '../../context/AuthContext';
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
 import { LogIn, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import useReducedMotion from '../../hooks/useReducedMotion';
 
 const LoginForm = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState({});
@@ -56,7 +58,10 @@ const LoginForm = () => {
         );
       }
     } catch (err) {
-      console.error("Login error:", err);
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.error("Login error:", err);
+      }
       setError({ general: err.message || "Invalid email or password" });
       toast.error(err.message || 'Login failed. Please check your credentials.');
     } finally {
@@ -114,7 +119,7 @@ const LoginForm = () => {
               onChange={handleChange}
               required
               disabled={loading}
-              placeholder="Enter your email or username"
+              placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
               className="w-full pl-10 pr-4 py-3 bg-[#0f172a]/60 border border-slate-700/50 rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner"
             />
           </div>
@@ -140,7 +145,7 @@ const LoginForm = () => {
               onChange={handleChange}
               required
               disabled={loading}
-              placeholder="Enter your password"
+              placeholder="Create a secure password"
               className="w-full pl-10 pr-10 py-3 bg-[#0f172a]/60 border border-slate-700/50 rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner"
             />
             <button

@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import mockEvents from "./eventsMockData.json";
+import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { getRouteSearchResults } from "../../utils/searchUtils";
 import { getEventStatus } from "../../utils/eventUtils";
 import {
@@ -39,6 +40,7 @@ const useEventListing = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortType, setSortType] = useState("Newest");
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [eventsPerPage, setEventsPerPage] = useState(DEFAULT_EVENTS_PER_PAGE);
   const [advancedFilters, setAdvancedFilters] = useState(getDefaultFilters());
@@ -58,6 +60,29 @@ const useEventListing = () => {
 
     return () => clearTimeout(timer);
   }, []);
+  const fetchEvents = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError("");
+
+    try {
+      const response = await apiUtils.get(API_ENDPOINTS.EVENTS.LIST);
+      const apiEvents = Array.isArray(response.data) ? response.data : [];
+      setEvents(apiEvents.map((event) => ({ ...event, status: getEventStatus(event) })));
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        setEvents(mockEvents.map((event) => ({ ...event, status: getEventStatus(event) })));
+      } else {
+        setEvents([]);
+        setLoadError(error?.message || "Failed to load events. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   const filteredEvents = useMemo(() => {
     const searchResults = getSearchResults(events, searchQuery);
@@ -67,9 +92,11 @@ const useEventListing = () => {
   }, [events, filterType, searchQuery, sortType, advancedFilters]);
 
   const totalPages = getTotalPages(filteredEvents.length, eventsPerPage);
-  const paginatedEvents = useMemo(() => {
-    return getPaginatedEvents(filteredEvents, currentPage, eventsPerPage);
-  }, [currentPage, eventsPerPage, filteredEvents]);
+
+  const paginatedEvents = useMemo(
+    () => getPaginatedEvents(filteredEvents, currentPage, eventsPerPage),
+    [currentPage, eventsPerPage, filteredEvents],
+  );
 
   useEffect(() => {
     setCurrentPage(1);
@@ -92,8 +119,10 @@ const useEventListing = () => {
   return {
     currentPage,
     eventsPerPage,
+    fetchEvents,
     filteredEvents,
     filterType,
+    loadError,
     isLoading,
     paginatedEvents,
     searchQuery,

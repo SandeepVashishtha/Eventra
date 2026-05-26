@@ -1,6 +1,10 @@
+import React from "react";
 import { Link, useParams } from "react-router-dom";
 import { Calendar, MapPin, Clock, Tag } from "lucide-react";
-import { getEventStatus } from "../../utils/eventUtils";
+import {
+  getEventStatus,
+  isEventRegistrationClosed,
+} from "../../utils/eventUtils";
 import { isEventBookmarked } from "../../utils/bookmarkUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
 import ReminderControls from "../../components/reminders/ReminderControls";
@@ -8,7 +12,7 @@ import mockEvents from "./eventsMockData.json";
 import CertificateDownload from "../../components/CertificateDownload";
 import EventMaterials from "../../components/common/EventMaterials";
 import EventRecommendations from "../../components/events/EventRecommendations";
-
+import CopyLinkButton from "../../components/common/CopyLinkButton";
 const EventDetails = () => {
   const { eventId } = useParams();
   const { isRegistered } = useMyEvents();
@@ -16,6 +20,8 @@ const EventDetails = () => {
   const event = foundEvent
     ? { ...foundEvent, status: getEventStatus(foundEvent) }
     : null;
+
+  
 
   if (!event) {
     return (
@@ -34,6 +40,7 @@ const EventDetails = () => {
   }
 
   const canSetReminder = isEventBookmarked(event.id) || isRegistered(event.id);
+  const isRegistrationClosed = isEventRegistrationClosed(event.status);
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 py-16 px-4 sm:px-6 lg:px-8">
@@ -54,12 +61,19 @@ const EventDetails = () => {
           </div>
 
           <div className="flex flex-wrap gap-3">
-            {event.status === 'past' ? (
-              <CertificateDownload
-                eventName={event.title}
-                eventDate={event.date}
-                eventType={event.type}
-              />
+            {isRegistrationClosed ? (
+              <>
+                <span className="inline-flex items-center justify-center rounded-full bg-gray-200 px-6 py-3 text-sm font-semibold text-gray-600 shadow-sm cursor-not-allowed dark:bg-gray-800 dark:text-gray-300">
+                  Event Ended
+                </span>
+                {event.status === "past" && (
+                  <CertificateDownload
+                    eventName={event.title}
+                    eventDate={event.date}
+                    eventType={event.type}
+                  />
+                )}
+              </>
             ) : (
               <Link
                 to={`/events/${event.id}/register`}
@@ -68,13 +82,17 @@ const EventDetails = () => {
                 Register Now
               </Link>
             )}
-            <Link
-              to="/events"
-              className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
-            >
-              Back to Events
-            </Link>
-          </div>
+
+  {/* Copy Link Button */}
+  <CopyLinkButton />
+
+  <Link
+    to="/events"
+    className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+  >
+    Back to Events
+  </Link>
+</div>
         </div>
 
         {/* Main Grid */}

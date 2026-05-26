@@ -1,31 +1,21 @@
+import useRecentlyViewed from "../../hooks/useRecentlyViewed";  
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-
-import {
-  Calendar,
-  MapPin,
-  Clock,
-  Users,
-  Tag,
-  Share2,
-  ArrowLeft,
-  LayoutTemplate,
-} from "lucide-react";
+import CountdownTimer from "../../components/common/CountdownTimer";
+import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft } from "lucide-react";
 
 import eventsMockData from "./eventsMockData.json";
+import { getEventStatus } from "../../utils/eventUtils";
 
-import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
-
-import ShareMenu from "../../components/common/ShareMenu";
-import CertificateDownload from "../../components/CertificateDownload";
-
-import { generateEventSharingData } from "../../utils/shareUtils";
+// Removed unused imports: addEventToGoogleCalendar, ShareMenu, CertificateDownload, generateEventSharingData
 
 const EventDetailsPage = () => {
   const { eventId } = useParams();
 
   const navigate = useNavigate();
+
+  const { addRecentlyViewed } = useRecentlyViewed();
 
   const [loading, setLoading] =
     useState(true);
@@ -51,6 +41,16 @@ const EventDetailsPage = () => {
           );
 
         setEvent(foundEvent);
+        if (foundEvent) {
+          addRecentlyViewed({
+            id:       foundEvent.id,
+            title:    foundEvent.title,
+            date:     foundEvent.date,
+            location: foundEvent.location,
+            image:    foundEvent.image,
+            category: foundEvent.type,
+          });
+        }
       } catch (error) {
         console.error(error);
       } finally {
@@ -59,7 +59,7 @@ const EventDetailsPage = () => {
     };
 
     fetchEvent();
-  }, [eventId]);
+  }, [eventId , addRecentlyViewed]);
 
   // Loading State
   if (loading) {
@@ -105,52 +105,10 @@ const EventDetailsPage = () => {
     );
   }
 
-  const eventDateTime = new Date(
-    `${event.date} ${event.time}`
-  );
-
   const isPastEvent =
-    eventDateTime < new Date();
+    getEventStatus(event) === "past" || getEventStatus(event) === "ended";
 
-  const attendeePercentage =
-    (event.attendees /
-      event.maxAttendees) *
-    100;
-
-  const popularEvents =
-    eventsMockData
-      .filter(
-        (e) => e.id !== event.id
-      )
-      .sort(
-        (a, b) =>
-          b.attendees - a.attendees
-      )
-      .slice(0, 4);
-
-  const eventSharingData =
-    generateEventSharingData({
-      ...event,
-      title: event.title,
-      description:
-        event.description,
-      date: event.date,
-      id: event.id,
-    });
-
-  const handleCopyLink = (e) => {
-    e.preventDefault();
-
-    const shareUrl = `${window.location.origin}/events/${event.id}`;
-
-    navigator.clipboard
-      .writeText(shareUrl)
-      .then(() => {
-        alert(
-          "Event link copied to clipboard!"
-        );
-      });
-  };
+  // Removed unused derived values and handlers to satisfy linting rules
 
   return (
     <div className="min-h-screen mt-16 bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
@@ -170,7 +128,7 @@ const EventDetailsPage = () => {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
         <motion.div
           initial={{
             opacity: 0,
@@ -194,10 +152,14 @@ const EventDetailsPage = () => {
                 alt={`${event.title} event banner`}
                 className="w-full h-96 object-cover"
               />
+  src={event.image}
+  alt={event.title}
+  className="w-full h-48 sm:h-64 md:h-96 object-cover"
+/>
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-              <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+              <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-6 text-white">
                 <div className="flex items-center gap-3 mb-4">
                   <span className="px-3 py-1 bg-indigo-600 rounded-full text-sm font-semibold">
                     {event.type
@@ -224,6 +186,9 @@ const EventDetailsPage = () => {
                 <h1 id="event-details-title" className="text-4xl font-bold">
                   {event.title}
                 </h1>
+                <h1 className="text-xl sm:text-2xl md:text-4xl font-bold leading-tight">
+  {event.title}
+</h1>
               </div>
             </div>
 
@@ -238,6 +203,53 @@ const EventDetailsPage = () => {
               </p>
             </section>
           </section>
+            </div>
+          </div>
+        {/* Sidebar */}
+          <div className="lg:col-span-1 flex flex-col gap-6">
+            {/* Countdown Timer */}
+            {!isPastEvent && (
+              <CountdownTimer date={event.date} time={event.time} />
+            )}
+
+            {/* Event Info */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                Event Details
+              </h3>
+              <div className="flex flex-col gap-4 text-sm text-gray-600 dark:text-gray-300">
+                <div className="flex items-center gap-3">
+                  <Calendar size={16} className="text-indigo-500 flex-shrink-0" />
+                  <span>{new Date(event.date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Clock size={16} className="text-blue-500 flex-shrink-0" />
+                  <span>{event.time}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <MapPin size={16} className="text-pink-500 flex-shrink-0" />
+                  <span>{event.location}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Users size={16} className="text-green-500 flex-shrink-0" />
+                  <span>{event.attendees} / {event.maxAttendees} registered</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Tag size={16} className="text-yellow-500 flex-shrink-0" />
+                  <span className="capitalize">{event.type}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Register Button */}
+            {!isPastEvent && (
+              <Link to={`/events/${event.id}/register`}>
+                <div className="inline-flex items-center justify-center w-full rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-900 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 text-white px-4 py-4 text-sm font-semibold shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
+                  Register Now
+                </div>
+              </Link>
+            )}
+          </div>
         </motion.div>
       </main>
     </div>

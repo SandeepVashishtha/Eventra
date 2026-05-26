@@ -1,13 +1,14 @@
 import React, { useEffect, useId, useRef } from 'react';
+import React, { useEffect } from 'react';
 import './ConfirmationModal.css';
 
-const ConfirmationModal = ({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
-  title = "Are you sure?", 
-  message = "Are you sure you want to log out?",
-  confirmText = "Yes, Logout",
+const ConfirmationModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title = "Are you sure?",
+  message = "Are you sure you want to continue?",
+  confirmText = "Confirm",
   cancelText = "Cancel"
 }) => {
   const cancelButtonRef = useRef(null);
@@ -49,6 +50,20 @@ const ConfirmationModal = ({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       previouslyFocusedElement?.focus?.();
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("keydown", handleEsc);
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEsc);
     };
   }, [isOpen, onClose]);
 
@@ -76,28 +91,45 @@ const ConfirmationModal = ({
       >
         <div className="confirmation-modal-header">
           <h3 id={titleId}>{title}</h3>
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirmation-modal-title"
+    >
+      <div className="confirmation-modal-content">
+
+        <div className="confirmation-modal-header">
+          <h3 id="confirmation-modal-title">
+            {title}
+          </h3>
         </div>
-        
+
         <div className="confirmation-modal-body">
           <p id={descriptionId}>{message}</p>
         </div>
-        
+
         <div className="confirmation-modal-actions">
           <button 
             ref={cancelButtonRef}
             type="button"
             className="confirmation-modal-btn confirmation-modal-btn-cancel" 
+
+          <button
+            className="confirmation-modal-btn confirmation-modal-btn-cancel"
             onClick={onClose}
           >
-             {cancelText}
+            {cancelText}
           </button>
           <button 
             type="button"
             className="confirmation-modal-btn confirmation-modal-btn-confirm" 
+
+          <button
+            className="confirmation-modal-btn confirmation-modal-btn-confirm"
             onClick={onConfirm}
           >
-             {confirmText}
+            {confirmText}
           </button>
+
         </div>
       </div>
     </div>
