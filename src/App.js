@@ -50,7 +50,11 @@ function App() {
   const toggleCursor = () => {
     const newValue = !cursorEnabled;
     setCursorEnabled(newValue);
-    localStorage.setItem("cursor", newValue ? "on" : "off");
+    try {
+      localStorage.setItem("cursor", newValue ? "on" : "off");
+    } catch (error) {
+      console.error('Error setting cursor preference:', error);
+    }
   };
 
   useEffect(() => {
