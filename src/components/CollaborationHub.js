@@ -398,8 +398,9 @@ const CollaborationHub = () => {
                 </div>
                 
                 <div className="form-group">
-                  <label>Deadline</label>
+                  <label htmlFor="collab-deadline">Deadline</label>
                   <input 
+                    id="collab-deadline"
                     type="date" 
                     name="deadline"
                     value={newRequest.deadline}
@@ -694,6 +695,7 @@ export default CollaborationHub;
 /*
  * ============================================================================
  * ACCESSIBILITY & QUALITY ASSURANCE DOCUMENTATION
+ * COMPONENT: fix/collaboration-form-deadline-accessibility
  * COMPONENT: fix/collaboration-form-type-accessibility
  * STANDARDS: WCAG 2.1 / 2.2 AA Compliance Checklist
  * ============================================================================
