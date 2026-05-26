@@ -294,7 +294,7 @@ export default function CommandPalette({
                           `}
                         >
                           <div className="flex items-center gap-3">
-                            <Icon className={`h-4.5 w-4.5 ${active ? "text-white" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600"}`} />
+                            <Icon className={`h-5 w-5 ${active ? "text-white" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600"}`} />
                             <span className="text-sm font-semibold tracking-tight">{name}</span>
                           </div>
                           {active && (
