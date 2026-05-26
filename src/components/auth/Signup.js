@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
@@ -34,6 +35,7 @@ const assessStrength = (password) => {
 };
 
 const Signup = () => {
+  const prefersReducedMotion = useReducedMotion();
   useDocumentTitle("Sign Up | Eventra");
   const [formData, setFormData] = useState({
     firstName: "",
@@ -299,14 +301,14 @@ const handleSubmit = async (e) => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.6 }}
+      transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
       className="pastel-grid-bg  min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8"
     >
        <div className="max-w-4xl w-full mx-auto">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
           className="w-full pl-3 pr-4 py-3 my-14 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
         >
         <div className="md:flex">  
@@ -606,7 +608,7 @@ const handleSubmit = async (e) => {
                 <motion.p
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
-                  transition={{ duration: 0.3 }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
                   className="text-xs mt-1 text-green-600 dark:text-green-400"
                 >
                   {passwordMatchMessage}

@@ -1,10 +1,12 @@
 import StatusBadge from "./common/StatusBadge";
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import { toast } from 'react-toastify';
 import './components.css';
 
 const CollaborationHub = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [activeSection, setActiveSection] = useState('opportunities');
   const [newRequest, setNewRequest] = useState({
     title: '',
@@ -126,7 +128,7 @@ const CollaborationHub = () => {
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
           className="collaboration-title"
         >
           Collaboration Hub 🤝
@@ -158,7 +160,7 @@ const CollaborationHub = () => {
         key={activeSection}
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
         className="tab-content"
       >
         {activeSection === 'opportunities' && (
@@ -179,7 +181,7 @@ const CollaborationHub = () => {
                   key={opportunity.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1, duration: 0.6 }}
+                  transition={{ delay: prefersReducedMotion ? 0 : index * 0.1, duration: prefersReducedMotion ? 0 : 0.6 }}
                   className="opportunity-card"
                 >
                   <div className="opportunity-header">
@@ -243,7 +245,7 @@ const CollaborationHub = () => {
                   key={collab.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1, duration: 0.6 }}
+                  transition={{ delay: prefersReducedMotion ? 0 : index * 0.1, duration: prefersReducedMotion ? 0 : 0.6 }}
                   className="collaboration-card"
                 >
                   <div className="collaboration-header">
@@ -298,7 +300,7 @@ const CollaborationHub = () => {
                   key={request.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1, duration: 0.6 }}
+                  transition={{ delay: prefersReducedMotion ? 0 : index * 0.1, duration: prefersReducedMotion ? 0 : 0.6 }}
                   className="networking-card"
                 >
                   <div className="networking-header">

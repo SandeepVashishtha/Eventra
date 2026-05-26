@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { getSmartDateLabel } from "../../utils/relativeTime";
 import {
   Calendar, Trophy, FolderOpen, Users, Settings,
@@ -23,18 +24,18 @@ import {
 import "./UserDashboard.css";
 import EventTicket from "./EventTicket";
 
-const fadeUp = {
+const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 24 },
   visible: (i = 0) => ({
     opacity: 1, y: 0,
-    transition: { delay: i * 0.07, duration: 0.45, ease: "easeOut" }
+    transition: { delay: prefersReducedMotion ? 0 : i * 0.07, duration: prefersReducedMotion ? 0 : 0.45, ease: "easeOut" }
   })
-};
+});
 
-const stagger = {
+const stagger = (prefersReducedMotion) => ({
   hidden: {},
-  visible: { transition: { staggerChildren: 0.08 } }
-};
+  visible: { transition: { staggerChildren: prefersReducedMotion ? 0 : 0.08 } }
+});
 
 // ✅ Removed STATUS_COLORS — no longer needed, StatusBadge handles all styling
 
@@ -65,6 +66,7 @@ const QUICK_ACTIONS = [
 ];
 
 export default function UserDashboard() {
+  const prefersReducedMotion = useReducedMotion();
   const { user, logout } = useAuth();
   const { myEvents } = useMyEvents();
   const navigate = useNavigate();
@@ -213,7 +215,7 @@ export default function UserDashboard() {
                     initial={{ opacity: 0, y: -8, scale: 0.97 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -8, scale: 0.97 }}
-                    transition={{ duration: 0.18 }}
+                    transition={{ duration: prefersReducedMotion ? 0 : 0.18 }}
                   >
                     <div className="ud-notif-header">
                       <span>Notifications</span>

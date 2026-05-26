@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
   FiBarChart,
   FiCalendar,
@@ -23,6 +24,7 @@ import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 // Star Rating Component
 const StarRating = ({ rating, onRatingChange, error }) => {
+  const prefersReducedMotion = useReducedMotion();
   const [hoveredRating, setHoveredRating] = useState(0);
 
   const handleStarClick = (star) => {
@@ -317,6 +319,7 @@ const CustomFloatingSelect = ({
 
 // Feedback Page Component
 const FeedbackPage = () => {
+  const prefersReducedMotion = useReducedMotion();
   useDocumentTitle("Eventra | Feedback")
   const [formData, setFormData] = useState({
     name: "",
@@ -477,7 +480,7 @@ const FeedbackPage = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
           className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
         >
           {/* FIXED FLEX LAYOUT */}

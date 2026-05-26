@@ -1,6 +1,7 @@
 // src/pages/CommunityEventsPage.jsx
 import React, { useState } from "react";
 import { motion } from "framer-motion";
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import {
   CalendarDays,
   Users,
@@ -90,6 +91,7 @@ const events = [
 ];
 
 const CommunityEvent = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [selectedEvent, setSelectedEvent] = useState(null);
 
   return (
@@ -109,7 +111,7 @@ const CommunityEvent = () => {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
           className="text-center mb-14"
         >
           <div className="flex justify-center mb-6">
@@ -128,7 +130,7 @@ const CommunityEvent = () => {
           <motion.h1
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
             className={`
               text-4xl sm:text-6xl lg:text-7xl
               font-extrabold
@@ -145,7 +147,7 @@ const CommunityEvent = () => {
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.7 }}
+            transition={{ delay: prefersReducedMotion ? 0 : 0.2, duration: prefersReducedMotion ? 0 : 0.7 }}
             className={`
               text-base sm:text-lg
               max-w-2xl

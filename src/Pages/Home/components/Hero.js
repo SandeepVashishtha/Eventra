@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
 import { Search, Calendar, Trophy, Code, ExternalLink } from "lucide-react";
 
+import useReducedMotion from "../../../hooks/useReducedMotion.js";
 // Import mock data
 import eventsData from "../../Events/eventsMockData.json";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
@@ -16,6 +17,7 @@ import useDocumentTitle from "../../../hooks/useDocumentTitle";
 const MotionLink = motion(Link);
 
 const Hero = () => {
+  const prefersReducedMotion = useReducedMotion();
   useDocumentTitle("Eventra | Home");
   const phrases = [
     "Amazing Tech Events",
@@ -151,14 +153,14 @@ const Hero = () => {
 
   const fadeUp = {
     hidden: { y: 40, opacity: 0 },
-    show: { y: 0, opacity: 1, transition: { duration: 0.8, ease: "easeOut" } },
+    show: { y: 0, opacity: 1, transition: { duration: prefersReducedMotion ? 0 : 0.8, ease: "easeOut" } },
   };
 
   const floatShape = (i) => ({
     y: [0, -20 - i * 5, 0],
     x: [0, 20 + i * 5, 0],
     rotate: [0, 15, -15, 0],
-    transition: { duration: 4.4 + i * 0.7, repeat: Infinity, ease: "easeInOut" },
+    transition: { duration: prefersReducedMotion ? 0 : 4.4 + i * 0.7, repeat: Infinity, ease: "easeInOut" },
   });
 
   // Vibrant colors for light mode, soft pastels for dark mode
@@ -233,12 +235,12 @@ border-b border-gray-100 dark:border-slate-900">
                     animate={{
                       opacity: 1,
                       y: 0,
-                      transition: { duration: 0.8, ease: "easeOut" },
+                      transition: { duration: prefersReducedMotion ? 0 : 0.8, ease: "easeOut" },
                     }}
                     exit={{
                       opacity: 0,
                       y: -40,
-                      transition: { duration: 0.5, ease: "easeIn" },
+                      transition: { duration: prefersReducedMotion ? 0 : 0.5, ease: "easeIn" },
                     }}
                   >
                     <span className="text-indigo-600 dark:text-indigo-500 font-extrabold drop-shadow-sm">
@@ -275,7 +277,7 @@ border-b border-gray-100 dark:border-slate-900">
                     initial={{ opacity: 0, y: -10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
+                    transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
                     className="absolute top-full left-0 right-0 mt-3 
                      bg-white dark:bg-slate-900
 rounded-xl
@@ -334,7 +336,7 @@ text-gray-600 dark:text-gray-300"
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 10 }}
-                          transition={{ duration: 0.25, ease: "easeOut" }}
+                          transition={{ duration: prefersReducedMotion ? 0 : 0.25, ease: "easeOut" }}
                           className="text-center text-gray-500 dark:text-gray-400 py-10 text-base"
                         >
                           No results match "
@@ -439,7 +441,7 @@ text-gray-600 dark:text-gray-300"
                   key={i}
                   variants={fadeUp}
                   whileHover={{ y: -5 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
                   className="flex flex-col items-center justify-center p-6 bg-white/60 dark:bg-gray-900/40 backdrop-blur-md rounded-2xl border border-gray-200/60 dark:border-gray-800/60 shadow-sm"
                 >
                   

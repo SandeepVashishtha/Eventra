@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 
 const RespawningText = ({ texts = ["Discover & Join"], typingSpeed = 150, deletingSpeed = 100, pauseTime = 2000 }) => {
   const [currentText, setCurrentText] = useState("");
   const [textIndex, setTextIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     let timeout;
@@ -45,7 +47,7 @@ const RespawningText = ({ texts = ["Discover & Join"], typingSpeed = 150, deleti
       {currentText}
       <motion.span
         animate={{ opacity: [1, 0] }}
-        transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.8, repeat: Infinity, ease: "linear" }}
         className="inline-block w-1 h-8 sm:h-12 md:h-16 lg:h-20 bg-black dark:bg-white ml-1 align-middle"
         style={{ marginBottom: '0.1em' }}
       />

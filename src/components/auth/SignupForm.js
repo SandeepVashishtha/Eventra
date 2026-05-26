@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
@@ -18,6 +19,7 @@ const assessStrength = (password) => {
 };
 
 const SignupForm = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",

@@ -19,6 +19,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import {
   Calendar, MapPin, Clock, Tag, Search, X,
   Ticket, Trash2, Filter, ArrowUpDown,
@@ -29,19 +30,19 @@ import StatusBadge from '../common/StatusBadge';
 
 // ── animation variants ──────────────────────────────────────────────────────
 
-const fadeUp = {
+const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
   visible: (i = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.06, duration: 0.4, ease: 'easeOut' },
+    transition: { delay: prefersReducedMotion ? 0 : i * 0.06, duration: prefersReducedMotion ? 0 : 0.4, ease: 'easeOut' },
   }),
-};
+});
 
-const stagger = {
+const stagger = (prefersReducedMotion) => ({
   hidden: {},
-  visible: { transition: { staggerChildren: 0.07 } },
-};
+  visible: { transition: { staggerChildren: prefersReducedMotion ? 0 : 0.07 } },
+});
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -59,12 +60,12 @@ const getEventStatus = (event) => {
 
 // ── empty state ──────────────────────────────────────────────────────────────
 
-const EmptyState = () => (
+const EmptyState = ({ prefersReducedMotion }) => (
   <motion.div
     className="my-events-empty"
     initial={{ opacity: 0, y: 24 }}
     animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.45 }}
+    transition={{ duration: prefersReducedMotion ? 0 : 0.45 }}
   >
     <div className="my-events-empty-icon">
       <Ticket size={40} />
@@ -251,6 +252,7 @@ const CancelDialog = ({ eventTitle, onConfirm, onDismiss }) => (
 // ── main component ────────────────────────────────────────────────────────────
 
 export default function MyEventsTab() {
+  const prefersReducedMotion = useReducedMotion();
   const { myEvents, removeRegistration } = useMyEvents();
 
   const [searchQuery, setSearchQuery] = useState('');
