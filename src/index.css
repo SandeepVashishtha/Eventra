@@ -502,6 +502,15 @@ table {
   content: none;
 }
 
+/* NavbarIssueFix: Scrollable navbar links — hides scrollbar while keeping scroll */
+.navbar-links-scroll {
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE/Edge */
+}
+.navbar-links-scroll::-webkit-scrollbar {
+  display: none;               /* Chrome/Safari/Opera */
+}
+
 /* Sidebar */
 .theme-sidebar {
   background-color: var(--sidebar-bg);
