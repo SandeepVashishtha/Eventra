@@ -1,3 +1,4 @@
+import TeamMatchmaking from "./components/TeamMatchmaking";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -367,6 +368,9 @@ const HackathonHub = () => {
           </div>
         ))}
       </motion.div>
+
+{/* TEAM MATCHMAKING SECTION */}
+<TeamMatchmaking />
 
       {/* Featured Hackathons */}
       {!isLoading && featuredHackathons.length > 0 && (

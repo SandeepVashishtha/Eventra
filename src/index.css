@@ -594,12 +594,19 @@ select,
     );
 }
 
-/* navbar updates */
-nav {
-  overflow-x: hidden;
+.error-banner {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #dc2626;
+  padding: 10px 16px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 0.875rem;
 }
 
-.neon-logo {
-  white-space: nowrap;
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
-
+.animate-spin {
+  animation: spin 0.7s linear infinite;
+}

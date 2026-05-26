@@ -140,22 +140,20 @@ function App() {
                     }
                   >
                     <Routes>
+                      <Route
+                        path="/register/:id"
+                        element={<RegistrationPage />}
+                      />
 
-      <Route
-        path="/register/:id"
-        element={<RegistrationPage />}
-      />
+                      <Route
+                        path="/event-recommendation"
+                        element={<EventRecommendation />}
+                      />
 
-      <Route
-        path="/event-recommendation"
-        element={<EventRecommendation />}
-      />
-
-      <Route
-        path="*"
-        element={<AppRoutes />}
-      />
-
+                      <Route
+                        path="*"
+                        element={<AppRoutes />}
+                      />
                     </Routes>
                   </Suspense>
                 </PageTransition>
