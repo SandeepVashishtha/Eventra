@@ -34,13 +34,39 @@ const FILTERS = [
 
 // FIX: Extracted sort logic to a pure function — eliminates duplication
 // between handleSortChange and the sort useEffect
-const sortEvents = (events, sortType) => {
+const sortEvents = (
+  events,
+  sortType
+) => {
   const sorted = [...events];
+
   if (sortType === "Newest") {
-    sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
-  } else if (sortType === "Upcoming" || sortType === "upcoming") {
-    sorted.sort((a, b) => new Date(a.date) - new Date(b.date));
+    sorted.sort(
+      (a, b) =>
+        new Date(b.date) -
+        new Date(a.date)
+    );
+
+  } else if (
+    sortType === "Upcoming" ||
+    sortType === "upcoming"
+  ) {
+    sorted.sort(
+      (a, b) =>
+        new Date(a.date) -
+        new Date(b.date)
+    );
+
+  } else if (
+    sortType === "Popular"
+  ) {
+    sorted.sort(
+      (a, b) =>
+        (b.attendees || 0) -
+        (a.attendees || 0)
+    );
   }
+
   return sorted;
 };
 
@@ -261,7 +287,11 @@ const EventsPage = () => {
                 label=""
                 value={sortType}
                 onChange={setSortType}
-                options={["Newest", "Upcoming"]}
+                options={[
+  "Newest",
+  "Upcoming",
+  "Popular",
+]}
                 placeholder="Sort by Date"
               />
             </div>
