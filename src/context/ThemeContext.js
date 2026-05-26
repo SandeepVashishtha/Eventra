@@ -26,6 +26,7 @@ export const ThemeProvider = ({
 }) => {
   const [theme, setTheme] =
     useState(getInitialTheme);
+  const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
 
   const resolvedTheme =
     theme === "system"
@@ -108,6 +109,8 @@ export const ThemeProvider = ({
       isDarkMode:
         resolvedTheme === "dark",
       setTheme,
+      isCustomizerOpen,
+      setIsCustomizerOpen,
 
       toggleTheme: () =>
         setTheme((current) =>
@@ -119,7 +122,7 @@ export const ThemeProvider = ({
             : "dark"
         ),
     }),
-    [theme, resolvedTheme]
+    [theme, resolvedTheme, isCustomizerOpen]
   );
 
   return (
