@@ -7,6 +7,8 @@ import { toast } from "react-toastify";
 import BackToTopButton
 from "./components/common/BackToTopButton";
 import Navbar from "./components/Layout/Navbar";
+import OfflineBanner from "./components/common/OfflineBanner";
+import OfflineConflictModal from "./components/common/OfflineConflictModal";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -115,6 +117,8 @@ function App() {
 
             <div className="App">
               <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+              <OfflineBanner />
+              <OfflineConflictModal />
               <KeyboardShortcutsModal
                 isOpen={showKeyboardModal}
                 onClose={() => setShowKeyboardModal(false)}
@@ -133,6 +137,17 @@ function App() {
                   duration-300
                 "
               >
+<<<<<<< HEAD
+              <PageTransition>
+  <Suspense
+    fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        Loading...
+      </div>
+    }
+  >
+    <Routes>
+=======
                 <PageTransition>
                   <Suspense
                     fallback={
@@ -152,6 +167,7 @@ function App() {
                         path="/event-recommendation"
                         element={<EventRecommendation />}
                       />
+>>>>>>> upstream/master
 
                       <Route
                         path="*"
