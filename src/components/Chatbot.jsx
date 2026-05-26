@@ -113,7 +113,7 @@ export default function Chatbot() {
       setMessages(INITIAL_MESSAGES);
     }
     localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
-  }, []);
+  }, [setMessages]);
 
   useEffect(() => {
     return () => {
