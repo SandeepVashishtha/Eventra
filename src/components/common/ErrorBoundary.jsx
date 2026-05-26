@@ -14,131 +14,99 @@ class GlobalErrorBoundary extends React.Component {
       errorInfo: null,
       retryCount: 0,
       errorId: null,
+      copied: false,
     };
 
-    this.recoveryTimeout =
-      null;
-
-    this.handleReset =
-      this.handleReset.bind(
-        this
-      );
-
-    this.handleReload =
-      this.handleReload.bind(
-        this
-      );
-
-    this.handleCopyError =
-      this.handleCopyError.bind(
-        this
-      );
+    this.handleReset = this.handleReset.bind(this);
+    this.handleReload = this.handleReload.bind(this);
+    this.handleCopyError = this.handleCopyError.bind(this);
   }
 
-  // Catch Rendering Errors
-  static getDerivedStateFromError(
-    error
-  ) {
+  static getDerivedStateFromError(error) {
     return {
       hasError: true,
       error,
-      errorId:
-        Date.now().toString(
-          36
-        ),
+      errorId: `EVT-${Date.now().toString(36).toUpperCase()}`,
+      copied: false,
     };
   }
 
-  // Log Errors
-  componentDidCatch(
-    error,
-    errorInfo
-  ) {
-    logError(
-      error,
-      errorInfo
-    );
-
-    this.setState({
-      errorInfo,
+  componentDidCatch(error, errorInfo) {
+    logError(error, {
+      ...errorInfo,
+      boundary: this.props.boundaryName || "Application",
+      errorId: this.state.errorId,
     });
 
-    // Intelligent Recovery
-    this.recoveryTimeout =
-      setTimeout(() => {
-        this.handleReset();
-      }, 10000);
+    this.setState({ errorInfo });
   }
 
-  // Cleanup
-  componentWillUnmount() {
-    if (
-      this.recoveryTimeout
-    ) {
-      clearTimeout(
-        this.recoveryTimeout
-      );
-    }
-  }
-
-  // Retry Rendering
-  handleReset() {
-    if (
-      this.state.retryCount >=
-      3
-    ) {
-      window.location.reload();
-
+  componentDidUpdate(prevProps) {
+    if (!this.state.hasError) {
       return;
     }
 
-    this.setState(
-      (prevState) => ({
-        hasError: false,
-        error: null,
-        errorInfo: null,
-        retryCount:
-          prevState.retryCount +
-          1,
-      })
-    );
+    const previousResetKeys = prevProps.resetKeys || [];
+    const resetKeys = this.props.resetKeys || [];
+    const shouldReset = resetKeys.some((key, index) => key !== previousResetKeys[index]);
+
+    if (shouldReset) {
+      this.handleReset();
+    }
   }
 
-  // Force Reload
+  handleReset() {
+    if (this.state.retryCount >= 3) {
+      window.location.reload();
+      return;
+    }
+
+    this.setState((prevState) => ({
+      hasError: false,
+      error: null,
+      errorInfo: null,
+      errorId: null,
+      copied: false,
+      retryCount: prevState.retryCount + 1,
+    }));
+  }
+
   handleReload() {
     window.location.reload();
   }
 
-  // Copy Error
-  handleCopyError() {
-    if (
-      this.state.error
-    ) {
-      navigator.clipboard.writeText(
-        this.state.error.toString()
-      );
+  async handleCopyError() {
+    if (!this.state.error || !navigator.clipboard) {
+      return;
+    }
+
+    const errorReport = [
+      `Error ID: ${this.state.errorId}`,
+      `Boundary: ${this.props.boundaryName || "Application"}`,
+      this.state.error.toString(),
+      this.state.errorInfo?.componentStack || "",
+    ].join("\n\n");
+
+    try {
+      await navigator.clipboard.writeText(errorReport);
+      this.setState({ copied: true });
+    } catch (_) {
+      this.setState({ copied: false });
     }
   }
 
   render() {
-    const variant =
-      this.props.variant ||
-      "fullscreen";
+    const variant = this.props.variant || "fullscreen";
+    const boundaryName = this.props.boundaryName || "Application";
 
-    if (
-      this.state.hasError
-    ) {
+    if (this.state.hasError) {
       return (
         <div
-          className={`
-            eb-overlay
-            eb-${variant}
-          `}
+          className={`eb-shell eb-${variant}`}
           role="alert"
           aria-live="assertive"
         >
           <div className="eb-card">
-            {/* Icon */}
             <div
               className="eb-icon-wrapper"
               aria-hidden="true"
@@ -173,67 +141,59 @@ class GlobalErrorBoundary extends React.Component {
               </svg>
             </div>
 
-            {/* Title */}
             <h1 className="eb-title">
-              Oops! Something
-              went wrong.
+              {this.props.title || "Something went wrong"}
             </h1>
 
-            {/* Description */}
             <p className="eb-message">
-              An unexpected
-              runtime error
-              interrupted the
-              application.
-              Recovery options
-              are available
-              below.
+              {this.props.description ||
+                `The ${boundaryName} area hit an unexpected runtime issue. You can retry this view, reload the app state, or return to a safe page.`}
             </p>
 
-            {/* Error ID */}
-            <p className="eb-error-id">
-              Error ID:
-              {" "}
-              {
-                this.state
-                  .errorId
-              }
-            </p>
+            <div className="eb-summary-window">
+              <div>
+                <span className="eb-summary-label">Boundary</span>
+                <strong>{boundaryName}</strong>
+              </div>
+              <div>
+                <span className="eb-summary-label">Error ID</span>
+                <strong>{this.state.errorId}</strong>
+              </div>
+              <div>
+                <span className="eb-summary-label">Recovery attempts</span>
+                <strong>{this.state.retryCount} of 3</strong>
+              </div>
+            </div>
 
-            {/* Actions */}
             <div className="eb-actions">
               <button
                 className="eb-btn-primary"
-                onClick={
-                  this
-                    .handleReload
-                }
+                onClick={this.handleReload}
               >
-                Reload Page
+                Reload App State
               </button>
 
               <button
                 className="eb-btn-secondary"
-                onClick={
-                  this
-                    .handleReset
-                }
+                onClick={this.handleReset}
               >
                 Try Again
               </button>
 
+              {this.props.showHomeLink !== false && (
+                <a className="eb-btn-secondary eb-link" href="/">
+                  Return Home
+                </a>
+              )}
+
               <button
                 className="eb-btn-copy"
-                onClick={
-                  this
-                    .handleCopyError
-                }
+                onClick={this.handleCopyError}
               >
-                Copy Error
+                {this.state.copied ? "Copied" : "Copy Error"}
               </button>
             </div>
 
-            {/* Development Details */}
             {process.env
               .NODE_ENV !==
               "production" &&
@@ -241,13 +201,11 @@ class GlobalErrorBoundary extends React.Component {
                 .error && (
                 <details className="eb-details">
                   <summary className="eb-details-summary">
-                    Technical
-                    Details
+                    Technical Details
                   </summary>
 
                   <pre className="eb-stack">
                     {this.state.error.toString()}
-
                     {
                       this
                         .state

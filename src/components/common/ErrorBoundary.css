@@ -1,216 +1,263 @@
-/* ============================================================
-   ErrorBoundary.css
-   Styles for the GlobalErrorBoundary fallback UI.
-   Matches Eventra design tokens defined in index.css.
-   ============================================================ */
-
-/* Full-screen overlay — sits above everything */
-.eb-overlay {
-  position: fixed;
-  inset: 0;
+.eb-shell {
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background-color: var(--bg-color, #ffffff);
-  /* Subtle pastel grid inherited from the app's design language */
-  background-image:
-    linear-gradient(to right, rgba(147, 197, 253, 0.2) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(250, 204, 21, 0.2) 1px, transparent 1px);
+  color: var(--text-color, #111827);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.eb-fullscreen {
+  position: fixed;
+  inset: 0;
+  min-height: 100vh;
+  background:
+    linear-gradient(to right, rgba(99, 102, 241, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(16, 185, 129, 0.08) 1px, transparent 1px),
+    var(--bg-color, #ffffff);
   background-size: 40px 40px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   z-index: 9999;
 }
-.dark .eb-overlay {
-  background-color: #0f172a;
-}
 
-/* Central card */
-.eb-card {
-  background: var(--card-bg-color, #ffffff);
-  border: 1px solid var(--border-color, #e1e5e9);
-  border-radius: 20px;
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.05),
-    0 20px 60px -10px rgba(102, 126, 234, 0.15);
-  padding: 56px 48px;
-  max-width: 520px;
+.eb-section,
+.eb-card-variant,
+.eb-inline {
+  position: relative;
   width: 100%;
-  text-align: center;
-  animation: eb-fade-up 0.4s ease both;
+  min-height: 320px;
+  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.04);
 }
 
-/* Entrance animation */
+.dark .eb-fullscreen {
+  background:
+    linear-gradient(to right, rgba(99, 102, 241, 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(16, 185, 129, 0.08) 1px, transparent 1px),
+    #0f172a;
+}
+
+.eb-card {
+  width: min(100%, 620px);
+  padding: 40px;
+  text-align: left;
+  background: var(--card-bg-color, #ffffff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.12);
+  animation: eb-fade-up 0.35s ease both;
+}
+
+.dark .eb-card {
+  background: #111827;
+  border-color: #334155;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+}
+
 @keyframes eb-fade-up {
   from {
     opacity: 0;
-    transform: translateY(24px);
+    transform: translateY(18px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-/* Icon wrapper */
 .eb-icon-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.12), rgba(118, 75, 162, 0.12));
-  margin: 0 auto 24px;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 20px;
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 8px;
 }
 
 .eb-icon {
-  width: 36px;
-  height: 36px;
-  color: #667eea;
+  width: 32px;
+  height: 32px;
 }
 
-/* Title */
 .eb-title {
-  font-size: var(--font-h3, 1.5rem);
-  font-weight: var(--fw-bold, 700);
-  line-height: var(--lh-heading, 1.2);
-  color: var(--text-color, #1a1a1a);
-  margin-bottom: 12px;
+  margin: 0 0 10px;
+  color: var(--text-color, #111827);
+  font-size: 1.65rem;
+  font-weight: 800;
+  line-height: 1.2;
 }
 
-/* Body message */
 .eb-message {
-  font-size: var(--font-body, 1rem);
-  font-weight: var(--fw-regular, 400);
-  line-height: var(--lh-body, 1.65);
-  color: var(--text-color-light, #4a4a4a);
-  margin-bottom: 36px;
+  max-width: 58ch;
+  margin: 0 0 24px;
+  color: var(--text-color-light, #4b5563);
+  font-size: 0.98rem;
+  line-height: 1.65;
 }
 
-/* Action buttons row */
-.eb-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-bottom: 28px;
-}
-
-/* Primary CTA — Refresh Page */
-.eb-btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #ffffff;
-  padding: 12px 28px;
-  border: none;
-  border-radius: 10px;
-  font-family: inherit;
-  font-size: var(--font-body, 1rem);
-  font-weight: var(--fw-semibold, 600);
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.eb-btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.35);
-}
-
-.eb-btn-primary:active {
-  transform: translateY(0);
-}
-
-/* Secondary CTA — Try Again (re-renders without full reload) */
-.eb-btn-secondary {
-  background: transparent;
-  color: var(--btn-secondary-text, #4a4a4a);
-  padding: 12px 28px;
-  border: 2px solid var(--border-color, #e1e5e9);
-  border-radius: 10px;
-  font-family: inherit;
-  font-size: var(--font-body, 1rem);
-  font-weight: var(--fw-semibold, 600);
-  cursor: pointer;
-  transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
-}
-.dark .eb-btn-secondary {
-  color: #e2e8f0;
-  border-color: #475569;
-}
-
-.eb-btn-secondary:hover {
-  border-color: #667eea;
-  color: #667eea;
-  transform: translateY(-2px);
-}
-
-.eb-btn-secondary:active {
-  transform: translateY(0);
-}
-.eb-btn-primary:focus,
-.eb-btn-secondary:focus {
-  outline: 2px solid #818cf8;
-  outline-offset: 2px;
-}
-
-
-/* Collapsible dev-only error details */
-.eb-details {
-  margin-top: 4px;
-  text-align: left;
-}
-
-.eb-details-summary {
-  font-size: 0.8125rem;
-  font-weight: var(--fw-medium, 500);
-  color: var(--text-color-light, #4a4a4a);
-  cursor: pointer;
-  user-select: none;
-  list-style: none;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  justify-content: center;
-}
-
-.eb-details-summary::-webkit-details-marker { display: none; }
-
-.eb-stack {
-  margin-top: 12px;
-  padding: 16px;
-  background: var(--scrollbar-track-color, #f1f1f1);
-  border-radius: 8px;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 0.75rem;
-  line-height: 1.6;
-  color: var(--text-color, #1a1a1a);
-  white-space: pre-wrap;
-  word-break: break-word;
-  max-height: 200px;
-  overflow-y: auto;
-}
-.dark .eb-stack {
-  background: #0f172a;
+.dark .eb-title,
+.dark .eb-message {
   color: #f8fafc;
 }
 
-/* Dark mode overrides */
-.dark .eb-card {
-  background: #1e293b;
-  border-color: #334155;
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.3),
-    0 20px 60px -10px rgba(102, 126, 234, 0.1);
+.dark .eb-message {
+  color: #cbd5e1;
 }
 
-/* Responsive */
+.eb-summary-window {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 14px;
+  background: #f8fafc;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+}
+
+.dark .eb-summary-window {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+.eb-summary-window div {
+  min-width: 0;
+}
+
+.eb-summary-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text-color-light, #64748b);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.eb-summary-window strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--text-color, #111827);
+  font-size: 0.9rem;
+}
+
+.dark .eb-summary-window strong {
+  color: #f8fafc;
+}
+
+.eb-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.eb-btn-primary,
+.eb-btn-secondary,
+.eb-btn-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.eb-btn-primary {
+  color: #ffffff;
+  background: #6366f1;
+  border: 1px solid #6366f1;
+}
+
+.eb-btn-secondary {
+  color: var(--text-color, #111827);
+  background: transparent;
+  border: 1px solid var(--border-color, #d1d5db);
+}
+
+.eb-btn-copy {
+  color: #b91c1c;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+}
+
+.eb-link {
+  text-decoration: none;
+}
+
+.dark .eb-btn-secondary {
+  color: #f8fafc;
+  border-color: #475569;
+}
+
+.eb-btn-primary:hover,
+.eb-btn-secondary:hover,
+.eb-btn-copy:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(99, 102, 241, 0.18);
+}
+
+.eb-btn-primary:focus-visible,
+.eb-btn-secondary:focus-visible,
+.eb-btn-copy:focus-visible {
+  outline: 3px solid rgba(99, 102, 241, 0.35);
+  outline-offset: 3px;
+}
+
+.eb-details {
+  margin-top: 4px;
+}
+
+.eb-details-summary {
+  color: var(--text-color-light, #4b5563);
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.eb-stack {
+  max-height: 220px;
+  margin-top: 12px;
+  padding: 14px;
+  overflow: auto;
+  color: var(--text-color, #111827);
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: #f1f5f9;
+  border-radius: 8px;
+}
+
+.dark .eb-stack {
+  color: #f8fafc;
+  background: #020617;
+}
+
 @media (max-width: 768px) {
+  .eb-shell {
+    padding: 16px;
+  }
+
   .eb-card {
-    padding: 40px 24px;
+    padding: 28px 20px;
   }
 
   .eb-title {
-    font-size: var(--font-h4, 1.25rem);
+    font-size: 1.35rem;
+  }
+
+  .eb-summary-window {
+    grid-template-columns: 1fr;
   }
 
   .eb-actions {
@@ -218,187 +265,18 @@
   }
 
   .eb-btn-primary,
-  .eb-btn-secondary {
+  .eb-btn-secondary,
+  .eb-btn-copy {
     width: 100%;
-    text-align: center;
   }
 }
-/* ============================================================
-   Advanced Recovery & Accessibility Enhancements
-============================================================ */
 
-/* Error ID */
-
-.eb-error-id {
-  margin-bottom: 24px;
-
-  font-size: 0.85rem;
-
-  color: var(
-    --text-color-light,
-    #6b7280
-  );
-
-  opacity: 0.9;
-}
-
-/* Copy Error Button */
-
-.eb-btn-copy {
-  background:
-    rgba(
-      239,
-      68,
-      68,
-      0.08
-    );
-
-  color: #ef4444;
-
-  padding: 12px 28px;
-
-  border: 1px solid
-    rgba(
-      239,
-      68,
-      68,
-      0.2
-    );
-
-  border-radius: 10px;
-
-  font-family: inherit;
-
-  font-size: var(
-    --font-body,
-    1rem
-  );
-
-  font-weight: var(
-    --fw-semibold,
-    600
-  );
-
-  cursor: pointer;
-
-  transition:
-    all 0.25s ease;
-}
-
-.eb-btn-copy:hover {
-  background:
-    rgba(
-      239,
-      68,
-      68,
-      0.15
-    );
-
-  transform:
-    translateY(-2px);
-}
-
-/* Better Focus Accessibility */
-
-.eb-btn-primary:focus-visible,
-.eb-btn-secondary:focus-visible,
-.eb-btn-copy:focus-visible {
-  outline: 3px solid
-    rgba(
-      102,
-      126,
-      234,
-      0.35
-    );
-
-  outline-offset: 3px;
-}
-
-/* Reduced Motion Accessibility */
-
-@media (
-  prefers-reduced-motion: reduce
-) {
+@media (prefers-reduced-motion: reduce) {
   .eb-card,
   .eb-btn-primary,
   .eb-btn-secondary,
   .eb-btn-copy {
     animation: none;
-
     transition: none;
   }
-}
-
-/* Glass Blur Enhancement */
-
-.eb-card {
-  backdrop-filter:
-    blur(14px);
-
-  -webkit-backdrop-filter:
-    blur(14px);
-}
-
-/* Inline Variant */
-
-.eb-inline {
-  position: relative;
-
-  min-height: 320px;
-
-  padding: 32px;
-}
-
-/* Card Variant */
-
-.eb-card-variant {
-  position: relative;
-
-  padding: 32px;
-}
-
-/* Better Dark Mode */
-
-.dark .eb-overlay {
-  background-image:
-    linear-gradient(
-      to right,
-      rgba(
-        59,
-        130,
-        246,
-        0.08
-      )
-      1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      to bottom,
-      rgba(
-        250,
-        204,
-        21,
-        0.06
-      )
-      1px,
-      transparent 1px
-    );
-}
-
-/* Better Scrollbar */
-
-.eb-stack::-webkit-scrollbar {
-  width: 8px;
-}
-
-.eb-stack::-webkit-scrollbar-thumb {
-  background:
-    rgba(
-      102,
-      126,
-      234,
-      0.45
-    );
-
-  border-radius: 999px;
 }

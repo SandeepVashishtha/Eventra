@@ -4,6 +4,7 @@ import { Route } from 'react-router-dom';
 // --------------- COMPONENTS
 import ProtectedRoute from "../auth/ProtectedRoute";
 import EventCreation from "../common/EventCreation";
+import ErrorBoundary from "../common/ErrorBoundary";
 import HostHackathon from "../../Pages/Hackathons/HostHackathon";
 import EditProfile from "../user/EditProfile";
 import Settings from "../../Pages/Settings";
@@ -16,6 +17,16 @@ import SurveyEngine from "../../Pages/Feedback/SurveyEngine";
 const AdminDashboard = lazy(() => import("../admin/AdminDashboard"));
 const Dashboard = lazy(() => import("../Dashboard"));
 
+const withModuleBoundary = (children, boundaryName) => (
+  <ErrorBoundary
+    variant="section"
+    boundaryName={boundaryName}
+    title={`${boundaryName} needs a reset`}
+  >
+    {children}
+  </ErrorBoundary>
+);
+
 export const getProtectedRoutes = () => [
   <Route
     key="/create-event"
@@ -26,7 +37,7 @@ export const getProtectedRoutes = () => [
         requiredScopes={["event:write"]}
         validateContext={({ user }) => user?.roles?.includes("ADMIN") || user?.roles?.includes("EVENT_MANAGER")}
       >
-        <EventCreation />
+        {withModuleBoundary(<EventCreation />, "Event creation")}
       </ProtectedRoute>
     }
   />,
@@ -39,7 +50,7 @@ export const getProtectedRoutes = () => [
         requiredScopes={["admin:all"]}
         validateContext={({ user }) => user?.status !== "Suspended"}
       >
-        <AdminDashboard />
+        {withModuleBoundary(<AdminDashboard />, "Admin dashboard")}
       </ProtectedRoute>
     }
   />,
@@ -52,7 +63,7 @@ export const getProtectedRoutes = () => [
         requiredScopes={["hackathon:write"]}
         validateContext={({ user }) => user?.roles?.includes("ADMIN") || user?.roles?.includes("EVENT_MANAGER")}
       >
-        <HostHackathon />
+        {withModuleBoundary(<HostHackathon />, "Hackathon hosting")}
       </ProtectedRoute>
     }
   />,
@@ -61,7 +72,7 @@ export const getProtectedRoutes = () => [
     path="/dashboard"
     element={
       <ProtectedRoute>
-        <Dashboard />
+        {withModuleBoundary(<Dashboard />, "User dashboard")}
       </ProtectedRoute>
     }
   />,
@@ -70,7 +81,7 @@ export const getProtectedRoutes = () => [
     path="/profile"
     element={
       <ProtectedRoute>
-        <EditProfile />
+        {withModuleBoundary(<EditProfile />, "Profile editor")}
       </ProtectedRoute>
     }
   />,
@@ -79,7 +90,7 @@ export const getProtectedRoutes = () => [
     path="/settings"
     element={
       <ProtectedRoute>
-        <Settings />
+        {withModuleBoundary(<Settings />, "Settings")}
       </ProtectedRoute>
     }
   />,
@@ -88,7 +99,7 @@ export const getProtectedRoutes = () => [
     path="/feedback/survey-builder"
     element={
       <ProtectedRoute requiredPermissions={["HOST_HACKATHON", "CREATE_EVENT"]}>
-        <SurveyEngine />
+        {withModuleBoundary(<SurveyEngine />, "Survey builder")}
       </ProtectedRoute>
     }
   />,

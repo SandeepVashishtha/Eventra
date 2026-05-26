@@ -1,16 +1,15 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import "./App.css";
 import { toast } from "react-toastify";
 
 import Navbar from "./components/Layout/Navbar";
-import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
 import FluidCursor from "./jhalak/FluidCursor";
+import ErrorBoundary from "./components/common/ErrorBoundary";
 import PageTransition from "./components/common/PageTransition";
 import ReminderChecker from "./components/reminders/ReminderChecker";
 import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
-import ThemeCustomizerDrawer from "./components/common/ThemeCustomizerDrawer";
 
 import RegistrationPage from "./Pages/RegistrationPage";
 
@@ -141,29 +140,41 @@ function App() {
                   "
                 >
                   <PageTransition>
-                    <Suspense
-                      fallback={
-                        <div className="flex items-center justify-center min-h-screen">
-                          Loading...
-                        </div>
-                      }
+                    <ErrorBoundary
+                      variant="section"
+                      boundaryName="Main application routes"
+                      title="This view needs a quick reset"
                     >
-                      <Routes>
-                        <Route
-                          path="/register/:id"
-                          element={<RegistrationPage />}
-                        />
-                        <Route path="*" element={<AppRoutes />} />
-                      </Routes>
-                    </Suspense>
+                      <Suspense
+                        fallback={
+                          <div className="flex items-center justify-center min-h-screen">
+                            Loading...
+                          </div>
+                        }
+                      >
+                        <Routes>
+                          <Route
+                            path="/register/:id"
+                            element={<RegistrationPage />}
+                          />
+                          <Route path="*" element={<AppRoutes />} />
+                        </Routes>
+                      </Suspense>
+                    </ErrorBoundary>
                   </PageTransition>
                 </main>
 
-                <Suspense fallback={null}>
-                 
-                  <Footer />
-                   <Chatbot />
-                </Suspense>
+                <ErrorBoundary
+                  variant="section"
+                  boundaryName="Footer and assistant widgets"
+                  title="One support widget failed to load"
+                  showHomeLink={false}
+                >
+                  <Suspense fallback={null}>
+                    <Footer />
+                    <Chatbot />
+                  </Suspense>
+                </ErrorBoundary>
 
                 <FeedbackButton />
                   
