@@ -130,16 +130,16 @@ function App() {
                   transition-colors
                   duration-300
                 "
-
-              <PageTransition>
-  <Suspense
-    fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        Loading...
-      </div>
-    }
-  >
-    <Routes>
+              >
+                <PageTransition>
+                  <Suspense
+                    fallback={
+                      <div className="flex items-center justify-center min-h-screen">
+                        Loading...
+                      </div>
+                    }
+                  >
+                    <Routes>
 
       <Route
         path="/register/:id"
@@ -156,9 +156,9 @@ function App() {
         element={<AppRoutes />}
       />
 
-    </Routes>
-  </Suspense>
-</PageTransition>
+                    </Routes>
+                  </Suspense>
+                </PageTransition>
 
               </main>
 
