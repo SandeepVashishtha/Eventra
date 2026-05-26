@@ -73,6 +73,11 @@ const Hero = () => {
   useEffect(() => {
     setStatsReady(true);
   }, []);
+  // FIXED
+useEffect(() => {
+  const timer = setTimeout(() => setStatsReady(true), 100);
+  return () => clearTimeout(timer);
+}, []);
 
   // Global search functionality
   const createSearchItem = (item, type, searchType) => ({
@@ -454,14 +459,13 @@ text-gray-600 dark:text-gray-300"
                   
                   <p className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
                     {statsReady ? (
-                      <CountUp
-                        start={0}
-                        end={Number.isFinite(stat.value) ? stat.value : 0}
-                        duration={2.5}
-                        suffix={stat.suffix || ""}
-                        enableScrollSpy
-                        scrollSpyOnce
-                      />
+                      // AFTER
+<CountUp
+  start={0}
+  end={Number.isFinite(stat.value) ? stat.value : 0}
+  duration={2.5}
+  suffix={stat.suffix || ""}
+/>
                     ) : (
                       <>
                         {stat.value}
