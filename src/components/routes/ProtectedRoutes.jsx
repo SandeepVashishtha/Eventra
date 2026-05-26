@@ -10,6 +10,7 @@ const AdminDashboard = lazy(() => import("../admin/AdminDashboard"));
 const Dashboard = lazy(() => import("../Dashboard"));
 const EventCreation = lazy(() => import("../common/EventCreation"));
 const HostHackathon = lazy(() => import("../../Pages/Hackathons/HostHackathon"));
+const UserProfile = lazy(() => import("../user/UserProfile"));
 const EditProfile = lazy(() => import("../user/EditProfile"));
 const Settings = lazy(() => import("../../Pages/Settings"));
 const AuthPage = lazy(() => import("../auth/AuthPage"));
@@ -67,11 +68,30 @@ export const getProtectedRoutes = () => [
     }
   />,
   <Route
+    key="/dashboard/profile"
+    path="/dashboard/profile"
+    element={
+      <ProtectedRoute>
+        <UserProfile />
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/profile/edit"
+    path="/profile/edit"
+    element={
+      <ProtectedRoute>
+        <EditProfile />
+      </ProtectedRoute>
+    }
+  />,
+  /* Keep legacy /profile route redirecting to view page */
+  <Route
     key="/profile"
     path="/profile"
     element={
       <ProtectedRoute>
-        <EditProfile />
+        <UserProfile />
       </ProtectedRoute>
     }
   />,

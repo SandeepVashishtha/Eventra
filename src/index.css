@@ -12,7 +12,9 @@
   padding: 0;
   box-sizing: border-box;
 }
-
+html {
+  scroll-behavior: smooth;
+}
 /* Theme variables */
 /* Theme variables */
 :root {
@@ -139,6 +141,53 @@ body {
   font-weight: var(--fw-regular);
 }
 
+img,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+main,
+section,
+article,
+header,
+footer,
+aside {
+  min-width: 0;
+}
+.dark {
+  color-scheme: dark;
+}
+
+/* Fix unreadable text */
+.dark p,
+.dark span,
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6,
+.dark label,
+.dark li,
+.dark a {
+  color: inherit;
+}
+
+/* Placeholder text fix */
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #94a3b8;
+}
+
+/* Better default text colors */
+.dark body {
+  color: #f8fafc;
+  background-color: #0f172a;
+}
 .dark .pastel-grid-bg {
   /* Use a solid dark background in dark mode and remove the light pastel grid image
      which remains visible otherwise. This ensures pages that use the pastel grid

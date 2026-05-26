@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { getSmartDateLabel } from "../../utils/relativeTime";
 import {
   Calendar, Trophy, FolderOpen, Users, Settings,
   Clock, MapPin, Zap, Activity, Bell, ChevronRight,
@@ -58,7 +59,7 @@ const QUICK_ACTIONS = [
   { label: "Events", icon: <Calendar size={22} />, to: "/events", color: "#6366f1" },
   { label: "Hackathons", icon: <Trophy size={22} />, to: "/hackathons", color: "#ec4899" },
   { label: "Projects", icon: <FolderOpen size={22} />, to: "/projects", color: "#8b5cf6" },
-  { label: "Profile", icon: <User size={22} />, to: "/profile", color: "#10b981" },
+  { label: "Profile", icon: <User size={22} />, to: "/dashboard/profile", color: "#10b981" },
   { label: "Settings", icon: <Settings size={22} />, to: "/settings", color: "#f59e0b" },
 ];
 
@@ -167,7 +168,7 @@ export default function UserDashboard() {
         </nav>
 
         <div className="ud-sidebar-bottom">
-          <Link to="/profile" className="ud-nav-item">
+          <Link to="/dashboard/profile" className="ud-nav-item" id="sidebar-profile-link">
             <User size={18} /><span>Profile</span>
           </Link>
           <button className="ud-nav-item ud-nav-logout" onClick={() => { logout(); navigate("/"); }}>
@@ -308,7 +309,7 @@ export default function UserDashboard() {
                       <div key={ev.id} className="ud-list-item">
                         <div>
                           <p className="ud-list-title">{ev.title}</p>
-                          <p className="ud-list-meta"><Calendar size={12} /> {ev.date} · <MapPin size={12} /> {ev.location}</p>
+                          <p className="ud-list-meta"><Calendar size={12} /> {getSmartDateLabel(ev.date)} · <MapPin size={12} /> {ev.location}</p>
                         </div>
                         {/* ✅ StatusBadge replaces ud-badge span */}
                         <StatusBadge status={ev.participationType} />
@@ -330,7 +331,7 @@ export default function UserDashboard() {
                       <div key={h.id} className="ud-list-item">
                         <div>
                           <p className="ud-list-title">{h.title}</p>
-                          <p className="ud-list-meta"><Calendar size={12} /> {h.date} · <MapPin size={12} /> {h.location}</p>
+                          <p className="ud-list-meta"><Calendar size={12} /> {getSmartDateLabel(h.date)} · <MapPin size={12} /> {h.location}</p>
                         </div>
                         <StatusBadge status={h.participationType} />
                       </div>
@@ -488,7 +489,7 @@ export default function UserDashboard() {
                         <tr key={item.id}>
                           <td><span className="ud-table-type">{TYPE_ICON[item.type]}{item.type}</span></td>
                           <td className="ud-table-title" title={item.title}>{item.title}</td>
-                          <td>{item.date || "—"}</td>
+                          <td title={item.date || ""}>{item.date ? getSmartDateLabel(item.date) : "—"}</td>
                           <td title={item.location || item.lastUpdate || "—"}>{item.location || item.lastUpdate || "—"}</td>
                           <td>
                             <StatusBadge status={item.projectStatus !== "-" ? item.projectStatus : item.status} />
