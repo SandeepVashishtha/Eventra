@@ -10,6 +10,24 @@ import {
   isAlreadyRegistered,
   saveRegistration,
 } from "../utils/registerUtils";
+
+const getRegistrationErrorMessage = (error) => {
+  const message =
+    error?.data?.message ||
+    error?.data?.error ||
+    error?.message ||
+    "";
+
+  if (
+    error?.status === 409 ||
+    /duplicate|already registered|conflict/i.test(message)
+  ) {
+    return "This email is already registered for this event.";
+  }
+
+  return message || "Something went wrong. Please try again.";
+};
+
 const RegistrationPage = () => {
   useDocumentTitle("Eventra | Registration");
   const navigate = useNavigate();
@@ -85,24 +103,25 @@ const RegistrationPage = () => {
         return;
       }
 
-      const res = await apiUtils.post(
+      await apiUtils.post(
         API_ENDPOINTS.EVENTS.REGISTER(eventId),
         formData
       );
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.message || data?.error || "Registration failed. Please try again.");
-      }
 
       saveRegistration(eventId, formData.email);
       setSubmitSuccess(true);
       toast.success("Registration successful!");
     } catch (error) {
+      const registrationErrorMessage = getRegistrationErrorMessage(error);
+
       setErrors((prev) => ({
         ...prev,
-        submit: error.message || "Something went wrong. Please try again.",
+        submit: registrationErrorMessage,
       }));
+
+      if (/already registered|duplicate|conflict/i.test(registrationErrorMessage)) {
+        toast.error(registrationErrorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }
