@@ -1,5 +1,5 @@
 // src/pages/CommunityEventsPage.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import {
@@ -93,6 +93,18 @@ const events = [
 const CommunityEvent = () => {
   const prefersReducedMotion = useReducedMotion();
   const [selectedEvent, setSelectedEvent] = useState(null);
+  
+      useEffect(() => {
+        if (selectedEvent) {
+          document.body.style.overflow = "hidden";
+        } else {
+           document.body.style.overflow = "auto";
+        }
+
+        return () => {
+          document.body.style.overflow = "unset";
+        };
+      }, [selectedEvent]);
 
   return (
     <div
@@ -260,7 +272,9 @@ const CommunityEvent = () => {
           aria-modal="true"
           aria-labelledby="community-event-modal-title"
           onClick={() => setSelectedEvent(null)}
-        >
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+  >
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
