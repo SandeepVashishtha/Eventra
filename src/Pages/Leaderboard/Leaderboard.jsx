@@ -16,7 +16,9 @@ import {
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
 import StyledDropdown from "../../components/StyledDropdown";
-import { LeaderboardTableSkeleton } from "../../components/common/SkeletonLoaders";
+import SkeletonLeaderboard, {
+  LeaderboardStatCardSkeleton,
+} from "../../components/common/SkeletonLeaderboard";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useLeaderboardStream, SSE_STATUS } from "../../context/RealTimeContext";
 
@@ -667,6 +669,34 @@ export default function LeaderBoard() {
 
         {/* AGGREGATED STATS CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {/* Contributors Card */}
+          {loading ? (
+            <LeaderboardStatCardSkeleton />
+          ) : (
+          <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
+            <div className="flex items-center">
+              <div className="p-3 rounded-xl mr-4 bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+                <FaUsers className="text-2xl" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Contributors
+                </p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {stats.totalContributors}
+                </p>
+              </div>
+            </div>
+          </div>
+          )}
+          {/* Pull Requests Card */}
+          {loading ? (
+            <LeaderboardStatCardSkeleton />
+          ) : (
+          <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
+            <div className="flex items-center">
+              <div className="p-3 rounded-xl mr-4 bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400">
+                <FaCode className="text-2xl" />
           {[
             {
               title: "Active Contributors",
@@ -701,6 +731,33 @@ export default function LeaderBoard() {
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   {card.title}
                 </p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {stats.flooredTotalPRs}
+                </p>
+              </div>
+            </div>
+          </div>
+          )}
+          {/* Total Points Card */}
+          {loading ? (
+            <LeaderboardStatCardSkeleton />
+          ) : (
+          <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
+            <div className="flex items-center">
+              <div className="p-3 rounded-xl mr-4 bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-400">
+                <FaStar className="text-2xl" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Total Points
+                </p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {stats.flooredTotalPoints}
+                </p>
+              </div>
+            </div>
+          </div>
+          )}
                 <p className="text-3xl font-extrabold text-slate-950 dark:text-white mt-1">
                   {loading ? "..." : <AnimatedCounter value={card.value} />}
                 </p>
@@ -712,7 +769,7 @@ export default function LeaderBoard() {
         {/* LEADERBOARD ARENA GRID */}
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden">
           {loading ? (
-            <LeaderboardTableSkeleton rows={CONTRIBUTORS_PER_PAGE} />
+            <SkeletonLeaderboard rows={CONTRIBUTORS_PER_PAGE} />
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">

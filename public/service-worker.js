@@ -31,7 +31,6 @@ const log = (...args) => {
 };
 
 // Install Service Worker and cache core static assets
-
 self.addEventListener('install', (event) => {
   event.waitUntil(
     fetch('/asset-manifest.json')
@@ -107,15 +106,17 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
 
-  // Skip non-GET requests and external resources (except essential fonts/icons)
+  // Skip non-GET requests
   if (event.request.method !== 'GET') return;
+
+  // Skip non-HTTP(S) requests e.g. chrome-extension://
+  if (!event.request.url.startsWith('http')) return;
 
   // Network-First strategy for API routes to always deliver fresh data when online
   if (requestUrl.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          // Cache fresh API response if it is successful
           if (response.status === 200) {
             const responseCopy = response.clone();
             caches.open(CACHE_NAME).then((cache) => {
@@ -125,10 +126,8 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => {
-          // If offline, check if we have cached API response
           return caches.match(event.request).then((cachedResponse) => {
             if (cachedResponse) return cachedResponse;
-            // Return clean JSON fallback for offline status
             return new Response(
               JSON.stringify({
                 error: 'You are currently offline. Event details will synchronize automatically once reconnected.',
@@ -149,15 +148,17 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Return cache instantly, and fetch fresh resource in the background (stale-while-revalidate)
+        // Stale-while-revalidate: serve cache, update in background
         fetch(event.request)
           .then((response) => {
-            if (response.status === 200) {
-              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, response));
+            if (response && response.status === 200 && response.type === 'basic') {
+              caches.open(CACHE_NAME).then((cache) => {
+                cache.put(event.request, response).catch(() => {});
+              });
             }
           })
           .catch(() => {/* Ignore bg fetch failures when offline */});
-        
+
         return cachedResponse;
       }
 
@@ -173,7 +174,6 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => {
-          // Offline fallback for navigation requests (HTML views)
           if (event.request.mode === 'navigate') {
             return caches.match('/index.html');
           }

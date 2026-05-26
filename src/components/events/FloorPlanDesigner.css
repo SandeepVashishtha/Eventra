@@ -800,3 +800,63 @@
   }
 }
 
+/* ── Collision Detection & Warning Visuals ── */
+.fp-collision-warning-badge {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(239, 68, 68, 0.16);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  color: #fca5a5;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.3);
+  z-index: 100;
+  pointer-events: none;
+  animation: fpBadgeBounce 1s infinite alternate ease-in-out;
+}
+
+@keyframes fpBadgeBounce {
+  from {
+    transform: translate(-50%, 0);
+  }
+  to {
+    transform: translate(-50%, -4px);
+  }
+}
+
+.fp-svg-element-colliding {
+  stroke: #ef4444 !important;
+  stroke-width: 2.5px !important;
+  filter: drop-shadow(0 0 14px rgba(239, 68, 68, 0.95)) !important;
+  animation: fpPulseRed 1.5s infinite alternate ease-in-out;
+}
+
+@keyframes fpPulseRed {
+  0% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 18px rgba(239, 68, 68, 1)) !important;
+  }
+}
+
+/* 2.5D element transition hooks */
+.fp-element-group {
+  transition: transform 0.1s ease-out;
+}
+
+.fp-seat-25d {
+  transition: transform 0.2s ease;
+}
+
+

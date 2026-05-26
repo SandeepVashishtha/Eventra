@@ -1,3 +1,4 @@
+import EventRecommendation from "./Pages/EventRecommendation/EventRecommendation";
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom"; // Added this back for your routing!
 import "./App.css";
@@ -131,21 +132,33 @@ function App() {
                 "
               >
                 <PageTransition>
-                  <Suspense fallback={<PageLoader text="Loading page..." />}>
+                  <Suspense
+                    fallback={
+                      <div className="flex items-center justify-center min-h-screen">
+                        Loading...
+                      </div>
+                    }
+                  >
                     <Routes>
+                      <Route path="/register/:id" element={<RegistrationPage />} />
                       <Route
                         path="/register/:id"
-                        element={
-                          <ProtectedRoute>
-                            <RegistrationPage />
-                          </ProtectedRoute>
-                        }
+                        element={<RegistrationPage />}
                       />
-                      <Route path="/*" element={<AppRoutes />} />
-                      <Route path="*" element={<NotFoundPage />} />
+
+                      <Route
+                        path="/event-recommendation"
+                        element={<EventRecommendation />}
+                      />
+
+                      <Route
+                        path="*"
+                        element={<AppRoutes />}
+                      />
                     </Routes>
                   </Suspense>
                 </PageTransition>
+
               </main>
 
               <ScrollToTop />
