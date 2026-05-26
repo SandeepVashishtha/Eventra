@@ -7,8 +7,6 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import "./FloorPlanDesigner.css";
-const [selectedId, setSelectedId] = useState(null);
-const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 // Preset layouts
 const PRESETS = {
   empty: [],
@@ -59,7 +57,8 @@ const checkCollision = (el1, el2) => {
 const FloorPlanDesigner = ({ eventId = "default" }) => {
   const [elements, setElements] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
-
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  
   // Canvas Zoom / Pan
   const [zoom, setZoom] = useState(0.8);
   const [panOffset, setPanOffset] = useState({ x: 50, y: 30 });

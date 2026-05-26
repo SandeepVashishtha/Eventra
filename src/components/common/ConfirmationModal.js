@@ -1,3 +1,4 @@
+import React, { useEffect, useId, useRef } from 'react';
 import React, { useEffect } from 'react';
 import './ConfirmationModal.css';
 
@@ -10,6 +11,45 @@ const ConfirmationModal = ({
   confirmText = "Confirm",
   cancelText = "Cancel"
 }) => {
+  const cancelButtonRef = useRef(null);
+  const modalRef = useRef(null);
+  const titleId = useId();
+  const descriptionId = useId();
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const previouslyFocusedElement = document.activeElement;
+    cancelButtonRef.current?.focus();
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+
+      if (event.key !== "Tab" || !modalRef.current) return;
+
+      const focusableElements = modalRef.current.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement?.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement?.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previouslyFocusedElement?.focus?.();
 
   useEffect(() => {
     const handleEsc = (e) => {
@@ -39,6 +79,18 @@ const ConfirmationModal = ({
     <div
       className="confirmation-modal-overlay"
       onClick={handleOverlayClick}
+      role="presentation"
+    >
+      <div
+        ref={modalRef}
+        className="confirmation-modal-content"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descriptionId}
+      >
+        <div className="confirmation-modal-header">
+          <h3 id={titleId}>{title}</h3>
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirmation-modal-title"
@@ -52,10 +104,14 @@ const ConfirmationModal = ({
         </div>
 
         <div className="confirmation-modal-body">
-          <p>{message}</p>
+          <p id={descriptionId}>{message}</p>
         </div>
 
         <div className="confirmation-modal-actions">
+          <button 
+            ref={cancelButtonRef}
+            type="button"
+            className="confirmation-modal-btn confirmation-modal-btn-cancel" 
 
           <button
             className="confirmation-modal-btn confirmation-modal-btn-cancel"
@@ -63,6 +119,9 @@ const ConfirmationModal = ({
           >
             {cancelText}
           </button>
+          <button 
+            type="button"
+            className="confirmation-modal-btn confirmation-modal-btn-confirm" 
 
           <button
             className="confirmation-modal-btn confirmation-modal-btn-confirm"
