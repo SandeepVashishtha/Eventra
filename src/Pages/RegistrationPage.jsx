@@ -230,11 +230,14 @@ const RegistrationPage = () => {
                     errors.fullName ? "border-rose-500 ring-rose-500/20" : "border-slate-200 dark:border-slate-800 focus:border-indigo-500 dark:focus:border-indigo-400"
                   } p-3.5 rounded-2xl text-slate-800 dark:text-white outline-none focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-indigo-400/10 transition-all duration-300`}
                   required
+                  aria-invalid={!!errors.fullName}
+                  aria-describedby={errors.fullName ? "fullName-error" : undefined}
                 />
               </div>
               <AnimatePresence>
                 {errors.fullName && (
                   <motion.div
+                    id="fullName-error"
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
@@ -265,10 +268,13 @@ const RegistrationPage = () => {
                   errors.email ? "border-rose-500 ring-rose-500/20" : "border-slate-200 dark:border-slate-800 focus:border-indigo-500 dark:focus:border-indigo-400"
                 } p-3.5 rounded-2xl text-slate-800 dark:text-white outline-none focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-indigo-400/10 transition-all duration-300`}
                 required
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? "email-error" : undefined}
               />
               <AnimatePresence>
                 {errors.email && (
                   <motion.div
+                    id="email-error"
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
@@ -299,10 +305,13 @@ const RegistrationPage = () => {
                   errors.phone ? "border-rose-500 ring-rose-500/20" : "border-slate-200 dark:border-slate-800 focus:border-indigo-500 dark:focus:border-indigo-400"
                 } p-3.5 rounded-2xl text-slate-800 dark:text-white outline-none focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-indigo-400/10 transition-all duration-300`}
                 required
+                aria-invalid={!!errors.phone}
+                aria-describedby={errors.phone ? "phone-error" : undefined}
               />
               <AnimatePresence>
                 {errors.phone && (
                   <motion.div
+                    id="phone-error"
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
