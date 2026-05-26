@@ -227,7 +227,7 @@ border-b border-gray-100 dark:border-slate-900">
           <MotionConfig reducedMotion="never">
             {/* Headline */}
             <motion.h1
-              className="mx-auto max-w-4xl mt-6 flex flex-col items-center gap-5 sm:gap-6 text-lg sm:text-xl md:text-4xl lg:text-5xl font-black mb-6 leading-relaxed tracking-tight text-gray-900 dark:text-white px-2 sm:px-0 text-center"
+              className="mx-auto max-w-4xl mt-6 flex flex-col items-center gap-5 sm:gap-6 text-lg sm:text-xl md:text-4xl lg:text-5xl font-black mb-6 leading-relaxed tracking-tight text-gray-900 dark:text-white px-2 sm:px-0 text-center overflow-visible"
               style={{ fontFamily: '"Inter", sans-serif' }}
             >
               <motion.span
@@ -244,11 +244,11 @@ border-b border-gray-100 dark:border-slate-900">
                 {phrases[index]}
               </span>
 
-              <div className="relative mx-auto w-full min-h-[7.5rem] sm:min-h-[9rem] md:min-h-[10rem] lg:min-h-[11rem] overflow-hidden flex justify-center items-center max-w-full px-1 mt-2">
+              <div className="relative mx-auto w-full min-h-[7.5rem] sm:min-h-[9rem] md:min-h-[10rem] lg:min-h-[11rem] overflow-hidden flex justify-center items-center max-w-full px-1 mt-2 py-4 ">
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={index}
-                    className="block mt-2 text-gray-900 dark:text-white mb-4 pb-2 whitespace-normal text-center px-1"
+                    className="block mt-2 text-gray-900 dark:text-white mb-4 pb-4 whitespace-normal text-center px-1 leading-tight"
                     initial={{ opacity: 0, y: 40 }}
                     animate={{
                       opacity: 1,
