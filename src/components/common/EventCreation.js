@@ -39,7 +39,7 @@ const DRAFT_KEY = "eventra_create_event_draft";
 const EventCreation = () => {
   const [currentStep, setCurrentStep] = useState("form");
 
-  const { handleSubmit, isSubmitting, error: submitError, success: submitSuccess } = useFormSubmit(async (eventData) => {
+  const { handleSubmit: submitEventForm, isSubmitting, error: submitError, success: submitSuccess } = useFormSubmit(async (eventData) => {
     const token = localStorage.getItem("token");
     if (!token) {
       throw new Error("Authentication required. Please log in and try again.");
@@ -395,7 +395,7 @@ const EventCreation = () => {
           })),
       };
 
-      handleSubmit(eventData);
+      submitEventForm(eventData);
     } catch (error) {
       console.error("Error creating event:", error);
       let errorMessage = "Failed to create event. ";
