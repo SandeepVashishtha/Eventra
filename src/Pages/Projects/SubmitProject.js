@@ -35,6 +35,7 @@ const SubmitProject = () => {
     description: "",
     projectType: "",
     techStack: "",
+    projectCategory: "",
     additionalNotes: "",
     projectImage: "",
     submissionCategory: "",
@@ -153,7 +154,6 @@ const SubmitProject = () => {
       return;
     }
 
-    console.log("Project Submitted:", formData);
     toast.success("Project submitted successfully!");
     setFormData({
       projectName: "",
@@ -164,6 +164,7 @@ const SubmitProject = () => {
       description: "",
       projectType: "",
       techStack: "",
+      projectCategory: "",
       additionalNotes: "",
       projectImage: "",
       submissionCategory: "",
@@ -270,7 +271,7 @@ const SubmitProject = () => {
     ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100 dark:from-gray-900 dark:to-black flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
+    <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
       <motion.div
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -497,14 +498,15 @@ const SubmitProject = () => {
           progress easily.
         </p>
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-6">
-          <motion.a
-            href="#"
+          <motion.button
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="inline-flex items-center justify-center gap-2 bg-white text-black px-8 py-3 rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300"
           >
             <ArrowUpTrayIcon className="w-5 h-5" /> Submit Another Project
-          </motion.a>
+          </motion.button>
+          
           <motion.a
             href="/projects"
             whileHover={{ scale: 1.05 }}

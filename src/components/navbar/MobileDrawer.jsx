@@ -36,7 +36,7 @@ const MobileDrawer = ({
         </button>
       </div>
 
-      <div className="p-4 overflow-x-auto space-y-6">
+      <div className="p-4 overflow-y-auto h-[calc(100vh-72px)] pb-12 space-y-6">
         <NavbarLinks vertical={true} onClick={closeMenu} />
 
         {isAuthenticated ? (
@@ -51,12 +51,13 @@ const MobileDrawer = ({
             >
               Dashboard
             </Link>
+            {/* Standardized "View Profile" route to route consistently to /dashboard/profile across mobile and desktop viewports */}
             <Link
-              to="/profile"
+              to="/dashboard/profile"
               onClick={closeMenu}
               className="text-sm font-medium py-2"
             >
-              Edit Profile
+              View Profile
             </Link>
             <button
               onClick={() => {

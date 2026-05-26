@@ -11,6 +11,7 @@ import StyledDropdown from "../../components/StyledDropdown";
 import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
 import SearchEmptyState from "../../components/common/SearchEmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import ActiveFilters from "./ActiveFilters";
 import { getRouteSearchResults } from "../../utils/searchUtils";
 
 const EVENT_SEARCH_KEYS = [
@@ -23,16 +24,62 @@ const EVENT_SEARCH_KEYS = [
   "status",
 ];
 
-const renderCardSection = (isLoading, filteredEvents, viewMode, filterType, searchQuery, onClearSearch) => {
+const FILTERS = [
+  { key: "all", label: "All" },
+  { key: "upcoming", label: "Upcoming" },
+  { key: "past", label: "Past" },
+  { key: "conference", label: "Conferences" },
+  { key: "workshop", label: "Workshops" },
+];
+
+// FIX: Extracted sort logic to a pure function — eliminates duplication
+// between handleSortChange and the sort useEffect
+const sortEvents = (events, sortType) => {
+  const sorted = [...events];
+  if (sortType === "Newest") {
+    sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
+  } else if (sortType === "Upcoming" || sortType === "upcoming") {
+    sorted.sort((a, b) => new Date(a.date) - new Date(b.date));
+  }
+  return sorted;
+};
+
+const renderCardSection = (
+  isLoading,
+  filteredEvents,
+  viewMode,
+  filterType,
+  searchQuery,
+  onClearSearch,
+) => {
   if (isLoading) {
-    return (
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+  return (
+    <div>
+      <div className="mb-4 text-sm text-gray-500 dark:text-gray-400">
+        Loading events...
+      </div>
+
+      <div
+        className="
+          animate-pulse
+          grid
+          gap-6
+          grid-cols-1
+          sm:grid-cols-2
+          lg:grid-cols-3
+        "
+        role="status"
+        aria-label="Loading events"
+      >
         {[1, 2, 3, 4, 5, 6].map((i) => (
-          <EventCardSkeleton key={`skeleton-${i}`} />
+          <EventCardSkeleton
+            key={`skeleton-${i}`}
+          />
         ))}
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   if (filteredEvents.length === 0) {
     return (
@@ -53,10 +100,10 @@ const renderCardSection = (isLoading, filteredEvents, viewMode, filterType, sear
     <div
       key={filterType + viewMode}
       className={`grid gap-6 ${
-  viewMode === "grid"
-    ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-    : "grid-cols-1 max-w-4xl mx-auto"
-}`}
+        viewMode === "grid"
+          ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+          : "grid-cols-1 max-w-4xl mx-auto"
+      }`}
     >
       {filteredEvents.map((event) => (
         <EventCard key={event.id} event={event} />
@@ -66,9 +113,14 @@ const renderCardSection = (isLoading, filteredEvents, viewMode, filterType, sear
 };
 
 const EventsPage = () => {
-  useDocumentTitle("Eventra | Events")
+  useDocumentTitle("Eventra | Events");
   const location = useLocation();
-  const routeSearchQuery = new URLSearchParams(location.search).get("search") || "";
+
+  // FIX: Derive routeSearchQuery inline — no need to store in state and sync
+  // via a separate useEffect, which caused an extra render on mount
+  const routeSearchQuery =
+    new URLSearchParams(location.search).get("search") || "";
+
   const [events, setEvents] = useState([]);
   const [filterType, setFilterType] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
@@ -78,32 +130,50 @@ const EventsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const cardSectionRef = useRef();
 
+  // Load events with simulated delay
   useEffect(() => {
     const timer = setTimeout(() => {
-      setEvents(mockEvents.map((event) => ({
-        ...event,
-        status: getEventStatus(event),
-      })));
+      setEvents(
+        mockEvents.map((event) => ({
+          ...event,
+          status: getEventStatus(event),
+        })),
+      );
       setIsLoading(false);
     }, 800);
     return () => clearTimeout(timer);
   }, []);
 
+  // Sync search query when URL param changes (e.g. navigating from navbar search)
   useEffect(() => {
     setSearchQuery(routeSearchQuery);
   }, [routeSearchQuery]);
 
-  const handleSearch = useCallback((query = "") => {
-    setSearchQuery(query);
+  // FIX: Removed filterType from handleSearch — filtering is a separate concern.
+  // Previously, filterType in deps caused handleSearch to recreate → the effect
+  // below re-ran → double filtering on every filter button click.
+  const handleSearch = useCallback(
+    (query = "") => {
+      setSearchQuery(query);
 
-    let results = events;
-    if (query.trim()) {
-      results = getRouteSearchResults(events, query, EVENT_SEARCH_KEYS, {
-        threshold: 0.35,
-      });
-    }
+      let results = events;
+      if (query.trim()) {
+        results = getRouteSearchResults(events, query, EVENT_SEARCH_KEYS, {
+          threshold: 0.35,
+        });
+      }
+      return results;
+    },
+    [events],
+  );
 
-    const final = results.filter((event) => {
+  // FIX: Single unified effect that handles search + filter + sort together.
+  // Replaces the old handleSortChange function AND the separate sort useEffect
+  // which were both modifying filteredEvents, causing double sorts.
+  useEffect(() => {
+    const searched = handleSearch(searchQuery);
+
+    const filtered = searched.filter((event) => {
       return (
         filterType === "all" ||
         (filterType === "upcoming" && event.status === "upcoming") ||
@@ -112,43 +182,20 @@ const EventsPage = () => {
       );
     });
 
-    setFilteredEvents(final);
-  }, [events, filterType]);
+    setFilteredEvents(sortEvents(filtered, sortType));
+  }, [handleSearch, searchQuery, filterType, sortType]);
 
-  useEffect(() => {
-    handleSearch(searchQuery);
-  }, [handleSearch, searchQuery]);
-
+  // Scroll to card section after loading when a route search is active
   useEffect(() => {
     if (!isLoading && routeSearchQuery) {
       setTimeout(() => {
-        cardSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        cardSectionRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
       }, 100);
     }
   }, [isLoading, routeSearchQuery]);
-
-  const handleSortChange = (type) => {
-    setSortType(type);
-    let sorted = [...filteredEvents];
-    if (type === "Newest") {
-      sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
-    } else if (type === "Upcoming" || type === "upcoming") {
-      sorted.sort((a, b) => new Date(a.date) - new Date(b.date));
-    }
-    setFilteredEvents(sorted);
-  };
-
-  useEffect(() => {
-    setFilteredEvents((currentEvents) => {
-      const sorted = [...currentEvents];
-      if (sortType === "Newest") {
-        sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
-      } else if (sortType === "Upcoming" || sortType === "upcoming") {
-        sorted.sort((a, b) => new Date(a.date) - new Date(b.date));
-      }
-      return sorted;
-    });
-  }, [filterType, searchQuery, sortType]);
 
   const scrollToCard = () => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -158,11 +205,13 @@ const EventsPage = () => {
     setSearchQuery("");
     setFilterType("all");
     setSortType("Newest");
-    handleSearch("");
   };
 
+  const hasActiveFilters =
+    filterType !== "all" || sortType !== "Newest" || searchQuery !== "";
+
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 overflow-x-hidden">
       <EventHero
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -175,51 +224,49 @@ const EventsPage = () => {
         ref={cardSectionRef}
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
       >
-        <div
-          className="mb-5 sm:mb-6 flex flex-col gap-3"
-        >
+        <div className="mb-5 sm:mb-6 flex flex-col gap-3">
           <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center sm:justify-start">
-            {[
-              { key: "all", label: "All" },
-              { key: "upcoming", label: "Upcoming" },
-              { key: "past", label: "Past" },
-              { key: "conference", label: "Conferences" },
-              { key: "workshop", label: "Workshops" },
-            ].map((filter, index) => (
+            {/* FIX: Removed unused `index` from map callback */}
+            {FILTERS.map((filter) => (
               <button
                 key={filter.key}
                 onClick={() => setFilterType(filter.key)}
-                className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-full transition ${
+                className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-lg transition ${
                   filterType === filter.key
-                    ? "bg-black text-white dark:bg-white dark:text-black"
-                    : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-700"
+                    ? "bg-blue-600 text-white dark:bg-blue-600 dark:text-white"
+                    : "border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:text-gray-300 dark:border-slate-700 dark:hover:bg-slate-800"
                 }`}
                 aria-pressed={filterType === filter.key}
               >
                 {filter.label}
               </button>
             ))}
+
+            {hasActiveFilters && (
+              <button
+                onClick={clearSearchAndFilters}
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-full transition bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 dark:bg-red-900/30 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/50 font-semibold"
+              >
+                Clear Filters
+              </button>
+            )}
           </div>
 
-          {/* Sort Dropdown and View Toggle */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-            {/* Sort Dropdown */}
             <div className="w-full sm:w-48">
               <label htmlFor="sort-events" className="sr-only">
                 Sort events
               </label>
               <StyledDropdown
                 label=""
-                value={sortType === "" ? "" : sortType}
-                onChange={handleSortChange}
+                value={sortType}
+                onChange={setSortType}
                 options={["Newest", "Upcoming"]}
                 placeholder="Sort by Date"
               />
             </div>
 
-            <div
-              className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm"
-            >
+            <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
               <button
                 onClick={() => setViewMode("grid")}
                 className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
@@ -248,18 +295,28 @@ const EventsPage = () => {
           </div>
         </div>
 
+        <ActiveFilters
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          filterType={filterType}
+          setFilterType={setFilterType}
+          sortType={sortType}
+          setSortType={setSortType}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+        />
+
         {renderCardSection(
           isLoading,
           filteredEvents,
           viewMode,
           filterType,
           searchQuery,
-          clearSearchAndFilters
+          clearSearchAndFilters,
         )}
       </div>
 
       <EventCTA />
-
       <FeedbackButton />
     </div>
   );

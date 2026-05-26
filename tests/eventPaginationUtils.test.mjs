@@ -8,7 +8,7 @@ import {
   getTotalPages,
   getVisiblePaginationPages,
   sortEventsByDate,
-} from "../src/Pages/Events/eventPaginationUtils.js";
+} from "../src/Pages/Events/eventPaginationUtils.mjs";
 
 const sampleEvents = [
   {
@@ -158,4 +158,6 @@ assert.deepEqual(
   "filter, sort, and pagination compose correctly"
 );
 
-console.log("event pagination edge cases passed");
+if (process.env.NODE_ENV === "development") {
+ console.log("event pagination edge cases passed");
+}

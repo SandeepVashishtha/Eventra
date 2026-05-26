@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { Link } from "react-router-dom";
+import useDocumentTitle from "../hooks/useDocumentTitle";
 import {
   FaLock,
   FaUserShield,
@@ -13,6 +14,7 @@ import {
 } from "react-icons/fa";
 
 export const Privacy = () => {
+  useDocumentTitle("Eventra | Privacy Policy");
   const controls = useAnimation();
   const [openSections, setOpenSections] = useState({});
 
@@ -91,7 +93,7 @@ export const Privacy = () => {
   ];
 
   return (
-    <div className="pastel-grid-bg min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white dark:bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-16">
         {" "}
         {/* Increased horizontal width */}

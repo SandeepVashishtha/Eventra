@@ -1,6 +1,7 @@
 // src/pages/CommunityEventsPage.jsx
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import {
   CalendarDays,
   Users,
@@ -13,6 +14,8 @@ import {
   Globe,
   X,
 } from "lucide-react"; // icons
+
+import { darkTheme } from "./styles/theme";
 
 const events = [
   {
@@ -88,6 +91,7 @@ const events = [
 ];
 
 const CommunityEvent = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [selectedEvent, setSelectedEvent] = useState(null);
   
       useEffect(() => {
@@ -103,30 +107,72 @@ const CommunityEvent = () => {
       }, [selectedEvent]);
 
   return (
-    // UPDATED: Main page background
-    <div className="bg-white dark:bg-black pt-20 md:pt-24">
-      <div className="max-w-7xl mx-auto px-6 py-16">
+    <div
+      className={`
+        relative overflow-hidden
+        bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white 
+        dark:from-slate-950 dark:via-slate-900 dark:to-black
+        ${darkTheme.textPrimary}
+        min-h-[80vh]
+        pt-8 pb-16 sm:pt-16 sm:pb-20 md:pt-10 md:pb-24
+        border-b border-gray-100 dark:border-slate-900
+      `}
+    >
+      <div className="max-w-7xl mx-auto px-6">
         {/* Intro Section */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
           className="text-center mb-14"
         >
           <div className="flex justify-center mb-6">
-            {/* UPDATED: Icon wrapper */}
-            <div className="p-4 rounded-full bg-indigo-100 dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 shadow-md">
+            <div
+              className={`
+                p-4 rounded-full
+                bg-indigo-100 dark:bg-slate-800
+                text-indigo-600 dark:text-indigo-400
+                shadow-md
+              `}
+            >
               <Users size={32} />
             </div>
           </div>
-          {/* UPDATED: Text colors */}
-          <h1 className="text-5xl font-extrabold text-indigo-900 dark:text-gray-100 mb-4">
-            Community Events
-          </h1>
-          <p className="text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            "Explore meetups, hackathons, webinars, and global conferences where
-            developers collaborate, innovate, and grow together."
-          </p>
+
+          <motion.h1
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
+            className={`
+              text-4xl sm:text-6xl lg:text-7xl
+              font-extrabold
+              leading-tight
+              tracking-tight
+              ${darkTheme.textPrimary}
+            `}
+            style={{ fontFamily: '"Big Shoulders Display", sans-serif' }}
+          >
+            Community{" "}
+            <span className="text-blue-600 dark:text-blue-500">Events</span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: prefersReducedMotion ? 0 : 0.2, duration: prefersReducedMotion ? 0 : 0.7 }}
+            className={`
+              text-base sm:text-lg
+              max-w-2xl
+              mx-auto
+              mt-6
+              mb-6
+              leading-relaxed
+              ${darkTheme.textSecondary}
+            `}
+          >
+            Explore meetups, hackathons, webinars, and global conferences where
+            developers collaborate, innovate, and grow together.
+          </motion.p>
         </motion.div>
 
         {/* Events Grid */}
@@ -136,35 +182,80 @@ const CommunityEvent = () => {
               key={idx}
               whileHover={{ scale: 1.03 }}
               transition={{ type: "spring", stiffness: 200, damping: 15 }}
-              // UPDATED: Card background and border
-              className="p-7 rounded-3xl bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-2xl transition-all duration-300"
+              className={`
+                ${darkTheme.card}
+                p-7
+                rounded-3xl
+                shadow-lg
+                border
+                hover:border-indigo-400
+                dark:hover:border-indigo-500
+                hover:shadow-2xl
+                transition-all duration-300
+              `}
             >
               {/* Event Header */}
               <div className="flex items-center gap-3 mb-4">
-                {/* UPDATED: Icon wrapper */}
-                <div className="p-3 bg-indigo-100 dark:bg-gray-700/50 text-indigo-600 dark:text-indigo-400 rounded-xl">
+                <div
+                  className="
+                    p-3
+                    bg-indigo-100 dark:bg-slate-800
+                    text-indigo-600 dark:text-indigo-400
+                    rounded-xl
+                  "
+                >
                   {event.icon}
                 </div>
-                {/* UPDATED: Text color */}
-                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{event.title}</h2>
+
+                <h2
+                  className={`
+                    text-xl font-bold
+                    ${darkTheme.textPrimary}
+                  `}
+                >
+                  {event.title}
+                </h2>
               </div>
 
               {/* Event Info */}
-              {/* UPDATED: Text colors */}
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p
+                className={`
+                  text-sm
+                  ${darkTheme.textSecondary}
+                `}
+              >
                 <strong>Date:</strong> {event.date}
               </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+
+              <p
+                className={`
+                  text-sm
+                  ${darkTheme.textSecondary}
+                `}
+              >
                 <strong>Location:</strong> {event.location}
               </p>
-              <p className="mt-4 text-gray-700 dark:text-gray-300">{event.description}</p>
 
-              {/* Learn More Button is fine for both themes */}
+              <p
+                className={`
+                  mt-4
+                  ${darkTheme.textSecondary}
+                `}
+              >
+                {event.description}
+              </p>
+
               <motion.button
                 type="button"
                 whileHover={{ scale: 1.05 }}
                 onClick={() => setSelectedEvent(event)}
-                className="mt-6 px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-md bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 transition-all"
+                className={`
+                  ${darkTheme.buttonPrimary}
+                  mt-6 px-4 py-2
+                  text-sm font-semibold
+                  rounded-lg shadow-md
+                  transition-all
+                `}
                 aria-label={`Learn more about ${event.title}`}
               >
                 Learn More -&gt;
@@ -188,38 +279,74 @@ const CommunityEvent = () => {
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.2 }}
-            className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900"
+            className={`
+              ${darkTheme.card}
+              relative w-full max-w-lg
+              rounded-2xl
+              p-6
+              shadow-2xl
+            `}
             onClick={(event) => event.stopPropagation()}
           >
             <button
               type="button"
               onClick={() => setSelectedEvent(null)}
-              className="absolute right-4 top-4 rounded-full p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+              className="
+                absolute right-4 top-4
+                rounded-full p-2
+                text-gray-500 dark:text-gray-300
+                transition
+                hover:bg-gray-100 dark:hover:bg-slate-800
+                hover:text-gray-900 dark:hover:text-white
+              "
               aria-label="Close event details"
             >
               <X size={20} />
             </button>
 
             <div className="mb-5 flex items-center gap-3 pr-10">
-              <div className="rounded-xl bg-indigo-100 p-3 text-indigo-600 dark:bg-gray-800 dark:text-indigo-400">
+              <div
+                className="
+                  rounded-xl
+                  bg-indigo-100 dark:bg-slate-800
+                  p-3
+                  text-indigo-600 dark:text-indigo-400
+                "
+              >
                 {selectedEvent.icon}
               </div>
+
               <h2
                 id="community-event-modal-title"
-                className="text-2xl font-bold text-gray-900 dark:text-gray-100"
+                className={`
+                  text-2xl font-bold
+                  ${darkTheme.textPrimary}
+                `}
               >
                 {selectedEvent.title}
               </h2>
             </div>
 
-            <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
+            <div
+              className={`
+                space-y-3 text-sm
+                ${darkTheme.textSecondary}
+              `}
+            >
               <p>
                 <strong>Date:</strong> {selectedEvent.date}
               </p>
+
               <p>
                 <strong>Location:</strong> {selectedEvent.location}
               </p>
-              <p className="text-base leading-relaxed text-gray-700 dark:text-gray-200">
+
+              <p
+                className={`
+                  text-base leading-relaxed
+                  ${darkTheme.textSecondary}
+                `}
+              >
                 {selectedEvent.description}
               </p>
             </div>

@@ -2,7 +2,7 @@ import StatusBadge from "../common/StatusBadge";
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate,useLocation } from 'react-router-dom';
 import {
   Users, Calendar, Activity, Shield, LogOut, Plus,
   Search, ChevronRight, BarChart2,
@@ -15,7 +15,10 @@ import {
   AdminTableSkeleton,
 } from '../common/SkeletonLoaders';
 import './AdminDashboard.css';
+import AnalyticsDashboard from './AnalyticsDashboard';
 import { toast } from 'react-toastify';
+
+import { ROLES,PERMISSIONS } from "../../config/roles";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -30,15 +33,59 @@ const stagger = {
   visible: { transition: { staggerChildren: 0.07 } }
 };
 
+
 /* ─── Mock data (replace with real API calls when endpoints are ready) ─── */
 const MOCK_USERS = [
-  { id: 1, firstName: 'Aarav', lastName: 'Sharma', email: 'aarav@example.com', roles: ['USER'], createdAt: '2025-01-15', status: 'Active' },
-  { id: 2, firstName: 'Priya', lastName: 'Mehta',  email: 'priya@example.com', roles: ['EVENT_MANAGER'], createdAt: '2025-02-20', status: 'Active' },
-  { id: 3, firstName: 'Rohan', lastName: 'Verma',  email: 'rohan@example.com', roles: ['USER'], createdAt: '2025-03-05', status: 'Inactive' },
-  { id: 4, firstName: 'Sneha', lastName: 'Patel',  email: 'sneha@example.com', roles: ['USER'], createdAt: '2025-04-12', status: 'Active' },
-  { id: 5, firstName: 'Karan', lastName: 'Joshi',  email: 'karan@example.com', roles: ['EVENT_MANAGER'], createdAt: '2025-05-01', status: 'Active' },
-];
+  {
+    id: 1,
+    firstName: 'Aarav',
+    lastName: 'Sharma',
+    email: 'aarav@example.com',
+    roles: [ROLES.ATTENDEE],
+    createdAt: '2025-01-15',
+    status: 'Active'
+  },
 
+  {
+    id: 2,
+    firstName: 'Priya',
+    lastName: 'Mehta',
+    email: 'priya@example.com',
+    roles: [ROLES.ORGANIZER],
+    createdAt: '2025-02-20',
+    status: 'Active'
+  },
+
+  {
+    id: 3,
+    firstName: 'Rohan',
+    lastName: 'Verma',
+    email: 'rohan@example.com',
+    roles: [ROLES.ATTENDEE],
+    createdAt: '2025-03-05',
+    status: 'Inactive'
+  },
+
+  {
+    id: 4,
+    firstName: 'Sneha',
+    lastName: 'Patel',
+    email: 'sneha@example.com',
+    roles: [ROLES.VOLUNTEER],
+    createdAt: '2025-04-12',
+    status: 'Active'
+  },
+
+  {
+    id: 5,
+    firstName: 'Karan',
+    lastName: 'Joshi',
+    email: 'karan@example.com',
+    roles: [ROLES.ADMIN],
+    createdAt: '2025-05-01',
+    status: 'Active'
+  },
+];
 const MOCK_EVENTS = [
   { id: 1, title: 'Tech Talk: AI in 2025', date: '2025-06-15', participantCount: 120, status: 'Completed', type: 'Event' },
   { id: 2, title: 'Web Dev Workshop',       date: '2025-09-10', participantCount: 45,  status: 'Upcoming',  type: 'Event' },
@@ -74,7 +121,15 @@ function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
 /* ─── Main Component ─── */
 const AdminDashboard = () => {
   const { user, logout, hasPermission } = useAuth();
+  const userRoles = user?.roles || [];
   const navigate = useNavigate();
+  const location = useLocation();
+  const isAdmin =
+    userRoles.includes(ROLES.ADMIN) ||
+    userRoles.includes(ROLES.SUPER_ADMIN);
+
+  
+ 
 
   const [activeTab, setActiveTab] = useState('overview');
   const [users,  setUsers]  = useState(MOCK_USERS);
@@ -90,12 +145,22 @@ const AdminDashboard = () => {
     const timer = window.setTimeout(() => setLoading(false), 700);
     return () => window.clearTimeout(timer);
   }, []);
+  useEffect(() => {
+  setActiveTab('overview');
+}, [location.pathname]);
 
+  if (!isAdmin) {
+    return <Navigate to="/unauthorized" replace />;
+  }
   /* Stats */
   const totalUsers  = users.length;
   const activeUsers = users.filter(u => u.status === 'Active').length;
   const totalEvents = events.length;
-  const upcoming    = events.filter(e => e.status === 'Upcoming').length;
+
+  const upcoming = events.filter(e =>
+    new Date(e.date) > new Date()
+  ).length;
+
   const totalParticipants = events.reduce((s, e) => s + e.participantCount, 0);
 
   /* Delete handlers */
@@ -174,7 +239,7 @@ const AdminDashboard = () => {
             </h1>
           </div>
           <div className="ad-topbar-right">
-            {activeTab === 'events' && hasPermission('CREATE_EVENT') && (
+            {activeTab === 'events' && hasPermission(PERMISSIONS.CREATE_EVENT) && (
               <button className="ad-btn-primary" onClick={() => navigate('/create-event')}>
                 <Plus size={15} /> New Event
               </button>
@@ -317,12 +382,12 @@ const AdminDashboard = () => {
                             <td><StatusBadge status={u.status} /></td>
                             <td>
                               <div className="ad-action-btns">
-                                {hasPermission('EDIT_USER') && (
+                                {hasPermission(PERMISSIONS.EDIT_USER) && (
                                   <button className="ad-icon-action" title="Edit" onClick={() => toast.info('Edit coming soon')}>
                                     <Edit2 size={14} />
                                   </button>
                                 )}
-                                {hasPermission('DELETE_USER') && (
+                                {hasPermission(PERMISSIONS.DELETE_USER) && (
                                   <button className="ad-icon-action ad-icon-danger" title="Delete" onClick={() => confirmDelete('user', u.id)}>
                                     <Trash2 size={14} />
                                   </button>
@@ -385,12 +450,12 @@ const AdminDashboard = () => {
                             <td><StatusBadge status={ev.status} /></td>
                             <td>
                               <div className="ad-action-btns">
-                                {hasPermission('EDIT_EVENT') && (
+                                {hasPermission(PERMISSIONS.EDIT_EVENT) && (
                                   <button className="ad-icon-action" title="Edit" onClick={() => toast.info('Edit coming soon')}>
                                     <Edit2 size={14} />
                                   </button>
                                 )}
-                                {hasPermission('DELETE_EVENT') && (
+                                {hasPermission(PERMISSIONS.DELETE_EVENT) && (
                                   <button className="ad-icon-action ad-icon-danger" title="Delete" onClick={() => confirmDelete('event', ev.id)}>
                                     <Trash2 size={14} />
                                   </button>
@@ -429,48 +494,10 @@ const AdminDashboard = () => {
                   ))}
                 </motion.div>
 
-                {/* Event Breakdown */}
-                <motion.section custom={1} variants={fadeUp} className="ad-card" style={{ marginTop: '1.5rem' }}>
-                  <div className="ad-card-head">
-                    <span className="ad-card-icon" style={{ background: '#6366f118', color: '#6366f1' }}><BarChart2 size={15} /></span>
-                    <h3>Event Breakdown</h3>
-                  </div>
-                  <div className="ad-analytics-bars">
-                    {events.map(ev => (
-                      <div key={ev.id} className="ad-bar-row">
-                        <span className="ad-bar-label">{ev.title}</span>
-                        <div className="ad-bar-track">
-                          <motion.div
-                            className="ad-bar-fill"
-                            initial={{ width: 0 }}
-                            animate={{ width: `${(ev.participantCount / totalParticipants) * 100}%` }}
-                            transition={{ duration: 0.6, delay: 0.1 }}
-                          />
-                        </div>
-                        <span className="ad-bar-value">{ev.participantCount}</span>
-                      </div>
-                    ))}
-                  </div>
-                </motion.section>
-
-                {/* Role Distribution */}
-                <motion.section custom={2} variants={fadeUp} className="ad-card" style={{ marginTop: '1rem' }}>
-                  <div className="ad-card-head">
-                    <span className="ad-card-icon" style={{ background: '#ec489918', color: '#ec4899' }}><Shield size={15} /></span>
-                    <h3>Role Distribution</h3>
-                  </div>
-                  <div className="ad-role-chips">
-                    {['USER', 'EVENT_MANAGER', 'ADMIN'].map(role => {
-                      const count = users.filter(u => u.roles.includes(role)).length;
-                      return (
-                        <div key={role} className="ad-role-chip">
-                          <StatusBadge status={role} />
-                          <span className="ad-role-count">{count} user{count !== 1 ? 's' : ''}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </motion.section>
+                {/* Dynamic Analytics Dashboard */}
+                <div style={{ marginTop: '1.5rem' }}>
+                  <AnalyticsDashboard />
+                </div>
               </motion.div>
             )}
 

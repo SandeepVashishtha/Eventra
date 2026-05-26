@@ -2,35 +2,37 @@ import {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
 export const ThemeContext =
-  createContext();
+  createContext(null);
+
+// Helper functions
+const getSystemTheme = () =>
+  window.matchMedia(
+    "(prefers-color-scheme: dark)"
+  ).matches
+    ? "dark"
+    : "light";
+
+const getInitialTheme = () =>
+  localStorage.getItem("theme") ||
+  "system";
 
 export const ThemeProvider = ({
   children,
 }) => {
-  // Get Initial Theme
-  const getInitialTheme = () => {
-    const savedTheme =
-      localStorage.getItem("theme");
-
-    if (savedTheme) {
-      return savedTheme;
-    }
-
-    return window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches
-      ? "dark"
-      : "light";
-  };
-
   const [theme, setTheme] =
     useState(getInitialTheme);
 
-  // Apply Theme
+  const resolvedTheme =
+    theme === "system"
+      ? getSystemTheme()
+      : theme;
+
+  // Apply theme + sync localStorage
   useEffect(() => {
     const root =
       document.documentElement;
@@ -40,31 +42,50 @@ export const ThemeProvider = ({
       "dark"
     );
 
-    root.classList.add(theme);
-
-    localStorage.setItem(
-      "theme",
-      theme
+    root.classList.add(
+      resolvedTheme
     );
-  }, [theme]);
 
-  // Detect System Theme Changes
+    if (theme === "system") {
+      localStorage.removeItem(
+        "theme"
+      );
+    } else {
+      localStorage.setItem(
+        "theme",
+        theme
+      );
+    }
+
+    const metaTheme =
+      document.querySelector(
+        'meta[name="theme-color"]'
+      );
+
+    if (metaTheme) {
+      metaTheme.setAttribute(
+        "content",
+        resolvedTheme === "dark"
+          ? "#0f172a"
+          : "#ffffff"
+      );
+    }
+  }, [theme, resolvedTheme]);
+
+  // Detect system theme changes
   useEffect(() => {
     const mediaQuery =
       window.matchMedia(
         "(prefers-color-scheme: dark)"
       );
 
-    const handleChange = (e) => {
-      const savedTheme =
-        localStorage.getItem("theme");
-
-      if (!savedTheme) {
-        setTheme(
-          e.matches
-            ? "dark"
-            : "light"
-        );
+    const handleChange = () => {
+      if (
+        !localStorage.getItem(
+          "theme"
+        )
+      ) {
+        setTheme("system");
       }
     };
 
@@ -73,38 +94,53 @@ export const ThemeProvider = ({
       handleChange
     );
 
-    return () => {
+    return () =>
       mediaQuery.removeEventListener(
         "change",
         handleChange
       );
-    };
   }, []);
 
-  // Toggle Theme
-  const toggleTheme = () => {
-    setTheme((prevTheme) =>
-      prevTheme === "dark"
-        ? "light"
-        : "dark"
-    );
-  };
+  const value = useMemo(
+    () => ({
+      theme,
+      resolvedTheme,
+      isDarkMode:
+        resolvedTheme === "dark",
+      setTheme,
+
+      toggleTheme: () =>
+        setTheme((current) =>
+          current === "dark" ||
+          (current === "system" &&
+            getSystemTheme() ===
+              "dark")
+            ? "light"
+            : "dark"
+        ),
+    }),
+    [theme, resolvedTheme]
+  );
 
   return (
     <ThemeContext.Provider
-      value={{
-        theme,
-        isDarkMode:
-          theme === "dark",
-        setTheme,
-        toggleTheme,
-      }}
+      value={value}
     >
       {children}
     </ThemeContext.Provider>
   );
 };
 
-// Custom Hook
-export const useTheme = () =>
-  useContext(ThemeContext);
+// Custom hook
+export const useTheme = () => {
+  const context =
+    useContext(ThemeContext);
+
+  if (!context) {
+    throw new Error(
+      "useTheme must be used within ThemeProvider"
+    );
+  }
+
+  return context;
+};
