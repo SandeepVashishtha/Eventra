@@ -229,6 +229,11 @@ export const API_ENDPOINTS = {
     CATEGORIES: buildApiUrl("/api/projects/categories"),
     SUBMIT: buildApiUrl("/api/projects"),
   },
+  HACKATHONS: {
+    LIST: buildApiUrl("/api/hackathons"),
+    DETAIL: (id) => buildApiUrl(`/api/hackathons/${id}`),
+    HOST: buildApiUrl("/api/hackathons"),
+  },
   NOTIFICATIONS: {
     BASE: buildApiUrl("/api/notifications"),
     READ: (id) => (id ? buildApiUrl(`/api/notifications/${id}/read`) : ""),
