@@ -9,19 +9,32 @@
  */
 
 export const setToken = (token) => {
-  localStorage.setItem("token", token);
+  try {
+    localStorage.setItem("token", token);
+  } catch (error) {
+    console.error('Error setting token:', error);
+  }
 };
 
 export const getToken = () => {
-  return localStorage.getItem("token");
+  try {
+    return localStorage.getItem("token");
+  } catch (error) {
+    console.error('Error getting token:', error);
+    return null;
+  }
 };
 
 export const removeToken = () => {
-  localStorage.removeItem("token");
+  try {
+    localStorage.removeItem("token");
 
-  // CRITICAL: Clean up the old vulnerability!
-  // Wipe the exposed key out of the browser cache if it exists from an old session.
-  localStorage.removeItem("ENCRYPTION_KEY_KEY");
+    // CRITICAL: Clean up the old vulnerability!
+    // Wipe the exposed key out of the browser cache if it exists from an old session.
+    localStorage.removeItem("ENCRYPTION_KEY_KEY");
+  } catch (error) {
+    console.error('Error removing token:', error);
+  }
 };
 
 export const syncSecureStorage = {

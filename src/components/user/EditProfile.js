@@ -83,7 +83,13 @@ const EditProfile = () => {
   // Initialize with fallback progression to prevent undefined fields
   const [form, setForm] = useState(() => {
     const saved = localStorage.getItem("user");
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (error) {
+        console.error('Error parsing user profile from localStorage:', error);
+      }
+    }
     return user ? { ...initialFormState, ...user } : initialFormState;
   });
 
