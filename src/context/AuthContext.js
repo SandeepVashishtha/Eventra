@@ -238,14 +238,10 @@ export const AuthProvider = ({ children }) => {
       password,
     });
 
-    const data = await res.json().catch((error) => {
-      // eslint-disable-next-line no-console
-      console.error("Failed to parse login response JSON:", error);
-      return null;
-    });
+    const data = res.data;
 
-    if (!res.ok) {
-      throw new Error(data?.message || data?.error || "Invalid credentials");
+    if (res.status !== 200) {
+      throw new Error(data?.message || data?.error || 'Invalid credentials');
     }
 
     const { sessionToken, sessionUser } = extractSession(res, data, usernameOrEmail);
