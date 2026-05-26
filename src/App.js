@@ -2,6 +2,7 @@ import EventRecommendation from "./Pages/EventRecommendation/EventRecommendation
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom"; // Added this back for your routing!
 import "./App.css";
+import "./styles/reduced-motion.css";
 import { toast } from "react-toastify";
 
 import Navbar from "./components/Layout/Navbar";
@@ -158,7 +159,6 @@ function App() {
                     </Routes>
                   </Suspense>
                 </PageTransition>
-
               </main>
 
               <ScrollToTop />

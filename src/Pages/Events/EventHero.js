@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
+import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
   Award,
   Calendar,
@@ -46,6 +47,7 @@ export default function EventHero({
   filteredEvents,
   scrollToCard,
 }) {
+  const prefersReducedMotion = useReducedMotion();
   const navigate = useNavigate();
 
   const [isSearchFocused, setIsSearchFocused] =
@@ -172,7 +174,7 @@ export default function EventHero({
                     scale: 0.98,
                   }}
                   transition={{
-                    duration: 0.18,
+                    duration: prefersReducedMotion ? 0 : 0.18,
                     ease: "easeOut",
                   }}
                   onMouseDown={(event) =>

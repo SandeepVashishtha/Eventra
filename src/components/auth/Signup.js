@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
@@ -32,6 +33,8 @@ const introPoints = [
 ];
 
 const Signup = () => {
+  const prefersReducedMotion = useReducedMotion();
+  useDocumentTitle("Sign Up | Eventra");
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -214,14 +217,14 @@ const Signup = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.6 }}
-      className="pastel-grid-bg min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8"
+      transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
+      className="pastel-grid-bg  min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8"
     >
       <div className="max-w-4xl w-full mx-auto">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
           className="w-full pl-3 pr-4 py-3 my-14 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
         >
           <div className="md:flex">
@@ -409,20 +412,19 @@ const Signup = () => {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
                   )}
-                  {loading ? "Creating Account..." : "Create Account"}
-                </motion.button>
-              </form>
-
-              <p className="text-xs text-center text-gray-500 dark:text-gray-500 mt-4 leading-relaxed">
-                By clicking on sign up, you agree to our{" "}
-                <Link to="/terms" className="hover:underline text-blue-600 dark:text-blue-400 font-semibold transition-colors">
-                  Terms of Service
-                </Link>{" "}
-                and{" "}
-                <Link to="/privacy" className="hover:underline text-blue-600 dark:text-blue-400 font-semibold transition-colors">
-                  Privacy Policy
-                </Link>
-              </p>
+                </button>
+              </div>
+              {passwordMatchMessage && (
+                <motion.p
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
+                  className="text-xs mt-1 text-green-600 dark:text-green-400"
+                >
+                  {passwordMatchMessage}
+                </motion.p>
+              )}
+            </div>
 
               <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-3">
                 Already have an account?{" "}
