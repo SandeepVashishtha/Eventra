@@ -124,6 +124,11 @@ const HostHackathon = () => {
         "Description must be at least 20 characters long!";
     }
 
+    // Participant Limit validation
+    if (data.participantLimit && Number(data.participantLimit) < 1) {
+      newErrors.participantLimit = "Participant limit must be at least 1!";
+    }
+
     return newErrors;
   };
 
