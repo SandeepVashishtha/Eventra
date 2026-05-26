@@ -1,0 +1,127 @@
+/* ============================================================
+   🎟️ PREMIUM 3D HOLOGRAPHIC TICKET & WALLET PASS STYLES
+   ============================================================ */
+
+/* 3D Perspective Card Wrapper */
+.ud-ticket-card-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  height: 540px;
+  border-radius: 24px;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+  cursor: grab;
+}
+
+.ud-ticket-card-wrapper:active {
+  cursor: grabbing;
+}
+
+/* Card Faces Container */
+.ud-ticket-card-face {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 24px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: rgba(13, 10, 18, 0.94);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Front Side */
+.ud-ticket-card-front {
+  z-index: 2;
+  transform: rotateY(0deg);
+}
+
+/* Back Side */
+.ud-ticket-card-back {
+  transform: rotateY(180deg);
+  z-index: 1;
+}
+
+/* Holographic Sheen Layer Overlay */
+.ud-ticket-holo-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  mix-blend-mode: color-dodge;
+  opacity: 0.85;
+  transition: opacity 0.5s ease;
+}
+
+.ud-ticket-card-wrapper:hover .ud-ticket-holo-overlay {
+  opacity: 1;
+}
+
+/* Header Sections */
+.ud-ticket-back-header {
+  position: relative;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.ud-ticket-back-title {
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+  margin-top: 1.25rem;
+}
+
+/* Agenda / Guidelines Lists */
+.ud-ticket-agenda-list li {
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+}
+
+/* Action Buttons Styling Overrides */
+.ud-ticket-action-btn.pdf-btn {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f1f5f9;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.ud-ticket-action-btn.pdf-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.ud-ticket-action-btn.flip-btn {
+  background: rgba(99, 102, 241, 0.12);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.ud-ticket-action-btn.flip-btn:hover {
+  background: rgba(99, 102, 241, 0.22);
+}
+
+/* Modal UI Fixes */
+.ud-ticket-modal-overlay {
+  animation: udFadeInOverlay 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes udFadeInOverlay {
+  from {
+    background: rgba(0, 0, 0, 0);
+    backdrop-filter: blur(0px);
+  }
+  to {
+    background: rgba(0, 0, 0, 0.88);
+    backdrop-filter: blur(16px);
+  }
+}
