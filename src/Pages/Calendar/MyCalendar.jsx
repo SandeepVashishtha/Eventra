@@ -21,6 +21,7 @@ import {
   generateGoogleCalendarLink,
   generateOutlookLink,
 } from "../../utils/calendarExporter";
+import SkeletonCalendar from "../../components/common/SkeletonCalendar";
 
 // Category Configuration Map
 const CATEGORIES = [
@@ -33,7 +34,7 @@ const CATEGORIES = [
 ];
 
 const MyCalendar = () => {
-  const { myEvents } = useMyEvents();
+  const { myEvents, loading } = useMyEvents();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState("grid"); // "grid" or "timeline"
@@ -194,6 +195,16 @@ const MyCalendar = () => {
           </div>
         </div>
 
+        {loading ? (
+          <div role="status" aria-live="polite" aria-label="Loading calendar">
+            <span className="sr-only">Loading calendar registrations...</span>
+            <SkeletonCalendar />
+          </div>
+        ) : viewMode === "grid" ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            {/* GRID CALENDAR (COLSPAN: 2) */}
+            <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-250/60 dark:border-slate-800/80 rounded-3xl p-6 shadow-md space-y-6">
         {/* PREMIUM FILTER ROW */}
         <div className="space-y-3.5">
           <div className="flex items-center gap-2 text-xs font-black tracking-widest text-slate-400 dark:text-slate-500 uppercase">
