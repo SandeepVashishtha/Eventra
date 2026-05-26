@@ -276,8 +276,8 @@ const EventRegistration = () => {
     // The backend still enforces capacity at submit time.
     try {
       const freshRes = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
-      if (freshRes.ok) {
-        const freshEvent = await freshRes.json();
+      if (freshRes.status === 200) {
+        const freshEvent = freshRes.data;
         if (freshEvent.attendees >= freshEvent.maxAttendees) {
           toast.error("This event is currently full. Registration may no longer be available.");
           return;
