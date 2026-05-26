@@ -1,3 +1,4 @@
+import useFilters from "../../hooks/useFilters";
 import { useState, useEffect, useRef, useCallback } from "react";
 import mockEvents from "./eventsMockData.json";
 import EventHero from "./EventHero";
@@ -145,6 +146,11 @@ const renderCardSection = (
 };
 
 const EventsPage = () => {
+  const {
+  filters: urlFilters,
+  updateFilters,
+  clearFilters,
+} = useFilters();
   useDocumentTitle("Eventra | Events");
   const location = useLocation();
 
@@ -154,11 +160,19 @@ const EventsPage = () => {
     new URLSearchParams(location.search).get("search") || "";
 
   const [events, setEvents] = useState([]);
-  const [filterType, setFilterType] = useState("all");
-  const [viewMode, setViewMode] = useState("grid");
-  const [searchQuery, setSearchQuery] = useState(routeSearchQuery);
+  
+  const [viewMode, setViewMode] = useState(
+  urlFilters.view || "grid"
+);const [filterType, setFilterType] = useState(
+  urlFilters.category[0] || "all"
+);
+  const [searchQuery, setSearchQuery] = useState(
+  urlFilters.search || routeSearchQuery
+);
   const [filteredEvents, setFilteredEvents] = useState([]);
-  const [sortType, setSortType] = useState("Newest");
+  const [sortType, setSortType] = useState(
+  urlFilters.sort || "Newest"
+);
   const [isLoading, setIsLoading] = useState(true);
   const cardSectionRef = useRef();
 
@@ -198,6 +212,22 @@ const EventsPage = () => {
     },
     [events],
   );
+  useEffect(() => {
+  updateFilters({
+    search: searchQuery,
+    category:
+      filterType !== "all"
+        ? [filterType]
+        : [],
+    sort: sortType,
+    view: viewMode,
+  });
+}, [
+  searchQuery,
+  filterType,
+  sortType,
+  viewMode,
+]);
 
   // FIX: Single unified effect that handles search + filter + sort together.
   // Replaces the old handleSortChange function AND the separate sort useEffect
@@ -237,6 +267,7 @@ const EventsPage = () => {
     setSearchQuery("");
     setFilterType("all");
     setSortType("Newest");
+    clearFilters();
   };
 
   const hasActiveFilters =
