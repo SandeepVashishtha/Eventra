@@ -5,6 +5,7 @@ import { FiStar, FiMessageSquare } from "react-icons/fi";
 import { toast } from "react-toastify";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 
+import useReducedMotion from "../../hooks/useReducedMotion.js";
 const FloatingField = ({
   id,
   label,
@@ -94,6 +95,7 @@ const FloatingField = ({
 };
 
 const ContactUs = () => {
+  const prefersReducedMotion = useReducedMotion();
   useDocumentTitle("Eventra | Contact Us");
   const [formData, setFormData] = useState({
     name: "",
@@ -211,7 +213,7 @@ const ContactUs = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
           // AOS Implementation on main card
           data-aos="fade-up"
           data-aos-duration="1000"

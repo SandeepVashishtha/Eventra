@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
   FiStar,
   FiGithub,
@@ -57,6 +58,7 @@ const getDifficultyColor = (difficulty) => {
 
 // --- Concentric SVG Technology Rings Component ---
 const ConcentricTechRings = ({ techStack }) => {
+  const prefersReducedMotion = useReducedMotion();
   const list = techStack && techStack.length > 0 ? techStack.slice(0, 3) : ["React", "CSS", "JS"];
 
   // Custom visual colors mapped to standard technology types
@@ -120,7 +122,7 @@ const ConcentricTechRings = ({ techStack }) => {
                 strokeDasharray={cfg.circ}
                 initial={{ strokeDashoffset: cfg.circ }}
                 animate={{ strokeDashoffset }}
-                transition={{ duration: 1.2, delay: 0.15 * i, ease: "easeOut" }}
+                transition={{ duration: prefersReducedMotion ? 0 : 1.2, delay: 0.15 * i, ease: "easeOut" }}
               />
             );
           })}
@@ -150,7 +152,7 @@ const ConcentricTechRings = ({ techStack }) => {
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${pct}%` }}
-                  transition={{ duration: 1.0, delay: 0.1 * i, ease: "easeOut" }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 1.0, delay: 0.1 * i, ease: "easeOut" }}
                   className="h-full rounded-full"
                   style={{ background: `linear-gradient(to right, ${grad.from}, ${grad.to})` }}
                 />
@@ -164,6 +166,7 @@ const ConcentricTechRings = ({ techStack }) => {
 };
 
 const ProjectCard = ({ project, index }) => {
+  const prefersReducedMotion = useReducedMotion();
   const [isLoaded, setIsLoaded] = useState(false);
   const [metrics, setMetrics] = useState(null);
   const [metricsLoading, setMetricsLoading] = useState(true);
