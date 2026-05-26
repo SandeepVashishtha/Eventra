@@ -29,8 +29,16 @@ export const getQueue = () => {
  */
 export const pushToQueue = (item) => {
   const queue = getQueue();
+  if (queue.length >= 5) {
+    console.warn('Offline queue limit reached (max 5). Dropping new registration to prevent local DoS.');
+    return;
+  }
   queue.push(item);
-  localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+  try {
+    localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+  } catch (error) {
+    console.error('Error adding to offline queue:', error);
+  }
 };
 
 /**
@@ -40,10 +48,14 @@ export const pushToQueue = (item) => {
  * @param {Array} queue - The replacement queue.
  */
 export const setQueue = (queue) => {
-  if (queue.length === 0) {
-    localStorage.removeItem(QUEUE_KEY);
-  } else {
-    localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+  try {
+    if (queue.length === 0) {
+      localStorage.removeItem(QUEUE_KEY);
+    } else {
+      localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+    }
+  } catch (error) {
+    console.error('Error setting offline queue:', error);
   }
 };
 
@@ -51,5 +63,9 @@ export const setQueue = (queue) => {
  * Remove the offline queue entirely from localStorage.
  */
 export const clearQueue = () => {
-  localStorage.removeItem(QUEUE_KEY);
+  try {
+    localStorage.removeItem(QUEUE_KEY);
+  } catch (error) {
+    console.error('Error clearing offline queue:', error);
+  }
 };

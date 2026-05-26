@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
-import { getRouteSearchResults } from "../src/utils/searchUtils.js";
+import { getRouteSearchResults } from "../src/utils/searchUtils.mjs";
 
 const require = createRequire(import.meta.url);
 const events = require("../src/Pages/Events/eventsMockData.json");

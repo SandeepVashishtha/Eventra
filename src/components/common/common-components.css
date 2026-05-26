@@ -16,11 +16,19 @@
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
+.dark .loading-spinner {
+  border: 3px solid rgba(165, 180, 252, 0.2);
+  border-top: 3px solid #a5b4fc;
+}
 
 .loading-text {
   margin-left: 1rem;
   color: #667eea;
   font-weight: 500;
+}
+
+.dark .loading-text {
+  color: #a5b4fc;
 }
 
 @keyframes spin {
@@ -55,6 +63,29 @@
   border-color: rgba(34, 197, 94, 0.3);
   color: #059669;
 }
+.dark .error-message {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+.dark .error-message.warning {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fcd34d;
+}
+
+.dark .error-message.info {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #93c5fd;
+}
+
+.dark .error-message.success {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #86efac;
+}
 
 .error-message-title {
   font-weight: 600;
@@ -82,6 +113,11 @@
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
+.dark .layout,
+.dark .public-layout {
+  color: #f8fafc;
+}
+
 
 .public-layout-content {
   display: flex;
@@ -98,6 +134,11 @@
   padding: 2rem;
   width: 100%;
   max-width: 400px;
+}
+
+.dark .public-layout-card {
+  background: #1e293b;
+  color: #f8fafc;
 }
 
 /* ===== RESPONSIVE DESIGN FOR UTILITY COMPONENTS ===== */

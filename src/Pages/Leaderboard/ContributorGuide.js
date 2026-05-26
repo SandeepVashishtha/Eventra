@@ -187,6 +187,74 @@ const ContributorGuide = () => {
         </p>
       </div>
 
+      {/* GAMIFICATION & SCORING SYSTEM CARD */}
+      <div className="bg-white dark:bg-gray-900 p-6 md:p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-md">
+        <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-gray-100 mb-6 text-center">
+          🎮 Contribution Gamification & Points Arena
+        </h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 text-center max-w-xl mx-auto mb-8">
+          Every contribution you make earns you arena points, rank metrics, and elite profile achievements in our community leaderboard!
+        </p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Point system */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 border-b pb-2 border-slate-100 dark:border-slate-800">
+              🏷️ Label-Based Scoring Metrics
+            </h3>
+            <ul className="space-y-3.5">
+              <li className="flex items-center justify-between text-sm">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">Level 1 GSSoC Pull Request</span>
+                <span className="px-2.5 py-1 rounded bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-bold">3 Points</span>
+              </li>
+              <li className="flex items-center justify-between text-sm">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">Level 2 GSSoC Pull Request</span>
+                <span className="px-2.5 py-1 rounded bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-bold">7 Points</span>
+              </li>
+              <li className="flex items-center justify-between text-sm">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">Level 3 GSSoC Pull Request</span>
+                <span className="px-2.5 py-1 rounded bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-bold">10 Points</span>
+              </li>
+              <li className="flex items-center justify-between text-sm border-t pt-3 border-slate-100 dark:border-slate-800">
+                <div>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">🚀 Milestone Boosters</span>
+                  <p className="text-xs text-slate-500 mt-0.5">Reach merged PR milestones for massive score multipliers!</p>
+                </div>
+                <div className="flex flex-col items-end gap-1.5">
+                  <span className="px-2.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-bold">+5 Bonus (5+ PRs)</span>
+                  <span className="px-2.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 text-xs font-bold">+10 Bonus (10+ PRs)</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          {/* Achievement Badges */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 border-b pb-2 border-slate-100 dark:border-slate-800">
+              🏅 Elite Achievement Badges
+            </h3>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 text-center">
+                <span className="block font-bold text-amber-700 dark:text-amber-400 mb-1">👑 Grandmaster</span>
+                <span className="text-slate-500 dark:text-slate-400">Rank #1 Overall</span>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700/50 text-center">
+                <span className="block font-bold text-slate-700 dark:text-slate-300 mb-1">⭐ Champion</span>
+                <span className="text-slate-500 dark:text-slate-400">Rank #2 Overall</span>
+              </div>
+              <div className="p-3 rounded-xl bg-orange-50 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-900/30 text-center">
+                <span className="block font-bold text-orange-700 dark:text-orange-400 mb-1">🏅 Elite</span>
+                <span className="text-slate-500 dark:text-slate-400">Rank #3 Overall</span>
+              </div>
+              <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/30 text-center">
+                <span className="block font-bold text-indigo-700 dark:text-indigo-400 mb-1">🔥 PR Machine</span>
+                <span className="text-slate-500 dark:text-slate-400">Merged 10+ PRs</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Step-by-Step Contribution Section */}
       <div className="bg-white dark:bg-gray-900 p-6 md:p-8 rounded-xl shadow-md">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8 mt-8 text-center">
@@ -533,7 +601,7 @@ const ContributorGuide = () => {
           initial={{ opacity: 0, y: -20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          style={{fontFamily: '"Big Shoulders Display", sans-seri'}}
+          style={{fontFamily: '"Big Shoulders Display", sans-serif'}}
           className="relative text-3xl md:text-4xl font-extrabold tracking-tight text-black dark:text-white mb-10 text-center"
         >
           Frequently Asked Questions

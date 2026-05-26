@@ -28,18 +28,25 @@ const BookmarkedEvents = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 text-slate-900 dark:text-gray-100 pt-28 pb-16">
+    <div className="min-h-screen dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 text-slate-900 dark:text-gray-100 pt-12 pb-16 bg-gradient-to-br from-[#f5f7ff] via-[#eef2ff] to-[#f3e8ff] " style={{
+    backgroundImage: "url('/assets/bookmarkbg.png')",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+    minHeight: "100vh",
+    width:"100vw"
+  }}>
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between mb-8">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white/80 px-4 py-2 text-sm font-semibold text-indigo-700 shadow-sm dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300">
+            <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white/80 px-4 py-2 text-sm font-semibold text-indigo-700 shadow-sm dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-600">
               <Bookmark size={16} fill="currentColor" />
               {normalizedEvents.length} saved
             </div>
-            <h1 className="mt-4 text-3xl sm:text-4xl font-bold tracking-tight text-gray-950 dark:text-white">
+            <h1 className="mt-4 text-3xl sm:text-4xl font-bold tracking-tight text-gray-950 dark:text-gray-800">
               Bookmarked Events
             </h1>
-            <p className="mt-3 max-w-2xl text-sm sm:text-base leading-7 text-gray-600 dark:text-gray-400">
+            <p className="mt-3 max-w-2xl text-sm sm:text-base leading-7 text-gray-600 dark:text-gray-600">
               Revisit the events you saved while exploring Eventra.
             </p>
           </div>
@@ -58,10 +65,10 @@ const BookmarkedEvents = () => {
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300">
               <Bookmark size={30} />
             </div>
-            <h2 className="text-2xl font-bold text-gray-950 dark:text-white">
+            <h2 className="text-2xl font-bold text-gray-950 dark:text-gray-400">
               No bookmarked events yet
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm sm:text-base leading-7 text-gray-600 dark:text-gray-400">
+            <p className="mx-auto mt-3 max-w-xl text-sm sm:text-base leading-7 text-gray-600 dark:text-gray-600">
               Tap the bookmark icon on any event card to save it here for quick access later.
             </p>
             <Link

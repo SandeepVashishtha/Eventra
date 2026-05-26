@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 const EventCountdown = ({ eventDate }) => {
-  const calculateTimeLeft = () => {
+  const calculateTimeLeft = useCallback(() => {
     const difference = +new Date(eventDate) - +new Date();
     let timeLeft = {};
 
@@ -17,7 +17,7 @@ const EventCountdown = ({ eventDate }) => {
     }
 
     return timeLeft;
-  };
+  }, [eventDate]);
 
   const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
 
@@ -27,7 +27,7 @@ const EventCountdown = ({ eventDate }) => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [eventDate]);
+  }, [eventDate, calculateTimeLeft]);
 
   const formatNumber = (num) => String(num).padStart(2, '0');
 

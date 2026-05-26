@@ -12,13 +12,16 @@
   padding: 0;
   box-sizing: border-box;
 }
-
+html {
+  scroll-behavior: smooth;
+}
 /* Theme variables */
 /* Theme variables */
 :root {
   --bg-color: #ffffff;
   --text-color: #1a1a1a;
   --text-color-light: #4a4a4a;
+
   --border-color: #e1e5e9;
   --card-bg-color: #ffffff;
 
@@ -86,10 +89,12 @@
   --navbar-bg: #111827;
   --sidebar-bg: #0f172a;
 
+
   --input-bg: #1e293b;
   --input-text: #f8fafc;
 
   --table-bg: #111827;
+
   --modal-bg: #1e293b;
 }
 
@@ -124,6 +129,7 @@ body {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
     "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
+
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: var(--lh-body);
@@ -133,6 +139,54 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
   font-size: var(--font-body);
   font-weight: var(--fw-regular);
+}
+
+img,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+main,
+section,
+article,
+header,
+footer,
+aside {
+  min-width: 0;
+}
+.dark {
+  color-scheme: dark;
+}
+
+/* Fix unreadable text */
+.dark p,
+.dark span,
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6,
+.dark label,
+.dark li,
+.dark a {
+  color: inherit;
+}
+
+/* Placeholder text fix */
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #94a3b8;
+}
+
+/* Better default text colors */
+.dark body {
+  color: #f8fafc;
+  background-color: #0f172a;
 }
 .dark .pastel-grid-bg {
   /* Use a solid dark background in dark mode and remove the light pastel grid image
@@ -175,7 +229,9 @@ code {
 .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
 .section-padding { padding: 80px 0; }
 .text-gradient {
+
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -183,7 +239,9 @@ code {
 
 /* Buttons */
 .btn-primary {
+
   background: linear-gradient(135deg, #667eea 0%, #5a67d8 100%);
+
   color: white;
   padding: 12px 32px;
   border: none;
@@ -199,6 +257,7 @@ code {
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+
   color: #ffffff;
 }
 
@@ -219,6 +278,7 @@ code {
 .btn-secondary:hover {
   border-color: #667eea;
   color: #667eea;
+
   transform: translateY(-2px);
 }
 
@@ -235,6 +295,7 @@ code {
   }
 
   .container { padding: 0 16px; }
+
   .section-padding { padding: 60px 0; }
   .btn-primary, .btn-secondary { padding: 10px 24px; font-size: 0.875rem; }
 }
@@ -405,9 +466,6 @@ table {
 .theme-sidebar {
   background-color: var(--sidebar-bg);
 }
-/* =========================================
-   Advanced Theme Enhancements
-========================================= */
 
 /* Disable transitions during initial load */
 

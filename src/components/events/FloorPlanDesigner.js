@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { 
   Plus, Minus, Trash2, Save, RotateCcw, 
-  Move, Grid, Users, Layout, MapPin, Minimize2 
+  Move, Grid, Users, Layout, MapPin, Minimize2,
+  Download, Upload, Image, FileJson
 } from "lucide-react";
+import { toast } from "react-toastify";
 import "./FloorPlanDesigner.css";
 
 // Preset layouts
@@ -74,7 +76,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
 
   const saveLayout = () => {
     localStorage.setItem(`eventra_floorplan_${eventId}`, JSON.stringify(elements));
-    alert("Venue floor plan successfully saved!");
+    toast.success("Venue floor plan successfully saved!");
   };
 
   const loadPreset = (presetName) => {
@@ -82,6 +84,188 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
       setElements(PRESETS[presetName]);
       setSelectedId(null);
     }
+  };
+
+  // Helper to prepare the SVG for export by cloning and stripping specific attributes/styles
+  const getCleanExportSvgString = () => {
+    const svgElement = canvasRef.current;
+    if (!svgElement) return "";
+
+    const clonedSvg = svgElement.cloneNode(true);
+    
+    // Reset transform style so export is the full canvas without panning and zooming
+    clonedSvg.style.transform = "none";
+    clonedSvg.style.transformOrigin = "initial";
+    clonedSvg.style.transition = "none";
+    
+    // Set width and height explicitly to matching the viewBox dimensions for high resolution
+    clonedSvg.setAttribute("width", "1000");
+    clonedSvg.setAttribute("height", "800");
+
+    // Restore selected shape's default stroke so it looks clean in the exported snapshot
+    const selectedShape = clonedSvg.querySelector(".fp-svg-element-selected");
+    if (selectedShape) {
+      selectedShape.classList.remove("fp-svg-element-selected");
+      const parentG = selectedShape.parentElement;
+      if (parentG) {
+        const type = parentG.getAttribute("data-element-type");
+        let defaultStroke = "#4f46e5";
+        let defaultStrokeWidth = "2";
+        if (type === "stage") {
+          defaultStroke = "#374151";
+          defaultStrokeWidth = "2.5";
+        } else if (type === "booth") {
+          defaultStroke = "#059669";
+          defaultStrokeWidth = "2";
+        } else if (type === "barrier") {
+          defaultStroke = "#991b1b";
+          defaultStrokeWidth = "1.5";
+        } else if (type === "exit") {
+          defaultStroke = "#ef4444";
+          defaultStrokeWidth = "2";
+        }
+        selectedShape.setAttribute("stroke", defaultStroke);
+        selectedShape.setAttribute("stroke-width", defaultStrokeWidth);
+      }
+    }
+
+    const serializer = new XMLSerializer();
+    return serializer.serializeToString(clonedSvg);
+  };
+
+  // Export as SVG
+  const handleExportSVG = () => {
+    try {
+      const svgString = getCleanExportSvgString();
+      if (!svgString) return;
+      
+      const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `eventra-floorplan-${eventId}.svg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("SVG Export failed:", error);
+      toast.error("Failed to export as SVG. Please try again.");
+    }
+  };
+
+  // Export as PNG
+  const handleExportPNG = () => {
+    try {
+      const svgElement = canvasRef.current;
+      if (!svgElement) return;
+
+      const svgString = getCleanExportSvgString();
+      if (!svgString) return;
+
+      // Get computed background color of the SVG to draw on the canvas
+      const computedStyle = window.getComputedStyle(svgElement);
+      const bgColor = computedStyle.backgroundColor || "#0b0b14";
+
+      const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 1000;
+        canvas.height = 800;
+        const ctx = canvas.getContext("2d");
+
+        // Fill background first
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, 1000, 800);
+
+        // Draw image onto canvas
+        ctx.drawImage(img, 0, 0, 1000, 800);
+
+        // Convert canvas to png and trigger download
+        canvas.toBlob((pngBlob) => {
+          if (!pngBlob) {
+            toast.error("Failed to generate PNG image.");
+            return;
+          }
+          const pngUrl = URL.createObjectURL(pngBlob);
+          const link = document.createElement("a");
+          link.href = pngUrl;
+          link.download = `eventra-floorplan-${eventId}.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(pngUrl);
+          URL.revokeObjectURL(url);
+        }, "image/png");
+      };
+      
+      img.onerror = () => {
+        toast.error("Failed to render floor plan workspace onto image canvas.");
+        URL.revokeObjectURL(url);
+      };
+      
+      img.src = url;
+    } catch (error) {
+      console.error("PNG Export failed:", error);
+      toast.error("Failed to export as PNG. Please try again.");
+    }
+  };
+
+  // Download Layout JSON
+  const handleDownloadJSON = () => {
+    try {
+      const jsonBlob = new Blob([JSON.stringify(elements, null, 2)], { type: "application/json" });
+      const jsonUrl = URL.createObjectURL(jsonBlob);
+      
+      const link = document.createElement("a");
+      link.href = jsonUrl;
+      link.download = `eventra-floorplan-${eventId}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(jsonUrl);
+    } catch (error) {
+      console.error("JSON Export failed:", error);
+      toast.error("Failed to download layout configuration.");
+    }
+  };
+
+  // Import Layout JSON
+  const handleImportJSON = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const importedData = JSON.parse(event.target.result);
+        
+        if (!Array.isArray(importedData)) {
+          throw new Error("Floor plan config layout must be a valid JSON array.");
+        }
+
+        // Schema validation
+        const isValid = importedData.every(el => 
+          el && typeof el === "object" && "id" in el && "type" in el && "x" in el && "y" in el
+        );
+
+        if (!isValid) {
+          throw new Error("One or more grid elements are missing mandatory properties (id, type, x, y).");
+        }
+
+        setElements(importedData);
+        setSelectedId(null);
+        toast.success("Floor plan layout imported successfully!");
+      } catch (err) {
+        toast.error(`Failed to import floor plan: ${err.message}`);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ""; // Reset input
   };
 
   const handleAddElement = (type) => {
@@ -132,25 +316,28 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
 
   const handleSeatAssign = (seatIndex, attendeeName) => {
     setElements(elements.map(el => {
+      // 1. Create a clean copy of the assignedAttendees object for this element
+      const nextAssignments = { ...el.assignedAttendees };
+      
+      // 2. Unassign this attendee if they are currently assigned to any seat on this table
+      Object.keys(nextAssignments).forEach(k => {
+        if (nextAssignments[k] === attendeeName) {
+          delete nextAssignments[k];
+        }
+      });
+
       if (el.id === selectedId) {
-        const nextAssignments = { ...el.assignedAttendees };
-        if (attendeeName === "") {
-          delete nextAssignments[seatIndex];
-        } else {
-          // Check if attendee is already assigned somewhere else, and unassign if so
-          elements.forEach(otherEl => {
-            Object.keys(otherEl.assignedAttendees).forEach(k => {
-              if (otherEl.assignedAttendees[k] === attendeeName) {
-                otherEl.assignedAttendees[k] = undefined;
-                delete otherEl.assignedAttendees[k];
-              }
-            });
-          });
+        // 3. If this is the selected table, assign the attendee to the new seat slot
+        if (attendeeName !== "") {
           nextAssignments[seatIndex] = attendeeName;
+        } else {
+          delete nextAssignments[seatIndex];
         }
         return { ...el, assignedAttendees: nextAssignments };
+      } else {
+        // 4. For other tables, just return the element with the attendee cleanly removed
+        return { ...el, assignedAttendees: nextAssignments };
       }
-      return el;
     }));
   };
 
@@ -374,6 +561,43 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
             </div>
           </div>
 
+          <div className="fp-sidebar-section fp-portability-section">
+            <div className="fp-section-title">Export & Portability</div>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">
+              Export high-resolution images or portable layout configurations for sharing.
+            </p>
+
+            <div className="fp-portability-grid mb-4">
+              <button className="fp-portability-btn font-semibold" onClick={handleExportPNG} title="Export as high-res PNG image">
+                <Image className="fp-portability-icon" size={16} />
+                <span>Export PNG</span>
+              </button>
+              <button className="fp-portability-btn font-semibold" onClick={handleExportSVG} title="Export as vector SVG image">
+                <Download className="fp-portability-icon" size={16} />
+                <span>Export SVG</span>
+              </button>
+            </div>
+
+            <button className="fp-btn fp-btn-secondary w-full justify-center mb-3 text-xs" onClick={handleDownloadJSON} title="Download backup config JSON file">
+              <FileJson size={14} className="text-indigo-400" />
+              <span>Backup Layout JSON</span>
+            </button>
+
+            <div className="fp-import-zone">
+              <label className="fp-import-label cursor-pointer">
+                <Upload size={18} className="text-indigo-400 mb-1.5" />
+                <span className="text-[11px] font-bold text-gray-300 dark:text-gray-400">Restore Layout JSON</span>
+                <span className="text-[9px] text-gray-500 dark:text-gray-500 mt-0.5 text-center">Click to browse and upload</span>
+                <input 
+                  type="file" 
+                  accept=".json" 
+                  className="hidden" 
+                  onChange={handleImportJSON} 
+                />
+              </label>
+            </div>
+          </div>
+
           <div className="fp-sidebar-section mt-auto border-t border-gray-800">
             <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
               <div className="text-xs font-bold text-indigo-400 mb-1 flex items-center gap-1.5">
@@ -442,6 +666,8 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
               return (
                 <g 
                   key={el.id} 
+                  data-element-id={el.id}
+                  data-element-type={el.type}
                   transform={`rotate(${el.rotation}, ${el.x + el.width / 2}, ${el.y + el.height / 2})`}
                   onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, el.id); }}
                 >
