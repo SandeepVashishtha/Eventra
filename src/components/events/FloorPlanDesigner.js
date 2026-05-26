@@ -527,23 +527,23 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
             <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Click items to add them directly onto the seating designer grid canvas.</p>
 
             <div className="fp-tool-grid">
-              <button className="fp-tool-item" onClick={() => handleAddElement("stage")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("stage")}>
                 <Layout className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Stage</span>
               </button>
-              <button className="fp-tool-item" onClick={() => handleAddElement("round-table")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("round-table")}>
                 <Users className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Round Table</span>
               </button>
-              <button className="fp-tool-item" onClick={() => handleAddElement("rect-table")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("rect-table")}>
                 <Grid className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Rect Table</span>
               </button>
-              <button className="fp-tool-item" onClick={() => handleAddElement("booth")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("booth")}>
                 <MapPin className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Stand/Booth</span>
               </button>
-              <button className="fp-tool-item" onClick={() => handleAddElement("barrier")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("barrier")}>
                 <Minimize2 className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Barrier</span>
               </button>
