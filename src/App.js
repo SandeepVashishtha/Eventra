@@ -129,7 +129,8 @@ function App() {
                   dark:text-white
                   transition-colors
                   duration-300
-                ">
+                "
+              >
 
               <PageTransition>
   <Suspense
