@@ -1,4 +1,4 @@
-name: Auto Comment on PR
+name: Auto Comment, Assign & Label on PR
 
 on:
   pull_request_target:
@@ -29,3 +29,56 @@ jobs:
             if (process.env.NODE_ENV === "development") {
              console.log('Comment added successfully.');
             }
+
+      - name: Auto-assign PR creator
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const prNumber = context.issue.number;
+            const creator = context.payload.pull_request.user.login;
+
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              assignees: [creator]
+            });
+            if (process.env.NODE_ENV === "development") {
+              console.log(`Assigned PR #${prNumber} to ${creator}`);
+            }
+
+      - name: Add gssoc:approved label
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const prNumber = context.issue.number;
+            const label = 'gssoc:approved';
+
+            // Ensure the label exists in the repo before applying it
+            const { data: repoLabels } = await github.rest.issues.listLabelsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+
+            const labelExists = repoLabels.some(l => l.name === label);
+
+            if (!labelExists) {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: label,
+                color: 'e4e669',
+                description: 'Approved for GSSoC contribution'
+              });
+              console.log(`Label "${label}" created.`);
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              labels: [label]
+            });
+            if (process.env.NODE_ENV === "development") {
+              console.log(`Label "${label}" added to PR #${prNumber}`);
+            }
