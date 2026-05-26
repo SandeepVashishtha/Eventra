@@ -65,8 +65,12 @@
       "source": "/api/(.*)",
       "headers": [
         {
+          "_comment": "SECURITY: A wildcard Access-Control-Allow-Origin ('*') CANNOT be used here.",
+          "_reason": "The Axios instance sends withCredentials:true, which causes browsers to block",
+          "_reason2": "credentialed cross-origin requests when the server responds with a wildcard origin.",
+          "_reason3": "The origin must be the exact production domain(s) of the Eventra frontend.",
           "key": "Access-Control-Allow-Origin",
-          "value": "https://eventra-psi.vercel.app"
+          "value": "https://eventra.sandeepvashishtha.tech"
         },
         {
           "key": "Access-Control-Allow-Credentials",
@@ -74,7 +78,7 @@
         },
         {
           "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS"
+          "value": "GET, POST, PUT, PATCH, DELETE, OPTIONS"
         },
         {
           "key": "Access-Control-Allow-Headers",
