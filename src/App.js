@@ -3,7 +3,8 @@ import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom"; // Added this back for your routing!
 import "./App.css";
 import { toast } from "react-toastify";
-
+import BackToTopButton
+from "./components/common/BackToTopButton";
 import Navbar from "./components/Layout/Navbar";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
@@ -166,6 +167,7 @@ function App() {
                 <Chatbot />
                 <Footer />
               </Suspense>
+              <BackToTopButton />
               <FeedbackButton />
               <ThemeCustomizerDrawer />
               <SessionRecovery />
