@@ -50,6 +50,7 @@ function App() {
   useKeyboardShortcuts({
     onOpenHelp: () => setShowKeyboardModal(true),
     onCloseHelp: () => setShowKeyboardModal(false),
+    isOpen: showKeyboardModal,
   });
 
   const toggleCursor = () => {
