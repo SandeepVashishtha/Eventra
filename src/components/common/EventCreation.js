@@ -78,7 +78,11 @@ const EventCreation = () => {
       return;
     }
 
-    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData, token);
+    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData, {
+      headers: {
+        Authorization: token
+      }
+    });
     const result = response.data;
 
     if (!(response.status === 200 && result.success)) {
