@@ -36,7 +36,7 @@ export function getSmartDateLabel(dateInput, timeInput = "") {
 
   if (relative) return relative;
 
-  return new Date(dateInput).toLocaleDateString("en-US", {
+  return new Date(timeInput ? `${dateInput} ${timeInput}` : dateInput).toLocaleDateString("en-US", {
     weekday: "short",
     day: "numeric",
     month: "short",
