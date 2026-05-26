@@ -286,23 +286,27 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
   };
 
   const updateSelectedElement = (key, value) => {
-    setElements(elements.map(el => {
-      if (el.id === selectedId) {
-        let updated = { ...el, [key]: value };
-        // Reset assigned attendees if seats decrease
-        if (key === "seatsCount") {
-          const freshAssigned = {};
-          Object.keys(el.assignedAttendees).forEach(k => {
-            if (parseInt(k) < value) {
-              freshAssigned[k] = el.assignedAttendees[k];
-            }
-          });
-          updated.assignedAttendees = freshAssigned;
+    const updates = typeof key === "object" ? key : { [key]: value };
+    setElements((prevElements) =>
+      prevElements.map((el) => {
+        if (el.id === selectedId) {
+          let updated = { ...el, ...updates };
+          // Reset assigned attendees if seats decrease
+          if ("seatsCount" in updates) {
+            const seatsCountVal = updates.seatsCount;
+            const freshAssigned = {};
+            Object.keys(el.assignedAttendees).forEach((k) => {
+              if (parseInt(k) < seatsCountVal) {
+                freshAssigned[k] = el.assignedAttendees[k];
+              }
+            });
+            updated.assignedAttendees = freshAssigned;
+          }
+          return updated;
         }
-        return updated;
-      }
-      return el;
-    }));
+        return el;
+      })
+    );
   };
 
   const handleSeatAssign = (seatIndex, attendeeName) => {
