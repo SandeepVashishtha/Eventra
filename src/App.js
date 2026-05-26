@@ -130,7 +130,7 @@ function App() {
                   transition-colors
                   duration-300
                 "
-
+              >
               <PageTransition>
   <Suspense
     fallback={
