@@ -3,14 +3,13 @@ import { getSmartDateLabel } from "../../utils/relativeTime";
 import {
   Calendar, Trophy, FolderOpen, Users, Settings,
   Clock, MapPin, Zap, Activity, Bell, ChevronRight,
-  LogOut, User, Plus, Search, X, Ticket
+  LogOut, User, Plus, Search, X
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { useMyEvents } from "../../context/MyEventsContext";
 import StatusBadge from "../common/StatusBadge";
-import MyEventsTab from "./MyEventsTab";
+import EventsTab from "./EventsTab";
 import {
   DashboardItemCardSkeleton,
   DashboardListCardSkeleton,
@@ -68,7 +67,6 @@ const QUICK_ACTIONS = [
 
 export default function UserDashboard() {
   const { user, logout } = useAuth();
-  const { myEvents } = useMyEvents();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState("overview");
@@ -143,7 +141,6 @@ export default function UserDashboard() {
         <nav className="ud-nav">
           {[
             { id: "overview", icon: <Activity size={18} />, label: "Overview" },
-            { id: "my-events", icon: <Ticket size={18} />, label: "My Events", badge: myEvents.length || null },
             { id: "events", icon: <Calendar size={18} />, label: "Events" },
             { id: "hackathons", icon: <Trophy size={18} />, label: "Hackathons" },
             { id: "projects", icon: <FolderOpen size={18} />, label: "Projects" },
@@ -369,45 +366,11 @@ export default function UserDashboard() {
             </motion.div>
           )}
 
-          {/* My Events tab */}
-          {activeTab === "my-events" && <MyEventsTab />}
-
           {/* Events tab */}
           {activeTab === "events" && (
-            <motion.div key="events" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="ud-content">
-              <div className="ud-tab-header">
-                <h2 className="ud-page-title"><Calendar size={20} /> My Events</h2>
-                <Link to="/events" className="ud-btn-primary"><Plus size={15} /> Explore Events</Link>
-              </div>
-              <div className="ud-items-grid">
-                {loading
-                  ? [...Array(3)].map((_, i) => <DashboardItemCardSkeleton key={i} />)
-                  : MOCK_DATA.filter(d => d.type === "Event").map((ev, i) => (
-                  <motion.div key={ev.id} custom={i} variants={fadeUp} initial="hidden" animate="visible" className="ud-item-card">
-                    <div className="ud-item-top">
-                      <span className="ud-item-type" style={{ background: "#6366f118", color: "#6366f1" }}><Calendar size={13} /> Event</span>
-                      <StatusBadge status={ev.status} />
-                    </div>
-                    <h3 className="ud-item-title">{ev.title}</h3>
-                    <div className="ud-item-meta">
-                      <span><Calendar size={13} /> {ev.date}</span>
-                      <span><MapPin size={13} /> {ev.location}</span>
-                    </div>
-                    <div className="ud-item-footer">
-                      <StatusBadge status={ev.participationType} />
-                      {ev.participationType === "Registered" && (
-                        <button
-                          onClick={() => setSelectedTicketEvent(ev)}
-                          className="ud-btn-ticket"
-                        >
-                          View Ticket
-                        </button>
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
+            <EventsTab
+              hostedEvents={MOCK_DATA.filter((d) => d.type === "Event" && d.participationType === "Hosted")}
+            />
           )}
 
           {/* Hackathons tab */}
