@@ -257,43 +257,50 @@ GET /api/events
 
 ---
 
-## Get Public Event By ID
+### Get Event By ID
+
+---
+
 
 | Method | Endpoint |
 |--------|----------|
 | GET | `/api/events/{id}` |
 
-Returns a public event if available.
+Returns complete details for an event by its ID. Requires JWT authentication.
+
+This endpoint retrieves the event directly by ID and does not apply public-only filtering. If the event exists, both public and private/non-public events can be returned to an authenticated requester.
+
+### Request Headers
+
+    Authorization: Bearer YOUR_JWT_TOKEN
 
 ### Example Request
 
-```bash
-GET /api/events/1
-```
+    GET /api/events/1
 
 ### Successful Response (200)
 
 ```json
-{
-  "id": 1,
-  "title": "Tech Conference",
-  "description": "Annual developer meetup",
-  "location": "Mumbai",
-  "eventDate": "2026-05-19T18:30:00",
-  "public": true
-}
+    {
+      "id": 1,
+      "title": "Tech Conference",
+      "description": "Annual developer meetup",
+      "location": "Mumbai",
+      "eventDate": "2026-05-19T18:30:00",
+      "public": false
+    }
 ```
 
 ### Error Response (404)
 
 ```json
-{
-  "status": 404,
-  "error": "Not Found",
-  "message": "Event not found or is not public with id: 888",
-  "path": "/api/events/888",
-  "timestamp": "2026-05-19T12:20:31"
-}
+    {
+      "status": 404,
+      "error": "Not Found",
+      "message": "Event not found with id: 888",
+      "path": "/api/events/888",
+      "timestamp": "2026-05-19T12:20:31"
+    }
 ```
 
 ---
@@ -488,7 +495,7 @@ The backend returns standardized JSON error responses for better frontend integr
 {
   "status": 404,
   "error": "Not Found",
-  "message": "Event not found or is not public with id: 888",
+  "message": "Event not found with id: 888",
   "path": "/api/events/888",
   "timestamp": "2026-05-19T12:20:31"
 }
