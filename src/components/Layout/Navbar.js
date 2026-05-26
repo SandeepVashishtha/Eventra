@@ -92,7 +92,7 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
           className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-pink-500 text-white font-semibold border-none shadow-md hover:shadow-lg transition-all cursor-pointer"
         >
           <Palette className="w-5 h-5" />
-          <span>Theme Skins Panel</span>
+          <span>Theme Customizer</span>
         </motion.button>
       </div>
     );
@@ -152,7 +152,7 @@ const CursorToggleButton = ({ cursorEnabled, toggleCursor, isMobile }) => {
         ) : (
           <MousePointer className="w-5 h-5 text-zinc-400" />
         )}
-        <span>{cursorEnabled ? "Cursor: FLUID" : "Cursor: STATIC"}</span>
+        <span>{cursorEnabled ? "Fluid Cursor" : "Static Cursor"}</span>
       </motion.button>
     );
   }
