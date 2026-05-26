@@ -23,6 +23,8 @@ import {
 import "./UserDashboard.css";
 import EventTicket from "./EventTicket";
 
+const STATUS_COLORS = {};
+
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
   visible: (i = 0) => ({

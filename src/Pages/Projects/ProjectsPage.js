@@ -7,6 +7,7 @@ import ProjectCard from "./ProjectCard";
 import ProjectCTA from "./ProjectCTA";
 
 import mockProjects from "./mockProjectsData.json";
+import { apiUtils, API_ENDPOINTS } from "../../config/api";
 
 // Modern custom styled search input
 const ModernSearchInput = ({ value, onChange, placeholder }) => (
@@ -58,9 +59,8 @@ const ProjectCardSkeleton = () => (
     </div>
   </div>
 );
-import { apiUtils, API_ENDPOINTS } from "../../config/api";
-import ModernSearchInput from "../../components/common/ModernSearchInput";
-import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
+
+// import ModernSearchInput from "../../components/common/ModernSearchInput";
 
 const ProjectGallery = () => {
   const [projects, setProjects] = useState([]);
