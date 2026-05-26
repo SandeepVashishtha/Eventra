@@ -1,0 +1,8 @@
+node_modules
+build
+dist
+public
+coverage
+*.config.js
+.next
+out
