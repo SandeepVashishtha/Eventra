@@ -394,9 +394,7 @@ export default function UserDashboard() {
                       <span><MapPin size={13} /> {ev.location}</span>
                     </div>
                     <div className="ud-item-footer">
-                      <span className={`ud-badge ${STATUS_COLORS[ev.participationType] || "ud-badge-gray"}`}>
-                        {ev.participationType}
-                      </span>
+                      <StatusBadge status={ev.participationType} />
                       {ev.participationType === "Registered" && (
                         <button
                           onClick={() => setSelectedTicketEvent(ev)}
@@ -405,7 +403,6 @@ export default function UserDashboard() {
                           View Ticket
                         </button>
                       )}
-                      <StatusBadge status={ev.participationType} />
                     </div>
                   </motion.div>
                 ))}
@@ -510,15 +507,8 @@ export default function UserDashboard() {
                             <StatusBadge status={item.projectStatus !== "-" ? item.projectStatus : item.status} />
                           </td>
                           <td>
-                            <span className={`ud-badge ${STATUS_COLORS[item.projectStatus] || STATUS_COLORS[item.status] || "ud-badge-gray"}`}>
-                              {item.projectStatus !== "-" ? item.projectStatus : item.status}
-                            </span>
-                          </td>
-                          <td>
                             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                              <span className={`ud-badge ${STATUS_COLORS[item.participationType] || "ud-badge-gray"}`}>
-                                {item.participationType}
-                              </span>
+                              <StatusBadge status={item.participationType} />
                               {item.type === "Event" && item.participationType === "Registered" && (
                                 <button
                                   onClick={() => setSelectedTicketEvent(item)}
@@ -528,7 +518,6 @@ export default function UserDashboard() {
                                 </button>
                               )}
                             </div>
-                            <StatusBadge status={item.participationType} />
                           </td>
                         </tr>
                       ))

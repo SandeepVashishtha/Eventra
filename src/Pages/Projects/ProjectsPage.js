@@ -9,6 +9,7 @@ import ProjectCTA from "./ProjectCTA";
 import mockProjects from "./mockProjectsData.json";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
 
+
 // Modern custom styled search input
 const ModernSearchInput = ({ value, onChange, placeholder }) => (
   <div className="relative flex items-center w-full">
@@ -61,6 +62,7 @@ const ProjectCardSkeleton = () => (
 );
 
 // import ModernSearchInput from "../../components/common/ModernSearchInput";
+
 
 const ProjectGallery = () => {
   const [projects, setProjects] = useState([]);

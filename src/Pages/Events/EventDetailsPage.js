@@ -6,6 +6,7 @@ import CountdownTimer from "../../components/common/CountdownTimer";
 import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft } from "lucide-react";
 
 import eventsMockData from "./eventsMockData.json";
+import { getEventStatus } from "../../utils/eventUtils";
 
 // Removed unused imports: addEventToGoogleCalendar, ShareMenu, CertificateDownload, generateEventSharingData
 
@@ -103,12 +104,8 @@ const EventDetailsPage = () => {
     );
   }
 
-  const eventDateTime = new Date(
-    `${event.date} ${event.time}`
-  );
-
   const isPastEvent =
-    eventDateTime < new Date();
+    getEventStatus(event) === "past" || getEventStatus(event) === "ended";
 
   // Removed unused derived values and handlers to satisfy linting rules
 

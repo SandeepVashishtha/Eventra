@@ -55,8 +55,7 @@ const EventCard = ({ event }) => {
   const hasConflict = conflictCheck.hasConflict;
   const isUserRegistered = isRegistered(event.id);
 
-  const eventDateTime = new Date(`${event.date} ${event.time}`);
-  const isPastEvent = eventDateTime < new Date();
+  const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
 
   const eventSharingData = generateEventSharingData({
     ...event,

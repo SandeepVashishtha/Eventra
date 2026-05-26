@@ -53,7 +53,7 @@ const Alert = ({
       aria-live="polite"
     >
       <div className="flex-shrink-0">
-        <Icon className={`h-5 w-5 ${config.iconColor}`} />
+        <Icon className={`h-5 w-5 ${config.iconColor}`} aria-hidden="true" />
       </div>
       <div className="flex-1">
         {title && (
