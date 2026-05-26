@@ -83,6 +83,11 @@ class GlobalErrorBoundary extends React.Component {
 
   // Retry Rendering
   handleReset() {
+    if (this.recoveryTimeout) {
+      clearTimeout(this.recoveryTimeout);
+      this.recoveryTimeout = null;
+    }
+
     if (
       this.state.retryCount >=
       3

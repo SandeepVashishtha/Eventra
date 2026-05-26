@@ -226,6 +226,21 @@ We welcome contributions from the community! To get started, please follow these
 - To keep your assignment, please **open a draft Pull Request** within the 7-day period to show progress.
 - For more details, see our [Auto-unassign Documentation](.github/AUTO_UNASSIGN.md).
 
+### Automatic PR Labels
+
+This repository uses GitHub Actions with `actions/labeler`
+to automatically apply labels to pull requests based on changed files.
+
+Examples:
+- `docs/**` → `type:docs`
+- `tests/**` → `type:testing`
+- `.github/**` → `type:devops`
+- `src/**` → `type:refactor`
+- `public/**` → `type:design`
+
+The workflow runs automatically whenever a pull request is opened,
+updated, or reopened.
+
 ## License
 
 This project is licensed under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for details.

@@ -37,3 +37,22 @@ assert.equal(isAlreadyRegistered("event-1", "third@example.com"), false);
 saveRegistration("event-2", "third@example.com");
 assert.equal(isAlreadyRegistered("event-2", "third@example.com"), true);
 assert.equal(isAlreadyRegistered("event-1", "third@example.com"), false);
+
+// Test corrupted localStorage data is treated as empty
+localStorage.clear();
+localStorage.setItem("eventRegistrations", "{broken");
+
+let warningCount = 0;
+const originalWarn = console.warn;
+console.warn = () => {
+  warningCount += 1;
+};
+
+try {
+  assert.equal(isAlreadyRegistered("event-3", "broken@example.com"), false);
+  saveRegistration("event-3", "broken@example.com");
+  assert.equal(isAlreadyRegistered("event-3", "broken@example.com"), true);
+  assert.ok(warningCount >= 1);
+} finally {
+  console.warn = originalWarn;
+}

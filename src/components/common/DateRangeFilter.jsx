@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Calendar, X } from "lucide-react";
 
+const parseLocalDate = (dateString) => {
+  if (!dateString) return null;
+  if (typeof dateString !== "string") return new Date(dateString);
+  const [y, m, d] = dateString.split("-").map(Number);
+  return new Date(y, m - 1, d);
+};
+
 /**
  * DateRangeFilter Component
  * Allows users to select start and end dates for filtering events
@@ -18,8 +25,8 @@ const DateRangeFilter = ({
   useEffect(() => {
     if (onDateRangeChange) {
       onDateRangeChange({
-        startDate: localStartDate ? new Date(localStartDate) : null,
-        endDate: localEndDate ? new Date(localEndDate) : null,
+        startDate: parseLocalDate(localStartDate),
+        endDate: parseLocalDate(localEndDate),
       });
     }
   }, [localStartDate, localEndDate, onDateRangeChange]);
@@ -39,7 +46,7 @@ const DateRangeFilter = ({
   };
 
   const minDateStr = formatDateForInput(minDate || new Date());
-  const maxDateStr = formatDateForInput(maxDate || new Date("2099-12-31"));
+  const maxDateStr = formatDateForInput(maxDate || parseLocalDate("2099-12-31"));
 
   return (
     <div className="space-y-3">
@@ -105,8 +112,8 @@ const DateRangeFilter = ({
       {localStartDate && localEndDate && (
         <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700">
           <p className="text-xs text-indigo-700 dark:text-indigo-300">
-            {new Date(localStartDate).toLocaleDateString()} -
-            {new Date(localEndDate).toLocaleDateString()}
+            {parseLocalDate(localStartDate).toLocaleDateString()} -
+            {parseLocalDate(localEndDate).toLocaleDateString()}
           </p>
         </div>
       )}
