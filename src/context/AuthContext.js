@@ -135,12 +135,9 @@ export const AuthProvider = ({ children }) => {
       password,
     });
 
-  const data = await res.json().catch((error) => {
-    console.error('Failed to parse login response JSON:', error);
-    return null;
-  });
+    const data = res.data;
 
-    if (!res.ok) {
+    if (res.status !== 200) {
       throw new Error(data?.message || data?.error || 'Invalid credentials');
     }
 
