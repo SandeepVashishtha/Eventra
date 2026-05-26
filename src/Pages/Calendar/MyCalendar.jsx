@@ -43,6 +43,37 @@ const MyCalendar = () => {
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
 
+  const handleMonthChange = (e) => {
+    setCurrentDate(new Date(currentYear, parseInt(e.target.value), 1));
+  };
+
+  const handleYearChange = (e) => {
+    setCurrentDate(new Date(parseInt(e.target.value), currentMonth, 1));
+  };
+
+  // Detect scheduling conflicts (overlapping time slots on the same day)
+  const hasOverlappingEvents = (events) => {
+    if (events.length <= 1) return false;
+    
+    // Sort events by their date/time
+    const sorted = [...events]
+      .filter(item => item.event?.date)
+      .sort((a, b) => new Date(a.event.date) - new Date(b.event.date));
+    
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const current = new Date(sorted[i].event.date);
+      const currentDuration = sorted[i].event.durationMinutes || 60;
+      const currentEnd = new Date(current.getTime() + currentDuration * 60000);
+      
+      const next = new Date(sorted[i + 1].event.date);
+      
+      if (next < currentEnd) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   // Calendar Date Calculations
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
