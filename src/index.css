@@ -65,6 +65,11 @@ html {
 
   --touch-target-min: 44px;
   --touch-target-gap: 0.75rem;
+  --primary-color: #667eea;
+--primary-hover: #5a67d8;
+--danger-bg: #fef2f2;
+--danger-border: #fca5a5;
+--danger-text: #dc2626;
 }
 
 /* Fix #599: Changed from body.dark to .dark
@@ -230,7 +235,11 @@ code {
 .section-padding { padding: 80px 0; }
 .text-gradient {
 
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+background: linear-gradient(
+  135deg,
+  var(--primary-color) 0%,
+  #764ba2 100%
+);
 
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -240,8 +249,11 @@ code {
 /* Buttons */
 .btn-primary {
 
-  background: linear-gradient(135deg, #667eea 0%, #5a67d8 100%);
-
+ background: linear-gradient(
+  135deg,
+  var(--primary-color) 0%,
+  var(--primary-hover) 100%
+);
   color: white;
   padding: 12px 32px;
   border: none;
@@ -276,8 +288,8 @@ code {
 }
 
 .btn-secondary:hover {
-  border-color: #667eea;
-  color: #667eea;
+border-color: var(--primary-color);
+color: var(--primary-color);
 
   transform: translateY(-2px);
 }
@@ -595,9 +607,9 @@ select,
 }
 
 .error-banner {
-  background: #fef2f2;
-  border: 1px solid #fca5a5;
-  color: #dc2626;
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  color: var(--danger-text);
   padding: 10px 16px;
   border-radius: 6px;
   margin-bottom: 12px;
