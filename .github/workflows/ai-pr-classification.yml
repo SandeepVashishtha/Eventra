@@ -1,0 +1,291 @@
+name: AI PR Classification
+
+on:
+  pull_request_target:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  classify-pr:
+    name: Classify pull request labels
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+
+    steps:
+      - name: Analyze PR and apply labels
+        uses: actions/github-script@v7
+        env:
+          AI_LABEL_PROVIDER: ${{ vars.AI_LABEL_PROVIDER || 'openai' }}
+          AI_LABEL_MODEL: ${{ vars.AI_LABEL_MODEL || 'gpt-4o-mini' }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const difficultyLabels = [
+              'level:beginner',
+              'level:intermediate',
+              'level:advanced',
+              'level:critical'
+            ];
+
+            const typeLabels = [
+              'type:security',
+              'type:performance',
+              'type:refactor',
+              'type:feature',
+              'type:bug'
+            ];
+
+            const supportedLabels = [...difficultyLabels, ...typeLabels];
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner,
+              repo,
+              pull_number: pr.number,
+              per_page: 100
+            });
+
+            const changedFiles = files.map((file) => ({
+              filename: file.filename,
+              status: file.status,
+              additions: file.additions,
+              deletions: file.deletions,
+              changes: file.changes,
+              patch: (file.patch || '').slice(0, 800)
+            }));
+
+            const diffSummary = {
+              totalFiles: files.length,
+              totalAdditions: files.reduce((sum, file) => sum + file.additions, 0),
+              totalDeletions: files.reduce((sum, file) => sum + file.deletions, 0),
+              files: changedFiles.slice(0, 30),
+              omittedFiles: Math.max(changedFiles.length - 30, 0)
+            };
+
+            const prContext = {
+              title: pr.title,
+              description: pr.body || '',
+              changedFiles: files.map((file) => file.filename),
+              diffSummary
+            };
+
+            const prompt = [
+              'You classify GitHub pull requests for the Eventra repository.',
+              'Analyze the PR title, description, changed files, and diff summary.',
+              'Return only valid JSON with this exact shape:',
+              '{"difficulty":"level:beginner|level:intermediate|level:advanced|level:critical","types":["type:security|type:performance|type:refactor|type:feature|type:bug"],"reason":"short reason"}',
+              'Rules:',
+              '- Pick exactly one difficulty label.',
+              '- Pick one or more type labels, but only from the supported type labels.',
+              '- Prefer type:security for auth, secrets, permissions, XSS, CSRF, injection, token, or vulnerability changes.',
+              '- Prefer type:performance for caching, pagination, lazy loading, bundle, debounce, rendering, or algorithmic speed changes.',
+              '- Prefer type:bug for fixes, broken behavior, errors, crashes, regressions, or test failures.',
+              '- Prefer type:refactor for cleanup, restructuring, migration, or behavior-preserving changes.',
+              '- Prefer type:feature for new user-facing behavior or new workflow capability.',
+              '',
+              `Supported difficulty labels: ${difficultyLabels.join(', ')}`,
+              `Supported type labels: ${typeLabels.join(', ')}`,
+              '',
+              `PR context:\n${JSON.stringify(prContext, null, 2)}`
+            ].join('\n');
+
+            function keywordMatch(text, words) {
+              return words.some((word) => text.includes(word));
+            }
+
+            function fallbackClassification(contextValue) {
+              const searchable = [
+                contextValue.title,
+                contextValue.description,
+                contextValue.changedFiles.join(' '),
+                JSON.stringify(contextValue.diffSummary.files.map((file) => ({
+                  filename: file.filename,
+                  patch: file.patch
+                })))
+              ].join(' ').toLowerCase();
+
+              const labels = new Set();
+
+              if (keywordMatch(searchable, ['security', 'auth', 'token', 'secret', 'permission', 'xss', 'csrf', 'injection', 'vulnerability'])) {
+                labels.add('type:security');
+              }
+
+              if (keywordMatch(searchable, ['performance', 'optimize', 'cache', 'lazy', 'debounce', 'pagination', 'bundle', 'render', 'speed'])) {
+                labels.add('type:performance');
+              }
+
+              if (keywordMatch(searchable, ['fix', 'bug', 'error', 'crash', 'broken', 'regression', 'failing'])) {
+                labels.add('type:bug');
+              }
+
+              if (keywordMatch(searchable, ['refactor', 'cleanup', 'restructure', 'rename', 'migrate'])) {
+                labels.add('type:refactor');
+              }
+
+              if (labels.size === 0 || keywordMatch(searchable, ['feature', 'add', 'create', 'new', 'implement', 'support'])) {
+                labels.add('type:feature');
+              }
+
+              const { totalFiles, totalAdditions, totalDeletions } = contextValue.diffSummary;
+              const totalChanges = totalAdditions + totalDeletions;
+              let difficulty = 'level:beginner';
+
+              if (labels.has('type:security') || totalFiles > 20 || totalChanges > 1000) {
+                difficulty = 'level:critical';
+              } else if (totalFiles > 10 || totalChanges > 500 || labels.has('type:performance')) {
+                difficulty = 'level:advanced';
+              } else if (totalFiles > 4 || totalChanges > 120) {
+                difficulty = 'level:intermediate';
+              }
+
+              return {
+                difficulty,
+                types: Array.from(labels),
+                reason: 'Fallback classification from PR keywords and change size.'
+              };
+            }
+
+            function normalizeClassification(classification) {
+              const difficulty = difficultyLabels.includes(classification?.difficulty)
+                ? classification.difficulty
+                : null;
+
+              const types = Array.isArray(classification?.types)
+                ? classification.types.filter((label) => typeLabels.includes(label))
+                : [];
+
+              if (!difficulty || types.length === 0) {
+                return fallbackClassification(prContext);
+              }
+
+              return {
+                difficulty,
+                types: [...new Set(types)],
+                reason: classification.reason || 'AI classification completed.'
+              };
+            }
+
+            async function classifyWithAI() {
+              const provider = (process.env.AI_LABEL_PROVIDER || 'openai').toLowerCase();
+              const model = process.env.AI_LABEL_MODEL || 'gpt-4o-mini';
+
+              const configs = {
+                openai: {
+                  apiKey: process.env.OPENAI_API_KEY,
+                  url: 'https://api.openai.com/v1/chat/completions'
+                },
+                grok: {
+                  apiKey: process.env.XAI_API_KEY,
+                  url: 'https://api.x.ai/v1/chat/completions'
+                },
+                xai: {
+                  apiKey: process.env.XAI_API_KEY,
+                  url: 'https://api.x.ai/v1/chat/completions'
+                }
+              };
+
+              const config = configs[provider] || configs.openai;
+
+              if (!config.apiKey) {
+                console.log(`No API key configured for provider "${provider}". Using fallback classification.`);
+                return fallbackClassification(prContext);
+              }
+
+              try {
+                const response = await fetch(config.url, {
+                  method: 'POST',
+                  headers: {
+                    Authorization: `Bearer ${config.apiKey}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    model,
+                    messages: [
+                      {
+                        role: 'system',
+                        content: 'You are a careful GitHub PR classifier. Return valid JSON only.'
+                      },
+                      {
+                        role: 'user',
+                        content: prompt
+                      }
+                    ],
+                    temperature: 0.1,
+                    response_format: { type: 'json_object' }
+                  })
+                });
+
+                if (!response.ok) {
+                  const errorText = await response.text();
+                  throw new Error(`AI API request failed with ${response.status}: ${errorText.slice(0, 500)}`);
+                }
+
+                const payload = await response.json();
+                const content = payload?.choices?.[0]?.message?.content;
+
+                if (!content) {
+                  throw new Error('AI API response did not include message content.');
+                }
+
+                return normalizeClassification(JSON.parse(content));
+              } catch (error) {
+                console.warn(`AI classification failed: ${error.message}`);
+                return fallbackClassification(prContext);
+              }
+            }
+
+            const classification = normalizeClassification(await classifyWithAI());
+            const labelsToApply = [classification.difficulty, ...classification.types];
+
+            console.log(`Classification reason: ${classification.reason}`);
+            console.log(`Candidate labels: ${labelsToApply.join(', ')}`);
+
+            const availableLabels = await github.paginate(github.rest.issues.listLabelsForRepo, {
+              owner,
+              repo,
+              per_page: 100
+            });
+            const availableLabelNames = new Set(availableLabels.map((label) => label.name));
+            const existingSupportedLabels = supportedLabels.filter((label) => availableLabelNames.has(label));
+            const finalLabels = labelsToApply.filter((label) => availableLabelNames.has(label));
+
+            if (finalLabels.length === 0) {
+              core.warning('No classified labels exist in the repository. Create the expected level:* and type:* labels first.');
+              return;
+            }
+
+            const currentLabels = (pr.labels || []).map((label) => label.name);
+            const labelsToRemove = currentLabels.filter((label) => (
+              existingSupportedLabels.includes(label) && !finalLabels.includes(label)
+            ));
+
+            for (const label of labelsToRemove) {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner,
+                  repo,
+                  issue_number: pr.number,
+                  name: label
+                });
+                console.log(`Removed previous classification label: ${label}`);
+              } catch (error) {
+                console.warn(`Could not remove label "${label}": ${error.message}`);
+              }
+            }
+
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: pr.number,
+              labels: finalLabels
+            });
+
+            console.log(`Applied labels to PR #${pr.number}: ${finalLabels.join(', ')}`);

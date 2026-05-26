@@ -45,6 +45,12 @@ This repository contains the React frontend application for Eventra. The backend
 - **Swagger**: [https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html](https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html)
 - Capacity and registration availability endpoints are documented in Swagger UI.
 
+### Backend API Setup Note
+
+The frontend communicates with the Spring Boot backend through `/api` routes. For local full-stack testing, run the backend service separately and configure the frontend API URL accordingly.
+
+Backend repository: https://github.com/SandeepVashishtha/Eventra-Backend
+
 ## Project Insights
 
 <table align="center">
@@ -288,7 +294,7 @@ Example:
 ```env
 REACT_APP_API_URL=http://localhost:8080/api
 REACT_APP_USE_REAL_API=false
-REACT_APP_GITHUB_TOKEN=your_github_token
+GITHUB_TOKEN=your_github_token
 REACT_APP_EMAILJS_PUBLIC_KEY=your_emailjs_public_key
 REACT_APP_EMAILJS_SERVICE_ID=your_emailjs_service_id
 REACT_APP_EMAILJS_TEMPLATE_ID=your_emailjs_template_id
@@ -305,7 +311,7 @@ DAYS_THRESHOLD=30
 | `REACT_APP_API_URL` | Yes | Backend API base URL |
 | `REACT_APP_USE_REAL_API` | No | Enables real API calls in selected development flows |
 | `DAYS_THRESHOLD` | No | Threshold days configuration used by date-based features |
-| `REACT_APP_GITHUB_TOKEN` | No | GitHub API token for higher rate limits on contributor and repository stats |
+| `GITHUB_TOKEN` | No | GitHub API token for higher rate limits on contributor and repository stats (configured in Vercel environment variables, not exposed to the client) |
 | `REACT_APP_EMAILJS_PUBLIC_KEY` | No | EmailJS public key for event registration emails |
 | `REACT_APP_EMAILJS_SERVICE_ID` | No | EmailJS service ID for event registration emails |
 | `REACT_APP_EMAILJS_TEMPLATE_ID` | No | EmailJS template ID for event registration emails |
@@ -313,5 +319,50 @@ DAYS_THRESHOLD=30
 | `REACT_APP_GOOGLE_CLIENT_ID` | No | Google authentication client ID |
 
 The `.env.example` file contains all required environment variable names needed to run the project locally.
+
+---
+
+## SSE Mock Server (Development Only)
+
+For testing real-time leaderboard rank updates and analytics stream features in development, a local mock Server-Sent Events (SSE) server is provided.
+
+### 1. Start the SSE Server
+Run the following command to start the mock server:
+```bash
+node sse-mock-server.js
+```
+
+### 2. Configure Environment Variables (Optional)
+The SSE mock server reads configuration from the environment:
+- `SSE_MOCK_PORT` (or `PORT`): The port the server listens on (default: `4001`).
+- `ALLOWED_ORIGIN`: Allowed CORS request origin (default: `http://localhost:3000`).
+- `SSE_DEBUG`: Set to `true` to print real-time logging for connections and events (default: `false` to reduce console noise).
+
+Example with custom settings:
+```bash
+# Windows PowerShell
+$env:SSE_MOCK_PORT="4005"; $env:ALLOWED_ORIGIN="http://localhost:3000"; $env:SSE_DEBUG="true"; node sse-mock-server.js
+
+# Linux/macOS
+SSE_MOCK_PORT=4005 ALLOWED_ORIGIN=http://localhost:3000 SSE_DEBUG=true node sse-mock-server.js
+```
+
+### 3. Configure the React Application
+Update `.env.local` to point to the mock server base URL:
+```env
+REACT_APP_API_URL=http://localhost:4001
+```
+*(Make sure to match the port number if a custom `SSE_MOCK_PORT` was configured.)*
+Update `.env.local` to point to the mock server. You have two options:
+- **Option A (Recommended)**: Set `REACT_APP_SSE_URL` to route only real-time connections to the mock server, keeping the rest of the application pointing to the real API:
+  ```env
+  REACT_APP_SSE_URL=http://localhost:4001
+  ```
+- **Option B**: Set the general `REACT_APP_API_URL` to point to the mock server port (this routes all endpoints through port 4001):
+  ```env
+  REACT_APP_API_URL=http://localhost:4001
+  ```
+
+---
 
 Built with care by the Eventra Team

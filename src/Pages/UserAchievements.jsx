@@ -14,6 +14,9 @@ import {
   ChevronDown,
   Sparkles,
   Trophy,
+  Linkedin,
+  Twitter,
+  Share2,
 } from 'lucide-react';
 
 export default function UserAchievements() {
@@ -125,6 +128,39 @@ export default function UserAchievements() {
 
   const toggleExpand = (badgeId) => {
     setExpandedBadgeId(expandedBadgeId === badgeId ? null : badgeId);
+  };
+
+  const handleShareTwitter = (badge) => {
+    const text = `I just unlocked the '${badge.name}' milestone badge on Eventra! 🏆 ${badge.description} Check it out: https://eventra.dev`;
+    const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    window.open(shareUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const handleShareLinkedIn = (badge) => {
+    const text = `I just unlocked the '${badge.name}' milestone badge on Eventra! 🏆 ${badge.description}`;
+    const shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent("https://eventra.dev")}&summary=${encodeURIComponent(text)}`;
+    window.open(shareUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const handleNativeShare = async (badge) => {
+    const title = `Unlocked '${badge.name}' Badge on Eventra!`;
+    const text = `I just unlocked the '${badge.name}' milestone badge on Eventra! 🏆 ${badge.description}`;
+    const url = "https://eventra.dev";
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text, url });
+      } catch (error) {
+        console.error("Native share failed:", error);
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(`${text} Check it out: ${url}`);
+        alert("Milestone details copied to clipboard!");
+      } catch (err) {
+        alert("Failed to copy milestone details.");
+      }
+    }
   };
 
   return (
@@ -416,6 +452,38 @@ export default function UserAchievements() {
                             ))}
                           </div>
                         </div>
+
+                        {/* Share section */}
+                        {badge.earned && (
+                          <div className="pt-4 border-t border-dashed border-slate-200 dark:border-slate-850/50 space-y-2.5" onClick={(e) => e.stopPropagation()}>
+                            <span className="block text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none">
+                              Share Achievement
+                            </span>
+                            <div className="flex flex-wrap gap-2 pt-0.5">
+                              <button
+                                onClick={() => handleShareLinkedIn(badge)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:hover:bg-indigo-950/60 dark:text-indigo-400 border border-indigo-100/10 transition-all cursor-pointer shadow-xs hover:scale-[1.03]"
+                              >
+                                <Linkedin className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                                <span>LinkedIn</span>
+                              </button>
+                              <button
+                                onClick={() => handleShareTwitter(badge)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold rounded-xl bg-slate-100/50 hover:bg-slate-200/50 text-slate-700 dark:bg-slate-850 dark:hover:bg-slate-800 dark:text-slate-200 border border-slate-200/10 transition-all cursor-pointer shadow-xs hover:scale-[1.03]"
+                              >
+                                <Twitter className="w-3.5 h-3.5 text-slate-700 dark:text-slate-350" />
+                                <span>Twitter / X</span>
+                              </button>
+                              <button
+                                onClick={() => handleNativeShare(badge)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold rounded-xl bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white transition-all cursor-pointer shadow-xs hover:scale-[1.03]"
+                              >
+                                <Share2 className="w-3.5 h-3.5" />
+                                <span>Native Share</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Lock Warning if locked */}
                         {!badge.earned && (

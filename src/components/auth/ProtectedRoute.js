@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { isTokenValid } from '../../utils/auth';
@@ -16,6 +16,19 @@ const ProtectedRoute = ({
   const { isAuthenticated, hasRole, hasPermission, loading, user, token, logout } = useAuth();
   const location = useLocation();
 
+  // Distinguish between "never had a token" and "had a token that expired".
+  // Passing sessionExpired lets the Login page show a contextual banner
+  // instead of silently dropping the user on the login form.
+  const sessionExpired = requireAuth && !loading && !isAuthenticated() && !!token && !isTokenValid(token);
+
+  // Clean up stale session data cleanly via useEffect to avoid updating the 
+  // AuthProvider component's state during the ProtectedRoute render phase.
+  useEffect(() => {
+    if (sessionExpired) {
+      logout();
+    }
+  }, [sessionExpired, logout]);
+
   // Show loading spinner while checking authentication
   if (loading) {
     return (
@@ -27,17 +40,6 @@ const ProtectedRoute = ({
 
   // Check if authentication is required
   if (requireAuth && !isAuthenticated()) {
-    // Distinguish between "never had a token" and "had a token that expired".
-    // Passing sessionExpired lets the Login page show a contextual banner
-    // instead of silently dropping the user on the login form.
-    const sessionExpired = !!token && !isTokenValid(token);
-
-    // Clean up stale session data so localStorage doesn't retain an
-    // expired token that would confuse subsequent checks.
-    if (sessionExpired) {
-      logout();
-    }
-
     return (
       <Navigate
         to={redirectTo}

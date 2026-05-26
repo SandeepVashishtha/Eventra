@@ -8,6 +8,7 @@ import ProjectCTA from "./ProjectCTA";
 
 import mockProjects from "./mockProjectsData.json";
 
+
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import { ProjectCardSkeleton } from "../../components/common/SkeletonLoaders";
