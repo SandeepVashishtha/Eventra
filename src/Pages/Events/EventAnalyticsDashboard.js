@@ -99,7 +99,7 @@ const AttendanceBarChart = ({ height = 260, layout = 'horizontal', showLegend = 
 const KPIHeader = () => (
   <div className="ead-header">
     <div className="ead-header-left">
-      <span className="ead-badge">Organizer View</span>
+      <span className="sb-badge sb-hosted">Organizer View</span>
       <h1 className="ead-title">Event Analytics</h1>
       <p className="ead-subtitle">Data-driven insights for smarter decisions</p>
     </div>

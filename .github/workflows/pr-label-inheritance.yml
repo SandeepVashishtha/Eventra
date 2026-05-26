@@ -1,0 +1,77 @@
+name: PR Label Inheritance
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened]
+
+permissions:
+  issues: read
+  pull-requests: write
+
+jobs:
+  inherit-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inherit Labels from Issues and Add Special Labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const body = pr.body || "";
+            const prNumber = pr.number;
+
+            console.log(`Processing PR #${prNumber}`);
+
+            // 1. Extract linked issue numbers using regex
+            // Matching keywords: Fixes, Closes, Resolves, Fixed, Closed, Resolved followed by #<number>
+            const regex = /(?:fixes|closes|resolves|fixed|closed|resolved)\s+#(\d+)/gi;
+            const matches = [...body.matchAll(regex)];
+            const linkedIssues = [...new Set(matches.map(match => parseInt(match[1])))];
+
+            console.log(`Linked issues found: ${linkedIssues.join(', ') || 'None'}`);
+
+            const labelsToAdd = new Set();
+
+            // 2. Fetch labels from linked issues
+            for (const issueNumber of linkedIssues) {
+              try {
+                const { data: issue } = await github.rest.issues.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber
+                });
+                
+                if (issue.labels && issue.labels.length > 0) {
+                  for (const label of issue.labels) {
+                    const labelName = typeof label === 'string' ? label : label.name;
+                    labelsToAdd.add(labelName);
+                    console.log(`Found label "${labelName}" from issue #${issueNumber}`);
+                  }
+                }
+              } catch (error) {
+                console.warn(`Could not fetch details for issue #${issueNumber}: ${error.message}`);
+              }
+            }
+
+            // 3. Hacktoberfest Label Check
+            // If PR is created in October, add hacktoberfest-accepted
+            const createdAt = new Date(pr.created_at);
+            if (createdAt.getMonth() === 9) { // 9 is October (0-indexed)
+              labelsToAdd.add('hacktoberfest-accepted');
+              console.log('PR created in October. Adding "hacktoberfest-accepted" label.');
+            }
+
+            // 4. Apply Labels if there are any to add
+            if (labelsToAdd.size > 0) {
+              const labelList = Array.from(labelsToAdd);
+              console.log(`Applying labels to PR #${prNumber}: ${labelList.join(', ')}`);
+              
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                labels: labelList
+              });
+            } else {
+              console.log('No labels to add to this PR.');
+            }

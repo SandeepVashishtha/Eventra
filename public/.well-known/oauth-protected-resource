@@ -1,0 +1,5 @@
+{
+  "resource": "https://eventra.sandeepvashishtha.in/api",
+  "authorization_servers": ["https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net"],
+  "scopes_supported": ["read", "write"]
+}

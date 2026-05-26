@@ -1,8 +1,8 @@
 import { motion, useAnimation, AnimatePresence, MotionConfig } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
-import { Search, X, Calendar, Trophy, Code, ExternalLink } from "lucide-react";
+import { Search, Calendar, Trophy, Code, ExternalLink } from "lucide-react";
 
 // Import mock data
 import eventsData from "../../Events/eventsMockData.json";
@@ -10,9 +10,13 @@ import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
 import RespawningText from "../../../jhalak/RespawningText";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
+import CountUp from "react-countup";
+import useDocumentTitle from "../../../hooks/useDocumentTitle";
+
+const MotionLink = motion(Link);
 
 const Hero = () => {
-  const navigate = useNavigate();
+  useDocumentTitle("Eventra | Home");
   const phrases = [
     "Amazing Tech Events",
     "Exciting Hackathons Today",
@@ -20,11 +24,30 @@ const Hero = () => {
     "Cutting-Edge Tech Meetups",
   ];
 
+
   const [index, setIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
+  const [statsReady, setStatsReady] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(
+    typeof window !== "undefined" ? window.innerWidth <= 420 : false
+  );
+  const [isDark, setIsDark] = useState(
+    document.documentElement.classList.contains("dark")
+  );
+
+  // Sync isDark with theme changes
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
 
   // Change phrase every 3 seconds
   useEffect(() => {
@@ -32,7 +55,7 @@ const Hero = () => {
       setIndex((prev) => (prev + 1) % phrases.length);
     }, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [phrases.length]);
 
   const controls = useAnimation();
 
@@ -41,23 +64,43 @@ const Hero = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [controls]);
 
+  useEffect(() => {
+    const onResize = () => setIsMobileView(window.innerWidth <= 420);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    setStatsReady(true);
+  }, []);
+  // FIXED
+useEffect(() => {
+  const timer = setTimeout(() => setStatsReady(true), 100);
+  return () => clearTimeout(timer);
+}, []);
+
   // Global search functionality
+  const createSearchItem = (item, type, searchType) => ({
+    id: item.id,
+    title: item.title,
+    description: item.description,
+    location: item.location,
+    tags: item.tags,
+    techStack: item.techStack,
+    category: item.category,
+    author: item.author,
+    organizer: item.organizer,
+    searchType,
+  });
+
   const allData = [
-    ...eventsData.map((item) => ({
-      ...item,
-      type: "event",
-      searchType: "Events",
-    })),
-    ...hackathonsData.map((item) => ({
-      ...item,
-      type: "hackathon",
-      searchType: "Hackathons",
-    })),
-    ...projectsData.map((item) => ({
-      ...item,
-      type: "project",
-      searchType: "Projects",
-    })),
+    ...eventsData.map((item) => createSearchItem(item, "event", "Events")),
+    ...hackathonsData.map((item) =>
+      createSearchItem(item, "hackathon", "Hackathons")
+    ),
+    ...projectsData.map((item) =>
+      createSearchItem(item, "project", "Projects")
+    ),
   ];
 
   const fuse = new Fuse(allData, {
@@ -79,7 +122,7 @@ const Hero = () => {
   const handleSearch = (query) => {
     setSearchQuery(query);
     if (query.trim()) {
-      const results = fuse.search(query).slice(0, 8); // Limit to 8 results
+      const results = fuse.search(query).slice(0, 8);
       setSearchResults(results);
       setShowResults(true);
     } else {
@@ -88,16 +131,17 @@ const Hero = () => {
     }
   };
 
-  const handleResultClick = (result, type) => {
+  const clearSearch = () => {
     setShowResults(false);
     setSearchQuery("");
-    if (type === "event") {
-      navigate("/events");
-    } else if (type === "hackathon") {
-      navigate("/hackathons");
-    } else if (type === "project") {
-      navigate("/projects");
-    }
+  };
+
+  const getResultHref = (item) => {
+    const query = encodeURIComponent(item.title || searchQuery);
+    if (item.type === "event") return `/events?search=${query}`;
+    if (item.type === "hackathon") return `/hackathons?search=${query}`;
+    if (item.type === "project") return `/projects?search=${query}`;
+    return "/";
   };
 
   const getResultIcon = (type) => {
@@ -130,63 +174,50 @@ const Hero = () => {
     transition: { duration: 4.4 + i * 0.7, repeat: Infinity, ease: "easeInOut" },
   });
 
+  // Vibrant colors for light mode, soft pastels for dark mode
   const shapes = [
-    { size: 42, pos: { top: "10%", left: "5%" }, color: "#dbeafe" },
-    { size: 54, pos: { top: "14%", left: "20%" }, color: "#fde68a" },
-    { size: 30, pos: { top: "24%", left: "42%" }, color: "#dcfce7" },
-    { size: 50, pos: { top: "30%", left: "70%" }, color: "#bae6fd" },
-    { size: 40, pos: { top: "52%", left: "10%" }, color: "#fbcfe8" },
-    { size: 26, pos: { top: "42%", left: "32%" }, color: "#c7d2fe" },
-    { size: 68, pos: { top: "68%", left: "24%" }, color: "#fecdd3" },
-    { size: 50, pos: { top: "72%", left: "64%" }, color: "#bbf7d0" },
-    { size: 34, pos: { top: "48%", left: "80%" }, color: "#fde68a" },
+    { size: 42, pos: { top: "10%", left: "5%" }, lightColor: "#3b82f6", darkColor: "#dbeafe" },
+    { size: 54, pos: { top: "14%", left: "20%" }, lightColor: "#f59e0b", darkColor: "#fde68a" },
+    { size: 30, pos: { top: "24%", left: "42%" }, lightColor: "#22c55e", darkColor: "#dcfce7" },
+    { size: 50, pos: { top: "30%", left: "70%" }, lightColor: "#0ea5e9", darkColor: "#bae6fd" },
+    { size: 40, pos: { top: "52%", left: "10%" }, lightColor: "#ec4899", darkColor: "#fbcfe8" },
+    { size: 26, pos: { top: "42%", left: "32%" }, lightColor: "#8b5cf6", darkColor: "#c7d2fe" },
+    { size: 68, pos: { top: "68%", left: "24%" }, lightColor: "#f43f5e", darkColor: "#fecdd3" },
+    { size: 50, pos: { top: "72%", left: "64%" }, lightColor: "#10b981", darkColor: "#bbf7d0" },
+    { size: 34, pos: { top: "48%", left: "80%" }, lightColor: "#eab308", darkColor: "#fde68a" },
   ];
 
   const stats = [
-    {
-      value: "1500+",
-      label: "Developers Joined",
-      color: "text-black",
-    },
-    {
-      value: "75",
-      label: "Events Organized",
-      color: "text-black",
-    },
-    {
-      value: "30+",
-      label: "Partners & Sponsors",
-      color: "text-black",
-    },
+    { value: 1500, label: "Developers Joined", suffix: "+" },
+    { value: 75, label: "Events Organized", suffix: "+" },
+    { value: 30, label: "Partners & Sponsors", suffix: "+" },
   ];
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 py-16 sm:py-20 md:py-24">
-      {/* Floating pastel shapes */}
-      {shapes.map((shape, i) => (
-        <motion.div
-          key={i}
-          animate={floatShape(i)}
-          className="absolute rounded-full"
-          style={{
-            width: `${shape.size}px`,
-            height: `${shape.size}px`,
-            ...shape.pos,
-            backgroundColor: shape.color,
-            opacity: 0.5, // Increased from 0.2 for better visibility
-            filter: "blur(2px)", // Added a slight blur for a premium look
-          }}
-        />
-      ))}
-
+    <section
+      aria-label="Hero section"
+      className="relative overflow-hidden 
+bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white
+dark:from-slate-950 dark:via-slate-900 dark:to-black
+text-slate-900 dark:text-gray-100 
+pb-16 sm:pb-20 md:pb-24
+border-b border-gray-100 dark:border-slate-900">
       {/* Hero Content */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
+      <div className=" mx-auto px-6 lg:px-8 relative z-10 pt-20"
+      style={{
+    backgroundImage: "url('/background.png')",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+    minHeight: "100vh",
+    width:"100vw"
+  }}
+      >
         <motion.div
           className="text-center"
           variants={container}
           initial="hidden"
           animate={controls}
-          // AOS Implementation (Fallback/Enhancement)
           data-aos="zoom-in"
           data-aos-once="true"
           data-aos-duration="1000"
@@ -194,11 +225,11 @@ const Hero = () => {
           <MotionConfig reducedMotion="never">
             {/* Headline */}
             <motion.h1
-              className="mx-auto max-w-[92vw] text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 sm:mb-6 leading-[0.95] sm:leading-tight text-black dark:text-white break-words px-2 sm:px-0"
-              style={{ fontFamily: '"Anton", sans-serif' }}
+              className="mx-auto max-w-4xl mt-6 flex flex-col items-center gap-5 sm:gap-6 text-lg sm:text-xl md:text-4xl lg:text-5xl font-black mb-6 leading-relaxed tracking-tight text-gray-900 dark:text-white px-2 sm:px-0 text-center"
+              style={{ fontFamily: '"Inter", sans-serif' }}
             >
               <motion.span
-                className="block text-black dark:text-white mb-2 md:mb-0"
+                className="block text-gray-900 dark:text-gray-400"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
@@ -206,24 +237,27 @@ const Hero = () => {
                 <RespawningText texts={["Discover & Join", "Innovate & Create", "Learn & Grow"]} />
               </motion.span>
 
-              <div className="relative mx-auto mt-2 sm:mt-3 h-14 sm:h-24 md:h-28 lg:h-32 overflow-hidden flex justify-center items-center max-w-full">
+              {/* Static phrase for smallest screens (no motion) */}
+              <span className="block sm:hidden text-indigo-600 dark:text-indigo-500 font-extrabold drop-shadow-sm mt-3 text-lg text-center">
+                {phrases[index]}
+              </span>
+
+              <div className="relative mx-auto w-full min-h-[7.5rem] sm:min-h-[9rem] md:min-h-[10rem] lg:min-h-[11rem] overflow-hidden flex justify-center items-center max-w-full px-1 mt-2">
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={index}
-                    className="block mt-2 text-black dark:text-white mb-4 pb-2 whitespace-normal text-center px-1"
-                    initial={{ opacity: 0, y: 40 }}
-                    animate={{
-                      opacity: 1,
-                      y: 0,
-                      transition: { duration: 0.8, ease: "easeOut" },
-                    }}
-                    exit={{
-                      opacity: 0,
-                      y: -40,
-                      transition: { duration: 0.5, ease: "easeIn" },
-                    }}
+                    className="hidden sm:block text-gray-900 dark:text-white whitespace-normal text-center px-1 leading-snug mt-3 sm:mt-4"
+                    initial={isMobileView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+                    animate={
+                      isMobileView
+                        ? { opacity: 1, y: 0 }
+                        : { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } }
+                    }
+                    exit={isMobileView ? { opacity: 0 } : { opacity: 0, y: -40, transition: { duration: 0.5, ease: "easeIn" } }}
                   >
-                    {phrases[index]}
+                    <span className="text-indigo-600 dark:text-indigo-500 font-extrabold drop-shadow-sm text-2xl sm:text-3xl md:text-5xl lg:text-6xl">
+                      {phrases[index]}
+                    </span>
                   </motion.span>
                 </AnimatePresence>
               </div>
@@ -233,14 +267,14 @@ const Hero = () => {
           {/* Subtext */}
           <motion.p
             variants={fadeUp}
-            className="text-sm sm:text-base md:text-lg text-black dark:text-gray-300 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
+            className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-800 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
           >
             Connect with developers, learn new skills, and grow your network at
             the best tech events, hackathons, and workshops in your area.
           </motion.p>
 
-          {/* Global Search Bar */}
-          <div className="w-full max-w-2xl mx-auto mb-10 sm:mb-12">
+          {/* Global Search Bar (Glassmorphism) */}
+          <div className="w-full max-w-2xl mx-auto mb-10 p-2 sm:p-2.5 bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xl shadow-indigo-500/5">
             <ModernSearchInput
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
@@ -257,8 +291,10 @@ const Hero = () => {
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
                     className="absolute top-full left-0 right-0 mt-3 
-                     bg-white rounded-3xl 
-                     shadow-2xl border border-gray-200 
+                     bg-white dark:bg-slate-900
+rounded-xl
+shadow-2xl
+border border-gray-200 dark:border-slate-700
                      max-h-96 overflow-y-auto z-50"
                   >
                     <div className="p-4">
@@ -269,44 +305,41 @@ const Hero = () => {
                           </div>
                           <div className="space-y-2">
                             {searchResults.map((result, index) => (
-                              <motion.div
+                              <MotionLink
                                 key={`${result.item.type}-${result.item.id}`}
+                                to={getResultHref(result.item)}
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.05 }}
-                                onClick={() =>
-                                  handleResultClick(result.item, result.item.type)
-                                }
-                                className="flex items-center gap-3 p-3 rounded-2xl 
-                                 hover:bg-gray-50 
-                                 cursor-pointer transition-colors group"
+                                onClick={clearSearch}
+                                className="flex items-center gap-3 p-3 rounded-lg 
+                                 hover:bg-gray-50 dark:hover:bg-slate-800
+                                 cursor-pointer transition-colors group text-left no-underline"
+                                aria-label={`Open ${result.item.title} in ${result.item.searchType || result.item.type || "page"
+                                  }`}
                               >
-                                <div
-                                  className="flex-shrink-0 p-2 bg-blue-100 rounded-xl text-blue-600 
-                                      group-hover:bg-blue-200 transition-colors"
-                                >
+                                <div className="flex-shrink-0 p-2 bg-blue-100 rounded-xl text-blue-600 group-hover:bg-blue-200 transition-colors">
                                   {getResultIcon(result.item.type)}
                                 </div>
                                 <div className="flex-1 min-w-0 relative">
                                   <div className="flex items-center gap-2 mb-1">
-                                    <h4 className="text-sm font-semibold text-gray-900 truncate">
+                                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                                       {result.item.title}
                                     </h4>
                                     <span
                                       className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium 
-                                           bg-gray-100 text-gray-600"
+                                           bg-gray-100 dark:bg-slate-800
+text-gray-600 dark:text-gray-300"
                                     >
                                       {result.item.searchType}
                                     </span>
                                   </div>
-                                  <p className="text-xs text-gray-500 line-clamp-2 absolute left-0">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 absolute left-0">
                                     {result.item.description?.substring(0, 80)}...
                                   </p>
                                 </div>
-                                <ExternalLink
-                                  className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors"
-                                />
-                              </motion.div>
+                                <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                              </MotionLink>
                             ))}
                           </div>
                         </>
@@ -316,13 +349,13 @@ const Hero = () => {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 10 }}
                           transition={{ duration: 0.25, ease: "easeOut" }}
-                          className="text-center text-gray-500 py-10 text-base"
+                          className="text-center text-gray-500 dark:text-gray-400 py-10 text-base"
                         >
-                          No results match “
-                          <span className="font-medium text-gray-700">
+                          No results match "
+                          <span className="font-medium text-gray-700 dark:text-white">
                             {searchQuery}
                           </span>
-                          ”
+                          "
                         </motion.div>
                       )}
                     </div>
@@ -332,21 +365,22 @@ const Hero = () => {
             </ModernSearchInput>
           </div>
 
-          {/* Buttons */}
+          {/* Professional Buttons */}
           <motion.div
             variants={container}
-            className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6 mb-12 sm:mb-16"
+            className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 mb-16"
           >
-            {/* Primary Button - Explore Events */}
             <motion.div variants={fadeUp}>
               <Link
                 to="/events"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-100 dark:bg-blue-900 text-black dark:text-white font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-200 dark:hover:bg-blue-800"
+                aria-label="Explore upcoming tech events"
+                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-500 dark:bg-blue-900 text-white dark:text-white font-bold shadow-md shadow-blue-200 dark:shadow-none overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-600 dark:hover:bg-blue-800"
               >
                 <span className="relative z-10 flex items-center">
+                  <img src="/assets/events.svg" alt="events" className="mr-2"/>
                   Explore Events
                   <svg
-                    className="ml-3 w-5 h-5 text-black dark:text-white transition-transform duration-300 group-hover:translate-x-2"
+                    className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -360,25 +394,39 @@ const Hero = () => {
               </Link>
             </motion.div>
 
-            {/* Secondary Button - Join Hackathons - FIXED */}
             <motion.div variants={fadeUp}>
               <Link
                 to="/hackathons"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full border border-yellow-200 dark:border-yellow-700 bg-yellow-100 dark:bg-yellow-900 text-black dark:text-white font-semibold shadow-sm hover:shadow-md hover:bg-yellow-200 dark:hover:bg-yellow-800 hover:scale-105 transition-all duration-300"
+                aria-label="Join upcoming hackathons"
+                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-amber-400 dark:bg-yellow-900 border border-amber-300 dark:border-yellow-700 text-white dark:text-white font-semibold shadow-md shadow-amber-100 dark:shadow-none hover:shadow-lg hover:bg-amber-500 dark:hover:bg-yellow-800 hover:scale-105 transition-all duration-300"
               >
+                <img src="/assets/hackathons.svg" alt="hackaton" className="mr-2"/>
                 Join Hackathons
+                <svg
+                    className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
               </Link>
             </motion.div>
 
-            {/* Optional Tertiary Button - Learn More */}
+            {/* Tertiary Button - Learn More */}
             <motion.div variants={fadeUp}>
               <Link
                 to="/about"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-pink-100 dark:bg-pink-900 text-black dark:text-white font-semibold shadow-sm transform transition-all duration-300 hover:scale-105 hover:bg-pink-200 dark:hover:bg-pink-800"
+                aria-label="Learn more about Eventra"
+                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-pink-500 dark:bg-pink-900 text-white dark:text-white font-semibold shadow-md shadow-pink-100 dark:shadow-none transform transition-all duration-300 hover:scale-105 hover:bg-pink-600 dark:hover:bg-pink-800"
               >
+                <img src="/assets/learnmore.svg" alt="learnmore" className="mr-2"/>
                 Learn More
                 <svg
-                  className="ml-3 w-5 h-5 text-black dark:text-white transition-transform duration-300 group-hover:translate-x-2"
+                  className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -393,27 +441,45 @@ const Hero = () => {
           </motion.div>
 
           {/* Animated Stats Cards */}
-          <motion.div
-            variants={fadeUp}
-            className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
-          >
-            {stats.map((stat, i) => (
-              <motion.div
-                key={i}
-                variants={fadeUp}
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 300 }}
-                className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-lg border border-gray-100 dark:border-gray-700"
-              >
-                <p className="text-3xl font-bold mb-2 text-black dark:text-white">
-                  {stat.value}
-                </p>
-                <p className="text-black dark:text-gray-300 text-sm">
-                  {stat.label}
-                </p>
-              </motion.div>
-            ))}
-          </motion.div>
+          {!searchQuery.trim() && (
+            <motion.div
+              variants={fadeUp}
+              className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
+              role="region"
+              aria-label="Platform statistics"
+            >
+              {stats.map((stat, i) => (
+                <motion.div
+                  key={i}
+                  variants={fadeUp}
+                  whileHover={{ y: -5 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex flex-col items-center justify-center p-6 bg-white/60 dark:bg-gray-900/40 backdrop-blur-md rounded-2xl border border-gray-200/60 dark:border-gray-800/60 shadow-sm"
+                >
+                  
+                  <p className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
+                    {statsReady ? (
+                      // AFTER
+<CountUp
+  start={0}
+  end={Number.isFinite(stat.value) ? stat.value : 0}
+  duration={2.5}
+  suffix={stat.suffix || ""}
+/>
+                    ) : (
+                      <>
+                        {stat.value}
+                        {stat.suffix || ""}
+                      </>
+                    )}
+                  </p>
+                  <p className="text-gray-500 dark:text-gray-600 text-xs sm:text-sm font-semibold uppercase tracking-wider">
+                    {stat.label}
+                  </p>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
         </motion.div>
       </div>
     </section>

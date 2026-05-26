@@ -1,18 +1,31 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom"; // <-- 1. Added this import
 
-import App from './App';
-import { MotionConfig } from "framer-motion";
-import { ThemeProvider } from './context/ThemeContext';
+import "./index.css";
+import App from "./App";
+import { ThemeProvider } from "./context/ThemeContext";
+import GlobalErrorBoundary from "./components/common/ErrorBoundary";
+import { initializeGlobalErrorHandling } from "./utils/globalErrorHandler";
+import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+// Initialize Global Runtime Monitoring
+initializeGlobalErrorHandling();
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+
 root.render(
   <React.StrictMode>
-    <MotionConfig reducedMotion="always">
+    <GlobalErrorBoundary>
       <ThemeProvider>
-      <App />
+        <BrowserRouter>
+          {" "}
+          {/* <-- 2. Wrapped the App here */}
+          <App />
+        </BrowserRouter>
       </ThemeProvider>
-    </MotionConfig>
+    </GlobalErrorBoundary>
   </React.StrictMode>
 );
+
+serviceWorkerRegistration.unregister();

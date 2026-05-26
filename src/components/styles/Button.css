@@ -1,0 +1,173 @@
+/* =========================
+   Button.css (Improved Version)
+========================= */
+
+:root {
+  /* Border Radius */
+  --button-radius: 8px;
+
+  /* Typography */
+  --button-font-family: system-ui, -apple-system, sans-serif;
+  --button-font-weight: 600;
+
+  /* Transition */
+  --button-transition: all 0.2s ease-in-out;
+
+  /* Primary Colors */
+  --primary-bg: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-text: #ffffff;
+
+  /* Secondary Colors */
+  --secondary-bg: #f1f5f9;
+  --secondary-hover: #e2e8f0;
+  --secondary-text: #0f172a;
+
+  /* Outline Colors */
+  --outline-color: #2563eb;
+  --outline-hover: #eff6ff;
+
+  /* Danger Colors */
+  --danger-bg: #dc2626;
+  --danger-hover: #b91c1c;
+  --danger-text: #ffffff;
+
+  /* Focus Ring */
+  --focus-ring: rgba(37, 99, 235, 0.4);
+}
+
+/* =========================
+   Base Button Styles
+========================= */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  font-family: var(--button-font-family);
+  font-weight: var(--button-font-weight);
+  line-height: 1.2;
+
+  border-radius: var(--button-radius);
+  border: 2px solid transparent;
+
+  cursor: pointer;
+  user-select: none;
+
+  transition: var(--button-transition);
+  outline: none;
+}
+
+/* =========================
+   Focus Accessibility
+========================= */
+
+.btn:focus-visible {
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+/* =========================
+   Disabled State
+========================= */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* =========================
+   Hover Effects
+========================= */
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+/* =========================
+   Variants
+========================= */
+
+/* Primary */
+
+.btn-primary {
+  background-color: var(--primary-bg);
+  color: var(--primary-text);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+}
+
+/* Secondary */
+
+.btn-secondary {
+  background-color: var(--secondary-bg);
+  color: var(--secondary-text);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--secondary-hover);
+}
+
+/* Outline */
+
+.btn-outline {
+  background-color: transparent;
+  border-color: var(--outline-color);
+  color: var(--outline-color);
+}
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background-color: var(--outline-hover);
+}
+
+/* Danger */
+
+.btn-danger {
+  background-color: var(--danger-bg);
+  color: var(--danger-text);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: var(--danger-hover);
+}
+
+/* =========================
+   Sizes
+========================= */
+
+.btn-small {
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+.btn-medium {
+  padding: 10px 20px;
+  font-size: 16px;
+}
+
+.btn-large {
+  padding: 14px 28px;
+  font-size: 18px;
+}
+.dark .btn-secondary {
+  background-color: #1e293b;
+  color: #f8fafc;
+}
+
+.dark .btn-secondary:hover:not(:disabled) {
+  background-color: #334155;
+}
+
+.dark .btn-outline {
+  border-color: #818cf8;
+  color: #a5b4fc;
+}
+
+.dark .btn-outline:hover:not(:disabled) {
+  background-color: rgba(129, 140, 248, 0.1);
+}

@@ -7,10 +7,20 @@
   display: flex;
   min-height: 100vh;
   background: #f8fafc;
+  color: #111827;
   font-family: 'Inter', system-ui, sans-serif;
+  --ad-space-xxs: 0.25rem;
+  --ad-space-xs: 0.5rem;
+  --ad-space-sm: 0.75rem;
+  --ad-space-md: 1rem;
+  --ad-space-lg: 1.5rem;
+  --ad-space-xl: 2rem;
 }
 
-.dark .ad-root { background: #0f1117; }
+.dark .ad-root {
+  background: #0f1117;
+  color: #f9fafb;
+}
 
 /* ── Sidebar ── */
 .ad-sidebar {
@@ -20,7 +30,7 @@
   border-right: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
-  padding: 1.5rem 0.75rem;
+  padding: var(--ad-space-lg) var(--ad-space-sm);
   position: sticky;
   top: 0;
   flex-shrink: 0;
@@ -34,11 +44,11 @@
 .ad-brand {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--ad-space-xs);
   font-size: 1.1rem;
   font-weight: 700;
   color: #111827;
-  padding: 0.25rem 0.75rem 1.5rem;
+  padding: var(--ad-space-xxs) var(--ad-space-sm) var(--ad-space-lg);
   letter-spacing: -0.3px;
 }
 
@@ -68,23 +78,23 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--ad-space-xxs);
 }
 
 .ad-nav-item {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: var(--ad-space-sm);
   padding: 0.6rem 0.85rem;
   border-radius: 10px;
   font-size: 0.875rem;
   font-weight: 500;
   color: #6b7280;
-  background: none;
-  border: none;
+  background: transparent;
+  border: 1px solid transparent;
   cursor: pointer;
   text-decoration: none;
-  transition: all 0.18s ease;
+  transition: all 0.2s ease;
   width: 100%;
   text-align: left;
 }
@@ -92,22 +102,26 @@
 .ad-nav-item:hover {
   background: #f3f4f6;
   color: #111827;
+  border-color: #e5e7eb;
 }
 
 .dark .ad-nav-item:hover {
   background: #1f2937;
   color: #f9fafb;
+  border-color: #374151;
 }
 
 .ad-nav-active {
   background: linear-gradient(135deg, #6366f115, #8b5cf615) !important;
   color: #6366f1 !important;
   font-weight: 600;
+  border: 1px solid #c7d2fe !important;
 }
 
 .dark .ad-nav-active {
   background: linear-gradient(135deg, #6366f122, #8b5cf622) !important;
   color: #818cf8 !important;
+  border-color: #4f46e5 !important;
 }
 
 .ad-nav-logout {
@@ -117,13 +131,14 @@
 .ad-nav-logout:hover {
   background: #fee2e215 !important;
   color: #ef4444 !important;
+  border-color: #fca5a5 !important;
 }
 
 .ad-sidebar-bottom {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding-top: 1rem;
+  gap: var(--ad-space-sm);
+  padding-top: var(--ad-space-md);
   border-top: 1px solid #e5e7eb;
   margin-top: auto;
 }
@@ -133,8 +148,8 @@
 .ad-admin-info {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0.75rem;
+  gap: var(--ad-space-sm);
+  padding: var(--ad-space-xs) var(--ad-space-sm);
 }
 
 .ad-admin-avatar {
@@ -166,6 +181,10 @@
   margin: 0;
 }
 
+.dark .ad-admin-role {
+  color: #9ca3af;
+}
+
 /* ── Main ── */
 .ad-main {
   flex: 1;
@@ -179,7 +198,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.25rem 2rem;
+  padding: 1.25rem var(--ad-space-xl);
   background: #fff;
   border-bottom: 1px solid #e5e7eb;
   position: sticky;
@@ -201,6 +220,10 @@
   letter-spacing: 0.5px;
 }
 
+.dark .ad-greeting {
+  color: #d1d5db;
+}
+
 .ad-page-heading {
   font-size: 1.35rem;
   font-weight: 700;
@@ -213,7 +236,7 @@
 .ad-topbar-right {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--ad-space-sm);
 }
 
 .ad-btn-primary {
@@ -273,21 +296,21 @@
 
 /* ── Content ── */
 .ad-content {
-  padding: 1.75rem 2rem;
+  padding: 1.75rem var(--ad-space-xl);
   flex: 1;
 }
 
 .ad-section {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: var(--ad-space-lg);
 }
 
 /* ── Stat cards ── */
 .ad-stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
+  gap: var(--ad-space-md);
 }
 
 .ad-stat-card {
@@ -297,7 +320,7 @@
   padding: 1.25rem;
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
+  gap: var(--ad-space-md);
   transition: all 0.2s;
 }
 
@@ -351,7 +374,7 @@
 .ad-stat-label {
   font-size: 0.75rem;
   color: #9ca3af;
-  margin: 0 0 2px;
+  margin: 0 0 var(--ad-space-xxs);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -361,7 +384,7 @@
   font-size: 1.8rem;
   font-weight: 700;
   color: #111827;
-  margin: 0 0 2px;
+  margin: 0 0 var(--ad-space-xxs);
   line-height: 1.1;
 }
 
@@ -377,7 +400,7 @@
 .ad-two-col {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.25rem;
+  gap: var(--ad-space-md);
 }
 
 /* ── Card ── */
@@ -388,7 +411,7 @@
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: var(--ad-space-sm);
   transition: all 0.3s ease;
 }
 
@@ -406,7 +429,7 @@
 .ad-card-head {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--ad-space-sm);
 }
 
 .ad-card-head h3 {
@@ -448,8 +471,8 @@
 .ad-list-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.65rem 0.75rem;
+  gap: var(--ad-space-sm);
+  padding: var(--ad-space-sm);
   border-radius: 10px;
   border: 1px solid #f3f4f6;
   transition: background 0.15s;
@@ -486,7 +509,7 @@
   font-size: 0.83rem;
   font-weight: 600;
   color: #111827;
-  margin: 0 0 2px;
+  margin: 0 0 var(--ad-space-xxs);
 }
 
 .dark .ad-list-title { color: #f9fafb; }
@@ -501,7 +524,7 @@
 .ad-toolbar {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--ad-space-sm);
   flex-wrap: wrap;
 }
 
@@ -534,7 +557,7 @@
 
 .ad-search-icon {
   position: absolute;
-  left: 0.75rem;
+  left: var(--ad-space-sm);
   color: #9ca3af;
   pointer-events: none;
   transition: color 0.3s ease;
@@ -560,7 +583,7 @@
 
 .ad-search:focus {
   border-color: #6366f1;
-  background: #fff;
+  background: transparent;
   box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1), 0 4px 12px rgba(0, 0, 0, 0.05);
   width: 300px;
 }
@@ -581,6 +604,10 @@
   font-size: 0.8rem;
   color: #9ca3af;
   margin-left: auto;
+}
+
+.dark .ad-count {
+  color: #d1d5db;
 }
 
 /* ── Table ── */
@@ -612,7 +639,7 @@
 }
 
 .ad-table th {
-  padding: 0.85rem 1rem;
+  padding: 0.85rem var(--ad-space-md);
   text-align: left;
   font-size: 0.73rem;
   font-weight: 600;
@@ -625,7 +652,7 @@
 .dark .ad-table th { color: #9ca3af; }
 
 .ad-table td {
-  padding: 0.85rem 1rem;
+  padding: 0.85rem var(--ad-space-md);
   border-bottom: 1px solid #f3f4f6;
   color: #374151;
   vertical-align: middle;
@@ -814,6 +841,10 @@
   font-size: 0.8rem;
   color: #6b7280;
   font-weight: 500;
+}
+
+.dark .ad-role-count {
+  color: #d1d5db;
 }
 
 /* ── Confirm Modal ── */
