@@ -241,7 +241,7 @@ export const AuthProvider = ({ children }) => {
     const data = res.data;
 
     if (res.status !== 200) {
-      throw new Error(data?.message || data?.error || 'Invalid credentials');
+      throw new Error(data?.message || data?.error || "Invalid credentials");
     }
 
     const { sessionToken, sessionUser } = extractSession(res, data, usernameOrEmail);
@@ -298,15 +298,9 @@ export const AuthProvider = ({ children }) => {
     }
 
     // ── Step 2: Parse the backend response ───────────────────────────────────
-    const data = await res.json().catch(() => null);
+    const data = res.data;
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    clearQueue();
-    if (!res.ok) {
+    if (res.status !== 200) {
       // The backend rejected the credential (bad token, wrong audience, etc.)
       throw new Error(
         data?.message ||
