@@ -51,6 +51,12 @@ function registerValidSW(swUrl, config) {
   navigator.serviceWorker
     .register(swUrl)
     .then((registration) => {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'CACHE_UPDATED') {
+          log('[Service Worker] Cache updated to version:', event.data.version);
+          window.dispatchEvent(new CustomEvent('sw-cache-updated', { detail: event.data }));
+        }
+      });
       registration.onupdatefound = () => {
         const installingWorker = registration.installing;
         if (installingWorker == null) {
