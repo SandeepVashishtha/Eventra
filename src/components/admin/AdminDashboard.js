@@ -1,29 +1,7 @@
- feat/keyboard-navigation-accessibility
-import { AnimatePresence, motion } from 'framer-motion';
-import {
-  Activity,
-  AlertCircle,
-  BarChart2,
-  Calendar,
-  CheckCircle,
-  ChevronRight,
-  Edit2,
-  LogOut, Plus,
-  Search,
-  Shield,
-  Trash2,
-  TrendingUp,
-  Users
-} from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-
-import StatusBadge from "../common/StatusBadge";
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate, Navigate,useLocation } from 'react-router-dom';
+import { useNavigate, Navigate, useLocation } from 'react-router-dom';
 import {
   Users, Calendar, Activity, Shield, LogOut, Plus,
   Search, ChevronRight, BarChart2,
@@ -35,7 +13,7 @@ import {
   AdminStatCardSkeleton,
   AdminTableSkeleton,
 } from '../common/SkeletonLoaders';
-master
+import StatusBadge from "../common/StatusBadge";
 import './AdminDashboard.css';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import { toast } from 'react-toastify';
@@ -116,16 +94,7 @@ const MOCK_EVENTS = [
   { id: 5, title: 'Global AI Hackathon',    date: '2025-10-10', participantCount: 200, status: 'Upcoming',  type: 'Hackathon' },
 ];
 
- feat/keyboard-navigation-accessibility
-const STATUS_COLORS = {
-  Active: 'ad-badge-green', Inactive: 'ad-badge-gray',
-  Upcoming: 'ad-badge-blue', Completed: 'ad-badge-green',
-  USER: 'ad-badge-gray', EVENT_MANAGER: 'ad-badge-blue', ADMIN: 'ad-badge-purple',
-};
 
-
-
- master
 /* ─── Confirmation Modal ─── */
 function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
 
