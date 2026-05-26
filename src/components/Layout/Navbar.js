@@ -100,11 +100,19 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
   return (
     <div className="flex items-center gap-1">
       <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={toggleTheme}
-        title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-        className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group cursor-pointer"
+         whileHover={{ scale: 1.05 }}
+  whileTap={{ scale: 0.95 }}
+  onClick={toggleTheme}
+  title={
+    isDarkMode
+      ? "Switch to Light Mode"
+      : "Switch to Dark Mode"
+  }
+  aria-label={
+    isDarkMode
+      ? "Switch to Light Mode"
+      : "Switch to Dark Mode"
+  }
       >
         <motion.span
           key={isDarkMode ? "sun" : "moon"}
