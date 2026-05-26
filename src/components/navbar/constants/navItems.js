@@ -1,7 +1,6 @@
 import {
   Home,
   Calendar,
-  Sparkles,
   FolderKanban,
   Users,
   Trophy,
@@ -25,7 +24,7 @@ export const NAV_ITEMS = [
   {
     name: "Hackathons",
     href: "/hackathons",
-    icon: <Sparkles className="w-5 h-5" />,
+    icon: <Trophy className="w-5 h-5" />,
   },
   {
     name: "Projects",

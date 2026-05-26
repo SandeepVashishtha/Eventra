@@ -7,6 +7,7 @@ const CursorToggle = ({ cursorEnabled, toggleCursor }) => {
       type="button"
       onClick={toggleCursor}
       aria-pressed={cursorEnabled}
+      aria-label="Toggle background cursor effects"
       title={
         cursorEnabled
           ? "Turn off background cursor effects"

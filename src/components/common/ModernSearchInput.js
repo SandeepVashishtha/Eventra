@@ -53,7 +53,7 @@ const ModernSearchInput = ({
         </div>
 
         <div
-          className={`flex flex-wrap items-center gap-2 w-full pl-12 pr-12 py-3.5 sm:py-4 text-base text-gray-900 dark:text-gray-100 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl transition-all duration-300 shadow-lg ${inputClassName}`}
+          className={`flex flex-wrap items-center gap-2 w-full pl-12 pr-12 py-3.5 sm:py-4 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 border  rounded-2xl transition-all duration-300 shadow-lg ${inputClassName}`}
           style={{
             borderColor: isFocused ? "#6366f1" : "",
             borderWidth: isFocused ? "2px" : "1px",
@@ -86,6 +86,7 @@ const ModernSearchInput = ({
             whileTap={{ scale: 0.9 }}
             onClick={() => onChange({ target: { value: "" } })}
             className="absolute inset-y-0 right-4 flex items-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors z-20"
+            aria-label="Clear search input"
           >
             <X className="h-5 w-5" />
           </motion.button>

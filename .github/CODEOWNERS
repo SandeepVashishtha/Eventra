@@ -1,0 +1,6 @@
+# Global owner (fallback)
+* @SandeepVashishtha
+
+# Specific directories
+/.github/ @SandeepVashishtha
+/src/ @SandeepVashishtha

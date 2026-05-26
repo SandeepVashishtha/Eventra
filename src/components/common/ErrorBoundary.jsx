@@ -1,135 +1,274 @@
-import React from 'react';
-import './ErrorBoundary.css';
+import React from "react";
 
-/**
- * GlobalErrorBoundary
- *
- * Wraps the entire React component tree to catch any unhandled runtime
- * rendering exceptions. Without this, a single child component crash
- * would unmount the entire app, presenting a blank "white screen of death".
- *
- * Usage:
- *   <GlobalErrorBoundary>
- *     <App />
- *   </GlobalErrorBoundary>
- */
+import "./ErrorBoundary.css";
+
+import { logError } from "../../utils/errorLogger";
+
 class GlobalErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
+
     this.state = {
       hasError: false,
       error: null,
       errorInfo: null,
+      retryCount: 0,
+      errorId: null,
     };
-    this.handleReset = this.handleReset.bind(this);
+
+    this.recoveryTimeout =
+      null;
+
+    this.handleReset =
+      this.handleReset.bind(
+        this
+      );
+
+    this.handleReload =
+      this.handleReload.bind(
+        this
+      );
+
+    this.handleCopyError =
+      this.handleCopyError.bind(
+        this
+      );
   }
 
-  /**
-   * getDerivedStateFromError
-   * Called during the render phase when a descendant throws.
-   * Updates state so the next render shows the fallback UI.
-   */
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
+  // Catch Rendering Errors
+  static getDerivedStateFromError(
+    error
+  ) {
+    return {
+      hasError: true,
+      error,
+      errorId:
+        Date.now().toString(
+          36
+        ),
+    };
   }
 
-  /**
-   * componentDidCatch
-   * Called after the error has been thrown and captured.
-   * Logs the error details for debugging / future centralised logging.
-   */
-  componentDidCatch(error, errorInfo) {
-    // Log safely — avoids crashing the boundary itself
-    try {
-      console.error('[GlobalErrorBoundary] Uncaught rendering error:', error);
-      console.error('[GlobalErrorBoundary] Component stack:', errorInfo.componentStack);
-    } catch (_) {
-      // Silently ignore any logging failures
+  // Log Errors
+  componentDidCatch(
+    error,
+    errorInfo
+  ) {
+    logError(
+      error,
+      errorInfo
+    );
+
+    this.setState({
+      errorInfo,
+    });
+
+    // Intelligent Recovery
+    this.recoveryTimeout =
+      setTimeout(() => {
+        this.handleReset();
+      }, 10000);
+  }
+
+  // Cleanup
+  componentWillUnmount() {
+    if (
+      this.recoveryTimeout
+    ) {
+      clearTimeout(
+        this.recoveryTimeout
+      );
+    }
+  }
+
+  // Retry Rendering
+  handleReset() {
+    if (this.recoveryTimeout) {
+      clearTimeout(this.recoveryTimeout);
+      this.recoveryTimeout = null;
     }
 
-    this.setState({ errorInfo });
+    if (
+      this.state.retryCount >=
+      3
+    ) {
+      window.location.reload();
 
-    // ─── Future integration point ────────────────────────────────────────────
-    // Send to a centralised error monitoring service (e.g. Sentry, Datadog):
-    //
-    // if (window.Sentry) {
-    //   window.Sentry.captureException(error, { extra: errorInfo });
-    // }
-    // ─────────────────────────────────────────────────────────────────────────
+      return;
+    }
+
+    this.setState(
+      (prevState) => ({
+        hasError: false,
+        error: null,
+        errorInfo: null,
+        retryCount:
+          prevState.retryCount +
+          1,
+      })
+    );
   }
 
-  /** Resets error state, allowing React to re-render the child tree. */
-  handleReset() {
-    this.setState({ hasError: false, error: null, errorInfo: null });
+  // Force Reload
+  handleReload() {
+    window.location.reload();
+  }
+
+  // Copy Error
+  handleCopyError() {
+    if (
+      this.state.error
+    ) {
+      navigator.clipboard.writeText(
+        this.state.error.toString()
+      );
+    }
   }
 
   render() {
-    if (this.state.hasError) {
+    const variant =
+      this.props.variant ||
+      "fullscreen";
+
+    if (
+      this.state.hasError
+    ) {
       return (
-        <div className="eb-overlay" role="alert" aria-live="assertive">
+        <div
+          className={`
+            eb-overlay
+            eb-${variant}
+          `}
+          role="alert"
+          aria-live="assertive"
+        >
           <div className="eb-card">
-            {/* Branded icon */}
-            <div className="eb-icon-wrapper" aria-hidden="true">
+            {/* Icon */}
+            <div
+              className="eb-icon-wrapper"
+              aria-hidden="true"
+            >
               <svg
                 className="eb-icon"
                 viewBox="0 0 64 64"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
-                <circle cx="32" cy="32" r="30" stroke="currentColor" strokeWidth="2.5" />
+                <circle
+                  cx="32"
+                  cy="32"
+                  r="30"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                />
+
                 <path
                   d="M32 18v18"
                   stroke="currentColor"
                   strokeWidth="3"
                   strokeLinecap="round"
                 />
-                <circle cx="32" cy="44" r="2.5" fill="currentColor" />
+
+                <circle
+                  cx="32"
+                  cy="44"
+                  r="2.5"
+                  fill="currentColor"
+                />
               </svg>
             </div>
 
-            {/* Heading */}
-            <h1 className="eb-title">Oops! Something went wrong.</h1>
+            {/* Title */}
+            <h1 className="eb-title">
+              Oops! Something
+              went wrong.
+            </h1>
 
-            {/* Sub-message */}
+            {/* Description */}
             <p className="eb-message">
-              An unexpected error occurred and the page could not be displayed.
-              This has been logged and our team will look into it.
+              An unexpected
+              runtime error
+              interrupted the
+              application.
+              Recovery options
+              are available
+              below.
             </p>
 
-            {/* Action buttons */}
+            {/* Error ID */}
+            <p className="eb-error-id">
+              Error ID:
+              {" "}
+              {
+                this.state
+                  .errorId
+              }
+            </p>
+
+            {/* Actions */}
             <div className="eb-actions">
               <button
-                id="eb-refresh-btn"
                 className="eb-btn-primary"
-                onClick={() => window.location.reload()}
+                onClick={
+                  this
+                    .handleReload
+                }
               >
-                Refresh Page
+                Reload Page
               </button>
+
               <button
-                id="eb-retry-btn"
                 className="eb-btn-secondary"
-                onClick={this.handleReset}
+                onClick={
+                  this
+                    .handleReset
+                }
               >
                 Try Again
               </button>
+
+              <button
+                className="eb-btn-copy"
+                onClick={
+                  this
+                    .handleCopyError
+                }
+              >
+                Copy Error
+              </button>
             </div>
 
-            {/* Collapsible technical detail — only shown in non-production */}
-            {process.env.NODE_ENV !== 'production' && this.state.error && (
-              <details className="eb-details">
-                <summary className="eb-details-summary">Technical Details (dev only)</summary>
-                <pre className="eb-stack">
-                  {this.state.error.toString()}
-                  {this.state.errorInfo?.componentStack}
-                </pre>
-              </details>
-            )}
+            {/* Development Details */}
+            {process.env
+              .NODE_ENV !==
+              "production" &&
+              this.state
+                .error && (
+                <details className="eb-details">
+                  <summary className="eb-details-summary">
+                    Technical
+                    Details
+                  </summary>
+
+                  <pre className="eb-stack">
+                    {this.state.error.toString()}
+
+                    {
+                      this
+                        .state
+                        .errorInfo
+                        ?.componentStack
+                    }
+                  </pre>
+                </details>
+              )}
           </div>
         </div>
       );
     }
 
-    return this.props.children;
+    return this.props
+      .children;
   }
 }
 

@@ -1,80 +1,168 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 import { API_ENDPOINTS } from '../config/api';
+import { getQueueIndexedDB, setQueue, clearQueue } from '../utils/offlineQueue';
+import { isTokenValid } from '../utils/tokenUtils';
 
-const QUEUE_KEY = 'eventra_offline_queue';
+const MAX_RETRIES = 3;
+const BASE_BACKOFF_MS = 1_000;
 
 const useOfflineSync = () => {
   const { token } = useAuth();
+  const isSyncing = useRef(false);
 
   useEffect(() => {
-    const handleOnline = async () => {
-      const queueStr = localStorage.getItem(QUEUE_KEY);
-      if (!queueStr) return;
+    // Helper to resolve conflict events sequentially
+    const resolveConflict = (item, serverState) => {
+      return new Promise((resolve) => {
+        const handleResolution = (e) => {
+          if (e.detail.itemId === item.id) {
+            window.removeEventListener("eventra-offline-conflict-resolved", handleResolution);
+            resolve(e.detail);
+          }
+        };
+        window.addEventListener("eventra-offline-conflict-resolved", handleResolution);
+        
+        // Dispatch event for conflict modal UI
+        window.dispatchEvent(
+          new CustomEvent("eventra-offline-conflict", {
+            detail: { item, serverState }
+          })
+        );
+      });
+    };
 
-      let queue = [];
-      try {
-        queue = JSON.parse(queueStr);
-      } catch (e) {
-        localStorage.removeItem(QUEUE_KEY);
+    const postWithBackoff = async (url, payload, authToken, attempt = 0, forceOverride = false) => {
+      if (attempt > 0) {
+        const delayMs = BASE_BACKOFF_MS * Math.pow(2, attempt - 1);
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+
+      const headers = { 'Content-Type': 'application/json' };
+      if (authToken) headers.Authorization = `Bearer ${authToken}`;
+      if (forceOverride) headers['X-Override-Conflict'] = 'true';
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      // Handle 409 Conflict specifically
+      if (response.status === 409) {
+        const serverState = await response.json().catch(() => ({}));
+        return { status: "conflict", serverState };
+      }
+
+      if (response.ok) return { status: "success" };
+
+      if (response.status >= 400 && response.status < 500) {
+        console.warn(
+          `Offline queue: server rejected item with ${response.status} — dropping.`,
+          await response.text().catch(() => '')
+        );
+        return { status: "dropped" };
+      }
+
+      throw new Error(`Sync failed with status: ${response.status}`);
+    };
+
+    const handleOnline = async () => {
+      if (isSyncing.current) {
         return;
       }
 
-      if (queue.length === 0) return;
-
-      // Notify user sync is starting
-      toast.info(`Syncing ${queue.length} offline registration(s)...`, { autoClose: 2000 });
-
-      const failedQueue = [];
-      let successCount = 0;
-
-      for (const item of queue) {
-        try {
-          const response = await fetch(API_ENDPOINTS.EVENTS.REGISTER(item.eventId), {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(token && { Authorization: `Bearer ${token}` }),
-            },
-            body: JSON.stringify(item.payload),
-          });
-
-          if (response.ok) {
-            successCount++;
-          } else {
-            // If the server rejected it (e.g. 400 Bad Request), we still drop it from the queue
-            // to avoid infinite retry loops on invalid data.
-            console.error('Registration rejected by server:', await response.text());
-          }
-        } catch (error) {
-          // Network error again, keep in queue
-          failedQueue.push(item);
-        }
+      const queue = await getQueueIndexedDB();
+      if (queue.length === 0) {
+        return;
       }
 
-      if (failedQueue.length > 0) {
-        localStorage.setItem(QUEUE_KEY, JSON.stringify(failedQueue));
-        if (successCount > 0) {
-          toast.warning(`Synced ${successCount} registration(s). ${failedQueue.length} remain queued.`);
+      isSyncing.current = true;
+
+      try {
+        toast.info(`Syncing ${queue.length} cached offline action(s)...`, {
+          autoClose: 2000,
+        });
+
+        const failedQueue = [];
+        let successCount = 0;
+        let droppedCount = 0;
+
+        for (const item of queue) {
+          const retries = item.retryCount ?? 0;
+
+          if (retries >= MAX_RETRIES) {
+            droppedCount++;
+            continue;
+          }
+
+          try {
+            // Determine endpoints dynamically
+            const url = item.endpoint || API_ENDPOINTS.EVENTS.REGISTER(item.eventId);
+            let res = await postWithBackoff(
+              url,
+              item.payload,
+              token,
+              retries
+            );
+
+            // Handle Conflict loop
+            if (res.status === "conflict") {
+              const resolution = await resolveConflict(item, res.serverState);
+              
+              if (resolution.resolution === "local") {
+                // Retry with force flag
+                res = await postWithBackoff(url, item.payload, token, 0, true);
+              } else if (resolution.resolution === "merge") {
+                // Post merged content
+                res = await postWithBackoff(url, resolution.mergedPayload, token, 0, true);
+              } else {
+                // Discard local (treated as handled success so we proceed)
+                res = { status: "success" };
+              }
+            }
+
+            if (res.status === "success" || res.status === "dropped") {
+              successCount++;
+            } else {
+              failedQueue.push({ ...item, retryCount: retries + 1 });
+            }
+          } catch (error) {
+            failedQueue.push({ ...item, retryCount: retries + 1 });
+          }
         }
-      } else {
-        localStorage.removeItem(QUEUE_KEY);
-        if (successCount > 0) {
-          toast.success('Offline registrations synced successfully!');
+
+        if (failedQueue.length > 0) {
+          await setQueue(failedQueue);
+          toast.warning(
+            `Synced ${successCount} registration(s). ${failedQueue.length} remaining in local draft queue.`,
+          );
+        } else {
+          await clearQueue();
+          if (successCount > 0) {
+            toast.success("All offline actions successfully synchronized!");
+          }
         }
+
+        if (droppedCount > 0) {
+          toast.error(
+            `${droppedCount} registration(s) dropped after ${MAX_RETRIES} attempts.`,
+          );
+        }
+      } finally {
+        isSyncing.current = false;
       }
     };
 
-    window.addEventListener('online', handleOnline);
+    window.addEventListener("online", handleOnline);
 
-    // Also run once on mount in case they came online before the app loaded
     if (navigator.onLine) {
       handleOnline();
     }
 
     return () => {
-      window.removeEventListener('online', handleOnline);
+      window.removeEventListener("online", handleOnline);
     };
   }, [token]);
 };
