@@ -247,47 +247,75 @@ export const AuthProvider = ({ children }) => {
     return true;
   };
 
-  // Decode a JWT payload (base64url) without external libraries
-  const decodeJwtPayload = (jwt) => {
-    try {
-      const base64Url = jwt.split(".")[1];
-      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-      const json = decodeURIComponent(
-        atob(base64)
-          .split("")
-          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-          .join("")
-      );
-      return JSON.parse(json);
-    } catch (err) {
-      console.error("Failed to decode Google credential:", err);
-      return null;
-    }
-  };
-
+  /**
+   * Sign in with a Google credential returned by @react-oauth/google.
+   *
+   * SECURITY NOTE
+   * -------------
+   * The Google ID token (credential) MUST be verified server-side.
+   * Client-side JWT decoding only reads the payload — it does NOT verify
+   * the cryptographic signature, audience (aud), issuer (iss), or expiry.
+   * Skipping the backend exchange would allow any Google-issued token
+   * (even one issued for a completely different application) to create a
+   * valid session in Eventra.
+   *
+   * Flow:
+   *  1. POST the raw Google credential to the Eventra backend.
+   *  2. The backend verifies it against Google's JWKS endpoint and checks
+   *     aud, iss, exp, and email_verified.
+   *  3. On success the backend returns an Eventra-signed JWT + user object.
+   *  4. We persist ONLY the Eventra JWT — never the raw Google token.
+   *
+   * @param {string} credential - Raw Google ID token from @react-oauth/google
+   * @returns {Promise<true>} Resolves to true on success
+   * @throws {Error} If the credential is missing, the backend rejects it,
+   *                 or the response does not contain an Eventra token
+   */
   const signInWithGoogle = async (credential) => {
     if (!credential) {
       throw new Error("Google Sign-In failed: missing credential");
     }
 
-    const payload = decodeJwtPayload(credential);
-    if (!payload || !payload.email) {
-      throw new Error("Google Sign-In failed: invalid credential");
+    // ── Step 1: Exchange the Google credential with the Eventra backend ──────
+    // The backend is the only party that can verify the token's signature.
+    let res;
+    try {
+      res = await apiUtils.post(API_ENDPOINTS.AUTH.GOOGLE, { token: credential });
+    } catch (networkError) {
+      // Surface network/timeout errors with a friendlier message
+      throw new Error(
+        `Google Sign-In failed: could not reach the server. ${
+          networkError?.message || "Please check your connection and try again."
+        }`
+      );
     }
 
-    const sessionUser = {
-      firstName: payload.given_name || "",
-      lastName: payload.family_name || "",
-      email: payload.email,
-      username: payload.email,
-      picture: payload.picture || "",
-      role: "",
-      roles: [],
-      permissions: [],
-      provider: "google",
-    };
+    // ── Step 2: Parse the backend response ───────────────────────────────────
+    const data = await res.json().catch(() => null);
 
-    persistSession(credential, sessionUser);
+    if (!res.ok) {
+      // The backend rejected the credential (bad token, wrong audience, etc.)
+      throw new Error(
+        data?.message ||
+          data?.error ||
+          `Google Sign-In failed: server returned ${res.status}`
+      );
+    }
+
+    // ── Step 3: Extract and validate the Eventra-issued token ────────────────
+    // extractSession normalises the response shape (handles token / accessToken
+    // in body as well as a Bearer header), and builds a canonical sessionUser
+    // with normalised roles and computed scopes.
+    const { sessionToken, sessionUser } = extractSession(res, data, null);
+
+    if (!sessionToken) {
+      throw new Error(
+        "Google Sign-In failed: the server did not return an authentication token."
+      );
+    }
+
+    // ── Step 4: Persist the Eventra JWT (never the raw Google token) ─────────
+    persistSession(sessionToken, sessionUser);
     return true;
   };
 

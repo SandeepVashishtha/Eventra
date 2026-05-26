@@ -35,6 +35,8 @@ import {
   Upload,
   Plus,
 } from "lucide-react";
+import { useFormSubmit } from "../../hooks/useFormSubmit";
+import { LoadingButton } from "../ui/LoadingButton";
 
 const DRAFT_KEY = "eventra_create_event_draft";
 
@@ -60,7 +62,37 @@ const EventCreation = () => {
     },
   ];
   const [currentStep, setCurrentStep] = useState("form");
-  const [loading, setLoading] = useState(false);
+
+  const { handleSubmit: submitEventForm, isSubmitting, error: submitError, success: submitSuccess } = useFormSubmit(async (eventData) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("Authentication required. Please log in and try again.");
+    }
+
+    if (!API_ENDPOINTS.EVENTS.CREATE || process.env.NODE_ENV === "development") {
+      console.warn("⚠️ Mocking event creation success (API inactive)");
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return;
+    }
+
+    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData, token);
+    const result = await response.json();
+
+    if (!(response.ok && result.success)) {
+      const errorMessage = result.message || result.error || `Server error: ${response.status}`;
+      throw new Error(errorMessage);
+    }
+  });
+
+  useEffect(() => {
+    if (submitSuccess) {
+      toast.success("Event created successfully!");
+      resetForm();
+      setCurrentStep("form");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [submitSuccess]);
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -324,8 +356,7 @@ const EventCreation = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [generalError, setGeneralError] = useState("");
 
-  const createEvent = async () => {
-    setLoading(true);
+  const createEvent = () => {
     setSuccessMessage("");
     setGeneralError("");
     try {
@@ -386,40 +417,7 @@ const EventCreation = () => {
           })),
       };
 
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error("Authentication required. Please log in and try again.");
-        setCurrentStep("form");
-        return;
-      }
-
-      // Mock success if API inactive
-      if (
-        !API_ENDPOINTS.EVENTS.CREATE ||
-        (process.env.NODE_ENV === "development" && process.env.REACT_APP_USE_REAL_API === "true")
-      ) {
-        console.warn("⚠️ Mocking event creation success (API inactive)");
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        toast.success("Event created successfully!");
-        resetForm();
-        setCurrentStep("form");
-        window.scrollTo({ top: 0, behavior: "smooth" });
-        setLoading(false);
-        return;
-      }
-
-      const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData, token);
-      const result = response.data;
-
-      if (result.success) {
-        toast.success("Event created successfully!");
-        resetForm();
-        setCurrentStep("form");
-      } else {
-        const errorMessage = result.message || result.error || "Event creation failed.";
-        toast.error(`❌ Error creating event: ${errorMessage}`);
-        setCurrentStep("form");
-      }
+      submitEventForm(eventData);
     } catch (error) {
       console.error("Error creating event:", error);
       const backendMessage = error.response?.data?.message || error.response?.data?.error;
@@ -433,8 +431,6 @@ const EventCreation = () => {
       }
       toast.error(errorMessage);
       setCurrentStep("form");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -1839,52 +1835,34 @@ const EventCreation = () => {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 mt-8 justify-center">
-            <motion.button
-              onClick={() => setCurrentStep("form")}
-              disabled={loading}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center justify-center gap-2 bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 border-2 border-indigo-500 font-semibold px-8 py-3 rounded-xl shadow-lg hover:bg-indigo-50 dark:hover:bg-gray-600 transition-all duration-300"
-            >
-              <PencilIcon className="w-5 h-5" />
-              Edit Event
-            </motion.button>
+          <div className="mt-8 flex flex-col items-center">
+            {submitError && (
+              <div className="error-banner w-full mb-4" role="alert">
+                ❌ {submitError}
+              </div>
+            )}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center w-full">
+              <motion.button
+                onClick={() => setCurrentStep("form")}
+                disabled={isSubmitting}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center justify-center gap-2 bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 border-2 border-indigo-500 font-semibold px-8 py-3 rounded-xl shadow-lg hover:bg-indigo-50 dark:hover:bg-gray-600 transition-all duration-300"
+              >
+                <PencilIcon className="w-5 h-5" />
+                Edit Event
+              </motion.button>
 
-            <motion.button
-              onClick={createEvent}
-              disabled={loading}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center justify-center gap-2 bg-black text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:bg-zinc-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <>
-                  <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      fill="none"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  Creating Event...
-                </>
-              ) : (
-                <>
-                  <CheckCircleIcon className="w-5 h-5" />
-                  Create Event
-                </>
-              )}
-            </motion.button>
+              <LoadingButton
+                onClick={createEvent}
+                isLoading={isSubmitting}
+                loadingText="Creating Event..."
+                className="flex items-center justify-center gap-2 bg-black text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:bg-zinc-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <CheckCircleIcon className="w-5 h-5" />
+                Create Event
+              </LoadingButton>
+            </div>
           </div>
         </motion.div>
       )}

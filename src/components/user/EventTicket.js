@@ -1,12 +1,17 @@
-import React, { useRef, useState } from "react";
-import { X, Download, ShieldCheck, Calendar, MapPin, Clock, User, Mail, Award, Loader2 } from "lucide-react";
+import React, { useRef, useState, useEffect } from "react";
+import { X, Download, ShieldCheck, Calendar, MapPin, Clock, User, Mail, Award, Loader2, RefreshCw, FileText, Sparkles, Map } from "lucide-react";
 import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 import QRCode from "react-qr-code";
 import { toast } from "react-toastify";
+import "./EventTicket.css";
 
 const EventTicket = ({ event, user, onClose }) => {
   const ticketRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [rotate, setRotate] = useState({ x: 0, y: 0 });
+  const [shine, setShine] = useState({ x: 50, y: 50 });
 
   // Generate a mock ticket serial code based on event and user details
   const generateSerial = () => {
@@ -18,43 +23,111 @@ const EventTicket = ({ event, user, onClose }) => {
 
   const serialNumber = useRef(generateSerial());
 
-  const handleDownload = async () => {
+  // Dynamic category themes
+  const getThemeColors = () => {
+    const type = (event?.type || event?.category || "Event").toLowerCase();
+    if (type.includes("hackathon")) {
+      return {
+        badge: "HACKATHON PASS",
+        primary: "from-pink-500 via-purple-600 to-indigo-700",
+        glow: "rgba(236, 72, 153, 0.25)",
+        accent: "#ec4899"
+      };
+    }
+    if (type.includes("workshop") || type.includes("meetup") || type.includes("tech")) {
+      return {
+        badge: "WORKSHOP PASS",
+        primary: "from-emerald-400 via-teal-500 to-cyan-600",
+        glow: "rgba(16, 185, 129, 0.25)",
+        accent: "#10b981"
+      };
+    }
+    return {
+      badge: "OFFICIAL PASS",
+      primary: "from-indigo-500 via-purple-600 to-pink-500",
+      glow: "rgba(99, 102, 241, 0.25)",
+      accent: "#6366f1"
+    };
+  };
+
+  const theme = getThemeColors();
+
+  // 3D Mouse Tilt & Holographic Reflection logic
+  const handleMouseMove = (e) => {
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const xc = rect.width / 2;
+    const yc = rect.height / 2;
+
+    // Constrain rotation between -12 and 12 degrees
+    const rotateX = -(y - yc) / (rect.height / 10);
+    const rotateY = (x - xc) / (rect.width / 10);
+
+    setRotate({ x: rotateX, y: rotateY });
+    setShine({ x: (x / rect.width) * 100, y: (y / rect.height) * 100 });
+  };
+
+  const handleMouseLeave = () => {
+    setRotate({ x: 0, y: 0 });
+    setShine({ x: 50, y: 50 });
+  };
+
+  const handleDownload = async (format = "png") => {
     if (!ticketRef.current) return;
     setDownloading(true);
-    toast.info("Generating your high-resolution ticket...");
+    toast.info(`Generating your high-resolution ticket ${format.toUpperCase()}...`);
 
     try {
-      // Small timeout to ensure image rendering and style stability
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      // Force temporary state to front-side without rotation to capture cleanly
+      const originalFlip = isFlipped;
+      setIsFlipped(false);
+      setRotate({ x: 0, y: 0 });
+      
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
       const canvas = await html2canvas(ticketRef.current, {
-        scale: 3, // Premium quality magnification
-        useCORS: true, // Handle cross-origin image requests
+        scale: 3,
+        useCORS: true,
         allowTaint: true,
-        backgroundColor: null, // Keeps background transparency if any
+        backgroundColor: null,
         logging: false,
         onclone: (clonedDoc) => {
-          // Adjust specific styles in the cloned element if needed
           const clonedTicket = clonedDoc.querySelector("[data-ticket-root]");
           if (clonedTicket) {
             clonedTicket.style.boxShadow = "none";
             clonedTicket.style.transform = "none";
+            clonedTicket.style.transition = "none";
           }
         }
       });
 
+      // Restore original state
+      setIsFlipped(originalFlip);
+
       const imgData = canvas.toDataURL("image/png");
-      const link = document.createElement("a");
       const cleanTitle = (event?.title || "ticket").toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      
-      link.download = `eventra-ticket-${cleanTitle}.png`;
-      link.href = imgData;
-      link.click();
-      
-      toast.success("Ticket downloaded successfully!");
+
+      if (format === "pdf") {
+        const pdf = new jsPDF({
+          orientation: "portrait",
+          unit: "px",
+          format: [380, 580]
+        });
+        pdf.addImage(imgData, "PNG", 0, 0, 380, 580);
+        pdf.save(`eventra-ticket-${cleanTitle}.pdf`);
+        toast.success("PDF Ticket downloaded successfully!");
+      } else {
+        const link = document.createElement("a");
+        link.download = `eventra-ticket-${cleanTitle}.png`;
+        link.href = imgData;
+        link.click();
+        toast.success("PNG Ticket downloaded successfully!");
+      }
     } catch (error) {
-      console.error("Ticket download error:", error);
-      toast.error("Failed to generate ticket image. Please try again.");
+      console.error("Ticket export error:", error);
+      toast.error("Failed to generate ticket. Please try again.");
     } finally {
       setDownloading(false);
     }
@@ -67,155 +140,243 @@ const EventTicket = ({ event, user, onClose }) => {
       <div className="ud-ticket-modal-container">
         {/* Modal Header Actions */}
         <div className="ud-ticket-modal-actions">
-          <button 
-            onClick={handleDownload} 
-            disabled={downloading}
-            className="ud-ticket-action-btn download-btn"
-            title="Download Ticket"
-          >
-            {downloading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Download className="w-5 h-5" />
-            )}
-            <span>{downloading ? "Exporting..." : "Download"}</span>
-          </button>
+          <div className="flex gap-2 flex-1">
+            <button 
+              onClick={() => handleDownload("png")} 
+              disabled={downloading}
+              className="ud-ticket-action-btn download-btn"
+              title="Download PNG Ticket"
+            >
+              {downloading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4" />
+              )}
+              <span>PNG</span>
+            </button>
+            <button 
+              onClick={() => handleDownload("pdf")} 
+              disabled={downloading}
+              className="ud-ticket-action-btn pdf-btn"
+              title="Download PDF Ticket"
+            >
+              <FileText className="w-4 h-4" />
+              <span>PDF</span>
+            </button>
+          </div>
           
+          <button 
+            onClick={() => setIsFlipped(!isFlipped)} 
+            className="ud-ticket-action-btn flip-btn"
+            title="Flip Ticket"
+          >
+            <RefreshCw className={`w-4 h-4 transition-transform duration-500 ${isFlipped ? "rotate-180" : ""}`} />
+            <span>Info</span>
+          </button>
+
           <button 
             onClick={onClose} 
             className="ud-ticket-action-btn close-btn"
             title="Close Ticket"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Outer frame to capture - encapsulates ticket contents cleanly */}
-        <div className="ud-ticket-capture-frame" ref={ticketRef}>
-          {/* Main Ticket Layout */}
-          <div className="ud-ticket-card" data-ticket-root>
-            
-            {/* Header / Graphic banner */}
-            <div className="ud-ticket-header">
-              <div className="ud-ticket-header-gradient" />
-              {event.image && (
-                <img 
-                  src={event.image} 
-                  alt={event.title} 
-                  className="ud-ticket-header-img"
-                  crossOrigin="anonymous"
-                  onError={(e) => {
-                    // Fallback to visual gradient if image fails or CORS blocks
-                    e.target.style.display = 'none';
-                  }}
-                />
-              )}
-              <div className="ud-ticket-logo-overlay">
-                <span className="ud-ticket-logo-dot" />
-                <span className="ud-ticket-logo-text">Eventra</span>
-              </div>
-              <div className="ud-ticket-category">
-                <Award size={12} className="mr-1" />
-                <span>OFFICIAL PASS</span>
-              </div>
-            </div>
+        {/* Outer frame containing the interactive 3D card layout */}
+        <div className="ud-ticket-capture-frame">
+          <div 
+            className={`ud-ticket-card-wrapper ${isFlipped ? "flipped" : ""}`}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            style={{
+              transform: `perspective(1200px) rotateX(${rotate.x}deg) rotateY(${rotate.y + (isFlipped ? 180 : 0)}deg)`,
+              boxShadow: `0 30px 60px -15px rgba(0, 0, 0, 0.6), 0 0 50px ${theme.glow}`
+            }}
+            ref={ticketRef}
+            data-ticket-root
+          >
+            {/* Front of Card */}
+            <div className="ud-ticket-card-face ud-ticket-card-front">
+              {/* Holographic light sheen overlay */}
+              <div 
+                className="ud-ticket-holo-overlay" 
+                style={{
+                  background: `radial-gradient(circle at ${shine.x}% ${shine.y}%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 60%), linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%)`
+                }}
+              />
 
-            {/* Event Details Section */}
-            <div className="ud-ticket-body">
-              <h2 className="ud-ticket-title">{event.title}</h2>
-              
-              <div className="ud-ticket-grid">
-                <div className="ud-ticket-info-item">
-                  <span className="ud-ticket-info-label">DATE</span>
-                  <span className="ud-ticket-info-value flex items-center gap-1.5">
-                    <Calendar size={13} className="text-indigo-500" />
-                    {event.date ? new Date(event.date).toLocaleDateString("en-US", {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric"
-                    }) : "TBA"}
-                  </span>
-                </div>
-                
-                <div className="ud-ticket-info-item">
-                  <span className="ud-ticket-info-label">TIME</span>
-                  <span className="ud-ticket-info-value flex items-center gap-1.5">
-                    <Clock size={13} className="text-indigo-500" />
-                    {event.time || "TBA"}
-                  </span>
-                </div>
-
-                <div className="ud-ticket-info-item">
-                  <span className="ud-ticket-info-label">VENUE</span>
-                  <span className="ud-ticket-info-value flex items-center gap-1.5">
-                    <MapPin size={13} className="text-indigo-500" />
-                    {event.location || "Online"}
-                  </span>
-                </div>
-
-                <div className="ud-ticket-info-item">
-                  <span className="ud-ticket-info-label">GATE / ENTRY</span>
-                  <span className="ud-ticket-info-value">GENERAL</span>
-                </div>
-              </div>
-
-              {/* Attendee Details */}
-              <div className="ud-ticket-attendee">
-                <div className="ud-ticket-info-item">
-                  <span className="ud-ticket-info-label">ATTENDEE</span>
-                  <span className="ud-ticket-info-value flex items-center gap-1.5 font-semibold text-white">
-                    <User size={13} className="text-pink-500" />
-                    {user?.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "Eventra Guest"}
-                  </span>
-                </div>
-                
-                <div className="ud-ticket-info-item">
-                  <span className="ud-ticket-info-label">EMAIL</span>
-                  <span className="ud-ticket-info-value flex items-center gap-1.5 text-xs text-zinc-300">
-                    <Mail size={12} className="text-pink-500" />
-                    {user?.email || "guest@eventra.com"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Aesthetic Tear-Off Perforation Divider */}
-            <div className="ud-ticket-divider-container">
-              <div className="ud-ticket-notch notch-left" />
-              <div className="ud-ticket-perforation" />
-              <div className="ud-ticket-notch notch-right" />
-            </div>
-
-            {/* QR Code / Stub Section */}
-            <div className="ud-ticket-footer">
-              <div className="ud-ticket-qr-wrap">
-                <div className="ud-ticket-qr-border">
-                  <QRCode 
-                    value={JSON.stringify({
-                      ticketId: serialNumber.current,
-                      eventId: event.id,
-                      eventName: event.title,
-                      userId: user?.id || "anonymous",
-                      userName: user?.fullName || "Guest"
-                    })} 
-                    size={110} 
-                    bgColor="transparent" 
-                    fgColor="currentColor"
-                    className="ud-ticket-qr"
+              {/* Header Banner */}
+              <div className={`ud-ticket-header bg-gradient-to-r ${theme.primary}`}>
+                {event.image && (
+                  <img 
+                    src={event.image} 
+                    alt={event.title} 
+                    className="ud-ticket-header-img"
+                    crossOrigin="anonymous"
+                    onError={(e) => { e.target.style.display = 'none'; }}
                   />
+                )}
+                <div className="ud-ticket-header-gradient" />
+                <div className="ud-ticket-logo-overlay">
+                  <span className="ud-ticket-logo-dot" />
+                  <span className="ud-ticket-logo-text">Eventra</span>
+                </div>
+                <div className="ud-ticket-category" style={{ borderColor: theme.accent, background: `${theme.accent}33` }}>
+                  <Award size={12} className="mr-1" style={{ color: theme.accent }} />
+                  <span>{theme.badge}</span>
                 </div>
               </div>
-              
-              <div className="ud-ticket-stub-details">
-                <div className="ud-ticket-serial">{serialNumber.current}</div>
-                <div className="ud-ticket-status">
-                  <ShieldCheck size={14} className="text-emerald-400" />
-                  <span>SECURE VALID PASS</span>
+
+              {/* Event Body */}
+              <div className="ud-ticket-body">
+                <h2 className="ud-ticket-title">{event.title}</h2>
+                
+                <div className="ud-ticket-grid">
+                  <div className="ud-ticket-info-item">
+                    <span className="ud-ticket-info-label">DATE</span>
+                    <span className="ud-ticket-info-value flex items-center gap-1.5">
+                      <Calendar size={13} style={{ color: theme.accent }} />
+                      {event.date ? new Date(event.date).toLocaleDateString("en-US", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric"
+                      }) : "TBA"}
+                    </span>
+                  </div>
+                  
+                  <div className="ud-ticket-info-item">
+                    <span className="ud-ticket-info-label">TIME</span>
+                    <span className="ud-ticket-info-value flex items-center gap-1.5">
+                      <Clock size={13} style={{ color: theme.accent }} />
+                      {event.time || "TBA"}
+                    </span>
+                  </div>
+
+                  <div className="ud-ticket-info-item">
+                    <span className="ud-ticket-info-label">VENUE</span>
+                    <span className="ud-ticket-info-value flex items-center gap-1.5">
+                      <MapPin size={13} style={{ color: theme.accent }} />
+                      {event.location || "Online"}
+                    </span>
+                  </div>
+
+                  <div className="ud-ticket-info-item">
+                    <span className="ud-ticket-info-label">GATE / ENTRY</span>
+                    <span className="ud-ticket-info-value">GENERAL</span>
+                  </div>
+                </div>
+
+                {/* Attendee Details */}
+                <div className="ud-ticket-attendee">
+                  <div className="ud-ticket-info-item">
+                    <span className="ud-ticket-info-label">ATTENDEE</span>
+                    <span className="ud-ticket-info-value flex items-center gap-1.5 font-semibold text-white">
+                      <User size={13} style={{ color: theme.accent }} />
+                      {user?.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "Eventra Guest"}
+                    </span>
+                  </div>
+                  
+                  <div className="ud-ticket-info-item">
+                    <span className="ud-ticket-info-label">EMAIL</span>
+                    <span className="ud-ticket-info-value flex items-center gap-1.5 text-xs text-zinc-300">
+                      <Mail size={12} style={{ color: theme.accent }} />
+                      {user?.email || "guest@eventra.com"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Perforation Divider */}
+              <div className="ud-ticket-divider-container">
+                <div className="ud-ticket-notch notch-left" />
+                <div className="ud-ticket-perforation" />
+                <div className="ud-ticket-notch notch-right" />
+              </div>
+
+              {/* QR Stub Footer */}
+              <div className="ud-ticket-footer">
+                <div className="ud-ticket-qr-wrap">
+                  <div className="ud-ticket-qr-border">
+                    <QRCode 
+                      value={JSON.stringify({
+                        ticketId: serialNumber.current,
+                        eventId: event.id,
+                        eventName: event.title,
+                        userId: user?.id || "anonymous",
+                        userName: user?.fullName || "Guest"
+                      })} 
+                      size={90} 
+                      bgColor="transparent" 
+                      fgColor="currentColor"
+                      className="ud-ticket-qr"
+                    />
+                  </div>
+                </div>
+                
+                <div className="ud-ticket-stub-details">
+                  <div className="ud-ticket-serial">{serialNumber.current}</div>
+                  <div className="ud-ticket-status">
+                    <ShieldCheck size={14} className="text-emerald-400 animate-pulse" />
+                    <span>SECURE VALID PASS</span>
+                  </div>
                 </div>
               </div>
             </div>
-            
+
+            {/* Back of Card (Schedule, Guidelines, Interactive Map) */}
+            <div className="ud-ticket-card-face ud-ticket-card-back">
+              <div className={`ud-ticket-back-header bg-gradient-to-r ${theme.primary}`}>
+                <div className="ud-ticket-logo-overlay">
+                  <span className="ud-ticket-logo-dot" />
+                  <span className="ud-ticket-logo-text">Eventra Info</span>
+                </div>
+                <div className="ud-ticket-back-title">SCHEDULE & INFO</div>
+              </div>
+
+              <div className="ud-ticket-body flex-1 justify-between">
+                <div className="space-y-4">
+                  <div className="ud-ticket-info-item">
+                    <span className="ud-ticket-info-label flex items-center gap-1">
+                      <Sparkles size={11} style={{ color: theme.accent }} />
+                      EVENT AGENDA
+                    </span>
+                    <ul className="ud-ticket-agenda-list mt-1 space-y-2 text-xs text-zinc-300">
+                      <li className="flex justify-between items-center border-b border-white/5 pb-1">
+                        <span>1. Welcome & Keynote</span>
+                        <span className="text-zinc-400 font-semibold">10:00 AM</span>
+                      </li>
+                      <li className="flex justify-between items-center border-b border-white/5 pb-1">
+                        <span>2. Technical Deep-Dive</span>
+                        <span className="text-zinc-400 font-semibold">11:30 AM</span>
+                      </li>
+                      <li className="flex justify-between items-center border-b border-white/5 pb-1">
+                        <span>3. Interactive Q&A</span>
+                        <span className="text-zinc-400 font-semibold">02:00 PM</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="ud-ticket-info-item">
+                    <span className="ud-ticket-info-label flex items-center gap-1">
+                      <Map size={11} style={{ color: theme.accent }} />
+                      DIRECTIONS
+                    </span>
+                    <p className="text-xs text-zinc-400 leading-relaxed mt-1">
+                      {event.location ? `Join offline at ${event.location}. Please arrive 15 minutes early for check-in.` : "This is a virtual event. Check-in online using the unique QR code."}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="ud-ticket-back-footer mt-auto pt-4 border-t border-white/5 flex flex-col items-center gap-2">
+                  <div className="ud-ticket-serial text-center text-xs opacity-75">{serialNumber.current}</div>
+                  <div className="text-[10px] text-zinc-500 uppercase tracking-widest text-center">
+                    Powered by Eventra Engine
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

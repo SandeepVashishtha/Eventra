@@ -554,7 +554,7 @@ const NAV_ITEMS = [
   { name: "Bookmarks", href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
   { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
   {
-    name: "Events",
+    name: "Event Tools",
     icon: <Calendar className="w-5 h-5" />,
     subItems: [
       { name: "Explore Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
@@ -840,11 +840,11 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         data-aos="fade-down"
         data-aos-once="true"
         data-aos-duration="1000"
-        className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 transition-colors duration-300"
+        className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 transition-colors duration-300 overflow-visible"
       >
         <div className="neon-navbar-border"></div>
 
-        <div className="max-w-screen-2xl mx-auto flex items-center justify-between h-[68px] px-4 md:px-6 xl:px-10 gap-4 w-full overflow-hidden">
+        <div className="max-w-screen-2xl mx-auto flex items-center justify-between min-h-[68px] px-4 md:px-6 xl:px-10 gap-4 w-full overflow-visible">
           
           {/* Logo */}
           <Link

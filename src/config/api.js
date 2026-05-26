@@ -13,20 +13,9 @@ const normalizeApiBaseUrl = (value = "") => {
 
   try {
     const parsed = new URL(trimmed);
-    const hostname = parsed.hostname.toLowerCase();
-
-    if (
-      hostname === "localhost" ||
-      hostname === "127.0.0.1" ||
-      hostname === "0.0.0.0" ||
-      hostname === "::1"
-    ) {
-      return "";
-    }
-
     return `${parsed.origin}${parsed.pathname === "/" ? "" : parsed.pathname}`;
   } catch {
-    return /localhost|127\.0\.0\.1|0\.0\.0\.0|::1/i.test(trimmed) ? "" : trimmed;
+    return trimmed;
   }
 };
 
