@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check stale assigned issues
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const daysThreshold = parseInt(process.env.DAYS_THRESHOLD || '${{ inputs.days_threshold || '7' }}');
