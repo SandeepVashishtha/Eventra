@@ -320,4 +320,44 @@ DAYS_THRESHOLD=30
 
 The `.env.example` file contains all required environment variable names needed to run the project locally.
 
+---
+
+## SSE Mock Server (Development Only)
+
+For testing real-time leaderboard rank updates and analytics stream features in development, a local mock Server-Sent Events (SSE) server is provided.
+
+### 1. Start the SSE Server
+Run the following command to start the mock server:
+```bash
+node sse-mock-server.js
+```
+
+### 2. Configure Environment Variables (Optional)
+The SSE mock server reads configuration from the environment:
+- `SSE_MOCK_PORT` (or `PORT`): The port the server listens on (default: `4001`).
+- `ALLOWED_ORIGIN`: Allowed CORS request origin (default: `http://localhost:3000`).
+- `SSE_DEBUG`: Set to `true` to print real-time logging for connections and events (default: `false` to reduce console noise).
+
+Example with custom settings:
+```bash
+# Windows PowerShell
+$env:SSE_MOCK_PORT="4005"; $env:ALLOWED_ORIGIN="http://localhost:3000"; $env:SSE_DEBUG="true"; node sse-mock-server.js
+
+# Linux/macOS
+SSE_MOCK_PORT=4005 ALLOWED_ORIGIN=http://localhost:3000 SSE_DEBUG=true node sse-mock-server.js
+```
+
+### 3. Configure the React Application
+Update `.env.local` to point to the mock server. You have two options:
+- **Option A (Recommended)**: Set `REACT_APP_SSE_URL` to route only real-time connections to the mock server, keeping the rest of the application pointing to the real API:
+  ```env
+  REACT_APP_SSE_URL=http://localhost:4001
+  ```
+- **Option B**: Set the general `REACT_APP_API_URL` to point to the mock server port (this routes all endpoints through port 4001):
+  ```env
+  REACT_APP_API_URL=http://localhost:4001
+  ```
+
+---
+
 Built with care by the Eventra Team
