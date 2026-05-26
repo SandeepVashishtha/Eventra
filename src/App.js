@@ -25,6 +25,7 @@ import { NotificationProvider } from "./context/NotificationContext";
 import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
 import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
+import GlobalErrorBoundary from "./components/common/ErrorBoundary";
 
 import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
@@ -107,76 +108,78 @@ function App() {
   }, []); // <--- The missing bracket and closure are fixed!
 
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <MyEventsProvider>
-          <SessionRecoveryProvider>
-            <ReminderChecker />
-            <NotificationToastContainer />
-            <OfflineSyncManager />
+    <GlobalErrorBoundary>
+      <AuthProvider>
+        <NotificationProvider>
+          <MyEventsProvider>
+            <SessionRecoveryProvider>
+              <ReminderChecker />
+              <NotificationToastContainer />
+              <OfflineSyncManager />
 
-            <div className="App">
-              <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
-              <OfflineBanner />
-              <OfflineConflictModal />
-              <KeyboardShortcutsModal
-                isOpen={showKeyboardModal}
-                onClose={() => setShowKeyboardModal(false)}
-              />
+              <div className="App">
+                <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+                <OfflineBanner />
+                <OfflineConflictModal />
+                <KeyboardShortcutsModal
+                  isOpen={showKeyboardModal}
+                  onClose={() => setShowKeyboardModal(false)}
+                />
 
-              <main
-                className="
-                  relative
-                  z-10
-                  min-h-[85vh]
-                  bg-white
-                  dark:bg-slate-950
-                  text-black
-                  dark:text-white
-                  transition-colors
-                  duration-300
-                "
-              >
-                <PageTransition>
-                  <Suspense
-                    fallback={
-                      <div className="flex items-center justify-center min-h-screen">
-                        Loading...
-                      </div>
-                    }
-                  >
-                    <Routes>
-                      <Route path="/register/:id" element={<RegistrationPage />} />
+                <main
+                  className="
+                    relative
+                    z-10
+                    min-h-[85vh]
+                    bg-white
+                    dark:bg-slate-950
+                    text-black
+                    dark:text-white
+                    transition-colors
+                    duration-300
+                  "
+                >
+                  <PageTransition>
+                    <Suspense
+                      fallback={
+                        <div className="flex items-center justify-center min-h-screen">
+                          Loading...
+                        </div>
+                      }
+                    >
+                      <Routes>
+                        <Route path="/register/:id" element={<RegistrationPage />} />
 
-                      <Route
-                        path="/event-recommendation"
-                        element={<EventRecommendation />}
-                      />
+                        <Route
+                          path="/event-recommendation"
+                          element={<EventRecommendation />}
+                        />
 
-                      <Route
-                        path="*"
-                        element={<AppRoutes />}
-                      />
-                    </Routes>
-                  </Suspense>
-                </PageTransition>
-              </main>
+                        <Route
+                          path="*"
+                          element={<AppRoutes />}
+                        />
+                      </Routes>
+                    </Suspense>
+                  </PageTransition>
+                </main>
 
-              <ScrollToTop />
-              <Suspense fallback={null}>
-                <Chatbot />
-                <Footer />
-              </Suspense>
-              <BackToTopButton />
-              <FeedbackButton />
-              <ThemeCustomizerDrawer />
-              <SessionRecovery />
-              <FluidCursor enabled={cursorEnabled} />
-            </div>
-          </SessionRecoveryProvider>
-        </MyEventsProvider>
-      </NotificationProvider>
-    </AuthProvider>
+                <ScrollToTop />
+                <Suspense fallback={null}>
+                  <Chatbot />
+                  <Footer />
+                </Suspense>
+                <BackToTopButton />
+                <FeedbackButton />
+                <ThemeCustomizerDrawer />
+                <SessionRecovery />
+                <FluidCursor enabled={cursorEnabled} />
+              </div>
+            </SessionRecoveryProvider>
+          </MyEventsProvider>
+        </NotificationProvider>
+      </AuthProvider>
+    </GlobalErrorBoundary>
   );
 }
 
