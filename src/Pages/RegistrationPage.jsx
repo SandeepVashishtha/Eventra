@@ -95,12 +95,15 @@ const RegistrationPage = () => {
     setErrors((prev) => ({ ...prev, submit: "" }));
 
     try {
+      // Show a fast pre-check hint using the local cache, but always proceed
+      // to the API call so the server remains the authoritative duplicate guard.
       if (isAlreadyRegistered(eventId, formData.email)) {
         setErrors((prev) => ({
           ...prev,
           submit: "You have already registered with this email address.",
         }));
-        return;
+        // Do not return here -- fall through to the API call so the server can
+        // confirm. The server's 409 will be caught below if it rejects.
       }
 
       await apiUtils.post(
@@ -110,6 +113,7 @@ const RegistrationPage = () => {
 
       saveRegistration(eventId, formData.email);
       setSubmitSuccess(true);
+      setErrors((prev) => ({ ...prev, submit: "" }));
       toast.success("Registration successful!");
     } catch (error) {
       const registrationErrorMessage = getRegistrationErrorMessage(error);
