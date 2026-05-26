@@ -75,8 +75,7 @@ function RankMovementIndicator({ username }) {
 
 // Repository constant — update if the leaderboard should point to another repo
 const GITHUB_REPO = "SandeepVashishtha/Eventra";
-// Token read from env for higher rate limits (optional)
-const TOKEN = process.env.REACT_APP_GITHUB_TOKEN || "";
+// Token is managed securely by the backend proxy
 const LEADERBOARD_CACHE_KEY = "leaderboardData:v2";
 
 // Points mapping for PR labels (keeps scoring logic centralized)
@@ -240,10 +239,8 @@ export default function LeaderBoard() {
       let page = 1;
       let hasMore = true;
 
-      const contributorsRes = await fetch(
-        `https://api.github.com/repos/${GITHUB_REPO}/contributors`,
-        { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} }
-      );
+      const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(`/repos/${GITHUB_REPO}/contributors`)}`;
+      const contributorsRes = await fetch(proxyUrl);
 
       if (!contributorsRes.ok) throw new Error("Failed to fetch contributors");
       const contributorsData = await contributorsRes.json();
@@ -258,10 +255,8 @@ export default function LeaderBoard() {
       });
 
       while (hasMore) {
-        const res = await fetch(
-          `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`,
-          { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} }
-        );
+        const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(`/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`)}`;
+        const res = await fetch(proxyUrl);
 
         if (!res.ok) {
           console.warn(`GitHub API request failed with status: ${res.status}`);

@@ -21,6 +21,7 @@ import {
   DashboardTableSkeleton,
 } from "../common/SkeletonLoaders";
 import "./UserDashboard.css";
+import EventTicket from "./EventTicket";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -74,6 +75,7 @@ export default function UserDashboard() {
   const [filterStatus, setFilterStatus] = useState("All");
   const [greeting, setGreeting] = useState("");
   const [notifOpen, setNotifOpen] = useState(false);
+  const [selectedTicketEvent, setSelectedTicketEvent] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const firstName = user?.firstName || user?.username || "there";
@@ -390,6 +392,17 @@ export default function UserDashboard() {
                       <span><MapPin size={13} /> {ev.location}</span>
                     </div>
                     <div className="ud-item-footer">
+                      <span className={`ud-badge ${STATUS_COLORS[ev.participationType] || "ud-badge-gray"}`}>
+                        {ev.participationType}
+                      </span>
+                      {ev.participationType === "Registered" && (
+                        <button
+                          onClick={() => setSelectedTicketEvent(ev)}
+                          className="ud-btn-ticket"
+                        >
+                          View Ticket
+                        </button>
+                      )}
                       <StatusBadge status={ev.participationType} />
                     </div>
                   </motion.div>
@@ -495,6 +508,24 @@ export default function UserDashboard() {
                             <StatusBadge status={item.projectStatus !== "-" ? item.projectStatus : item.status} />
                           </td>
                           <td>
+                            <span className={`ud-badge ${STATUS_COLORS[item.projectStatus] || STATUS_COLORS[item.status] || "ud-badge-gray"}`}>
+                              {item.projectStatus !== "-" ? item.projectStatus : item.status}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                              <span className={`ud-badge ${STATUS_COLORS[item.participationType] || "ud-badge-gray"}`}>
+                                {item.participationType}
+                              </span>
+                              {item.type === "Event" && item.participationType === "Registered" && (
+                                <button
+                                  onClick={() => setSelectedTicketEvent(item)}
+                                  className="ud-btn-ticket"
+                                >
+                                  View Ticket
+                                </button>
+                              )}
+                            </div>
                             <StatusBadge status={item.participationType} />
                           </td>
                         </tr>
@@ -508,6 +539,15 @@ export default function UserDashboard() {
           )}
         </AnimatePresence>
       </main>
+
+      {/* Futuristic Ticket Preview Modal */}
+      {selectedTicketEvent && (
+        <EventTicket
+          event={selectedTicketEvent}
+          user={user}
+          onClose={() => setSelectedTicketEvent(null)}
+        />
+      )}
     </div>
   );
 }

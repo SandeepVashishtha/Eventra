@@ -13,23 +13,21 @@ import { ContributorCardSkeleton } from "./common/SkeletonLoaders";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
-const TOKEN = process.env.REACT_APP_GITHUB_TOKEN || "";
-
 const STORAGE_KEY = "github_contributors";
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
 const REQUEST_TIMEOUT = 10000;
 const MAX_CONTRIBUTOR_PAGES = 10;
 
-const getGithubHeaders = () =>
-  TOKEN ? { Authorization: `token ${TOKEN}` } : undefined;
-
 const fetchJsonWithTimeout = async (url) => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
+  const proxyUrl = url.startsWith("https://api.github.com") 
+    ? `/api/github-proxy?path=${encodeURIComponent(url.replace("https://api.github.com", ""))}` 
+    : url;
+
   try {
-    const res = await fetch(url, {
-      headers: getGithubHeaders(),
+    const res = await fetch(proxyUrl, {
       signal: controller.signal,
     });
 
