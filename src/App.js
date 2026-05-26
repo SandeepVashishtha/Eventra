@@ -5,6 +5,8 @@ import "./App.css";
 import { toast } from "react-toastify";
 
 import Navbar from "./components/Layout/Navbar";
+import OfflineBanner from "./components/common/OfflineBanner";
+import OfflineConflictModal from "./components/common/OfflineConflictModal";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -113,6 +115,8 @@ function App() {
 
             <div className="App">
               <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+              <OfflineBanner />
+              <OfflineConflictModal />
               <KeyboardShortcutsModal
                 isOpen={showKeyboardModal}
                 onClose={() => setShowKeyboardModal(false)}
@@ -130,7 +134,7 @@ function App() {
                   transition-colors
                   duration-300
                 "
-
+              >
               <PageTransition>
   <Suspense
     fallback={
