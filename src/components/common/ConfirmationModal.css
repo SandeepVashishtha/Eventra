@@ -76,6 +76,11 @@
   min-width: 100px;
 }
 
+.confirmation-modal-btn:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+}
+
 .confirmation-modal-btn-cancel {
   background-color: #f3f4f6;
   color: #374151;

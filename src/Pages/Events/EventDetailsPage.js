@@ -64,22 +64,22 @@ const EventDetailsPage = () => {
   // Loading State
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
+      <main className="min-h-screen flex items-center justify-center bg-white dark:bg-black" role="status" aria-live="polite" aria-busy="true">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" aria-hidden="true"></div>
 
           <p className="text-gray-600 dark:text-gray-400 font-medium">
             Loading event details...
           </p>
         </div>
-      </div>
+      </main>
     );
   }
 
   // Event Not Found
   if (!event) {
     return (
-      <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center px-4">
+      <main className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center px-4">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
             Event Not Found
@@ -91,16 +91,17 @@ const EventDetailsPage = () => {
           </p>
 
           <button
+            type="button"
             onClick={() =>
               navigate("/events")
             }
             className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-colors"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={18} aria-hidden="true" />
             Back to Events
           </button>
         </div>
-      </div>
+      </main>
     );
   }
 
@@ -154,19 +155,20 @@ const EventDetailsPage = () => {
   return (
     <div className="min-h-screen mt-16 bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
       {/* Back Button */}
-      <div className="sticky top-20 md:top-24 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
+      <header className="sticky top-20 md:top-24 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <button
+            type="button"
             onClick={() =>
               navigate("/events")
             }
             className="inline-flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold transition-colors"
           >
-            <ArrowLeft size={20} />
+            <ArrowLeft size={20} aria-hidden="true" />
             Back to Events
           </button>
         </div>
-      </div>
+      </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <motion.div
@@ -184,12 +186,12 @@ const EventDetailsPage = () => {
           className="grid grid-cols-1 lg:grid-cols-3 gap-8"
         >
           {/* Main Content */}
-          <div className="lg:col-span-2">
+          <section className="lg:col-span-2" aria-labelledby="event-details-title">
             {/* Hero Image */}
             <div className="relative rounded-2xl overflow-hidden mb-8 shadow-xl">
               <img
                 src={event.image}
-                alt={event.title}
+                alt={`${event.title} event banner`}
                 className="w-full h-96 object-cover"
               />
 
@@ -219,23 +221,23 @@ const EventDetailsPage = () => {
                   </span>
                 </div>
 
-                <h1 className="text-4xl font-bold">
+                <h1 id="event-details-title" className="text-4xl font-bold">
                   {event.title}
                 </h1>
               </div>
             </div>
 
             {/* Description */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 mb-8 shadow-sm border border-gray-200 dark:border-gray-700">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            <section className="bg-white dark:bg-gray-800 rounded-2xl p-6 mb-8 shadow-sm border border-gray-200 dark:border-gray-700" aria-labelledby="event-about-title">
+              <h2 id="event-about-title" className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
                 About This Event
               </h2>
 
               <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed">
                 {event.description}
               </p>
-            </div>
-          </div>
+            </section>
+          </section>
         </motion.div>
       </main>
     </div>

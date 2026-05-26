@@ -7,7 +7,10 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
   const location = useLocation();
 
   return (
-    <div className={`flex ${vertical ? "flex-col items-start w-full gap-4" : "items-center gap-3 mx-7"}`}>
+    <nav
+      className={`flex ${vertical ? "flex-col items-start w-full gap-4" : "items-center gap-3 mx-7"}`}
+      aria-label={vertical ? "Mobile primary links" : "Primary links"}
+    >
       {NAV_ITEMS.map((item) => {
         const isCurrentPath = location.pathname === item.href;
         const isSubItemActive = item.subItems?.some(
@@ -30,6 +33,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
               <Link
                 to={item.href}
                 onClick={onClick}
+                aria-current={active ? "page" : undefined}
                 className={`flex items-center gap-1.5 text-sm font-medium transition-colors whitespace-nowrap ${
                   vertical ? "py-2" : "px-1 py-2 rounded-md"
                 } ${activeClasses}`}
@@ -40,12 +44,13 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
               <button
                 type="button"
                 className={`flex items-center justify-center rounded-md p-1 transition-colors ${activeClasses}`}
-                aria-label={`Toggle ${item.name} menu`}
+                aria-label={`Show ${item.name} submenu`}
+                aria-haspopup="true"
               >
                 <ChevronDown className="w-4 h-4 opacity-50 group-hover/nav:rotate-180 transition-transform" />
               </button>
 
-              <div className="absolute top-full left-0 hidden group-hover/nav:block bg-white dark:bg-gray-800 shadow-lg rounded-md p-2 min-w-[200px] z-50 border border-gray-100 dark:border-gray-700 mt-1 animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="absolute top-full left-0 hidden group-hover/nav:block group-focus-within/nav:block bg-white dark:bg-gray-800 shadow-lg rounded-md p-2 min-w-[200px] z-50 border border-gray-100 dark:border-gray-700 mt-1 animate-in fade-in slide-in-from-top-1 duration-200">
                 {item.subItems.map((sub) => {
                   const subActive = location.pathname === sub.href;
                   return (
@@ -53,6 +58,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                       key={sub.name}
                       to={sub.href}
                       onClick={onClick}
+                      aria-current={subActive ? "page" : undefined}
                       className={`flex items-center gap-2 p-2 rounded-md text-sm font-medium transition-colors ${
                         subActive
                           ? "bg-gray-100 dark:bg-gray-700 text-black dark:text-white"
@@ -74,6 +80,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
             key={item.name}
             to={item.href}
             onClick={onClick}
+            aria-current={active ? "page" : undefined}
             className={`flex gap-1 items-center text-sm font-medium transition-all duration-200 whitespace-nowrap ${
               vertical
                 ? `pl-3 border-l-2 w-full text-left py-2 ${
@@ -93,7 +100,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           </Link>
         );
       })}
-    </div>
+    </nav>
   );
 };
 

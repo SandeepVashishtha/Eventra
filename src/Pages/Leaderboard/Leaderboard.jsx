@@ -370,24 +370,33 @@ export default function LeaderBoard() {
         </div>
 
         {/* UPDATED: Table container */}
-        <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl shadow-lg overflow-hidden">
+        <section className="bg-gray-50 dark:bg-gray-900 rounded-2xl shadow-lg overflow-hidden" aria-labelledby="leaderboard-table-title">
+          <h2 id="leaderboard-table-title" className="sr-only">
+            Contributor leaderboard table
+          </h2>
           {loading ? (
-            <SkeletonLeaderboard rows={CONTRIBUTORS_PER_PAGE} />
+            <div role="status" aria-live="polite" aria-label="Loading leaderboard contributors">
+              <span className="sr-only">Loading leaderboard contributors...</span>
+              <SkeletonLeaderboard rows={CONTRIBUTORS_PER_PAGE} />
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-500">
+                <caption className="sr-only">
+                  GSSoC 2026 contributors ranked by contribution points and pull requests.
+                </caption>
                 <thead className="bg-gray-50 dark:bg-gray-900">
                   <tr>
-                    <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th scope="col" className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Rank
                     </th>
-                    <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th scope="col" className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Contributor
                     </th>
-                    <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th scope="col" className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Points
                     </th>
-                    <th className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th scope="col" className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       PRs
                     </th>
                   </tr>
@@ -400,7 +409,7 @@ export default function LeaderBoard() {
                         key={c.username}
                         className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 border-b border-gray-100 dark:border-gray-700"
                       >
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <th scope="row" className="px-6 py-4 whitespace-nowrap text-left">
                           <span
                             // UPDATED: Rank badges
                             className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-medium ${
@@ -415,7 +424,7 @@ export default function LeaderBoard() {
                           >
                             {rank}
                           </span>
-                        </td>
+                        </th>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
@@ -426,7 +435,7 @@ export default function LeaderBoard() {
                                 height="40"
                                 className="h-10 w-10 rounded-full border-2 border-indigo-200 dark:border-gray-600"
                                 src={c.avatar}
-                                alt={c.username}
+                                alt={`${c.username} GitHub avatar`}
                               />
                             </div>
                             <div className="ml-4">
@@ -468,6 +477,7 @@ export default function LeaderBoard() {
                   <button
                     onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                     disabled={currentPage === 1}
+                    aria-label="Go to previous leaderboard page"
                     className="px-3 py-1 text-sm rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-50 flex items-center bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
                   >
                     <FaChevronLeft />
@@ -476,6 +486,8 @@ export default function LeaderBoard() {
                     <button
                       key={i}
                       onClick={() => setCurrentPage(i + 1)}
+                      aria-label={`Go to leaderboard page ${i + 1}`}
+                      aria-current={currentPage === i + 1 ? "page" : undefined}
                       className={`px-3 py-1 text-sm rounded-lg border ${
                         currentPage === i + 1
                           ? "bg-indigo-500 text-white border-indigo-500"
@@ -490,6 +502,7 @@ export default function LeaderBoard() {
                       setCurrentPage((p) => Math.min(p + 1, totalPages))
                     }
                     disabled={currentPage === totalPages}
+                    aria-label="Go to next leaderboard page"
                     className="px-3 py-1 text-sm rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-50 flex items-center bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
                   >
                     <FaChevronRight />
@@ -507,7 +520,7 @@ export default function LeaderBoard() {
               </span>
             )}
           </div>
-        </div>
+        </section>
       </div>
       <GSSoCContribution />
     </div>

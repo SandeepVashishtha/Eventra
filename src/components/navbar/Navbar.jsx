@@ -48,6 +48,7 @@ const Navbar = ({
     <>
       <nav
         ref={navRef}
+        aria-label="Primary navigation"
         className="fixed top-0 left-0 w-full h-20 bg-white dark:bg-gray-900 border-b border-border z-[200] transition-all duration-300"
       >
         <div
@@ -60,7 +61,7 @@ const Navbar = ({
           "
         >
           {/* Logo */}
-          <Link to="/">
+          <Link to="/" aria-label="Eventra home">
             <div
               className="
                 flex
@@ -71,7 +72,8 @@ const Navbar = ({
             >
               <img
                 src="/Eventra.png"
-                alt="Eventra Logo"
+                alt=""
+                aria-hidden="true"
                 className="
                   h-8
                   w-8
@@ -111,8 +113,10 @@ const Navbar = ({
 
             {/* Theme Toggle */}
             <button
+              type="button"
               onClick={toggleTheme}
-              aria-label="Toggle Theme"
+              aria-label={isDarkMode ? "Switch to light theme" : "Switch to dark theme"}
+              aria-pressed={isDarkMode}
               className="
                 theme-toggle
 

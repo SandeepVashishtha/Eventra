@@ -14,8 +14,7 @@ import {
 } from "lucide-react";
 import {
   downloadICSFile,
-  generateGoogleCalendarLink,
-  generateOutlookLink
+  generateGoogleCalendarLink
 } from "../../utils/calendarExporter";
 import SkeletonCalendar from "../../components/common/SkeletonCalendar";
 
@@ -85,14 +84,14 @@ const MyCalendar = () => {
   const selectedEvents = getSelectedDateEvents();
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-20 px-4 md:px-8 transition-colors duration-300">
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-20 px-4 md:px-8 transition-colors duration-300">
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* HEADER SECTION */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
+        <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
           <div>
             <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-semibold text-sm tracking-wide uppercase">
-              <CalendarIcon className="w-4 h-4" />
+              <CalendarIcon className="w-4 h-4" aria-hidden="true" />
               Calendar Center
             </div>
             <h1 className="text-4xl font-black tracking-tight mt-1 bg-clip-text text-transparent bg-gradient-to-r from-slate-950 to-indigo-700 dark:from-slate-100 dark:to-indigo-400">
@@ -106,7 +105,9 @@ const MyCalendar = () => {
           {/* VIEW SWITCHER */}
           <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl self-start md:self-auto">
             <button
+              type="button"
               onClick={() => setViewMode("grid")}
+              aria-pressed={viewMode === "grid"}
               className={`p-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 ${
                 viewMode === "grid"
                   ? "bg-white dark:bg-slate-850 shadow text-indigo-600 dark:text-indigo-400"
@@ -114,11 +115,13 @@ const MyCalendar = () => {
               }`}
               aria-label="Grid calendar view"
             >
-              <Grid className="w-4 h-4" />
+              <Grid className="w-4 h-4" aria-hidden="true" />
               Calendar Grid
             </button>
             <button
+              type="button"
               onClick={() => setViewMode("list")}
+              aria-pressed={viewMode === "list"}
               className={`p-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 ${
                 viewMode === "list"
                   ? "bg-white dark:bg-slate-850 shadow text-indigo-600 dark:text-indigo-400"
@@ -126,11 +129,11 @@ const MyCalendar = () => {
               }`}
               aria-label="List view"
             >
-              <List className="w-4 h-4" />
+              <List className="w-4 h-4" aria-hidden="true" />
               Event List ({myEvents.length})
             </button>
           </div>
-        </div>
+        </header>
 
         {loading ? (
           <div role="status" aria-live="polite" aria-label="Loading calendar">
@@ -138,30 +141,32 @@ const MyCalendar = () => {
             <SkeletonCalendar />
           </div>
         ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <section className="grid grid-cols-1 lg:grid-cols-3 gap-8" aria-labelledby="calendar-grid-title">
             
             {/* GRID CALENDAR (COLSPAN: 2) */}
             <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-250/60 dark:border-slate-800/80 rounded-3xl p-6 shadow-md space-y-6">
               
               {/* MONTH CONTROLS */}
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <h2 id="calendar-grid-title" className="text-xl font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                   {monthNames[currentMonth]} {currentYear}
                 </h2>
                 <div className="flex items-center gap-1">
                   <button
+                    type="button"
                     onClick={prevMonth}
                     className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 transition"
                     aria-label="Previous month"
                   >
-                    <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-350" />
+                    <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-350" aria-hidden="true" />
                   </button>
                   <button
+                    type="button"
                     onClick={nextMonth}
                     className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 transition"
                     aria-label="Next month"
                   >
-                    <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-355" />
+                    <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-355" aria-hidden="true" />
                   </button>
                 </div>
               </div>
@@ -203,6 +208,7 @@ const MyCalendar = () => {
                         key={`day-${day}`}
                         role="gridcell"
                         aria-label={`Select date ${day} ${monthNames[currentMonth]}, ${dayEvents.length} events`}
+                        aria-selected={selected}
                         onClick={() => setSelectedDate(cellDate)}
                         className={`aspect-square rounded-2xl border p-2 flex flex-col justify-between items-start transition-all ${
                           selected
@@ -271,12 +277,12 @@ const MyCalendar = () => {
                           </h4>
                           
                           <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 mt-2">
-                            <Clock className="w-3.5 h-3.5" />
+                            <Clock className="w-3.5 h-3.5" aria-hidden="true" />
                             <span>{new Date(item.event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                           </div>
                           
                           <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 mt-1">
-                            <MapPin className="w-3.5 h-3.5" />
+                            <MapPin className="w-3.5 h-3.5" aria-hidden="true" />
                             <span className="truncate max-w-[200px]">{item.event.location || "Virtual / Online"}</span>
                           </div>
                         </div>
@@ -284,11 +290,13 @@ const MyCalendar = () => {
                         {/* EXPORT BUTTONS */}
                         <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
                           <button
+                            type="button"
                             onClick={() => downloadICSFile(item.event)}
+                            aria-label={`Download ICS calendar file for ${item.event.title}`}
                             className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl border border-slate-250 bg-white hover:bg-slate-50 text-[11px] font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 transition"
                             title="Download standard .ics iCalendar file"
                           >
-                            <Download className="w-3 h-3 text-slate-500" />
+                            <Download className="w-3 h-3 text-slate-500" aria-hidden="true" />
                             Download ICS
                           </button>
                           
@@ -298,7 +306,7 @@ const MyCalendar = () => {
                             rel="noopener noreferrer"
                             className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl border border-slate-250 bg-white hover:bg-slate-50 text-[11px] font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 transition"
                           >
-                            <ExternalLink className="w-3 h-3 text-indigo-500" />
+                            <ExternalLink className="w-3 h-3 text-indigo-500" aria-hidden="true" />
                             Google Calendar
                           </a>
                         </div>
@@ -306,7 +314,7 @@ const MyCalendar = () => {
                     ))
                   ) : (
                     <div className="flex flex-col items-center justify-center py-10 text-center space-y-3">
-                      <AlertCircle className="w-8 h-8 text-slate-350 dark:text-slate-655" />
+                      <AlertCircle className="w-8 h-8 text-slate-350 dark:text-slate-655" aria-hidden="true" />
                       <p className="text-slate-400 text-xs leading-relaxed max-w-[200px]">
                         No registrations scheduled for this date. Check active events or registration forms.
                       </p>
@@ -316,11 +324,11 @@ const MyCalendar = () => {
               </div>
             </div>
 
-          </div>
+          </section>
         ) : (
           /* EVENT LIST VIEW */
-          <div className="bg-white dark:bg-slate-900 border border-slate-250/60 dark:border-slate-800/80 rounded-3xl p-6 shadow-md">
-            <h3 className="text-lg font-black text-slate-900 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800 pb-3">
+          <section className="bg-white dark:bg-slate-900 border border-slate-250/60 dark:border-slate-800/80 rounded-3xl p-6 shadow-md" aria-labelledby="registered-events-title">
+            <h3 id="registered-events-title" className="text-lg font-black text-slate-900 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800 pb-3">
               📝 Registered Events Schedule ({myEvents.length})
             </h3>
             
@@ -349,15 +357,15 @@ const MyCalendar = () => {
                       
                       <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 mt-2">
                         <span className="flex items-center gap-1">
-                          <CalendarIcon className="w-3.5 h-3.5 text-indigo-500" />
+                          <CalendarIcon className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
                           {new Date(item.event.date).toLocaleDateString()}
                         </span>
                         <span className="flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5 text-indigo-500" />
+                          <Clock className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
                           {new Date(item.event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                         <span className="flex items-center gap-1">
-                          <MapPin className="w-3.5 h-3.5 text-indigo-500" />
+                          <MapPin className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
                           {item.event.location || "Online"}
                         </span>
                       </div>
@@ -365,11 +373,13 @@ const MyCalendar = () => {
 
                     <div className="flex items-center gap-2 mt-4 sm:mt-0">
                       <button
+                        type="button"
                         onClick={() => downloadICSFile(item.event)}
+                        aria-label={`Download ICS calendar file for ${item.event.title}`}
                         className="p-2.5 rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-350 shadow-sm"
                         title="Download standard .ics iCalendar file"
                       >
-                        <Download className="w-4 h-4" />
+                        <Download className="w-4 h-4" aria-hidden="true" />
                       </button>
                       <a
                         href={generateGoogleCalendarLink(item.event)}
@@ -377,7 +387,7 @@ const MyCalendar = () => {
                         rel="noopener noreferrer"
                         className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-sm flex items-center gap-1.5"
                       >
-                        <ExternalLink className="w-3.5 h-3.5" />
+                        <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
                         Sync Google
                       </a>
                     </div>
@@ -385,7 +395,7 @@ const MyCalendar = () => {
                 ))
               ) : (
                 <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                  <CalendarIcon className="w-12 h-12 text-slate-300 dark:text-slate-700 animate-pulse" />
+                  <CalendarIcon className="w-12 h-12 text-slate-300 dark:text-slate-700 animate-pulse" aria-hidden="true" />
                   <div>
                     <h4 className="font-extrabold text-slate-800 dark:text-slate-205">No Active Registrations</h4>
                     <p className="text-slate-400 text-sm leading-relaxed max-w-sm mt-1 mx-auto">
@@ -395,11 +405,11 @@ const MyCalendar = () => {
                 </div>
               )}
             </div>
-          </div>
+          </section>
         )}
 
       </div>
-    </div>
+    </main>
   );
 };
 
