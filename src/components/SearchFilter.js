@@ -146,7 +146,9 @@ const SearchFilter = () => {
         <div className="search-input-wrapper">
           <span className="search-icon">🔍</span>
           <input
+            id="search-events"
             type="text"
+            aria-label="Search events"
             placeholder="Search events, topics, or keywords..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -163,8 +165,9 @@ const SearchFilter = () => {
         className="filters-container"
       >
         <div className="filter-group">
-          <label>Category</label>
+          <label htmlFor="filter-category">Category</label>
           <select
+            id="filter-category"
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="filter-select"
@@ -178,8 +181,9 @@ const SearchFilter = () => {
         </div>
 
         <div className="filter-group">
-          <label>Location</label>
+          <label htmlFor="filter-location">Location</label>
           <select
+            id="filter-location"
             value={selectedLocation}
             onChange={(e) => setSelectedLocation(e.target.value)}
             className="filter-select"
@@ -193,8 +197,9 @@ const SearchFilter = () => {
         </div>
 
         <div className="filter-group">
-          <label>Price</label>
+          <label htmlFor="filter-price">Price</label>
           <select
+            id="filter-price"
             value={priceFilter}
             onChange={(e) => setPriceFilter(e.target.value)}
             className="filter-select"

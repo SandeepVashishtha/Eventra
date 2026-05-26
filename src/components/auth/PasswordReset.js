@@ -3,9 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { apiUtils } from '../../config/api';
 import { motion } from "framer-motion";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import useReducedMotion from "../../hooks/useReducedMotion";
 
 const PasswordReset = () => {
   useDocumentTitle("Reset Password | Eventra");
+  const prefersReducedMotion = useReducedMotion();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');

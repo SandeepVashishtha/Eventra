@@ -5,11 +5,13 @@ import { useAuth } from '../../context/AuthContext';
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
+import useReducedMotion from "../../hooks/useReducedMotion";
 import GoogleLoginButton from './GoogleLoginButton';
 import '../../styles/auth.css';
 
 const Login = () => {
   useDocumentTitle("Login | Eventra");
+  const prefersReducedMotion = useReducedMotion();
   const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState({});
@@ -96,7 +98,7 @@ const Login = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.6 }}
+      transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
       className="pastel-grid-bg min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 section-theme"
     >
 
@@ -104,7 +106,7 @@ const Login = () => {
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6, delay: prefersReducedMotion ? 0 : 0.2 }}
           className="relative w-full my-8 sm:my-12 overflow-hidden rounded-2xl border p-4 sm:p-6 lg:p-8 shadow-lg backdrop-blur-sm transition-all duration-200 hover:shadow-xl card-theme"
         >
           <div className="pointer-events-none absolute top-8 left-6 h-16 w-16 rounded-full bg-blue-100 opacity-60 blur-sm"></div>
@@ -147,7 +149,7 @@ const Login = () => {
                 <motion.div
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4 }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 0.4 }}
                   className="session-expired-banner"
                   role="alert"
                   aria-live="polite"
@@ -159,7 +161,7 @@ const Login = () => {
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.3, type: "spring", stiffness: 200 }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.3, type: "spring", stiffness: 200 }}
                 className="text-center space-y-4"
               >
                 <motion.div

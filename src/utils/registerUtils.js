@@ -5,8 +5,10 @@ const normalizeEmail = (email) =>
 
 const readRegistrations = () => {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-  } catch {
+    const data = localStorage.getItem(STORAGE_KEY);
+    return data ? JSON.parse(data) : {};
+  } catch (error) {
+    console.warn("Failed to parse eventRegistrations from localStorage.", error);
     return {};
   }
 };
