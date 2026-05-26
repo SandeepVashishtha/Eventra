@@ -362,6 +362,76 @@ POST /api/events/1/register
 
 ---
 
+## Create Event
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/events/create` |
+
+Creates a new event. This endpoint is restricted to authenticated users with `ORGANIZER` or `ADMIN` authority.
+
+
+### Authentication
+
+---
+
+Requires a valid JWT token.
+
+```http
+Authorization: Bearer <token>
+```
+
+#### Request Body
+
+```json
+{
+  "title": "Manual Create Event Test",
+  "description": "Testing event creation manually",
+  "location": "Online",
+  "eventDate": "2026-07-15T10:00:00",
+  "capacity": 50,
+  "isPublic": true
+}
+```
+
+#### Field Notes
+
+- `title`, `description`, `location`, and `eventDate` are required.
+- `eventDate` must be a future date/time.
+- `capacity` is optional, but must be positive when provided.
+- `isPublic` is optional and defaults to `true`.
+- `registeredCount` is managed by the backend and defaults to `0`.
+
+#### Success Response
+
+```http
+201 Created
+```
+
+```json
+{
+  "id": 1,
+  "title": "Manual Create Event Test",
+  "description": "Testing event creation manually",
+  "location": "Online",
+  "eventDate": "2026-07-15T10:00:00",
+  "capacity": 50,
+  "registeredCount": 0,
+  "public": true
+}
+```
+
+#### Error Responses
+
+| Status | Reason |
+|---|---|
+| `400 Bad Request` | Invalid event payload |
+| `401 Unauthorized` | Missing or invalid JWT |
+| `403 Forbidden` | Authenticated user is not an `ORGANIZER` or `ADMIN` |
+
+
+---
+
 # Project APIs
 
 ## Submit Project
