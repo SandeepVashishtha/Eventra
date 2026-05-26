@@ -1,0 +1,36 @@
+type:docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "docs/**"
+          - "**/*.md"
+
+type:testing:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "tests/**"
+
+type:devops:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/**"
+          - "scripts/**"
+          - "vercel.json"
+
+type:design:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "public/**"
+          - "**/*.png"
+          - "**/*.jpg"
+
+type:security:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*auth*"
+          - "**/*security*"
+          - ".env*"
+
+type:refactor:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/**"

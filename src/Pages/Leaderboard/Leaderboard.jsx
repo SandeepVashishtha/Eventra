@@ -195,6 +195,14 @@ export default function LeaderBoard() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState("");
   const [search, setSearch] = useState("");
+  const [
+  debouncedSearch,
+  setDebouncedSearch,
+] = useState(search);
+  const [
+  recentSearches,
+  setRecentSearches,
+] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("points");
   const [activeCategory, setActiveCategory] = useState("overall");
@@ -206,6 +214,14 @@ export default function LeaderBoard() {
   // Constants for pagination and UI
   const CONTRIBUTORS_PER_PAGE = 10;
 
+  useEffect(() => {
+  const timer = setTimeout(() => {
+    setDebouncedSearch(search);
+  }, 400);
+
+  return () =>
+    clearTimeout(timer);
+}, [search]);
   // 🎉 Celebratory confetti on load
   useEffect(() => {
     confetti({
@@ -233,6 +249,18 @@ export default function LeaderBoard() {
     );
   }, [streamContributors, lastSynced]);
 
+  useEffect(() => {
+  const savedSearches =
+    JSON.parse(
+      localStorage.getItem(
+        "recentSearches"
+      )
+    ) || [];
+
+  setRecentSearches(
+    savedSearches
+  );
+}, []);
   // Load data from cache or network will be handled by effect below
 
   const fetchContributors = async () => {
@@ -362,6 +390,28 @@ export default function LeaderBoard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchContributors is stable across renders
   }, []);
 
+  const saveRecentSearch =
+  (query) => {
+    if (!query.trim()) return;
+
+    const updatedSearches = [
+      query,
+      ...recentSearches.filter(
+        (item) => item !== query
+      ),
+    ].slice(0, 5);
+
+    setRecentSearches(
+      updatedSearches
+    );
+
+    localStorage.setItem(
+      "recentSearches",
+      JSON.stringify(
+        updatedSearches
+      )
+    );
+  };
   const filteredContributors = contributors.filter((c) => {
     const q = search.trim().toLowerCase();
     const matchSearch = !q || c.username.toLowerCase().includes(q) || (c.name && c.name.toLowerCase().includes(q));
@@ -644,11 +694,17 @@ export default function LeaderBoard() {
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-4 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-800/40">
           <input
             type="text"
+            
             value={search}
             onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
+  setSearch(e.target.value);
+
+  saveRecentSearch(
+    e.target.value
+  );
+
+  setCurrentPage(1);
+}}
             placeholder="Search creators..."
             className="w-full sm:max-w-xs px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-slate-950 dark:text-white"
           />
@@ -666,112 +722,136 @@ export default function LeaderBoard() {
             placeholder="Sort by"
           />
         </div>
+{/* AGGREGATED STATS CARDS */}
+<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+  {[
+    {
+      title: "Active Contributors",
+      value: stats.totalContributors,
+      color:
+        "from-blue-500/10 to-indigo-500/10 border-blue-100 dark:border-blue-900/30 text-blue-600 dark:text-blue-400",
+      icon: FaUsers,
+    },
+    {
+      title: "Merged Pull Requests",
+      value: stats.flooredTotalPRs,
+      color:
+        "from-emerald-500/10 to-teal-500/10 border-emerald-100 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400",
+      icon: FaCode,
+    },
+    {
+      title: "Aggregated Arena Points",
+      value: stats.flooredTotalPoints,
+      color:
+        "from-amber-500/10 to-orange-500/10 border-amber-100 dark:border-amber-900/30 text-amber-600 dark:text-amber-400",
+      icon: FaStar,
+    },
+  ].map((card, idx) => (
+    <motion.div
+      key={idx}
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: idx * 0.1 }}
+      className={`p-6 rounded-2xl bg-gradient-to-br ${card.color} border shadow-sm flex items-center gap-4`}
+    >
+      <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 shadow-sm">
+        <card.icon className="text-2xl" />
+      </div>
 
-        {/* AGGREGATED STATS CARDS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {/* Contributors Card */}
-          {loading ? (
-            <LeaderboardStatCardSkeleton />
-          ) : (
-          <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
-            <div className="flex items-center">
-              <div className="p-3 rounded-xl mr-4 bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
-                <FaUsers className="text-2xl" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Contributors
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {stats.totalContributors}
-                </p>
-              </div>
-            </div>
-          </div>
-          )}
-          {/* Pull Requests Card */}
-          {loading ? (
-            <LeaderboardStatCardSkeleton />
-          ) : (
-          <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
-            <div className="flex items-center">
-              <div className="p-3 rounded-xl mr-4 bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400">
-                <FaCode className="text-2xl" />
-          {[
-            {
-              title: "Active Contributors",
-              value: stats.totalContributors,
-              color: "from-blue-500/10 to-indigo-500/10 border-blue-100 dark:border-blue-900/30 text-blue-600 dark:text-blue-400",
-              icon: FaUsers,
-            },
-            {
-              title: "Merged Pull Requests",
-              value: stats.flooredTotalPRs,
-              color: "from-emerald-500/10 to-teal-500/10 border-emerald-100 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400",
-              icon: FaCode,
-            },
-            {
-              title: "Aggregated Arena Points",
-              value: stats.flooredTotalPoints,
-              color: "from-amber-500/10 to-orange-500/10 border-amber-100 dark:border-amber-900/30 text-amber-600 dark:text-amber-400",
-              icon: FaStar,
-            },
-          ].map((card, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              className={`p-6 rounded-2xl bg-gradient-to-br ${card.color} border shadow-sm flex items-center gap-4`}
-            >
-              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 shadow-sm">
-                <card.icon className="text-2xl" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  {card.title}
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {stats.flooredTotalPRs}
-                </p>
-              </div>
-            </div>
-          </div>
-          )}
-          {/* Total Points Card */}
-          {loading ? (
-            <LeaderboardStatCardSkeleton />
-          ) : (
-          <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
-            <div className="flex items-center">
-              <div className="p-3 rounded-xl mr-4 bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-400">
-                <FaStar className="text-2xl" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Total Points
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {stats.flooredTotalPoints}
-                </p>
-              </div>
-            </div>
-          </div>
-          )}
-                <p className="text-3xl font-extrabold text-slate-950 dark:text-white mt-1">
-                  {loading ? "..." : <AnimatedCounter value={card.value} />}
-                </p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          {card.title}
+        </p>
 
+        <p className="text-3xl font-extrabold text-slate-950 dark:text-white mt-1">
+          {loading ? (
+            "..."
+          ) : (
+            <AnimatedCounter value={card.value} />
+          )}
+        </p>
+      </div>
+    </motion.div>
+  ))}
+</div>
+
+        {/* UPDATED: Table container */}
+        <section className="bg-gray-50 dark:bg-gray-900 rounded-2xl shadow-lg overflow-hidden" aria-labelledby="leaderboard-table-title">
+          <h2 id="leaderboard-table-title" className="sr-only">
+            Contributor leaderboard table
+          </h2>
         {/* LEADERBOARD ARENA GRID */}
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden">
           {loading ? (
-            <SkeletonLeaderboard rows={CONTRIBUTORS_PER_PAGE} />
+            <div role="status" aria-live="polite" aria-label="Loading leaderboard contributors">
+              <span className="sr-only">Loading leaderboard contributors...</span>
+              <SkeletonLeaderboard rows={CONTRIBUTORS_PER_PAGE} />
+            </div>
           ) : (
             <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-500">
+                <caption className="sr-only">
+                  GSSoC 2026 contributors ranked by contribution points and pull requests.
+                </caption>
+                <thead className="bg-gray-50 dark:bg-gray-900">
+                  <tr>
+                    <th scope="col" className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Rank
+                    </th>
+                    <th scope="col" className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Contributor
+                    </th>
+                    <th scope="col" className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Points
+                    </th>
+                    <th scope="col" className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      PRs
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-gradient-to-b from-indigo-50 to-white dark:from-gray-900  dark:to-black  divide-y divide-gray-400 dark:divide-gray-500">
+                  {currentContributors.map((c) => {
+                    const rank = ranksMap[c.username];
+                    return (
+                      <tr
+                        key={c.username}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 border-b border-gray-100 dark:border-gray-700"
+                      >
+                        <th scope="row" className="px-6 py-4 whitespace-nowrap text-left">
+                          <span
+                            // UPDATED: Rank badges
+                            className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-medium ${
+                              rank === 1
+                                ? "bg-yellow-500 text-white"
+                                : rank === 2
+                                  ? "bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200"
+                                  : rank === 3
+                                    ? "bg-amber-800 text-white"
+                                    : "bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300"
+                            }`}
+                          >
+                            {rank}
+                          </span>
+                        </th>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10">
+<img
+                                loading="lazy"
+                                decoding="async"
+                                width="40"
+                                height="40"
+                                className="h-10 w-10 rounded-full border-2 border-indigo-200 dark:border-gray-600"
+                                src={c.avatar}
+                                alt={`${c.username} GitHub avatar`}
+                              />
+                            </div>
+                            <div className="ml-4">
+                              <a
+                                href={c.profile}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
               <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
                 <thead className="bg-slate-50 dark:bg-slate-900/50">
                   <tr>
@@ -907,6 +987,26 @@ export default function LeaderBoard() {
 
               {/* PAGINATION BAR */}
               {totalPages > 1 && (
+                <div className="flex justify-center items-center space-x-2 py-4 bg-white dark:bg-black/80">
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                    disabled={currentPage === 1}
+                    aria-label="Go to previous leaderboard page"
+                    className="px-3 py-1 text-sm rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-50 flex items-center bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                  >
+                    <FaChevronLeft />
+                  </button>
+                  {[...Array(totalPages)].map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentPage(i + 1)}
+                      aria-label={`Go to leaderboard page ${i + 1}`}
+                      aria-current={currentPage === i + 1 ? "page" : undefined}
+                      className={`px-3 py-1 text-sm rounded-lg border ${
+                        currentPage === i + 1
+                          ? "bg-indigo-500 text-white border-indigo-500"
+                          : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+                      }`}
                 <div className="flex justify-between items-center py-4 px-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
                   <span className="text-xs font-medium text-slate-500">
                     Showing page {currentPage} of {totalPages}
@@ -920,6 +1020,17 @@ export default function LeaderBoard() {
                     >
                       <FaChevronLeft className="w-3 h-3" />
                     </button>
+                  ))}
+                  <button
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(p + 1, totalPages))
+                    }
+                    disabled={currentPage === totalPages}
+                    aria-label="Go to next leaderboard page"
+                    className="px-3 py-1 text-sm rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-50 flex items-center bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                  >
+                    <FaChevronRight />
+                  </button>
                     
                     <button
                       onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
@@ -943,7 +1054,7 @@ export default function LeaderBoard() {
             )}
             <LiveStatusBadge status={streamStatus} />
           </div>
-        </div>
+        </section>
       </div>
       <GSSoCContribution />
     </div>

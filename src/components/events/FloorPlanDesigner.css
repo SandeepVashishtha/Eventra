@@ -859,4 +859,88 @@
   transition: transform 0.2s ease;
 }
 
+/* Mobile Touch Feedback Improvements */
 
+.fp-btn,
+.fp-tool-item,
+.fp-control-btn,
+.fp-portability-btn,
+.fp-attendee-select,
+.confirmation-modal-btn {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease,
+    background-color 0.2s ease;
+}
+
+/* Active press feedback */
+.fp-btn:active,
+.fp-tool-item:active,
+.fp-control-btn:active,
+.fp-portability-btn:active,
+.confirmation-modal-btn:active {
+  transform: scale(0.96);
+  opacity: 0.85;
+}
+
+/* Better touch target sizing */
+.fp-control-btn,
+.fp-tool-item,
+.fp-btn,
+.fp-portability-btn {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Improved mobile responsiveness */
+@media (max-width: 768px) {
+
+  .fp-topbar {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .fp-topbar-actions {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .fp-workspace {
+    flex-direction: column;
+  }
+
+  .fp-sidebar {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0;
+  }
+
+  .fp-controls-floating {
+    bottom: 12px;
+    right: 12px;
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .fp-control-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .fp-tool-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .fp-portability-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fp-canvas-wrapper {
+    overflow: auto;
+    touch-action: pan-x pan-y;
+  }
+}

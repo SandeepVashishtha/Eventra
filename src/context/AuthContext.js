@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from '../config/api';
 import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
-import { syncSecureStorage } from '../utils/secureStorage';
 import { toast } from 'react-toastify';
 import { ROLES } from '../config/roles';
 
@@ -106,12 +105,20 @@ export const AuthProvider = ({ children }) => {
   // When isAuthenticated() detects an expired token during a render, it
   // sets needsExpiryCleanupRef. This effect runs AFTER render finishes
   // and performs the actual state cleanup + toast.
+  //
+  // FIX: Added [clearExpiredSession] dependency array.
+  // Without a dependency array this effect ran after EVERY render of the
+  // entire React tree (AuthProvider wraps everything). While the ref guard
+  // prevented duplicate cleanups, the unnecessary post-render calls added
+  // overhead and made the effect semantically misleading.
+  // With [clearExpiredSession] it only re-runs when that stable callback
+  // reference changes — which is effectively once on mount.
   useEffect(() => {
     if (needsExpiryCleanupRef.current) {
       needsExpiryCleanupRef.current = false;
       clearExpiredSession();
     }
-  });
+  }, [clearExpiredSession]);
 
   // --- Smart Token Expiry Timeout ---
   // Instead of polling every 15 s, compute the exact remaining TTL from the
@@ -166,6 +173,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("token", sessionToken);
       localStorage.setItem("user", JSON.stringify(sessionUser));
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error persisting session:', error);
     }
   };
@@ -229,6 +237,7 @@ export const AuthProvider = ({ children }) => {
     });
 
     const data = await res.json().catch((error) => {
+      // eslint-disable-next-line no-console
       console.error("Failed to parse login response JSON:", error);
       return null;
     });
