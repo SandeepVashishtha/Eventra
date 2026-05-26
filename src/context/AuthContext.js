@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
   const clearSession = useCallback(() => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem("token");
+    sessionStorage.removeItem("token");
     localStorage.removeItem("user");
   }, []);
 
@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check for existing authentication on app start
-    const storedToken = localStorage.getItem("token");
+    const storedToken = sessionStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
 
     if (storedToken && storedUser) {
@@ -170,7 +170,7 @@ export const AuthProvider = ({ children }) => {
     setToken(sessionToken);
     setUser(sessionUser);
     try {
-      localStorage.setItem("token", sessionToken);
+      sessionStorage.setItem("token", sessionToken);
       localStorage.setItem("user", JSON.stringify(sessionUser));
     } catch (error) {
       // eslint-disable-next-line no-console

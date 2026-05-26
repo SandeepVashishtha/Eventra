@@ -106,7 +106,7 @@ const normalizeRequestConfig = (configOrToken = {}, maybeToken) => {
       ? configOrToken
       : typeof maybeToken === "string"
         ? maybeToken
-        : localStorage.getItem("token") || "";
+        : sessionStorage.getItem("token") || "";
 
   if (token) {
     config.headers = {
