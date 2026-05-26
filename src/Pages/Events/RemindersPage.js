@@ -8,14 +8,20 @@ import {
   subscribeToReminderChanges,
 } from "../../utils/reminderUtils";
 
-const formatEventDate = (event) =>
-  new Date(`${event.date} ${event.time || "12:00 AM"}`).toLocaleString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+import { parseEventDateTimeLocal } from "../../utils/timezoneUtils";
+
+const formatEventDate = (event) => {
+  const parsed = parseEventDateTimeLocal(event.date, event.time);
+  return parsed
+    ? parsed.toLocaleString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      })
+    : "";
+};
 
 const formatTriggerDate = (triggerAt) =>
   new Date(triggerAt).toLocaleString("en-US", {
