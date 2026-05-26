@@ -1,4 +1,6 @@
-import React from "react";
+import React, {
+  useEffect,
+} from "react";
 import { Link, useParams } from "react-router-dom";
 import { Calendar, MapPin, Clock, Tag } from "lucide-react";
 import {
@@ -40,7 +42,31 @@ const EventDetails = () => {
   }
 
   const canSetReminder = isEventBookmarked(event.id) || isRegistered(event.id);
-  const isRegistrationClosed = isEventRegistrationClosed(event.status);
+  const isRegistrationClosed = useEffect(() => {
+  if (!event) return;
+
+  const viewedEvents =
+    JSON.parse(
+      localStorage.getItem(
+        "recentlyViewedEvents"
+      )
+    ) || [];
+
+  const updatedEvents = [
+    event,
+    ...viewedEvents.filter(
+      (item) =>
+        item.id !== event.id
+    ),
+  ].slice(0, 6);
+
+  localStorage.setItem(
+    "recentlyViewedEvents",
+    JSON.stringify(
+      updatedEvents
+    )
+  );
+}, [event]);
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 py-16 px-4 sm:px-6 lg:px-8">
