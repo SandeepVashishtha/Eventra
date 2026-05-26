@@ -17,4 +17,4 @@ jobs:
 
     steps:
       - name: Apply labels based on changed files
-        uses: actions/labeler@v5
+        uses: actions/labeler@v6
