@@ -288,7 +288,7 @@ Example:
 ```env
 REACT_APP_API_URL=http://localhost:8080/api
 REACT_APP_USE_REAL_API=false
-REACT_APP_GITHUB_TOKEN=your_github_token
+GITHUB_TOKEN=your_github_token
 REACT_APP_EMAILJS_PUBLIC_KEY=your_emailjs_public_key
 REACT_APP_EMAILJS_SERVICE_ID=your_emailjs_service_id
 REACT_APP_EMAILJS_TEMPLATE_ID=your_emailjs_template_id
@@ -305,7 +305,7 @@ DAYS_THRESHOLD=30
 | `REACT_APP_API_URL` | Yes | Backend API base URL |
 | `REACT_APP_USE_REAL_API` | No | Enables real API calls in selected development flows |
 | `DAYS_THRESHOLD` | No | Threshold days configuration used by date-based features |
-| `REACT_APP_GITHUB_TOKEN` | No | GitHub API token for higher rate limits on contributor and repository stats |
+| `GITHUB_TOKEN` | No | GitHub API token for higher rate limits on contributor and repository stats (configured in Vercel environment variables, not exposed to the client) |
 | `REACT_APP_EMAILJS_PUBLIC_KEY` | No | EmailJS public key for event registration emails |
 | `REACT_APP_EMAILJS_SERVICE_ID` | No | EmailJS service ID for event registration emails |
 | `REACT_APP_EMAILJS_TEMPLATE_ID` | No | EmailJS template ID for event registration emails |
