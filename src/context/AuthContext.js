@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { API_ENDPOINTS, apiUtils } from '../config/api';
+import { clearQueue } from '../utils/offlineQueue';
 
 const AuthContext = createContext();
 
@@ -95,6 +96,7 @@ const login = async (usernameOrEmail, password) => {
     setToken(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    clearQueue();
   };
 
   const isAuthenticated = () => {
