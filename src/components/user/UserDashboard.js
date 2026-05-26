@@ -1,12 +1,25 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { getSmartDateLabel } from "../../utils/relativeTime";
 import {
   Calendar, Trophy, FolderOpen, Users, Settings,
   Clock, MapPin, Zap, Activity, Bell, ChevronRight,
-  LogOut, User, Plus, Search, X
+  LogOut, User, Plus, Search, X, Ticket
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useMyEvents } from "../../context/MyEventsContext";
+import StatusBadge from "../common/StatusBadge";
+import MyEventsTab from "./MyEventsTab";
+import {
+  DashboardItemCardSkeleton,
+  DashboardListCardSkeleton,
+  DashboardProfileSkeleton,
+  DashboardQuickActionSkeleton,
+  DashboardSectionTitleSkeleton,
+  DashboardStatCardSkeleton,
+  DashboardTableSkeleton,
+} from "../common/SkeletonLoaders";
 import "./UserDashboard.css";
 import EventTicket from "./EventTicket";
 
@@ -23,14 +36,7 @@ const stagger = {
   visible: { transition: { staggerChildren: 0.08 } }
 };
 
-const STATUS_COLORS = {
-  Completed: "ud-badge-green",
-  Upcoming: "ud-badge-blue",
-  "In Progress": "ud-badge-yellow",
-  Done: "ud-badge-green",
-  Live: "ud-badge-red",
-  "-": "ud-badge-gray",
-};
+// ✅ Removed STATUS_COLORS — no longer needed, StatusBadge handles all styling
 
 const TYPE_ICON = {
   Event: <Calendar className="ud-type-icon" style={{ color: "#6366f1" }} />,
@@ -54,12 +60,13 @@ const QUICK_ACTIONS = [
   { label: "Events", icon: <Calendar size={22} />, to: "/events", color: "#6366f1" },
   { label: "Hackathons", icon: <Trophy size={22} />, to: "/hackathons", color: "#ec4899" },
   { label: "Projects", icon: <FolderOpen size={22} />, to: "/projects", color: "#8b5cf6" },
-  { label: "Profile", icon: <User size={22} />, to: "/profile", color: "#10b981" },
-  { label: "Settings", icon: <Settings size={22} />, to: "/profile", color: "#f59e0b" },
+  { label: "Profile", icon: <User size={22} />, to: "/dashboard/profile", color: "#10b981" },
+  { label: "Settings", icon: <Settings size={22} />, to: "/settings", color: "#f59e0b" },
 ];
 
 export default function UserDashboard() {
   const { user, logout } = useAuth();
+  const { myEvents } = useMyEvents();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState("overview");
@@ -69,6 +76,7 @@ export default function UserDashboard() {
   const [greeting, setGreeting] = useState("");
   const [notifOpen, setNotifOpen] = useState(false);
   const [selectedTicketEvent, setSelectedTicketEvent] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const firstName = user?.firstName || user?.username || "there";
 
@@ -77,6 +85,11 @@ export default function UserDashboard() {
     if (h < 12) setGreeting("Good morning");
     else if (h < 17) setGreeting("Good afternoon");
     else setGreeting("Good evening");
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setLoading(false), 700);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const stats = {
@@ -118,7 +131,7 @@ export default function UserDashboard() {
 
   return (
     <div className="ud-root">
-      {/* ── Sidebar ── */}
+      {/* Sidebar */}
       <aside className="ud-sidebar">
         <div className="ud-sidebar-brand">
           <div className="ud-brand-dot" />
@@ -128,6 +141,7 @@ export default function UserDashboard() {
         <nav className="ud-nav">
           {[
             { id: "overview", icon: <Activity size={18} />, label: "Overview" },
+            { id: "my-events", icon: <Ticket size={18} />, label: "My Events", badge: myEvents.length || null },
             { id: "events", icon: <Calendar size={18} />, label: "Events" },
             { id: "hackathons", icon: <Trophy size={18} />, label: "Hackathons" },
             { id: "projects", icon: <FolderOpen size={18} />, label: "Projects" },
@@ -140,54 +154,54 @@ export default function UserDashboard() {
             >
               {item.icon}
               <span>{item.label}</span>
+              {item.badge > 0 && (
+                <span className="ud-nav-badge">{item.badge}</span>
+              )}
             </button>
           ))}
+          <Link to="/dashboard/achievements" className="ud-nav-item">
+            <Trophy size={18} />
+            <span>Achievements</span>
+          </Link>
+          <Link to="/dashboard/achievements" className="ud-nav-item">
+            <Zap size={18} />
+            <span>Quest Center</span>
+          </Link>
         </nav>
 
         <div className="ud-sidebar-bottom">
-          <Link to="/profile" className="ud-nav-item">
-            <User size={18} />
-            <span>Profile</span>
+          <Link to="/dashboard/profile" className="ud-nav-item" id="sidebar-profile-link">
+            <User size={18} /><span>Profile</span>
           </Link>
           <button className="ud-nav-item ud-nav-logout" onClick={() => { logout(); navigate("/"); }}>
-            <LogOut size={18} />
-            <span>Logout</span>
+            <LogOut size={18} /><span>Logout</span>
           </button>
         </div>
       </aside>
 
-      {/* ── Main ── */}
+      {/* Main */}
       <main className="ud-main">
-        {/* Header */}
         <header className="ud-topbar">
-          <div>
-            <p className="ud-greeting">{greeting},</p>
-            <h1 className="ud-username">{firstName} 👋</h1>
-          </div>
+          {loading ? (
+            <DashboardProfileSkeleton />
+          ) : (
+            <div>
+              <p className="ud-greeting">{greeting},</p>
+              <h1 className="ud-username">{firstName} 👋</h1>
+            </div>
+          )}
 
           <div className="ud-topbar-right">
             <div className="ud-search-wrap">
               <Search size={15} className="ud-search-icon" />
-              <input
-                className="ud-search"
-                placeholder="Search…"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-              />
+              <input className="ud-search" placeholder="Search…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
               {searchQuery && (
-                <button className="ud-search-clear" onClick={() => setSearchQuery("")}>
-                  <X size={13} />
-                </button>
+                <button className="ud-search-clear" onClick={() => setSearchQuery("")} aria-label="Clear search query"><X size={13} /></button>
               )}
             </div>
 
-            {/* Notifications */}
             <div style={{ position: "relative" }}>
-              <button
-                className="ud-icon-btn"
-                onClick={() => setNotifOpen(o => !o)}
-                aria-label="Notifications"
-              >
+              <button className="ud-icon-btn" onClick={() => setNotifOpen(o => !o)} aria-label="Notifications">
                 <Bell size={18} />
                 {unreadCount > 0 && <span className="ud-notif-dot">{unreadCount}</span>}
               </button>
@@ -203,7 +217,7 @@ export default function UserDashboard() {
                   >
                     <div className="ud-notif-header">
                       <span>Notifications</span>
-                      <button onClick={() => setNotifOpen(false)}><X size={14} /></button>
+                      <button onClick={() => setNotifOpen(false)} aria-label="Close notification panel"><X size={14} /></button>
                     </div>
                     {notifications.map(n => (
                       <div key={n.id} className={`ud-notif-item ${n.unread ? "ud-notif-unread" : ""}`}>
@@ -215,54 +229,47 @@ export default function UserDashboard() {
                 )}
               </AnimatePresence>
             </div>
-
-            <Link to="/profile" className="ud-icon-btn">
-              <div className="ud-avatar">
-                {firstName.charAt(0).toUpperCase()}
-              </div>
-            </Link>
           </div>
         </header>
 
-        {/* ── Tab: Overview ── */}
         <AnimatePresence mode="wait">
+          {/* Overview */}
           {activeTab === "overview" && (
-            <motion.div
-              key="overview"
-              variants={stagger}
-              initial="hidden"
-              animate="visible"
-              exit={{ opacity: 0 }}
-              className="ud-content"
-            >
-              {/* Stat Cards */}
+            <motion.div key="overview" variants={stagger} initial="hidden" animate="visible" exit={{ opacity: 0 }} className="ud-content">
+              {loading ? (
+                <>
+                  <div className="ud-stats-grid">
+                    {[...Array(4)].map((_, i) => (
+                      <DashboardStatCardSkeleton key={i} />
+                    ))}
+                  </div>
+
+                  <section>
+                    <DashboardSectionTitleSkeleton />
+                    <div className="ud-quick-grid">
+                      {[...Array(6)].map((_, i) => (
+                        <DashboardQuickActionSkeleton key={i} />
+                      ))}
+                    </div>
+                  </section>
+
+                  <div className="ud-three-col">
+                    {[...Array(3)].map((_, i) => (
+                      <DashboardListCardSkeleton key={i} />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
               <motion.div variants={stagger} className="ud-stats-grid">
                 {[
-                  {
-                    label: "Events", value: stats.eventsTotal,
-                    sub: `${stats.eventsCreated} hosted · ${stats.eventsJoined} joined`,
-                    icon: <Calendar size={20} />, accent: "#6366f1"
-                  },
-                  {
-                    label: "Hackathons", value: stats.hackathonsTotal,
-                    sub: `${stats.hackathonsHosted} hosted · ${stats.hackathonsJoined} joined`,
-                    icon: <Trophy size={20} />, accent: "#ec4899"
-                  },
-                  {
-                    label: "Projects", value: stats.projectsTotal,
-                    sub: `${stats.projectsDone} done · ${stats.projectsActive} active`,
-                    icon: <FolderOpen size={20} />, accent: "#8b5cf6"
-                  },
-                  {
-                    label: "Upcoming", value: upcomingEvents.length + upcomingHackathons.length,
-                    sub: `${upcomingEvents.length} events · ${upcomingHackathons.length} hackathons`,
-                    icon: <Clock size={20} />, accent: "#10b981"
-                  },
+                  { label: "Events", value: stats.eventsTotal, sub: `${stats.eventsCreated} hosted · ${stats.eventsJoined} joined`, icon: <Calendar size={20} />, accent: "#6366f1" },
+                  { label: "Hackathons", value: stats.hackathonsTotal, sub: `${stats.hackathonsHosted} hosted · ${stats.hackathonsJoined} joined`, icon: <Trophy size={20} />, accent: "#ec4899" },
+                  { label: "Projects", value: stats.projectsTotal, sub: `${stats.projectsDone} done · ${stats.projectsActive} active`, icon: <FolderOpen size={20} />, accent: "#8b5cf6" },
+                  { label: "Upcoming", value: upcomingEvents.length + upcomingHackathons.length, sub: `${upcomingEvents.length} events · ${upcomingHackathons.length} hackathons`, icon: <Clock size={20} />, accent: "#10b981" },
                 ].map((s, i) => (
                   <motion.div key={s.label} custom={i} variants={fadeUp} className="ud-stat-card">
-                    <div className="ud-stat-icon" style={{ background: s.accent + "18", color: s.accent }}>
-                      {s.icon}
-                    </div>
+                    <div className="ud-stat-icon" style={{ background: s.accent + "18", color: s.accent }}>{s.icon}</div>
                     <div className="ud-stat-info">
                       <p className="ud-stat-label">{s.label}</p>
                       <p className="ud-stat-value">{s.value}</p>
@@ -272,39 +279,29 @@ export default function UserDashboard() {
                 ))}
               </motion.div>
 
-              {/* Quick Actions */}
               <motion.section custom={1} variants={fadeUp}>
-                <h2 className="ud-section-title">
-                  <Zap size={17} /> Quick Actions
-                </h2>
+                <h2 className="ud-section-title"><Zap size={17} /> Quick Actions</h2>
                 <div className="ud-quick-grid">
                   {QUICK_ACTIONS.map(a => (
                     <Link key={a.label} to={a.to} className="ud-quick-card" style={{ "--qa-color": a.color }}>
-                      <span className="ud-quick-icon" style={{ color: a.color, background: a.color + "18" }}>
-                        {a.icon}
-                      </span>
+                      <span className="ud-quick-icon" style={{ color: a.color, background: a.color + "18" }}>{a.icon}</span>
                       <span className="ud-quick-label">{a.label}</span>
                       <ChevronRight size={14} className="ud-quick-arrow" />
                     </Link>
                   ))}
                   <Link to="/create-event" className="ud-quick-card ud-quick-new" style={{ "--qa-color": "#6366f1" }}>
-                    <span className="ud-quick-icon" style={{ color: "#6366f1", background: "#6366f118" }}>
-                      <Plus size={22} />
-                    </span>
+                    <span className="ud-quick-icon" style={{ color: "#6366f1", background: "#6366f118" }}><Plus size={22} /></span>
                     <span className="ud-quick-label">New Event</span>
                     <ChevronRight size={14} className="ud-quick-arrow" />
                   </Link>
                 </div>
               </motion.section>
 
-              {/* 3-col cards */}
               <div className="ud-three-col">
                 {/* Upcoming Events */}
                 <motion.section custom={2} variants={fadeUp} className="ud-card">
                   <div className="ud-card-head">
-                    <span className="ud-card-icon" style={{ background: "#6366f118", color: "#6366f1" }}>
-                      <Clock size={16} />
-                    </span>
+                    <span className="ud-card-icon" style={{ background: "#6366f118", color: "#6366f1" }}><Clock size={16} /></span>
                     <h3>Upcoming Events</h3>
                     <Link to="/events" className="ud-card-link">See all <ChevronRight size={13} /></Link>
                   </div>
@@ -314,11 +311,10 @@ export default function UserDashboard() {
                       <div key={ev.id} className="ud-list-item">
                         <div>
                           <p className="ud-list-title">{ev.title}</p>
-                          <p className="ud-list-meta"><Calendar size={12} /> {ev.date} · <MapPin size={12} /> {ev.location}</p>
+                          <p className="ud-list-meta"><Calendar size={12} /> {getSmartDateLabel(ev.date)} · <MapPin size={12} /> {ev.location}</p>
                         </div>
-                        <span className={`ud-badge ${STATUS_COLORS[ev.participationType] || "ud-badge-gray"}`}>
-                          {ev.participationType}
-                        </span>
+                        {/* ✅ StatusBadge replaces ud-badge span */}
+                        <StatusBadge status={ev.participationType} />
                       </div>
                     ))
                   }
@@ -327,9 +323,7 @@ export default function UserDashboard() {
                 {/* Upcoming Hackathons */}
                 <motion.section custom={3} variants={fadeUp} className="ud-card">
                   <div className="ud-card-head">
-                    <span className="ud-card-icon" style={{ background: "#ec489918", color: "#ec4899" }}>
-                      <Trophy size={16} />
-                    </span>
+                    <span className="ud-card-icon" style={{ background: "#ec489918", color: "#ec4899" }}><Trophy size={16} /></span>
                     <h3>Upcoming Hackathons</h3>
                     <Link to="/hackathons" className="ud-card-link">See all <ChevronRight size={13} /></Link>
                   </div>
@@ -339,11 +333,9 @@ export default function UserDashboard() {
                       <div key={h.id} className="ud-list-item">
                         <div>
                           <p className="ud-list-title">{h.title}</p>
-                          <p className="ud-list-meta"><Calendar size={12} /> {h.date} · <MapPin size={12} /> {h.location}</p>
+                          <p className="ud-list-meta"><Calendar size={12} /> {getSmartDateLabel(h.date)} · <MapPin size={12} /> {h.location}</p>
                         </div>
-                        <span className={`ud-badge ${STATUS_COLORS[h.participationType] || "ud-badge-gray"}`}>
-                          {h.participationType}
-                        </span>
+                        <StatusBadge status={h.participationType} />
                       </div>
                     ))
                   }
@@ -352,9 +344,7 @@ export default function UserDashboard() {
                 {/* Active Projects */}
                 <motion.section custom={4} variants={fadeUp} className="ud-card">
                   <div className="ud-card-head">
-                    <span className="ud-card-icon" style={{ background: "#8b5cf618", color: "#8b5cf6" }}>
-                      <FolderOpen size={16} />
-                    </span>
+                    <span className="ud-card-icon" style={{ background: "#8b5cf618", color: "#8b5cf6" }}><FolderOpen size={16} /></span>
                     <h3>Active Projects</h3>
                     <Link to="/projects" className="ud-card-link">See all <ChevronRight size={13} /></Link>
                   </div>
@@ -366,18 +356,21 @@ export default function UserDashboard() {
                           <p className="ud-list-title">{p.title}</p>
                           <p className="ud-list-meta">Updated: {p.lastUpdate}</p>
                         </div>
-                        <span className={`ud-badge ${STATUS_COLORS[p.projectStatus] || "ud-badge-gray"}`}>
-                          {p.projectStatus}
-                        </span>
+                        <StatusBadge status={p.projectStatus} />
                       </div>
                     ))
                   }
                 </motion.section>
               </div>
+                </>
+              )}
             </motion.div>
           )}
 
-          {/* ── Tab: Events ── */}
+          {/* My Events tab */}
+          {activeTab === "my-events" && <MyEventsTab />}
+
+          {/* Events tab */}
           {activeTab === "events" && (
             <motion.div key="events" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="ud-content">
               <div className="ud-tab-header">
@@ -385,13 +378,13 @@ export default function UserDashboard() {
                 <Link to="/events" className="ud-btn-primary"><Plus size={15} /> Explore Events</Link>
               </div>
               <div className="ud-items-grid">
-                {MOCK_DATA.filter(d => d.type === "Event").map((ev, i) => (
+                {loading
+                  ? [...Array(3)].map((_, i) => <DashboardItemCardSkeleton key={i} />)
+                  : MOCK_DATA.filter(d => d.type === "Event").map((ev, i) => (
                   <motion.div key={ev.id} custom={i} variants={fadeUp} initial="hidden" animate="visible" className="ud-item-card">
                     <div className="ud-item-top">
-                      <span className="ud-item-type" style={{ background: "#6366f118", color: "#6366f1" }}>
-                        <Calendar size={13} /> Event
-                      </span>
-                      <span className={`ud-badge ${STATUS_COLORS[ev.status] || "ud-badge-gray"}`}>{ev.status}</span>
+                      <span className="ud-item-type" style={{ background: "#6366f118", color: "#6366f1" }}><Calendar size={13} /> Event</span>
+                      <StatusBadge status={ev.status} />
                     </div>
                     <h3 className="ud-item-title">{ev.title}</h3>
                     <div className="ud-item-meta">
@@ -410,6 +403,7 @@ export default function UserDashboard() {
                           View Ticket
                         </button>
                       )}
+                      <StatusBadge status={ev.participationType} />
                     </div>
                   </motion.div>
                 ))}
@@ -417,7 +411,7 @@ export default function UserDashboard() {
             </motion.div>
           )}
 
-          {/* ── Tab: Hackathons ── */}
+          {/* Hackathons tab */}
           {activeTab === "hackathons" && (
             <motion.div key="hackathons" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="ud-content">
               <div className="ud-tab-header">
@@ -425,13 +419,13 @@ export default function UserDashboard() {
                 <Link to="/hackathons" className="ud-btn-primary"><Plus size={15} /> Explore Hackathons</Link>
               </div>
               <div className="ud-items-grid">
-                {MOCK_DATA.filter(d => d.type === "Hackathon").map((h, i) => (
+                {loading
+                  ? [...Array(3)].map((_, i) => <DashboardItemCardSkeleton key={i} />)
+                  : MOCK_DATA.filter(d => d.type === "Hackathon").map((h, i) => (
                   <motion.div key={h.id} custom={i} variants={fadeUp} initial="hidden" animate="visible" className="ud-item-card">
                     <div className="ud-item-top">
-                      <span className="ud-item-type" style={{ background: "#ec489918", color: "#ec4899" }}>
-                        <Trophy size={13} /> Hackathon
-                      </span>
-                      <span className={`ud-badge ${STATUS_COLORS[h.status] || "ud-badge-gray"}`}>{h.status}</span>
+                      <span className="ud-item-type" style={{ background: "#ec489918", color: "#ec4899" }}><Trophy size={13} /> Hackathon</span>
+                      <StatusBadge status={h.status} />
                     </div>
                     <h3 className="ud-item-title">{h.title}</h3>
                     <div className="ud-item-meta">
@@ -439,9 +433,7 @@ export default function UserDashboard() {
                       <span><MapPin size={13} /> {h.location}</span>
                     </div>
                     <div className="ud-item-footer">
-                      <span className={`ud-badge ${STATUS_COLORS[h.participationType] || "ud-badge-gray"}`}>
-                        {h.participationType}
-                      </span>
+                      <StatusBadge status={h.participationType} />
                     </div>
                   </motion.div>
                 ))}
@@ -449,7 +441,7 @@ export default function UserDashboard() {
             </motion.div>
           )}
 
-          {/* ── Tab: Projects ── */}
+          {/* Projects tab */}
           {activeTab === "projects" && (
             <motion.div key="projects" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="ud-content">
               <div className="ud-tab-header">
@@ -457,22 +449,20 @@ export default function UserDashboard() {
                 <Link to="/submit-project" className="ud-btn-primary"><Plus size={15} /> Submit Project</Link>
               </div>
               <div className="ud-items-grid">
-                {MOCK_DATA.filter(d => d.type === "Project").map((p, i) => (
+                {loading
+                  ? [...Array(2)].map((_, i) => <DashboardItemCardSkeleton key={i} />)
+                  : MOCK_DATA.filter(d => d.type === "Project").map((p, i) => (
                   <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" animate="visible" className="ud-item-card">
                     <div className="ud-item-top">
-                      <span className="ud-item-type" style={{ background: "#8b5cf618", color: "#8b5cf6" }}>
-                        <FolderOpen size={13} /> Project
-                      </span>
-                      <span className={`ud-badge ${STATUS_COLORS[p.projectStatus] || "ud-badge-gray"}`}>{p.projectStatus}</span>
+                      <span className="ud-item-type" style={{ background: "#8b5cf618", color: "#8b5cf6" }}><FolderOpen size={13} /> Project</span>
+                      <StatusBadge status={p.projectStatus} />
                     </div>
                     <h3 className="ud-item-title">{p.title}</h3>
                     <div className="ud-item-meta">
                       <span>Updated: {p.lastUpdate}</span>
                     </div>
                     <div className="ud-item-footer">
-                      <span className={`ud-badge ${STATUS_COLORS[p.participationType] || "ud-badge-gray"}`}>
-                        {p.participationType}
-                      </span>
+                      <StatusBadge status={p.participationType} />
                     </div>
                   </motion.div>
                 ))}
@@ -480,7 +470,7 @@ export default function UserDashboard() {
             </motion.div>
           )}
 
-          {/* ── Tab: Registrations ── */}
+          {/* Registrations tab */}
           {activeTab === "registrations" && (
             <motion.div key="registrations" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="ud-content">
               <div className="ud-tab-header">
@@ -495,16 +485,14 @@ export default function UserDashboard() {
                 </div>
               </div>
 
+              {loading ? (
+                <DashboardTableSkeleton rows={6} />
+              ) : (
               <div className="ud-table-wrap">
                 <table className="ud-table">
                   <thead>
                     <tr>
-                      <th>Type</th>
-                      <th>Title</th>
-                      <th>Date</th>
-                      <th>Location / Info</th>
-                      <th>Status</th>
-                      <th>Participation</th>
+                      <th>Type</th><th>Title</th><th>Date</th><th>Location / Info</th><th>Status</th><th>Participation</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -512,15 +500,13 @@ export default function UserDashboard() {
                       ? <tr><td colSpan={6} className="ud-table-empty">No records match your filters.</td></tr>
                       : filteredData.map(item => (
                         <tr key={item.id}>
+                          <td><span className="ud-table-type">{TYPE_ICON[item.type]}{item.type}</span></td>
+                          <td className="ud-table-title" title={item.title}>{item.title}</td>
+                          <td title={item.date || ""}>{item.date ? getSmartDateLabel(item.date) : "—"}</td>
+                          <td title={item.location || item.lastUpdate || "—"}>{item.location || item.lastUpdate || "—"}</td>
                           <td>
-                            <span className="ud-table-type">
-                              {TYPE_ICON[item.type]}
-                              {item.type}
-                            </span>
+                            <StatusBadge status={item.projectStatus !== "-" ? item.projectStatus : item.status} />
                           </td>
-                          <td className="ud-table-title">{item.title}</td>
-                          <td>{item.date || "—"}</td>
-                          <td>{item.location || item.lastUpdate || "—"}</td>
                           <td>
                             <span className={`ud-badge ${STATUS_COLORS[item.projectStatus] || STATUS_COLORS[item.status] || "ud-badge-gray"}`}>
                               {item.projectStatus !== "-" ? item.projectStatus : item.status}
@@ -540,6 +526,7 @@ export default function UserDashboard() {
                                 </button>
                               )}
                             </div>
+                            <StatusBadge status={item.participationType} />
                           </td>
                         </tr>
                       ))
@@ -547,6 +534,7 @@ export default function UserDashboard() {
                   </tbody>
                 </table>
               </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

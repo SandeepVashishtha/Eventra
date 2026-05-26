@@ -1,188 +1,147 @@
 [
   {
     "id": 1,
-    "title": "AI Innovation Challenge 2025",
+    "title": "AI Innovation Challenge 2026",
     "status": "live",
-    "startDate": "2025-02-01",
-    "endDate": "2025-02-03",
-    "timeLeft": "2 days 14 hours",
+    "startDate": "2026-05-10",
+    "endDate": "2026-06-10",
     "participants": 1250,
     "teams": 315,
+    "submissions": 180,
     "prize": "$50,000",
     "description": "Build innovative AI solutions that can solve real-world problems.",
+    "location": "Virtual",
+    "organizer": "TechCorp Inc.",
+    "difficulty": "Advanced",
+    "techStack": ["Python", "TensorFlow", "React", "Node.js"],
     "rules": [
       "Teams of 2-4 members",
       "Must use provided API endpoints",
-      "Submit working prototype with documentation",
+      "Submit working prototype",
       "Open source code required"
     ],
-    "techStack": ["Python", "TensorFlow", "React", "Node.js"],
-    "organizer": "TechCorp Inc.",
-    "difficulty": "Advanced",
-    "location": "Virtual",
-    "submissions": 89
+    "winner": "",
+    "featured": true
   },
+
   {
     "id": 2,
     "title": "Green Tech Hackathon",
     "status": "upcoming",
-    "startDate": "2025-03-15",
-    "endDate": "2025-03-17",
-    "timeLeft": "45 days",
-    "participants": 0,
-    "teams": 0,
+    "startDate": "2026-08-15",
+    "endDate": "2026-08-17",
+    "participants": 420,
+    "teams": 110,
+    "submissions": 0,
     "prize": "$25,000",
     "description": "Create sustainable technology solutions for environmental challenges.",
-    "rules": [
-      "Individual or team participation",
-      "Focus on sustainability",
-      "Working demo required",
-      "Present to judges"
-    ],
-    "techStack": ["Any", "IoT", "Mobile", "Web"],
-    "organizer": "EcoTech Foundation",
-    "difficulty": "Intermediate",
     "location": "San Francisco, CA",
-    "submissions": 0
+    "organizer": "EcoFuture Labs",
+    "difficulty": "Beginner",
+    "techStack": ["React", "Node.js", "MongoDB", "IoT"],
+    "rules": [
+      "Green technology focus",
+      "Prototype required",
+      "Max 4 members"
+    ],
+    "winner": "",
+    "featured": false
   },
+
   {
     "id": 3,
     "title": "FinTech Innovation Sprint",
     "status": "completed",
-    "startDate": "2024-12-01",
-    "endDate": "2024-12-03",
-    "timeLeft": "Completed",
+    "startDate": "2025-12-01",
+    "endDate": "2025-12-03",
     "participants": 800,
     "teams": 200,
+    "submissions": 150,
     "prize": "$30,000",
     "description": "Revolutionary financial technology solutions for the future.",
-    "rules": [
-      "Teams of 3-5 members",
-      "Financial domain focus",
-      "Security compliance required",
-      "Business plan submission"
-    ],
-    "techStack": ["Blockchain", "React", "Node.js", "Python"],
-    "organizer": "FinTech Alliance",
-    "difficulty": "Advanced",
     "location": "New York, NY",
-    "submissions": 156,
-    "winner": "CryptoWallet Pro Team"
+    "organizer": "FinVerse",
+    "difficulty": "Intermediate",
+    "techStack": ["Blockchain", "Solidity", "Ethereum", "React"],
+    "rules": [
+      "No copied projects",
+      "Live demo required",
+      "Original code only"
+    ],
+    "winner": "Team Nexus",
+    "featured": false
   },
+
   {
     "id": 4,
     "title": "Virtual Reality Hackathon",
     "status": "live",
-    "startDate": "2025-07-15",
-    "endDate": "2025-07-17",
-    "timeLeft": "45 days",
+    "startDate": "2026-05-01",
+    "endDate": "2026-07-01",
     "participants": 500,
     "teams": 150,
+    "submissions": 95,
     "prize": "$20,000",
     "description": "Create immersive virtual reality experiences for future.",
+    "location": "Los Angeles, CA",
+    "organizer": "VRX Studios",
+    "difficulty": "Intermediate",
+    "techStack": ["Unity", "Vuforia", "C++"],
     "rules": [
       "Teams of 2-4 members",
       "VR domain focus",
       "Working prototype required",
       "Present to judges"
     ],
-    "techStack": ["Unity", "Vuforia", "C++"],
-    "organizer": "VRX Studios",
-    "difficulty": "Intermediate",
-    "location": "Los Angeles, CA",
-    "submissions": 120
+    "winner": "",
+    "featured": true
   },
+
   {
     "id": 5,
     "title": "Coding Bootcamp Challenge",
     "status": "upcoming",
-    "startDate": "2025-11-15",
-    "endDate": "2025-11-17",
-    "timeLeft": "95 days",
-    "participants": 0,
-    "teams": 0,
+    "startDate": "2026-09-15",
+    "endDate": "2026-09-17",
+    "participants": 210,
+    "teams": 65,
+    "submissions": 0,
     "prize": "$10,000",
     "description": "Build a project in a coding bootcamp using latest techstack.",
-    "rules": [
-      "Teams of 2-4 members",
-      "Focus on bootcamp curriculum",
-      "Working prototype required",
-      "Present to judges"
-    ],
-    "techStack": ["React", "Node.js", "Python"],
-    "organizer": "Coding Bootcamp Alumni Association",
-    "difficulty": "Beginner",
     "location": "Online",
-    "submissions": 0
+    "organizer": "CodeSprint",
+    "difficulty": "Beginner",
+    "techStack": ["HTML", "CSS", "JavaScript", "React"],
+    "rules": [
+      "Individual or team participation",
+      "Must submit GitHub repo",
+      "Presentation required"
+    ],
+    "winner": "",
+    "featured": false
   },
+
   {
     "id": 6,
     "title": "Blockchain Hackathon",
     "status": "completed",
-    "startDate": "2025-05-01",
-    "endDate": "2025-05-03",
-    "timeLeft": "Completed",
+    "startDate": "2025-10-01",
+    "endDate": "2025-10-03",
     "participants": 300,
     "teams": 100,
+    "submissions": 75,
     "prize": "$15,000",
     "description": "Build decentralized applications and blockchain solutions.",
-    "rules": [
-      "Teams of 3-5 members",
-      "Blockchain domain focus",
-      "Working prototype required",
-      "Business plan submission"
-    ],
-    "techStack": ["Ethereum", "Solidity", "Python"],
-    "organizer": "Blockchain Alliance",
-    "difficulty": "Advanced",
     "location": "New York, NY",
-    "submissions": 80,
-    "winner": "CryptoVote Team"
-  },
-  {
-    "id": 7,
-    "title": "Chatbot Hackathon",
-    "status": "live",
-    "startDate": "2025-08-15",
-    "endDate": "2025-08-17",
-    "timeLeft": "45 days",
-    "participants": 400,
-    "teams": 200,
-    "prize": "$10,000",
-    "description": "Build conversational AI chatbots with fuzzy searches.",
+    "organizer": "ChainLabs",
+    "difficulty": "Advanced",
+    "techStack": ["Blockchain", "Ethereum", "Solidity", "Web3.js"],
     "rules": [
-      "Teams of 2-4 members",
-      "Natural Language Processing focus",
-      "Working prototype required",
-      "Present to judges"
+      "Smart contracts required",
+      "Live blockchain demo",
+      "No copied code"
     ],
-    "techStack": ["Python", "Rasa", "ChatGPT"],
-    "organizer": "Chatbot Inc.",
-    "difficulty": "Intermediate",
-    "location": "San Francisco, CA",
-    "submissions": 180
-  },
-  {
-    "id": 8,
-    "title": "AI for Social Good Challenge",
-    "status": "upcoming",
-    "startDate": "2025-12-01",
-    "endDate": "2025-12-03",
-    "timeLeft": "95 days",
-    "participants": 0,
-    "teams": 0,
-    "prize": "$20,000",
-    "description": "Build AI solutions for social and environmental challenges.",
-    "rules": [
-      "Individual or team participation",
-      "Social impact focus",
-      "Working prototype required",
-      "Present to judges"
-    ],
-    "techStack": ["Python", "TensorFlow", "React"],
-    "organizer": "AI for Social Good Foundation",
-    "difficulty": "Beginner",
-    "location": "Online",
-    "submissions": 0
+    "winner": "Crypto Titans",
+    "featured": false
   }
 ]

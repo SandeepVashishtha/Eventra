@@ -1,14 +1,24 @@
-import React, { useState } from 'react';
+import StatusBadge from "../common/StatusBadge";
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate,useLocation } from 'react-router-dom';
 import {
   Users, Calendar, Activity, Shield, LogOut, Plus,
   Search, ChevronRight, BarChart2,
-  Trash2, Edit2, CheckCircle, AlertCircle,
+  Trash2, Edit2, AlertCircle,
   TrendingUp
 } from 'lucide-react';
+import {
+  AdminListCardSkeleton,
+  AdminStatCardSkeleton,
+  AdminTableSkeleton,
+} from '../common/SkeletonLoaders';
 import './AdminDashboard.css';
+import AnalyticsDashboard from './AnalyticsDashboard';
+import { toast } from 'react-toastify';
+
+import { ROLES,PERMISSIONS } from "../../config/roles";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -23,15 +33,59 @@ const stagger = {
   visible: { transition: { staggerChildren: 0.07 } }
 };
 
+
 /* ─── Mock data (replace with real API calls when endpoints are ready) ─── */
 const MOCK_USERS = [
-  { id: 1, firstName: 'Aarav', lastName: 'Sharma', email: 'aarav@example.com', roles: ['USER'], createdAt: '2025-01-15', status: 'Active' },
-  { id: 2, firstName: 'Priya', lastName: 'Mehta',  email: 'priya@example.com', roles: ['EVENT_MANAGER'], createdAt: '2025-02-20', status: 'Active' },
-  { id: 3, firstName: 'Rohan', lastName: 'Verma',  email: 'rohan@example.com', roles: ['USER'], createdAt: '2025-03-05', status: 'Inactive' },
-  { id: 4, firstName: 'Sneha', lastName: 'Patel',  email: 'sneha@example.com', roles: ['USER'], createdAt: '2025-04-12', status: 'Active' },
-  { id: 5, firstName: 'Karan', lastName: 'Joshi',  email: 'karan@example.com', roles: ['EVENT_MANAGER'], createdAt: '2025-05-01', status: 'Active' },
-];
+  {
+    id: 1,
+    firstName: 'Aarav',
+    lastName: 'Sharma',
+    email: 'aarav@example.com',
+    roles: [ROLES.ATTENDEE],
+    createdAt: '2025-01-15',
+    status: 'Active'
+  },
 
+  {
+    id: 2,
+    firstName: 'Priya',
+    lastName: 'Mehta',
+    email: 'priya@example.com',
+    roles: [ROLES.ORGANIZER],
+    createdAt: '2025-02-20',
+    status: 'Active'
+  },
+
+  {
+    id: 3,
+    firstName: 'Rohan',
+    lastName: 'Verma',
+    email: 'rohan@example.com',
+    roles: [ROLES.ATTENDEE],
+    createdAt: '2025-03-05',
+    status: 'Inactive'
+  },
+
+  {
+    id: 4,
+    firstName: 'Sneha',
+    lastName: 'Patel',
+    email: 'sneha@example.com',
+    roles: [ROLES.VOLUNTEER],
+    createdAt: '2025-04-12',
+    status: 'Active'
+  },
+
+  {
+    id: 5,
+    firstName: 'Karan',
+    lastName: 'Joshi',
+    email: 'karan@example.com',
+    roles: [ROLES.ADMIN],
+    createdAt: '2025-05-01',
+    status: 'Active'
+  },
+];
 const MOCK_EVENTS = [
   { id: 1, title: 'Tech Talk: AI in 2025', date: '2025-06-15', participantCount: 120, status: 'Completed', type: 'Event' },
   { id: 2, title: 'Web Dev Workshop',       date: '2025-09-10', participantCount: 45,  status: 'Upcoming',  type: 'Event' },
@@ -39,12 +93,6 @@ const MOCK_EVENTS = [
   { id: 4, title: 'Hack for Sustainability',date: '2025-07-20', participantCount: 80,  status: 'Completed', type: 'Hackathon' },
   { id: 5, title: 'Global AI Hackathon',    date: '2025-10-10', participantCount: 200, status: 'Upcoming',  type: 'Hackathon' },
 ];
-
-const STATUS_COLORS = {
-  Active: 'ad-badge-green', Inactive: 'ad-badge-gray',
-  Upcoming: 'ad-badge-blue', Completed: 'ad-badge-green',
-  USER: 'ad-badge-gray', EVENT_MANAGER: 'ad-badge-blue', ADMIN: 'ad-badge-purple',
-};
 
 /* ─── Confirmation Modal ─── */
 function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
@@ -73,7 +121,15 @@ function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
 /* ─── Main Component ─── */
 const AdminDashboard = () => {
   const { user, logout, hasPermission } = useAuth();
+  const userRoles = user?.roles || [];
   const navigate = useNavigate();
+  const location = useLocation();
+  const isAdmin =
+    userRoles.includes(ROLES.ADMIN) ||
+    userRoles.includes(ROLES.SUPER_ADMIN);
+
+  
+ 
 
   const [activeTab, setActiveTab] = useState('overview');
   const [users,  setUsers]  = useState(MOCK_USERS);
@@ -81,20 +137,30 @@ const AdminDashboard = () => {
   const [searchUser,  setSearchUser]  = useState('');
   const [searchEvent, setSearchEvent] = useState('');
   const [confirmModal, setConfirmModal] = useState({ open: false, type: '', id: null });
-  const [toast, setToast] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const firstName = user?.firstName || user?.username || 'Admin';
 
-  const showToast = (msg, type = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  };
+  useEffect(() => {
+    const timer = window.setTimeout(() => setLoading(false), 700);
+    return () => window.clearTimeout(timer);
+  }, []);
+  useEffect(() => {
+  setActiveTab('overview');
+}, [location.pathname]);
 
+  if (!isAdmin) {
+    return <Navigate to="/unauthorized" replace />;
+  }
   /* Stats */
   const totalUsers  = users.length;
   const activeUsers = users.filter(u => u.status === 'Active').length;
   const totalEvents = events.length;
-  const upcoming    = events.filter(e => e.status === 'Upcoming').length;
+
+  const upcoming = events.filter(e =>
+    new Date(e.date) > new Date()
+  ).length;
+
   const totalParticipants = events.reduce((s, e) => s + e.participantCount, 0);
 
   /* Delete handlers */
@@ -105,7 +171,7 @@ const AdminDashboard = () => {
     if (type === 'user')  setUsers(prev  => prev.filter(u => u.id !== id));
     if (type === 'event') setEvents(prev => prev.filter(e => e.id !== id));
     setConfirmModal({ open: false, type: '', id: null });
-    showToast(`${type === 'user' ? 'User' : 'Event'} deleted successfully.`);
+    toast.success(`${type === 'user' ? 'User' : 'Event'} deleted successfully.`);
   };
 
   const filteredUsers  = users.filter(u =>
@@ -173,7 +239,7 @@ const AdminDashboard = () => {
             </h1>
           </div>
           <div className="ad-topbar-right">
-            {activeTab === 'events' && hasPermission('CREATE_EVENT') && (
+            {activeTab === 'events' && hasPermission(PERMISSIONS.CREATE_EVENT) && (
               <button className="ad-btn-primary" onClick={() => navigate('/create-event')}>
                 <Plus size={15} /> New Event
               </button>
@@ -184,19 +250,7 @@ const AdminDashboard = () => {
           </div>
         </header>
 
-        {/* Toast */}
-        <AnimatePresence>
-          {toast && (
-            <motion.div
-              className={`ad-toast ${toast.type === 'error' ? 'ad-toast-error' : ''}`}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-            >
-              <CheckCircle size={15} /> {toast.msg}
-            </motion.div>
-          )}
-        </AnimatePresence>
+
 
         <div className="ad-content">
           <AnimatePresence mode="wait">
@@ -207,7 +261,9 @@ const AdminDashboard = () => {
 
                 {/* Stat Cards */}
                 <motion.div variants={stagger} className="ad-stats-grid">
-                  {[
+                  {loading
+                    ? [...Array(4)].map((_, i) => <AdminStatCardSkeleton key={i} />)
+                    : [
                     { label: 'Total Users',     value: totalUsers,        sub: `${activeUsers} active`,      icon: <Users size={20} />,    color: '#6366f1' },
                     { label: 'Total Events',    value: totalEvents,       sub: `${upcoming} upcoming`,       icon: <Calendar size={20} />, color: '#ec4899' },
                     { label: 'Participants',    value: totalParticipants, sub: 'across all events',          icon: <TrendingUp size={20}/>, color: '#10b981' },
@@ -226,6 +282,13 @@ const AdminDashboard = () => {
 
                 {/* Recent Users + Recent Events */}
                 <div className="ad-two-col">
+                  {loading ? (
+                    <>
+                      <AdminListCardSkeleton />
+                      <AdminListCardSkeleton />
+                    </>
+                  ) : (
+                  <>
                   <motion.section custom={1} variants={fadeUp} className="ad-card">
                     <div className="ad-card-head">
                       <span className="ad-card-icon" style={{ background: '#6366f118', color: '#6366f1' }}><Users size={15} /></span>
@@ -239,7 +302,7 @@ const AdminDashboard = () => {
                           <p className="ad-list-title">{u.firstName} {u.lastName}</p>
                           <p className="ad-list-sub">{u.email}</p>
                         </div>
-                        <span className={`ad-badge ${STATUS_COLORS[u.status] || 'ad-badge-gray'}`}>{u.status}</span>
+                        <StatusBadge status={u.status} />
                       </div>
                     ))}
                   </motion.section>
@@ -257,10 +320,12 @@ const AdminDashboard = () => {
                           <p className="ad-list-title">{ev.title}</p>
                           <p className="ad-list-sub">{ev.date} · {ev.participantCount} participants</p>
                         </div>
-                        <span className={`ad-badge ${STATUS_COLORS[ev.status] || 'ad-badge-gray'}`}>{ev.status}</span>
+                        <StatusBadge status={ev.status} />
                       </div>
                     ))}
                   </motion.section>
+                  </>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -282,6 +347,9 @@ const AdminDashboard = () => {
                 </div>
 
                 <div className="ad-table-wrap">
+                  {loading ? (
+                    <AdminTableSkeleton rows={5} />
+                  ) : (
                   <table className="ad-table">
                     <thead>
                       <tr>
@@ -307,19 +375,19 @@ const AdminDashboard = () => {
                             <td className="ad-muted">{u.email}</td>
                             <td>
                               {u.roles.map(r => (
-                                <span key={r} className={`ad-badge ${STATUS_COLORS[r] || 'ad-badge-gray'}`} style={{ marginRight: '4px' }}>{r}</span>
+                                <span key={r} style={{ marginRight: '4px' }}><StatusBadge status={r} /></span>
                               ))}
                             </td>
                             <td className="ad-muted">{u.createdAt}</td>
-                            <td><span className={`ad-badge ${STATUS_COLORS[u.status] || 'ad-badge-gray'}`}>{u.status}</span></td>
+                            <td><StatusBadge status={u.status} /></td>
                             <td>
                               <div className="ad-action-btns">
-                                {hasPermission('EDIT_USER') && (
-                                  <button className="ad-icon-action" title="Edit" onClick={() => showToast('Edit coming soon', 'info')}>
+                                {hasPermission(PERMISSIONS.EDIT_USER) && (
+                                  <button className="ad-icon-action" title="Edit" onClick={() => toast.info('Edit coming soon')}>
                                     <Edit2 size={14} />
                                   </button>
                                 )}
-                                {hasPermission('DELETE_USER') && (
+                                {hasPermission(PERMISSIONS.DELETE_USER) && (
                                   <button className="ad-icon-action ad-icon-danger" title="Delete" onClick={() => confirmDelete('user', u.id)}>
                                     <Trash2 size={14} />
                                   </button>
@@ -330,6 +398,7 @@ const AdminDashboard = () => {
                         ))}
                     </tbody>
                   </table>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -351,6 +420,9 @@ const AdminDashboard = () => {
                 </div>
 
                 <div className="ad-table-wrap">
+                  {loading ? (
+                    <AdminTableSkeleton rows={5} />
+                  ) : (
                   <table className="ad-table">
                     <thead>
                       <tr>
@@ -369,21 +441,21 @@ const AdminDashboard = () => {
                           <tr key={ev.id}>
                             <td className="ad-table-bold">{ev.title}</td>
                             <td>
-                              <span className={`ad-badge ${ev.type === 'Hackathon' ? 'ad-badge-purple' : 'ad-badge-blue'}`}>
-                                {ev.type}
-                              </span>
+                              <StatusBadge status={ev.type} />
+                              
+                              
                             </td>
                             <td className="ad-muted">{ev.date}</td>
                             <td className="ad-muted">{ev.participantCount}</td>
-                            <td><span className={`ad-badge ${STATUS_COLORS[ev.status] || 'ad-badge-gray'}`}>{ev.status}</span></td>
+                            <td><StatusBadge status={ev.status} /></td>
                             <td>
                               <div className="ad-action-btns">
-                                {hasPermission('EDIT_EVENT') && (
-                                  <button className="ad-icon-action" title="Edit" onClick={() => showToast('Edit coming soon', 'info')}>
+                                {hasPermission(PERMISSIONS.EDIT_EVENT) && (
+                                  <button className="ad-icon-action" title="Edit" onClick={() => toast.info('Edit coming soon')}>
                                     <Edit2 size={14} />
                                   </button>
                                 )}
-                                {hasPermission('DELETE_EVENT') && (
+                                {hasPermission(PERMISSIONS.DELETE_EVENT) && (
                                   <button className="ad-icon-action ad-icon-danger" title="Delete" onClick={() => confirmDelete('event', ev.id)}>
                                     <Trash2 size={14} />
                                   </button>
@@ -394,6 +466,7 @@ const AdminDashboard = () => {
                         ))}
                     </tbody>
                   </table>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -402,7 +475,9 @@ const AdminDashboard = () => {
             {activeTab === 'analytics' && (
               <motion.div key="analytics" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="ad-section">
                 <motion.div variants={stagger} initial="hidden" animate="visible" className="ad-stats-grid">
-                  {[
+                  {loading
+                    ? [...Array(4)].map((_, i) => <AdminStatCardSkeleton key={i} />)
+                    : [
                     { label: 'Total Users',        value: totalUsers,        sub: `${activeUsers} active · ${totalUsers - activeUsers} inactive`,    color: '#6366f1', icon: <Users size={20} /> },
                     { label: 'Events Hosted',       value: totalEvents,       sub: `${upcoming} upcoming · ${totalEvents - upcoming} completed`,      color: '#ec4899', icon: <Calendar size={20} /> },
                     { label: 'Total Participants',  value: totalParticipants, sub: 'across all events',                                              color: '#10b981', icon: <TrendingUp size={20} /> },
@@ -419,48 +494,10 @@ const AdminDashboard = () => {
                   ))}
                 </motion.div>
 
-                {/* Event Breakdown */}
-                <motion.section custom={1} variants={fadeUp} className="ad-card" style={{ marginTop: '1.5rem' }}>
-                  <div className="ad-card-head">
-                    <span className="ad-card-icon" style={{ background: '#6366f118', color: '#6366f1' }}><BarChart2 size={15} /></span>
-                    <h3>Event Breakdown</h3>
-                  </div>
-                  <div className="ad-analytics-bars">
-                    {events.map(ev => (
-                      <div key={ev.id} className="ad-bar-row">
-                        <span className="ad-bar-label">{ev.title}</span>
-                        <div className="ad-bar-track">
-                          <motion.div
-                            className="ad-bar-fill"
-                            initial={{ width: 0 }}
-                            animate={{ width: `${(ev.participantCount / totalParticipants) * 100}%` }}
-                            transition={{ duration: 0.6, delay: 0.1 }}
-                          />
-                        </div>
-                        <span className="ad-bar-value">{ev.participantCount}</span>
-                      </div>
-                    ))}
-                  </div>
-                </motion.section>
-
-                {/* Role Distribution */}
-                <motion.section custom={2} variants={fadeUp} className="ad-card" style={{ marginTop: '1rem' }}>
-                  <div className="ad-card-head">
-                    <span className="ad-card-icon" style={{ background: '#ec489918', color: '#ec4899' }}><Shield size={15} /></span>
-                    <h3>Role Distribution</h3>
-                  </div>
-                  <div className="ad-role-chips">
-                    {['USER', 'EVENT_MANAGER', 'ADMIN'].map(role => {
-                      const count = users.filter(u => u.roles.includes(role)).length;
-                      return (
-                        <div key={role} className="ad-role-chip">
-                          <span className={`ad-badge ${STATUS_COLORS[role] || 'ad-badge-gray'}`}>{role}</span>
-                          <span className="ad-role-count">{count} user{count !== 1 ? 's' : ''}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </motion.section>
+                {/* Dynamic Analytics Dashboard */}
+                <div style={{ marginTop: '1.5rem' }}>
+                  <AnalyticsDashboard />
+                </div>
               </motion.div>
             )}
 

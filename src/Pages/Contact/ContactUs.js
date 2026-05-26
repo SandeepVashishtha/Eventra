@@ -1,80 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { User, Mail, FileText, MessageSquare } from "lucide-react";
-import {
-  FiStar,
-  FiMessageSquare,
-} from "react-icons/fi";
+import { motion } from "framer-motion";
+import { User, Mail, FileText, MessageSquare, AlertCircle } from "lucide-react";
+import { FiStar, FiMessageSquare } from "react-icons/fi";
+import { toast } from "react-toastify";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
-// Toast Component
-const Toast = ({ message, type = "success", onClose }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 50, scale: 0.3 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
-      className={`fixed top-24 right-4 max-w-sm w-full shadow-lg rounded-lg pointer-events-auto overflow-hidden ${
-        type === "success" ? "bg-green-500" : "bg-red-500"
-      }`}
-    >
-      <div className="p-4">
-        <div className="flex items-start">
-          <div className="flex-shrink-0">
-            {type === "success" ? (
-              <svg
-                className="h-6 w-6 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            ) : (
-              <svg
-                className="h-6 w-6 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            )}
-          </div>
-          <div className="ml-3 w-0 flex-1 pt-0.5">
-            <p className="text-sm font-medium text-white">{message}</p>
-          </div>
-          <div className="ml-4 flex-shrink-0 flex">
-            <button
-              onClick={onClose}
-              className="bg-transparent inline-flex text-white hover:text-gray-200 focus:outline-none"
-            >
-              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path
-                  fillRule="evenodd"
-                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-// Floating Label Input Component
-const FloatingInput = ({
+const FloatingField = ({
   id,
   label,
   type = "text",
@@ -83,52 +14,78 @@ const FloatingInput = ({
   required = true,
   error,
   icon: Icon,
+  as = "input",
+  rows = 4,
+  autoComplete,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const isTextArea = as === "textarea";
+  const hasValue = Boolean(value?.trim());
+  const isActive = isFocused || hasValue;
+  const FieldElement = isTextArea ? "textarea" : "input";
 
   return (
-    <div className="relative mt-6">
-      {Icon && (
-        <Icon className="absolute left-3 top-4 text-gray-400 w-5 h-5 pointer-events-none" />
-      )}
-      <motion.label
-        htmlFor={id}
-        className={`absolute transition-all duration-300 ${
-          isFocused || value
-            ? "top-0 text-xs text-black dark:text-white font-medium"
-            : "top-4 text-sm text-gray-500 dark:text-gray-400"
-        } ${error ? "text-red-500 dark:text-red-400" : ""}`}
-        initial={false}
-        animate={{
-          y: isFocused || value ? -20 : 0,
-          scale: isFocused || value ? 0.85 : 1,
-          left: isFocused || value ? "0.75rem" : "2.5rem",
-          transformOrigin: "left",
-        }}
+    <div className="space-y-1">
+      <div
+        className={`relative rounded-2xl border bg-white/80 dark:bg-slate-900/70 backdrop-blur-sm transition-all duration-300 ${error
+            ? "border-red-400 bg-red-50/40 dark:border-red-500 dark:bg-red-950/20"
+            : hasValue && !isFocused
+              ? "border-green-400 dark:border-green-500"
+              : isActive
+                ? "border-indigo-500 dark:border-indigo-400 shadow-[0_0_0_4px_rgba(99,102,241,0.16)] dark:shadow-[0_0_0_4px_rgba(99,102,241,0.22)]"
+                : "border-slate-200/90 dark:border-slate-700/90 hover:border-indigo-300 dark:hover:border-indigo-500/70"
+          }`}
       >
-        {label} {required && <span className="text-red-500">*</span>}
-      </motion.label>
+        {Icon && (
+          <Icon
+            className={`pointer-events-none absolute left-4 h-5 w-5 text-slate-400 transition-colors duration-300 ${isTextArea ? "top-5" : "top-1/2 -translate-y-1/2"
+              } ${error
+                ? "text-red-500 dark:text-red-400"
+                : isActive
+                  ? "text-indigo-500 dark:text-indigo-300"
+                  : ""
+              }`}
+          />
+        )}
+        <label
+          htmlFor={id}
+          className={`pointer-events-none absolute z-10 origin-left transition-all duration-300 ${isActive
+              ? "left-3 -top-2 rounded-md bg-white/95 px-2 text-xs font-semibold text-indigo-600 dark:bg-gray-900/95 dark:text-indigo-300"
+              : isTextArea
+                ? "left-11 top-5 text-sm text-slate-500 dark:text-slate-400"
+                : "left-11 top-1/2 -translate-y-1/2 text-sm text-slate-500 dark:text-slate-400"
+            } ${error ? "text-red-500 dark:text-red-400" : ""}`}
+        >
+          {label} {required && <span className="text-red-500">*</span>}
+        </label>
 
-      <input
-        id={id}
-        name={id}
-        type={type}
-        value={value}
-        onChange={onChange}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        className={`w-full py-3 pl-10 pr-4 border rounded-lg focus:ring-2 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
-          error
-            ? "border-red-500 focus:ring-red-200"
-            : "border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-200 dark:focus:ring-indigo-900/50"
-        }`}
-      />
+        <FieldElement
+          id={id}
+          name={id}
+          type={isTextArea ? undefined : type}
+          rows={isTextArea ? rows : undefined}
+          value={value}
+          onChange={onChange}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          aria-required={required}
+          autoComplete={autoComplete}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${id}-error` : undefined}
+          className={`block w-full appearance-none border-0 bg-transparent text-slate-900 outline-none shadow-none ring-0 transition-colors duration-200 placeholder-transparent focus:border-0 focus:outline-none focus:ring-0 dark:text-slate-100 ${isTextArea
+              ? "min-h-[152px] resize-y pl-11 pr-4 pt-7 pb-4 leading-relaxed"
+              : "h-14 pl-11 pr-4 pt-5 pb-2"
+            }`}
+        />
+      </div>
       {error && (
         <motion.p
+          id={`${id}-error`}
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-red-500 dark:text-red-400 text-xs mt-1 ml-1"
+          className="ml-1 mt-1 flex items-center gap-1.5 text-sm text-red-500 dark:text-red-400"
         >
+          <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
         </motion.p>
       )}
@@ -136,20 +93,17 @@ const FloatingInput = ({
   );
 };
 
-// Contact Us Page Component
-
 const ContactUs = () => {
+  useDocumentTitle("Eventra | Contact Us");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     subject: "",
     message: "",
-    phone: "",
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [toast, setToast] = useState(null);
   const formRef = useRef(null);
 
   // Scroll to top when component mounts
@@ -158,43 +112,43 @@ const ContactUs = () => {
   }, []);
 
   const validateForm = () => {
-  const newErrors = {};
+    const newErrors = {};
 
-  // Name validation
-  if (!formData.name.trim()) {
-    newErrors.name = "Name is required";
-  } else if (formData.name.trim().length < 2) {
-    newErrors.name = "Name must be at least 2 characters";
-  } else if (!/^[A-Za-z\s]+$/.test(formData.name)) {
-    newErrors.name = "Name should contain only letters";
-  }
+    // Name validation
+    if (!formData.name.trim()) {
+      newErrors.name = "Name is required";
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = "Name must be at least 2 characters";
+    } else if (!/^[A-Za-z\s]+$/.test(formData.name)) {
+      newErrors.name = "Name should contain only letters";
+    }
 
-  // Email validation (unchanged)
-  if (!formData.email.trim()) {
-    newErrors.email = "Email is required";
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-    newErrors.email = "Please enter a valid email";
-  }
+    // Email validation (unchanged)
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email";
+    }
 
-  // Subject validation
-  if (!formData.subject.trim()) {
-    newErrors.subject = "Subject is required";
-  } else if (formData.subject.trim().length < 5) {
-    newErrors.subject = "Subject must be at least 5 characters";
-  } else if (!/[a-zA-Z]{2,}/.test(formData.subject)) {
-    newErrors.subject = "Please enter a meaningful subject";
-  }
+    // Subject validation
+    if (!formData.subject.trim()) {
+      newErrors.subject = "Subject is required";
+    } else if (formData.subject.trim().length < 5) {
+      newErrors.subject = "Subject must be at least 5 characters";
+    } else if (!/[a-zA-Z]{2,}/.test(formData.subject)) {
+      newErrors.subject = "Please enter a meaningful subject";
+    }
 
-  // Message validation
-  if (!formData.message.trim()) {
-    newErrors.message = "Message is required";
-  } else if (formData.message.trim().length < 10) {
-    newErrors.message = "Message must be at least 10 characters";
-  }
+    // Message validation
+    if (!formData.message.trim()) {
+      newErrors.message = "Message is required";
+    } else if (formData.message.trim().length < 10) {
+      newErrors.message = "Message must be at least 10 characters";
+    }
 
-  setErrors(newErrors);
-  return Object.keys(newErrors).length === 0;
-};
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -217,10 +171,14 @@ const ContactUs = () => {
 
     if (!validateForm()) {
       // Shake animation for invalid form
-      formRef.current.classList.add("animate-shake");
-      setTimeout(() => {
-        formRef.current.classList.remove("animate-shake");
-      }, 500);
+      if (formRef.current) {
+        formRef.current.classList.add("animate-shake");
+        setTimeout(() => {
+          if (formRef.current) {
+            formRef.current.classList.remove("animate-shake");
+          }
+        }, 500);
+      }
       return;
     }
 
@@ -231,11 +189,7 @@ const ContactUs = () => {
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
       // Show success toast
-      setToast({
-        message:
-          "Your message has been sent successfully! We'll get back to you soon.",
-        type: "success",
-      });
+      toast.success("Your message has been sent successfully! We'll get back to you soon.");
 
       // Reset form
       setFormData({
@@ -245,22 +199,14 @@ const ContactUs = () => {
         message: "",
       });
     } catch (error) {
-      setToast({
-        message: "There was an error sending your message. Please try again.",
-        type: "error",
-      });
+      toast.error("There was an error sending your message. Please try again.");
     } finally {
       setIsSubmitting(false);
-
-      // Auto-close toast after 5 seconds
-      setTimeout(() => {
-        setToast(null);
-      }, 5000);
     }
   };
-  const [isFocused, setIsFocused] = useState(false);
+
   return (
-    <div className="pastel-grid-bg min-h-screen bg-white dark:bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="pastel-grid-bg min-h-screen bg-white bg-gradient-to-r from-slate-900 to-black hover:from-black hover:to-slate-800 shadow-xl shadow-black/20 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       <div className="max-w-4xl w-full mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -273,9 +219,9 @@ const ContactUs = () => {
           // UPDATED: Card background and border
           className="bg-white dark:bg-gray-900 shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
         >
-          <div className="md:flex">
+          <div className="md:flex gap-0">
             <div
-              className="md:w-3/5 lg:w-2/5 bg-black text-white p-12 flex flex-col justify-between rounded-3xl shadow-xl backdrop-blur-lg"
+              className="md:w-3/5 lg:w-2/5 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white p-12 flex flex-col justify-between rounded-3xl shadow-xl backdrop-blur-lg"
               data-aos="fade-right"
               data-aos-duration="1000"
               data-aos-anchor=".ContactUs"
@@ -363,99 +309,73 @@ const ContactUs = () => {
             </div>
 
             <div
-              className="md:w-3/5 p-10"
+              className="md:w-3/5 p-6 sm:p-8 lg:p-10"
               // AOS Implementation for form
               data-aos="fade-left"
               data-aos-duration="1000"
               data-aos-anchor=".ContactUs"
             >
-              <div className="text-center mb-8">
+              <div className="mx-auto mb-8 max-w-md text-center">
                 <h2
                   className="text-3xl font-extrabold text-gray-900 dark:text-gray-100"
                   style={{ fontFamily: '"Anton", sans-serif' }}
                 >
                   Send us a Message
                 </h2>
-                <p className="mt-2 text-gray-600 dark:text-gray-400">
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                   We typically respond within 24 hours
                 </p>
               </div>
 
-              <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
-                <FloatingInput
-                  id="name"
-                  label="Your Name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  error={errors.name}
-                  icon={User}
-                />
+              <form
+                ref={formRef}
+                onSubmit={handleSubmit}
+                className="space-y-5 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 shadow-sm dark:border-slate-700/70 dark:bg-slate-800/25 sm:p-6"
+              >
+                <div className="space-y-5">
+                  <FloatingField
+                    id="name"
+                    label="Your Name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    error={errors.name}
+                    icon={User}
+                    autoComplete="name"
+                  />
 
-                <FloatingInput
-                  id="email"
-                  label="Email Address"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  error={errors.email}
-                  icon={Mail}
-                />
+                  <FloatingField
+                    id="email"
+                    label="Email Address"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    error={errors.email}
+                    icon={Mail}
+                    autoComplete="email"
+                  />
+                </div>
 
-                <FloatingInput
+                <FloatingField
                   id="subject"
                   label="Subject"
                   value={formData.subject}
                   onChange={handleChange}
                   error={errors.subject}
                   icon={FileText}
+                  autoComplete="off"
                 />
 
-                <div className="relative mt-6">
-                  <MessageSquare className="absolute left-3 top-4 text-gray-400 w-5 h-5 pointer-events-none" />
-                  <motion.label
-                    htmlFor="message"
-                    className={`absolute left-10 transition-all duration-300 ${
-                      isFocused || formData.message
-                        ? "top-0 text-xs text-black dark:text-white font-medium"
-                        : "top-4 text-sm text-gray-500 dark:text-gray-400"
-                    } ${
-                      errors.message ? "text-red-500 dark:text-red-400" : ""
-                    }`}
-                    initial={false}
-                    animate={{
-                      y: isFocused || formData.message ? -20 : 0,
-                      scale: isFocused || formData.message ? 0.85 : 1,
-                      left:
-                        isFocused || formData.message ? "0.75rem" : "2.5rem",
-                      transformOrigin: "left",
-                    }}
-                  >
-                    Your Message <span className="text-red-500">*</span>
-                  </motion.label>
-                  <textarea
-                    id="message"
-                    name="message"
-                    rows="4"
-                    value={formData.message}
-                    onChange={handleChange}
-                    onFocus={() => setIsFocused(true)}
-                    onBlur={() => setIsFocused(false)}
-                    className={`w-full py-3 pl-10 pr-4 border rounded-lg focus:ring-2 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
-                      errors.message
-                        ? "border-red-500 focus:ring-red-200"
-                        : "border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-200 dark:focus:ring-indigo-900/50"
-                    }`}
-                  ></textarea>
-                  {errors.message && (
-                    <motion.p
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-red-500 dark:text-red-400 text-xs mt-1 ml-1"
-                    >
-                      {errors.message}
-                    </motion.p>
-                  )}
-                </div>
+                <FloatingField
+                  id="message"
+                  label="Your Message"
+                  as="textarea"
+                  rows={5}
+                  value={formData.message}
+                  onChange={handleChange}
+                  error={errors.message}
+                  icon={MessageSquare}
+                  autoComplete="off"
+                />
 
                 <div>
                   <motion.button
@@ -463,11 +383,11 @@ const ContactUs = () => {
                     whileTap={{ scale: 0.98 }}
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
+                    className="w-full overflow-hidden rounded-xl border border-slate-300/25 bg-gradient-to-r from-slate-800 via-slate-900 to-indigo-900 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/35 transition-all duration-300 hover:from-slate-700 hover:via-slate-800 hover:to-indigo-800 hover:shadow-slate-900/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-80 dark:border-slate-600/40 dark:focus-visible:ring-offset-gray-900"
                   >
                     {isSubmitting ? (
                       <svg
-                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        className="animate-spin h-5 w-5 text-white mx-auto"
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
                         viewBox="0 0 24 24"
@@ -495,42 +415,6 @@ const ContactUs = () => {
           </div>
         </motion.div>
       </div>
-
-      <AnimatePresence>
-        {toast && (
-          <Toast
-            message={toast.message}
-            type={toast.type}
-            onClose={() => setToast(null)}
-          />
-        )}
-      </AnimatePresence>
-
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes shake {
-          0%,
-          100% {
-            transform: translateX(0);
-          }
-          10%,
-          30%,
-          50%,
-          70%,
-          90% {
-            transform: translateX(-5px);
-          }
-          20%,
-          40%,
-          60%,
-          80% {
-            transform: translateX(5px);
-          }
-        }
-
-        .animate-shake {
-          animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-        }
-      ` }} />
     </div>
   );
 };

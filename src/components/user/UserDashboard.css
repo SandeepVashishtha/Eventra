@@ -14,6 +14,12 @@
   --ud-space-md: 1rem;
   --ud-space-lg: 1.5rem;
   --ud-space-xl: 2rem;
+   /* Theme Colors */
+  --card-bg-color: #ffffff;
+  --border-color: #e5e7eb;
+  --text-color: #111827;
+  --text-color-light: #6b7280;
+  --hover-bg: #f9fafb;
 }
 
 .dark .ud-root {
@@ -21,6 +27,7 @@
   --border-color: rgba(148, 163, 184, 0.18);
   --text-color: #f8fafc;
   --text-color-light: #cbd5e1;
+  --hover-bg: rgba(255, 255, 255, 0.05);
 }
 
 /* Dark mode root */
@@ -70,6 +77,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--ud-space-xxs);
+  min-height: 0;      /* ← add this line (required for flex scroll to work) */
 }
 
 .ud-nav-item {
@@ -91,9 +99,9 @@
 }
 
 .ud-nav-item:hover {
-  background: #f3f4f6;
+  background: var(--hover-bg);
   color: var(--text-color);
-  border-color: #e5e7eb;
+  border-color: var(--border-color);
 }
 
 .dark .ud-nav-item:hover {
@@ -211,8 +219,8 @@
   display: flex;
   align-items: center;
   border-radius: 12px;
-  background: #f9fafb;
-  border: 1.5px solid #e5e7eb;
+  background: var(--card-bg-color);
+  border: 1.5px solid var(--border-color);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -300,7 +308,9 @@
 }
 
 .ud-icon-btn:hover {
-  background: #f3f4f6;
+  
+  background: var(--hover-bg);
+
   color: #6366f1;
   transform: scale(1.05);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
@@ -437,6 +447,8 @@
   flex-direction: column;
   gap: var(--ud-space-lg);
   flex: 1;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 /* ── Section titles ── */
@@ -705,7 +717,7 @@
   transition: background 0.15s;
 }
 
-.ud-list-item:hover { background: #f9fafb; }
+.ud-list-item:hover {  background: var(--hover-bg);; }
 
 .dark .ud-list-item {
   border-color: rgba(148, 163, 184, 0.14);
@@ -940,12 +952,27 @@
   border-collapse: collapse;
   background: var(--card-bg-color);
   font-size: 0.85rem;
+  table-layout: fixed;
+}
+
+.ud-table th:nth-child(1) { width: 120px; }
+.ud-table th:nth-child(2) { width: 200px; }
+.ud-table th:nth-child(3) { width: 110px; }
+.ud-table th:nth-child(4) { width: 150px; }
+.ud-table th:nth-child(5) { width: 110px; }
+.ud-table th:nth-child(6) { width: 120px; }
+
+.ud-table td:nth-child(4) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
 }
 
 /* removed dark mode override (handled by CSS variables) */
 
 .ud-table thead tr {
-  background: #f9fafb;
+  background: var(--hover-bg);
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -997,7 +1024,7 @@
 
 .ud-table tbody tr:last-child td { border-bottom: none; }
 
-.ud-table tbody tr:hover td { background: #f9fafb; }
+.ud-table tbody tr:hover td { background: var(--hover-bg) ; }
 
 /* removed dark mode override (handled by CSS variables) */
 
@@ -1008,7 +1035,14 @@
   font-weight: 600;
 }
 
-.ud-table-title { font-weight: 600; color: var(--text-color); }
+.ud-table-title {
+  font-weight: 600;
+  color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
 
 /* removed dark mode override (handled by CSS variables) */
 
@@ -1424,3 +1458,235 @@
   padding: 0.3rem 0.6rem;
 }
 
+   MY EVENTS TAB  — styles appended below existing rules
+   ============================================================ */
+
+/* ── Sidebar badge (shows count of registered events) ── */
+.ud-nav-badge {
+  margin-left: auto;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* ── Summary pills row ── */
+.my-events-summary {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.my-events-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  background: var(--card-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 0.65rem 1.1rem;
+  min-width: 80px;
+  transition: box-shadow 0.2s;
+}
+.my-events-pill:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+}
+.my-events-pill-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--pill-color, #6366f1);
+  line-height: 1;
+}
+.my-events-pill-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-color-light);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Search + filter toolbar ── */
+.my-events-toolbar {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.my-events-search {
+  flex: 1;
+  min-width: 180px;
+}
+
+.my-events-filter-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.my-events-filter-icon {
+  position: absolute;
+  left: 10px;
+  color: var(--text-color-light);
+  pointer-events: none;
+}
+.my-events-filter-wrap .ud-select {
+  padding-left: 2rem;
+}
+/* ── Event card — styling handled by Tailwind inline classes (matches Events page) ── */
+
+/* ── Empty state ── */
+.my-events-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3.5rem 1rem;
+  text-align: center;
+}
+.my-events-empty-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #6366f110;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6366f1;
+}
+.my-events-empty-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0;
+}
+.my-events-empty-sub {
+  font-size: 0.875rem;
+  color: var(--text-color-light);
+  max-width: 320px;
+  margin: 0;
+}
+.my-events-empty-cta {
+  margin-top: 0.5rem;
+}
+
+/* ── No results ── */
+.my-events-no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2.5rem 1rem;
+  color: var(--text-color-light);
+  font-size: 0.875rem;
+}
+.my-events-clear-filters {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #6366f1;
+  background: #6366f112;
+  border: none;
+  padding: 5px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+.my-events-clear-filters:hover {
+  background: #6366f122;
+}
+
+/* ── Cancel confirmation dialog ── */
+.my-events-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+.my-events-dialog {
+  background: var(--card-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  padding: 1.75rem 2rem;
+  max-width: 360px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+.my-events-dialog-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0;
+}
+.my-events-dialog-body {
+  font-size: 0.875rem;
+  color: var(--text-color-light);
+  margin: 0;
+  line-height: 1.5;
+}
+.my-events-dialog-actions {
+  display: flex;
+  gap: 0.65rem;
+  margin-top: 0.35rem;
+}
+.my-events-dialog-cancel {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-color);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+.my-events-dialog-cancel:hover {
+  background: var(--border-color);
+}
+.my-events-dialog-confirm {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 10px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+.my-events-dialog-confirm:hover {
+  background: #dc2626;
+}
+/* ── Large screen fix (Issue #891) ── */
+@media (min-width: 1400px) {
+  .ud-content { max-width: 1400px; padding-left: 2.5rem; padding-right: 2.5rem; }
+  .ud-stats-grid { grid-template-columns: repeat(4, 1fr); }
+  .ud-quick-grid { grid-template-columns: repeat(6, 1fr); }
+  .ud-three-col  { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 1400px) and (min-width: 1100px) {
+  .ud-stats-grid { grid-template-columns: repeat(4, 1fr); }
+  .ud-quick-grid { grid-template-columns: repeat(4, 1fr); }
+  .ud-three-col  { grid-template-columns: repeat(3, 1fr); }
+}

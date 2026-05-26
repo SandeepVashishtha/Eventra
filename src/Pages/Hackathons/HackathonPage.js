@@ -4,17 +4,13 @@ import { Link } from "react-router-dom";
 import mockHackathons from "./hackathonMockData.json";
 import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
-import FeedbackButton from "../../components/FeedbackButton";
-import {
-  FiCode,
-  FiRotateCw,
-  FiCompass,
-  FiChevronDown,
-  FiX,
-} from "react-icons/fi";
+import { FiCode, FiRotateCw, FiCompass, FiChevronDown, FiX } from "react-icons/fi";
 import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
+import BackToTopButton from "../../components/common/BackToTopButton";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { filterHackathons } from "./hackathonFilterUtils.mjs";
 import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 
 // NEW: Tag component for selected tags in search bar
@@ -23,12 +19,12 @@ const Tag = ({ tag, onRemove }) => (
     initial={{ scale: 0.8, opacity: 0 }}
     animate={{ scale: 1, opacity: 1 }}
     exit={{ scale: 0.8, opacity: 0 }}
-    className="flex items-center gap-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-3 py-1 rounded-full text-sm font-medium"
+    className="flex items-center gap-1.5 bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full text-xs font-semibold border border-indigo-500/30 backdrop-blur-sm"
   >
     <span>{tag}</span>
     <button
       onClick={() => onRemove(tag)}
-      className="hover:bg-indigo-200 dark:hover:bg-indigo-800 rounded-full p-0.5 transition-colors"
+      className="hover:bg-indigo-500/30 rounded-full p-0.5 transition-colors"
     >
       <FiX className="w-3 h-3" />
     </button>
@@ -42,12 +38,14 @@ const HackathonHub = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isScrollVisible, setIsScrollVisible] = useState(false);
   const [filters, setFilters] = useState({
-    difficulty: [],
-    prize: [],
-    location: [],
+    difficulty: "",
+    prize: "",
+    location: "",
   });
   const [showFilters, setShowFilters] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+
+  useDocumentTitle("Eventra | Hackathons");
 
   // NEW: State for selected tags
   const [selectedTags, setSelectedTags] = useState([]);
@@ -56,53 +54,31 @@ const HackathonHub = () => {
   const cardsSectionRef = useRef(null);
   const searchInputRef = useRef(null);
 
-  // Simulate API call
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setHackathons(mockHackathons);
-      setIsLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, []);
-  // UPDATED: Extract available tags from hackathons - ADDED BLOCKCHAIN TAGS
-  useEffect(() => {
-    if (hackathons.length > 0) {
-      const allTags = new Set();
-      hackathons.forEach(hackathon => {
-        if (hackathon.techStack && Array.isArray(hackathon.techStack)) {
-          hackathon.techStack.forEach(tag => {
-            // Replace "Any" with "Blockchain"
-            if (tag === "Any") {
-              allTags.add("Blockchain");
-            } else {
-              allTags.add(tag);
-            }
-          });
-        }
-      });
-      // ADD ONLY THESE 3 BLOCKCHAIN TAGS
-      allTags.add("Blockchain");
-      allTags.add("Solidity");
-      allTags.add("Ethereum");
-
-      setAvailableTags(Array.from(allTags));
-    }
-  }, [hackathons]);
-
   const scrollToCards = () => {
-    cardsSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+    cardsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  // Simulate API call and wire page listeners
   useEffect(() => {
+    setIsLoading(true);
+    setHackathons(mockHackathons);
+    setIsLoading(false);
+
+    const tags = [
+      ...new Set(
+        mockHackathons.flatMap((hackathon) => hackathon.techStack || []),
+      ),
+    ];
+    setAvailableTags(tags);
+
     const handleScroll = () => {
-      setIsScrollVisible(window.scrollY > 50);
+      setIsScrollVisible(window.scrollY > 300);
     };
     window.addEventListener("scroll", handleScroll);
     handleScroll();
 
     const handleChatbotState = () => {
-      setIsChatbotOpen(document.querySelector("[data-chatbot-open]") !== null);
+      setIsChatbotOpen(document.querySelector('[data-chatbot-open]') !== null);
     };
 
     handleChatbotState();
@@ -161,11 +137,7 @@ const HackathonHub = () => {
 
   // NEW: Handle backspace in search input
   const handleSearchKeyDown = (e) => {
-    if (
-      e.key === "Backspace" &&
-      searchQuery === "" &&
-      selectedTags.length > 0
-    ) {
+    if (e.key === "Backspace" && searchQuery === "" && selectedTags.length > 0) {
       // Remove the last tag when backspace is pressed on empty input
       const lastTag = selectedTags[selectedTags.length - 1];
       handleTagRemove(lastTag);
@@ -181,42 +153,11 @@ const HackathonHub = () => {
     ? fuse.search(searchQuery).map((result) => result.item)
     : hackathons;
 
-  // UPDATED: Filter hackathons based on selected tags
-  const filteredHackathons = searchedHackathons
-    .filter((hackathon) => {
-      if (activeTab === "all") return true;
-      return hackathon.status === activeTab;
-    })
-    .filter((hackathon) => {
-      if (
-        filters.difficulty.length > 0 &&
-        !filters.difficulty.includes(hackathon.difficulty)
-      )
-        return false;
-      if (
-        filters.prize.length > 0 &&
-        !filters.prize.some(
-          (prize) =>
-            !hackathon.prize.toLowerCase().includes(prize.toLowerCase()),
-        )
-      )
-        return false;
-      if (
-        filters.location.length > 0 &&
-        !filters.location.some((loc) =>
-          hackathon.location.toLowerCase().includes(loc.toLowerCase()),
-        )
-      )
-        return false;
-
-      // NEW: Filter by selected tags
-      if (selectedTags.length > 0) {
-        const hackathonTags = hackathon.techStack || [];
-        return selectedTags.some((tag) => hackathonTags.includes(tag));
-      }
-
-      return true;
-    });
+  const filteredHackathons = filterHackathons(searchedHackathons, {
+    activeTab,
+    filters,
+    selectedTags,
+  });
 
   const featuredHackathons = [...hackathons]
     .filter((h) => h.featured)
@@ -225,9 +166,9 @@ const HackathonHub = () => {
   // UPDATED: Reset filters and tags
   const resetFilters = () => {
     setFilters({
-      difficulty: [],
-      prize: [],
-      location: [],
+      difficulty: "",
+      prize: "",
+      location: "",
     });
     setSearchQuery("");
     setSelectedTags([]);
@@ -294,24 +235,30 @@ const HackathonHub = () => {
         <button
           type="button"
           ref={buttonRef}
-          className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"
+          className="flex w-full items-center justify-between gap-3 px-4 py-3 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-white/5 cursor-pointer hover:ring-2 hover:ring-indigo-500/30 dark:hover:ring-indigo-500/50 hover:border-indigo-300 dark:hover:border-indigo-500/30 transition-all text-slate-700 dark:text-slate-300"
           onClick={toggleOpen}
-          aria-expanded={open}
         >
           <span
-            className={`text-gray-700 dark:text-gray-200 ${!value ? "text-gray-400" : ""}`}
+            className={`flex-1 text-left text-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis ${!value ? "text-slate-400 dark:text-slate-500" : "text-slate-900 dark:text-slate-200"}`}
           >
             {displayText}
           </span>
 
-          <FiChevronDown className="text-gray-400 dark:text-gray-500" />
+          <FiChevronDown className="text-slate-400 dark:text-slate-500 flex-shrink-0" />
         </button>
 
         {open &&
           createPortal(
             <ul
               ref={dropdownRef}
-              className="z-[10000] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg"
+              className="
+                z-[10000]
+                bg-white dark:bg-slate-900
+                border border-slate-200 dark:border-white/10
+                rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.6)]
+                overflow-hidden
+                min-w-[180px]
+              "
               style={{
                 position: "absolute",
                 top: menuCoords.top,
@@ -324,7 +271,7 @@ const HackathonHub = () => {
                   onChange("");
                   setOpen(false);
                 }}
-                className="px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                className="px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-indigo-500/10 text-slate-500 dark:text-slate-400 text-sm transition-colors"
               >
                 {placeholder}
               </li>
@@ -332,9 +279,9 @@ const HackathonHub = () => {
               {options.map((opt) => (
                 <li
                   key={opt}
-                  className={`px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 ${opt === value
-                      ? "font-semibold bg-indigo-100 dark:bg-indigo-900"
-                      : ""
+                  className={`px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-indigo-500/10 text-slate-700 dark:text-slate-300 text-sm transition-colors ${opt === value
+                    ? "font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300"
+                    : ""
                     }`}
                   onClick={() => {
                     onChange(opt);
@@ -347,12 +294,13 @@ const HackathonHub = () => {
             </ul>,
             document.body,
           )}
+
       </div>
     );
   };
 
   return (
-    <div className="overflow-x-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 py-6">
+    <div className="overflow-x-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-6 transition-colors duration-300">
       {/* Floating Action Button */}
       <motion.div
         className={`fixed z-50  ${positionClass}`}
@@ -362,7 +310,7 @@ const HackathonHub = () => {
       >
         <Link
           to="/host-hackathon"
-          className="flex items-center justify-center w-14 h-14 bg-black text-white rounded-full shadow-lg hover:bg-zinc-800 transition-colors border-2 border-white"
+          className="flex items-center justify-center w-14 h-14 bg-gradient-to-br from-blue-600 to-violet-600 text-white rounded-xl shadow-[0_0_24px_rgba(99,102,241,0.5)] hover:shadow-[0_0_36px_rgba(99,102,241,0.7)] border border-indigo-500/30 transition-all"
           title="Host a Hackathon"
         >
           <svg
@@ -423,23 +371,27 @@ const HackathonHub = () => {
       {/* Featured Hackathons */}
       {!isLoading && featuredHackathons.length > 0 && (
         <div
-          className="bg-white dark:bg-black py-8 border-b border-gray-200 dark:border-gray-800"
+          className="py-10 border-b border-slate-200 dark:border-white/5"
           data-aos="fade-up"
           data-aos-duration="1000"
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                Featured Hackathons
-              </h2>
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-1">Handpicked for you</p>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+                  Featured{" "}
+                  <span className="bg-gradient-to-r from-blue-600 to-violet-600 dark:from-blue-400 dark:to-violet-400 bg-clip-text text-transparent">Hackathons</span>
+                </h2>
+              </div>
               <Link
                 to="/hackathons?filter=featured"
-                className="text-black dark:text-white hover:text-gray-700 dark:hover:text-gray-200 text-sm font-medium"
+                className="text-indigo-400 hover:text-indigo-300 text-sm font-medium transition-colors"
               >
-                View all featured
+                View all →
               </Link>
             </div>
-            <div className="grid gap-4 sm:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {featuredHackathons.map((hackathon, index) => (
                 <HackathonCard
                   key={index}
@@ -455,56 +407,54 @@ const HackathonHub = () => {
       )}
 
       {/* Hackathons Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        {/* Search and Filters */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Section header + Filters toggle */}
         <div className="mb-8" data-aos="fade-up" data-aos-delay="200">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 mt-0">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-0">
-              All Hackathons
-            </h2>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-1">Browse all</p>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+                All{" "}
+                <span className="bg-gradient-to-r from-blue-600 to-violet-600 dark:from-blue-400 dark:to-violet-400 bg-clip-text text-transparent">Hackathons</span>
+              </h2>
+            </div>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${
+                  showFilters
+                    ? "bg-indigo-600 text-white border-indigo-500 shadow-md dark:shadow-[0_0_16px_rgba(99,102,241,0.4)]"
+                    : "bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 hover:border-indigo-300 dark:hover:border-indigo-500/40 shadow-sm dark:shadow-none"
+                }`}
               >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
                   />
                 </svg>
-                {showFilters ? "Hide Filters" : "Show Filters"}
+                {showFilters ? "Hide Filters" : "Filters"}
               </button>
-              {(filters.difficulty ||
-                filters.prize ||
-                filters.location ||
+              {(filters.difficulty || filters.prize || filters.location ||
                 selectedTags.length > 0) && (
-                <button
-                  onClick={resetFilters}
-                  className="text-sm text-black dark:text-white hover:text-gray-700 dark:hover:text-gray-200 font-medium"
-                >
-                  Clear all filters
-                </button>
-              )}
+                  <button
+                    onClick={resetFilters}
+                    className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold border border-indigo-200 dark:border-indigo-500/30 px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-all"
+                  >
+                    ✕ Clear filters
+                  </button>
+                )}
             </div>
           </div>
 
-          {/* UPDATED: Tags display */}
+          {/* Selected tags display */}
           {selectedTags.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-4 flex flex-wrap gap-2"
+              className="mb-4 flex flex-wrap items-center gap-2"
             >
-              <span className="text-sm text-gray-600 dark:text-gray-400 mr-2">
-                Selected tags:
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 mr-1">
+                Active tags:
               </span>
               <AnimatePresence>
                 {selectedTags.map((tag) => (
@@ -524,11 +474,11 @@ const HackathonHub = () => {
                 transition={{ duration: 0.35, ease: "easeOut" }}
                 className="
                 relative overflow-hidden mb-6
-                rounded-3xl
-                border border-white/20 dark:border-gray-700
-                bg-white/80 dark:bg-gray-900/80
+                rounded-2xl
+                border border-slate-200 dark:border-white/10
+                bg-white/90 dark:bg-slate-900/80
                 backdrop-blur-xl
-                shadow-[0_8px_30px_rgba(0,0,0,0.08)]
+                shadow-lg dark:shadow-[0_8px_40px_rgba(0,0,0,0.4)]
                 p-6 md:p-8
                 "
               >
@@ -562,10 +512,10 @@ const HackathonHub = () => {
                   />
                 </div>
 
-                {/* NEW: Available tags for selection - NOW INCLUDES BLOCKCHAIN */}
+                {/* Available tags for selection */}
                 {availableTags.length > 0 && (
-                  <div className="mt-8 pt-6 border-t border-gray-200/70 dark:border-gray-700">
-                    <label className="block text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-4">
+                  <div className="mt-8 pt-6 border-t border-slate-200 dark:border-white/10">
+                    <label className="block text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4">
                       Filter by Technology
                     </label>
                     <div className="flex flex-wrap gap-2">
@@ -573,10 +523,11 @@ const HackathonHub = () => {
                         <button
                           key={tag}
                           onClick={() => handleTagSelect(tag)}
-                          className={`px-3 py-1.5 text-sm rounded-full transition-all ${selectedTags.includes(tag)
-                              ? 'bg-black text-white'
-                              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                            }`}
+                          className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 border ${
+                            selectedTags.includes(tag)
+                              ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm dark:shadow-[0_0_10px_rgba(99,102,241,0.4)]'
+                              : 'bg-white dark:bg-white/5 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 hover:border-indigo-300 dark:hover:border-indigo-500/40 hover:text-indigo-700 dark:hover:text-white shadow-sm dark:shadow-none'
+                          }`}
                         >
                           {tag}
                         </button>
@@ -599,17 +550,18 @@ const HackathonHub = () => {
           <div className="flex flex-wrap gap-3">
             {[
               { key: "all", label: "All Hackathons" },
-              { key: "live", label: "Live Now" },
+              { key: "live", label: "🔴 Live Now" },
               { key: "upcoming", label: "Upcoming" },
               { key: "completed", label: "Completed" },
             ].map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-300 transform ${activeTab === tab.key
-                    ? "bg-black text-white shadow-lg scale-105"
-                    : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105"
-                  }`}
+                className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300 border ${
+                  activeTab === tab.key
+                    ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white border-indigo-500/50 shadow-md dark:shadow-[0_0_16px_rgba(99,102,241,0.4)] scale-105"
+                    : "bg-white dark:bg-white/5 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 hover:border-indigo-300 dark:hover:border-indigo-500/30 hover:text-indigo-700 dark:hover:text-white shadow-sm dark:shadow-none"
+                }`}
               >
                 {tab.label}
               </button>
@@ -619,13 +571,13 @@ const HackathonHub = () => {
 
         {/* Hackathons Grid */}
         <AnimatePresence mode="wait">
-          {isLoading ? (
-            <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <HackathonCardSkeleton key={`skeleton-${i}`} />
-              ))}
-            </div>
-          ) : filteredHackathons.length > 0 ? (
+         {isLoading ? (
+  <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+    {[...Array(6)].map((_, i) => (
+      <HackathonCardSkeleton key={`skeleton-${i}`} />
+    ))}
+  </div>
+) : filteredHackathons.length > 0 ? (
             <motion.div
               key={activeTab}
               className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
@@ -645,13 +597,13 @@ const HackathonHub = () => {
             </motion.div>
           ) : (
             <motion.div
-              className="relative overflow-hidden rounded-3xl p-10 text-center shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)] border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800"
+              className="relative overflow-hidden rounded-3xl p-10 text-center shadow-md dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)] border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-800"
               initial={{ opacity: 0, y: 30, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.6, ease: "easeOut" }}
             >
               <motion.div
-                className="absolute inset-0 -z-10 bg-black/10 dark:bg-black/30 blur-3xl"
+                className="absolute inset-0 -z-10 bg-indigo-50/50 dark:bg-black/30 blur-3xl"
                 animate={{
                   opacity: [0.3, 0.6, 0.3],
                   scale: [1, 1.1, 1],
@@ -711,12 +663,12 @@ const HackathonHub = () => {
                     repeat: Infinity,
                     ease: "easeInOut",
                   }}
-                  className="flex justify-center items-center w-20 h-20 rounded-full bg-white dark:bg-gray-700 shadow-lg mx-auto border border-indigo-100 dark:border-gray-600"
+                  className="flex justify-center items-center w-20 h-20 rounded-full bg-slate-50 dark:bg-gray-700 shadow-sm dark:shadow-lg mx-auto border border-slate-200 dark:border-gray-600"
                 >
-                  <FiCode className="h-10 w-10 text-indigo-600 dark:text-indigo-400" />
+                  <FiCode className="h-10 w-10 text-indigo-500 dark:text-indigo-400" />
                 </motion.div>
 
-                <h3 className="mt-6 text-2xl font-bold text-gray-900 dark:text-gray-100">
+                <h3 className="mt-6 text-2xl font-bold text-slate-900 dark:text-gray-100">
                   No Hackathons Found
                 </h3>
 
@@ -744,7 +696,7 @@ const HackathonHub = () => {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => { }}
+                    onClick={() => {}}
                     className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-black dark:text-white border border-black/15 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 shadow-md transition-all"
                   >
                     Explore Hackathons
@@ -757,9 +709,7 @@ const HackathonHub = () => {
         </AnimatePresence>
       </div>
       <HackathonCTA></HackathonCTA>
-
-      {/* Feedback Button */}
-      <FeedbackButton />
+      <BackToTopButton />
     </div>
   );
 };

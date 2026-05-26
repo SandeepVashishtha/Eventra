@@ -1,5 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Bot,
   CalendarDays,
@@ -11,7 +13,12 @@ import {
   Sparkles,
   Ticket,
   X,
+  ChevronUp,
+  Trash2,
 } from "lucide-react";
+import useLocalStorage from "../hooks/useLocalStorage";
+
+// ─── Knowledge base ────────────────------------------------------------------
 
 const quickPrompts = [
   "How do I register for an event?",
@@ -61,173 +68,370 @@ function getAssistantReply(input) {
   const match = knowledgeBase.find((item) =>
     item.keywords.some((keyword) => normalizedInput.includes(keyword))
   );
-
-  return match || { answer: defaultAnswer, actions: [{ label: "Explore events", to: "/events", icon: CalendarDays }] };
+  return (
+    match || {
+      answer: defaultAnswer,
+      actions: [{ label: "Explore events", to: "/events", icon: CalendarDays }],
+    }
+  );
 }
+
+// ─── Component ────────────────-----------------------------------------------
+
+const INITIAL_MESSAGES = [
+  {
+    role: "assistant",
+    content:
+      "Hi, I am Eventra Assist. Ask me about events, workshops, registration, hosting, or platform help.",
+    actions: [
+      { label: "Events", to: "/events", icon: CalendarDays },
+      { label: "FAQ", to: "/faq", icon: HelpCircle },
+    ],
+  },
+];
 
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [draft, setDraft] = useState("");
-  const [messages, setMessages] = useState([
-    {
-      role: "assistant",
-      content:
-        "Hi, I am Eventra Assist. Ask me about events, workshops, registration, hosting, or platform help.",
-      actions: [
-        { label: "Events", to: "/events", icon: CalendarDays },
-        { label: "FAQ", to: "/faq", icon: HelpCircle },
-      ],
-    },
-  ]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [messages, setMessages] = useLocalStorage("eventra_chatbot_history", INITIAL_MESSAGES);
+
+  // Expiration check on mount (2 hours threshold)
+  useEffect(() => {
+    const lastActive = localStorage.getItem("eventra_chatbot_last_active");
+    const twoHours = 2 * 60 * 60 * 1000;
+    if (lastActive && Date.now() - parseInt(lastActive) > twoHours) {
+      setMessages(INITIAL_MESSAGES);
+    }
+    localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
+  }, []);
+
+  // Sync last active timestamp when messages change
+  useEffect(() => {
+    localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
+  }, [messages]);
+
+  const handleClearConversation = () => {
+    if (window.confirm("Are you sure you want to clear your conversation history?")) {
+      setMessages(INITIAL_MESSAGES);
+    }
+  };
+
+  // Auto-scroll messages to bottom when new ones arrive
+  const messagesEndRef = useRef(null);
+  useEffect(() => {
+    if (!isMinimized && isOpen) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isMinimized, isOpen, isTyping]);
 
   const latestActions = useMemo(() => {
-    const latestAssistantMessage = [...messages].reverse().find((message) => message.role === "assistant");
+    const latestAssistantMessage = [...messages]
+      .reverse()
+      .find((m) => m.role === "assistant");
     return latestAssistantMessage?.actions || [];
   }, [messages]);
 
   const sendMessage = (messageText = draft) => {
     const cleanMessage = messageText.trim();
-    if (!cleanMessage) return;
+    if (!cleanMessage || isTyping) return;
 
-    const reply = getAssistantReply(cleanMessage);
-    setMessages((currentMessages) => [
-      ...currentMessages,
-      { role: "user", content: cleanMessage },
-      { role: "assistant", content: reply.answer, actions: reply.actions },
+    // Append User Message
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: cleanMessage }
     ]);
     setDraft("");
+    setIsTyping(true);
+
+    // Simulated network/AI response latency
+    setTimeout(() => {
+      const reply = getAssistantReply(cleanMessage);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: reply.answer, actions: reply.actions }
+      ]);
+      setIsTyping(false);
+    }, 850);
   };
 
-  if (!isOpen) {
-    return (
-      <button
-        type="button"
-        onClick={() => {
-          setIsOpen(true);
-          setIsMinimized(false);
-        }}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-2xl shadow-indigo-500/30 hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300"
-        aria-label="Open Eventra assistant"
-      >
-        <Bot className="h-6 w-6" />
-      </button>
-    );
-  }
+  const handleOpen = () => {
+    setIsOpen(true);
+    setIsMinimized(false);
+  };
 
-  return (
-    <section
-      data-chatbot-open
-      className={`fixed bottom-6 right-6 z-50 w-[calc(100vw-2rem)] max-w-sm overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900 ${
-        isMinimized ? "h-16" : ""
-      }`}
-      aria-label="Eventra assistant"
-    >
-      <header className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-950 px-4 py-3 text-white dark:border-slate-700">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-500">
-            <Sparkles className="h-4 w-4" />
-          </div>
-          <div>
-            <h2 className="text-sm font-bold">Eventra Assist</h2>
-            <p className="text-xs text-slate-300">Events, workshops, and support</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => setIsMinimized((value) => !value)}
-            className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white"
-            aria-label={isMinimized ? "Expand assistant" : "Minimize assistant"}
-          >
-            <Minus className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsOpen(false)}
-            className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white"
-            aria-label="Close assistant"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      </header>
+  const handleClose = () => {
+    setIsOpen(false);
+    setIsMinimized(false);
+  };
 
-      {!isMinimized && (
+  const handleMinimize = () => setIsMinimized((v) => !v);
+
+  // ── Unified single portal rendering ─────────────────────────────────────────
+  return createPortal(
+    <>
+      {/* Minimized strip / Floating launcher — shown when closed OR minimized */}
+      {(!isOpen || isMinimized) && (
         <>
-          <div className="max-h-80 space-y-3 overflow-y-auto px-4 py-4">
-            {messages.map((message, index) => (
-              <div
-                key={`${message.role}-${index}`}
-                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-[82%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                    message.role === "user"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-100"
-                  }`}
-                >
-                  {message.content}
+          {/* Minimized strip — only on desktop when minimized */}
+          {isOpen && isMinimized && (
+            <div
+              className="
+                fixed bottom-6 right-6 z-[100]
+                hidden sm:flex               /* hide strip on mobile, show FAB instead */
+                items-center justify-between gap-3
+                w-72 rounded-2xl
+                border border-slate-700
+                bg-slate-950 px-4 py-3
+                text-white shadow-2xl
+                fixed-floating-widget
+                transition-opacity duration-300
+              "
+              aria-label="Eventra assistant minimized"
+            >
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-500">
+                  <Sparkles className="h-3.5 w-3.5" />
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={handleMinimize}
+                    className="rounded-xl p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+                    aria-label="Expand assistant"
+                  >
+                    <ChevronUp className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleClose}
+                    className="rounded-xl p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+                    aria-label="Close assistant"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
-
-          <div className="border-t border-slate-200 px-4 py-3 dark:border-slate-700">
-            <div className="mb-3 flex flex-wrap gap-2">
-              {quickPrompts.map((prompt) => (
-                <button
-                  key={prompt}
-                  type="button"
-                  onClick={() => sendMessage(prompt)}
-                  className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-600 dark:border-slate-700 dark:text-slate-300"
-                >
-                  {prompt}
-                </button>
-              ))}
             </div>
+          )}
 
-            {latestActions.length > 0 && (
-              <div className="mb-3 flex flex-wrap gap-2">
-                {latestActions.map(({ label, to, icon: Icon }) => (
-                  <Link
-                    key={`${label}-${to}`}
-                    to={to}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-slate-950 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                    {label}
-                  </Link>
-                ))}
-              </div>
-            )}
-
-            <form
-              className="flex items-center gap-2"
-              onSubmit={(event) => {
-                event.preventDefault();
-                sendMessage();
-              }}
-            >
-              <input
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                placeholder="Ask about Eventra..."
-                className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-              />
-              <button
-                type="submit"
-                disabled={!draft.trim()}
-                className="rounded-xl bg-indigo-600 p-2.5 text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
-                aria-label="Send message"
-              >
-                <Send className="h-4 w-4" />
-              </button>
-            </form>
-          </div>
+          <motion.button
+            onClick={handleOpen}
+            whileHover={{ scale: 1.1, rotate: 5 }}
+            className={`
+              fixed bottom-6 right-6 z-[100]
+              flex h-14 w-14 items-center justify-center
+              rounded-full bg-gradient-to-br from-indigo-600 to-pink-600 text-white
+              shadow-[0_8px_30px_rgb(99,102,241,0.4)]
+              hover:shadow-[0_8px_30px_rgb(236,72,153,0.5)]
+              focus:outline-none focus:ring-4 focus:ring-indigo-300
+              transition-all duration-200 hover:scale-110
+              fixed-floating-widget
+              ${isMinimized ? "sm:hidden" : ""}
+            `}
+            aria-label="Open Eventra assistant"
+          >
+            <Bot className="h-6 w-6" />
+          </motion.button>
         </>
       )}
-    </section>
+
+      {/* Fully expanded chat popup */}
+      <AnimatePresence>
+        {isOpen && !isMinimized && (
+          <motion.section
+            data-chatbot-open
+            data-lenis-prevent
+            aria-label="Eventra assistant"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            transition={{ duration: 0.2 }}
+            className="
+              fixed bottom-6 right-6 z-[100]
+              flex flex-col                        /* KEY FIX: flex column layout */
+              w-[calc(100vw-2rem)] max-w-sm sm:max-w-sm
+              rounded-2xl
+              border border-slate-200 dark:border-slate-700
+              bg-white dark:bg-slate-900
+              shadow-2xl
+              fixed-floating-widget
+              transition-opacity duration-300
+      
+              /* KEY FIX: constrain total height to viewport so it never overflows.
+                 bottom-6 = 1.5rem offset from bottom, so we subtract that + a little breathing room. */
+              max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-5rem)]
+            "
+          >
+            {/* ── Header — always visible, never scrolls away ── */}
+            <header className="
+              flex flex-shrink-0 items-center justify-between gap-3
+              border-b border-slate-200 dark:border-slate-700
+              bg-slate-950 px-4 py-3 text-white
+              rounded-t-2xl
+            ">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-500">
+                  <Sparkles className="h-4 w-4" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold">Eventra Assist</h2>
+                  <p className="text-xs text-slate-300">Events, workshops, and support</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={handleClearConversation}
+                  className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-red-400 transition-colors"
+                  title="Clear conversation"
+                  aria-label="Clear conversation"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleMinimize}
+                  className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white"
+                  aria-label="Minimize assistant"
+                >
+                  <Minus className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white"
+                  aria-label="Close assistant"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </header>
+
+            {/* Messages list */}
+            <div
+              className="flex-1 overflow-y-auto px-4 py-4 space-y-4"
+              role="log"
+              aria-live="polite"
+              aria-label="Chat messages"
+              data-lenis-prevent
+            >
+              {messages.map((message, index) => (
+                <div
+                  key={`${message.role}-${index}`}
+                  className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 15 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    className={`max-w-[85%] rounded-[1.25rem] px-4 py-3 text-sm leading-relaxed shadow-sm ${
+                      message.role === "user"
+                        ? "bg-gradient-to-r from-indigo-600 to-pink-600 text-white rounded-br-sm"
+                        : "bg-slate-100 dark:bg-slate-800/80 backdrop-blur-sm text-slate-800 dark:text-slate-100 rounded-bl-sm border border-slate-200/30 dark:border-slate-700/20"
+                    }`}
+                  >
+                    {message.content}
+                  </motion.div>
+                </div>
+              ))}
+              
+              {isTyping && (
+                <div className="flex justify-start">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    className="bg-slate-100 dark:bg-slate-800/80 backdrop-blur-sm rounded-[1.25rem] rounded-bl-sm px-4 py-3.5 flex items-center gap-1.5 border border-slate-200/30 dark:border-slate-700/20 shadow-sm"
+                  >
+                    <motion.span
+                      animate={{ y: [0, -5, 0] }}
+                      transition={{ repeat: Infinity, duration: 0.6, delay: 0 }}
+                      className="w-2 h-2 rounded-full bg-indigo-500"
+                    />
+                    <motion.span
+                      animate={{ y: [0, -5, 0] }}
+                      transition={{ repeat: Infinity, duration: 0.6, delay: 0.15 }}
+                      className="w-2 h-2 rounded-full bg-pink-500"
+                    />
+                    <motion.span
+                      animate={{ y: [0, -5, 0] }}
+                      transition={{ repeat: Infinity, duration: 0.6, delay: 0.3 }}
+                      className="w-2 h-2 rounded-full bg-emerald-500"
+                    />
+                  </motion.div>
+                </div>
+              )}
+              
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Footer controls */}
+            <div className="
+              flex-shrink-0
+              px-4 py-4
+              bg-white/90 dark:bg-slate-900/90
+              border-t border-slate-200/50 dark:border-slate-800/40
+            ">
+              {/* Quick prompts */}
+              <div className="mb-3.5 flex flex-wrap gap-1.5">
+                {quickPrompts.map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => sendMessage(prompt)}
+                    className="rounded-full border border-slate-200/60 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-950/40 px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-gradient-to-r hover:from-indigo-600 hover:to-pink-600 hover:text-white hover:border-transparent transition-all duration-300 transform hover:scale-[1.03]"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+
+              {/* Contextual action links */}
+              {latestActions.length > 0 && (
+                <div className="mb-3.5 flex flex-wrap gap-2">
+                  {latestActions.map(({ label, to, icon: Icon }) => (
+                    <Link
+                      key={`${label}-${to}`}
+                      to={to}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-950 dark:bg-slate-950 dark:hover:bg-black border border-white/10 px-3 py-2 text-xs font-bold text-white hover:scale-[1.03] transition-all duration-300 shadow"
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+
+              {/* Input form */}
+              <form
+                className="flex items-center gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  sendMessage();
+                }}
+              >
+                <input
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  placeholder="Ask about Eventra..."
+                  aria-label="Message input"
+                  className="min-w-0 flex-1 rounded-xl border border-slate-200/60 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-950/30 px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 dark:focus:border-indigo-400 transition-colors"
+                />
+                <button
+                  type="submit"
+                  disabled={!draft.trim() || isTyping}
+                  aria-label="Send message"
+                  className="rounded-xl bg-slate-900 dark:bg-white p-2.5 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 transition-all shadow hover:scale-105 active:scale-95"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
+              </form>
+            </div>
+          </motion.section>
+        )}
+      </AnimatePresence>
+    </>,
+    document.body
   );
 }

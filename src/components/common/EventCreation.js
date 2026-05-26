@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
+import { Download } from "lucide-react";
+import {} from "../../utils/eventDraftUtils";
+
+import { exportAttendeesToCSV } from "../../utils/exportCsv";
 import {
   ArrowRightIcon,
   CalendarIcon,
@@ -32,7 +36,29 @@ import {
   Plus,
 } from "lucide-react";
 
+const DRAFT_KEY = "eventra_create_event_draft";
+
 const EventCreation = () => {
+  const mockAttendees = [
+    {
+      name: "John Doe",
+      email: "john@example.com",
+      registrationDate: "2026-08-15",
+      ticketType: "VIP",
+    },
+    {
+      name: "Sarah Smith",
+      email: "sarah@example.com",
+      registrationDate: "2026-08-16",
+      ticketType: "General",
+    },
+    {
+      name: "Alex Johnson",
+      email: "alex@example.com",
+      registrationDate: "2026-08-17",
+      ticketType: "Workshop",
+    },
+  ];
   const [currentStep, setCurrentStep] = useState("form");
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -68,9 +94,11 @@ const EventCreation = () => {
     banner: null,
     bannerPreview: null,
   });
-  const [errors, setErrors] = useState("");
+  const [errors, setErrors] = useState({});
   const [newTag, setNewTag] = useState("");
-
+  // Track whether draft has been loaded to avoid overwriting on initial mount
+  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
   const categories = [
     { label: "Conference", value: "CONFERENCE" },
     { label: "Workshop", value: "WORKSHOP" },
@@ -95,8 +123,7 @@ const EventCreation = () => {
       newErrors.title = "Title must be between 3 and 200 characters";
     }
 
-    if (!formData.description.trim())
-      newErrors.description = "Event description is required";
+    if (!formData.description.trim()) newErrors.description = "Event description is required";
     if (!formData.category) newErrors.category = "Please select a category";
 
     if (formData.isMultiDay) {
@@ -115,13 +142,18 @@ const EventCreation = () => {
     if (!formData.startTime) newErrors.startTime = "Start time is required";
     if (!formData.endTime) newErrors.endTime = "End time is required";
 
-    if (
-      !newErrors.startTime &&
-      !newErrors.endTime &&
-      !formData.isMultiDay &&
-      formData.startTime >= formData.endTime
-    ) {
-      newErrors.endTime = "End time must be after start time";
+    if (!newErrors.startTime && !newErrors.endTime && !formData.isMultiDay) {
+      // Convert time strings (HH:MM format) to minutes for proper comparison
+      const parseTimeToMinutes = (timeStr) => {
+        if (!timeStr) return 0;
+        const [hours, minutes] = timeStr.split(":").map(Number);
+        return (hours || 0) * 60 + (minutes || 0);
+      };
+      const startMinutes = parseTimeToMinutes(formData.startTime);
+      const endMinutes = parseTimeToMinutes(formData.endTime);
+      if (startMinutes >= endMinutes) {
+        newErrors.endTime = "End time must be after start time";
+      }
     }
 
     if (!formData.isVirtual && !formData.location.name.trim()) {
@@ -142,13 +174,27 @@ const EventCreation = () => {
     }
 
     if (formData.registrationStart && formData.registrationEnd) {
-      if (
-        new Date(formData.registrationStart) >=
-        new Date(formData.registrationEnd)
-      ) {
-        newErrors.registrationEnd =
-          "Registration end must be after registration start";
+      if (new Date(formData.registrationStart) >= new Date(formData.registrationEnd)) {
+        newErrors.registrationEnd = "Registration end must be after registration start";
       }
+    }
+
+    // Validate ticket tiers
+    if (formData.ticketTiers && formData.ticketTiers.length > 0) {
+      formData.ticketTiers.forEach((tier, index) => {
+        if (tier.name && tier.name.trim()) {
+          const price = Number(tier.price);
+          if (price < 0) {
+            newErrors[`ticketPrice_${index}`] = "Ticket price cannot be negative";
+          }
+          if (tier.capacity) {
+            const capacity = Number(tier.capacity);
+            if (capacity <= 0) {
+              newErrors[`ticketCapacity_${index}`] = "Ticket capacity must be greater than 0";
+            }
+          }
+        }
+      });
     }
 
     setErrors(newErrors);
@@ -196,6 +242,10 @@ const EventCreation = () => {
         i === index ? { ...tier, [field]: value } : tier
       ),
     }));
+    const errorKey = `ticketTier_${index}_${field}`;
+    if (errors[errorKey]) {
+      setErrors((prev) => ({ ...prev, [errorKey]: "" }));
+    }
   };
 
   const addTicketTier = () => {
@@ -249,10 +299,7 @@ const EventCreation = () => {
 
   const addTag = () => {
     const trimmed = newTag.trim();
-    if (
-      trimmed &&
-      !formData.tags.some((tag) => tag.toLowerCase() === trimmed.toLowerCase())
-    ) {
+    if (trimmed && !formData.tags.some((tag) => tag.toLowerCase() === trimmed.toLowerCase())) {
       setFormData((prev) => ({
         ...prev,
         tags: [...prev.tags, trimmed],
@@ -283,10 +330,7 @@ const EventCreation = () => {
     setGeneralError("");
     try {
       let coordinates = null;
-      if (
-        formData.location.coordinates.latitude &&
-        formData.location.coordinates.longitude
-      ) {
+      if (formData.location.coordinates.latitude && formData.location.coordinates.longitude) {
         const lat = parseFloat(formData.location.coordinates.latitude);
         const lng = parseFloat(formData.location.coordinates.longitude);
 
@@ -296,14 +340,10 @@ const EventCreation = () => {
       }
 
       const eventStartDate = new Date(
-        `${formData.isMultiDay ? formData.startDate : formData.date}T${
-          formData.startTime
-        }`
+        `${formData.isMultiDay ? formData.startDate : formData.date}T${formData.startTime}`
       );
       const eventEndDate = new Date(
-        `${formData.isMultiDay ? formData.endDate : formData.date}T${
-          formData.endTime
-        }`
+        `${formData.isMultiDay ? formData.endDate : formData.date}T${formData.endTime}`
       );
 
       if (isNaN(eventStartDate.getTime()) || isNaN(eventEndDate.getTime())) {
@@ -356,7 +396,7 @@ const EventCreation = () => {
       // Mock success if API inactive
       if (
         !API_ENDPOINTS.EVENTS.CREATE ||
-        process.env.NODE_ENV === "development"
+        (process.env.NODE_ENV === "development" && process.env.REACT_APP_USE_REAL_API === "true")
       ) {
         console.warn("⚠️ Mocking event creation success (API inactive)");
         await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -368,28 +408,24 @@ const EventCreation = () => {
         return;
       }
 
-      const response = await apiUtils.post(
-        API_ENDPOINTS.EVENTS.CREATE,
-        eventData,
-        token
-      );
-      const result = await response.json();
+      const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData, token);
+      const result = response.data;
 
-      if (response.ok && result.success) {
+      if (result.success) {
         toast.success("Event created successfully!");
         resetForm();
         setCurrentStep("form");
       } else {
-        const errorMessage =
-          result.message || result.error || `Server error: ${response.status}`;
+        const errorMessage = result.message || result.error || "Event creation failed.";
         toast.error(`❌ Error creating event: ${errorMessage}`);
         setCurrentStep("form");
       }
     } catch (error) {
       console.error("Error creating event:", error);
+      const backendMessage = error.response?.data?.message || error.response?.data?.error;
       let errorMessage = "Failed to create event. ";
-      if (error.name === "TypeError" && error.message.includes("fetch")) {
-        errorMessage += "Network error - please check your connection.";
+      if (backendMessage) {
+        errorMessage += backendMessage;
       } else if (error.message.includes("Invalid date")) {
         errorMessage += "Please check your date and time values.";
       } else {
@@ -403,6 +439,44 @@ const EventCreation = () => {
   };
 
   useEffect(() => {
+    const saved = localStorage.getItem(DRAFT_KEY);
+
+    if (saved) {
+      setShowRestoreModal(true);
+    }
+
+    setIsDraftLoaded(true);
+  }, []);
+  const handleRestoreDraft = () => {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+
+      if (saved) {
+        const parsed = JSON.parse(saved);
+
+        setFormData((prev) => ({
+          ...prev,
+          ...parsed,
+          banner: null,
+          bannerPreview: null,
+        }));
+
+        toast.success("Draft restored successfully!");
+      }
+    } catch (error) {
+      console.error(error);
+    }
+
+    setShowRestoreModal(false);
+  };
+  const handleDiscardDraft = () => {
+    localStorage.removeItem(DRAFT_KEY);
+
+    setShowRestoreModal(false);
+
+    toast.info("Saved draft discarded.");
+  };
+  useEffect(() => {
     if (successMessage || generalError) {
       const timer = setTimeout(() => {
         setSuccessMessage("");
@@ -412,12 +486,70 @@ const EventCreation = () => {
     }
   }, [successMessage, generalError]);
 
+  useEffect(() => {
+    // Prevent saving before draft restoration
+    if (!isDraftLoaded) return;
+
+    const { banner, bannerPreview, ...saveable } = formData;
+
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
+  }, [formData, isDraftLoaded]);
+
+  /**
+   * Warn user before accidental refresh,
+   * tab close, or browser close
+   */
+  useEffect(() => {
+    const hasUnsavedChanges = Object.entries(formData).some(([key, value]) => {
+      // Ignore banner fields
+      if (key === "banner" || key === "bannerPreview") {
+        return false;
+      }
+
+      // Handle strings
+      if (typeof value === "string") {
+        return value.trim() !== "";
+      }
+
+      // Handle arrays
+      if (Array.isArray(value)) {
+        return value.length > 0;
+      }
+
+      // Handle objects
+      if (typeof value === "object" && value !== null) {
+        return JSON.stringify(value) !== "{}";
+      }
+
+      // Handle booleans/numbers
+      return Boolean(value);
+    });
+
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+
+        // Required for browser warning
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [formData]);
+
   const resetForm = () => {
     setFormData({
       title: "",
       description: "",
       category: "",
+      isMultiDay: false,
       date: "",
+      startDate: "",
+      endDate: "",
       startTime: "",
       endTime: "",
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -446,6 +578,7 @@ const EventCreation = () => {
       bannerPreview: null,
     });
     setErrors({});
+    localStorage.removeItem(DRAFT_KEY);
     setNewTag("");
     setCurrentStep("form");
   };
@@ -469,6 +602,79 @@ const EventCreation = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-indigo-100 to-white dark:from-gray-900 dark:to-black flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      {showRestoreModal && (
+        <div
+          className="
+      fixed inset-0 z-50
+      flex items-center justify-center
+      bg-black/50
+      px-4
+    "
+        >
+          <div
+            className="
+        w-full max-w-md
+        bg-white dark:bg-gray-900
+        rounded-3xl
+        p-8
+        shadow-2xl
+        border border-gray-200
+        dark:border-gray-700
+      "
+          >
+            <h2
+              className="
+          text-2xl font-bold
+          text-gray-900 dark:text-white
+          mb-3
+        "
+            >
+              Restore Draft?
+            </h2>
+
+            <p
+              className="
+          text-gray-600 dark:text-gray-400
+          mb-6
+        "
+            >
+              A previously saved event draft was found. Would you like to restore it?
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={handleDiscardDraft}
+                className="
+            px-4 py-2
+            rounded-xl
+            border border-gray-300
+            dark:border-gray-700
+            hover:bg-gray-100
+            dark:hover:bg-gray-800
+            transition
+          "
+              >
+                Discard
+              </button>
+
+              <button
+                onClick={handleRestoreDraft}
+                className="
+            px-5 py-2
+            rounded-xl
+            bg-indigo-600
+            hover:bg-indigo-700
+            text-white
+            font-medium
+            transition
+          "
+              >
+                Restore Draft
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {successMessage && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -492,6 +698,34 @@ const EventCreation = () => {
       {currentStep === "form" ? (
         <>
           {/* Heading Section */}
+          <div className="w-full max-w-4xl flex justify-end mb-6">
+            <button
+              onClick={() => {
+                exportAttendeesToCSV(mockAttendees, "event-attendees.csv");
+
+                toast.success("CSV exported successfully!");
+              }}
+              className="
+      inline-flex
+      items-center
+      gap-2
+      px-5
+      py-3
+      rounded-2xl
+      bg-emerald-600
+      hover:bg-emerald-700
+      text-white
+      font-semibold
+      shadow-md
+      hover:shadow-lg
+      transition-all
+      duration-300
+    "
+            >
+              <Download size={18} />
+              Download CSV
+            </button>
+          </div>
           <motion.div
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -522,43 +756,36 @@ const EventCreation = () => {
             </div>
             <ul className="list-disc pl-6 space-y-3 text-gray-700 dark:text-gray-300 text-sm sm:text-base">
               <li>
-                Provide a{" "}
-                <span className="font-medium">clear and catchy title</span> that
+                Provide a <span className="font-medium">clear and catchy title</span> that
                 accurately represents your event (3-200 characters).
               </li>
               <li>
-                Write a{" "}
-                <span className="font-medium">detailed description</span>{" "}
-                explaining what attendees can expect and why they should join.
+                Write a <span className="font-medium">detailed description</span> explaining what
+                attendees can expect and why they should join.
               </li>
               <li>
-                Set{" "}
-                <span className="font-medium">accurate dates and times</span> to
-                avoid confusion. Make sure the end time is after the start time.
+                Set <span className="font-medium">accurate dates and times</span> to avoid
+                confusion. Make sure the end time is after the start time.
               </li>
               <li>
-                Choose between{" "}
-                <span className="font-medium">virtual or in-person</span> format
-                and provide the necessary details (link or location).
+                Choose between <span className="font-medium">virtual or in-person</span> format and
+                provide the necessary details (link or location).
               </li>
               <li>
-                Define <span className="font-medium">ticket tiers</span> if
-                applicable, with clear pricing and capacity limits.
+                Define <span className="font-medium">ticket tiers</span> if applicable, with clear
+                pricing and capacity limits.
               </li>
               <li>
-                Add relevant{" "}
-                <span className="font-medium">tags and categories</span> to help
-                people discover your event.
+                Add relevant <span className="font-medium">tags and categories</span> to help people
+                discover your event.
               </li>
               <li>
-                Upload an{" "}
-                <span className="font-medium">eye-catching banner image</span>{" "}
-                (max 5MB) to make your event stand out.
+                Upload an <span className="font-medium">eye-catching banner image</span> (max 5MB)
+                to make your event stand out.
               </li>
               <li>
-                Review all details in the{" "}
-                <span className="font-medium">preview</span> before publishing
-                your event.
+                Review all details in the <span className="font-medium">preview</span> before
+                publishing your event.
               </li>
             </ul>
           </motion.div>
@@ -587,19 +814,13 @@ const EventCreation = () => {
                   name="title"
                   value={formData.title}
                   onChange={handleInputChange}
-                  placeholder="Enter event title (3-200 characters)"
+                  placeholder="React Summit 2026 / AI Hackathon Gujarat / Open Source Meetup"
                   maxLength={200}
                   className={`w-full border ${
-                    errors.title
-                      ? "border-red-500"
-                      : "border-gray-300 dark:border-gray-600"
+                    errors.title ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                   } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
                 />
-                {errors.title && (
-                  <span className="text-red-500 text-sm mt-1">
-                    {errors.title}
-                  </span>
-                )}
+                {errors.title && <span className="text-red-500 text-sm mt-1">{errors.title}</span>}
               </motion.div>
 
               {/* Event Banner */}
@@ -692,16 +913,13 @@ const EventCreation = () => {
                   )}
 
                   {/* Error Message */}
-                  {errors.banner && (
-                    <span className="text-red-500 text-sm">
-                      {errors.banner}
-                    </span>
-                  )}
+                  {errors.banner && <span className="text-red-500 text-sm">{errors.banner}</span>}
 
                   {/* Preview Section */}
                   {formData.bannerPreview && (
                     <div className="rounded-lg overflow-hidden border border-indigo-200 dark:border-gray-700 shadow-md">
                       <img
+                        loading="lazy"
                         src={formData.bannerPreview}
                         alt="Banner preview"
                         className="w-full h-48 object-cover hover:scale-[1.02] transition-transform duration-300"
@@ -722,23 +940,45 @@ const EventCreation = () => {
                   <ClipboardList className="w-5 h-5 text-indigo-500 inline-block mr-2" />
                   Description <span className="text-red-600">*</span>
                 </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  placeholder="Describe your event"
-                  rows={4}
-                  className={`w-full border ${
-                    errors.description
-                      ? "border-red-500"
-                      : "border-gray-300 dark:border-gray-600"
-                  } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
-                />
-                {errors.description && (
-                  <span className="text-red-500 text-sm mt-1">
-                    {errors.description}
-                  </span>
-                )}
+               <p
+  className={`text-sm text-right mt-1 ${
+    formData.description.length > 450
+      ? "text-red-500"
+      : formData.description.length > 350
+      ? "text-yellow-500"
+      : "text-gray-400"
+  }`}
+>
+  {formData.description.length}/500 characters
+</p>
+
+                {/* Character counter + error row */}
+                <div className="flex justify-between items-start mt-1">
+                  <div className="flex-1">
+                    {errors.description && (
+                      <span className="text-red-500 text-sm">{errors.description}</span>
+                    )}
+                  </div>
+                  {(() => {
+                    const len = formData.description.length;
+                    const max = 500;
+                    const ratio = len / max;
+                    const counterColor =
+                      ratio >= 0.95
+                        ? "text-red-500"
+                        : ratio >= 0.8
+                          ? "text-amber-500"
+                          : "text-gray-500 dark:text-gray-400";
+                    return (
+                      <span
+                        className={`text-xs font-medium ml-2 tabular-nums ${counterColor}`}
+                        aria-live="polite"
+                      >
+                        {len} / {max}
+                      </span>
+                    );
+                  })()}
+                </div>
               </motion.div>
 
               {/* Category */}
@@ -757,9 +997,7 @@ const EventCreation = () => {
                   value={formData.category}
                   onChange={handleInputChange}
                   className={`w-full border ${
-                    errors.category
-                      ? "border-red-500"
-                      : "border-gray-300 dark:border-gray-600"
+                    errors.category ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                   } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
                 >
                   <option value="">Select a category</option>
@@ -770,9 +1008,7 @@ const EventCreation = () => {
                   ))}
                 </select>
                 {errors.category && (
-                  <span className="text-red-500 text-sm mt-1">
-                    {errors.category}
-                  </span>
+                  <span className="text-red-500 text-sm mt-1">{errors.category}</span>
                 )}
               </motion.div>
 
@@ -856,15 +1092,11 @@ const EventCreation = () => {
                       onChange={handleInputChange}
                       min={todayString}
                       className={`w-full border ${
-                        errors.startDate
-                          ? "border-red-500"
-                          : "border-gray-300 dark:border-gray-600"
+                        errors.startDate ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                       } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.startDate && (
-                      <span className="text-red-500 text-sm mt-1 block">
-                        {errors.startDate}
-                      </span>
+                      <span className="text-red-500 text-sm mt-1 block">{errors.startDate}</span>
                     )}
                   </div>
 
@@ -880,15 +1112,11 @@ const EventCreation = () => {
                       onChange={handleInputChange}
                       min={formData.startDate || todayString}
                       className={`w-full border ${
-                        errors.endDate
-                          ? "border-red-500"
-                          : "border-gray-300 dark:border-gray-600"
+                        errors.endDate ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                       } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.endDate && (
-                      <span className="text-red-500 text-sm mt-1 block">
-                        {errors.endDate}
-                      </span>
+                      <span className="text-red-500 text-sm mt-1 block">{errors.endDate}</span>
                     )}
                   </div>
 
@@ -903,15 +1131,11 @@ const EventCreation = () => {
                       value={formData.startTime}
                       onChange={handleInputChange}
                       className={`w-full border ${
-                        errors.startTime
-                          ? "border-red-500"
-                          : "border-gray-300 dark:border-gray-600"
+                        errors.startTime ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                       } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.startTime && (
-                      <span className="text-red-500 text-sm mt-1 block">
-                        {errors.startTime}
-                      </span>
+                      <span className="text-red-500 text-sm mt-1 block">{errors.startTime}</span>
                     )}
                   </div>
 
@@ -926,15 +1150,11 @@ const EventCreation = () => {
                       value={formData.endTime}
                       onChange={handleInputChange}
                       className={`w-full border ${
-                        errors.endTime
-                          ? "border-red-500"
-                          : "border-gray-300 dark:border-gray-600"
+                        errors.endTime ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                       } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.endTime && (
-                      <span className="text-red-500 text-sm mt-1 block">
-                        {errors.endTime}
-                      </span>
+                      <span className="text-red-500 text-sm mt-1 block">{errors.endTime}</span>
                     )}
                   </div>
                 </motion.div>
@@ -959,15 +1179,11 @@ const EventCreation = () => {
                       onChange={handleInputChange}
                       min={todayString}
                       className={`w-full border ${
-                        errors.date
-                          ? "border-red-500"
-                          : "border-gray-300 dark:border-gray-600"
+                        errors.date ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                       } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.date && (
-                      <span className="text-red-500 text-sm mt-1 block">
-                        {errors.date}
-                      </span>
+                      <span className="text-red-500 text-sm mt-1 block">{errors.date}</span>
                     )}
                   </div>
 
@@ -982,15 +1198,11 @@ const EventCreation = () => {
                       value={formData.startTime}
                       onChange={handleInputChange}
                       className={`w-full border ${
-                        errors.startTime
-                          ? "border-red-500"
-                          : "border-gray-300 dark:border-gray-600"
+                        errors.startTime ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                       } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.startTime && (
-                      <span className="text-red-500 text-sm mt-1 block">
-                        {errors.startTime}
-                      </span>
+                      <span className="text-red-500 text-sm mt-1 block">{errors.startTime}</span>
                     )}
                   </div>
 
@@ -1005,15 +1217,11 @@ const EventCreation = () => {
                       value={formData.endTime}
                       onChange={handleInputChange}
                       className={`w-full border ${
-                        errors.endTime
-                          ? "border-red-500"
-                          : "border-gray-300 dark:border-gray-600"
+                        errors.endTime ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                       } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.endTime && (
-                      <span className="text-red-500 text-sm mt-1 block">
-                        {errors.endTime}
-                      </span>
+                      <span className="text-red-500 text-sm mt-1 block">{errors.endTime}</span>
                     )}
                   </div>
                 </motion.div>
@@ -1058,15 +1266,11 @@ const EventCreation = () => {
                     onChange={handleInputChange}
                     placeholder="https://zoom.us/j/..."
                     className={`w-full border ${
-                      errors.virtualLink
-                        ? "border-red-500"
-                        : "border-gray-300 dark:border-gray-600"
+                      errors.virtualLink ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                     } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
                   />
                   {errors.virtualLink && (
-                    <span className="text-red-500 text-sm mt-1">
-                      {errors.virtualLink}
-                    </span>
+                    <span className="text-red-500 text-sm mt-1">{errors.virtualLink}</span>
                   )}
                 </motion.div>
               ) : (
@@ -1088,15 +1292,11 @@ const EventCreation = () => {
                       onChange={handleInputChange}
                       placeholder="Convention Center, Community Hall, etc."
                       className={`w-full border ${
-                        errors.location
-                          ? "border-red-500"
-                          : "border-gray-300 dark:border-gray-600"
+                        errors.location ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                       } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
                     />
                     {errors.location && (
-                      <span className="text-red-500 text-sm mt-1">
-                        {errors.location}
-                      </span>
+                      <span className="text-red-500 text-sm mt-1">{errors.location}</span>
                     )}
                   </motion.div>
 
@@ -1182,15 +1382,11 @@ const EventCreation = () => {
                   min="1"
                   max="100000"
                   className={`w-full border ${
-                    errors.capacity
-                      ? "border-red-500"
-                      : "border-gray-300 dark:border-gray-600"
+                    errors.capacity ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                   } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
                 />
                 {errors.capacity && (
-                  <span className="text-red-500 text-sm mt-1">
-                    {errors.capacity}
-                  </span>
+                  <span className="text-red-500 text-sm mt-1">{errors.capacity}</span>
                 )}
               </motion.div>
 
@@ -1233,9 +1429,7 @@ const EventCreation = () => {
                     } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
                   />
                   {errors.registrationEnd && (
-                    <span className="text-red-500 text-sm mt-1">
-                      {errors.registrationEnd}
-                    </span>
+                    <span className="text-red-500 text-sm mt-1">{errors.registrationEnd}</span>
                   )}
                 </div>
               </motion.div>
@@ -1319,55 +1513,60 @@ const EventCreation = () => {
                       )}
                     </div>
                     <div className="space-y-3">
-                      <input
-                        type="text"
-                        placeholder="Tier name"
-                        value={tier.name}
-                        onChange={(e) =>
-                          handleTicketTierChange(index, "name", e.target.value)
-                        }
-                        className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                      />
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="Tier name"
+                          value={tier.name}
+                          onChange={(e) => handleTicketTierChange(index, "name", e.target.value)}
+                          className={`w-full border ${errors[`ticketTier_${index}_name`] ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500`}
+                        />
+                        {errors[`ticketTier_${index}_name`] && (
+                          <span className="text-red-500 text-sm mt-1 block">
+                            {errors[`ticketTier_${index}_name`]}
+                          </span>
+                        )}
+                      </div>
                       <div className="grid grid-cols-2 gap-3">
-                        <input
-                          type="number"
-                          placeholder="Price"
-                          min="0"
-                          step="0.01"
-                          value={tier.price}
-                          onChange={(e) =>
-                            handleTicketTierChange(
-                              index,
-                              "price",
-                              e.target.value
-                            )
-                          }
-                          className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                        />
-                        <input
-                          type="number"
-                          placeholder="Capacity (optional)"
-                          min="1"
-                          value={tier.capacity}
-                          onChange={(e) =>
-                            handleTicketTierChange(
-                              index,
-                              "capacity",
-                              e.target.value
-                            )
-                          }
-                          className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                        />
+                        <div>
+                          <input
+                            type="number"
+                            placeholder="Price"
+                            min="0"
+                            step="0.01"
+                            value={tier.price}
+                            onChange={(e) => handleTicketTierChange(index, "price", e.target.value)}
+                            className={`w-full border ${errors[`ticketTier_${index}_price`] ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500`}
+                          />
+                          {errors[`ticketTier_${index}_price`] && (
+                            <span className="text-red-500 text-sm mt-1 block">
+                              {errors[`ticketTier_${index}_price`]}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <input
+                            type="number"
+                            placeholder="Capacity (optional)"
+                            min="1"
+                            value={tier.capacity}
+                            onChange={(e) =>
+                              handleTicketTierChange(index, "capacity", e.target.value)
+                            }
+                            className={`w-full border ${errors[`ticketTier_${index}_capacity`] ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500`}
+                          />
+                          {errors[`ticketTier_${index}_capacity`] && (
+                            <span className="text-red-500 text-sm mt-1 block">
+                              {errors[`ticketTier_${index}_capacity`]}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <textarea
                         placeholder="Description"
                         value={tier.description}
                         onChange={(e) =>
-                          handleTicketTierChange(
-                            index,
-                            "description",
-                            e.target.value
-                          )
+                          handleTicketTierChange(index, "description", e.target.value)
                         }
                         rows={2}
                         className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
@@ -1478,9 +1677,7 @@ const EventCreation = () => {
                 <h3 className="text-3xl font-bold text-indigo-700 dark:text-indigo-400">
                   {stat.number}
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400 mt-2">
-                  {stat.label}
-                </p>
+                <p className="text-gray-600 dark:text-gray-400 mt-2">{stat.label}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -1497,15 +1694,14 @@ const EventCreation = () => {
             <h1 className="text-4xl font-extrabold text-indigo-800 dark:text-indigo-300 mb-4">
               Preview Your Event
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Review all details before publishing
-            </p>
+            <p className="text-gray-600 dark:text-gray-400">Review all details before publishing</p>
           </div>
 
           <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl overflow-hidden border border-indigo-300 dark:border-gray-700">
             {formData.bannerPreview && (
               <div className="w-full h-64 overflow-hidden">
                 <img
+                  loading="lazy"
                   src={formData.bannerPreview}
                   alt="Event banner"
                   className="w-full h-full object-cover"
@@ -1525,15 +1721,9 @@ const EventCreation = () => {
                 <div className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg">
                   <TagIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
                   <div>
-                    <p className="font-semibold text-gray-700 dark:text-gray-300">
-                      Category
-                    </p>
+                    <p className="font-semibold text-gray-700 dark:text-gray-300">Category</p>
                     <p className="text-gray-600 dark:text-gray-400">
-                      {
-                        categories.find(
-                          (cat) => cat.value === formData.category
-                        )?.label
-                      }
+                      {categories.find((cat) => cat.value === formData.category)?.label}
                     </p>
                   </div>
                 </div>
@@ -1541,20 +1731,15 @@ const EventCreation = () => {
                 <div className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg">
                   <CalendarIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
                   <div>
-                    <p className="font-semibold text-gray-700 dark:text-gray-300">
-                      Date & Time
-                    </p>
+                    <p className="font-semibold text-gray-700 dark:text-gray-300">Date & Time</p>
                     <p className="text-gray-600 dark:text-gray-400">
                       {formData.isMultiDay
-                        ? `${formatDate(formData.startDate)} - ${formatDate(
-                            formData.endDate
-                          )}`
+                        ? `${formatDate(formData.startDate)} - ${formatDate(formData.endDate)}`
                         : formatDate(formData.date)}
                     </p>
 
                     <p className="text-gray-600 dark:text-gray-400">
-                      {formatTime(formData.startTime)} -{" "}
-                      {formatTime(formData.endTime)}
+                      {formatTime(formData.startTime)} - {formatTime(formData.endTime)}
                     </p>
                   </div>
                 </div>
@@ -1562,13 +1747,9 @@ const EventCreation = () => {
                 <div className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg">
                   <MapPinIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
                   <div>
-                    <p className="font-semibold text-gray-700 dark:text-gray-300">
-                      Location
-                    </p>
+                    <p className="font-semibold text-gray-700 dark:text-gray-300">Location</p>
                     <p className="text-gray-600 dark:text-gray-400">
-                      {formData.isVirtual
-                        ? "Virtual Event"
-                        : formData.location.name}
+                      {formData.isVirtual ? "Virtual Event" : formData.location.name}
                     </p>
                     {formData.location.address && !formData.isVirtual && (
                       <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -1581,13 +1762,9 @@ const EventCreation = () => {
                 <div className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg">
                   <UsersIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
                   <div>
-                    <p className="font-semibold text-gray-700 dark:text-gray-300">
-                      Capacity
-                    </p>
+                    <p className="font-semibold text-gray-700 dark:text-gray-300">Capacity</p>
                     <p className="text-gray-600 dark:text-gray-400">
-                      {formData.capacity === ""
-                        ? "Unlimited"
-                        : `${formData.capacity} attendees`}
+                      {formData.capacity === "" ? "Unlimited" : `${formData.capacity} attendees`}
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       {formData.isPublic ? "Public" : "Private"} Event
@@ -1596,46 +1773,43 @@ const EventCreation = () => {
                 </div>
               </div>
 
-              {formData.ticketTiers.length > 0 &&
-                formData.ticketTiers[0].name && (
-                  <div className="mb-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      <TicketIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                      <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
-                        Ticket Tiers
-                      </h3>
-                    </div>
-                    <div className="space-y-3">
-                      {formData.ticketTiers.map((tier, index) => (
-                        <div
-                          key={index}
-                          className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                        >
-                          <div>
-                            <p className="font-semibold text-gray-900 dark:text-white">
-                              {tier.name}
-                            </p>
-                            {tier.description && (
-                              <p className="text-sm text-gray-600 dark:text-gray-400">
-                                {tier.description}
-                              </p>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
-                              ₹{Number(tier.price).toFixed(2)}
-                            </p>
-                            {tier.capacity && (
-                              <p className="text-sm text-gray-500 dark:text-gray-400">
-                                {tier.capacity} available
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+              {formData.ticketTiers.length > 0 && formData.ticketTiers[0].name && (
+                <div className="mb-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <TicketIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
+                      Ticket Tiers
+                    </h3>
                   </div>
-                )}
+                  <div className="space-y-3">
+                    {formData.ticketTiers.map((tier, index) => (
+                      <div
+                        key={index}
+                        className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                      >
+                        <div>
+                          <p className="font-semibold text-gray-900 dark:text-white">{tier.name}</p>
+                          {tier.description && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {tier.description}
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                            ₹{Number(tier.price).toFixed(2)}
+                          </p>
+                          {tier.capacity && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              {tier.capacity} available
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {formData.tags.length > 0 && (
                 <div className="mb-6">
@@ -1686,10 +1860,7 @@ const EventCreation = () => {
             >
               {loading ? (
                 <>
-                  <svg
-                    className="animate-spin h-5 w-5 mr-2"
-                    viewBox="0 0 24 24"
-                  >
+                  <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
                     <circle
                       className="opacity-25"
                       cx="12"

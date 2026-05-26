@@ -8,10 +8,13 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999;
+  z-index: 10000;
   backdrop-filter: blur(2px);
 }
 
+.dark .confirmation-modal-overlay {
+  background-color: rgba(0, 0, 0, 0.75);
+}
 .confirmation-modal-content {
   background: white;
   border-radius: 12px;
@@ -75,6 +78,10 @@
   transition: all 0.2s ease;
   min-width: 100px;
 }
+.confirmation-modal-btn:focus {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
+}
 
 .confirmation-modal-btn-cancel {
   background-color: #f3f4f6;
@@ -100,6 +107,7 @@
 .dark .confirmation-modal-content {
   background: #1f2937;
   color: white;
+  border: 1px solid #374151;
 }
 
 .dark .confirmation-modal-header h3 {
@@ -117,6 +125,7 @@
 
 .dark .confirmation-modal-btn-cancel:hover {
   background-color: #4b5563;
+  color: #f9fafb;
 }
 
 /* Responsive design */
