@@ -1,15 +1,32 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import './ConfirmationModal.css';
 
-const ConfirmationModal = ({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
-  title = "Are you sure?", 
-  message = "Are you sure you want to log out?",
-  confirmText = "Yes, Logout",
+const ConfirmationModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title = "Are you sure?",
+  message = "Are you sure you want to continue?",
+  confirmText = "Confirm",
   cancelText = "Cancel"
 }) => {
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("keydown", handleEsc);
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEsc);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleOverlayClick = (e) => {
@@ -19,29 +36,41 @@ const ConfirmationModal = ({
   };
 
   return (
-    <div className="confirmation-modal-overlay" onClick={handleOverlayClick}>
+    <div
+      className="confirmation-modal-overlay"
+      onClick={handleOverlayClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirmation-modal-title"
+    >
       <div className="confirmation-modal-content">
+
         <div className="confirmation-modal-header">
-          <h3>{title}</h3>
+          <h3 id="confirmation-modal-title">
+            {title}
+          </h3>
         </div>
-        
+
         <div className="confirmation-modal-body">
           <p>{message}</p>
         </div>
-        
+
         <div className="confirmation-modal-actions">
-          <button 
-            className="confirmation-modal-btn confirmation-modal-btn-cancel" 
+
+          <button
+            className="confirmation-modal-btn confirmation-modal-btn-cancel"
             onClick={onClose}
           >
-             {cancelText}
+            {cancelText}
           </button>
-          <button 
-            className="confirmation-modal-btn confirmation-modal-btn-confirm" 
+
+          <button
+            className="confirmation-modal-btn confirmation-modal-btn-confirm"
             onClick={onConfirm}
           >
-             {confirmText}
+            {confirmText}
           </button>
+
         </div>
       </div>
     </div>
