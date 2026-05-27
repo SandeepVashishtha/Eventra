@@ -14,13 +14,12 @@ const Login = () => {
   useDocumentTitle("Login | Eventra");
   const prefersReducedMotion = useReducedMotion();
   const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState({});
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isAuthenticated, user, token } = useAuth();
+  const { login, isAuthenticated, user, token, authRequest } = useAuth();
   // If ProtectedRoute redirected here because the JWT expired, show a notice.
   const sessionExpired = location.state?.sessionExpired ?? false;
   const introPoints = [
@@ -75,7 +74,6 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-    setLoading(true);
 
 
     try {
@@ -86,12 +84,8 @@ const Login = () => {
         );
       }
     } catch (err) {
-      console.error("Login error:", err);
-      setError({ general: err.message || "Invalid email or password" });
       // Show error toast
       toast.error(err.message || 'Login failed. Please check your credentials.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -216,7 +210,7 @@ const Login = () => {
                       value={formData.usernameOrEmail}
                       onChange={handleChange}
                       required
-                      disabled={loading}
+                      disabled={authRequest.loading}
                       placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
                       aria-invalid={!!error.usernameOrEmail}
                       aria-describedby={error.usernameOrEmail ? 'usernameOrEmail-error' : undefined}
@@ -263,7 +257,7 @@ const Login = () => {
                       value={formData.password}
                       onChange={handleChange}
                       required
-                      disabled={loading}
+                      disabled={authRequest.loading}
                       placeholder="Enter secure password / Minimum 8 characters / Use strong password"
                       aria-invalid={!!error.password}
                       aria-describedby={error.password ? 'password-error' : undefined}
@@ -305,13 +299,13 @@ const Login = () => {
                 </div>
 
                 {/* Error message */}
-                {error.general && (
+                {authRequest.error && (
                   <motion.div
                     initial={{ opacity: 0, y: -5 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm"
                   >
-                    {error.general}
+                    {authRequest.error}
                   </motion.div>
                 )}
 
@@ -320,10 +314,10 @@ const Login = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   type="submit"
-                  disabled={loading}
+                  disabled={authRequest.loading}
                   className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
                 >
-                  {loading ? (
+                  {authRequest.loading ? (
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       Signing In...
