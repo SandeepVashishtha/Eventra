@@ -132,5 +132,3 @@ describe("useOfflineSync", () => {
     expect(clearQueue).not.toHaveBeenCalled();
   });
 });
-
-```
