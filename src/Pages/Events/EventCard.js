@@ -34,7 +34,10 @@ import {
   subscribeToBookmarkChanges,
 } from "../../utils/bookmarkUtils";
 import { checkRegistrationConflict } from "../../utils/conflictDetection";
-
+const [
+  savedEvents,
+  setSavedEvents,
+] = useState([]);
 const getCapacityStyles = (ratio, isFull) => {
   if (isFull || ratio >= 0.85) {
     return {
@@ -77,7 +80,12 @@ const EventCard = ({ event }) => {
   const isUserRegistered = isRegistered(event.id);
 
   const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
+useEffect(() => {
+  const saved =
+    getBookmarkedEvents();
 
+  setSavedEvents(saved);
+}, []);
   const eventSharingData = generateEventSharingData({
     ...event,
     title: event.title,
@@ -214,6 +222,52 @@ const EventCard = ({ event }) => {
           title="Copy Event Link"
           aria-label={`Copy link for ${event.title}`}
         >
+          {savedEvents.length > 0 && (
+  <section className="mb-10">
+
+    <div className="
+      flex
+      items-center
+      justify-between
+      mb-4
+    ">
+      <h2 className="
+        text-2xl
+        font-bold
+        text-slate-900
+        dark:text-white
+      ">
+        Saved Events
+      </h2>
+    </div>
+
+    <div className="
+      flex
+      gap-4
+      overflow-x-auto
+      pb-2
+    ">
+
+      {savedEvents.map(
+        (event) => (
+          <div
+            key={event.id}
+            className="
+              min-w-[280px]
+              flex-shrink-0
+            "
+          >
+            <EventCard
+              event={event}
+            />
+          </div>
+        )
+      )}
+
+    </div>
+
+  </section>
+)}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="14"
