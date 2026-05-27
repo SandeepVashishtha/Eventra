@@ -115,7 +115,7 @@ const useOfflineSync = () => {
               url,
               item.payload,
               token,
-              retries
+              0
             );
 
             // Handle Conflict loop
