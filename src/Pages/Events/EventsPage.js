@@ -1,7 +1,13 @@
 import { useEffect, useRef } from "react";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
-import { Grid, List } from "lucide-react";
+import { getEventStatus } from "../../utils/eventUtils";
+import { useSearchParams } from "react-router-dom";
+import {
+  Grid,
+  List,
+  Loader2,
+} from "lucide-react";
 import { useLocation } from "react-router-dom";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
@@ -13,6 +19,19 @@ import ActiveFilters from "./ActiveFilters";
 import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
+import { getRouteSearchResults } from "../../utils/searchUtils";
+
+
+
+const EVENT_SEARCH_KEYS = [
+  "title",
+  "description",
+  "location",
+  "tags",
+  "type",
+  "date",
+  "status",
+];
 
 const FILTERS = [
   { key: "all", label: "All" },
@@ -81,8 +100,9 @@ const renderCardSection = (
 const EventsPage = () => {
   useDocumentTitle("Eventra | Events");
   const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-  const routeSearchQuery = searchParams.get("search") || "";
+  const [searchParams] = useSearchParams();
+  const routeSearchQuery =
+  new URLSearchParams(location.search).get("search") || "";
 
   const listing = useEventListing();
   const cardSectionRef = useRef();
@@ -96,12 +116,6 @@ const EventsPage = () => {
     const sort = searchParams.get("sort") || "Newest";
     const view = searchParams.get("view") || "grid";
     
-    listing.setSafePage(page);
-    listing.setEventsPerPage(perPage);
-    listing.setSearchQuery(search);
-    listing.setFilterType(filter);
-    listing.setSortType(sort);
-    listing.setViewMode(view);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

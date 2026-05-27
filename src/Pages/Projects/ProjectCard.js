@@ -509,4 +509,5 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
   );
 };
 
+
 export default memo(ProjectCard);

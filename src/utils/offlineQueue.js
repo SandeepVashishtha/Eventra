@@ -58,12 +58,53 @@ export const getQueueIndexedDB = async () => {
 };
 
 /**
+ * generateQueueId
+ *
+ * Generates a collision-free ID for a new offline queue item.
+ *
+ * Why the previous implementation was unreliable
+ * ───────────────────────────────────────────────
+ * The previous expression was:
+ *
+ *   Date.now() + Math.random().toString(36).substring(2, 7)
+ *
+ * This had two problems:
+ *
+ *  1. String coercion ambiguity: the result of Date.now() (a number) was
+ *     concatenated with a string via implicit coercion. The expression worked
+ *     by accident but is fragile and non-obvious.
+ *
+ *  2. Collision risk under rapid submissions: Date.now() returns the same
+ *     millisecond timestamp for two events queued in the same tick (e.g. a
+ *     double-tap or a rapid programmatic batch). With only 5 random characters
+ *     from a 36-character alphabet (36^5 ≈ 60 million), collision probability
+ *     is non-trivial under load. A collision causes the second IndexedDB put()
+ *     to silently overwrite the first item (keyPath: 'id'), losing one action.
+ *
+ * Fix
+ * ───
+ * Use crypto.randomUUID() which produces a RFC 4122 v4 UUID — 122 bits of
+ * random data, guaranteed unique by the Web Crypto API. Falls back to a
+ * manually composed UUID-like string with 9 random characters (vs the previous
+ * 5) for environments where crypto.randomUUID is unavailable (older browsers).
+ *
+ * @returns {string} A collision-resistant unique ID string
+ */
+const generateQueueId = () => {
+  if (typeof crypto?.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  // Fallback: timestamp + 9 random base-36 chars (36^9 ≈ 101 billion combinations)
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+};
+
+/**
  * Append a single item to both localStorage mirror and IndexedDB.
  */
 export const pushToQueue = async (item) => {
   // Add metadata tracking
   const actionItem = {
-    id: item.id || Date.now() + Math.random().toString(36).substring(2, 7),
+    id: item.id || generateQueueId(),
     timestamp: item.timestamp || new Date().toISOString(),
     retryCount: item.retryCount || 0,
     actionType: item.actionType || "REGISTER_EVENT",
