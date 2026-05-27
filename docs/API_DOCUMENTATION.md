@@ -1,5 +1,17 @@
 # Eventra API Documentation
 
+## 📖 Prerequisites
+
+Before working with the API, ensure your environment is properly configured:
+
+**\u2705 [Environment Setup Guide](ENV_SETUP_GUIDE.md)** – Complete configuration instructions including:
+- Backend API URL configuration (`REACT_APP_API_URL`)
+- Running the backend locally
+- Troubleshooting connection issues
+- Mock API vs real API modes
+
+---
+
 ## Overview
 
 Eventra provides a RESTful backend API built using Spring Boot and secured using JWT Authentication.

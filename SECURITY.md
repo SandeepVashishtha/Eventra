@@ -39,6 +39,7 @@ We support the latest version of Eventra. Please update to the latest release to
 - Offline-first request queuing for network resilience
 
 **For detailed security information, refer to:**
+- [Environment Setup & Security](docs/ENV_SETUP_GUIDE.md#-deployment--security-guidelines) – Safe vs unsafe environment variables, deployment secrets checklist
 - [SECURITY_MIGRATION.md](SECURITY_MIGRATION.md) – Security updates and migration guide
 - [Architecture & Roles: Security Measures](docs/ARCHITECTURE_AND_ROLES.md#security-measures)
 
