@@ -17,6 +17,7 @@ import CertificateDownload from "../../components/CertificateDownload";
 import EventMaterials from "../../components/common/EventMaterials";
 import EventRecommendations from "../../components/events/EventRecommendations";
 import CopyLinkButton from "../../components/common/CopyLinkButton";
+import LazyImage from "../../components/common/LazyImage";
 const EventDetails = () => {
   const { eventId } = useParams();
   const { isRegistered } = useMyEvents();
@@ -144,9 +145,13 @@ const EventDetails = () => {
 
           {/* Left - Image and Details */}
           <div className="space-y-6 rounded-3xl bg-white p-8 shadow-xl dark:bg-gray-900">
-            <img
+            <LazyImage
               src={event.image}
               alt={event.title}
+              width={1200}
+              height={384}
+              loading="eager"
+              useWebP
               className="w-full rounded-3xl object-cover shadow-lg h-96"
             />
             <div className="grid gap-4 sm:grid-cols-2">
