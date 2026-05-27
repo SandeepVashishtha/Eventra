@@ -30,13 +30,9 @@ class FeatureErrorBoundary extends React.Component {
         <div className="flex flex-col items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/5 p-6 text-center">
           <AlertTriangle className="mb-3 text-red-400" size={36} />
 
-          <h2 className="mb-2 text-lg font-bold text-red-400">
-            Something went wrong
-          </h2>
+          <h2 className="mb-2 text-lg font-bold text-red-400">Something went wrong</h2>
 
-          <p className="mb-4 text-sm text-gray-400">
-            This feature failed to load properly.
-          </p>
+          <p className="mb-4 text-sm text-gray-400">This feature failed to load properly.</p>
 
           <button
             onClick={this.handleRetry}

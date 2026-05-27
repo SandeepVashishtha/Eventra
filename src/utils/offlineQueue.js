@@ -4,9 +4,9 @@
 import { safeJsonParse } from "./safeJsonParse.js";
 import { logger } from "../utils/logger";
 
-const QUEUE_KEY = 'eventra_offline_queue';
-const DB_NAME = 'eventra_offline_db';
-const STORE_NAME = 'actions_queue';
+const QUEUE_KEY = "eventra_offline_queue";
+const DB_NAME = "eventra_offline_db";
+const STORE_NAME = "actions_queue";
 const DB_VERSION = 1;
 
 // Open Promise-based IndexedDB connection
@@ -36,7 +36,7 @@ export const getQueue = () => {
     const raw = localStorage.getItem(QUEUE_KEY);
     return safeJsonParse(raw, []);
   } catch (error) {
-    logger.error('[OfflineQueue] Failed to parse offline queue:', error);
+    logger.error("[OfflineQueue] Failed to parse offline queue:", error);
     return [];
   }
 };
@@ -120,17 +120,19 @@ export const pushToQueue = async (item, userId = null) => {
     endpoint: item.endpoint || null,
     // SECURITY: Attach user ID to validate ownership on replay
     userId: userId || null,
-    sessionId: typeof window !== 'undefined' ? sessionStorage.getItem('session_id') || null : null,
+    sessionId: typeof window !== "undefined" ? sessionStorage.getItem("session_id") || null : null,
   };
 
   // 1. Sync mirror updates immediately (Synchronous fallback)
   const queue = getQueue();
   if (queue.length >= 15) {
-    logger.warn('Offline queue limit reached. Dropping item to prevent local overflow.');
+    logger.warn("Offline queue limit reached. Dropping item to prevent local overflow.");
     if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent('eventra-offline-queue-full', {
-        detail: { eventId: item.eventId, limit: 15 }
-      }));
+      window.dispatchEvent(
+        new CustomEvent("eventra-offline-queue-full", {
+          detail: { eventId: item.eventId, limit: 15 },
+        })
+      );
     }
     return false;
   }
@@ -141,7 +143,7 @@ export const pushToQueue = async (item, userId = null) => {
     localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
     localStorageSuccess = true;
   } catch (error) {
-    logger.error('Error writing localStorage backup:', error);
+    logger.error("Error writing localStorage backup:", error);
   }
 
   // 2. Async IndexedDB background write
@@ -176,7 +178,7 @@ export const setQueue = async (newQueue) => {
       localStorage.setItem(QUEUE_KEY, JSON.stringify(newQueue));
     }
   } catch (error) {
-    logger.error('Error setting localStorage backup:', error);
+    logger.error("Error setting localStorage backup:", error);
   }
 
   // 2. Sync IndexedDB in background
@@ -185,16 +187,16 @@ export const setQueue = async (newQueue) => {
     await new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, "readwrite");
       const store = tx.objectStore(STORE_NAME);
-      
+
       const clearReq = store.clear();
       clearReq.onsuccess = () => {
         if (newQueue.length === 0) {
           resolve();
           return;
         }
-        
+
         let completed = 0;
-        newQueue.forEach(item => {
+        newQueue.forEach((item) => {
           const putReq = store.add(item);
           putReq.onsuccess = () => {
             completed++;
@@ -218,7 +220,7 @@ export const clearQueue = async () => {
   try {
     localStorage.removeItem(QUEUE_KEY);
   } catch (error) {
-    logger.error('Error clearing localStorage backup:', error);
+    logger.error("Error clearing localStorage backup:", error);
   }
 
   // 2. Sync IndexedDB
@@ -252,7 +254,7 @@ export const clearQueue = async () => {
  */
 export const filterQueueByOwnership = (queue, currentUserId) => {
   if (!currentUserId) {
-    logger.warn('[Security] No user ID provided — dropping entire queue as a safety precaution');
+    logger.warn("[Security] No user ID provided — dropping entire queue as a safety precaution");
     return [];
   }
 
@@ -261,8 +263,8 @@ export const filterQueueByOwnership = (queue, currentUserId) => {
     if (item.userId !== currentUserId) {
       logger.warn(
         `[Security] Dropping queued action ${item.id}: ` +
-        `owned by user ${item.userId} but current user is ${currentUserId}. ` +
-        `This prevents cross-user action replay.`
+          `owned by user ${item.userId} but current user is ${currentUserId}. ` +
+          `This prevents cross-user action replay.`
       );
       return false;
     }
