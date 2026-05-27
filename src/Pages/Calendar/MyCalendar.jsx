@@ -37,6 +37,7 @@ const MyCalendar = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState("grid"); // "grid" or "timeline"
   const [activeCategory, setActiveCategory] = useState("all");
+  const [announcement, setAnnouncement] = useState("");
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
@@ -45,20 +46,60 @@ const MyCalendar = () => {
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
 
-  const prevMonth = () => {
-    setCurrentDate(new Date(currentYear, currentMonth - 1, 1));
-  };
-
-  const nextMonth = () => {
-    setCurrentDate(new Date(currentYear, currentMonth + 1, 1));
-  };
-
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
   ];
 
   const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  const selectDay = (day) => {
+    const cellDate = new Date(currentYear, currentMonth, day);
+    setSelectedDate(cellDate);
+    const dayEvents = getEventsForDate(day);
+    setAnnouncement(
+      `Selected ${cellDate.toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+      })}. ${dayEvents.length} event${dayEvents.length === 1 ? "" : "s"} scheduled.`
+    );
+  };
+
+  const prevMonth = () => {
+    const newDate = new Date(currentYear, currentMonth - 1, 1);
+    setCurrentDate(newDate);
+    setAnnouncement(`Switched to calendar view for ${monthNames[newDate.getMonth()]} ${newDate.getFullYear()}`);
+  };
+
+  const nextMonth = () => {
+    const newDate = new Date(currentYear, currentMonth + 1, 1);
+    setCurrentDate(newDate);
+    setAnnouncement(`Switched to calendar view for ${monthNames[newDate.getMonth()]} ${newDate.getFullYear()}`);
+  };
+
+  const handleDayKeyDown = (e, day) => {
+    let nextFocusDay = null;
+    if (e.key === "ArrowRight") {
+      nextFocusDay = day + 1;
+    } else if (e.key === "ArrowLeft") {
+      nextFocusDay = day - 1;
+    } else if (e.key === "ArrowDown") {
+      nextFocusDay = day + 7;
+    } else if (e.key === "ArrowUp") {
+      nextFocusDay = day - 7;
+    }
+
+    if (nextFocusDay !== null && nextFocusDay >= 1 && nextFocusDay <= daysInMonth) {
+      e.preventDefault();
+      selectDay(nextFocusDay);
+      // Wait for re-render and focus
+      setTimeout(() => {
+        const btn = document.getElementById(`calendar-cell-${nextFocusDay}`);
+        btn?.focus();
+      }, 0);
+    }
+  };
 
   // Matches item's category to the active selector
   const matchesCategory = (itemCategory, selectedCat) => {
@@ -133,6 +174,25 @@ const MyCalendar = () => {
 
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-20 px-4 md:px-8 transition-colors duration-300">
+      {/* Visually hidden screen reader live region */}
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        style={{
+          position: "absolute",
+          width: "1px",
+          height: "1px",
+          padding: 0,
+          margin: "-1px",
+          overflow: "hidden",
+          clip: "rect(0, 0, 0, 0)",
+          whiteSpace: "nowrap",
+          border: 0,
+        }}
+      >
+        {announcement}
+      </div>
+
       <div className="max-w-6xl mx-auto space-y-8">
 
         {/* HEADER SECTION */}
@@ -297,8 +357,11 @@ const MyCalendar = () => {
                           return (
                             <button
                               key={`day-${day}`}
+                              id={`calendar-cell-${day}`}
                               role="gridcell"
-                              onClick={() => setSelectedDate(cellDate)}
+                              onClick={() => selectDay(day)}
+                              onKeyDown={(e) => handleDayKeyDown(e, day)}
+                              aria-selected={selected}
                               className={`aspect-square rounded-2xl border p-2 flex flex-col justify-between items-start cursor-pointer transition-all ${selected
                                   ? "bg-indigo-650 border-indigo-600 text-white shadow-lg shadow-indigo-600/10 scale-102"
                                   : isToday
