@@ -448,6 +448,12 @@ This endpoint retrieves the event directly by ID and does not apply public-only 
     }
 ```
 
+### Event Response Note
+
+Event create, update, and detail APIs return a sanitized event response object instead of the raw backend entity. The response includes public event fields such as `id`, `title`, `description`, `location`, `eventDate`, `capacity`, `registeredCount`, and `public`.
+
+Internal backend fields such as registered user entities, attendee details, and JPA metadata are not exposed in event API responses.
+
 ---
 
 ## Register for Event
