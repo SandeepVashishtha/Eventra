@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
@@ -357,4 +357,4 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
   );
 };
 
-export default HackathonCard;
+export default memo(HackathonCard);

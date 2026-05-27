@@ -17,6 +17,7 @@ import CertificateDownload from "../../components/CertificateDownload";
 import EventMaterials from "../../components/common/EventMaterials";
 import EventRecommendations from "../../components/events/EventRecommendations";
 import CopyLinkButton from "../../components/common/CopyLinkButton";
+import LazyImage from "../../components/common/LazyImage";
 const EventDetails = () => {
   const { eventId } = useParams();
   const { isRegistered } = useMyEvents();
@@ -122,6 +123,14 @@ const EventDetails = () => {
   {/* Copy Link Button */}
   <CopyLinkButton />
 
+  <button
+    onClick={() => window.print()}
+    className="print-hide inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+    aria-label="Print or save as PDF"
+  >
+    🖨️ Print / Save as PDF
+  </button>
+
   <Link
     to="/events"
     className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
@@ -136,9 +145,13 @@ const EventDetails = () => {
 
           {/* Left - Image and Details */}
           <div className="space-y-6 rounded-3xl bg-white p-8 shadow-xl dark:bg-gray-900">
-            <img
+            <LazyImage
               src={event.image}
               alt={event.title}
+              width={1200}
+              height={384}
+              loading="eager"
+              useWebP
               className="w-full rounded-3xl object-cover shadow-lg h-96"
             />
             <div className="grid gap-4 sm:grid-cols-2">

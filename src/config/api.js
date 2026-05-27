@@ -261,3 +261,11 @@ export const apiUtils = {
 };
 
 export default API;
+
+export const API_ENDPOINTS_UPDATED = {
+  ...API_ENDPOINTS,
+  NOTIFICATIONS: {
+    ...API_ENDPOINTS.NOTIFICATIONS,
+    READ_ALL: buildApiUrl("/api/notifications/read-all"),
+  }
+};

@@ -17,6 +17,11 @@ import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
 import SearchEmptyState from "../../components/common/SearchEmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import ActiveFilters from "./ActiveFilters";
+import PaginationControls from "./PaginationControls";
+import useEventListing from "./useEventListing";
+import { darkTheme } from "../../components/styles/theme";
+import BackToTopButton from "../../components/common/BackToTopButton";
+import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
 import { getRouteSearchResults } from "../../utils/searchUtils";
 
 const EVENT_SEARCH_KEYS = [
@@ -178,6 +183,19 @@ const EventsPage = () => {
 
   // Load events with simulated delay
   useEffect(() => {
+    const page = parseInt(searchParams.get("page")) || 1;
+    const perPage = parseInt(searchParams.get("perPage")) || 6;
+    const search = prepareSafeSearchQuery(searchParams.get("search") || "");
+    const filter = searchParams.get("filter") || "all";
+    const sort = searchParams.get("sort") || "latest";
+    const view = searchParams.get("view") || "grid";
+    listing.setSafePage(page);
+    listing.setEventsPerPage(perPage);
+    listing.setSearchQuery(search);
+    listing.setFilterType(filter);
+    listing.setSortType(sort);
+    listing.setViewMode(view);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const timer = setTimeout(() => {
       setEvents(
         mockEvents.map((event) => ({
