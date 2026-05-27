@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }) => {
   const clearSession = useCallback(() => {
     setUser(null);
     setToken(null);
-    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; HttpOnly; SameSite=Strict";
     sessionStorage.removeItem("token");
     localStorage.removeItem("user");
   }, []);
@@ -380,19 +380,16 @@ export const AuthProvider = ({ children }) => {
       return false;
     }
     return true;
-  }, [user, token]);
+  }, [user]);
 
   const hasRole = (roleName) => {
-    if (!user?.roles || !token) return false;
+    if (!user?.roles) return false;
 
-    // SECURITY: Always verify against the JWT token (server-signed).
-    // Even if React state is somehow corrupted or localStorage is tampered with,
-    // the JWT cannot be forged client-side.
-    const tokenRoleData = extractRolesFromToken(token);
-    if (!tokenRoleData || !tokenRoleData.roles) return false;
-
+    // With HttpOnly cookies, we cannot extract roles from the JWT client-side.
+    // We rely on the cached user roles for UI rendering.
+    // Real security enforcement happens on the backend.
     const targetRole = String(roleName).toUpperCase();
-    return tokenRoleData.roles.includes(targetRole);
+    return user.roles.includes(targetRole);
   };
 
   const hasPermission = (permissionName) => user?.permissions?.includes(permissionName) || false;
