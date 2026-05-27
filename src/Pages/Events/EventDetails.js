@@ -23,6 +23,7 @@ import { useAuth } from "../../context/AuthContext";
 import { exportToCSV, exportToJSON } from "../../utils/exportUtils";
 import { ROLES } from "../../config/roles";
 import { marked } from 'marked';
+import { safeParseJson } from "../../utils/jsonUtils";
 
 const EventDetails = () => {
   const { eventId } = useParams();
@@ -47,10 +48,7 @@ const EventDetails = () => {
   useEffect(() => {
     if (!event) return;
 
-    const viewedEvents =
-      JSON.parse(
-        localStorage.getItem("recentlyViewedEvents")
-      ) || [];
+    const viewedEvents = safeParseJson(localStorage.getItem("recentlyViewedEvents"), []);
 
     const updatedEvents = [
       event,

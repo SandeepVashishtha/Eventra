@@ -67,8 +67,12 @@ const Settings = () => {
 
   const handleCopyKey = () => {
     if (!backupKey) return;
-    navigator.clipboard.writeText(`Mnemonic: ${backupKey.mnemonic}\nHex: ${backupKey.hex}`);
-    toast.success("Backup key copied to clipboard!");
+    navigator.clipboard.writeText(`Mnemonic: ${backupKey.mnemonic}\nHex: ${backupKey.hex}`)
+      .then(() => toast.success("Backup key copied to clipboard!"))
+      .catch((err) => {
+        console.error("Failed to copy key:", err);
+        toast.error("Could not copy key. Please copy manually.");
+      });
   };
 
   const handleDownloadKey = () => {
