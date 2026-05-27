@@ -272,8 +272,10 @@ border-b border-gray-100 dark:border-slate-900">
       {/* Hero Content */}
       <motion.div 
         className="mx-auto px-6 lg:px-8 relative z-10 pt-20"
-        style={{
-          backgroundImage: "url('/background.png')",
+       style={{
+  backgroundImage: isDark
+    ? "url('/background-dark.png')"
+    : "url('/background.png')",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
