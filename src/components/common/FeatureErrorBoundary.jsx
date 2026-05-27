@@ -21,7 +21,13 @@ class FeatureErrorBoundary extends React.Component {
   }
 
   handleRetry = () => {
+    // 1. Reset the local error state
     this.setState({ hasError: false });
+    
+    // 2. Trigger a manual re-fetch/recalculation callback if provided by the parent
+    if (this.props.onRetry) {
+      this.props.onRetry();
+    }
   };
 
   render() {
@@ -39,7 +45,7 @@ class FeatureErrorBoundary extends React.Component {
             className="flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-600"
           >
             <RefreshCw size={16} />
-            Retry
+            Tap to Retry
           </button>
         </div>
       );
