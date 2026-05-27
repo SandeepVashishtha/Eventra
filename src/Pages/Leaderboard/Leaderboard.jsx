@@ -34,49 +34,11 @@ const CATEGORY_FILTERS = [
   { id: "mentors", label: "Project Mentors", icon: "🎓" },
 ];
 
-// ─── Deterministic rank movement generator (seeded by username hash) ──────────
-function getRankMovement(username) {
-  let hash = 0;
-  for (let i = 0; i < username.length; i++) {
-    hash = (hash << 5) - hash + username.charCodeAt(i);
-    hash |= 0;
-  }
-  const mod = Math.abs(hash) % 10;
-  if (mod < 4) return { direction: "up", delta: (mod % 3) + 1 };
-  if (mod < 7) return { direction: "stable", delta: 0 };
-  return { direction: "down", delta: (mod % 2) + 1 };
-}
-
-function RankMovementIndicator({ username }) {
-  const { direction, delta } = getRankMovement(username);
-  if (direction === "up") {
-    return (
-      <motion.span
-        initial={{ opacity: 0, y: 4 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="inline-flex items-center gap-0.5 text-[10px] font-black text-emerald-500"
-        title={`Up ${delta} position${delta > 1 ? "s" : ""}`}
-      >
-        <FaArrowUp className="w-2.5 h-2.5" /> {delta}
-      </motion.span>
-    );
-  }
-  if (direction === "down") {
-    return (
-      <motion.span
-        initial={{ opacity: 0, y: -4 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="inline-flex items-center gap-0.5 text-[10px] font-black text-rose-500"
-        title={`Down ${delta} position${delta > 1 ? "s" : ""}`}
-      >
-        <FaArrowDown className="w-2.5 h-2.5" /> {delta}
-      </motion.span>
-    );
-  }
+function RankMovementIndicator() {
   return (
     <span
       className="inline-flex items-center text-[10px] font-bold text-slate-400"
-      title="No change"
+      title="Stable"
     >
       <FaMinus className="w-2 h-2" />
     </span>
