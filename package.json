@@ -44,8 +44,8 @@
     "recharts": "^3.8.1"
   },
   "scripts": {
-    "dev": "set DISABLE_ESLINT_PLUGIN=true && react-scripts start",
-    "start": "react-scripts start",
+    "dev": "set PORT=3001 && set DISABLE_ESLINT_PLUGIN=true && react-scripts start",
+    "start": "set PORT=3001 && react-scripts start",
     "prebuild": "node scripts/validate-env.js",
     "build": "react-scripts build",
     "build:fast": "cross-env GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true NODE_OPTIONS=\"--no-deprecation --max-old-space-size=4096\" react-scripts build",
