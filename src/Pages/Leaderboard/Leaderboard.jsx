@@ -24,7 +24,7 @@ import {
   storageManager,
   STORAGE_KEYS,
   validators,
-} from "../../utils/storageManager";
+} from "../../utils/storage/storageManager";
 
 // ─── Category filter definitions ───────────────────────────────────────────────
 const CATEGORY_FILTERS = [
