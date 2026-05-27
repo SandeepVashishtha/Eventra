@@ -23,7 +23,8 @@
 
 /* Red bouncing laser scanning beam */
 @keyframes bounceBeam {
-  0%, 100% {
+  0%,
+  100% {
     top: 15%;
   }
   50% {

@@ -1,18 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
-import { 
-  Camera, 
-  CameraOff, 
-  CheckCircle2, 
-  XCircle, 
-  AlertTriangle, 
-  RefreshCw, 
-  Keyboard, 
-  FileText, 
-  User, 
+import {
+  Camera,
+  CameraOff,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  RefreshCw,
+  Keyboard,
+  FileText,
+  User,
   Calendar,
   Sparkles,
-  Search
+  Search,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import "./TicketScanner.css";
@@ -25,7 +25,7 @@ export default function TicketScanner() {
   const [scannerStatus, setScannerStatus] = useState("idle"); // idle, starting, scanning, stopped, error
   const [scanResult, setScanResult] = useState(null); // { status: 'verified'|'flagged'|'duplicate', data: { ... } }
   const [manualMode, setManualMode] = useState(false);
-  
+
   // Manual form state
   const [manualTicketId, setManualTicketId] = useState("");
   const [manualAttendeeName, setManualAttendeeName] = useState("");
@@ -42,7 +42,9 @@ export default function TicketScanner() {
           setDevices(cameras);
           // Default to back camera or first device
           const backCam = cameras.find(
-            (cam) => cam.label.toLowerCase().includes("back") || cam.label.toLowerCase().includes("environment")
+            (cam) =>
+              cam.label.toLowerCase().includes("back") ||
+              cam.label.toLowerCase().includes("environment")
           );
           setSelectedCameraId(backCam ? backCam.id : cameras[0].id);
         } else {
@@ -137,7 +139,7 @@ export default function TicketScanner() {
           ticketId: decodedText.trim(),
           eventName: "Official Eventra Event",
           userName: "Guest Attendee",
-          eventId: "unknown"
+          eventId: "unknown",
         };
       }
     }
@@ -146,7 +148,7 @@ export default function TicketScanner() {
       setScanResult({
         status: "flagged",
         message: "Invalid QR Code format. Ticket is secure and cannot be verified.",
-        raw: decodedText
+        raw: decodedText,
       });
       toast.error("Security Alert: Invalid Ticket QR Code scanned!");
       logCheckIn("Unknown Attendee", "Unknown Event", "Flagged");
@@ -158,7 +160,7 @@ export default function TicketScanner() {
 
   const processTicket = (ticketData) => {
     const savedCheckins = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
-    
+
     // Check if duplicate check-in
     const isDuplicate = savedCheckins.some(
       (c) => c.ticketId === ticketData.ticketId && c.status === "Verified"
@@ -168,7 +170,7 @@ export default function TicketScanner() {
       setScanResult({
         status: "duplicate",
         data: ticketData,
-        message: "This ticket has already been checked in!"
+        message: "This ticket has already been checked in!",
       });
       toast.warning(`Duplicate Attempt: ${ticketData.userName} is already checked in.`);
       logCheckIn(ticketData.userName, ticketData.eventName, "Flagged", ticketData.ticketId);
@@ -176,7 +178,7 @@ export default function TicketScanner() {
       setScanResult({
         status: "verified",
         data: ticketData,
-        message: "Attendee check-in verified successfully!"
+        message: "Attendee check-in verified successfully!",
       });
       toast.success(`Check-In Verified: Welcome, ${ticketData.userName}!`);
       logCheckIn(ticketData.userName, ticketData.eventName, "Verified", ticketData.ticketId);
@@ -193,7 +195,7 @@ export default function TicketScanner() {
         name: name || "Unknown Guest",
         event: event || "Official Event",
         time: "Just now",
-        status: status // "Verified" or "Flagged"
+        status: status, // "Verified" or "Flagged"
       };
 
       const updated = [newCheckin, ...savedCheckins].slice(0, 50); // limit local history to 50
@@ -215,11 +217,11 @@ export default function TicketScanner() {
       ticketId: manualTicketId.trim().toUpperCase(),
       userName: manualAttendeeName.trim(),
       eventName: manualEventName,
-      eventId: "manual"
+      eventId: "manual",
     };
 
     processTicket(manualData);
-    
+
     // Clear manual inputs
     setManualTicketId("");
     setManualAttendeeName("");
@@ -232,7 +234,6 @@ export default function TicketScanner() {
 
   return (
     <div className="ts-root bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-md transition-all duration-300">
-      
       {/* HEADER BANNER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-slate-800 pb-5 mb-6 gap-4">
         <div>
@@ -241,7 +242,8 @@ export default function TicketScanner() {
             Active Door Pass Scanner
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Access device camera to scan dynamic attendee QR codes instantly or enter ticket codes manually.
+            Access device camera to scan dynamic attendee QR codes instantly or enter ticket codes
+            manually.
           </p>
         </div>
 
@@ -254,8 +256,8 @@ export default function TicketScanner() {
               startScanner(selectedCameraId);
             }}
             className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${
-              !manualMode 
-                ? "bg-white dark:bg-slate-850 text-indigo-600 dark:text-indigo-400 shadow-sm" 
+              !manualMode
+                ? "bg-white dark:bg-slate-850 text-indigo-600 dark:text-indigo-400 shadow-sm"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-350"
             }`}
           >
@@ -268,8 +270,8 @@ export default function TicketScanner() {
               setScanResult(null);
             }}
             className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${
-              manualMode 
-                ? "bg-white dark:bg-slate-850 text-indigo-600 dark:text-indigo-400 shadow-sm" 
+              manualMode
+                ? "bg-white dark:bg-slate-850 text-indigo-600 dark:text-indigo-400 shadow-sm"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-350"
             }`}
           >
@@ -280,18 +282,18 @@ export default function TicketScanner() {
 
       {/* SCANNING WORKSPACE */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        
         {/* LEFT / CENTER PANEL: SCANNER CONTAINER or MANUAL VIEW */}
         <div className="lg:col-span-3 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-850 rounded-2xl p-6 min-h-[380px] relative overflow-hidden">
-          
           {!manualMode ? (
             /* CAMERA MODE */
             <div className="w-full flex flex-col items-center gap-4">
-              
               {/* Camera selection dropdown */}
               {devices.length > 1 && (
                 <div className="w-full max-w-sm flex items-center gap-2 mb-2">
-                  <label htmlFor="camera-select" className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest min-w-[70px]">
+                  <label
+                    htmlFor="camera-select"
+                    className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest min-w-[70px]"
+                  >
                     Source:
                   </label>
                   <select
@@ -322,9 +324,12 @@ export default function TicketScanner() {
                       <span className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-indigo-500 -mt-1 -mr-1 rounded-tr-lg" />
                       <span className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-indigo-500 -mb-1 -ml-1 rounded-bl-lg" />
                       <span className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-indigo-500 -mb-1 -mr-1 rounded-br-lg" />
-                      
+
                       {/* Glowing red scanner beam line */}
-                      <div className="absolute w-full h-[3px] bg-rose-500/80 shadow-[0_0_10px_#f43f5e] rounded-full animate-bounce" style={{ top: '10%' }} />
+                      <div
+                        className="absolute w-full h-[3px] bg-rose-500/80 shadow-[0_0_10px_#f43f5e] rounded-full animate-bounce"
+                        style={{ top: "10%" }}
+                      />
                     </div>
                   </div>
                 )}
@@ -349,14 +354,18 @@ export default function TicketScanner() {
                 {scannerStatus === "starting" && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-950 text-white">
                     <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
-                    <span className="text-xs font-bold text-slate-400">Waking up lens hardware...</span>
+                    <span className="text-xs font-bold text-slate-400">
+                      Waking up lens hardware...
+                    </span>
                   </div>
                 )}
 
                 {scannerStatus === "stopped" && !scanResult && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950/90 text-white">
                     <CameraOff className="w-8 h-8 text-amber-500 animate-bounce" />
-                    <span className="text-xs font-bold text-slate-300">Camera paused / feed stopped</span>
+                    <span className="text-xs font-bold text-slate-300">
+                      Camera paused / feed stopped
+                    </span>
                     <button
                       onClick={() => startScanner(selectedCameraId)}
                       className="px-4 py-2 rounded-xl bg-indigo-600 text-xs font-bold"
@@ -379,17 +388,25 @@ export default function TicketScanner() {
             </div>
           ) : (
             /* MANUAL MODE ENTRY FORM */
-            <form onSubmit={handleManualCheckIn} className="w-full max-w-sm flex flex-col gap-5 py-2">
+            <form
+              onSubmit={handleManualCheckIn}
+              className="w-full max-w-sm flex flex-col gap-5 py-2"
+            >
               <div className="text-center mb-2">
                 <Keyboard className="w-10 h-10 text-indigo-500 mx-auto mb-2 animate-bounce" />
-                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Manual Check-In Fallback</h4>
+                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                  Manual Check-In Fallback
+                </h4>
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-normal max-w-xs mx-auto">
-                  Type in the ticket credentials directly. Use this when the guest's device screen is cracked or camera access is down.
+                  Type in the ticket credentials directly. Use this when the guest's device screen
+                  is cracked or camera access is down.
                 </p>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Attendee Name</label>
+                <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                  Attendee Name
+                </label>
                 <input
                   type="text"
                   placeholder="e.g. Priyanshu Ranjan"
@@ -401,7 +418,9 @@ export default function TicketScanner() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Ticket Code</label>
+                <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                  Ticket Code
+                </label>
                 <input
                   type="text"
                   placeholder="e.g. GLO-PRI-8F39A"
@@ -413,7 +432,9 @@ export default function TicketScanner() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Event Destination</label>
+                <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                  Event Destination
+                </label>
                 <select
                   value={manualEventName}
                   onChange={(e) => setManualEventName(e.target.value)}
@@ -471,22 +492,34 @@ export default function TicketScanner() {
                   <div className="flex items-center gap-2">
                     <User className="w-3.5 h-3.5 text-indigo-400" />
                     <div>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase block leading-none">ATTENDEE</span>
-                      <span className="text-xs font-bold text-white">{scanResult.data.userName}</span>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase block leading-none">
+                        ATTENDEE
+                      </span>
+                      <span className="text-xs font-bold text-white">
+                        {scanResult.data.userName}
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-3.5 h-3.5 text-indigo-400" />
                     <div>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase block leading-none">EVENT</span>
-                      <span className="text-xs font-bold text-zinc-300">{scanResult.data.eventName}</span>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase block leading-none">
+                        EVENT
+                      </span>
+                      <span className="text-xs font-bold text-zinc-300">
+                        {scanResult.data.eventName}
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <FileText className="w-3.5 h-3.5 text-indigo-400" />
                     <div>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase block leading-none">TICKET CODE / UUID</span>
-                      <span className="text-xs font-mono font-bold text-slate-350">{scanResult.data.ticketId}</span>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase block leading-none">
+                        TICKET CODE / UUID
+                      </span>
+                      <span className="text-xs font-mono font-bold text-slate-350">
+                        {scanResult.data.ticketId}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -547,13 +580,17 @@ export default function TicketScanner() {
                       {item.name ? item.name.charAt(0) : "U"}
                     </div>
                     <div className="truncate">
-                      <div className="text-[11px] font-bold text-slate-800 dark:text-slate-100 truncate">{item.name}</div>
+                      <div className="text-[11px] font-bold text-slate-800 dark:text-slate-100 truncate">
+                        {item.name}
+                      </div>
                       <div className="text-[9px] text-slate-450 truncate">{item.event}</div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-[8px] font-mono text-slate-400">{item.ticketId?.slice(-5) || "N/A"}</span>
+                    <span className="text-[8px] font-mono text-slate-400">
+                      {item.ticketId?.slice(-5) || "N/A"}
+                    </span>
                     <span
                       className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider ${
                         item.status === "Verified"
@@ -569,9 +606,7 @@ export default function TicketScanner() {
             })()}
           </div>
         </div>
-
       </div>
-
     </div>
   );
 }
