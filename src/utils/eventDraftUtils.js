@@ -11,6 +11,7 @@ export const saveDraft = (
       JSON.stringify(formData)
     );
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Error saving draft:', error);
   }
 };
@@ -24,6 +25,7 @@ export const getDraft = () => {
       ? safeJsonParse(draft, {})
       : null;
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Error loading draft:', error);
     return null;
   }
@@ -35,6 +37,7 @@ export const clearDraft = () => {
       STORAGE_KEY
     );
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Error clearing draft:', error);
   }
 };
