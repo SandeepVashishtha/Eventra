@@ -48,6 +48,14 @@ The frontend calls all APIs via an Axios instance configured with:
 
 ## 2. Base URL & Environment
 
+📖 **See [Environment Setup Guide](ENV_SETUP_GUIDE.md)** for:
+- How to configure `REACT_APP_API_URL` in frontend
+- Running the backend locally
+- Troubleshooting backend connection issues
+- Development vs production API endpoints
+
+**Current Configuration:**
+
 | Environment | Base URL |
 |-------------|----------|
 | Local Dev | `http://localhost:8080` |
