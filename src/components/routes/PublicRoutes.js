@@ -1,6 +1,7 @@
 import React, { lazy } from 'react';
 import { Route } from 'react-router-dom';
 import PageLayout from '../Layout/PageLayout';
+import SectionErrorBoundary from '../common/SectionErrorBoundary';
 
 // Auth guard — redirects unauthenticated users to /login
 import ProtectedRoute from '../auth/ProtectedRoute';
@@ -125,7 +126,7 @@ export const getPublicRoutes = () => [
     path="/leaderBoard"
     element={
       <ProtectedRoute>
-        <PageLayout><LeaderBoard /></PageLayout>
+        <PageLayout><SectionErrorBoundary label="Leaderboard"><LeaderBoard /></SectionErrorBoundary></PageLayout>
       </ProtectedRoute>
     }
   />,
@@ -134,7 +135,7 @@ export const getPublicRoutes = () => [
     path="/leaderboard"
     element={
       <ProtectedRoute>
-        <PageLayout><LeaderBoard /></PageLayout>
+        <PageLayout><SectionErrorBoundary label="Leaderboard"><LeaderBoard /></SectionErrorBoundary></PageLayout>
       </ProtectedRoute>
     }
   />,
@@ -168,6 +169,9 @@ export const getPublicRoutes = () => [
   <Route key="/feedback" path="/feedback" element={<PageLayout><FeedbackPage /></PageLayout>} />,
   <Route key="/documentation" path="/documentation" element={<PageLayout><DocumentationPage /></PageLayout>} />,
 
+  // /analytics — exposes organisation-level event analytics data.
+  // Requires authentication so that only registered users can view
+  // aggregate participant and event metrics.
   <Route
     key="/analytics"
     path="/analytics"
@@ -180,6 +184,9 @@ export const getPublicRoutes = () => [
     }
    />,
 
+  // /events/:eventId/floor-plan — venue floor plan designer.
+  // Requires authentication; only event organisers should be able
+  // to view or edit a floor plan layout.
   <Route
     key="/events/:eventId/floor-plan"
     path="/events/:eventId/floor-plan"
@@ -192,6 +199,9 @@ export const getPublicRoutes = () => [
     }
    />,
 
+  // /submit-project — allows users to submit projects to hackathons.
+  // Requires authentication so submissions are linked to a verified
+  // user account and cannot be made anonymously.
   <Route
     key="/submit-project"
     path="/submit-project"

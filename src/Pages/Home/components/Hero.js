@@ -13,6 +13,7 @@ import RespawningText from "../../../jhalak/RespawningText";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
 import CountUp from "react-countup";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
+import SectionErrorBoundary from "../../../components/common/SectionErrorBoundary";
 
 const MotionLink = motion(Link);
 
@@ -505,6 +506,7 @@ text-gray-600 dark:text-gray-300"
 
           {/* Animated Stats Cards */}
           {!searchQuery.trim() && (
+            <SectionErrorBoundary label="Statistics">
             <motion.div
               variants={fadeUp}
               style={{
@@ -546,6 +548,7 @@ text-gray-600 dark:text-gray-300"
                 </motion.div>
               ))}
             </motion.div>
+            </SectionErrorBoundary>
           )}
         </motion.div>
       </motion.div>
