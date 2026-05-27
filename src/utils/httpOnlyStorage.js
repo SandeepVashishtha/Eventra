@@ -1,1 +1,1 @@
-Frontend storage migration layer for HttpOnly cookies
+// Frontend storage migration layer for HttpOnly cookies

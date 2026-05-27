@@ -17,6 +17,7 @@ import {
 import StatusBadge from "../common/StatusBadge";
 import './AdminDashboard.css';
 import AnalyticsDashboard from './AnalyticsDashboard';
+import SectionErrorBoundary from '../common/SectionErrorBoundary';
 import { toast } from 'react-toastify';
 
 import { ROLES,PERMISSIONS } from "../../config/roles";
@@ -459,7 +460,15 @@ const AdminDashboard = () => {
                       {filteredUsers.length === 0
                         ? <tr><td colSpan={6} className="ad-table-empty">No users found.</td></tr>
                         : filteredUsers.map(u => (
-                          <tr key={u.id}>
+                        <tr
+  key={u.id}
+  className="
+    transition-colors
+    duration-200
+    hover:bg-slate-50
+    dark:hover:bg-slate-800/50
+  "
+>
                             <td>
                               <div className="ad-table-user">
                                 <div className="ad-table-avatar">{u.firstName.charAt(0)}</div>
@@ -532,8 +541,15 @@ const AdminDashboard = () => {
                       {filteredEvents.length === 0
                         ? <tr><td colSpan={6} className="ad-table-empty">No events found.</td></tr>
                         : filteredEvents.map(ev => (
-                          <tr key={ev.id}>
-                            <td className="ad-table-bold">{ev.title}</td>
+<tr
+  key={ev.id}
+  className="
+    transition-colors
+    duration-200
+    hover:bg-slate-50
+    dark:hover:bg-slate-800/50
+  "
+>                            <td className="ad-table-bold">{ev.title}</td>
                             <td>
                               <StatusBadge status={ev.type} />
                               
@@ -590,7 +606,9 @@ const AdminDashboard = () => {
 
                 {/* Dynamic Analytics Dashboard */}
                 <div style={{ marginTop: '1.5rem' }}>
-                  <AnalyticsDashboard />
+                  <SectionErrorBoundary label="Analytics Dashboard">
+                    <AnalyticsDashboard />
+                  </SectionErrorBoundary>
                 </div>
               </motion.div>
             )}

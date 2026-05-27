@@ -21,7 +21,9 @@ export const CountdownBadge = ({ date, time }) => {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft(deadline));
+      const remaining = calculateTimeLeft(deadline);
+      setTimeLeft(remaining);
+      if (!remaining) clearInterval(timer);
     }, 1000);
     return () => clearInterval(timer);
   }, [deadline]);
@@ -49,7 +51,9 @@ const CountdownTimer = ({ date, time }) => {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft(deadline));
+      const remaining = calculateTimeLeft(deadline);
+      setTimeLeft(remaining);
+      if (!remaining) clearInterval(timer);
     }, 1000);
     return () => clearInterval(timer);
   }, [deadline]);

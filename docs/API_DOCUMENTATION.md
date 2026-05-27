@@ -95,6 +95,24 @@ POST /api/auth/login
 
 ---
 
+## Alternative: Google OAuth Login
+
+### Endpoint
+
+```bash
+POST /api/auth/google
+```
+
+### Request Body
+
+```json
+{
+  "credential": "GOOGLE_ID_TOKEN_FROM_GOOGLE_OAUTH"
+}
+```
+
+---
+
 ## Step 3 — Copy JWT Token
 
 Successful login returns:
@@ -149,6 +167,119 @@ Creates a new user account and returns a JWT token.
 | POST | `/api/auth/login` |
 
 Authenticates the user and returns a JWT token.
+
+### Request Body
+
+```json
+{
+  "usernameOrEmail": "john@example.com",
+  "password": "password123"
+}
+```
+
+### Successful Response (200)
+
+```json
+{
+  "message": "Login successful",
+  "token": "JWT_TOKEN",
+  "tokenType": "Bearer",
+  "id": 1,
+  "firstName": "john",
+  "lastName": "doe",
+  "email": "john@example.com",
+  "username": "john",
+  "role": "ATTENDEE",
+  "roles": ["USER"],
+  "permissions": ["events:view", "events:register", ...]
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `400 Bad Request` | Missing username/email or password |
+| `401 Unauthorized` | Invalid credentials |
+
+---
+
+## Google OAuth Login
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/auth/google` |
+
+Authenticates the user via Google OAuth and returns a JWT token. Creates a new user if they don't exist.
+
+### Request Body
+
+```json
+{
+  "credential": "GOOGLE_ID_TOKEN"
+}
+```
+
+### Successful Response (200)
+
+```json
+{
+  "message": "Login successful via Google",
+  "token": "JWT_TOKEN",
+  "tokenType": "Bearer",
+  "id": 1,
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john@example.com",
+  "username": "john@example.com",
+  "role": "ATTENDEE",
+  "roles": ["USER"],
+  "permissions": ["events:view", "events:register", ...],
+  "avatarUrl": "https://lh3.googleusercontent.com/...",
+  "emailVerified": true,
+  "provider": "google"
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `400 Bad Request` | Missing Google credential |
+| `401 Unauthorized` | Invalid or expired Google token |
+
+---
+
+## Logout
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/auth/logout` |
+
+Logs out the authenticated user and invalidates their JWT token. Requires JWT authentication.
+
+### Request Headers
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+### Successful Response (200)
+
+```json
+{
+  "message": "Logged out successfully",
+  "timestamp": "2026-05-27T16:00:00.000Z"
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `401 Unauthorized` | Missing, invalid, or expired token |
+| `401 Unauthorized` | Token has already been invalidated (logged out) |
+| `405 Method Not Allowed` | Invalid HTTP method (only POST allowed) |
 
 ---
 
@@ -501,6 +632,63 @@ Authorization: Bearer <token>
 | `400 Bad Request` | Invalid event payload |
 | `401 Unauthorized` | Missing or invalid JWT |
 | `403 Forbidden` | Authenticated user is not an `ORGANIZER` or `ADMIN` |
+
+
+---
+
+## Update Event
+
+| Method | Endpoint |
+|--------|----------|
+| PUT | `/api/events/{id}` |
+
+Updates an existing event by ID. This endpoint is restricted to authenticated users with `ORGANIZER` or `ADMIN` authority.
+
+*This is a companion documentation update for backend issue #2099 and backend update-event API work.*
+
+### Authentication
+
+---
+
+Requires a valid JWT token.
+
+```http
+Authorization: Bearer <token>
+```
+
+#### Request Body
+
+```json
+{
+  "title": "Updated Event",
+  "description": "Updated event description",
+  "location": "Updated Location",
+  "eventDate": "2026-12-30T10:00:00",
+  "capacity": 150,
+  "isPublic": true
+}
+```
+
+#### Field Notes
+
+- `registeredCount` is preserved during update and cannot be directly edited.
+- `capacity` must not be lower than current `registeredCount`.
+- Owner-only authorization is not enforced because the Event model currently does not track event ownership.
+
+#### Success Response
+
+```http
+200 OK
+```
+
+#### Error Responses
+
+| Status | Reason |
+|---|---|
+| `400 Bad Request` | Invalid payload |
+| `403 Forbidden` | Unauthorized roles such as `CLIENT` |
+| `404 Not Found` | Event ID does not exist |
+| `409 Conflict` | Capacity is lower than current registeredCount |
 
 
 ---

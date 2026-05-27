@@ -71,6 +71,7 @@ const ConfirmationModal = ({
     };
   }, [isOpen, onClose]);
 
+
   if (!isOpen) return null;
 
   const handleOverlayClick = (e) => {

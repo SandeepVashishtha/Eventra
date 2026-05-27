@@ -78,7 +78,7 @@ ${JSON.stringify(report.localStorage, null, 2)}
 
           {/* Glassmorphic Card */}
           <div className="max-w-2xl w-full bg-white/10 dark:bg-slate-900/40 backdrop-blur-xl border border-white/20 dark:border-slate-800/50 shadow-2xl rounded-3xl p-6 sm:p-8 space-y-6 relative overflow-hidden">
-            
+
             {/* Header Icon + Title */}
             <div className="flex flex-col items-center text-center space-y-3">
               <div className="p-4 bg-rose-500/20 text-rose-400 rounded-2xl border border-rose-500/30 animate-pulse">
@@ -168,11 +168,10 @@ ${JSON.stringify(report.localStorage, null, 2)}
               </button>
               <button
                 onClick={this.handleCopyReport}
-                className={`flex-1 px-4 py-3 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-1.5 border border-indigo-500/30 ${
-                  this.state.copied
+                className={`flex-1 px-4 py-3 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-1.5 border border-indigo-500/30 ${this.state.copied
                     ? "bg-emerald-600/90 text-white border-emerald-500/30"
                     : "bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-900/30"
-                }`}
+                  }`}
               >
                 {this.state.copied ? (
                   <>
@@ -190,7 +189,7 @@ ${JSON.stringify(report.localStorage, null, 2)}
                   </>
                 )}
               </button>
-
+            </div>
           </div>
         </div>
       );

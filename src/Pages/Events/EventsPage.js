@@ -20,6 +20,7 @@ import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
 import { getRouteSearchResults } from "../../utils/searchUtils";
+import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
 
 
 
@@ -101,8 +102,17 @@ const EventsPage = () => {
   useDocumentTitle("Eventra | Events");
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const routeSearchQuery =
-  new URLSearchParams(location.search).get("search") || "";
+  // SECURITY: Decode URL parameter safely then sanitize before use.
+  // Raw URL params can contain encoded HTML/JS. decodeURIComponent may throw
+  // on malformed sequences — we catch and fall back to empty string.
+  const rawSearchParam = new URLSearchParams(location.search).get("search") || "";
+  let routeSearchQuery = "";
+  try {
+    routeSearchQuery = prepareSafeSearchQuery(decodeURIComponent(rawSearchParam));
+  } catch {
+    // Malformed URI component — treat as empty query
+    routeSearchQuery = "";
+  }
 
   const listing = useEventListing();
   const cardSectionRef = useRef();
@@ -115,15 +125,16 @@ const EventsPage = () => {
     const filter = searchParams.get("filter") || "all";
     const sort = searchParams.get("sort") || "Newest";
     const view = searchParams.get("view") || "grid";
-    
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Sync search query when URL param changes (e.g. navigating from navbar search)
   useEffect(() => {
-    if (routeSearchQuery !== listing.searchQuery) {
-      listing.setSearchQuery(routeSearchQuery);
+    const safeQuery = prepareSafeSearchQuery(routeSearchQuery);
+    if (safeQuery !== listing.searchQuery) {
+      listing.setSearchQuery(safeQuery);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [routeSearchQuery]);
 
   // Scroll to card section after loading when a route search is active
@@ -158,8 +169,10 @@ const EventsPage = () => {
         setSearchQuery={listing.setSearchQuery}
         filteredEvents={listing.filteredEvents}
         handleSearch={(query) => {
-          listing.setSearchQuery(query);
-          return listing.filteredEvents; 
+          // SECURITY: Sanitize search query from user input before use
+          const safeQuery = prepareSafeSearchQuery(query);
+          listing.setSearchQuery(safeQuery);
+          return listing.filteredEvents;
         }}
         scrollToCard={scrollToCard}
       />
@@ -249,23 +262,25 @@ const EventsPage = () => {
           setViewMode={listing.setViewMode}
         />
 
-        {renderCardSection(
-          listing.isLoading,
-          listing.paginatedEvents,
-          listing.viewMode,
-          listing.searchQuery,
-          clearSearchAndFilters
-        )}
+        <SectionErrorBoundary label="Events">
+          {renderCardSection(
+            listing.isLoading,
+            listing.paginatedEvents,
+            listing.viewMode,
+            listing.searchQuery,
+            clearSearchAndFilters
+          )}
 
-        {!listing.isLoading && listing.totalPages > 1 && (
-          <div className="mt-8 flex justify-center">
-            <PaginationControls
-              currentPage={listing.currentPage}
-              totalPages={listing.totalPages}
-              onPageChange={listing.setSafePage}
-            />
-          </div>
-        )}
+          {!listing.isLoading && listing.totalPages > 1 && (
+            <div className="mt-8 flex justify-center">
+              <PaginationControls
+                currentPage={listing.currentPage}
+                totalPages={listing.totalPages}
+                onPageChange={listing.setSafePage}
+              />
+            </div>
+          )}
+        </SectionErrorBoundary>
       </div>
 
       <EventCTA />
