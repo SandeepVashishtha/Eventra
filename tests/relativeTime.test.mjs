@@ -7,10 +7,10 @@ assert.equal(getRelativeTime(null), null);
 assert.equal(getRelativeTime(undefined), null);
 assert.equal(getRelativeTime(""), null);
 
-assert.equal(getSmartDateLabel("invalid-date"), "TBD");
-assert.equal(getSmartDateLabel(null), "TBD");
-assert.equal(getSmartDateLabel(undefined), "TBD");
-assert.equal(getSmartDateLabel(""), "TBD");
+assert.equal(getSmartDateLabel("invalid-date"), "—");
+assert.equal(getSmartDateLabel(null), "—");
+assert.equal(getSmartDateLabel(undefined), "—");
+assert.equal(getSmartDateLabel(""), "—");
 
 const now = new Date();
 
