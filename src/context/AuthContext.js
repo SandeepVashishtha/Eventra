@@ -90,15 +90,23 @@ export const AuthProvider = ({ children }) => {
     }
   }, [clearSession]);
 
-  // --- Global 401 handler ---
+  // --- FIX: Stable Global 401 handler ---
+  const clearExpiredSessionRef = useRef(clearExpiredSession);
+
+  // Keep the ref updated whenever the function changes
+  useEffect(() => {
+    clearExpiredSessionRef.current = clearExpiredSession;
+  }, [clearExpiredSession]);
+
+  // Register handler once on mount, referencing the latest logic via the ref
   useEffect(() => {
     setOnUnauthorizedHandler(() => {
-      clearExpiredSession();
+      clearExpiredSessionRef.current();
     });
 
-    // Cleanup on unmount
+    // Cleanup only on unmount
     return () => setOnUnauthorizedHandler(null);
-  }, [clearExpiredSession]);
+  }, []); // <--- Empty array here ensures it only runs once!
 
   // --- Deferred expiry cleanup ---
   // When isAuthenticated() detects an expired token during a render, it
