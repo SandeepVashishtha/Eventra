@@ -11,11 +11,14 @@ import {
 import { motion } from "framer-motion";
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { ContributorCardSkeleton } from "./common/SkeletonLoaders";
-import FeatureErrorBoundary from "../../components/common/FeatureErrorBoundary";
+import {
+  storageManager,
+  STORAGE_KEYS,
+  validators,
+} from "../utils/storageManager";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
-const STORAGE_KEY = "github_contributors";
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
 const REQUEST_TIMEOUT = 10000;
 const MAX_CONTRIBUTOR_PAGES = 10;
@@ -56,23 +59,30 @@ const getRoleByGitHubActivity = (contributor) => {
 };
 
 // Local storage helpers
+// Centralized storage helpers
 const getCachedContributors = () => {
-  try {
-    const cachedData = localStorage.getItem(STORAGE_KEY);
-    if (!cachedData) return null;
-    const { data, timestamp } = JSON.parse(cachedData);
-    return Date.now() - timestamp > CACHE_DURATION ? null : data;
-  } catch {
+  const cachedData = storageManager.get(
+    STORAGE_KEYS.GITHUB_CONTRIBUTORS,
+    validators.isObject,
+  );
+
+  if (!cachedData?.data || !cachedData?.timestamp) {
     return null;
   }
+
+  return Date.now() - cachedData.timestamp > CACHE_DURATION
+    ? null
+    : cachedData.data;
 };
+
 const cacheContributors = (data) => {
-  try {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ data, timestamp: Date.now() }),
-    );
-  } catch {}
+  storageManager.set(
+    STORAGE_KEYS.GITHUB_CONTRIBUTORS,
+    {
+      data,
+      timestamp: Date.now(),
+    },
+  );
 };
 
 const Contributors = () => {
