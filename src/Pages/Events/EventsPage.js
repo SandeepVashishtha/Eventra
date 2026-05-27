@@ -183,18 +183,6 @@ const EventsPage = () => {
 
   // Load events with simulated delay
   useEffect(() => {
-    const page = parseInt(searchParams.get("page")) || 1;
-    const perPage = parseInt(searchParams.get("perPage")) || 6;
-    const search = prepareSafeSearchQuery(searchParams.get("search") || "");
-    const filter = searchParams.get("filter") || "all";
-    const sort = searchParams.get("sort") || "latest";
-    const view = searchParams.get("view") || "grid";
-    listing.setSafePage(page);
-    listing.setEventsPerPage(perPage);
-    listing.setSearchQuery(search);
-    listing.setFilterType(filter);
-    listing.setSortType(sort);
-    listing.setViewMode(view);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const timer = setTimeout(() => {
       setEvents(
