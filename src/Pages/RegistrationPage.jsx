@@ -95,12 +95,15 @@ const RegistrationPage = () => {
     setErrors((prev) => ({ ...prev, submit: "" }));
 
     try {
+      // Show a fast pre-check hint using the local cache, but always proceed
+      // to the API call so the server remains the authoritative duplicate guard.
       if (isAlreadyRegistered(eventId, formData.email)) {
         setErrors((prev) => ({
           ...prev,
           submit: "You have already registered with this email address.",
         }));
-        return;
+        // Do not return here -- fall through to the API call so the server can
+        // confirm. The server's 409 will be caught below if it rejects.
       }
 
       await apiUtils.post(
@@ -110,6 +113,7 @@ const RegistrationPage = () => {
 
       saveRegistration(eventId, formData.email);
       setSubmitSuccess(true);
+      setErrors((prev) => ({ ...prev, submit: "" }));
       toast.success("Registration successful!");
     } catch (error) {
       const registrationErrorMessage = getRegistrationErrorMessage(error);
@@ -164,6 +168,13 @@ const RegistrationPage = () => {
               className="py-3 px-6 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-semibold rounded-2xl transition-colors duration-300"
             >
               Back to Home
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="print-hide flex items-center justify-center gap-2 py-3 px-6 border border-gray-300 dark:border-slate-700 rounded-2xl text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors duration-300"
+              aria-label="Print or save as PDF"
+            >
+              🖨️ Print / Save as PDF
             </button>
           </div>
         </motion.div>
@@ -226,11 +237,14 @@ const RegistrationPage = () => {
                     errors.fullName ? "border-rose-500 ring-rose-500/20" : "border-slate-200 dark:border-slate-800 focus:border-indigo-500 dark:focus:border-indigo-400"
                   } p-3.5 rounded-2xl text-slate-800 dark:text-white outline-none focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-indigo-400/10 transition-all duration-300`}
                   required
+                  aria-invalid={!!errors.fullName}
+                  aria-describedby={errors.fullName ? "fullName-error" : undefined}
                 />
               </div>
               <AnimatePresence>
                 {errors.fullName && (
                   <motion.div
+                    id="fullName-error"
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
@@ -261,10 +275,13 @@ const RegistrationPage = () => {
                   errors.email ? "border-rose-500 ring-rose-500/20" : "border-slate-200 dark:border-slate-800 focus:border-indigo-500 dark:focus:border-indigo-400"
                 } p-3.5 rounded-2xl text-slate-800 dark:text-white outline-none focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-indigo-400/10 transition-all duration-300`}
                 required
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? "email-error" : undefined}
               />
               <AnimatePresence>
                 {errors.email && (
                   <motion.div
+                    id="email-error"
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
@@ -295,10 +312,13 @@ const RegistrationPage = () => {
                   errors.phone ? "border-rose-500 ring-rose-500/20" : "border-slate-200 dark:border-slate-800 focus:border-indigo-500 dark:focus:border-indigo-400"
                 } p-3.5 rounded-2xl text-slate-800 dark:text-white outline-none focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-indigo-400/10 transition-all duration-300`}
                 required
+                aria-invalid={!!errors.phone}
+                aria-describedby={errors.phone ? "phone-error" : undefined}
               />
               <AnimatePresence>
                 {errors.phone && (
                   <motion.div
+                    id="phone-error"
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}

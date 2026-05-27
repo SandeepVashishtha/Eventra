@@ -1,8 +1,9 @@
 import EventRecommendation from "./Pages/EventRecommendation/EventRecommendation";
 import React, { useState, useEffect, lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom"; // Added this back for your routing!
+import { Routes, Route, useLocation } from "react-router-dom"; // Added this back for your routing!
 import "./App.css";
 import "./styles/reduced-motion.css";
+import "./styles/print.css";
 import { toast } from "react-toastify";
 import BackToTopButton
 from "./components/common/BackToTopButton";
@@ -20,12 +21,14 @@ import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
 import ThemeCustomizerDrawer from "./components/common/ThemeCustomizerDrawer";
 import SessionRecovery from "./components/SessionRecovery";
 import ErrorBoundary from "./components/common/ErrorBoundary";
+import OnboardingChecklist from "./components/user/OnboardingChecklist";
 
 import NotificationToastContainer from "./components/common/NotificationProvider";
 import { NotificationProvider } from "./context/NotificationContext";
 import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
 import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
+import GlobalErrorBoundary from "./components/common/ErrorBoundary";
 
 import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
@@ -43,6 +46,8 @@ const OfflineSyncManager = () => {
 };
 
 function App() {
+  const location = useLocation();
+  const isDashboardOrAdmin = location.pathname === "/dashboard" || location.pathname === "/admin";
   const [cursorEnabled, setCursorEnabled] = useState(localStorage.getItem("cursor") !== "off");
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
 
@@ -51,6 +56,7 @@ function App() {
   useKeyboardShortcuts({
     onOpenHelp: () => setShowKeyboardModal(true),
     onCloseHelp: () => setShowKeyboardModal(false),
+    isOpen: showKeyboardModal,
   });
 
   const toggleCursor = () => {
@@ -125,6 +131,7 @@ function App() {
                 isOpen={showKeyboardModal}
                 onClose={() => setShowKeyboardModal(false)}
               />
+              <OnboardingChecklist />
 
               <main
                 className="
@@ -167,7 +174,7 @@ function App() {
               <ScrollToTop />
               <Suspense fallback={null}>
                 <Chatbot />
-                <Footer />
+                {!isDashboardOrAdmin && <Footer />}
               </Suspense>
               <BackToTopButton />
               <FeedbackButton />

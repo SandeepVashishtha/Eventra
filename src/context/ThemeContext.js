@@ -141,6 +141,9 @@ export const ThemeProvider = ({ children }) => {
       resolvedTheme,
       isDarkMode: resolvedTheme === "dark",
       setTheme,
+      isCustomizerOpen,
+      setIsCustomizerOpen,
+
       toggleTheme: () =>
         setTheme((current) =>
           current === "dark" || (current === "system" && getSystemTheme() === "dark") ? "light" : "dark"

@@ -67,21 +67,25 @@ const EventCreation = () => {
   const [currentStep, setCurrentStep] = useState("form");
 
   const { handleSubmit: submitEventForm, isSubmitting, error: submitError, success: submitSuccess } = useFormSubmit(async (eventData) => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     if (!token) {
       throw new Error("Authentication required. Please log in and try again.");
     }
 
     if (!API_ENDPOINTS.EVENTS.CREATE || process.env.NODE_ENV === "development") {
-      console.warn("⚠️ Mocking event creation success (API inactive)");
+      // Mock event creation success (API inactive)
       await new Promise((resolve) => setTimeout(resolve, 1000));
       return;
     }
 
-    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData, token);
-    const result = await response.json();
+    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData, {
+      headers: {
+        Authorization: token
+      }
+    });
+    const result = response.data;
 
-    if (!(response.ok && result.success)) {
+    if (!(response.status === 200 && result.success)) {
       const errorMessage = result.message || result.error || `Server error: ${response.status}`;
       throw new Error(errorMessage);
     }

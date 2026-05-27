@@ -152,10 +152,6 @@ const EventDetailsPage = () => {
                 alt={`${event.title} event banner`}
                 className="w-full h-96 object-cover"
               />
-  src={event.image}
-  alt={event.title}
-  className="w-full h-48 sm:h-64 md:h-96 object-cover"
-/>
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
@@ -186,9 +182,6 @@ const EventDetailsPage = () => {
                 <h1 id="event-details-title" className="text-4xl font-bold">
                   {event.title}
                 </h1>
-                <h1 className="text-xl sm:text-2xl md:text-4xl font-bold leading-tight">
-  {event.title}
-</h1>
               </div>
             </div>
 
@@ -203,9 +196,7 @@ const EventDetailsPage = () => {
               </p>
             </section>
           </section>
-            </div>
-          </div>
-        {/* Sidebar */}
+          {/* Sidebar */}
           <div className="lg:col-span-1 flex flex-col gap-6">
             {/* Countdown Timer */}
             {!isPastEvent && (
@@ -249,6 +240,14 @@ const EventDetailsPage = () => {
                 </div>
               </Link>
             )}
+
+            <button
+              onClick={() => window.print()}
+              className="print-hide flex items-center justify-center gap-2 w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              aria-label="Print or save as PDF"
+            >
+              🖨️ Print / Save as PDF
+            </button>
           </div>
         </motion.div>
       </main>

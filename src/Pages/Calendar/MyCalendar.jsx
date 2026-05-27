@@ -13,14 +13,11 @@ import {
   Grid,
   Filter,
   Activity,
-  Share2,
 } from "lucide-react";
 import {
   downloadICSFile,
-  generateGoogleCalendarLink
   downloadBulkICSFile,
   generateGoogleCalendarLink,
-  generateOutlookLink,
 } from "../../utils/calendarExporter";
 import SkeletonCalendar from "../../components/common/SkeletonCalendar";
 
@@ -170,11 +167,6 @@ const MyCalendar = () => {
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* HEADER SECTION */}
-        <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
-          <div>
-            <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-semibold text-sm tracking-wide uppercase">
-              <CalendarIcon className="w-4 h-4" aria-hidden="true" />
-              Calendar Center
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-b border-slate-200 dark:border-slate-800/80 pb-6">
           <div>
             <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-black text-xs tracking-wider uppercase">
@@ -189,36 +181,6 @@ const MyCalendar = () => {
             </p>
           </div>
 
-          {/* VIEW SWITCHER */}
-          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl self-start md:self-auto">
-            <button
-              type="button"
-              onClick={() => setViewMode("grid")}
-              aria-pressed={viewMode === "grid"}
-              className={`p-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 ${
-                viewMode === "grid"
-                  ? "bg-white dark:bg-slate-850 shadow text-indigo-600 dark:text-indigo-400"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-              }`}
-              aria-label="Grid calendar view"
-            >
-              <Grid className="w-4 h-4" aria-hidden="true" />
-              Calendar Grid
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("list")}
-              aria-pressed={viewMode === "list"}
-              className={`p-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 ${
-                viewMode === "list"
-                  ? "bg-white dark:bg-slate-850 shadow text-indigo-600 dark:text-indigo-400"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-              }`}
-              aria-label="List view"
-            >
-              <List className="w-4 h-4" aria-hidden="true" />
-              Event List ({myEvents.length})
-            </button>
           <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
             {/* VIEW SWITCHER */}
             <div className="flex items-center gap-2 bg-slate-150/80 dark:bg-slate-900/60 p-1.5 rounded-2xl border border-slate-200/40 dark:border-slate-800/30 backdrop-blur-xs shadow-inner">
@@ -260,85 +222,10 @@ const MyCalendar = () => {
               </button>
             )}
           </div>
-        </header>
+        </div>
+
 
         {loading ? (
-          <div role="status" aria-live="polite" aria-label="Loading calendar">
-            <span className="sr-only">Loading calendar registrations...</span>
-            <SkeletonCalendar />
-          </div>
-        ) : viewMode === "grid" ? (
-          <section className="grid grid-cols-1 lg:grid-cols-3 gap-8" aria-labelledby="calendar-grid-title">
-            
-            {/* GRID CALENDAR (COLSPAN: 2) */}
-            <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-250/60 dark:border-slate-800/80 rounded-3xl p-6 shadow-md space-y-6">
-              
-              {/* MONTH CONTROLS */}
-              <div className="flex items-center justify-between">
-                <h2 id="calendar-grid-title" className="text-xl font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                  {monthNames[currentMonth]} {currentYear}
-                </h2>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={prevMonth}
-                    className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 transition"
-                    aria-label="Previous month"
-                  >
-                    <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-350" aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={nextMonth}
-                    className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 transition"
-                    aria-label="Next month"
-                  >
-                    <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-355" aria-hidden="true" />
-                  </button>
-                </div>
-              </div>
-
-              {/* CALENDAR BODY */}
-              <div role="grid" aria-label="Monthly Schedule Grid" className="space-y-2">
-                {/* Days Of Week Headers */}
-                <div role="row" className="grid grid-cols-7 gap-2 text-center text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                  {daysOfWeek.map((day) => (
-                    <div key={day} role="columnheader">
-                      {day}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Day Grid cells */}
-                <div className="grid grid-cols-7 gap-2">
-                  {/* Empty offsets for first day offset */}
-                  {Array.from({ length: firstDayOfMonth }).map((_, idx) => (
-                    <div
-                      key={`empty-${idx}`}
-                      className="aspect-square rounded-2xl bg-slate-50/40 dark:bg-slate-950/20 border border-dashed border-slate-100 dark:border-slate-900/60 opacity-30"
-                    />
-                  ))}
-
-                  {/* Monthly days */}
-                  {Array.from({ length: daysInMonth }).map((_, idx) => {
-                    const day = idx + 1;
-                    const cellDate = new Date(currentYear, currentMonth, day);
-                    const dayEvents = getEventsForDate(day);
-                    const selected = isSelected(day);
-                    const isToday =
-                      new Date().getDate() === day &&
-                      new Date().getMonth() === currentMonth &&
-                      new Date().getFullYear() === currentYear;
-
-                    return (
-                      <button
-                        key={`day-${day}`}
-                        role="gridcell"
-                        aria-label={`Select date ${day} ${monthNames[currentMonth]}, ${dayEvents.length} events`}
-                        aria-selected={selected}
-                        onClick={() => setSelectedDate(cellDate)}
-                        className={`aspect-square rounded-2xl border p-2 flex flex-col justify-between items-start transition-all ${
-       {loading ? (
   <div
     role="status"
     aria-live="polite"
@@ -648,8 +535,7 @@ const MyCalendar = () => {
                 </div>
               </div>
             </div>
-
-          </section>
+          </motion.div>
         ) : (
           /* EVENT LIST VIEW */
           <section className="bg-white dark:bg-slate-900 border border-slate-250/60 dark:border-slate-800/80 rounded-3xl p-6 shadow-md" aria-labelledby="registered-events-title">
@@ -732,24 +618,6 @@ const MyCalendar = () => {
             </div>
           </section>
         )}
-                        <h4 className="font-bold">
-                          {
-                            item.event
-                              .title
-                          }
-                        </h4>
-                      </div>
-                    )
-                  )
-                ) : (
-                  <div className="text-center py-10 text-slate-400 text-sm">
-                    No events scheduled.
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </motion.div>
       ) : (
         <motion.div
           key="timeline-container"
