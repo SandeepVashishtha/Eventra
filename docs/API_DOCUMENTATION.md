@@ -12,6 +12,8 @@ The APIs support:
 - Structured error handling
 - Swagger/OpenAPI integration
 
+**For detailed information on authentication flows, role-based access control, and how permissions work, see the [Architecture & Roles Guide](ARCHITECTURE_AND_ROLES.md#-route-protection--authentication-flow).**
+
 ---
 
 # Swagger/OpenAPI Documentation
@@ -81,6 +83,24 @@ POST /api/auth/login
 
 ---
 
+## Alternative: Google OAuth Login
+
+### Endpoint
+
+```bash
+POST /api/auth/google
+```
+
+### Request Body
+
+```json
+{
+  "credential": "GOOGLE_ID_TOKEN_FROM_GOOGLE_OAUTH"
+}
+```
+
+---
+
 ## Step 3 — Copy JWT Token
 
 Successful login returns:
@@ -135,6 +155,119 @@ Creates a new user account and returns a JWT token.
 | POST | `/api/auth/login` |
 
 Authenticates the user and returns a JWT token.
+
+### Request Body
+
+```json
+{
+  "usernameOrEmail": "john@example.com",
+  "password": "password123"
+}
+```
+
+### Successful Response (200)
+
+```json
+{
+  "message": "Login successful",
+  "token": "JWT_TOKEN",
+  "tokenType": "Bearer",
+  "id": 1,
+  "firstName": "john",
+  "lastName": "doe",
+  "email": "john@example.com",
+  "username": "john",
+  "role": "ATTENDEE",
+  "roles": ["USER"],
+  "permissions": ["events:view", "events:register", ...]
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `400 Bad Request` | Missing username/email or password |
+| `401 Unauthorized` | Invalid credentials |
+
+---
+
+## Google OAuth Login
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/auth/google` |
+
+Authenticates the user via Google OAuth and returns a JWT token. Creates a new user if they don't exist.
+
+### Request Body
+
+```json
+{
+  "credential": "GOOGLE_ID_TOKEN"
+}
+```
+
+### Successful Response (200)
+
+```json
+{
+  "message": "Login successful via Google",
+  "token": "JWT_TOKEN",
+  "tokenType": "Bearer",
+  "id": 1,
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john@example.com",
+  "username": "john@example.com",
+  "role": "ATTENDEE",
+  "roles": ["USER"],
+  "permissions": ["events:view", "events:register", ...],
+  "avatarUrl": "https://lh3.googleusercontent.com/...",
+  "emailVerified": true,
+  "provider": "google"
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `400 Bad Request` | Missing Google credential |
+| `401 Unauthorized` | Invalid or expired Google token |
+
+---
+
+## Logout
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/auth/logout` |
+
+Logs out the authenticated user and invalidates their JWT token. Requires JWT authentication.
+
+### Request Headers
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+### Successful Response (200)
+
+```json
+{
+  "message": "Logged out successfully",
+  "timestamp": "2026-05-27T16:00:00.000Z"
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `401 Unauthorized` | Missing, invalid, or expired token |
+| `401 Unauthorized` | Token has already been invalidated (logged out) |
+| `405 Method Not Allowed` | Invalid HTTP method (only POST allowed) |
 
 ---
 
@@ -357,6 +490,65 @@ POST /api/events/1/register
   "message": "Full authentication is required to access this resource",
   "path": "/api/events/1/register",
   "timestamp": "2026-05-19T12:20:31"
+}
+```
+
+---
+
+## My Registered Events
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/users/my-events` |
+
+Returns the events registered by the currently authenticated user. Requires JWT authentication.
+
+### Request Headers
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+### Example Request
+
+```bash
+GET /api/users/my-events
+```
+
+### Successful Response (200)
+
+```json
+[
+  {
+    "registrationId": 101,
+    "eventId": 1,
+    "title": "Tech Conference 2026",
+    "description": "Annual developer meetup featuring talks and workshops",
+    "location": "Mumbai",
+    "eventDate": "2026-08-15T10:00:00",
+    "date": "2026-08-15",
+    "time": "10:00:00",
+    "registeredAt": "2026-05-20T14:30:00",
+    "status": "CONFIRMED"
+  }
+]
+```
+
+### Empty Response (200)
+
+```json
+[]
+```
+
+### Error Response (401)
+
+```json
+{
+  "status": 401,
+  "error": "Unauthorized",
+  "message": "Full authentication is required to access this resource",
+  "path": "/api/users/my-events",
+  "timestamp": "2026-05-27T12:20:31"
 }
 ```
 

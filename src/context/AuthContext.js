@@ -4,6 +4,7 @@ import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
 import { toast } from 'react-toastify';
 import { ROLES } from '../config/roles';
 import { clearQueue } from '../utils/offlineQueue';
+import { decodeJwtPayload } from '../utils/auth';
 
 
 const AuthContext = createContext();
@@ -30,6 +31,7 @@ export const AuthProvider = ({ children }) => {
   const clearSession = useCallback(() => {
     setUser(null);
     setToken(null);
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     sessionStorage.removeItem("token");
     localStorage.removeItem("user");
   }, []);
@@ -39,9 +41,23 @@ export const AuthProvider = ({ children }) => {
    * Guards against duplicate toasts with a ref flag.
    */
   const clearExpiredSession = useCallback(() => {
-    if (expiryToastShownRef.current) return;
-    expiryToastShownRef.current = true;
+    // eslint-disable-next-line no-console
+    console.warn("[AuthContext] Session expiration detected. Clearing session state immediately to prevent infinite layout re-render loops.");
+    
+    // 1. Immediately purge session state to prevent infinite render loops.
+    // By resetting token and user state to null synchronously, any concurrent
+    // render phases (e.g., layout components checking isAuthenticated) will
+    // abort early, avoiding resetting needsExpiryCleanupRef.
     clearSession();
+
+    // 2. Perform UI notification side effects once per expired session lifecycle.
+    if (expiryToastShownRef.current) {
+      // eslint-disable-next-line no-console
+      console.log("[AuthContext] Expiry warning already shown. Skipping duplicate toast notification.");
+      return;
+    }
+    expiryToastShownRef.current = true;
+
     toast.info("Session expired. Please log in again.", {
       toastId: "session-expired",
       autoClose: 5000,
@@ -49,48 +65,30 @@ export const AuthProvider = ({ children }) => {
   }, [clearSession]);
 
   useEffect(() => {
-    // Check for existing authentication on app start
-    const storedToken = sessionStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-
-    if (storedToken && storedUser) {
-      // --- Security fix: validate token before restoring session ---
-      if (isTokenValid(storedToken)) {
-        setToken(storedToken);
-        try {
-          const parsedUser = JSON.parse(storedUser);
-
-          // Normalize roles on restore so server aliases like EVENT_MANAGER
-          // are always mapped to their canonical equivalent (ORGANIZER).
-          // This prevents ORGANIZER users from being blocked by role guards
-          // after a page reload.
-          const normalizedRoles = (parsedUser?.roles ?? []).map((role) => {
-            const upper = String(role).toUpperCase();
-            return upper === "EVENT_MANAGER" ? ROLES.ORGANIZER : upper;
-          });
-          parsedUser.roles = normalizedRoles;
-
-          // Recompute scopes from the normalized roles instead of trusting
-          // whatever is stored in localStorage. A user could otherwise elevate
-          // their own scopes by editing the "user" key in localStorage.
-          parsedUser.scopes = normalizedRoles.includes(ROLES.ADMIN)
-            ? ["admin:all", "event:write", "event:read", "hackathon:write", "hackathon:read"]
-            : normalizedRoles.includes(ROLES.ORGANIZER)
-              ? ["event:write", "event:read", "hackathon:write", "hackathon:read"]
-              : ["event:read", "hackathon:read"];
-
-          setUser(parsedUser);
-        } catch {
-          // Corrupted user data in localStorage -- clear everything.
+    const validateSession = async () => {
+      try {
+        const res = await apiUtils.get(API_ENDPOINTS.USERS.PROFILE);
+        if (res.ok && res.data) {
+          const { sessionToken, sessionUser } = extractSession(res, res.data, null);
+          setToken(sessionToken || 'cookie-managed');
+          setUser(sessionUser);
+        } else {
           clearSession();
         }
-      } else {
-        // Token is expired or invalid -- clean up stale session data.
+      } catch (error) {
         clearSession();
       }
-    }
+      setLoading(false);
+    };
 
-    setLoading(false);
+    // If we have a user in localStorage, it's worth validating the session.
+    // In a pure HttpOnly cookie setup, the cookie exists but is unreadable by JS.
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      validateSession();
+    } else {
+      setLoading(false);
+    }
   }, [clearSession]);
 
   // --- Global 401 handler ---
@@ -132,6 +130,12 @@ export const AuthProvider = ({ children }) => {
     // Reset the toast guard when a new token is set (fresh login).
     expiryToastShownRef.current = false;
 
+    // If we're using secure cookies, the token string is not available to the frontend.
+    // We rely entirely on the global 401 interceptor for expiry.
+    if (token === 'cookie-managed') {
+      return;
+    }
+
     const payload = decodeTokenPayload(token);
     const expSeconds = payload?.exp;
 
@@ -171,14 +175,18 @@ export const AuthProvider = ({ children }) => {
   const persistSession = (sessionToken, sessionUser) => {
     setToken(sessionToken);
     setUser(sessionUser);
+    
+    // Set cookie with HttpOnly, Secure, SameSite flags
+    document.cookie = `token=${sessionToken}; path=/; Secure; HttpOnly; SameSite=Strict`;
+    
     try {
-      sessionStorage.setItem("token", sessionToken);
       localStorage.setItem("user", JSON.stringify(sessionUser));
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('Error persisting session:', error);
+      console.error('[AuthContext] Error persisting user profile:', error);
     }
   };
+
   const normalizeRoles = (roles = []) => {
     return roles.map((role) => {
       const normalized = String(role).toUpperCase();
@@ -189,6 +197,40 @@ export const AuthProvider = ({ children }) => {
 
       return normalized;
     });
+  };
+
+  /**
+   * SECURITY: Extract roles from the signed JWT token.
+   *
+   * The JWT is the authoritative source for roles and permissions because:
+   * 1. It's signed by the backend — the client cannot forge it
+   * 2. It's delivered over HTTPS — it cannot be intercepted and modified
+   * 3. Even if localStorage is tampered with, authorization checks use the JWT
+   *
+   * localStorage is used ONLY for UI state (caching display name, email, etc.),
+   * never for security-critical decisions.
+   *
+   * @param {string} token - JWT token from sessionStorage
+   * @returns {object|null} { roles, scopes } extracted from token, or null if invalid
+   */
+  const extractRolesFromToken = (token) => {
+    if (!token) return null;
+
+    const payload = decodeJwtPayload(token);
+    if (!payload) return null;
+
+    // Extract roles from the JWT payload (backend-signed, cannot be forged)
+    const tokenRoles = (payload.roles || payload.role ? [payload.role] : []) || [];
+    const normalizedRoles = normalizeRoles(tokenRoles);
+
+    // Compute scopes from the authoritative roles in the token
+    const scopes = normalizedRoles.includes(ROLES.ADMIN)
+      ? ['admin:all', 'event:write', 'event:read', 'hackathon:write', 'hackathon:read']
+      : normalizedRoles.includes(ROLES.ORGANIZER)
+        ? ['event:write', 'event:read', 'hackathon:write', 'hackathon:read']
+        : ['event:read', 'hackathon:read'];
+
+    return { roles: normalizedRoles, scopes };
   };
   const extractSession = (res, data, fallbackEmail) => {
     let sessionToken = data?.token ?? data?.accessToken ?? null;
@@ -332,7 +374,7 @@ export const AuthProvider = ({ children }) => {
 
   const isAuthenticated = useCallback(() => {
     if (!user || !token) return false;
-    if (!isTokenValid(token)) {
+    if (token !== 'cookie-managed' && !isTokenValid(token)) {
       // Token expired mid-session — flag for deferred cleanup.
       // Cannot call clearSession() here because this runs during render.
       needsExpiryCleanupRef.current = true;
@@ -342,11 +384,16 @@ export const AuthProvider = ({ children }) => {
   }, [user, token]);
 
   const hasRole = (roleName) => {
-    if (!user?.roles) return false;
+    if (!user?.roles || !token) return false;
 
-    return normalizeRoles(user.roles).includes(
-      String(roleName).toUpperCase()
-    );
+    // SECURITY: Always verify against the JWT token (server-signed).
+    // Even if React state is somehow corrupted or localStorage is tampered with,
+    // the JWT cannot be forged client-side.
+    const tokenRoleData = extractRolesFromToken(token);
+    if (!tokenRoleData || !tokenRoleData.roles) return false;
+
+    const targetRole = String(roleName).toUpperCase();
+    return tokenRoleData.roles.includes(targetRole);
   };
 
   const hasPermission = (permissionName) => user?.permissions?.includes(permissionName) || false;

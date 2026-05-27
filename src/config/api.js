@@ -101,22 +101,12 @@ export const setOnUnauthorizedHandler = (handler) => {
   onUnauthorized = handler;
 };
 
-const normalizeRequestConfig = (configOrToken = {}, maybeToken) => {
+const normalizeRequestConfig = (configOrToken = {}) => {
   const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
-  const token =
-    typeof configOrToken === "string"
-      ? configOrToken
-      : typeof maybeToken === "string"
-        ? maybeToken
-        : sessionStorage.getItem("token") || "";
-
-  if (token) {
-    config.headers = {
-      ...(config.headers || {}),
-      Authorization: `Bearer ${token}`,
-    };
+  const skipAuth = config.skipAuth === true;
+  if ("skipAuth" in config) {
+    delete config.skipAuth;
   }
-
   return config;
 };
 
@@ -261,3 +251,11 @@ export const apiUtils = {
 };
 
 export default API;
+
+export const API_ENDPOINTS_UPDATED = {
+  ...API_ENDPOINTS,
+  NOTIFICATIONS: {
+    ...API_ENDPOINTS.NOTIFICATIONS,
+    READ_ALL: buildApiUrl("/api/notifications/read-all"),
+  }
+};

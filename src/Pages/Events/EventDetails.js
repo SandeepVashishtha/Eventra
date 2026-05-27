@@ -2,6 +2,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
+import DOMPurify from "dompurify";
 import { toast } from "react-toastify";
 import { Link, useParams } from "react-router-dom";
 import { Calendar, MapPin, Clock, Tag } from "lucide-react";
@@ -17,8 +18,24 @@ import CertificateDownload from "../../components/CertificateDownload";
 import EventMaterials from "../../components/common/EventMaterials";
 import EventRecommendations from "../../components/events/EventRecommendations";
 import CopyLinkButton from "../../components/common/CopyLinkButton";
+import LazyImage from "../../components/common/LazyImage";
+import { useAuth } from "../../context/AuthContext";
+import { exportToCSV, exportToJSON } from "../../utils/exportUtils";
+import { ROLES } from "../../config/roles";
+import { marked } from 'marked';
+
 const EventDetails = () => {
   const { eventId } = useParams();
+  const { user } = useAuth();
+  const isOrganizer = user?.roles?.includes(ROLES.ORGANIZER) || user?.roles?.includes(ROLES.ADMIN);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+
+  const mockRegistrants = [
+    { id: 1, name: "Aarav Sharma", email: "aarav@example.com", registeredAt: "2025-05-10", status: "Confirmed" },
+    { id: 2, name: "Priya Mehta", email: "priya@example.com", registeredAt: "2025-05-11", status: "Confirmed" },
+    { id: 3, name: "Rohan Verma", email: "rohan@example.com", registeredAt: "2025-05-12", status: "Pending" },
+    { id: 4, name: "Sneha Patel", email: "sneha@example.com", registeredAt: "2025-05-13", status: "Confirmed" },
+  ];
   const { isRegistered } = useMyEvents();
   const foundEvent = mockEvents.find((item) => String(item.id) === eventId);
   const event = foundEvent
@@ -91,9 +108,10 @@ const EventDetails = () => {
             <h1 className="mt-4 text-4xl sm:text-5xl font-extrabold tracking-tight">
               {event.title}
             </h1>
-            <p className="mt-4 max-w-2xl text-gray-600 dark:text-gray-300">
-              {event.description}
-            </p>
+            <div
+              className="mt-4 max-w-2xl text-gray-600 dark:text-gray-300 prose prose-indigo dark:prose-invert"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(event.description)) }}
+            />
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -122,6 +140,51 @@ const EventDetails = () => {
   {/* Copy Link Button */}
   <CopyLinkButton />
 
+  <button
+    onClick={() => window.print()}
+    className="print-hide inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+    aria-label="Print or save as PDF"
+  >
+    🖨️ Print / Save as PDF
+  </button>
+
+  {isOrganizer && (
+    <div className="relative print-hide">
+      <button
+        onClick={() => setShowExportDropdown(!showExportDropdown)}
+        className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+        aria-label="Export registrant data"
+      >
+        📥 Export Registrants
+      </button>
+      {showExportDropdown && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setShowExportDropdown(false)} />
+          <div className="absolute right-0 mt-2 w-40 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg py-1.5 z-20 animate-fadeIn text-left">
+            <button
+              onClick={() => {
+                exportToCSV(mockRegistrants, `${event.title}_registrants`);
+                setShowExportDropdown(false);
+              }}
+              className="w-full text-left px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+            >
+              Export as CSV
+            </button>
+            <button
+              onClick={() => {
+                exportToJSON(mockRegistrants, `${event.title}_registrants`);
+                setShowExportDropdown(false);
+              }}
+              className="w-full text-left px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+            >
+              Export as JSON
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )}
+
   <Link
     to="/events"
     className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
@@ -136,9 +199,13 @@ const EventDetails = () => {
 
           {/* Left - Image and Details */}
           <div className="space-y-6 rounded-3xl bg-white p-8 shadow-xl dark:bg-gray-900">
-            <img
+            <LazyImage
               src={event.image}
               alt={event.title}
+              width={1200}
+              height={384}
+              loading="eager"
+              useWebP
               className="w-full rounded-3xl object-cover shadow-lg h-96"
             />
             <div className="grid gap-4 sm:grid-cols-2">
@@ -215,9 +282,10 @@ const EventDetails = () => {
             </div>
             <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
               <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Summary</h3>
-              <p className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-6">
-                {event.description}
-              </p>
+              <div
+                className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-6 prose prose-indigo dark:prose-invert"
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(event.description)) }}
+              />
             </div>
           </aside>
 

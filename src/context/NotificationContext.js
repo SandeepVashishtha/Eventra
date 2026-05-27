@@ -143,9 +143,16 @@ export const NotificationProvider = ({ children }) => {
       return; // Exit early, no interval will be created
     }
 
-    // 2. Handle Login: Trigger instant data load
-    fetchNotifications();
-    fetchAchievements();
+    // 2. Handle Login: Trigger instant data load (parallelized)
+    const initData = async () => {
+      setLoading(true);
+      await Promise.allSettled([
+        fetchNotifications({ isBackground: true }),
+        fetchAchievements()
+      ]);
+      setLoading(false);
+    };
+    initData();
 
     // 3. Set up background polling
     const intervalId = setInterval(() => {

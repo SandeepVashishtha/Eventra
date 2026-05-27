@@ -11,6 +11,9 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import StatusBadge from "../common/StatusBadge";
 import EventsTab from "./EventsTab";
+import HackathonsTab from "./HackathonsTab";
+import ProjectsTab from "./ProjectsTab";
+import RegistrationsTab from "./RegistrationsTab";
 import {
   DashboardItemCardSkeleton,
   DashboardListCardSkeleton,
@@ -36,13 +39,7 @@ const stagger = (prefersReducedMotion) => ({
   visible: { transition: { staggerChildren: prefersReducedMotion ? 0 : 0.08 } }
 });
 
-// ✅ Removed STATUS_COLORS — no longer needed, StatusBadge handles all styling
-
-const TYPE_ICON = {
-  Event: <Calendar className="ud-type-icon" style={{ color: "#6366f1" }} />,
-  Hackathon: <Trophy className="ud-type-icon" style={{ color: "#ec4899" }} />,
-  Project: <FolderOpen className="ud-type-icon" style={{ color: "#8b5cf6" }} />,
-};
+// ✅ Removed STATUS_COLORS and TYPE_ICON — moved to relevant components
 
 const MOCK_DATA = [
   { id: 1, type: "Event", title: "Tech Talk: AI in 2025", date: "2025-06-15", location: "Mumbai", status: "Completed", projectStatus: "Done", lastUpdate: "-", participationType: "Registered" },
@@ -376,123 +373,51 @@ export default function UserDashboard() {
 
           {/* Hackathons tab */}
           {activeTab === "hackathons" && (
-            <motion.div key="hackathons" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="ud-content">
-              <div className="ud-tab-header">
-                <h2 className="ud-page-title"><Trophy size={20} /> My Hackathons</h2>
-                <Link to="/hackathons" className="ud-btn-primary"><Plus size={15} /> Explore Hackathons</Link>
-              </div>
-              <div className="ud-items-grid">
-                {loading
-                  ? [...Array(3)].map((_, i) => <DashboardItemCardSkeleton key={i} />)
-                  : MOCK_DATA.filter(d => d.type === "Hackathon").map((h, i) => (
-                  <motion.div key={h.id} custom={i} variants={fadeUp} initial="hidden" animate="visible" className="ud-item-card">
-                    <div className="ud-item-top">
-                      <span className="ud-item-type" style={{ background: "#ec489918", color: "#ec4899" }}><Trophy size={13} /> Hackathon</span>
-                      <StatusBadge status={h.status} />
-                    </div>
-                    <h3 className="ud-item-title">{h.title}</h3>
-                    <div className="ud-item-meta">
-                      <span><Calendar size={13} /> {h.date}</span>
-                      <span><MapPin size={13} /> {h.location}</span>
-                    </div>
-                    <div className="ud-item-footer">
-                      <StatusBadge status={h.participationType} />
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
+            <HackathonsTab
+              hackathons={MOCK_DATA.filter(d => d.type === "Hackathon")}
+              loading={loading}
+              fadeUp={fadeUp}
+            />
           )}
 
           {/* Projects tab */}
           {activeTab === "projects" && (
-            <motion.div key="projects" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="ud-content">
-              <div className="ud-tab-header">
-                <h2 className="ud-page-title"><FolderOpen size={20} /> My Projects</h2>
-                <Link to="/submit-project" className="ud-btn-primary"><Plus size={15} /> Submit Project</Link>
-              </div>
-              <div className="ud-items-grid">
-                {loading
-                  ? [...Array(2)].map((_, i) => <DashboardItemCardSkeleton key={i} />)
-                  : MOCK_DATA.filter(d => d.type === "Project").map((p, i) => (
-                  <motion.div key={p.id} custom={i} variants={fadeUp} initial="hidden" animate="visible" className="ud-item-card">
-                    <div className="ud-item-top">
-                      <span className="ud-item-type" style={{ background: "#8b5cf618", color: "#8b5cf6" }}><FolderOpen size={13} /> Project</span>
-                      <StatusBadge status={p.projectStatus} />
-                    </div>
-                    <h3 className="ud-item-title">{p.title}</h3>
-                    <div className="ud-item-meta">
-                      <span>Updated: {p.lastUpdate}</span>
-                    </div>
-                    <div className="ud-item-footer">
-                      <StatusBadge status={p.participationType} />
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
+            <ProjectsTab
+              projects={MOCK_DATA.filter(d => d.type === "Project")}
+              loading={loading}
+              fadeUp={fadeUp}
+            />
           )}
 
           {/* Registrations tab */}
           {activeTab === "registrations" && (
-            <motion.div key="registrations" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="ud-content">
-              <div className="ud-tab-header">
-                <h2 className="ud-page-title"><Users size={20} /> All Registrations</h2>
-                <div className="ud-filter-row">
-                  <select className="ud-select" value={filterType} onChange={e => setFilterType(e.target.value)}>
-                    {["All", "Event", "Hackathon", "Project"].map(t => <option key={t}>{t}</option>)}
-                  </select>
-                  <select className="ud-select" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-                    {["All", "Upcoming", "Completed", "In Progress", "Done"].map(s => <option key={s}>{s}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              {loading ? (
-                <DashboardTableSkeleton rows={6} />
-              ) : (
-              <div className="ud-table-wrap">
-                <table className="ud-table">
-                  <thead>
-                    <tr>
-                      <th>Type</th><th>Title</th><th>Date</th><th>Location / Info</th><th>Status</th><th>Participation</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredData.length === 0
-                      ? <tr><td colSpan={6} className="ud-table-empty">No records match your filters.</td></tr>
-                      : filteredData.map(item => (
-                        <tr key={item.id}>
-                          <td><span className="ud-table-type">{TYPE_ICON[item.type]}{item.type}</span></td>
-                          <td className="ud-table-title" title={item.title}>{item.title}</td>
-                          <td title={item.date || ""}>{item.date ? getSmartDateLabel(item.date) : "—"}</td>
-                          <td title={item.location || item.lastUpdate || "—"}>{item.location || item.lastUpdate || "—"}</td>
-                          <td>
-                            <StatusBadge status={item.projectStatus !== "-" ? item.projectStatus : item.status} />
-                          </td>
-                          <td>
-                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                              <StatusBadge status={item.participationType} />
-                              {(item.type === "Event" || item.type === "Hackathon") && item.participationType === "Registered" && (
-                                <button
-                                  onClick={() => setSelectedTicketEvent(item)}
-                                  className="ud-btn-ticket"
-                                >
-                                  View Ticket
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    }
-                  </tbody>
-                </table>
-              </div>
-              )}
-            </motion.div>
+            <RegistrationsTab
+              filteredData={filteredData}
+              loading={loading}
+              filterType={filterType}
+              setFilterType={setFilterType}
+              filterStatus={filterStatus}
+              setFilterStatus={setFilterStatus}
+              setSelectedTicketEvent={setSelectedTicketEvent}
+            />
           )}
         </AnimatePresence>
+
+        {/* Futuristic Dashboard Footer */}
+        <footer className="ud-footer">
+          <div className="ud-footer-divider" />
+          <div className="ud-footer-content">
+            <p className="ud-footer-copyright">
+              © {new Date().getFullYear()} Eventra. All rights reserved.
+            </p>
+            <div className="ud-footer-links">
+              <Link to="/helpcenter" className="ud-footer-link">Help Center</Link>
+              <Link to="/feedback" className="ud-footer-link">Feedback</Link>
+              <Link to="/privacy" className="ud-footer-link">Privacy Policy</Link>
+              <Link to="/terms" className="ud-footer-link">Terms of Service</Link>
+            </div>
+          </div>
+        </footer>
       </main>
 
       {/* Futuristic Ticket Preview Modal */}

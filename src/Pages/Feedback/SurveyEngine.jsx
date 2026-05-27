@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiPlus,
@@ -6,6 +6,8 @@ import {
   FiEye,
   FiPlusCircle,
   FiSave,
+  FiArrowUp,
+  FiArrowDown,
 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
@@ -51,6 +53,65 @@ const SurveyEngine = () => {
     optionIndex: null,
   });
 
+  // Telemetry & Draft Persistence State
+  const [draftDetected, setDraftDetected] = useState(false);
+  const [cachedDraft, setCachedDraft] = useState(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Check for saved template drafts on mount
+  useEffect(() => {
+    const draft = localStorage.getItem("eventra_survey_builder_draft");
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft);
+        if (parsed.questions?.length > 0 || parsed.title || parsed.description) {
+          setCachedDraft(parsed);
+          setDraftDetected(true);
+          return; // Skip setting isInitialized to prevent early overwrite
+        }
+      } catch (e) {
+        console.error("Failed to parse cached survey draft:", e);
+      }
+    }
+    setIsInitialized(true);
+  }, []);
+
+  // Debounced auto-save effect
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    const delayDebounceId = setTimeout(() => {
+      const payload = {
+        title: surveyTitle,
+        description: surveyDescription,
+        questions: questions,
+      };
+      localStorage.setItem("eventra_survey_builder_draft", JSON.stringify(payload));
+    }, 1000);
+
+    return () => clearTimeout(delayDebounceId);
+  }, [surveyTitle, surveyDescription, questions, isInitialized]);
+
+  const handleRestoreDraft = () => {
+    if (cachedDraft) {
+      setSurveyTitle(cachedDraft.title || "");
+      setSurveyDescription(cachedDraft.description || "");
+      setQuestions(cachedDraft.questions || []);
+      toast.success("Survey template draft restored!");
+    }
+    setDraftDetected(false);
+    setCachedDraft(null);
+    setIsInitialized(true);
+  };
+
+  const handleDiscardDraft = () => {
+    localStorage.removeItem("eventra_survey_builder_draft");
+    setDraftDetected(false);
+    setCachedDraft(null);
+    setIsInitialized(true);
+    toast.info("Survey template draft discarded");
+  };
+
   // Question type configuration
   const questionTypes = [
     { value: "text", label: "Open Text Question" },
@@ -87,6 +148,14 @@ const SurveyEngine = () => {
   const deleteQuestion = (id) => {
     setQuestions(questions.filter((q) => q.id !== id));
     toast.warn("Question removed");
+  };
+
+  const moveQuestion = (index, direction) => {
+    const nextIndex = direction === "up" ? index - 1 : index + 1;
+    if (nextIndex < 0 || nextIndex >= questions.length) return;
+    const updated = [...questions];
+    [updated[index], updated[nextIndex]] = [updated[nextIndex], updated[index]];
+    setQuestions(updated);
   };
 
   // Multiple choice option helpers
@@ -147,6 +216,7 @@ const SurveyEngine = () => {
       createdAt: new Date().toISOString(),
     };
 
+    localStorage.removeItem("eventra_survey_builder_draft");
     toast.success("Survey published and active for attendees!");
   };
 
@@ -194,6 +264,39 @@ const SurveyEngine = () => {
               exit={{ opacity: 0, y: -15 }}
               className="space-y-6"
             >
+              {/* SURVEY BUILDER DRAFT DETECTION BANNER */}
+              {draftDetected && cachedDraft && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0, y: -10 }}
+                  animate={{ opacity: 1, height: "auto", y: 0 }}
+                  exit={{ opacity: 0, height: 0, y: -10 }}
+                  className="p-5 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm"
+                >
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-bold text-indigo-900 dark:text-indigo-300">
+                      📝 Resume where you left off?
+                    </h3>
+                    <p className="text-xs text-indigo-700/80 dark:text-indigo-400/80 leading-relaxed">
+                      We found an unsaved survey template draft with {cachedDraft.questions?.length || 0} question(s) titled <strong className="font-semibold">"{cachedDraft.title || "Untitled Survey"}"</strong>.
+                    </p>
+                  </div>
+                  <div className="flex gap-2.5 shrink-0 w-full sm:w-auto">
+                    <button
+                      onClick={handleRestoreDraft}
+                      className="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white rounded-xl shadow-sm transition"
+                    >
+                      Restore Template
+                    </button>
+                    <button
+                      onClick={handleDiscardDraft}
+                      className="flex-1 sm:flex-none px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-350 dark:hover:bg-slate-750 text-xs font-bold text-slate-700 dark:text-slate-300 rounded-xl transition"
+                    >
+                      Discard
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
               {/* SURVEY IDENTITY METADATA CARD */}
               <div className="p-8 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-2xl shadow-xl space-y-4">
                 <div className="border-l-4 border-indigo-500 pl-4 space-y-4">
@@ -252,22 +355,48 @@ const SurveyEngine = () => {
                           />
                         </div>
 
-                        <button
-                           id="ymjlwm"
-onClick={() =>
-  setConfirmModal({
-    open: true,
-    type: "question",
-    questionId: question.id
-  })
-}
-
-
-                          className="p-2.5 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all"
-                          title="Remove question"
-                        >
-                          <FiTrash2 className="w-5 h-5" />
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() => moveQuestion(index, "up")}
+                            disabled={index === 0}
+                            className={`p-2 rounded-xl border transition-all ${
+                              index === 0
+                                ? "text-slate-300 border-slate-100 dark:border-slate-800/40 dark:text-slate-700 cursor-not-allowed opacity-40"
+                                : "text-slate-500 border-slate-200 dark:border-slate-800 dark:text-slate-400 hover:text-indigo-500 hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 cursor-pointer"
+                            }`}
+                            title="Move question up"
+                          >
+                            <FiArrowUp className="w-4 h-4" />
+                          </button>
+                          
+                          <button
+                            onClick={() => moveQuestion(index, "down")}
+                            disabled={index === questions.length - 1}
+                            className={`p-2 rounded-xl border transition-all ${
+                              index === questions.length - 1
+                                ? "text-slate-300 border-slate-100 dark:border-slate-800/40 dark:text-slate-700 cursor-not-allowed opacity-40"
+                                : "text-slate-500 border-slate-200 dark:border-slate-800 dark:text-slate-400 hover:text-indigo-500 hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 cursor-pointer"
+                            }`}
+                            title="Move question down"
+                          >
+                            <FiArrowDown className="w-4 h-4" />
+                          </button>
+                          
+                          <button
+                            id="ymjlwm"
+                            onClick={() =>
+                              setConfirmModal({
+                                open: true,
+                                type: "question",
+                                questionId: question.id
+                              })
+                            }
+                            className="p-2.5 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all cursor-pointer ml-1"
+                            title="Remove question"
+                          >
+                            <FiTrash2 className="w-5 h-5" />
+                          </button>
+                        </div>
                       </div>
 
                       {/* CHOICE SELECTIONS CREATOR */}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { AlertTriangle, Clock, Calendar, X, ArrowRight, Globe } from 'lucide-react';
 import { formatTimeRange } from '../utils/conflictDetection';
 import { getUserTimezone } from '../utils/timezoneUtils';
@@ -29,7 +29,58 @@ const EventConflictModal = ({
   onSelectAlternative,
   strictMode = false,
 }) => {
+  const modalRef = useRef(null);
   const userTimezone = getUserTimezone();
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onCancel();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onCancel]);
+
+  useEffect(() => {
+    if (!isOpen || !modalRef.current) return;
+
+    const focusableElements = modalRef.current.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex="0"]'
+    );
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    // Focus the first element when modal opens
+    firstElement?.focus();
+
+    const handleTabKey = (e) => {
+      if (e.key !== 'Tab') return;
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          lastElement?.focus();
+          e.preventDefault();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          firstElement?.focus();
+          e.preventDefault();
+        }
+      }
+    };
+
+    const modalNode = modalRef.current;
+    modalNode.addEventListener('keydown', handleTabKey);
+    return () => {
+      modalNode.removeEventListener('keydown', handleTabKey);
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -41,10 +92,16 @@ const EventConflictModal = ({
       />
 
       {/* Modal Content */}
-      <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div 
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+      >
         {/* Close Button */}
         <button
           onClick={onCancel}
+          aria-label="Close conflict dialog"
           className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
         >
           <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
@@ -149,6 +206,7 @@ const EventConflictModal = ({
                   <button
                     key={event.id}
                     onClick={() => onSelectAlternative?.(event)}
+                    aria-label={`Select alternative event: ${event.title}`}
                     className="w-full text-left bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors group"
                   >
                     <div className="flex items-center justify-between">
