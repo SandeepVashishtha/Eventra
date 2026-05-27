@@ -12,7 +12,7 @@
 import {
   getGoogleCalendarUrl,
   getOutlookCalendarUrl,
-} from '../src/utils/calendarUrlUtils';
+} from './calendarUrlUtils';
 
 // ---------------------------------------------------------------------------
 // Helpers

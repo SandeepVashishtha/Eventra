@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import {
   Calendar,
   MapPin,
@@ -16,19 +17,19 @@ import { Link } from "react-router-dom";
 import { useMyEvents } from "../../context/MyEventsContext";
 import StatusBadge from "../common/StatusBadge";
 
-const fadeUp = {
+const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
   visible: (i = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.06, duration: 0.4, ease: "easeOut" },
+    transition: { delay: prefersReducedMotion ? 0 : i * 0.06, duration: prefersReducedMotion ? 0 : 0.4, ease: 'easeOut' },
   }),
-};
+});
 
-const stagger = {
+const stagger = (prefersReducedMotion) => ({
   hidden: {},
-  visible: { transition: { staggerChildren: 0.07 } },
-};
+  visible: { transition: { staggerChildren: prefersReducedMotion ? 0 : 0.07 } },
+});
 
 const getEventStatus = (event) => {
   if (!event?.date) return "Unknown";
@@ -41,57 +42,62 @@ const getEventStatus = (event) => {
   return "Upcoming";
 };
 
-const EmptyState = () => (
-  <motion.div
-    className="my-events-empty"
-    initial={{ opacity: 0, y: 24 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.45 }}
-  >
-    <div className="my-events-empty-icon">
-      <Ticket size={40} />
-    </div>
-    <h3 className="my-events-empty-title">No events yet</h3>
-    <p className="my-events-empty-sub">
-      You have not registered for or hosted any events yet. Explore upcoming events to get started.
-    </p>
-    <Link
-      to="/events"
-      className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-100 dark:bg-blue-900 text-black dark:text-white font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-200 dark:hover:bg-blue-800 my-events-empty-cta"
+const EmptyState = () => {
+  const prefersReducedMotion = useReducedMotion();
+  return (
+    <motion.div
+      className="my-events-empty"
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: prefersReducedMotion ? 0 : 0.45 }}
     >
-      <span className="relative z-10 flex items-center">
-        Explore Events
-        <svg
-          className="ml-3 w-5 h-5 text-black dark:text-white transition-transform duration-300 group-hover:translate-x-2"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path
-            fillRule="evenodd"
-            d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-            clipRule="evenodd"
-          />
-        </svg>
-      </span>
-    </Link>
-  </motion.div>
-);
+      <div className="my-events-empty-icon">
+        <Ticket size={40} />
+      </div>
+      <h3 className="my-events-empty-title">No events yet</h3>
+      <p className="my-events-empty-sub">
+        You have not registered for or hosted any events yet. Explore upcoming events to get started.
+      </p>
+      <Link
+        to="/events"
+        className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-100 dark:bg-blue-900 text-black dark:text-white font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-200 dark:hover:bg-blue-800 my-events-empty-cta"
+      >
+        <span className="relative z-10 flex items-center">
+          Explore Events
+          <svg
+            className="ml-3 w-5 h-5 text-black dark:text-white transition-transform duration-300 group-hover:translate-x-2"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </span>
+      </Link>
+    </motion.div>
+  );
+};
 
-const EventCard = ({ event, index, onRemoveRegistration, showCancel }) => {
+const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicket }) => {
+  const prefersReducedMotion = useReducedMotion();
+  const fadeUpVariants = fadeUp(prefersReducedMotion);
   const status = getEventStatus(event);
   const shortDate = event?.date
     ? new Date(event.date).toLocaleDateString("en-US", {
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-      })
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    })
     : "—";
 
   return (
     <motion.div
       className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl backdrop-blur-sm transition-all duration-500 flex flex-col z-10 hover:z-50 overflow-hidden"
       custom={index}
-      variants={fadeUp}
+      variants={fadeUpVariants}
       initial="hidden"
       animate="visible"
       layout
@@ -170,21 +176,31 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel }) => {
 
       <div className="px-6 py-4 flex gap-3 bg-gradient-to-r from-gray-50/30 to-white/60 dark:from-gray-800/30 dark:to-gray-900/60 border-t border-gray-200/60 dark:border-gray-700/50 mt-auto">
         {showCancel ? (
-          <button
-            className="group/btn flex-1"
-            onClick={() => onRemoveRegistration?.(event?.id, event?.title)}
-          >
-            <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white px-5 py-2.5 text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-900 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
-              <Trash2 size={13} className="relative" />
-              <span className="relative">Cancel</span>
-            </div>
-          </button>
+          <>
+            <button
+              className="group/btn flex-1"
+              onClick={() => onRemoveRegistration?.(event?.id, event?.title)}
+            >
+              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+                <Trash2 size={13} className="relative" />
+                <span className="relative">Cancel</span>
+              </div>
+            </button>
+            <button
+              className="group/btn flex-1"
+              onClick={() => onViewTicket?.(event)}
+            >
+              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-650 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+                <Ticket size={13} className="relative" />
+                <span className="relative">Ticket</span>
+              </div>
+            </button>
+          </>
         ) : (
           <div className="flex-1" />
         )}
         <Link to={`/events/${event?.id}`} className="group/btn flex-1">
-          <div className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-5 py-2.5 text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-300 w-full">
+          <div className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-300 w-full">
             <span>{showCancel ? "View Details" : "Open Event"}</span>
           </div>
         </Link>
@@ -193,7 +209,10 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel }) => {
   );
 };
 
-const EventsTab = ({ hostedEvents = [] }) => {
+const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
+  const prefersReducedMotion = useReducedMotion();
+  const fadeUpVariants = fadeUp(prefersReducedMotion);
+  const staggerVariants = stagger(prefersReducedMotion);
   const { myEvents, removeRegistration } = useMyEvents();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -202,6 +221,8 @@ const EventsTab = ({ hostedEvents = [] }) => {
   const [sortBy, setSortBy] = useState("soonest");
   const [cancelTarget, setCancelTarget] = useState(null);
 
+  const [recentSearches,
+    setRecentSearches] = useState([]);
   const registeredEvents = useMemo(
     () =>
       myEvents.map((registration) => ({
@@ -211,6 +232,16 @@ const EventsTab = ({ hostedEvents = [] }) => {
       })),
     [myEvents]
   );
+  useEffect(() => {
+    const saved =
+      JSON.parse(
+        localStorage.getItem(
+          "recentSearches"
+        )
+      ) || [];
+
+    setRecentSearches(saved);
+  }, []);
 
   const availableTypes = useMemo(() => {
     const types = [...new Set([...registeredEvents, ...hostedEvents].map((event) => event?.type).filter(Boolean))];
@@ -299,7 +330,7 @@ const EventsTab = ({ hostedEvents = [] }) => {
       </div>
 
       {registeredCount + hostedCount > 0 && (
-        <motion.div className="my-events-summary" variants={stagger} initial="hidden" animate="visible">
+        <motion.div className="my-events-summary" variants={staggerVariants} initial="hidden" animate="visible">
           {[
             { label: "Registered", value: registeredCount, color: "#6366f1" },
             { label: "Hosted", value: hostedCount, color: "#ec4899" },
@@ -309,7 +340,7 @@ const EventsTab = ({ hostedEvents = [] }) => {
             <motion.div
               key={pill.label}
               className="my-events-pill"
-              variants={fadeUp}
+              variants={fadeUpVariants}
               style={{ "--pill-color": pill.color }}
             >
               <span className="my-events-pill-value">{pill.value}</span>
@@ -411,7 +442,7 @@ const EventsTab = ({ hostedEvents = [] }) => {
                   {filteredRegisteredEvents.length} event{filteredRegisteredEvents.length === 1 ? "" : "s"}
                 </span>
               </div>
-              <motion.div className="ud-items-grid" variants={stagger} initial="hidden" animate="visible">
+              <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
                 {filteredRegisteredEvents.map((event, index) => (
                   <EventCard
                     key={event.eventId || event.id}
@@ -419,6 +450,7 @@ const EventsTab = ({ hostedEvents = [] }) => {
                     index={index}
                     onRemoveRegistration={handleCancelClick}
                     showCancel
+                    onViewTicket={onViewTicket}
                   />
                 ))}
               </motion.div>
@@ -435,7 +467,7 @@ const EventsTab = ({ hostedEvents = [] }) => {
                   {filteredHostedEvents.length} event{filteredHostedEvents.length === 1 ? "" : "s"}
                 </span>
               </div>
-              <motion.div className="ud-items-grid" variants={stagger} initial="hidden" animate="visible">
+              <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
                 {filteredHostedEvents.map((event, index) => (
                   <EventCard
                     key={event.id}
@@ -459,6 +491,18 @@ const EventsTab = ({ hostedEvents = [] }) => {
             exit={{ opacity: 0 }}
             onClick={handleCancelDismiss}
           >
+            <button
+              onClick={() => {
+                localStorage.removeItem(
+                  "recentSearches"
+                );
+
+                setRecentSearches([]);
+              }}
+              className="text-sm text-red-500 hover:underline mt-2"
+            >
+              Clear History
+            </button>
             <motion.div
               className="my-events-dialog"
               initial={{ scale: 0.95, opacity: 0 }}

@@ -31,7 +31,6 @@ import { pushToQueue } from "../../utils/offlineQueue";
 import EventConflictModal from "../../components/EventConflictModal";
 
 const MAX_NOTES_CHARS = 500;
-const MAX_DESCRIPTION_CHARS = 1000; // Define limits as needed for other text areas
 
 const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
 const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
@@ -48,6 +47,36 @@ function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
     }).catch(() => {});
   }
 }
+
+const getRegistrationFailureMessage = (error) => {
+  const message =
+    error?.data?.message ||
+    error?.data?.error ||
+    error?.message ||
+    "";
+  const normalizedMessage = message.toLowerCase();
+
+  if (
+    error?.status === 409 &&
+    /already registered|duplicate/.test(normalizedMessage)
+  ) {
+    return "You are already registered for this event.";
+  }
+
+  if (
+    error?.status === 409 ||
+    error?.status === 423 ||
+    /capacity|full|sold out|max(?:imum)? capacity/.test(normalizedMessage)
+  ) {
+    return "This event has reached maximum capacity. Please choose another event.";
+  }
+
+  if (/conflict/.test(normalizedMessage)) {
+    return "Registration could not be completed because the server reported a conflict.";
+  }
+
+  return message || "Registration failed. Please try again.";
+};
 
 // NOTE: getGoogleCalendarUrl and getOutlookCalendarUrl are now imported from
 // src/utils/calendarUrlUtils.js at the top of this file. The old inline
@@ -243,23 +272,22 @@ const EventRegistration = () => {
       return;
     }
 
-    // Re-fetch the event to get the latest attendee count before checking capacity.
-    // Using the stale value from initial page load creates a race window where
-    // two users can both pass the check and both register past the limit.
+    // Quick UX hint based on the latest visible event snapshot.
+    // The backend still enforces capacity at submit time.
     try {
       const freshRes = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
-      if (freshRes.ok) {
-        const freshEvent = await freshRes.json();
+      if (freshRes.status === 200) {
+        const freshEvent = freshRes.data;
         if (freshEvent.attendees >= freshEvent.maxAttendees) {
-          toast.error("This event has reached maximum capacity.");
+          toast.error("This event is currently full. Registration may no longer be available.");
           return;
         }
       }
     } catch {
-      // If the re-fetch fails, fall back to the cached value so the user
+      // If the re-fetch fails, fall back to the cached snapshot so the user
       // can still attempt registration rather than being silently blocked.
       if (event.attendees >= event.maxAttendees) {
-        toast.error("This event has reached maximum capacity.");
+        toast.error("This event is currently full. Registration may no longer be available.");
         return;
       }
     }
@@ -310,21 +338,43 @@ const EventRegistration = () => {
       clearSession();
     
     } catch (error) {
-      console.error("Registration error:", error);
-      
-      // ── Offline Sync Queue Fallback ──
-      // Only persist the identifiers needed to retry the request -- never
-      // store PII (name, email, phone) in localStorage.
-      const payload = {
-        eventId: parseInt(eventId),
-        userId: user?.id || null,
-      };
+      const failureMessage = getRegistrationFailureMessage(error);
+      const isOfflineFailure = error?.isNetworkError || error?.isTimeout;
+      const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
 
-      pushToQueue({ eventId: parseInt(eventId), payload });
+      if (isOfflineFailure) {
+        // Offline sync fallback keeps registration intent intact without
+        // storing PII in localStorage.
+        const payload = {
+          eventId: parseInt(eventId),
+          userId: user?.id || null,
+        };
 
-      setRegistered(true);
-      addRegistration(event, formData);
-      toast.warning("Network error. Registration queued and will sync when you are online.", { autoClose: 4000 });
+        const success = await pushToQueue({ eventId: parseInt(eventId), payload });
+
+        if (success) {
+          setRegistered(true);
+          addRegistration(event, formData);
+          clearSession();
+          toast.warning(
+            "Network error. Registration queued and will sync when you are online.",
+            { autoClose: 4000 }
+          );
+        } else {
+          toast.error("Offline registration queue is full. Please reconnect to the internet to register.");
+        }
+        return;
+      }
+
+      if (isAlreadyRegistered) {
+        setRegistered(true);
+        addRegistration(event, formData);
+        clearSession();
+        toast.info(failureMessage);
+        return;
+      }
+
+      toast.error(failureMessage);
     } finally {
       // Release lock and reset submission state
       registrationLocks.delete(eventId);
@@ -386,7 +436,7 @@ const EventRegistration = () => {
         <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
           {isPastEvent 
             ? "This event has already ended." 
-            : "This event has reached maximum capacity."}
+            : "This event is currently full. You can still check back later in case a spot opens up."}
         </p>
         <Link
           to={`/events/${eventId}`}
@@ -778,39 +828,7 @@ const EventRegistration = () => {
                     </span>
                   </div>
               </div>
-             {/* Additional Info */}
-<div>
-  <label
-    htmlFor="additionalInfo"
-    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-  >
-    Additional Information (Optional)
-  </label>
 
-  <textarea
-    id="additionalInfo"
-    name="additionalInfo"
-    value={formData.additionalInfo}
-    onChange={handleChange}
-    rows="4"
-    maxLength={500}
-    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
-    placeholder="Any special requirements or questions?"
-  />
-
-  {/* Character Counter */}
-  <div className="mt-2 flex justify-end">
-    <span
-      className={`text-sm font-medium transition-colors ${
-        formData.additionalInfo.length >= 400
-          ? "text-red-500"
-          : "text-gray-500 dark:text-gray-400"
-      }`}
-    >
-      {formData.additionalInfo.length} / 500 characters
-    </span>
-  </div>
-</div>
 
               {/* Submit Button */}
               <div className="flex gap-4">

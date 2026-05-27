@@ -21,12 +21,13 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
   };
 
   return (
-    <div
+    <nav
       className={`flex ${
         vertical
           ? "flex-col items-start w-full gap-2"
           : "items-center gap-3 mx-7"
       }`}
+      aria-label={vertical ? "Mobile primary links" : "Primary links"}
     >
       {NAV_ITEMS.map((item) => {
         const isSubItemActive = item.subItems?.some(
@@ -101,7 +102,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           </NavLink>
         );
       })}
-    </div>
+    </nav>
   );
 };
 
