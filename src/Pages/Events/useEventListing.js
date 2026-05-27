@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import mockEvents from "./eventsMockData.json";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { getRouteSearchResults } from "../../utils/searchUtils";
@@ -45,21 +45,8 @@ const useEventListing = () => {
   const [eventsPerPage, setEventsPerPage] = useState(DEFAULT_EVENTS_PER_PAGE);
   const [advancedFilters, setAdvancedFilters] = useState(getDefaultFilters());
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
+  const isInitialMount = useRef(true);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const normalizedEvents = mockEvents.map((event) => ({
-        ...event,
-        status: getEventStatus(event),
-      }));
-
-      setEvents(normalizedEvents);
-
-      setIsLoading(false);
-    }, 800);
-
-    return () => clearTimeout(timer);
-  }, []);
   const fetchEvents = useCallback(async () => {
     setIsLoading(true);
     setLoadError("");
@@ -99,6 +86,10 @@ const useEventListing = () => {
   );
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     setCurrentPage(1);
   }, [eventsPerPage, filterType, searchQuery, sortType, advancedFilters]);
 

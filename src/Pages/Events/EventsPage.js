@@ -104,16 +104,24 @@ const EventsPage = () => {
 
   const listing = useEventListing();
   const cardSectionRef = useRef();
+  const routeSearchQuery = searchParams.get("search") || "";
 
   // Initialize state from URL params on mount only
   useEffect(() => {
     const page = parseInt(searchParams.get("page")) || 1;
     const perPage = parseInt(searchParams.get("perPage")) || 6;
-    const search = prepareSafeSearchQuery(routeSearchQuery);
+    const search = prepareSafeSearchQuery(searchParams.get("search") || "");
     const filter = searchParams.get("filter") || "all";
     const sort = searchParams.get("sort") || "Newest";
     const view = searchParams.get("view") || "grid";
-    
+
+    if (search) listing.setSearchQuery(search);
+    if (filter !== "all") listing.setFilterType(filter);
+    if (sort !== "Newest") listing.setSortType(sort);
+    if (view !== "grid") listing.setViewMode(view);
+    if (perPage !== 6) listing.setEventsPerPage(perPage);
+    if (page !== 1) listing.setSafePage(page);
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -122,7 +130,7 @@ const EventsPage = () => {
     if (routeSearchQuery !== listing.searchQuery) {
       listing.setSearchQuery(routeSearchQuery);
     }
-  }, [routeSearchQuery]);
+  }, [routeSearchQuery, listing.searchQuery, listing.setSearchQuery]);
 
   // Scroll to card section after loading when a route search is active
   useEffect(() => {
