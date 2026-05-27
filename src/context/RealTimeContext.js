@@ -9,114 +9,143 @@ import useRealTimeConnection, { SSE_STATUS } from "../hooks/useRealTimeConnectio
 
 export { SSE_STATUS };
 
-const RealTimeContext = createContext(null);
+// --- 1. Split the Contexts ---
+const LeaderboardContext = createContext(null);
+const AnalyticsContext = createContext(null);
 
-const initialState = {
-  leaderboard: {
-    contributors: [],
-    lastSynced: null,
-    status: SSE_STATUS.IDLE,
-  },
-  analytics: {
-    recentCheckins: [],
-    liveCount: 0,
-    scanVelocity: 0,
-    status: SSE_STATUS.IDLE,
-  },
+// --- 2. Initial States ---
+const initialLeaderboardState = {
+  contributors: [],
+  lastSynced: null,
+  status: SSE_STATUS.IDLE,
 };
 
-function reducer(state, action) {
+const initialAnalyticsState = {
+  recentCheckins: [],
+  liveCount: 0,
+  scanVelocity: 0,
+  status: SSE_STATUS.IDLE,
+};
+
+// --- 3. Split the Reducers ---
+function leaderboardReducer(state, action) {
   switch (action.type) {
-    case "LB_UPDATE":
+    case "UPDATE":
       return {
         ...state,
-        leaderboard: {
-          ...state.leaderboard,
-          contributors: action.payload,
-          lastSynced: Date.now(),
-        },
+        contributors: action.payload,
+        lastSynced: Date.now(),
       };
-    case "LB_STATUS":
-      return {
-        ...state,
-        leaderboard: { ...state.leaderboard, status: action.payload },
-      };
-    case "AN_CHECKIN":
-      return {
-        ...state,
-        analytics: {
-          ...state.analytics,
-          recentCheckins: [action.payload, ...state.analytics.recentCheckins.slice(0, 49)],
-          liveCount: state.analytics.liveCount + 1,
-        },
-      };
-    case "AN_UPDATE":
-      return {
-        ...state,
-        analytics: { ...state.analytics, ...action.payload },
-      };
-    case "AN_STATUS":
-      return {
-        ...state,
-        analytics: { ...state.analytics, status: action.payload },
-      };
+    case "STATUS":
+      return { ...state, status: action.payload };
     default:
       return state;
   }
 }
 
-export function RealTimeProvider({ children }) {
-  const [state, dispatch] = useReducer(reducer, initialState);
+function analyticsReducer(state, action) {
+  switch (action.type) {
+    case "CHECKIN":
+      return {
+        ...state,
+        recentCheckins: [action.payload, ...state.recentCheckins.slice(0, 49)],
+        liveCount: state.liveCount + 1,
+      };
+    case "UPDATE":
+      return { ...state, ...action.payload };
+    case "STATUS":
+      return { ...state, status: action.payload };
+    default:
+      return state;
+  }
+}
 
-  // Leaderboard stream: server sends full contributor list or delta
-  const onLeaderboardMessage = useCallback((data) => {
+// --- 4. Isolated Providers ---
+function LeaderboardProvider({ children }) {
+  const [state, dispatch] = useReducer(leaderboardReducer, initialLeaderboardState);
+
+  const onMessage = useCallback((data) => {
     if (Array.isArray(data)) {
-      dispatch({ type: "LB_UPDATE", payload: data });
+      dispatch({ type: "UPDATE", payload: data });
     } else if (Array.isArray(data?.contributors)) {
-      dispatch({ type: "LB_UPDATE", payload: data.contributors });
+      dispatch({ type: "UPDATE", payload: data.contributors });
     }
   }, []);
 
-  // Analytics stream: server sends individual check-in events or aggregate stats
-  const onAnalyticsMessage = useCallback((data) => {
-    if (data?.name && data?.event) {
-      // Flat check-in object: { id, name, event, time, status }
-      dispatch({ type: "AN_CHECKIN", payload: data });
-    } else if (data?.checkin) {
-      dispatch({ type: "AN_CHECKIN", payload: data.checkin });
-    } else if (data?.liveCount !== undefined || data?.scanVelocity !== undefined) {
-      dispatch({ type: "AN_UPDATE", payload: data });
-    }
-  }, []);
-
-  const { status: lbStatus } = useRealTimeConnection("/stream/leaderboard", {
-    onMessage: onLeaderboardMessage,
-  });
-
-  const { status: anStatus } = useRealTimeConnection("/stream/analytics", {
-    onMessage: onAnalyticsMessage,
+  const { status } = useRealTimeConnection("/stream/leaderboard", {
+    onMessage,
   });
 
   useEffect(() => {
-    dispatch({ type: "LB_STATUS", payload: lbStatus });
-  }, [lbStatus]);
-
-  useEffect(() => {
-    dispatch({ type: "AN_STATUS", payload: anStatus });
-  }, [anStatus]);
+    dispatch({ type: "STATUS", payload: status });
+  }, [status]);
 
   return (
-    <RealTimeContext.Provider value={state}>
+    <LeaderboardContext.Provider value={state}>
       {children}
-    </RealTimeContext.Provider>
+    </LeaderboardContext.Provider>
   );
 }
 
-export function useRealTime() {
-  const ctx = useContext(RealTimeContext);
-  if (!ctx) throw new Error("useRealTime must be used inside RealTimeProvider");
-  return ctx;
+function AnalyticsProvider({ children }) {
+  const [state, dispatch] = useReducer(analyticsReducer, initialAnalyticsState);
+
+  const onMessage = useCallback((data) => {
+    if (data?.name && data?.event) {
+      dispatch({ type: "CHECKIN", payload: data });
+    } else if (data?.checkin) {
+      dispatch({ type: "CHECKIN", payload: data.checkin });
+    } else if (data?.liveCount !== undefined || data?.scanVelocity !== undefined) {
+      dispatch({ type: "UPDATE", payload: data });
+    }
+  }, []);
+
+  const { status } = useRealTimeConnection("/stream/analytics", {
+    onMessage,
+  });
+
+  useEffect(() => {
+    dispatch({ type: "STATUS", payload: status });
+  }, [status]);
+
+  return (
+    <AnalyticsContext.Provider value={state}>
+      {children}
+    </AnalyticsContext.Provider>
+  );
 }
 
-export const useLeaderboardStream = () => useRealTime().leaderboard;
-export const useAnalyticsStream = () => useRealTime().analytics;
+// --- 5. Main Provider Composition ---
+// We wrap them together here so the rest of the app doesn't break!
+export function RealTimeProvider({ children }) {
+  return (
+    <LeaderboardProvider>
+      <AnalyticsProvider>
+        {children}
+      </AnalyticsProvider>
+    </LeaderboardProvider>
+  );
+}
+
+// --- 6. Exported Hooks ---
+export function useRealTime() {
+  const leaderboard = useContext(LeaderboardContext);
+  const analytics = useContext(AnalyticsContext);
+  if (!leaderboard || !analytics) {
+    throw new Error("useRealTime must be used inside RealTimeProvider");
+  }
+  return { leaderboard, analytics };
+}
+
+// 🔥 The Magic: These hooks now ONLY re-render when their specific stream updates!
+export const useLeaderboardStream = () => {
+  const ctx = useContext(LeaderboardContext);
+  if (!ctx) throw new Error("useLeaderboardStream must be used inside RealTimeProvider");
+  return ctx;
+};
+
+export const useAnalyticsStream = () => {
+  const ctx = useContext(AnalyticsContext);
+  if (!ctx) throw new Error("useAnalyticsStream must be used inside RealTimeProvider");
+  return ctx;
+};
