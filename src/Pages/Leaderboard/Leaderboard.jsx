@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import FeatureErrorBoundary from "../../components/common/FeatureErrorBoundary";
 import {
@@ -20,11 +20,11 @@ import StyledDropdown from "../../components/StyledDropdown";
 import SkeletonLeaderboard from "../../components/common/SkeletonLeaderboard";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useLeaderboardStream, SSE_STATUS } from "../../context/RealTimeContext";
-import {
-  storageManager,
-  STORAGE_KEYS,
-  validators,
-} from "../../utils/storage/storageManager";
+import { getAchievementBadge } from "../../utils/leaderboardUtils";
+import { logger } from "../../utils/logger";
+import { storageManager } from "../../utils/storage/storageManager";
+import { STORAGE_KEYS } from "../../utils/storage/storageKeys";
+import { validators } from "../../utils/storage/storageValidators";
 
 // ─── Category filter definitions ───────────────────────────────────────────────
 const CATEGORY_FILTERS = [
@@ -80,7 +80,7 @@ function RankMovementIndicator({ username }) {
 }
 
 // Repository constant — update if the leaderboard should point to another repo
-const GITHUB_REPO = "SandeepVashishtha/Eventra";
+const GITHUB_REPO = process.env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra";
 // Token is managed securely by the backend proxy
 
 // Points mapping for PR labels (keeps scoring logic centralized)
@@ -163,34 +163,6 @@ function LiveStatusBadge({ status }) {
     </span>
   );
 }
-const getAchievementBadge = (rank, prs, points) => {
-  if (rank === 1) {
-    return {
-      label: "Diamond Tier",
-      color: "from-sky-300 via-indigo-400 to-pink-300 text-indigo-950 border-indigo-300/40 shadow-[0_0_12px_rgba(99,102,241,0.4)]",
-      icon: FaTrophy
-    };
-  }
-  if (rank === 2 || rank === 3) {
-    return {
-      label: "Platinum Tier",
-      color: "from-teal-300 via-emerald-400 to-cyan-300 text-emerald-950 border-teal-300/40 shadow-[0_0_12px_rgba(20,184,166,0.3)]",
-      icon: FaAward
-    };
-  }
-  if (rank >= 4 && rank <= 10) {
-    return {
-      label: "Gold Tier",
-      color: "from-yellow-300 via-amber-400 to-yellow-500 text-amber-950 border-yellow-300/40 shadow-[0_0_8px_rgba(234,179,8,0.25)]",
-      icon: FaStar
-    };
-  }
-  return {
-    label: "Silver Tier",
-    color: "from-slate-100 via-zinc-200 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 text-slate-800 dark:text-slate-200 border-slate-200/50 dark:border-slate-700/20",
-    icon: FaCode
-  };
-};
 
 export default function LeaderBoard() {
   useDocumentTitle("Eventra | Leaderboard");
@@ -294,7 +266,7 @@ export default function LeaderBoard() {
         const res = await fetch(proxyUrl);
 
         if (!res.ok) {
-          console.warn(`GitHub API request failed with status: ${res.status}`);
+          logger.warn(`GitHub API request failed with status: ${res.status}`);
           hasMore = false;
           break;
         }
@@ -364,7 +336,7 @@ export default function LeaderBoard() {
         }
       );
     } catch (err) {
-      console.error("Error fetching contributors:", err);
+      logger.error("Error fetching contributors:", err);
     } finally {
       setLoading(false);
     }
@@ -420,32 +392,36 @@ export default function LeaderBoard() {
       updatedSearches
     );
   };
-  const filteredContributors = contributors.filter((c) => {
-    const q = search.trim().toLowerCase();
-    const matchSearch = !q || c.username.toLowerCase().includes(q) || (c.name && c.name.toLowerCase().includes(q));
-    if (!matchSearch) return false;
+  const filteredContributors = useMemo(() => {
+    return contributors.filter((c) => {
+      const q = search.trim().toLowerCase();
+      const matchSearch = !q || c.username.toLowerCase().includes(q) || (c.name && c.name.toLowerCase().includes(q));
+      if (!matchSearch) return false;
 
-    // Category filters (deterministic simulation based on username hash)
-    if (activeCategory === "monthly") {
-      // Show top ~40% as "monthly stars" based on points threshold
-      const threshold = contributors.length > 0
-        ? contributors[Math.floor(contributors.length * 0.4)]?.points || 0
-        : 0;
-      return c.points >= threshold;
-    }
-    if (activeCategory === "mentors") {
-      // Show contributors with 5+ PRs as "mentors"
-      return c.prs >= 5;
-    }
-    return true; // "overall" shows everyone
-  });
+      // Category filters (deterministic simulation based on username hash)
+      if (activeCategory === "monthly") {
+        // Show top ~40% as "monthly stars" based on points threshold
+        const threshold = contributors.length > 0
+          ? contributors[Math.floor(contributors.length * 0.4)]?.points || 0
+          : 0;
+        return c.points >= threshold;
+      }
+      if (activeCategory === "mentors") {
+        // Show contributors with 5+ PRs as "mentors"
+        return c.prs >= 5;
+      }
+      return true; // "overall" shows everyone
+    });
+  }, [contributors, search, activeCategory]);
 
-  const sortedContributors = [...filteredContributors].sort((a, b) => {
-    if (sortBy === "points") return b.points - a.points;
-    if (sortBy === "prs") return b.prs - a.prs;
-    if (sortBy === "username") return a.username.localeCompare(b.username);
-    return 0;
-  });
+  const sortedContributors = useMemo(() => {
+    return [...filteredContributors].sort((a, b) => {
+      if (sortBy === "points") return b.points - a.points;
+      if (sortBy === "prs") return b.prs - a.prs;
+      if (sortBy === "username") return a.username.localeCompare(b.username);
+      return 0;
+    });
+  }, [filteredContributors, sortBy]);
 
   const indexOfLast = currentPage * CONTRIBUTORS_PER_PAGE;
   const indexOfFirst = indexOfLast - CONTRIBUTORS_PER_PAGE;

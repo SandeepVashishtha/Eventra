@@ -8,6 +8,7 @@ import {
 import { MotionConfig } from "framer-motion";
 import { THEMES } from "../components/styles/theme";
 import { useReducedMotion } from "../hooks/useReducedMotion";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 export const ThemeContext = createContext(null);
 
@@ -31,7 +32,16 @@ export const ThemeProvider = ({ children }) => {
   // Custom HSL state
   const [customHsl, setCustomHsl] = useState(() => {
     const saved = localStorage.getItem("customHsl");
-    return saved ? JSON.parse(saved) : { h: 220, s: 90, l: 56, active: false };
+
+    return safeJsonParse(
+      saved,
+      {
+        h: 220,
+        s: 90,
+        l: 56,
+        active: false,
+      },
+    );
   });
 
   // Reduced motion state

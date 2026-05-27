@@ -1,4 +1,5 @@
-import { parseEventDateTimeLocal } from "./timezoneUtils";
+import { parseEventDateTimeLocal } from "./timezoneUtils.js";
+import { safeJsonParse } from "./safeJsonParse.js";
 
 export const REMINDERS_STORAGE_KEY = "eventra_event_reminders";
 export const REMINDERS_CHANGED_EVENT = "eventraRemindersChanged";
@@ -38,7 +39,11 @@ const readReminders = () => {
 
   try {
     const rawReminders = window.localStorage.getItem(REMINDERS_STORAGE_KEY);
-    const parsedReminders = rawReminders ? JSON.parse(rawReminders) : [];
+    const parsedReminders =
+      safeJsonParse(
+        rawReminders,
+        [],
+      );
     return Array.isArray(parsedReminders) ? parsedReminders : [];
   } catch {
     return [];

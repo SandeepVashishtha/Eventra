@@ -293,7 +293,7 @@ const Contributors = () => {
                     <div className="relative">
                       <img loading="lazy" decoding="async" width="65" height="65"
   src={c.avatar_url}
-  alt={c.login}
+  alt={`${c.name || c.login || "Contributor"}'s GitHub profile picture`}
   className="w-[65px] h-[65px] rounded-full border-4 border-black shadow-md relative z-10"
 />
                       <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 blur-sm -z-10"></div>
