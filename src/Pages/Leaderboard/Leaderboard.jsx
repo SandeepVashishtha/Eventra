@@ -412,11 +412,11 @@ export default function LeaderBoard() {
     flooredTotalPoints: contributors.reduce((sum, c) => sum + c.points, 0),
   };
 
-  const sortOptions = [
+  const sortOptions = useMemo(() => [
     { label: "Points", value: "points" },
     { label: "PRs", value: "prs" },
     { label: "Username", value: "username" },
-  ];
+  ], []);
 
   // Extraction of Top 3 for visual Olympic Podium
   const top3 = sortedContributors.slice(0, 3);
