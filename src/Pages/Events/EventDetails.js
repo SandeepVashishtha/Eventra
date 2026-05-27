@@ -25,18 +25,20 @@ import { ROLES } from "../../config/roles";
 import { marked } from 'marked';
 import { safeParseJson } from "../../utils/jsonUtils";
 
+// FIX: Hoisted static constant outside component scope
+const mockRegistrants = [
+  { id: 1, name: "Aarav Sharma", email: "aarav@example.com", registeredAt: "2025-05-10", status: "Confirmed" },
+  { id: 2, name: "Priya Mehta", email: "priya@example.com", registeredAt: "2025-05-11", status: "Confirmed" },
+  { id: 3, name: "Rohan Verma", email: "rohan@example.com", registeredAt: "2025-05-12", status: "Pending" },
+  { id: 4, name: "Sneha Patel", email: "sneha@example.com", registeredAt: "2025-05-13", status: "Confirmed" },
+];
+
 const EventDetails = () => {
   const { eventId } = useParams();
   const { user } = useAuth();
   const isOrganizer = user?.roles?.includes(ROLES.ORGANIZER) || user?.roles?.includes(ROLES.ADMIN);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
 
-  const mockRegistrants = [
-    { id: 1, name: "Aarav Sharma", email: "aarav@example.com", registeredAt: "2025-05-10", status: "Confirmed" },
-    { id: 2, name: "Priya Mehta", email: "priya@example.com", registeredAt: "2025-05-11", status: "Confirmed" },
-    { id: 3, name: "Rohan Verma", email: "rohan@example.com", registeredAt: "2025-05-12", status: "Pending" },
-    { id: 4, name: "Sneha Patel", email: "sneha@example.com", registeredAt: "2025-05-13", status: "Confirmed" },
-  ];
   const { isRegistered } = useMyEvents();
   const foundEvent = mockEvents.find((item) => String(item.id) === eventId);
   const event = foundEvent
@@ -55,10 +57,15 @@ const EventDetails = () => {
       ...viewedEvents.filter((item) => item.id !== event.id),
     ].slice(0, 6);
 
-    localStorage.setItem(
-      "recentlyViewedEvents",
-      JSON.stringify(updatedEvents)
-    );
+    // FIX: Wrapped storage access in try-catch to prevent crashes
+    try {
+      localStorage.setItem(
+        "recentlyViewedEvents",
+        JSON.stringify(updatedEvents)
+      );
+    } catch (error) {
+      console.warn("[EventDetails] Failed to save recently viewed events:", error);
+    }
   }, [event]);
 
   if (!event) {
@@ -96,8 +103,6 @@ const EventDetails = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 py-16 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-8">
-
-        {/* Header */}
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="inline-flex rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-200 px-4 py-1 text-sm font-semibold uppercase tracking-[0.2em]">
@@ -135,67 +140,63 @@ const EventDetails = () => {
               </Link>
             )}
 
-  {/* Copy Link Button */}
-  <CopyLinkButton />
+            <CopyLinkButton />
 
-  <button
-    onClick={() => window.print()}
-    className="print-hide inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
-    aria-label="Print or save as PDF"
-  >
-    🖨️ Print / Save as PDF
-  </button>
+            <button
+              onClick={() => window.print()}
+              className="print-hide inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+              aria-label="Print or save as PDF"
+            >
+              🖨️ Print / Save as PDF
+            </button>
 
-  {isOrganizer && (
-    <div className="relative print-hide">
-      <button
-        onClick={() => setShowExportDropdown(!showExportDropdown)}
-        className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800 cursor-pointer"
-        aria-label="Export registrant data"
-      >
-        📥 Export Registrants
-      </button>
-      {showExportDropdown && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setShowExportDropdown(false)} />
-          <div className="absolute right-0 mt-2 w-40 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg py-1.5 z-20 animate-fadeIn text-left">
-            <button
-              onClick={() => {
-                exportToCSV(mockRegistrants, `${event.title}_registrants`);
-                setShowExportDropdown(false);
-              }}
-              className="w-full text-left px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+            {isOrganizer && (
+              <div className="relative print-hide">
+                <button
+                  onClick={() => setShowExportDropdown(!showExportDropdown)}
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+                  aria-label="Export registrant data"
+                >
+                  📥 Export Registrants
+                </button>
+                {showExportDropdown && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setShowExportDropdown(false)} />
+                    <div className="absolute right-0 mt-2 w-40 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg py-1.5 z-20 animate-fadeIn text-left">
+                      <button
+                        onClick={() => {
+                          exportToCSV(mockRegistrants, `${event.title}_registrants`);
+                          setShowExportDropdown(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                      >
+                        Export as CSV
+                      </button>
+                      <button
+                        onClick={() => {
+                          exportToJSON(mockRegistrants, `${event.title}_registrants`);
+                          setShowExportDropdown(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                      >
+                        Export as JSON
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            <Link
+              to="/events"
+              className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
             >
-              Export as CSV
-            </button>
-            <button
-              onClick={() => {
-                exportToJSON(mockRegistrants, `${event.title}_registrants`);
-                setShowExportDropdown(false);
-              }}
-              className="w-full text-left px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-            >
-              Export as JSON
-            </button>
+              Back to Events
+            </Link>
           </div>
-        </>
-      )}
-    </div>
-  )}
-
-  <Link
-    to="/events"
-    className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
-  >
-    Back to Events
-  </Link>
-</div>
         </div>
 
-        {/* Main Grid */}
         <div className="grid gap-8 lg:grid-cols-[1.25fr_0.75fr] items-start">
-
-          {/* Left - Image and Details */}
           <div className="space-y-6 rounded-3xl bg-white p-8 shadow-xl dark:bg-gray-900">
             <LazyImage
               src={event.image}
@@ -236,40 +237,13 @@ const EventDetails = () => {
                 </div>
               </div>
             </div>
-
-{event.status === 'past' && (
-  <EventMaterials materials={event.materials || [
-    {
-      "id": 1,
-      "title": `${event.title} - Presentation Slides`,
-      "type": "ppt",
-      "size": "3.2 MB",
-      "url": "https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF1"
-    },
-    {
-      "id": 2,
-      "title": `${event.title} - Session Notes`,
-      "type": "pdf",
-      "size": "1.5 MB",
-      "url": "https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF1"
-    },
-    {
-      "id": 3,
-      "title": `${event.title} - Resource Guide`,
-      "type": "doc",
-      "size": "0.8 MB",
-      "url": "https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF1"
-    }
-  ]} />
-)}
+            {event.status === 'past' && <EventMaterials materials={event.materials || []} />}
           </div>
 
-          {/* Right - Sidebar */}
           <aside className="space-y-6 rounded-3xl bg-white p-8 shadow-xl dark:bg-gray-900">
             <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
               <ReminderControls event={event} canSetReminder={canSetReminder} />
             </div>
-
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">Event Details</h2>
               <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
@@ -286,10 +260,7 @@ const EventDetails = () => {
               />
             </div>
           </aside>
-
         </div>
-
-        {/* PERSONALIZED RECOMMENDATIONS SECTION */}
         <div className="mt-12">
           <EventRecommendations currentEventId={event.id} currentCategory={event.category} />
         </div>
