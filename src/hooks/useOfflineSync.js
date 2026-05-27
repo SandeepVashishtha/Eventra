@@ -206,6 +206,7 @@ const useOfflineSync = () => {
 
           if (retries >= MAX_RETRIES) {
             droppedCount++;
+            failedQueue.push(item);
             continue;
           }
 
@@ -260,7 +261,7 @@ const useOfflineSync = () => {
 
         if (droppedCount > 0) {
           toast.error(
-            `${droppedCount} registration(s) dropped after ${MAX_RETRIES} attempts.`,
+            `${droppedCount} registration(s) paused after ${MAX_RETRIES} failed attempts. Retained in local drafts.`,
           );
         }
       } finally {

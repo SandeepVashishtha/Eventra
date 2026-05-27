@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import ConfirmationModal from "../common/ConfirmationModal";
 import {
   Plus, Minus, Trash2, Save, RotateCcw,
@@ -54,8 +60,9 @@ const checkCollision = (el1, el2) => {
   );
 };
 
-const FloorPlanDesigner = ({ eventId = "default" }) => {
+const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   const [elements, setElements] = useState([]);
+  const [lastSavedElementsStr, setLastSavedElementsStr] = useState("");
   const [selectedId, setSelectedId] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   
@@ -67,28 +74,63 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
 
   // References
   const canvasRef = useRef(null);
+  const animationFrameRef = useRef(null);
   const isDraggingRef = useRef(false);
   const isPanningRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
   const elementStartRef = useRef({ x: 0, y: 0 });
   const panStartRef = useRef({ x: 0, y: 0 });
 
+  const isDirty = !!(lastSavedElementsStr && JSON.stringify(elements) !== lastSavedElementsStr);
+
+  useEffect(() => {
+    if (onDirtyChange) {
+      onDirtyChange(isDirty);
+    }
+  }, [isDirty, onDirtyChange]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = "You have unsaved changes on your floor plan layout. Are you sure you want to leave?";
+        return e.returnValue;
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isDirty]);
+
   // Load layout from local storage or set preset
   useEffect(() => {
     const savedLayout = localStorage.getItem(`eventra_floorplan_${eventId}`);
+    let initialElements = [];
     if (savedLayout) {
       try {
-        setElements(JSON.parse(savedLayout));
+        initialElements = JSON.parse(savedLayout);
       } catch (e) {
-        setElements(PRESETS.banquet);
+        initialElements = PRESETS.banquet;
       }
     } else {
-      setElements(PRESETS.banquet);
+      initialElements = PRESETS.banquet;
     }
+    setElements(initialElements);
+    setLastSavedElementsStr(JSON.stringify(initialElements));
   }, [eventId]);
-
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
+  
   const saveLayout = () => {
-    localStorage.setItem(`eventra_floorplan_${eventId}`, JSON.stringify(elements));
+    const serialized = JSON.stringify(elements);
+    localStorage.setItem(`eventra_floorplan_${eventId}`, serialized);
+    setLastSavedElementsStr(serialized);
     toast.success("Venue floor plan successfully saved!");
   };
 
@@ -390,12 +432,19 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
       newX = Math.max(10, Math.min(990, newX));
       newY = Math.max(10, Math.min(990, newY));
 
-      setElements(elements.map(el => {
-        if (el.id === selectedId) {
-          return { ...el, x: newX, y: newY };
-        }
-        return el;
-      }));
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+
+      animationFrameRef.current = requestAnimationFrame(() => {
+        setElements((prev) =>
+          prev.map((el) =>
+            el.id === selectedId
+              ? { ...el, x: newX, y: newY }
+              : el
+          )
+        );
+      });
     }
   };
 
@@ -404,10 +453,12 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
     isPanningRef.current = false;
   };
 
-  const activeElement = elements.find(el => el.id === selectedId);
+  const activeElement = useMemo(() => {
+    return elements.find(el => el.id === selectedId);
+  }, [elements, selectedId]);
 
   // Math calculation of seat position around tables
-  const getSeatPositions = (el) => {
+  const getSeatPositions = useCallback((el) => {
     const positions = [];
     const count = el.seatsCount;
     if (count <= 0) return positions;
@@ -471,21 +522,41 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
       }
     }
     return positions;
-  };
+  }, []);
 
   // Get seats calculation count statistics
-  const totalOccupiedSeats = elements.reduce((acc, el) => {
-    return acc + Object.keys(el.assignedAttendees || {}).length;
-  }, 0);
+  const totalOccupiedSeats = useMemo(() => {
+    return elements.reduce((acc, el) => {
+      return acc + Object.keys(el.assignedAttendees || {}).length;
+    }, 0);
+  }, [elements]);
 
-  const totalMaxSeats = elements.reduce((acc, el) => {
-    return acc + (el.seatsCount || 0);
-  }, 0);
+  const totalMaxSeats = useMemo(() => {
+    return elements.reduce((acc, el) => {
+      return acc + (el.seatsCount || 0);
+    }, 0);
+  }, [elements]);
 
   // Computes whether there is ANY overlap / collision currently detected on the canvas
-  const anyCollision = elements.some(el =>
-    elements.some(other => other.id !== el.id && checkCollision(el, other))
-  );
+  const collisionMap = useMemo(() => {
+    const collisions = new Map();
+
+    for (let i = 0; i < elements.length; i++) {
+      for (let j = i + 1; j < elements.length; j++) {
+        const el1 = elements[i];
+        const el2 = elements[j];
+
+        if (checkCollision(el1, el2)) {
+          collisions.set(el1.id, true);
+          collisions.set(el2.id, true);
+        }
+      }
+    }
+
+    return collisions;
+  }, [elements]);
+
+  const anyCollision = collisionMap.size > 0;
 
   return (
     <div className="fp-container">
@@ -717,7 +788,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
             {/* Elements render */}
             {elements.map((el) => {
               const isSelected = el.id === selectedId;
-              const isColliding = elements.some(other => other.id !== el.id && checkCollision(el, other));
+              const isColliding = collisionMap.has(el.id);
 
               // 2.5D visual projection offsets
               const projOffset = 10;

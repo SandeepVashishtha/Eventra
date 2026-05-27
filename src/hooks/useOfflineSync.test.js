@@ -99,4 +99,34 @@ describe('useOfflineSync', () => {
     // Our fix should complete it in under 500ms.
     expect(duration).toBeLessThan(500);
   });
+
+  it('preserves items with retryCount >= MAX_RETRIES in the offline queue instead of deleting them', async () => {
+    const queue = [
+      { id: '1', retryCount: 3, endpoint: '/api/register/1', payload: {} },
+    ];
+    getQueueIndexedDB.mockResolvedValue(queue);
+
+    const TestComponent = () => {
+      useOfflineSync();
+      return null;
+    };
+
+    act(() => {
+      root = createRoot(container);
+      root.render(<TestComponent />);
+    });
+
+    await act(async () => {
+      window.dispatchEvent(new Event('online'));
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
+
+    // Verify fetch was NOT called because retryCount >= 3
+    expect(global.fetch).not.toHaveBeenCalled();
+    // Verify setQueue was called to preserve the item
+    expect(setQueue).toHaveBeenCalledWith(expect.arrayContaining([
+      expect.objectContaining({ id: '1', retryCount: 3 })
+    ]));
+    expect(clearQueue).not.toHaveBeenCalled();
+  });
 });

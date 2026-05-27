@@ -49,7 +49,7 @@ export default async function handler(req, res) {
     }
   });
 
-  const token = process.env.GITHUB_TOKEN || process.env.REACT_APP_GITHUB_TOKEN;
+  const token = process.env.GITHUB_TOKEN;
 
   try {
     const fetchRes = await fetch(url.toString(), {
