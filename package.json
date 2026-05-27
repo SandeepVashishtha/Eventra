@@ -3,10 +3,15 @@
   "version": "1.0.0",
   "description": "A modern website for Eventra - platform for builders",
   "private": true,
+  "engines": {
+    "node": ">=20.19.0",
+    "npm": ">=9.6.4"
+  },
   "dependencies": {
     "@headlessui/react": "^2.2.8",
     "@heroicons/react": "^2.0.16",
     "@react-oauth/google": "^0.13.5",
+    "@sentry/react": "^10.54.0",
     "@studio-freight/lenis": "^1.0.42",
     "@tailwindcss/postcss": "4.3.0",
     "aos": "^2.3.4",
@@ -15,7 +20,7 @@
     "crypto-js": "^4.2.0",
     "date-fns": "^4.3.0",
     "dompurify": "3.4.6",
-    "framer-motion": "^12.40.0",
+    "framer-motion": "11.18.2",
     "fuse.js": "^7.1.0",
     "html2canvas": "^1.4.1",
     "jsdom": "29.1.1",
@@ -35,8 +40,7 @@
     "react-router-dom": "^7.15.1",
     "react-scripts": "^5.0.1",
     "react-toastify": "^11.1.0",
-    "recharts": "^3.8.1",
-    "@sentry/react": "^10.54.0"
+    "recharts": "^3.8.1"
   },
   "scripts": {
     "dev": "set DISABLE_ESLINT_PLUGIN=true && react-scripts start",

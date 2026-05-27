@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   FaGithub,
   FaExternalLinkAlt,
@@ -12,17 +12,24 @@ import { motion } from "framer-motion";
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { ContributorCardSkeleton } from "./common/SkeletonLoaders";
 import FeatureErrorBoundary from "./common/FeatureErrorBoundary";
-import {
-  storageManager,
-  STORAGE_KEYS,
-  validators,
-} from "../utils/storage/storageManager";
+import { storageManager } from "../utils/storage/storageManager";
+import { STORAGE_KEYS } from "../utils/storage/storageKeys";
+import { validators } from "../utils/storage/storageValidators";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
 const REQUEST_TIMEOUT = 10000;
 const MAX_CONTRIBUTOR_PAGES = 10;
+const PROFILE_FETCH_DELAY_MS = 100; // Throttle profile API calls to avoid rate limiting
+
+let profileFetchCounter = 0;
+const throttleProfileFetch = async () => {
+  profileFetchCounter++;
+  if (profileFetchCounter % 5 === 0) {
+    await new Promise(resolve => setTimeout(resolve, PROFILE_FETCH_DELAY_MS));
+  }
+};
 
 const fetchJsonWithTimeout = async (url) => {
   const controller = new AbortController();
@@ -92,9 +99,12 @@ const Contributors = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const fetchControllerRef = useRef(null);
+  const isFetchingRef = useRef(false);
 
   // Fetch GitHub profile details
   const fetchGitHubProfile = useCallback(async (username) => {
+    await throttleProfileFetch();
     if (!username) {
       return {
         followers: 0,
@@ -132,12 +142,22 @@ const Contributors = () => {
 
   // Fetch contributors
   const fetchContributors = useCallback(async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     setLoading(true);
     setError("");
+
+    // Cancel any in-flight request
+    if (fetchControllerRef.current) {
+      fetchControllerRef.current.abort();
+    }
+    fetchControllerRef.current = new AbortController();
+
     const cached = getCachedContributors();
     if (cached) {
       setContributors(cached);
       setLoading(false);
+      isFetchingRef.current = false;
       return;
     }
 
@@ -168,6 +188,7 @@ const Contributors = () => {
 
       if (allContributors.length === 0) {
         setContributors([]);
+        isFetchingRef.current = false;
         return;
       }
 
@@ -186,6 +207,7 @@ const Contributors = () => {
       setContributors(enhanced);
       cacheContributors(enhanced);
     } catch (err) {
+      if (err.name === "AbortError") return;
       setError(
         err?.name === "AbortError"
           ? "GitHub took too long to respond. Please try again."
@@ -194,6 +216,7 @@ const Contributors = () => {
       setContributors([]);
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
   }, [fetchGitHubProfile]);
 
@@ -320,7 +343,7 @@ const Contributors = () => {
                       width="80"
                       height="80"
                       src={c.avatar_url}
-                      alt={`${c.login}'s GitHub avatar`}
+                      alt={`${c.name || c.login || "Contributor"}'s GitHub profile picture`}
                       className="w-20 h-20 rounded-full border-4 border-black shadow-xl"
                     />
                     <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 blur-md"></div>

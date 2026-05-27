@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 const STORAGE_KEY = 'eventra_recently_viewed';
 const MAX_ITEMS = 10;
@@ -25,7 +26,9 @@ const useRecentlyViewed = () => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        setRecentlyViewed(JSON.parse(stored));
+        setRecentlyViewed(
+          safeJsonParse(stored, []),
+        );
       }
     } catch (err) {
       console.error('Failed to load recently viewed events:', err);

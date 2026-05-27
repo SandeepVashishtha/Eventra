@@ -30,6 +30,7 @@ import {
   generateGoogleCalendarLink,
   generateOutlookLink,
 } from "../../utils/calendarExporter";
+import { safeParseJson } from "../../utils/jsonUtils";
 
 const EventDetails = () => {
   const { eventId } = useParams();
@@ -54,10 +55,7 @@ const EventDetails = () => {
   useEffect(() => {
     if (!event) return;
 
-    const viewedEvents =
-      JSON.parse(
-        localStorage.getItem("recentlyViewedEvents")
-      ) || [];
+    const viewedEvents = safeParseJson(localStorage.getItem("recentlyViewedEvents"), []);
 
     const updatedEvents = [
       event,
