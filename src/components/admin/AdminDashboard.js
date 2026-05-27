@@ -17,6 +17,7 @@ import {
 import StatusBadge from "../common/StatusBadge";
 import './AdminDashboard.css';
 import AnalyticsDashboard from './AnalyticsDashboard';
+import SectionErrorBoundary from '../common/SectionErrorBoundary';
 import { toast } from 'react-toastify';
 
 import { ROLES,PERMISSIONS } from "../../config/roles";
@@ -590,7 +591,9 @@ const AdminDashboard = () => {
 
                 {/* Dynamic Analytics Dashboard */}
                 <div style={{ marginTop: '1.5rem' }}>
-                  <AnalyticsDashboard />
+                  <SectionErrorBoundary label="Analytics Dashboard">
+                    <AnalyticsDashboard />
+                  </SectionErrorBoundary>
                 </div>
               </motion.div>
             )}

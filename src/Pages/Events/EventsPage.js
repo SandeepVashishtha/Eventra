@@ -20,6 +20,7 @@ import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
 import { getRouteSearchResults } from "../../utils/searchUtils";
+import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
 
 
 
@@ -261,23 +262,25 @@ const EventsPage = () => {
           setViewMode={listing.setViewMode}
         />
 
-        {renderCardSection(
-          listing.isLoading,
-          listing.paginatedEvents,
-          listing.viewMode,
-          listing.searchQuery,
-          clearSearchAndFilters
-        )}
+        <SectionErrorBoundary label="Events">
+          {renderCardSection(
+            listing.isLoading,
+            listing.paginatedEvents,
+            listing.viewMode,
+            listing.searchQuery,
+            clearSearchAndFilters
+          )}
 
-        {!listing.isLoading && listing.totalPages > 1 && (
-          <div className="mt-8 flex justify-center">
-            <PaginationControls
-              currentPage={listing.currentPage}
-              totalPages={listing.totalPages}
-              onPageChange={listing.setSafePage}
-            />
-          </div>
-        )}
+          {!listing.isLoading && listing.totalPages > 1 && (
+            <div className="mt-8 flex justify-center">
+              <PaginationControls
+                currentPage={listing.currentPage}
+                totalPages={listing.totalPages}
+                onPageChange={listing.setSafePage}
+              />
+            </div>
+          )}
+        </SectionErrorBoundary>
       </div>
 
       <EventCTA />

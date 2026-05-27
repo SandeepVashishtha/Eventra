@@ -3,7 +3,6 @@ import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from '../config/api
 import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
 import { toast } from 'react-toastify';
 import { ROLES } from '../config/roles';
-import { clearQueue } from '../utils/offlineQueue';
 import { decodeJwtPayload } from '../utils/auth';
 
 

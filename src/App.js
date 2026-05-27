@@ -26,6 +26,7 @@ import { NotificationProvider } from "./context/NotificationContext";
 import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
 import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
+import SectionErrorBoundary from "./components/common/SectionErrorBoundary";
 
 import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
@@ -142,35 +143,37 @@ function App() {
                 "
               >
                 <PageTransition>
-                  <Suspense
-                    fallback={
-                      <div className="flex items-center justify-center min-h-screen">
-                        Loading...
-                      </div>
-                    }
-                  >
-                    <Routes>
-                      {/* Registration writes user-specific data and must stay behind auth. */}
-                      <Route
-                        path="/register/:id"
-                        element={
-                          <ProtectedRoute>
-                            <RegistrationPage />
-                          </ProtectedRoute>
-                        }
-                      />
+                  <SectionErrorBoundary label="Page Content">
+                    <Suspense
+                      fallback={
+                        <div className="flex items-center justify-center min-h-screen">
+                          Loading...
+                        </div>
+                      }
+                    >
+                      <Routes>
+                        {/* Registration writes user-specific data and must stay behind auth. */}
+                        <Route
+                          path="/register/:id"
+                          element={
+                            <ProtectedRoute>
+                              <RegistrationPage />
+                            </ProtectedRoute>
+                          }
+                        />
 
-                      <Route
-                        path="/event-recommendation"
-                        element={<EventRecommendation />}
-                      />
+                        <Route
+                          path="/event-recommendation"
+                          element={<EventRecommendation />}
+                        />
 
-                      <Route
-                        path="*"
-                        element={<AppRoutes />}
-                      />
-                    </Routes>
-                  </Suspense>
+                        <Route
+                          path="*"
+                          element={<AppRoutes />}
+                        />
+                      </Routes>
+                    </Suspense>
+                  </SectionErrorBoundary>
                 </PageTransition>
               </main>
 
