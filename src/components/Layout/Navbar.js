@@ -253,16 +253,22 @@ const DesktopNavLink = ({ item, isActive, onClick }) => (
   <Link
     to={item.href}
     onClick={onClick}
-    className={`relative group text-[13px] font-semibold transition-all duration-200 whitespace-nowrap px-3.5 py-1.5 rounded-lg border ${
+    className={`relative text-[13px] font-semibold transition-colors duration-200 whitespace-nowrap px-3.5 py-1.5 rounded-lg ${
       isActive
-        ? "text-indigo-600 dark:text-indigo-400 bg-indigo-100/70 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 shadow-sm"
-        : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50 border-transparent"
+        ? "text-indigo-700 dark:text-indigo-300"
+        : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
     }`}
+    style={
+      isActive
+        ? {
+            backgroundColor: 'rgba(99, 102, 241, 0.12)',
+            border: '1.5px solid rgba(99, 102, 241, 0.45)',
+            boxShadow: '0 0 0 3px rgba(99, 102, 241, 0.08)',
+          }
+        : { border: '1.5px solid transparent' }
+    }
   >
     {item.name}
-    {isActive && (
-      <span className="absolute bottom-0 left-3 right-3 h-[2px] rounded-full bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1px]" />
-    )}
   </Link>
 );
 
@@ -285,11 +291,20 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
       <button
         ref={btnRef}
         onClick={onToggle}
-        className={`relative group flex items-center gap-1 text-[12px] xl:text-[13px] font-semibold transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-lg border ${
+        className={`relative group flex items-center gap-1 text-[12px] xl:text-[13px] font-semibold transition-colors duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-lg ${
           isActive || isOpen
-            ? "text-indigo-600 dark:text-indigo-400 bg-indigo-100/70 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 shadow-sm"
-            : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50 border-transparent"
+            ? "text-indigo-700 dark:text-indigo-300"
+            : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
         }`}
+        style={
+          isActive || isOpen
+            ? {
+                backgroundColor: 'rgba(99, 102, 241, 0.12)',
+                border: '1.5px solid rgba(99, 102, 241, 0.45)',
+                boxShadow: '0 0 0 3px rgba(99, 102, 241, 0.08)',
+              }
+            : { border: '1.5px solid transparent' }
+        }
       >
         <span className="relative z-10 flex items-center gap-1">
           {item.name}
