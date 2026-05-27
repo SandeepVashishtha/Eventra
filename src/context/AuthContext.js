@@ -5,6 +5,11 @@ import { toast } from 'react-toastify';
 import { ROLES } from '../config/roles';
 import { clearQueue } from '../utils/offlineQueue';
 import { decodeJwtPayload } from '../utils/auth';
+import {
+  getToken as getStoredToken,
+  removeToken as removeStoredToken,
+  setToken as persistStoredToken,
+} from '../utils/secureStorage';
 
 
 const AuthContext = createContext();
@@ -19,7 +24,7 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
+  const [token, setAuthToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Ref-based flag so isAuthenticated() can request cleanup without
@@ -30,8 +35,8 @@ export const AuthProvider = ({ children }) => {
   // Centralized session cleanup — clears both React state and secure storage.
   const clearSession = useCallback(() => {
     setUser(null);
-    setToken(null);
-    sessionStorage.removeItem("token");
+    setAuthToken(null);
+    removeStoredToken();
     localStorage.removeItem("user");
   }, []);
 
@@ -51,13 +56,13 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check for existing authentication on app start
-    const storedToken = sessionStorage.getItem("token");
+    const storedToken = getStoredToken();
     const storedUser = localStorage.getItem("user");
 
     if (storedToken && storedUser) {
       // --- SECURITY: Validate token before restoring session ---
       if (isTokenValid(storedToken)) {
-        setToken(storedToken);
+        setAuthToken(storedToken);
         try {
           const parsedUser = JSON.parse(storedUser);
 
@@ -191,9 +196,11 @@ export const AuthProvider = ({ children }) => {
    * @param {object} sessionUser  - Normalised user profile object
    */
   const persistSession = (sessionToken, sessionUser) => {
-    // Write the JWT via secureStorage — sessionStorage, tab-scoped
-    setToken(sessionToken);
+    // Keep the API client's Authorization header source in sync with React
+    // state. A previous name collision called only the state setter here.
+    persistStoredToken(sessionToken);
     // Update React state
+    setAuthToken(sessionToken);
     setUser(sessionUser);
     try {
       // Store the non-sensitive user profile for UI personalisation across sessions
