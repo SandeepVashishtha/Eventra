@@ -71,6 +71,16 @@ const ConfirmationModal = ({
     };
   }, [isOpen, onClose]);
 
+  useEffect(() => {
+  document.body.style.overflow =
+    "hidden";
+
+  return () => {
+    document.body.style.overflow =
+      "";
+  };
+}, []);
+
   if (!isOpen) return null;
 
   const handleOverlayClick = (e) => {

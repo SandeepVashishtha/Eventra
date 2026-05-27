@@ -1,4 +1,5 @@
 const SAFE_GITHUB_PATH_PATTERNS = [
+  /^\/repos\/[^/?#]+\/[^/?#]+$/,
   /^\/repos\/[^/?#]+\/[^/?#]+\/contributors$/,
   /^\/repos\/[^/?#]+\/[^/?#]+\/pulls$/,
   /^\/users\/[^/?#]+$/,
@@ -49,7 +50,7 @@ export default async function handler(req, res) {
     }
   });
 
-  const token = process.env.GITHUB_TOKEN || process.env.REACT_APP_GITHUB_TOKEN;
+  const token = process.env.GITHUB_TOKEN;
 
   try {
     const fetchRes = await fetch(url.toString(), {

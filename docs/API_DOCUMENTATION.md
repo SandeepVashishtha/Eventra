@@ -12,6 +12,8 @@ The APIs support:
 - Structured error handling
 - Swagger/OpenAPI integration
 
+**For detailed information on authentication flows, role-based access control, and how permissions work, see the [Architecture & Roles Guide](ARCHITECTURE_AND_ROLES.md#-route-protection--authentication-flow).**
+
 ---
 
 # Swagger/OpenAPI Documentation
@@ -81,6 +83,24 @@ POST /api/auth/login
 
 ---
 
+## Alternative: Google OAuth Login
+
+### Endpoint
+
+```bash
+POST /api/auth/google
+```
+
+### Request Body
+
+```json
+{
+  "credential": "GOOGLE_ID_TOKEN_FROM_GOOGLE_OAUTH"
+}
+```
+
+---
+
 ## Step 3 — Copy JWT Token
 
 Successful login returns:
@@ -135,6 +155,86 @@ Creates a new user account and returns a JWT token.
 | POST | `/api/auth/login` |
 
 Authenticates the user and returns a JWT token.
+
+### Request Body
+
+```json
+{
+  "usernameOrEmail": "john@example.com",
+  "password": "password123"
+}
+```
+
+### Successful Response (200)
+
+```json
+{
+  "message": "Login successful",
+  "token": "JWT_TOKEN",
+  "tokenType": "Bearer",
+  "id": 1,
+  "firstName": "john",
+  "lastName": "doe",
+  "email": "john@example.com",
+  "username": "john",
+  "role": "ATTENDEE",
+  "roles": ["USER"],
+  "permissions": ["events:view", "events:register", ...]
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `400 Bad Request` | Missing username/email or password |
+| `401 Unauthorized` | Invalid credentials |
+
+---
+
+## Google OAuth Login
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/auth/google` |
+
+Authenticates the user via Google OAuth and returns a JWT token. Creates a new user if they don't exist.
+
+### Request Body
+
+```json
+{
+  "credential": "GOOGLE_ID_TOKEN"
+}
+```
+
+### Successful Response (200)
+
+```json
+{
+  "message": "Login successful via Google",
+  "token": "JWT_TOKEN",
+  "tokenType": "Bearer",
+  "id": 1,
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john@example.com",
+  "username": "john@example.com",
+  "role": "ATTENDEE",
+  "roles": ["USER"],
+  "permissions": ["events:view", "events:register", ...],
+  "avatarUrl": "https://lh3.googleusercontent.com/...",
+  "emailVerified": true,
+  "provider": "google"
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `400 Bad Request` | Missing Google credential |
+| `401 Unauthorized` | Invalid or expired Google token |
 
 ---
 

@@ -115,7 +115,6 @@ const EventsPage = () => {
     const filter = searchParams.get("filter") || "all";
     const sort = searchParams.get("sort") || "Newest";
     const view = searchParams.get("view") || "grid";
-    
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

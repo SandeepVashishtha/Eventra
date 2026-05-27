@@ -13,6 +13,9 @@ import { RealTimeProvider } from "./context/RealTimeContext";
 // Initialize Global Runtime Monitoring
 initializeGlobalErrorHandling();
 
+// Unregister service worker early to avoid caching conflicts
+serviceWorkerRegistration.unregister();
+
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
@@ -31,4 +34,4 @@ root.render(
   </React.StrictMode>
 );
 
-serviceWorkerRegistration.unregister();
+
