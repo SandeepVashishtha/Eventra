@@ -35,6 +35,25 @@ import {
 } from "../../utils/bookmarkUtils";
 import { checkRegistrationConflict } from "../../utils/conflictDetection";
 
+const getCapacityStyles = (ratio, isFull) => {
+  if (isFull || ratio >= 0.85) {
+    return {
+      barColor: "bg-red-500",
+      textColor: "text-red-600 dark:text-red-400",
+    };
+  }
+  if (ratio >= 0.6) {
+    return {
+      barColor: "bg-amber-500",
+      textColor: "text-amber-600 dark:text-amber-400",
+    };
+  }
+  return {
+    barColor: "bg-emerald-500",
+    textColor: "text-emerald-600 dark:text-emerald-400",
+  };
+};
+
 const EventCard = ({ event }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const titleId = useId();
@@ -331,21 +350,7 @@ const EventCard = ({ event }) => {
         const percent = Math.round(ratio * 100);
         const spotsLeft = Math.max(capacity - registered, 0);
 
-        const barColor = isFull
-          ? "bg-red-500"
-          : ratio >= 0.85
-            ? "bg-red-500"
-            : ratio >= 0.6
-              ? "bg-amber-500"
-              : "bg-emerald-500";
-
-        const textColor = isFull
-          ? "text-red-600 dark:text-red-400"
-          : ratio >= 0.85
-            ? "text-red-600 dark:text-red-400"
-            : ratio >= 0.6
-              ? "text-amber-600 dark:text-amber-400"
-              : "text-emerald-600 dark:text-emerald-400";
+        const { barColor, textColor } = getCapacityStyles(ratio, isFull);
 
         return (
           <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
