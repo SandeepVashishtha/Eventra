@@ -5,8 +5,7 @@ import { createPortal } from "react-dom";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
-import ConfirmationModal from "../common/ConfirmationModal";
-import { toast } from "react-toastify";
+
 import { UserCog } from "lucide-react";
 import {
   Home,
@@ -34,7 +33,7 @@ import {
   Search,
   Palette,
 } from "lucide-react";
-import CommandPalette from "../common/CommandPalette";
+
 
 // --- Helpers to reduce complexity ---
 const getUserDisplayNames = (user) => {

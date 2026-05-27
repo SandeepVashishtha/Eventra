@@ -23,6 +23,8 @@
  */
 import { safeJsonParse } from "./safeJsonParse";
 
+import { safeJsonParse } from "./safeJsonParse.js";
+
 /** Grace period (in seconds) to account for clock skew between browser and server. */
 const CLOCK_SKEW_BUFFER = 30;
 
