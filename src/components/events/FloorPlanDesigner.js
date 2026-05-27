@@ -605,22 +605,29 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   }, [elements]);
 
   // Computes whether there is ANY overlap / collision currently detected on the canvas
-  const collisionMap = useMemo(() => {
-    const collisions = new Map();
+  // FIX: Debounced O(N^2) collision calculation to prevent main-thread lag during drag
+  const [collisionMap, setCollisionMap] = useState(new Map());
 
-    for (let i = 0; i < elements.length; i++) {
-      for (let j = i + 1; j < elements.length; j++) {
-        const el1 = elements[i];
-        const el2 = elements[j];
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const collisions = new Map();
 
-        if (checkCollision(el1, el2)) {
-          collisions.set(el1.id, true);
-          collisions.set(el2.id, true);
+      for (let i = 0; i < elements.length; i++) {
+        for (let j = i + 1; j < elements.length; j++) {
+          const el1 = elements[i];
+          const el2 = elements[j];
+
+          if (checkCollision(el1, el2)) {
+            collisions.set(el1.id, true);
+            collisions.set(el2.id, true);
+          }
         }
       }
-    }
 
-    return collisions;
+      setCollisionMap(collisions);
+    }, 150);
+
+    return () => clearTimeout(timeoutId);
   }, [elements]);
 
   const anyCollision = collisionMap.size > 0;

@@ -138,32 +138,26 @@ function App() {
                   dark:text-white
                   transition-colors
                   duration-300
-                "
-                >
-                  <PageTransition>
-                    <SectionErrorBoundary label="Page Content">
-                      <Suspense
-                        fallback={
-                          <div className="flex items-center justify-center min-h-screen">
-                            Loading...
-                          </div>
-                        }
-                      >
-                        <Routes>
-                          {/* Registration writes user-specific data and must stay behind auth. */}
-                          <Route
-                            path="/register/:id"
-                            element={
-                              <ProtectedRoute>
-                                <RegistrationPage />
-                              </ProtectedRoute>
-                            }
-                          />
-                          <Route path="/saved" element={<SavedEventsPage />} />
-                          <Route
-                            path="/event-recommendation"
-                            element={<EventRecommendation />}
-                          />
+                ">
+              <PageTransition>
+  <Suspense
+    fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        Loading...
+      </div>
+    }
+  >
+    <Routes>
+
+      <Route
+        path="/register/:id"
+        element={<RegistrationPage />}
+      />
+
+      <Route
+        path="/event-recommendation"
+        element={<EventRecommendation />}
+      />
 
                           <Route path="/event-recommendation" element={<EventRecommendation />} />
 

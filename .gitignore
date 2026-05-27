@@ -16,7 +16,6 @@ build
 
 /.metadata/
 backend/azure-environment-variables.json
-
 GITHUB_ISSUE_ASYNC_VALIDATION.md
 PHASE_1_COMPLETION_SUMMARY.md
 PHASE_1_IMPLEMENTATION_GUIDE.md

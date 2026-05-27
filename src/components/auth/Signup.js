@@ -243,7 +243,6 @@ const Signup = () => {
       // TODO: Implement OAuth flow
       // const { url } = await apiUtils.get(`${API_ENDPOINTS.AUTH.OAUTH}/${provider}`);
       // window.location.href = url;
-      console.log(`Social login initiated: ${provider}`);
     } catch (err) {
       setErrors(prev => ({ ...prev, submit: `Failed to connect with ${provider}` }));
     } finally {

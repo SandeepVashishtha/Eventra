@@ -8,6 +8,7 @@ import ProjectCTA from "./ProjectCTA";
 
 import mockProjects from "./mockProjectsData.json";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 
 // Modern custom styled search input
@@ -77,12 +78,8 @@ const ProjectGallery = () => {
   const [sortOpen, setSortOpen] = useState(false);
 
   const [bookmarks, setBookmarks] = useState(() => {
-    try {
-      const saved = localStorage.getItem("eventra_bookmarked_projects");
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
+    const saved = localStorage.getItem("eventra_bookmarked_projects");
+    return safeJsonParse(saved, []);
   });
 
   const handleBookmarkToggle = (projectId) => {

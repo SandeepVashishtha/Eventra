@@ -251,8 +251,7 @@ const EventRegistration = () => {
     // Quick UX hint based on the latest visible event snapshot.
     const isFull = await checkEventCapacity(eventId, event);
     if (isFull) {
-      toast.error("This event is currently full. Registration may no longer be available.");
-      return;
+      toast.info("This event is full. You will be added to the waitlist.");
     }
 
     // Check for scheduling conflicts

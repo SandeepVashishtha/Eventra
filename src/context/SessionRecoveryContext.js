@@ -1,11 +1,31 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import CryptoJS from "crypto-js";
 import { safeJsonParse } from "../utils/safeJsonParse";
 import { logger } from "../utils/logger";
+import { sanitizeSessionState } from "../utils/sessionSanitization";
 
 const SessionRecoveryContext = createContext();
 
 const SESSION_KEY = "eventra_session_state";
 const SESSION_TIMEOUT = 30 * 60 * 1000;
+const RECOVERY_KEY_NAME = "eventra_session_recovery_key";
+
+const getOrCreateSessionKey = () => {
+  if (typeof window === "undefined" || !window.sessionStorage) {
+    return null;
+  }
+  try {
+    let key = sessionStorage.getItem(RECOVERY_KEY_NAME);
+    if (!key) {
+      key = CryptoJS.lib.WordArray.random(32).toString();
+      sessionStorage.setItem(RECOVERY_KEY_NAME, key);
+    }
+    return key;
+  } catch (e) {
+    logger.error("Failed to manage session-bound recovery key:", e);
+    return null;
+  }
+};
 
 export const useSessionRecovery = () => {
   const context = useContext(SessionRecoveryContext);
@@ -64,28 +84,43 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   useEffect(() => {
     try {
+      const key = getOrCreateSessionKey();
       const saved = localStorage.getItem(SESSION_KEY);
-      if (saved) {
-        const parsed = safeJsonParse(
-          saved,
-          {},
-        );
-        const now = Date.now();
+      if (saved && key) {
+        let decryptedStr = null;
+        try {
+          const bytes = CryptoJS.AES.decrypt(saved, key);
+          decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
+        } catch (decryptError) {
+          logger.error("Decryption of session recovery state failed (invalid key or tampered state):", decryptError);
+          localStorage.removeItem(SESSION_KEY);
+          return;
+        }
 
-        const isValidTimestamp =
-          parsed &&
-          parsed.timestamp &&
-          typeof parsed.timestamp === "number" &&
-          !isNaN(parsed.timestamp) &&
-          parsed.timestamp > 0;
+        if (decryptedStr) {
+          const parsed = safeJsonParse(decryptedStr, {});
+          const now = Date.now();
 
-        if (isValidTimestamp && now - parsed.timestamp < SESSION_TIMEOUT) {
-          setSessionData(parsed);
-          setHasSession(true);
-          setShowRecoveryPrompt(true);
+          const isValidTimestamp =
+            parsed &&
+            parsed.timestamp &&
+            typeof parsed.timestamp === "number" &&
+            !isNaN(parsed.timestamp) &&
+            parsed.timestamp > 0;
+
+          if (isValidTimestamp && now - parsed.timestamp < SESSION_TIMEOUT) {
+            setSessionData(parsed);
+            setHasSession(true);
+            setShowRecoveryPrompt(true);
+          } else {
+            localStorage.removeItem(SESSION_KEY);
+          }
         } else {
           localStorage.removeItem(SESSION_KEY);
         }
+      } else if (saved) {
+        // Ciphertext exists but key is absent (e.g. new tab/session), clean up persistently stored data
+        localStorage.removeItem(SESSION_KEY);
       }
     } catch (e) {
       logger.error("Failed to load session:", e);
@@ -99,12 +134,25 @@ export const SessionRecoveryProvider = ({ children }) => {
 
     saveTimeoutRef.current = setTimeout(() => {
       try {
+        const key = getOrCreateSessionKey();
+        if (!key) {
+          logger.warn("No session key available — skipping session recovery cache");
+          return;
+        }
+
+        // Recursively sanitize state to redact/strip any tokens, passwords, or JWT structures
+        const sanitizedState = sanitizeSessionState(state);
+
         const currentSession = {
-          ...state,
+          ...sanitizedState,
           timestamp: Date.now(),
           lastActivity: lastActivityRef.current,
         };
-        localStorage.setItem(SESSION_KEY, JSON.stringify(currentSession));
+
+        // Encrypt the state before persistently writing it to localStorage
+        const ciphertext = CryptoJS.AES.encrypt(JSON.stringify(currentSession), key).toString();
+
+        localStorage.setItem(SESSION_KEY, ciphertext);
         setSessionData(currentSession);
         setHasSession(true);
       } catch (e) {
