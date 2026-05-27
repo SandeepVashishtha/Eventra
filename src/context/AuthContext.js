@@ -168,17 +168,42 @@ export const AuthProvider = ({ children }) => {
     };
   }, [token, clearExpiredSession]);
 
+  /**
+   * persistSession
+   *
+   * Saves the authenticated session after a successful login.
+   *
+   * Token storage responsibility
+   * ────────────────────────────
+   * setToken() (from secureStorage.js) is the single source of truth for
+   * writing the JWT to sessionStorage. Calling sessionStorage.setItem("token")
+   * directly here would:
+   *   1. Duplicate the write — both setToken() and the inline call would
+   *      store the same value, bypassing the secureStorage abstraction layer.
+   *   2. Create a silent inconsistency if secureStorage.js is ever changed
+   *      to use a different storage key or storage type (e.g. cookies) —
+   *      the direct call here would keep writing to the old location.
+   *
+   * The user profile (non-sensitive) remains in localStorage so it survives
+   * tab close and is available for UI personalisation on next visit.
+   *
+   * @param {string} sessionToken - Eventra-issued JWT from the backend
+   * @param {object} sessionUser  - Normalised user profile object
+   */
   const persistSession = (sessionToken, sessionUser) => {
+    // Write the JWT via secureStorage — sessionStorage, tab-scoped
     setToken(sessionToken);
+    // Update React state
     setUser(sessionUser);
     try {
-      sessionStorage.setItem("token", sessionToken);
+      // Store the non-sensitive user profile for UI personalisation across sessions
       localStorage.setItem("user", JSON.stringify(sessionUser));
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('Error persisting session:', error);
+      console.error('[AuthContext] Error persisting user profile:', error);
     }
   };
+
   const normalizeRoles = (roles = []) => {
     return roles.map((role) => {
       const normalized = String(role).toUpperCase();
