@@ -5,6 +5,9 @@ import { createPortal } from "react-dom";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "react-toastify";
+import ConfirmationModal from "../common/ConfirmationModal";
+import CommandPalette from "../common/CommandPalette";
 
 import { UserCog } from "lucide-react";
 import {
