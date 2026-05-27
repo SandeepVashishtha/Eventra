@@ -31,15 +31,28 @@ const validateLoginInput = (usernameOrEmail, password) => {
 // CORS Headers
 // ---------------------------------------------------------------------------
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": process.env.ALLOWED_ORIGIN || "*",
-  "Access-Control-Allow-Credentials": "true",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+const corsHeaders = (req) => {
+  const allowedOrigin = process.env.ALLOWED_ORIGIN;
+  const requestOrigin = req.headers?.origin;
+
+  let corsOrigin = allowedOrigin || "*";
+  if (allowedOrigin && requestOrigin !== allowedOrigin) {
+    console.warn(`[CORS] Origin mismatch - Request: ${requestOrigin}, Allowed: ${allowedOrigin}`);
+  }
+  if (allowedOrigin && allowedOrigin !== "*") {
+    corsOrigin = allowedOrigin;
+  }
+
+  return {
+    "Access-Control-Allow-Origin": corsOrigin,
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  };
 };
 
-const corsResponse = (res, status, data) => {
-  return res.status(status).set(corsHeaders).json(data);
+const corsResponse = (res, status, data, req) => {
+  return res.status(status).set(corsHeaders(req)).json(data);
 };
 
 // ---------------------------------------------------------------------------
@@ -177,12 +190,12 @@ const findUserByUsernameOrEmail = (usernameOrEmail) => {
 export default async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return res.status(200).set(corsHeaders).end();
+    return res.status(200).set(corsHeaders(req)).end();
   }
 
   // Only allow POST requests
   if (req.method !== "POST") {
-    return corsResponse(res, 405, { error: "Method not allowed" });
+    return corsResponse(res, 405, { error: "Method not allowed" }, req);
   }
 
   try {
@@ -196,7 +209,7 @@ export default async function handler(req, res) {
     if (validationErrors.length > 0) {
       return corsResponse(res, 400, { 
         error: validationErrors.join(", ") 
-      });
+      }, req);
     }
 
     // -----------------------------------------------------------------------
@@ -209,7 +222,7 @@ export default async function handler(req, res) {
       // Return generic message to prevent user enumeration
       return corsResponse(res, 401, { 
         error: "Invalid credentials" 
-      });
+      }, req);
     }
 
     // -----------------------------------------------------------------------
@@ -221,14 +234,14 @@ export default async function handler(req, res) {
     if (!isPasswordValid) {
       return corsResponse(res, 401, { 
         error: "Invalid credentials" 
-      });
+      }, req);
     }
 
     // Check if user is active
     if (user.isActive === false) {
       return corsResponse(res, 401, { 
         error: "Account is deactivated. Please contact support." 
-      });
+      }, req);
     }
 
     // -----------------------------------------------------------------------
@@ -278,13 +291,13 @@ export default async function handler(req, res) {
       token,
       tokenType: "Bearer",
       ...userResponse,
-    });
+    }, req);
 
   } catch (error) {
     console.error("Login Error:", error);
     return corsResponse(res, 500, { 
       error: "Internal server error. Please try again later." 
-    });
+    }, req);
   }
 }
 

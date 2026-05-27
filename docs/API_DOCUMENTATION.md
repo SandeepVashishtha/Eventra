@@ -1,5 +1,17 @@
 # Eventra API Documentation
 
+## 📖 Prerequisites
+
+Before working with the API, ensure your environment is properly configured:
+
+**\u2705 [Environment Setup Guide](ENV_SETUP_GUIDE.md)** – Complete configuration instructions including:
+- Backend API URL configuration (`REACT_APP_API_URL`)
+- Running the backend locally
+- Troubleshooting connection issues
+- Mock API vs real API modes
+
+---
+
 ## Overview
 
 Eventra provides a RESTful backend API built using Spring Boot and secured using JWT Authentication.
@@ -620,6 +632,63 @@ Authorization: Bearer <token>
 | `400 Bad Request` | Invalid event payload |
 | `401 Unauthorized` | Missing or invalid JWT |
 | `403 Forbidden` | Authenticated user is not an `ORGANIZER` or `ADMIN` |
+
+
+---
+
+## Update Event
+
+| Method | Endpoint |
+|--------|----------|
+| PUT | `/api/events/{id}` |
+
+Updates an existing event by ID. This endpoint is restricted to authenticated users with `ORGANIZER` or `ADMIN` authority.
+
+*This is a companion documentation update for backend issue #2099 and backend update-event API work.*
+
+### Authentication
+
+---
+
+Requires a valid JWT token.
+
+```http
+Authorization: Bearer <token>
+```
+
+#### Request Body
+
+```json
+{
+  "title": "Updated Event",
+  "description": "Updated event description",
+  "location": "Updated Location",
+  "eventDate": "2026-12-30T10:00:00",
+  "capacity": 150,
+  "isPublic": true
+}
+```
+
+#### Field Notes
+
+- `registeredCount` is preserved during update and cannot be directly edited.
+- `capacity` must not be lower than current `registeredCount`.
+- Owner-only authorization is not enforced because the Event model currently does not track event ownership.
+
+#### Success Response
+
+```http
+200 OK
+```
+
+#### Error Responses
+
+| Status | Reason |
+|---|---|
+| `400 Bad Request` | Invalid payload |
+| `403 Forbidden` | Unauthorized roles such as `CLIENT` |
+| `404 Not Found` | Event ID does not exist |
+| `409 Conflict` | Capacity is lower than current registeredCount |
 
 
 ---

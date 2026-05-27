@@ -119,3 +119,37 @@
 .eventra-calendar .rbc-button-link {
   color: inherit;
 }
+
+/* ── Mobile adjustments (< 640 px) ─────────────────────────────────────── */
+@media (max-width: 639px) {
+  /* Tighten inner calendar padding so the grid isn't cramped */
+  .eventra-calendar .rbc-calendar {
+    padding: 8px;
+    border-radius: 14px;
+  }
+
+  /* Reduce date-number padding so numbers don't overflow narrow cells */
+  .eventra-calendar .rbc-date-cell {
+    padding: 3px 4px 0;
+    font-size: 0.68rem;
+  }
+
+  /* Shrink day-header padding */
+  .eventra-calendar .rbc-header {
+    padding: 6px 0;
+    font-size: 0.62rem;
+  }
+
+  /* Shrink event dot so it fits inside tight cells */
+  .eventra-calendar .rbc-day-bg.calendar-day--has-events::after {
+    width: 4px;
+    height: 4px;
+    bottom: 4px;
+  }
+
+  /* Make event labels smaller so they don't overflow */
+  .eventra-calendar .rbc-event {
+    padding: 1px 4px;
+    font-size: 0.65rem;
+  }
+}

@@ -75,6 +75,19 @@ You can help improve Eventra in several ways:
 
 ## 🛠️ Development Workflow
 
+### Prerequisites
+
+Before you start, make sure to set up your development environment:
+
+📖 **[⚙️ Environment Setup Guide](docs/ENV_SETUP_GUIDE.md)** – Complete setup instructions including:
+- Local frontend + backend architecture
+- Environment variable configuration
+- Running the project locally
+- Troubleshooting common issues
+- Security best practices
+
+### Contributing Steps
+
 1. **Fork the Repository**
    ```bash
    git fork https://github.com/SandeepVashishtha/Eventra.git
