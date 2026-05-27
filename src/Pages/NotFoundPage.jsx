@@ -1,16 +1,25 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { Home, Calendar, Search, HelpCircle, Code2 } from "lucide-react";
 
 const NotFoundPage = () => {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 text-center px-6">
-      
+    <div style={{
+      minHeight: "100vh",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+      textAlign: "center",
+      padding: "24px"
+    }}>
       <motion.h1
         initial={{ opacity: 0, scale: 0.5 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6 }}
-        className="text-7xl md:text-9xl font-bold text-black dark:text-white"
+        style={{ fontSize: "8rem", fontWeight: "bold", color: "white", margin: "0", lineHeight: "1" }}
       >
         404
       </motion.h1>
@@ -19,49 +28,64 @@ const NotFoundPage = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.6 }}
-        className="mt-4 text-2xl md:text-4xl font-semibold text-gray-800 dark:text-gray-200"
+        style={{ fontSize: "2rem", color: "white", marginTop: "10px", fontWeight: "600" }}
       >
-        Page Not Found
+        Lost in the Cloud?
       </motion.h2>
 
       <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4, duration: 0.6 }}
-        className="mt-4 text-gray-600 dark:text-gray-400 max-w-md"
+        style={{ color: "rgba(255,255,255,0.85)", marginTop: "16px", maxWidth: "450px", fontSize: "1.1rem" }}
       >
-        Sorry, the page you are looking for does not exist
-        or has been moved.
+        We can't seem to find the page you're looking for. It might have been removed, renamed, or temporarily unavailable.
       </motion.p>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6, duration: 0.6 }}
+        style={{ 
+          marginTop: "40px", 
+          display: "grid", 
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", 
+          gap: "16px",
+          width: "100%",
+          maxWidth: "600px" 
+        }}
       >
-        <Link
-          to="/"
-          className="
-            inline-block
-            mt-8
-            px-6
-            py-3
-            rounded-lg
-            bg-black
-            text-white
-            dark:bg-white
-            dark:text-black
-            font-medium
-            hover:scale-105
-            transition-transform
-            duration-300
-          "
-        >
-          Go Back Home
+        <Link to="/" className="hover:scale-105 transition-transform" style={btnStyle}>
+          <Home size={20} /> Home Page
+        </Link>
+        <Link to="/events" className="hover:scale-105 transition-transform" style={btnStyle}>
+          <Calendar size={20} /> Browse Events
+        </Link>
+        <Link to="/hackathons" className="hover:scale-105 transition-transform" style={btnStyle}>
+          <Code2 size={20} /> Hackathons
+        </Link>
+        <Link to="/help" className="hover:scale-105 transition-transform" style={btnStyle}>
+          <HelpCircle size={20} /> Help Center
         </Link>
       </motion.div>
     </div>
   );
+};
+
+const btnStyle = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "10px",
+  padding: "12px 20px",
+  borderRadius: "12px",
+  backgroundColor: "rgba(255, 255, 255, 0.15)",
+  color: "white",
+  fontWeight: "600",
+  textDecoration: "none",
+  fontSize: "1rem",
+  backdropFilter: "blur(10px)",
+  border: "1px solid rgba(255, 255, 255, 0.2)"
 };
 
 export default NotFoundPage;

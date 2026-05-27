@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import useReducedMotion from "../../../hooks/useReducedMotion.js";
 import {
   FaGithub,
   FaExternalLinkAlt,
@@ -12,13 +13,14 @@ import {
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { fetchWithTimeout } from "../../../utils/fetchWithTimeout";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
-const TOKEN = process.env.REACT_APP_GITHUB_TOKEN || "";
 
 const STORAGE_KEY = "github_contributors";
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
+const REQUEST_TIMEOUT = 10000;
 
 // Role assignment
 const getRoleByGitHubActivity = (contributor) => {
@@ -52,6 +54,7 @@ const cacheContributors = (data) => {
 };
 
 const Contributors = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -59,6 +62,7 @@ const Contributors = () => {
   const sectionRef = useRef(null);
 
   useEffect(() => {
+    const target = sectionRef.current;
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -70,12 +74,10 @@ const Contributors = () => {
       { threshold: 0.4 } // 40% of section must be visible
     );
 
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
+    if (target) observer.observe(target);
 
     return () => {
-      if (sectionRef.current) observer.unobserve(sectionRef.current);
+      if (target) observer.unobserve(target);
     };
   }, []);
 
@@ -97,13 +99,19 @@ const Contributors = () => {
   }, []);
 
   // Fetch GitHub profile details
+
   const fetchGitHubProfile = useCallback(async (username) => {
     try {
-      const res = await fetch(`https://api.github.com/users/${username}`, {
-        headers: TOKEN ? { Authorization: `token ${TOKEN}` } : undefined,
-      });
-      if (!res.ok) throw new Error("Profile fetch failed");
-      const profile = await res.json();
+      const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(
+        `/users/${username}`
+      )}`;
+
+      const { data: profile } = await fetchWithTimeout(
+        proxyUrl,
+        {},
+        REQUEST_TIMEOUT
+      );
+
       return {
         followers: profile.followers || 0,
         public_repos: profile.public_repos || 0,
@@ -139,13 +147,15 @@ const Contributors = () => {
       let page = 1;
       let hasMore = true;
       while (hasMore) {
-        const res = await fetch(
-          `https://api.github.com/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`,
-          {
-            headers: TOKEN ? { Authorization: `token ${TOKEN}` } : undefined,
-          }
+        const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(
+          `/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`
+        )}`;
+
+        const { data } = await fetchWithTimeout(
+          proxyUrl,
+          {},
+          REQUEST_TIMEOUT
         );
-        const data = await res.json();
         if (!Array.isArray(data) || data.length === 0) hasMore = false;
         else {
           allContributors = [...allContributors, ...data];
@@ -178,11 +188,11 @@ const Contributors = () => {
     fetchContributors();
   }, [fetchContributors]);
 
-  const nextSlide = () => {
+  const nextSlide = useCallback(() => {
     setCurrentIndex((prev) =>
       prev + itemsPerView >= contributors.length ? 0 : prev + itemsPerView
     );
-  };
+  }, [contributors.length, itemsPerView]);
 
   const prevSlide = () => {
     setCurrentIndex((prev) =>
@@ -200,7 +210,7 @@ const Contributors = () => {
     }, 5000); // Auto-slide every 5 seconds
 
     return () => clearInterval(interval);
-  }, [contributors.length, itemsPerView, currentIndex]);
+  }, [contributors.length, itemsPerView, currentIndex, nextSlide]);
 
   // UPDATED: Loading text color
   if (loading)
@@ -233,7 +243,7 @@ const Contributors = () => {
           className="text-5xl font-extrabold text-center mb-16 text-gray-800 dark:text-gray-100 tracking-tight"
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" }}
           // AOS Implementation (Title)
           data-aos="fade-zoom-in"
           data-aos-once="true"
@@ -271,7 +281,7 @@ const Contributors = () => {
             <motion.div
               className="flex gap-6 items-stretch"
               animate={{ x: 0 }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.5, ease: "easeInOut" }}
             >
               {visibleContributors.map((c, i) => (
                 <motion.div
@@ -298,7 +308,7 @@ const Contributors = () => {
                     <div className="relative">
                       <img loading="lazy" decoding="async" width="65" height="65"
   src={c.avatar_url}
-  alt={c.login}
+  alt={`${c.name || c.login || "Contributor"}'s GitHub profile picture`}
   className="w-[65px] h-[65px] rounded-full border-4 border-black shadow-md relative z-10"
 />
                       <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 blur-sm -z-10"></div>

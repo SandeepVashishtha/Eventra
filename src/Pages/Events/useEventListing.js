@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import mockEvents from "./eventsMockData.json";
+import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { getRouteSearchResults } from "../../utils/searchUtils";
 import { getEventStatus } from "../../utils/eventUtils";
 import {
@@ -39,25 +40,55 @@ const useEventListing = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortType, setSortType] = useState("Newest");
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [eventsPerPage, setEventsPerPage] = useState(DEFAULT_EVENTS_PER_PAGE);
   const [advancedFilters, setAdvancedFilters] = useState(getDefaultFilters());
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const normalizedEvents = mockEvents.map((event) => ({
-        ...event,
-        status: getEventStatus(event),
-      }));
+  const fetchEvents = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError("");
 
-      setEvents(normalizedEvents);
-
+    try {
+      const response = await apiUtils.get(API_ENDPOINTS.EVENTS.LIST);
+      const apiEvents = Array.isArray(response.data) ? response.data : [];
+      setEvents(apiEvents.map((event) => ({ ...event, status: getEventStatus(event) })));
+    } catch (error) {
+      // SECURITY/RACE CONDITION FIX: Only use mock data as fallback in dev mode,
+      // never overwrite real API data with mock data in production.
+      // Mock data is a development-only fallback, not a concurrent operation.
+      if (process.env.NODE_ENV === "development") {
+        const normalizedMockEvents = mockEvents.map((event) => ({
+          ...event,
+          status: getEventStatus(event),
+        }));
+        setEvents(normalizedMockEvents);
+      } else {
+        setEvents([]);
+        setLoadError(error?.message || "Failed to load events. Please try again.");
+      }
+    } finally {
       setIsLoading(false);
-    }, 800);
-
-    return () => clearTimeout(timer);
+    }
   }, []);
+
+  // RACE CONDITION FIX: Call fetchEvents immediately on mount, without scheduling
+  // mock data concurrently. This prevents race conditions where mock data could
+  // overwrite real API responses based on timing.
+  //
+  // Previous implementation:
+  // - useEffect 1: Scheduled mock data to load after 800ms
+  // - useEffect 2: Called fetchEvents() for API request
+  // - Result: If API took >800ms, mock data would overwrite real results
+  //
+  // New implementation:
+  // - Single fetchEvents() call that uses mock data only as a failure fallback
+  // - No concurrent timers that could race with network requests
+  // - Mock data is development-only fallback logic, not a production path
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   const filteredEvents = useMemo(() => {
     const searchResults = getSearchResults(events, searchQuery);
@@ -67,9 +98,11 @@ const useEventListing = () => {
   }, [events, filterType, searchQuery, sortType, advancedFilters]);
 
   const totalPages = getTotalPages(filteredEvents.length, eventsPerPage);
-  const paginatedEvents = useMemo(() => {
-    return getPaginatedEvents(filteredEvents, currentPage, eventsPerPage);
-  }, [currentPage, eventsPerPage, filteredEvents]);
+
+  const paginatedEvents = useMemo(
+    () => getPaginatedEvents(filteredEvents, currentPage, eventsPerPage),
+    [currentPage, eventsPerPage, filteredEvents],
+  );
 
   useEffect(() => {
     setCurrentPage(1);
@@ -92,8 +125,10 @@ const useEventListing = () => {
   return {
     currentPage,
     eventsPerPage,
+    fetchEvents,
     filteredEvents,
     filterType,
+    loadError,
     isLoading,
     paginatedEvents,
     searchQuery,

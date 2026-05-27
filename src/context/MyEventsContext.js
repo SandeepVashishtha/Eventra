@@ -18,9 +18,9 @@
  *   const { myEvents, addRegistration, isRegistered, removeRegistration } = useMyEvents();
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useAuth } from './AuthContext';
-import { syncSecureStorage } from '../utils/secureStorage';
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { useAuth } from "./AuthContext";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 const MyEventsContext = createContext(null);
 
@@ -31,8 +31,8 @@ const storageKey = (userId) => `my_events_${userId}`;
 const loadFromStorage = (userId) => {
   if (!userId) return [];
   try {
-    const raw = syncSecureStorage.getItem(storageKey(userId));
-    return raw ? JSON.parse(raw) : [];
+    const raw = localStorage.getItem(storageKey(userId));
+    return safeJsonParse(raw, []);
   } catch {
     return [];
   }
@@ -41,7 +41,7 @@ const loadFromStorage = (userId) => {
 const saveToStorage = (userId, data) => {
   if (!userId) return;
   try {
-    syncSecureStorage.setItem(storageKey(userId), JSON.stringify(data));
+    localStorage.setItem(storageKey(userId), JSON.stringify(data));
   } catch {
     // localStorage might be full — fail silently
   }
@@ -123,6 +123,6 @@ export const MyEventsProvider = ({ children }) => {
 
 export const useMyEvents = () => {
   const ctx = useContext(MyEventsContext);
-  if (!ctx) throw new Error('useMyEvents must be used inside <MyEventsProvider>');
+  if (!ctx) throw new Error("useMyEvents must be used inside <MyEventsProvider>");
   return ctx;
 };

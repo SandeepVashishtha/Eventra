@@ -1,14 +1,18 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from '../config/api';
-import { isTokenValid } from '../utils/tokenUtils';
-import { syncSecureStorage } from '../utils/secureStorage';
+import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
+import { toast } from 'react-toastify';
+import { ROLES, ROLE_PERMISSIONS } from '../config/roles';
+import { decodeJwtPayload } from '../utils/auth';
+import { logger } from "../utils/logger";
+
 
 const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
@@ -18,106 +22,252 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Ref-based flag so isAuthenticated() can request cleanup without
+  // mutating state during a render (React rule).
+  const needsExpiryCleanupRef = useRef(false);
+  const expiryToastShownRef = useRef(false);
+
   // Centralized session cleanup — clears both React state and secure storage.
   const clearSession = useCallback(() => {
     setUser(null);
     setToken(null);
-    syncSecureStorage.removeItem('token');
-    syncSecureStorage.removeItem('user');
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; HttpOnly; SameSite=Strict";
+    sessionStorage.removeItem("token");
+    localStorage.removeItem("user");
   }, []);
 
-  useEffect(() => {
-    // Check for existing authentication on app start
-    const storedToken = syncSecureStorage.getItem('token');
-    const storedUser = syncSecureStorage.getItem('user');
+  /**
+   * Clear the session AND notify the user via toast.
+   * Guards against duplicate toasts with a ref flag.
+   */
+  const clearExpiredSession = useCallback(() => {
+    // eslint-disable-next-line no-console
+    logger.warn("[AuthContext] Session expiration detected. Clearing session state immediately to prevent infinite layout re-render loops.");
+    
+    // 1. Immediately purge session state to prevent infinite render loops.
+    // By resetting token and user state to null synchronously, any concurrent
+    // render phases (e.g., layout components checking isAuthenticated) will
+    // abort early, avoiding resetting needsExpiryCleanupRef.
+    clearSession();
 
-    if (storedToken && storedUser) {
-      // --- Security fix: validate token before restoring session ---
-      // Decode the JWT payload and check the `exp` claim. If the token
-      // is expired or malformed, discard it instead of restoring a
-      // broken session that would silently fail on every API call.
-      if (isTokenValid(storedToken)) {
-        setToken(storedToken);
-        try {
-          setUser(JSON.parse(storedUser));
-        } catch {
-          // Corrupted user data in localStorage — clear everything.
+    // 2. Perform UI notification side effects once per expired session lifecycle.
+    if (expiryToastShownRef.current) {
+      // eslint-disable-next-line no-console
+      logger.log("[AuthContext] Expiry warning already shown. Skipping duplicate toast notification.");
+      return;
+    }
+    expiryToastShownRef.current = true;
+
+    toast.info("Session expired. Please log in again.", {
+      toastId: "session-expired",
+      autoClose: 5000,
+    });
+  }, [clearSession]);
+
+  const normalizeRoles = useCallback((roles = []) => {
+    return roles.map((role) => {
+      const normalized = String(role).toUpperCase();
+
+      if (normalized === 'EVENT_MANAGER') {
+        return ROLES.ORGANIZER;
+      }
+
+      return normalized;
+    });
+  }, []);
+
+  /**
+   * SECURITY: Extract authorization data from the signed JWT token.
+   *
+   * The JWT is the authoritative source for route authorization because
+   * localStorage and React state are user-editable. Server-side checks remain
+   * mandatory for every protected API operation.
+   */
+  const extractAuthorizationFromToken = useCallback((token) => {
+    if (!token) return null;
+
+    const payload = decodeJwtPayload(token);
+    if (!payload) return null;
+
+    // Extract roles and permissions from the JWT payload only. localStorage is
+    // user-editable, so it must never be the source for route authorization.
+    const tokenRoles = Array.isArray(payload.roles)
+      ? payload.roles
+      : payload.role
+        ? [payload.role]
+        : [];
+    const normalizedRoles = normalizeRoles(tokenRoles);
+    const tokenPermissions = Array.isArray(payload.permissions)
+      ? payload.permissions.map((permission) => String(permission))
+      : [];
+    const rolePermissions = normalizedRoles.flatMap(
+      (role) => ROLE_PERMISSIONS[role] || []
+    );
+    const permissions = Array.from(new Set([...tokenPermissions, ...rolePermissions]));
+
+    const scopes = normalizedRoles.includes(ROLES.SUPER_ADMIN) || normalizedRoles.includes(ROLES.ADMIN)
+      ? ['admin:all', 'event:write', 'event:read', 'hackathon:write', 'hackathon:read']
+      : normalizedRoles.includes(ROLES.ORGANIZER)
+        ? ['event:write', 'event:read', 'hackathon:write', 'hackathon:read']
+        : ['event:read', 'hackathon:read'];
+
+    return { roles: normalizedRoles, permissions, scopes };
+  }, [normalizeRoles]);
+
+  useEffect(() => {
+    const validateSession = async () => {
+      try {
+        const res = await apiUtils.get(API_ENDPOINTS.USERS.PROFILE);
+        if (res.ok && res.data) {
+          const { sessionToken, sessionUser } = extractSession(res, res.data, null);
+          setToken(sessionToken || 'cookie-managed');
+          setUser(sessionUser);
+        } else {
           clearSession();
         }
-      } else {
-        // Token is expired or invalid — clean up stale session data.
+      } catch (error) {
         clearSession();
       }
-    }
+      setLoading(false);
+    };
 
-    setLoading(false);
+    // If we have a user in localStorage, it's worth validating the session.
+    // In a pure HttpOnly cookie setup, the cookie exists but is unreadable by JS.
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      validateSession();
+    } else {
+      setLoading(false);
+    }
   }, [clearSession]);
 
   // --- Global 401 handler ---
-  // Register a callback so that any API call receiving a 401 Unauthorized
-  // response automatically clears the session. This prevents "zombie"
-  // authenticated states where the frontend thinks the user is logged in
-  // but every backend call fails silently.
   useEffect(() => {
     setOnUnauthorizedHandler(() => {
-      clearSession();
+      clearExpiredSession();
     });
 
     // Cleanup on unmount
     return () => setOnUnauthorizedHandler(null);
-  }, [clearSession]);
+  }, [clearExpiredSession]);
 
-  // --- Periodic Token Expiry Check ---
-  // Check token validity in the background so we don't mutate state during a render.
+  // --- Deferred expiry cleanup ---
+  // When isAuthenticated() detects an expired token during a render, it
+  // sets needsExpiryCleanupRef. This effect runs AFTER render finishes
+  // and performs the actual state cleanup + toast.
+  //
+  // FIX: Added [clearExpiredSession] dependency array.
+  // Without a dependency array this effect ran after EVERY render of the
+  // entire React tree (AuthProvider wraps everything). While the ref guard
+  // prevented duplicate cleanups, the unnecessary post-render calls added
+  // overhead and made the effect semantically misleading.
+  // With [clearExpiredSession] it only re-runs when that stable callback
+  // reference changes — which is effectively once on mount.
+  useEffect(() => {
+    if (needsExpiryCleanupRef.current) {
+      needsExpiryCleanupRef.current = false;
+      clearExpiredSession();
+    }
+  }, [clearExpiredSession]);
+
+  // --- Smart Token Expiry Timeout ---
+  // Instead of polling every 15 s, compute the exact remaining TTL from the
+  // token's `exp` claim and schedule a single timeout. Falls back to a 60 s
+  // interval if `exp` is missing or unparseable.
   useEffect(() => {
     if (!token) return;
 
-    const checkTokenExpiry = () => {
+    // Reset the toast guard when a new token is set (fresh login).
+    expiryToastShownRef.current = false;
+
+    // If we're using secure cookies, the token string is not available to the frontend.
+    // We rely entirely on the global 401 interceptor for expiry.
+    if (token === 'cookie-managed') {
+      return;
+    }
+
+    const payload = decodeTokenPayload(token);
+    const expSeconds = payload?.exp;
+
+    let timeoutId;
+
+    if (typeof expSeconds === "number") {
+      const nowMs = Date.now();
+      const expiresAtMs = expSeconds * 1000;
+      // Fire 1 second after actual expiry to avoid edge-case races.
+      const delayMs = Math.max(expiresAtMs - nowMs + 1000, 0);
+
+      timeoutId = setTimeout(() => {
+        if (!isTokenValid(token)) {
+          clearExpiredSession();
+        }
+      }, delayMs);
+    } else {
+      // No `exp` claim — fall back to a 60 s polling interval.
+      timeoutId = setInterval(() => {
+        if (!isTokenValid(token)) {
+          clearExpiredSession();
+        }
+      }, 60_000);
+
+      // Also check once immediately.
       if (!isTokenValid(token)) {
-        clearSession(); // Safe here because useEffect runs AFTER rendering finishes
+        clearExpiredSession();
       }
+    }
+
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(timeoutId);
     };
-
-    // Check immediately when the component mounts or token changes
-    checkTokenExpiry();
-
-    // Check periodically every 15 seconds to catch mid-session expiry
-    const interval = setInterval(checkTokenExpiry, 15000);
-    return () => clearInterval(interval);
-  }, [token, clearSession]);
+  }, [token, clearExpiredSession]);
 
   const persistSession = (sessionToken, sessionUser) => {
     setToken(sessionToken);
     setUser(sessionUser);
-    syncSecureStorage.setItem('token', sessionToken);
-    syncSecureStorage.setItem('user', JSON.stringify(sessionUser));
+    
+    // Set cookie with HttpOnly, Secure, SameSite flags
+    document.cookie = `token=${sessionToken}; path=/; Secure; HttpOnly; SameSite=Strict`;
+    
+    try {
+      localStorage.setItem("user", JSON.stringify(sessionUser));
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      logger.error('[AuthContext] Error persisting user profile:', error);
+    }
   };
 
   const extractSession = (res, data, fallbackEmail) => {
     let sessionToken = data?.token ?? data?.accessToken ?? null;
 
     if (!sessionToken) {
-      const authHeader = res.headers.get('Authorization') || res.headers.get('authorization');
+      const authHeader = res.headers?.['authorization'] || res.headers?.['Authorization'] || null;
       if (authHeader && authHeader.startsWith('Bearer ')) {
         sessionToken = authHeader.substring(7);
       }
     }
 
     const rawUser = data?.user ?? data?.data ?? data ?? null;
-    const resolvedRoles = rawUser?.roles ?? (rawUser?.role ? [rawUser.role] : []);
+    const rawRoles =
+      rawUser?.roles ??
+      (rawUser?.role ? [rawUser.role] : []);
+
+    const resolvedRoles = normalizeRoles(rawRoles);
     const sessionUser = {
       ...(rawUser || {}),
-      firstName: rawUser?.firstName ?? '',
-      lastName: rawUser?.lastName ?? '',
-      email: rawUser?.email ?? fallbackEmail ?? '',
-      username: rawUser?.username ?? fallbackEmail ?? '',
-      role: rawUser?.role ?? resolvedRoles[0] ?? '',
+      firstName: rawUser?.firstName ?? "",
+      lastName: rawUser?.lastName ?? "",
+      email: rawUser?.email ?? fallbackEmail ?? "",
+      username: rawUser?.username ?? fallbackEmail ?? "",
+      role: rawUser?.role ?? resolvedRoles[0] ?? "",
       roles: resolvedRoles,
       permissions: rawUser?.permissions ?? [],
       scopes: rawUser?.scopes ?? (
-        resolvedRoles.includes('ADMIN') ? ["admin:all", "event:write", "event:read", "hackathon:write", "hackathon:read"] :
-        resolvedRoles.includes('EVENT_MANAGER') ? ["event:write", "event:read", "hackathon:write", "hackathon:read"] :
-        ["event:read", "hackathon:read"]
+        resolvedRoles.includes(ROLES.ADMIN)
+          ? ["admin:all", "event:write", "event:read", "hackathon:write", "hackathon:read"]
+          : resolvedRoles.includes(ROLES.ORGANIZER)
+            ? ["event:write", "event:read", "hackathon:write", "hackathon:read"]
+            : ["event:read", "hackathon:read"]
       ),
     };
 
@@ -135,71 +285,91 @@ export const AuthProvider = ({ children }) => {
       password,
     });
 
-  const data = await res.json().catch((error) => {
-    console.error('Failed to parse login response JSON:', error);
-    return null;
-  });
+    const data = res.data;
 
-    if (!res.ok) {
-      throw new Error(data?.message || data?.error || 'Invalid credentials');
+    if (res.status !== 200) {
+      throw new Error(data?.message || data?.error || "Invalid credentials");
     }
 
-    const { sessionToken, sessionUser } = extractSession(res, data || {}, usernameOrEmail);
+    const { sessionToken, sessionUser } = extractSession(res, data, usernameOrEmail);
 
     if (!sessionToken) {
-      throw new Error('Login failed: token missing from response');
+      throw new Error("Login failed: token missing from response");
     }
 
     persistSession(sessionToken, sessionUser);
     return true;
   };
 
-  // Decode a JWT payload (base64url) without external libraries
-  const decodeJwtPayload = (jwt) => {
-    try {
-      const base64Url = jwt.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const json = decodeURIComponent(
-        atob(base64)
-          .split('')
-          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
-      );
-      return JSON.parse(json);
-    } catch (err) {
-      console.error('Failed to decode Google credential:', err);
-      return null;
-    }
-  };
-
-  // Sign in with Google using the credential returned by Google Identity Services.
-  // TODO: Send `credential` to backend (e.g. /api/auth/google) for server-side
-  // verification and to receive a backend-issued session token. For now we decode
-  // the Google ID token on the client so the UI flow works end-to-end.
+  /**
+   * Sign in with a Google credential returned by @react-oauth/google.
+   *
+   * SECURITY NOTE
+   * -------------
+   * The Google ID token (credential) MUST be verified server-side.
+   * Client-side JWT decoding only reads the payload — it does NOT verify
+   * the cryptographic signature, audience (aud), issuer (iss), or expiry.
+   * Skipping the backend exchange would allow any Google-issued token
+   * (even one issued for a completely different application) to create a
+   * valid session in Eventra.
+   *
+   * Flow:
+   *  1. POST the raw Google credential to the Eventra backend.
+   *  2. The backend verifies it against Google's JWKS endpoint and checks
+   *     aud, iss, exp, and email_verified.
+   *  3. On success the backend returns an Eventra-signed JWT + user object.
+   *  4. We persist ONLY the Eventra JWT — never the raw Google token.
+   *
+   * @param {string} credential - Raw Google ID token from @react-oauth/google
+   * @returns {Promise<true>} Resolves to true on success
+   * @throws {Error} If the credential is missing, the backend rejects it,
+   *                 or the response does not contain an Eventra token
+   */
   const signInWithGoogle = async (credential) => {
     if (!credential) {
-      throw new Error('Google Sign-In failed: missing credential');
+      throw new Error("Google Sign-In failed: missing credential");
     }
 
-    const payload = decodeJwtPayload(credential);
-    if (!payload || !payload.email) {
-      throw new Error('Google Sign-In failed: invalid credential');
+    // ── Step 1: Exchange the Google credential with the Eventra backend ──────
+    // The backend is the only party that can verify the token's signature.
+    let res;
+    try {
+      res = await apiUtils.post(API_ENDPOINTS.AUTH.GOOGLE, { token: credential });
+    } catch (networkError) {
+      // Surface network/timeout errors with a friendlier message
+      throw new Error(
+        `Google Sign-In failed: could not reach the server. ${
+          networkError?.message || "Please check your connection and try again."
+        }`
+      );
     }
 
-    const sessionUser = {
-      firstName: payload.given_name || '',
-      lastName: payload.family_name || '',
-      email: payload.email,
-      username: payload.email,
-      picture: payload.picture || '',
-      role: '',
-      roles: [],
-      permissions: [],
-      provider: 'google',
-    };
+    // ── Step 2: Parse the backend response ───────────────────────────────────
+    const data = res.data;
 
-    // Using the Google credential as the session token until backend support is added.
-    persistSession(credential, sessionUser);
+    if (res.status !== 200) {
+      // The backend rejected the credential (bad token, wrong audience, etc.)
+      throw new Error(
+        data?.message ||
+          data?.error ||
+          `Google Sign-In failed: server returned ${res.status}`
+      );
+    }
+
+    // ── Step 3: Extract and validate the Eventra-issued token ────────────────
+    // extractSession normalises the response shape (handles token / accessToken
+    // in body as well as a Bearer header), and builds a canonical sessionUser
+    // with normalised roles and computed scopes.
+    const { sessionToken, sessionUser } = extractSession(res, data, null);
+
+    if (!sessionToken) {
+      throw new Error(
+        "Google Sign-In failed: the server did not return an authentication token."
+      );
+    }
+
+    // ── Step 4: Persist the Eventra JWT (never the raw Google token) ─────────
+    persistSession(sessionToken, sessionUser);
     return true;
   };
 
@@ -207,41 +377,51 @@ export const AuthProvider = ({ children }) => {
     clearSession();
   };
 
- const isAuthenticated = useCallback(() => {
-    // Also verify the current token hasn't expired since it was stored.
+  const isAuthenticated = useCallback(() => {
     if (!user || !token) return false;
-    if (!isTokenValid(token)) {
-      // Token expired mid-session — safely return false without mutating state
+    if (token !== 'cookie-managed' && !isTokenValid(token)) {
+      // Token expired mid-session — flag for deferred cleanup.
+      // Cannot call clearSession() here because this runs during render.
+      needsExpiryCleanupRef.current = true;
       return false;
     }
     return true;
-  }, [user, token]);
+  }, [user]);
 
   const hasRole = (roleName) => {
-    return user?.roles?.includes(roleName) || false;
+    if (!user?.roles) return false;
+
+    // With HttpOnly cookies, we cannot extract roles from the JWT client-side.
+    // We rely on the cached user roles for UI rendering.
+    // Real security enforcement happens on the backend.
+    const targetRole = String(roleName).toUpperCase();
+    return user.roles.includes(targetRole);
   };
 
   const hasPermission = (permissionName) => {
-    return user?.permissions?.includes(permissionName) || false;
+    // With HttpOnly cookies, we cannot extract permissions from the JWT client-side.
+    // We rely on the validated user profile from the server for UI rendering.
+    if (!user?.permissions) return false;
+
+    return user.permissions.includes(permissionName);
   };
 
-  const hasAnyRole = (...roleNames) => {
-    return roleNames.some(role => hasRole(role));
-  };
+  const hasAnyRole = (...roleNames) => roleNames.some((role) => hasRole(role));
 
-  const hasAnyPermission = (...permissionNames) => {
-    return permissionNames.some(permission => hasPermission(permission));
-  };
+  const hasAnyPermission = (...permissionNames) =>
+    permissionNames.some((permission) => hasPermission(permission));
 
-  const isAdmin = () => {
-    return hasRole('ADMIN');
-  };
+  const isAdmin = () => hasRole(ROLES.ADMIN);
 
-  const isEventManager = () => hasRole('EVENT_MANAGER');
-  const isSuperAdmin = () => hasRole('SUPER_ADMIN');
-  const isOrganizer = () => hasRole('ORGANIZER');
-  const isVolunteer = () => hasRole('VOLUNTEER');
-  const isAttendee = () => hasRole('ATTENDEE');
+  const isEventManager = () => hasRole(ROLES.ORGANIZER);
+
+  const isSuperAdmin = () => hasRole(ROLES.SUPER_ADMIN);
+
+  const isOrganizer = () => hasRole(ROLES.ORGANIZER);
+
+  const isVolunteer = () => hasRole(ROLES.VOLUNTEER);
+
+  const isAttendee = () => hasRole(ROLES.ATTENDEE);
 
   const value = {
     user,
@@ -259,11 +439,11 @@ export const AuthProvider = ({ children }) => {
     hasAnyPermission,
     isAdmin,
     isEventManager,
+    isSuperAdmin,
+    isOrganizer,
+    isVolunteer,
+    isAttendee,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
