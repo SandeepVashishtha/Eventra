@@ -64,7 +64,16 @@ export const getPublicRoutes = () => [
   <Route key="/" path="/" element={<HomePage />} />,
   <Route key="/events" path="/events" element={<EventsPage />} />,
   <Route key="/event-details" path="/events/:eventId" element={<EventDetails />} />,
-  <Route key="/register" path="/events/:eventId/register" element={<EventRegistration />} />,
+  // Registration writes to an authenticated backend endpoint; keep guarded.
+  <Route
+    key="/register"
+    path="/events/:eventId/register"
+    element={
+      <ProtectedRoute>
+        <EventRegistration />
+      </ProtectedRoute>
+    }
+  />,
   <Route key="/hackathons" path="/hackathons" element={<HackathonPage />} />,
   <Route key="/hackathon-details" path="/hackathons/:hackathonId" element={<HackathonDetailsPage />} />,
   <Route key="/hackathons-lifecycle" path="/hackathons/:id/lifecycle" element={<HackathonLifecycle />} />,

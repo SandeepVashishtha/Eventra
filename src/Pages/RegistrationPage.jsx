@@ -5,6 +5,7 @@ import { FiUser, FiMail, FiPhone, FiBriefcase, FiAward, FiMessageSquare, FiCheck
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { toast } from "react-toastify";
 import { API_ENDPOINTS, apiUtils } from "../config/api";
+import { useAuth } from "../context/AuthContext";
 
 import {
   isAlreadyRegistered,
@@ -32,6 +33,7 @@ const RegistrationPage = () => {
   useDocumentTitle("Eventra | Registration");
   const navigate = useNavigate();
   const { id: eventId = "general" } = useParams();
+  const { token } = useAuth();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -108,7 +110,10 @@ const RegistrationPage = () => {
 
       await apiUtils.post(
         API_ENDPOINTS.EVENTS.REGISTER(eventId),
-        formData
+        formData,
+        // Pass the in-memory token explicitly so this protected write does not
+        // depend on a stale or missing sessionStorage read.
+        token
       );
 
       saveRegistration(eventId, formData.email);
