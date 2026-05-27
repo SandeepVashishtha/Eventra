@@ -40,9 +40,23 @@ export const AuthProvider = ({ children }) => {
    * Guards against duplicate toasts with a ref flag.
    */
   const clearExpiredSession = useCallback(() => {
-    if (expiryToastShownRef.current) return;
-    expiryToastShownRef.current = true;
+    // eslint-disable-next-line no-console
+    console.warn("[AuthContext] Session expiration detected. Clearing session state immediately to prevent infinite layout re-render loops.");
+    
+    // 1. Immediately purge session state to prevent infinite render loops.
+    // By resetting token and user state to null synchronously, any concurrent
+    // render phases (e.g., layout components checking isAuthenticated) will
+    // abort early, avoiding resetting needsExpiryCleanupRef.
     clearSession();
+
+    // 2. Perform UI notification side effects once per expired session lifecycle.
+    if (expiryToastShownRef.current) {
+      // eslint-disable-next-line no-console
+      console.log("[AuthContext] Expiry warning already shown. Skipping duplicate toast notification.");
+      return;
+    }
+    expiryToastShownRef.current = true;
+
     toast.info("Session expired. Please log in again.", {
       toastId: "session-expired",
       autoClose: 5000,
