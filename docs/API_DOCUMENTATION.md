@@ -693,6 +693,45 @@ Authorization: Bearer <token>
 
 ---
 
+## Delete Event
+
+| Method | Endpoint |
+|--------|----------|
+| DELETE | `/api/events/{id}` |
+
+Deletes an existing event by ID. This endpoint is restricted to authenticated users with `ADMIN` or `SUPER_ADMIN` authority.
+
+### Authentication
+
+---
+
+Requires a valid JWT token.
+
+```http
+Authorization: Bearer <token>
+```
+
+#### Success Response
+
+```http
+204 No Content
+```
+
+#### Error Responses
+
+| Status | Reason |
+|---|---|
+| `401 Unauthorized` | Missing or invalid JWT |
+| `403 Forbidden` | Authenticated user does not have `ADMIN` or `SUPER_ADMIN` authority |
+| `404 Not Found` | Event ID does not exist |
+
+#### Additional Notes
+
+- Related event registrations are automatically cleaned up by the backend before the event is deleted.
+
+
+---
+
 # Project APIs
 
 ## Submit Project
