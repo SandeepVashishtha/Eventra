@@ -13,8 +13,12 @@ import { RealTimeProvider } from "./context/RealTimeContext";
 // Initialize Global Runtime Monitoring
 initializeGlobalErrorHandling();
 
-// Unregister service worker early to avoid caching conflicts
-serviceWorkerRegistration.unregister();
+// Register in production for PWA/offline support; keep dev/test cache-free.
+if (process.env.NODE_ENV === "production") {
+  serviceWorkerRegistration.register();
+} else {
+  serviceWorkerRegistration.unregister();
+}
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
