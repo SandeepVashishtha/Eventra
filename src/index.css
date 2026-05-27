@@ -12,6 +12,39 @@
   padding: 0;
   box-sizing: border-box;
 }
+.responsive-btn {
+  @apply
+    max-w-full
+    min-w-0
+    whitespace-nowrap
+    overflow-hidden
+    text-ellipsis
+    px-4
+    sm:px-5
+    md:px-6;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+:where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+  border-radius: 0.5rem;
+}
+
+.dark :where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline-color: #93c5fd;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -24,7 +57,10 @@ html {
 
   --border-color: #e1e5e9;
   --card-bg-color: #ffffff;
-
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
   --scrollbar-track-color: #f1f1f1;
   --scrollbar-thumb-color: #000000;
   --scrollbar-thumb-hover-color: #262626;
@@ -65,6 +101,11 @@ html {
 
   --touch-target-min: 44px;
   --touch-target-gap: 0.75rem;
+  --primary-color: #667eea;
+--primary-hover: #5a67d8;
+--danger-bg: #fef2f2;
+--danger-border: #fca5a5;
+--danger-text: #dc2626;
 }
 
 /* Fix #599: Changed from body.dark to .dark
@@ -230,7 +271,11 @@ code {
 .section-padding { padding: 80px 0; }
 .text-gradient {
 
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+background: linear-gradient(
+  135deg,
+  var(--primary-color) 0%,
+  #764ba2 100%
+);
 
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -240,8 +285,11 @@ code {
 /* Buttons */
 .btn-primary {
 
-  background: linear-gradient(135deg, #667eea 0%, #5a67d8 100%);
-
+ background: linear-gradient(
+  135deg,
+  var(--primary-color) 0%,
+  var(--primary-hover) 100%
+);
   color: white;
   padding: 12px 32px;
   border: none;
@@ -276,8 +324,8 @@ code {
 }
 
 .btn-secondary:hover {
-  border-color: #667eea;
-  color: #667eea;
+border-color: var(--primary-color);
+color: var(--primary-color);
 
   transform: translateY(-2px);
 }
@@ -462,6 +510,20 @@ table {
   background-color: var(--navbar-bg);
 }
 
+.navbar-theme-toggle::before,
+.navbar-theme-toggle::after {
+  content: none;
+}
+
+/* NavbarIssueFix: Scrollable navbar links — hides scrollbar while keeping scroll */
+.navbar-links-scroll {
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE/Edge */
+}
+.navbar-links-scroll::-webkit-scrollbar {
+  display: none;               /* Chrome/Safari/Opera */
+}
+
 /* Sidebar */
 .theme-sidebar {
   background-color: var(--sidebar-bg);
@@ -595,9 +657,9 @@ select,
 }
 
 .error-banner {
-  background: #fef2f2;
-  border: 1px solid #fca5a5;
-  color: #dc2626;
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  color: var(--danger-text);
   padding: 10px 16px;
   border-radius: 6px;
   margin-bottom: 12px;
@@ -609,4 +671,23 @@ select,
 }
 .animate-spin {
   animation: spin 0.7s linear infinite;
+}
+
+/* WCAG AA Accessibility Contrast Overrides (Light Mode) */
+/* Overriding standard Tailwind light mode gray utilities that fail the 4.5:1 contrast check on white backgrounds */
+html:not(.dark) .text-gray-400 {
+  color: #5a6578 !important; /* Gray 500/600 hybrid, passes WCAG AA 4.5:1 */
+}
+
+html:not(.dark) .text-gray-500 {
+  color: #4b5563 !important; /* Gray 600, passes WCAG AA 4.5:1 */
+}
+
+html:not(.dark) .text-gray-600 {
+  color: #374151 !important; /* Gray 700, passes WCAG AAA 7:1 */
+}
+
+html:not(.dark) .placeholder-gray-400::placeholder,
+html:not(.dark) ::placeholder {
+  color: #5a6578 !important; /* Ensure accessible placeholder contrast */
 }

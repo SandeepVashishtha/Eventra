@@ -2,9 +2,17 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { Download } from "lucide-react";
-import {} from "../../utils/eventDraftUtils";
-
-import { exportAttendeesToCSV } from "../../utils/exportCsv";
+import { logger } from "../../../utils/logger";
+import useReducedMotion from "../../../hooks/useReducedMotion";
+import TicketTiersSection from "./components/TicketTiersSection";
+import { exportAttendeesToCSV } from "../../../utils/exportCsv";
+import {
+  DRAFT_KEY,
+  categories,
+  mockAttendees,
+  initialFormData,
+  todayString,
+} from "../../../constants/eventDefaults";
 import {
   ArrowRightIcon,
   CalendarIcon,
@@ -16,7 +24,7 @@ import {
   CheckCircleIcon,
   PencilIcon,
 } from "@heroicons/react/24/solid";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { API_ENDPOINTS, apiUtils } from "../../../config/api";
 import {
   Calendar,
   MapPin,
@@ -35,50 +43,41 @@ import {
   Upload,
   Plus,
 } from "lucide-react";
-import { useFormSubmit } from "../../hooks/useFormSubmit";
-import { LoadingButton } from "../ui/LoadingButton";
+import { useFormSubmit } from "../../../hooks/useFormSubmit";
+import { LoadingButton } from "../../ui/LoadingButton";
+import {
+  parseTimeToMinutes,
+  formatDate,
+  formatTime,
+  validateCoordinates,
+} from "../../../utils/eventCreationUtils";
 
-const DRAFT_KEY = "eventra_create_event_draft";
 
 const EventCreation = () => {
-  const mockAttendees = [
-    {
-      name: "John Doe",
-      email: "john@example.com",
-      registrationDate: "2026-08-15",
-      ticketType: "VIP",
-    },
-    {
-      name: "Sarah Smith",
-      email: "sarah@example.com",
-      registrationDate: "2026-08-16",
-      ticketType: "General",
-    },
-    {
-      name: "Alex Johnson",
-      email: "alex@example.com",
-      registrationDate: "2026-08-17",
-      ticketType: "Workshop",
-    },
-  ];
+  const prefersReducedMotion = useReducedMotion();
+  
   const [currentStep, setCurrentStep] = useState("form");
 
   const { handleSubmit: submitEventForm, isSubmitting, error: submitError, success: submitSuccess } = useFormSubmit(async (eventData) => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     if (!token) {
       throw new Error("Authentication required. Please log in and try again.");
     }
 
-    if (!API_ENDPOINTS.EVENTS.CREATE || process.env.NODE_ENV === "development") {
-      console.warn("⚠️ Mocking event creation success (API inactive)");
+    if (!API_ENDPOINTS.EVENTS.CREATE) {
+      // Mock event creation success (API inactive)
       await new Promise((resolve) => setTimeout(resolve, 1000));
       return;
     }
 
-    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData, token);
-    const result = await response.json();
+    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData, {
+      headers: {
+        Authorization: token
+      }
+    });
+    const result = response.data;
 
-    if (!(response.ok && result.success)) {
+    if (!(response.status === 200 && result.success)) {
       const errorMessage = result.message || result.error || `Server error: ${response.status}`;
       throw new Error(errorMessage);
     }
@@ -88,63 +87,19 @@ const EventCreation = () => {
     if (submitSuccess) {
       toast.success("Event created successfully!");
       resetForm();
-      setCurrentStep("form");
-      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
     }
   }, [submitSuccess]);
-
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    category: "",
-    isMultiDay: false,
-    date: "",
-    startTime: "",
-    endTime: "",
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    location: {
-      name: "",
-      address: "",
-      coordinates: { latitude: "", longitude: "" },
-    },
-    isVirtual: false,
-    virtualLink: "",
-    capacity: "",
-    isPublic: true,
-    requiresApproval: false,
-    registrationStart: "",
-    registrationEnd: "",
-    tags: [],
-    ticketTiers: [
-      {
-        name: "General Admission",
-        price: 0,
-        capacity: "",
-        description: "Standard event access",
-      },
-    ],
-    banner: null,
-    bannerPreview: null,
-  });
+  const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [newTag, setNewTag] = useState("");
   // Track whether draft has been loaded to avoid overwriting on initial mount
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
-  const categories = [
-    { label: "Conference", value: "CONFERENCE" },
-    { label: "Workshop", value: "WORKSHOP" },
-    { label: "Meetup", value: "MEETUP" },
-    { label: "Webinar", value: "WEBINAR" },
-    { label: "Social", value: "SOCIAL" },
-    { label: "Sports", value: "SPORTS" },
-    { label: "Cultural", value: "CULTURAL" },
-    { label: "Business", value: "BUSINESS" },
-    { label: "Charity", value: "CHARITY" },
-    { label: "Other", value: "OTHER" },
-  ];
-
-  const todayString = new Date().toISOString().split("T")[0];
 
   const validateForm = () => {
     const newErrors = {};
@@ -176,11 +131,6 @@ const EventCreation = () => {
 
     if (!newErrors.startTime && !newErrors.endTime && !formData.isMultiDay) {
       // Convert time strings (HH:MM format) to minutes for proper comparison
-      const parseTimeToMinutes = (timeStr) => {
-        if (!timeStr) return 0;
-        const [hours, minutes] = timeStr.split(":").map(Number);
-        return (hours || 0) * 60 + (minutes || 0);
-      };
       const startMinutes = parseTimeToMinutes(formData.startTime);
       const endMinutes = parseTimeToMinutes(formData.endTime);
       if (startMinutes >= endMinutes) {
@@ -267,42 +217,9 @@ const EventCreation = () => {
     }
   };
 
-  const handleTicketTierChange = (index, field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      ticketTiers: prev.ticketTiers.map((tier, i) =>
-        i === index ? { ...tier, [field]: value } : tier
-      ),
-    }));
-    const errorKey = `ticketTier_${index}_${field}`;
-    if (errors[errorKey]) {
-      setErrors((prev) => ({ ...prev, [errorKey]: "" }));
-    }
-  };
 
-  const addTicketTier = () => {
-    setFormData((prev) => ({
-      ...prev,
-      ticketTiers: [
-        ...prev.ticketTiers,
-        {
-          name: "",
-          price: 0,
-          capacity: "",
-          description: "",
-        },
-      ],
-    }));
-  };
 
-  const removeTicketTier = (index) => {
-    if (formData.ticketTiers.length > 1) {
-      setFormData((prev) => ({
-        ...prev,
-        ticketTiers: prev.ticketTiers.filter((_, i) => i !== index),
-      }));
-    }
-  };
+
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -353,21 +270,14 @@ const EventCreation = () => {
     }
   };
 
-  const [successMessage, setSuccessMessage] = useState("");
-  const [generalError, setGeneralError] = useState("");
-
   const createEvent = () => {
-    setSuccessMessage("");
-    setGeneralError("");
     try {
       let coordinates = null;
       if (formData.location.coordinates.latitude && formData.location.coordinates.longitude) {
-        const lat = parseFloat(formData.location.coordinates.latitude);
-        const lng = parseFloat(formData.location.coordinates.longitude);
-
-        if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-          coordinates = { latitude: lat, longitude: lng };
-        }
+        coordinates = validateCoordinates(
+          formData.location.coordinates.latitude,
+          formData.location.coordinates.longitude
+        );
       }
 
       const eventStartDate = new Date(
@@ -419,7 +329,7 @@ const EventCreation = () => {
 
       submitEventForm(eventData);
     } catch (error) {
-      console.error("Error creating event:", error);
+      logger.error("Error creating event:", error);
       const backendMessage = error.response?.data?.message || error.response?.data?.error;
       let errorMessage = "Failed to create event. ";
       if (backendMessage) {
@@ -472,15 +382,6 @@ const EventCreation = () => {
 
     toast.info("Saved draft discarded.");
   };
-  useEffect(() => {
-    if (successMessage || generalError) {
-      const timer = setTimeout(() => {
-        setSuccessMessage("");
-        setGeneralError("");
-      }, 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [successMessage, generalError]);
 
   useEffect(() => {
     // Prevent saving before draft restoration
@@ -538,62 +439,11 @@ const EventCreation = () => {
   }, [formData]);
 
   const resetForm = () => {
-    setFormData({
-      title: "",
-      description: "",
-      category: "",
-      isMultiDay: false,
-      date: "",
-      startDate: "",
-      endDate: "",
-      startTime: "",
-      endTime: "",
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      location: {
-        name: "",
-        address: "",
-        coordinates: { latitude: "", longitude: "" },
-      },
-      isVirtual: false,
-      virtualLink: "",
-      capacity: "",
-      isPublic: true,
-      requiresApproval: false,
-      registrationStart: "",
-      registrationEnd: "",
-      tags: [],
-      ticketTiers: [
-        {
-          name: "General Admission",
-          price: 0,
-          capacity: "",
-          description: "Standard event access",
-        },
-      ],
-      banner: null,
-      bannerPreview: null,
-    });
+    setFormData(initialFormData);
     setErrors({});
     localStorage.removeItem(DRAFT_KEY);
     setNewTag("");
     setCurrentStep("form");
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const formatTime = (timeString) => {
-    return new Date(`2000-01-01T${timeString}`).toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
   };
 
   return (
@@ -671,25 +521,6 @@ const EventCreation = () => {
           </div>
         </div>
       )}
-      {successMessage && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 px-6 py-4 rounded-xl bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 font-medium shadow-md text-center"
-        >
-          {successMessage}
-        </motion.div>
-      )}
-
-      {generalError && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 px-6 py-4 rounded-xl bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 font-medium shadow-md text-center"
-        >
-          {generalError}
-        </motion.div>
-      )}
 
       {currentStep === "form" ? (
         <>
@@ -725,7 +556,7 @@ const EventCreation = () => {
           <motion.div
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
             className="text-center mb-10"
           >
             <h1 className="text-4xl sm:text-5xl font-extrabold text-indigo-800 dark:text-indigo-300 mb-4">
@@ -741,7 +572,7 @@ const EventCreation = () => {
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
             className="w-full max-w-4xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-2xl p-6 mb-10"
           >
             <div className="flex items-center gap-2 mb-3">
@@ -790,7 +621,7 @@ const EventCreation = () => {
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
             className="w-full max-w-4xl bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 border border-indigo-300 dark:border-gray-700"
           >
             <div className="space-y-6">
@@ -799,7 +630,7 @@ const EventCreation = () => {
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
               >
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <FileText className="w-5 h-5 text-indigo-500 inline-block mr-2" />
@@ -824,7 +655,7 @@ const EventCreation = () => {
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.1 }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.1 }}
               >
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
                   <Image className="w-5 h-5 text-indigo-500 inline-block mr-2" />
@@ -914,12 +745,25 @@ const EventCreation = () => {
                   {/* Preview Section */}
                   {formData.bannerPreview && (
                     <div className="rounded-lg overflow-hidden border border-indigo-200 dark:border-gray-700 shadow-md">
-                      <img
-                        loading="lazy"
-                        src={formData.bannerPreview}
-                        alt="Banner preview"
-                        className="w-full h-48 object-cover hover:scale-[1.02] transition-transform duration-300"
-                      />
+                     <img
+  loading="lazy"
+  decoding="async"
+  src={formData.bannerPreview}
+  alt="Banner preview"
+  className="
+    w-full
+    h-48
+    sm:h-56
+    md:h-64
+    object-cover
+    rounded-xl
+    hover:scale-[1.02]
+    transition-all
+    duration-300
+    bg-slate-200
+    dark:bg-slate-800
+  "
+/>
                     </div>
                   )}
                 </div>
@@ -1074,7 +918,7 @@ const EventCreation = () => {
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.1 }}
                 >
                   {/* Start Date */}
                   <div>
@@ -1161,7 +1005,7 @@ const EventCreation = () => {
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.1 }}
                 >
                   {/* Event Date */}
                   <div>
@@ -1300,7 +1144,7 @@ const EventCreation = () => {
                     initial={{ opacity: 0, x: -20 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: 0.1 }}
+                    transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.1 }}
                   >
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       <Map className="w-5 h-5 text-indigo-500 inline-block mr-2" />
@@ -1461,116 +1305,12 @@ const EventCreation = () => {
                 </label>
               </motion.div>
 
-              {/* Ticket Tiers Section */}
-              {/* Ticket Tiers Section */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.9 }}
-                className="border-t border-gray-200 dark:border-gray-600 pt-6"
-              >
-                {/* Header with "Add Tier" button */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <TicketIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                    <label className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                      Ticket Tiers
-                    </label>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={addTicketTier}
-                    className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-3xl text-sm font-medium shadow-md hover:bg-zinc-800 transition-all duration-300 transform hover:scale-[1.03] active:scale-[0.97]"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Tier
-                  </button>
-                </div>
-
-                {formData.ticketTiers.map((tier, index) => (
-                  <div
-                    key={index}
-                    className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4 mb-4"
-                  >
-                    <div className="flex justify-between items-center mb-3">
-                      <h4 className="font-semibold text-gray-700 dark:text-gray-300">
-                        Tier {index + 1}
-                      </h4>
-                      {formData.ticketTiers.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeTicketTier(index)}
-                          className="text-red-500 hover:text-red-700 text-sm font-medium"
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </div>
-                    <div className="space-y-3">
-                      <div>
-                        <input
-                          type="text"
-                          placeholder="Tier name"
-                          value={tier.name}
-                          onChange={(e) => handleTicketTierChange(index, "name", e.target.value)}
-                          className={`w-full border ${errors[`ticketTier_${index}_name`] ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500`}
-                        />
-                        {errors[`ticketTier_${index}_name`] && (
-                          <span className="text-red-500 text-sm mt-1 block">
-                            {errors[`ticketTier_${index}_name`]}
-                          </span>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <input
-                            type="number"
-                            placeholder="Price"
-                            min="0"
-                            step="0.01"
-                            value={tier.price}
-                            onChange={(e) => handleTicketTierChange(index, "price", e.target.value)}
-                            className={`w-full border ${errors[`ticketTier_${index}_price`] ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500`}
-                          />
-                          {errors[`ticketTier_${index}_price`] && (
-                            <span className="text-red-500 text-sm mt-1 block">
-                              {errors[`ticketTier_${index}_price`]}
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          <input
-                            type="number"
-                            placeholder="Capacity (optional)"
-                            min="1"
-                            value={tier.capacity}
-                            onChange={(e) =>
-                              handleTicketTierChange(index, "capacity", e.target.value)
-                            }
-                            className={`w-full border ${errors[`ticketTier_${index}_capacity`] ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500`}
-                          />
-                          {errors[`ticketTier_${index}_capacity`] && (
-                            <span className="text-red-500 text-sm mt-1 block">
-                              {errors[`ticketTier_${index}_capacity`]}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <textarea
-                        placeholder="Description"
-                        value={tier.description}
-                        onChange={(e) =>
-                          handleTicketTierChange(index, "description", e.target.value)
-                        }
-                        rows={2}
-                        className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </motion.div>
+              <TicketTiersSection
+                formData={formData}
+                setFormData={setFormData}
+                errors={errors}
+                setErrors={setErrors}
+              />
 
               {/* Tags Section */}
               <motion.div

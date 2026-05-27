@@ -5,11 +5,14 @@ import { useAuth } from '../../context/AuthContext';
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
+import useReducedMotion from "../../hooks/useReducedMotion";
 import GoogleLoginButton from './GoogleLoginButton';
+import FieldError from '../common/FieldError';
 import '../../styles/auth.css';
 
 const Login = () => {
   useDocumentTitle("Login | Eventra");
+  const prefersReducedMotion = useReducedMotion();
   const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState({});
@@ -96,7 +99,7 @@ const Login = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.6 }}
+      transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
       className="pastel-grid-bg min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 section-theme"
     >
 
@@ -104,7 +107,7 @@ const Login = () => {
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6, delay: prefersReducedMotion ? 0 : 0.2 }}
           className="relative w-full my-8 sm:my-12 overflow-hidden rounded-2xl border p-4 sm:p-6 lg:p-8 shadow-lg backdrop-blur-sm transition-all duration-200 hover:shadow-xl card-theme"
         >
           <div className="pointer-events-none absolute top-8 left-6 h-16 w-16 rounded-full bg-blue-100 opacity-60 blur-sm"></div>
@@ -147,7 +150,7 @@ const Login = () => {
                 <motion.div
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4 }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 0.4 }}
                   className="session-expired-banner"
                   role="alert"
                   aria-live="polite"
@@ -159,7 +162,7 @@ const Login = () => {
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.3, type: "spring", stiffness: 200 }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.3, type: "spring", stiffness: 200 }}
                 className="text-center space-y-4"
               >
                 <motion.div
@@ -215,27 +218,16 @@ const Login = () => {
                       required
                       disabled={loading}
                       placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
-                      className="w-full pl-3 pr-4 py-3 
-bg-white dark:bg-gray-800
-border border-gray-200 dark:border-gray-600
-rounded-xl 
-placeholder:text-gray-400 dark:placeholder:text-gray-500
-focus:ring-2 focus:ring-blue-500/20 
-focus:border-blue-500
-transition-all duration-200 
-hover:shadow-md 
-text-gray-900 dark:text-white"
+                      aria-invalid={!!error.usernameOrEmail}
+                      aria-describedby={error.usernameOrEmail ? 'usernameOrEmail-error' : undefined}
+                      className={`w-full pl-3 pr-4 py-3 bg-white dark:bg-gray-800 border ${
+                        error.usernameOrEmail
+                          ? 'border-red-500 dark:border-red-500'
+                          : 'border-gray-200 dark:border-gray-600'
+                      } rounded-xl placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white`}
                     />
                   </div>
-                  {error.usernameOrEmail && (
-                    <motion.p
-                      initial={{ opacity: 0, y: -5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-red-500 text-sm mt-1"
-                    >
-                      {error.usernameOrEmail}
-                    </motion.p>
-                  )}
+                  <FieldError id="usernameOrEmail-error" message={error.usernameOrEmail} />
                 </div>
 
                 {/* Password */}
@@ -273,7 +265,13 @@ text-gray-900 dark:text-white"
                       required
                       disabled={loading}
                       placeholder="Enter secure password / Minimum 8 characters / Use strong password"
-                      className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                      aria-invalid={!!error.password}
+                      aria-describedby={error.password ? 'password-error' : undefined}
+                      className={`w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border ${
+                        error.password
+                          ? 'border-red-500 dark:border-red-500'
+                          : 'border-gray-200 dark:border-gray-600'
+                      } rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white`}
                     />
 
                     <button
@@ -295,15 +293,7 @@ text-gray-900 dark:text-white"
                     </button>
                   </div>
 
-                  {error.password && (
-                    <motion.p
-                      initial={{ opacity: 0, y: -5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-red-500 text-sm mt-1"
-                    >
-                      {error.password}
-                    </motion.p>
-                  )}
+                  <FieldError id="password-error" message={error.password} />
                   <div className="flex justify-end">
                     <Link
                       to="/password-reset"

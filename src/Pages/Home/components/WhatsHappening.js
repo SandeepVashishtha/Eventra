@@ -5,11 +5,13 @@ import { useInView } from "react-intersection-observer";
 import { HomeCardSkeleton } from "../../../components/common/SkeletonLoaders";
 import { CheckCircle2, Hourglass } from "lucide-react";
 
+import useReducedMotion from "../../../hooks/useReducedMotion.js";
 // Import mock data
 import eventsData from "../../Events/eventsMockData.json";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 
 const WhatsHappening = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [ref, inView] = useInView({
     triggerOnce: true,
     threshold: 0.1,
@@ -17,7 +19,13 @@ const WhatsHappening = () => {
 
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(!prefersReducedMotion);
+
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      setIsAutoPlaying(false);
+    }
+  }, [prefersReducedMotion]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -162,9 +170,9 @@ const WhatsHappening = () => {
   }, [isAutoPlaying]);
 
   const cardVariants = {
-    enter: (dir) => ({ opacity: 0, x: dir > 0 ? 300 : -300 }),
+    enter: (dir) => ({ opacity: 0, x: prefersReducedMotion ? 0 : (dir > 0 ? 300 : -300) }),
     center: { opacity: 1, x: 0 },
-    exit: (dir) => ({ opacity: 0, x: dir > 0 ? -300 : 300 }),
+    exit: (dir) => ({ opacity: 0, x: prefersReducedMotion ? 0 : (dir > 0 ? -300 : 300) }),
   };
 
   const activeDotIndex =
@@ -186,7 +194,7 @@ border-t border-gray-100 dark:border-slate-800/80"
           className="text-center mb-8 sm:mb-12"
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
         >
           <h2 className="text-2xl sm:text-3xl font-extrabold text-black dark:text-white">
             What's Happening Now
@@ -281,7 +289,7 @@ border-t border-gray-100 dark:border-slate-800/80"
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ duration: 0.4, ease: "easeInOut" }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.4, ease: "easeInOut" }}
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pointer-events-auto relative z-[50]"
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
@@ -323,8 +331,11 @@ border-t border-gray-100 dark:border-slate-800/80"
                           onMouseLeave={() => setIsAutoPlaying(true)}
                         >
                           <div
-                            className="w-full h-full absolute transition-transform duration-700 group-hover:[transform:rotateY(180deg)]"
-                            style={{ transformStyle: "preserve-3d" }}
+                            className="w-full h-full absolute transition-transform group-hover:[transform:rotateY(180deg)]"
+                            style={{ 
+                              transformStyle: "preserve-3d",
+                              transitionDuration: prefersReducedMotion ? "0ms" : "700ms"
+                            }}
                           >
                             {/* Front Face */}
                             <div

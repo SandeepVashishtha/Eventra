@@ -3,6 +3,7 @@
 
 node_modules
 build
+.DS_Store
 
 # Secret Files - DO NOT COMMIT
 *.SECRETS.*
@@ -15,7 +16,11 @@ build
 
 /.metadata/
 backend/azure-environment-variables.json
-
+GITHUB_ISSUE_ASYNC_VALIDATION.md
+PHASE_1_COMPLETION_SUMMARY.md
+PHASE_1_IMPLEMENTATION_GUIDE.md
+PHASE_1_QUICK_REFERENCE.md
+PULL_REQUEST_TEMPLATE_PHASE1.md
 # Dev artifacts & junk files
 *.log
 *.stackdump
@@ -24,3 +29,12 @@ diff.txt
 diff-utf8.txt
 devserver.out.log
 devserver.err.log
+
+*storybook.log
+storybook-static
+.storybook/cache/
+
+# Playwright
+playwright-report/
+test-results/
+playwright/.cache/

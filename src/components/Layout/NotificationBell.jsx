@@ -24,8 +24,29 @@ export default function NotificationBell() {
       </button>
 
       {/* Dropdown Menu */}
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden">
+
+      <div
+  className={`
+    absolute
+    right-0
+    mt-2
+    w-80
+    bg-white
+    rounded-lg
+    shadow-xl
+    border
+    border-gray-100
+    overflow-hidden
+    transition-all
+    duration-300
+    origin-top-right
+    ${
+      isOpen
+        ? "opacity-100 scale-100 translate-y-0"
+        : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+    }
+  `}
+>
           <div className="p-3 font-semibold text-gray-700 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
             <span>Notifications</span>
             {unreadCount > 0 && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">{unreadCount} New</span>}
@@ -49,7 +70,7 @@ export default function NotificationBell() {
             )}
           </div>
         </div>
-      )}
+
     </div>
   );
 }

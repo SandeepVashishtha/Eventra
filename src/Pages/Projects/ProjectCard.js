@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import useReducedMotion from "../../hooks/useReducedMotion.js";
+import { fetchGitHubRepo, getGitHubRepoDetails } from "../../utils/githubApiClient.js";
 import {
   FiStar,
   FiGithub,
@@ -9,21 +11,12 @@ import {
   FiCpu,
   FiCode,
   FiLayers,
+  FiBookmark,
 } from "react-icons/fi";
 
 // Cache Keys & Constants
 const CACHE_KEY = "eventra_github_metrics_cache";
 const CACHE_TTL = 1 * 60 * 60 * 1000; // 1 hour expiration
-
-// Parse Owner & Repo from GitHub URL
-const getRepoDetails = (url) => {
-  if (!url) return null;
-  const match = url.match(/github\.com\/([^/]+)\/([^/]+)/);
-  if (match) {
-    return { owner: match[1], repo: match[2].replace(/\.git$/, "") };
-  }
-  return null;
-};
 
 // Status Badge Styling Helper
 const getStatusColor = (status) => {
@@ -57,6 +50,7 @@ const getDifficultyColor = (difficulty) => {
 
 // --- Concentric SVG Technology Rings Component ---
 const ConcentricTechRings = ({ techStack }) => {
+  const prefersReducedMotion = useReducedMotion();
   const list = techStack && techStack.length > 0 ? techStack.slice(0, 3) : ["React", "CSS", "JS"];
 
   // Custom visual colors mapped to standard technology types
@@ -120,7 +114,7 @@ const ConcentricTechRings = ({ techStack }) => {
                 strokeDasharray={cfg.circ}
                 initial={{ strokeDashoffset: cfg.circ }}
                 animate={{ strokeDashoffset }}
-                transition={{ duration: 1.2, delay: 0.15 * i, ease: "easeOut" }}
+                transition={{ duration: prefersReducedMotion ? 0 : 1.2, delay: 0.15 * i, ease: "easeOut" }}
               />
             );
           })}
@@ -150,7 +144,7 @@ const ConcentricTechRings = ({ techStack }) => {
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${pct}%` }}
-                  transition={{ duration: 1.0, delay: 0.1 * i, ease: "easeOut" }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 1.0, delay: 0.1 * i, ease: "easeOut" }}
                   className="h-full rounded-full"
                   style={{ background: `linear-gradient(to right, ${grad.from}, ${grad.to})` }}
                 />
@@ -163,7 +157,8 @@ const ConcentricTechRings = ({ techStack }) => {
   );
 };
 
-const ProjectCard = ({ project, index }) => {
+const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
+  const prefersReducedMotion = useReducedMotion();
   const [isLoaded, setIsLoaded] = useState(false);
   const [metrics, setMetrics] = useState(null);
   const [metricsLoading, setMetricsLoading] = useState(true);
@@ -182,9 +177,53 @@ const ProjectCard = ({ project, index }) => {
     });
   };
 
+  const handleIncrementStar = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const repoDetails = getGitHubRepoDetails(project.githubUrl);
+    const key = repoDetails ? `${repoDetails.owner}/${repoDetails.repo}` : `mock-${project.id}`;
+    
+    setMetrics(prev => {
+      const updated = { ...prev, stars: (prev?.stars || 0) + 1 };
+      try {
+        let cache = {};
+        const saved = localStorage.getItem(CACHE_KEY);
+        cache = saved ? JSON.parse(saved) : {};
+        cache[key] = { data: updated, timestamp: Date.now() };
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+      } catch (err) {
+        console.error(err);
+      }
+      return updated;
+    });
+  };
+
+  const handleIncrementFork = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const repoDetails = getGitHubRepoDetails(project.githubUrl);
+    const key = repoDetails ? `${repoDetails.owner}/${repoDetails.repo}` : `mock-${project.id}`;
+    
+    setMetrics(prev => {
+      const updated = { ...prev, forks: (prev?.forks || 0) + 1 };
+      try {
+        let cache = {};
+        const saved = localStorage.getItem(CACHE_KEY);
+        cache = saved ? JSON.parse(saved) : {};
+        cache[key] = { data: updated, timestamp: Date.now() };
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+      } catch (err) {
+        console.error(err);
+      }
+      return updated;
+    });
+  };
+
   // GitHub metrics loading with LocalStorage caching system
   useEffect(() => {
-    const repoDetails = getRepoDetails(project.githubUrl);
+    const repoDetails = getGitHubRepoDetails(project.githubUrl);
 
     if (!repoDetails) {
       // Fallback directly to mock data if there is no valid repo
@@ -218,11 +257,7 @@ const ProjectCard = ({ project, index }) => {
           return;
         }
 
-        // Fetch live metadata
-        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`);
-        if (!res.ok) throw new Error("API Failure");
-
-        const data = await res.json();
+        const data = await fetchGitHubRepo({ owner, repo });
         const freshMetrics = {
           stars: data.stargazers_count || 0,
           forks: data.forks_count || 0,
@@ -289,6 +324,21 @@ const ProjectCard = ({ project, index }) => {
         <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full whitespace-nowrap shadow-xs ${getStatusColor(project.status)}`}>
           {project.status || "Unknown"}
         </span>
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onBookmarkToggle(project.id);
+          }}
+          className={`p-2 rounded-xl border transition-colors shrink-0 cursor-pointer ${
+            isBookmarked
+              ? "bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-950/40 dark:border-indigo-900/60 dark:text-indigo-400"
+              : "bg-white border-slate-200 text-slate-400 hover:text-slate-600 dark:bg-slate-900 dark:border-slate-800 dark:hover:text-slate-200"
+          }`}
+          title={isBookmarked ? "Remove Bookmark" : "Bookmark Project"}
+        >
+          <FiBookmark className={isBookmarked ? "fill-current" : ""} size={14} />
+        </button>
       </div>
 
       {/* Hero Image */}
@@ -365,24 +415,26 @@ const ProjectCard = ({ project, index }) => {
                 exit={{ opacity: 0, y: -5 }}
                 className="grid grid-cols-4 gap-2 text-[11px]"
               >
-                <div
-                  className="flex flex-col items-center justify-center bg-amber-50/50 hover:bg-amber-50 dark:bg-amber-950/20 dark:hover:bg-amber-950/30 border border-amber-100/20 dark:border-amber-900/10 rounded-xl py-1 text-amber-600 dark:text-amber-400 font-extrabold transition-colors cursor-help"
-                  title="Stargazers"
+                <button
+                  onClick={handleIncrementStar}
+                  className="flex flex-col items-center justify-center bg-amber-50/50 hover:bg-amber-100/80 dark:bg-amber-950/20 dark:hover:bg-amber-950/40 border border-amber-100/20 dark:border-amber-900/10 rounded-xl py-1 text-amber-600 dark:text-amber-400 font-extrabold transition-all cursor-pointer hover:scale-105 active:scale-95"
+                  title="Click to Star repository!"
                 >
                   <FiStar className="mb-0.5" />
                   <span>{metrics?.stars || 0}</span>
-                </div>
+                </button>
 
-                <div
-                  className="flex flex-col items-center justify-center bg-teal-50/50 hover:bg-teal-50 dark:bg-teal-950/20 dark:hover:bg-teal-950/30 border border-teal-100/20 dark:border-teal-900/10 rounded-xl py-1 text-teal-600 dark:text-teal-400 font-extrabold transition-colors cursor-help"
-                  title="Forks"
+                <button
+                  onClick={handleIncrementFork}
+                  className="flex flex-col items-center justify-center bg-teal-50/50 hover:bg-teal-100/80 dark:bg-teal-950/20 dark:hover:bg-teal-950/40 border border-teal-100/20 dark:border-teal-900/10 rounded-xl py-1 text-teal-600 dark:text-teal-400 font-extrabold transition-all cursor-pointer hover:scale-105 active:scale-95"
+                  title="Click to Fork repository!"
                 >
                   <FiGithub className="mb-0.5" />
                   <span>{metrics?.forks || 0}</span>
-                </div>
+                </button>
 
                 <div
-                  className="flex flex-col items-center justify-center bg-rose-50/50 hover:bg-rose-50 dark:bg-rose-950/20 dark:hover:bg-rose-950/30 border border-rose-100/20 dark:border-rose-900/10 rounded-xl py-1 text-rose-600 dark:text-rose-400 font-extrabold transition-colors cursor-help"
+                  className="flex flex-col items-center justify-center bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100/20 dark:border-rose-900/10 rounded-xl py-1 text-rose-600 dark:text-rose-400 font-extrabold cursor-help"
                   title="Open Issues"
                 >
                   <FiAlertCircle className="mb-0.5" />
@@ -390,7 +442,7 @@ const ProjectCard = ({ project, index }) => {
                 </div>
 
                 <div
-                  className="flex flex-col items-center justify-center bg-indigo-50/50 hover:bg-indigo-50 dark:bg-indigo-950/20 dark:hover:bg-indigo-950/30 border border-indigo-100/20 dark:border-indigo-900/10 rounded-xl py-1 text-indigo-600 dark:text-indigo-400 font-extrabold transition-colors cursor-help"
+                  className="flex flex-col items-center justify-center bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/20 dark:border-indigo-900/10 rounded-xl py-1 text-indigo-600 dark:text-indigo-400 font-extrabold cursor-help"
                   title="Pull Requests"
                 >
                   <FiGitPullRequest className="mb-0.5" />
@@ -444,4 +496,5 @@ const ProjectCard = ({ project, index }) => {
   );
 };
 
-export default ProjectCard;
+
+export default memo(ProjectCard);

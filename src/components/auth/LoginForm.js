@@ -1,19 +1,29 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
 import { LogIn, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import useReducedMotion from '../../hooks/useReducedMotion';
 
 const LoginForm = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState({});
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
+  const from = location.state?.from;
+  const redirectPath =
+    typeof from === "string"
+      ? from
+      : from?.pathname
+        ? `${from.pathname}${from.search || ""}${from.hash || ""}`
+        : "/dashboard";
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -51,8 +61,8 @@ const LoginForm = () => {
     try {
       const ok = await login(formData.usernameOrEmail, formData.password);
       if (ok) {
-        showAuthToast("Login successful! Redirecting to dashboard...", () =>
-          navigate("/dashboard", { replace: true })
+        showAuthToast("Login successful! Redirecting...", () =>
+          navigate(redirectPath, { replace: true })
         );
       }
     } catch (err) {
@@ -118,11 +128,15 @@ const LoginForm = () => {
               required
               disabled={loading}
               placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
-              className="w-full pl-10 pr-4 py-3 bg-[#0f172a]/60 border border-slate-700/50 rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner"
+              aria-invalid={!!error.usernameOrEmail}
+              aria-describedby={error.usernameOrEmail ? "usernameOrEmail-error" : undefined}
+              className={`w-full pl-10 pr-4 py-3 bg-[#0f172a]/60 border ${
+                error.usernameOrEmail ? "border-red-500" : "border-slate-700/50"
+              } rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner`}
             />
           </div>
           {error.usernameOrEmail && (
-            <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-1 flex items-center gap-1">
+            <motion.p id="usernameOrEmail-error" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-1 flex items-center gap-1" role="alert">
               <span>⚠</span> {error.usernameOrEmail}
             </motion.p>
           )}
@@ -144,7 +158,11 @@ const LoginForm = () => {
               required
               disabled={loading}
               placeholder="Create a secure password"
-              className="w-full pl-10 pr-10 py-3 bg-[#0f172a]/60 border border-slate-700/50 rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner"
+              aria-invalid={!!error.password}
+              aria-describedby={error.password ? "password-error" : undefined}
+              className={`w-full pl-10 pr-10 py-3 bg-[#0f172a]/60 border ${
+                error.password ? "border-red-500" : "border-slate-700/50"
+              } rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner`}
             />
             <button
               type="button"
@@ -155,7 +173,7 @@ const LoginForm = () => {
             </button>
           </div>
           {error.password && (
-            <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-1 flex items-center gap-1">
+            <motion.p id="password-error" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-1 flex items-center gap-1" role="alert">
               <span>⚠</span> {error.password}
             </motion.p>
           )}

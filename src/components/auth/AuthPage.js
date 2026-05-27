@@ -4,25 +4,34 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import useReducedMotion from "../../hooks/useReducedMotion";
 import LoginForm from './LoginForm';
 import SignupForm from './SignupForm';
 
 const AuthPage = () => {
+  const prefersReducedMotion = useReducedMotion();
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   
   const isLogin = location.pathname === '/login';
   const sessionExpired = location.state?.sessionExpired === true;
+  const from = location.state?.from;
+  const redirectPath =
+    typeof from === "string"
+      ? from
+      : from?.pathname
+        ? `${from.pathname}${from.search || ""}${from.hash || ""}`
+        : "/dashboard";
   const [showExpiredBanner, setShowExpiredBanner] = useState(sessionExpired);
   
   useDocumentTitle(isLogin ? "Login | Eventra" : "Sign Up | Eventra");
 
   useEffect(() => {
     if (isAuthenticated()) {
-      navigate('/dashboard', { replace: true });
+      navigate(redirectPath, { replace: true });
     }
-  }, [navigate, isAuthenticated]);
+  }, [navigate, isAuthenticated, redirectPath]);
 
   const introPoints = [
     "Create your account to post events, join hackathons, and submit projects.",
@@ -52,7 +61,7 @@ const AuthPage = () => {
       opacity: 0,
       scale: 0.95,
       transition: {
-        duration: 0.2,
+        duration: prefersReducedMotion ? 0 : 0.2,
       },
     }),
   };
