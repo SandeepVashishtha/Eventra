@@ -18,6 +18,7 @@ import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
 import StyledDropdown from "../../components/StyledDropdown";
 import SkeletonLeaderboard from "../../components/common/SkeletonLeaderboard";
+import EmptyState from "../../components/common/EmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useLeaderboardStream, SSE_STATUS } from "../../context/RealTimeContext";
 import {
@@ -798,6 +799,15 @@ export default function LeaderBoard() {
             </div>
           ) : (
             <div className="overflow-x-auto">
+              {currentContributors.length === 0 ? (
+                <EmptyState
+                  title="No rankings yet."
+                  description="Be the first to contribute to Eventra and claim the top spot!"
+                  ctaText="Participate Now"
+                  ctaLink="/projects"
+                />
+              ) : (
+              <>
               <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
 
                 <thead className="bg-slate-50 dark:bg-slate-900/50">
@@ -957,7 +967,8 @@ export default function LeaderBoard() {
                   </div>
                 </div>
               )}
-
+              </>
+              )}
             </div>
           )}
         </div>

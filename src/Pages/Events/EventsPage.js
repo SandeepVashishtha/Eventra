@@ -14,6 +14,7 @@ import EventCTA from "./EventCTA";
 import StyledDropdown from "../../components/StyledDropdown";
 import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
 import SearchEmptyState from "../../components/common/SearchEmptyState";
+import EmptyState from "../../components/common/EmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import ActiveFilters from "./ActiveFilters";
 import PaginationControls from "./PaginationControls";
@@ -46,7 +47,8 @@ const renderCardSection = (
   paginatedEvents,
   viewMode,
   searchQuery,
-  onClearSearch
+  onClearSearch,
+  hasActiveFilters
 ) => {
   if (isLoading) {
     return (
@@ -68,6 +70,17 @@ const renderCardSection = (
   }
 
   if (paginatedEvents.length === 0) {
+    if (!hasActiveFilters) {
+      return (
+        <EmptyState
+          title="No events scheduled."
+          description="There are currently no events to display in the database."
+          ctaText="Create an Event"
+          ctaLink="/events/create"
+        />
+      );
+    }
+    
     return (
       <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
         <SearchEmptyState
@@ -266,7 +279,8 @@ const EventsPage = () => {
           listing.paginatedEvents,
           listing.viewMode,
           listing.searchQuery,
-          clearSearchAndFilters
+          clearSearchAndFilters,
+          hasActiveFilters
         )}
 
         {!listing.isLoading && listing.totalPages > 1 && (
