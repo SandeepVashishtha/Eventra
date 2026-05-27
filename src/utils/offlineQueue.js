@@ -94,10 +94,19 @@ export const getQueueIndexedDB = async () => {
  * @returns {string} A collision-resistant unique ID string
  */
 const generateQueueId = () => {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
+  if (typeof crypto !== "undefined") {
+    // Modern environments
+    if (typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+    // Older environments (e.g., IE11/older Safari) that support crypto but lack randomUUID
+    if (typeof crypto.getRandomValues === "function") {
+      const array = new Uint32Array(4);
+      crypto.getRandomValues(array);
+      return `${Date.now()}-${array.join("-")}`;
+    }
   }
-  // Fallback: timestamp + 9 random base-36 chars (36^9 ≈ 101 billion combinations)
+  // Ultimate fallback if no crypto object is available at all
   return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 };
 
