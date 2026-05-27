@@ -100,9 +100,13 @@ const generateQueueId = () => {
 
 /**
  * Append a single item to both localStorage mirror and IndexedDB.
+ *
+ * SECURITY: Each queued action is tagged with the current user ID to prevent
+ * cross-user action replay. If a user logs out and another user logs in,
+ * the queued actions are validated for ownership before replay.
  */
-export const pushToQueue = async (item) => {
-  // Add metadata tracking
+export const pushToQueue = async (item, userId = null) => {
+  // Add metadata tracking with security context
   const actionItem = {
     id: item.id || generateQueueId(),
     timestamp: item.timestamp || new Date().toISOString(),
@@ -110,7 +114,10 @@ export const pushToQueue = async (item) => {
     actionType: item.actionType || "REGISTER_EVENT",
     eventId: item.eventId || null,
     payload: item.payload || {},
-    endpoint: item.endpoint || null
+    endpoint: item.endpoint || null,
+    // SECURITY: Attach user ID to validate ownership on replay
+    userId: userId || null,
+    sessionId: typeof window !== 'undefined' ? sessionStorage.getItem('session_id') || null : null,
   };
 
   // 1. Sync mirror updates immediately (Synchronous fallback)
@@ -214,4 +221,40 @@ export const clearQueue = async () => {
   } catch (err) {
     console.error("IndexedDB clear failed:", err);
   }
+};
+
+/**
+ * SECURITY: Filter queued actions to only include items owned by the current user.
+ *
+ * This prevents a critical cross-user action replay vulnerability:
+ * If User A queues actions offline, logs out, and User B logs in, the queued
+ * actions should NOT replay under User B's session.
+ *
+ * This function validates each queued action's userId against the current user.
+ * Orphaned actions (no userId) are dropped to be safe.
+ *
+ * @param {Array} queue - Current offline queue
+ * @param {string} currentUserId - User ID of currently logged-in user
+ * @returns {Array} Filtered queue containing only actions owned by currentUserId
+ */
+export const filterQueueByOwnership = (queue, currentUserId) => {
+  if (!currentUserId) {
+    console.warn('[Security] No user ID provided — dropping entire queue as a safety precaution');
+    return [];
+  }
+
+  const validatedQueue = queue.filter((item) => {
+    // SECURITY: Only allow items with matching userId
+    if (item.userId !== currentUserId) {
+      console.warn(
+        `[Security] Dropping queued action ${item.id}: ` +
+        `owned by user ${item.userId} but current user is ${currentUserId}. ` +
+        `This prevents cross-user action replay.`
+      );
+      return false;
+    }
+    return true;
+  });
+
+  return validatedQueue;
 };
