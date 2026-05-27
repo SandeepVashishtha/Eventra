@@ -133,6 +133,45 @@ const wrapAxiosResponse = (response) => {
       typeof response.data === "string" ? response.data : JSON.stringify(response.data),
   };
 };
+const normalizeApiError = (error) => {
+  const config = error.config || {};
+  const status = error?.response?.status;
+
+  if (
+    error.code === "ECONNABORTED" ||
+    error.name === "AbortError" ||
+    error.message?.includes("timeout")
+  ) {
+    return new ApiError(
+      `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
+      {
+        status,
+        isTimeout: true,
+      }
+    );
+  }
+
+  if (!error.response) {
+    return new ApiError(
+      error.message ||
+        `Network error: ${config.method?.toUpperCase()} ${config.url}`,
+      {
+        status,
+        isNetworkError: true,
+      }
+    );
+  }
+
+  return new ApiError(
+    error.response?.data?.message ||
+      error.message ||
+      `Request failed with status ${status}`,
+    {
+      status,
+      data: error.response?.data || null,
+    }
+  );
+};
 
 API.interceptors.request.use((config) => {
   if (!config.signal) {
@@ -171,32 +210,7 @@ API.interceptors.response.use(
       await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
       return API(config);
     }
-
-    if (
-      error.code === "ECONNABORTED" ||
-      error.name === "AbortError" ||
-      error.message?.includes("timeout")
-    ) {
-      throw new ApiError(
-        `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
-        { isTimeout: true }
-      );
-    }
-
-    if (!error.response) {
-      throw new ApiError(
-        error.message || `Network error: ${config.method?.toUpperCase()} ${config.url}`,
-        { isNetworkError: true }
-      );
-    }
-
-    throw new ApiError(
-      error.response?.data?.message || error.message || `Request failed with status ${status}`,
-      {
-        status: error.response.status,
-        data: error.response.data,
-      }
-    );
+    throw normalizeApiError(error);
   }
 );
 
@@ -255,6 +269,8 @@ export const apiUtils = {
 };
 
 export default API;
+
+export { normalizeApiError };
 
 export const API_ENDPOINTS_UPDATED = {
   ...API_ENDPOINTS,
