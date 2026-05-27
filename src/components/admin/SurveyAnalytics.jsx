@@ -7,7 +7,9 @@ import {
   FiStar,
   FiMessageSquare,
   FiCheckCircle,
+  FiDownload,
 } from "react-icons/fi";
+import { exportSurveyToCSV } from "../../utils/exportCsv";
 import {
   ResponsiveContainer,
   BarChart,
@@ -33,11 +35,87 @@ const FEEDBACK_COMMENTS_POOL = [
   "The live code demonstrations were highly informative and engaging.",
 ];
 
-const SurveyAnalytics = ({ questions = [] }) => {
+const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
   // Statics
   const [totalSubmissions, setTotalSubmissions] = useState(142);
   const [completionRate, setCompletionRate] = useState(87.3);
   const [isActive, setIsActive] = useState(true);
+
+  // Reconstruct individual rows corresponding to each submission per question distribution
+  const handleExportCSV = () => {
+    if (questions.length === 0) {
+      toast.warn("Please add some questions first before exporting results!");
+      return;
+    }
+
+    const responses = [];
+    const now = new Date();
+
+    for (let i = 0; i < totalSubmissions; i++) {
+      const answers = {};
+
+      questions.forEach((q) => {
+        if (q.type === "rating") {
+          const distribution = simulatedData[q.id] || { 5: 50, 4: 30, 3: 10, 2: 3, 1: 1 };
+          const total = Object.values(distribution).reduce((a, b) => a + b, 0) || 1;
+          const rand = Math.floor(Math.random() * total);
+
+          let cumulative = 0;
+          let selectedScore = 4;
+          for (const score of [5, 4, 3, 2, 1]) {
+            cumulative += distribution[score];
+            if (rand < cumulative) {
+              selectedScore = score;
+              break;
+            }
+          }
+          answers[q.id] = `${selectedScore} Stars`;
+        } else if (q.type === "choice") {
+          const distribution = simulatedData[q.id] || {};
+          const options = Object.keys(distribution);
+          if (options.length > 0) {
+            const total = Object.values(distribution).reduce((a, b) => a + b, 0) || 1;
+            const rand = Math.floor(Math.random() * total);
+
+            let cumulative = 0;
+            let selectedOpt = options[0];
+            for (const opt of options) {
+              cumulative += distribution[opt];
+              if (rand < cumulative) {
+                selectedOpt = opt;
+                break;
+              }
+            }
+            answers[q.id] = selectedOpt;
+          } else {
+            answers[q.id] = "";
+          }
+        } else if (q.type === "text") {
+          const qFeed = textFeed.find((t) => t.questionId === q.id);
+          const commentsList = qFeed ? qFeed.comments.map((c) => c.text) : [];
+          if (commentsList.length > 0) {
+            answers[q.id] = commentsList[i % commentsList.length];
+          } else {
+            answers[q.id] = FEEDBACK_COMMENTS_POOL[i % FEEDBACK_COMMENTS_POOL.length];
+          }
+        }
+      });
+
+      // Distribute timestamps back in 5-minute increments
+      const timestamp = new Date(now.getTime() - i * 5 * 60000)
+        .toISOString()
+        .replace("T", " ")
+        .substring(0, 19);
+
+      responses.push({
+        timestamp,
+        answers,
+      });
+    }
+
+    exportSurveyToCSV(questions, responses, surveyTitle);
+    toast.success("Survey responses successfully exported to CSV file!");
+  };
 
   // Dynamic simulation seed - generated dynamically based on the current questions
   const [simulatedData, setSimulatedData] = useState({});
@@ -205,13 +283,23 @@ const SurveyAnalytics = ({ questions = [] }) => {
             Generate synthetic survey submissions to test average calculations, option breakdowns, and scrolling log feeds.
           </p>
         </div>
-        <button
-          onClick={handleSimulateSubmission}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-xs font-bold text-white shadow-lg shadow-indigo-600/15 transition self-start sm:self-auto cursor-pointer"
-        >
-          <FiPlay className="w-4 h-4 fill-white" />
-          Inject Survey Response
-        </button>
+        <div className="flex items-center gap-3 shrink-0">
+          <button
+            onClick={handleExportCSV}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold hover:border-indigo-500 dark:hover:border-indigo-400 text-xs text-slate-700 dark:text-slate-350 hover:text-indigo-650 dark:hover:text-indigo-400 hover:shadow-md transition active:scale-95 cursor-pointer"
+          >
+            <FiDownload className="w-4 h-4 text-indigo-500" />
+            Export Results to CSV
+          </button>
+          
+          <button
+            onClick={handleSimulateSubmission}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-xs font-bold text-white shadow-lg shadow-indigo-600/15 transition self-start sm:self-auto cursor-pointer"
+          >
+            <FiPlay className="w-4 h-4 fill-white" />
+            Inject Survey Response
+          </button>
+        </div>
       </div>
 
       {/* SUMMARY STATS GRID */}

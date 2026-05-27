@@ -580,7 +580,7 @@ const SurveyEngine = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
             >
-              <SurveyAnalytics questions={questions} />
+              <SurveyAnalytics questions={questions} surveyTitle={surveyTitle} />
             </motion.div>
           )}
         </AnimatePresence>
