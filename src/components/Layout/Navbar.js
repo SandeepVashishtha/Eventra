@@ -1,3 +1,4 @@
+import NotificationBell from "../common/NotificationBell.jsx";
 import { useTheme } from "../../context/ThemeContext";
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -371,10 +372,13 @@ const MobileDrawerFooter = ({
       <div className="flex gap-3 mt-4">
         <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={true} />
         <CursorToggleButton
-          cursorEnabled={cursorEnabled}
-          toggleCursor={toggleCursor}
-          isMobile={true}
-        />
+  cursorEnabled={cursorEnabled}
+  toggleCursor={toggleCursor}
+  isMobile={true}
+/>
+
+<NotificationBell />
+        
       </div>
     </div>
   </div>

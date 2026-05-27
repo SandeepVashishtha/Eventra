@@ -6,10 +6,9 @@ const highlightMatch = (
 ) => {
   if (!query) return text;
 
-  const regex = new RegExp(
-    `(${query})`,
-    "gi"
-  );
+  // Escape special regular expression characters to prevent ReDoS and SyntaxError crashes
+  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`(${escapedQuery})`, "gi");
 
   const parts = text.split(regex);
 
