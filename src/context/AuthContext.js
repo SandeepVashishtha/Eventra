@@ -188,10 +188,9 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (!token) return;
-            setAuthRequest({
-              loading: false,
-              error: null,
-            });
+  // --- Smart Token Expiry Timeout ---
+  useEffect(() => {
+    if (!token) return;
 
     expiryToastShownRef.current = false;
 
@@ -199,97 +198,54 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
-          const normalizeRoles = useCallback((roles = []) => {
-            return roles.map((role) => {
-              const normalized = String(role).toUpperCase();
-              return normalized === "EVENT_MANAGER" ? ROLES.ORGANIZER : normalized;
-            });
-          }, []);
+    const payload = decodeTokenPayload(token);
+    const expSeconds = payload?.exp;
 
-          const extractSession = useCallback(
-            (res, data, fallbackEmail) => {
-              let sessionToken = data?.token ?? data?.accessToken ?? null;
+    let timeoutId;
 
-              if (!sessionToken) {
-                const authHeader = res.headers?.authorization || res.headers?.Authorization || null;
-                if (authHeader && authHeader.startsWith("Bearer ")) {
-                  sessionToken = authHeader.substring(7);
-                }
-              }
+    if (typeof expSeconds === "number") {
+      const nowMs = Date.now();
+      const expiresAtMs = expSeconds * 1000;
+      const delayMs = Math.max(expiresAtMs - nowMs + 1000, 0);
 
-              const rawUser = data?.user ?? data?.data ?? data ?? null;
-              const rawRoles = rawUser?.roles ?? (rawUser?.role ? [rawUser.role] : []);
-              const resolvedRoles = normalizeRoles(rawRoles);
-              const tokenPermissions = Array.isArray(rawUser?.permissions)
-                ? rawUser.permissions.map((permission) => String(permission))
-                : [];
-              const rolePermissions = resolvedRoles.flatMap((role) => ROLE_PERMISSIONS[role] || []);
-              const permissions = Array.from(new Set([...tokenPermissions, ...rolePermissions]));
+      timeoutId = setTimeout(() => {
+        if (!isTokenValid(token)) {
+          clearExpiredSession();
+        }
+      }, delayMs);
+    } else {
+      timeoutId = setInterval(() => {
+        if (!isTokenValid(token)) {
+          clearExpiredSession();
+        }
+      }, 60_000);
 
-              const scopes =
-                rawUser?.scopes ??
-                (resolvedRoles.includes(ROLES.SUPER_ADMIN) || resolvedRoles.includes(ROLES.ADMIN)
-                  ? ["admin:all", "event:write", "event:read", "hackathon:write", "hackathon:read"]
-                  : resolvedRoles.includes(ROLES.ORGANIZER)
-                    ? ["event:write", "event:read", "hackathon:write", "hackathon:read"]
-                    : ["event:read", "hackathon:read"]);
+      if (!isTokenValid(token)) {
+        clearExpiredSession();
+      }
+    }
 
-              const sessionUser = {
-                ...(rawUser || {}),
-                firstName: rawUser?.firstName ?? "",
-                lastName: rawUser?.lastName ?? "",
-                email: rawUser?.email ?? fallbackEmail ?? "",
-                username: rawUser?.username ?? fallbackEmail ?? "",
-                role: rawUser?.role ?? resolvedRoles[0] ?? "",
-                roles: resolvedRoles,
-                permissions,
-                scopes,
-              };
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(timeoutId);
+    };
+  }, [token, clearExpiredSession]);
 
-              return { sessionToken, sessionUser };
-            },
-            [normalizeRoles]
-          );
-
-          const clearExpiredSession = useCallback(() => {
-            // eslint-disable-next-line no-console
-            console.warn("[AuthContext] Session expiration detected. Clearing session state immediately.");
-            clearSession();
-
-            if (expiryToastShownRef.current) {
-              return;
-            }
-
-            expiryToastShownRef.current = true;
-            toast.info("Session expired. Please log in again.", {
-              toastId: "session-expired",
-              autoClose: 5000,
-            });
-          }, [clearSession]);
-
-          const setAuthRequestState = useCallback((nextState) => {
-            if (!isMountedRef.current) return false;
-
-            setAuthRequest(nextState);
-            return true;
-          }, []);
-
-
-      persistSession(sessionToken, sessionUser);
+  const persistSession = useCallback((sessionToken, sessionUser) => {
+    setToken(sessionToken);
+    setUser(sessionUser);
+    
+    document.cookie = `token=${sessionToken}; path=/; Secure; HttpOnly; SameSite=Strict`;
+    
+    try {
+      localStorage.setItem("user", JSON.stringify(sessionUser));
       return true;
     } catch (error) {
-      setAuthRequest((prev) => ({
-        ...prev,
-        error: getAuthErrorMessage(error, "Login failed. Please try again."),
-      }));
-      throw error;
-    } finally {
-      setAuthRequest((prev) => ({
-        ...prev,
-        loading: false,
-      }));
+      // eslint-disable-next-line no-console
+      console.error('[AuthContext] Error persisting user profile:', error);
+      return false;
     }
-  };
+  }, []);
 
   /**
    * Sign in with a Google credential returned by @react-oauth/google.
