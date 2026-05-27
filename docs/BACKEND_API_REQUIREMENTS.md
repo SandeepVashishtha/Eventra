@@ -1342,3 +1342,7 @@ Please agree on and document which format you will use before implementation.
    * Parameter descriptions
    * Example response values where applicable
 
+
+
+### Event Registration Constraint
+- **Duplicate Prevention**: Implemented a check to prevent users from registering multiple times for the same event, throwing an HTTP 409 Conflict exception if a duplicate registration is attempted.
