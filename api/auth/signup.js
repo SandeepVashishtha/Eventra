@@ -230,3 +230,10 @@ export default async function handler(req, res) {
     return corsResponse(res, 500, { error: "Internal server error. Please try again later." });
   }
 }
+
+// ---------------------------------------------------------------------------
+// Export users map for sharing with login.js (development purposes)
+// In production, replace with actual database
+// ---------------------------------------------------------------------------
+
+export { users };
