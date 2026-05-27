@@ -24,7 +24,7 @@ const endpoints = [
     url: "/api/hackathons",
     example: `fetch("/api/hackathons")
 .then(res => res.json())
-.then(data => console.log(data))
+.then(data => { /* handle response */ })
 .catch(err => console.error(err))`,
     response: `[
     
@@ -112,6 +112,9 @@ const ApiDocs = () => {
   const executeMockRequest = () => {
     setIsLoading(true);
     setTerminalOutput("");
+    
+    // Track execution for onboarding checklist
+    localStorage.setItem("eventra_sandbox_executed", "true");
     
     setTimeout(() => {
       let data = [];

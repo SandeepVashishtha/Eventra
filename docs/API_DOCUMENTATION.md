@@ -257,43 +257,50 @@ GET /api/events
 
 ---
 
-## Get Public Event By ID
+### Get Event By ID
+
+---
+
 
 | Method | Endpoint |
 |--------|----------|
 | GET | `/api/events/{id}` |
 
-Returns a public event if available.
+Returns complete details for an event by its ID. Requires JWT authentication.
+
+This endpoint retrieves the event directly by ID and does not apply public-only filtering. If the event exists, both public and private/non-public events can be returned to an authenticated requester.
+
+### Request Headers
+
+    Authorization: Bearer YOUR_JWT_TOKEN
 
 ### Example Request
 
-```bash
-GET /api/events/1
-```
+    GET /api/events/1
 
 ### Successful Response (200)
 
 ```json
-{
-  "id": 1,
-  "title": "Tech Conference",
-  "description": "Annual developer meetup",
-  "location": "Mumbai",
-  "eventDate": "2026-05-19T18:30:00",
-  "public": true
-}
+    {
+      "id": 1,
+      "title": "Tech Conference",
+      "description": "Annual developer meetup",
+      "location": "Mumbai",
+      "eventDate": "2026-05-19T18:30:00",
+      "public": false
+    }
 ```
 
 ### Error Response (404)
 
 ```json
-{
-  "status": 404,
-  "error": "Not Found",
-  "message": "Event not found or is not public with id: 888",
-  "path": "/api/events/888",
-  "timestamp": "2026-05-19T12:20:31"
-}
+    {
+      "status": 404,
+      "error": "Not Found",
+      "message": "Event not found with id: 888",
+      "path": "/api/events/888",
+      "timestamp": "2026-05-19T12:20:31"
+    }
 ```
 
 ---
@@ -352,6 +359,76 @@ POST /api/events/1/register
   "timestamp": "2026-05-19T12:20:31"
 }
 ```
+
+---
+
+## Create Event
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/events/create` |
+
+Creates a new event. This endpoint is restricted to authenticated users with `ORGANIZER` or `ADMIN` authority.
+
+
+### Authentication
+
+---
+
+Requires a valid JWT token.
+
+```http
+Authorization: Bearer <token>
+```
+
+#### Request Body
+
+```json
+{
+  "title": "Manual Create Event Test",
+  "description": "Testing event creation manually",
+  "location": "Online",
+  "eventDate": "2026-07-15T10:00:00",
+  "capacity": 50,
+  "isPublic": true
+}
+```
+
+#### Field Notes
+
+- `title`, `description`, `location`, and `eventDate` are required.
+- `eventDate` must be a future date/time.
+- `capacity` is optional, but must be positive when provided.
+- `isPublic` is optional and defaults to `true`.
+- `registeredCount` is managed by the backend and defaults to `0`.
+
+#### Success Response
+
+```http
+201 Created
+```
+
+```json
+{
+  "id": 1,
+  "title": "Manual Create Event Test",
+  "description": "Testing event creation manually",
+  "location": "Online",
+  "eventDate": "2026-07-15T10:00:00",
+  "capacity": 50,
+  "registeredCount": 0,
+  "public": true
+}
+```
+
+#### Error Responses
+
+| Status | Reason |
+|---|---|
+| `400 Bad Request` | Invalid event payload |
+| `401 Unauthorized` | Missing or invalid JWT |
+| `403 Forbidden` | Authenticated user is not an `ORGANIZER` or `ADMIN` |
+
 
 ---
 
@@ -488,7 +565,7 @@ The backend returns standardized JSON error responses for better frontend integr
 {
   "status": 404,
   "error": "Not Found",
-  "message": "Event not found or is not public with id: 888",
+  "message": "Event not found with id: 888",
   "path": "/api/events/888",
   "timestamp": "2026-05-19T12:20:31"
 }

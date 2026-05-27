@@ -78,6 +78,17 @@ const useOfflineSync = () => {
         return;
       }
 
+      // Refuse to replay queued actions under an expired or missing token.
+      // The queue was saved under a previous session; firing it now could
+      // attach those actions to whichever user happens to be logged in.
+      if (!token || !isTokenValid(token)) {
+        toast.warning(
+          "Offline actions are pending but your session has expired. Please log in again to sync them.",
+          { autoClose: 6000 }
+        );
+        return;
+      }
+
       isSyncing.current = true;
 
       try {
@@ -104,7 +115,7 @@ const useOfflineSync = () => {
               url,
               item.payload,
               token,
-              retries
+              0
             );
 
             // Handle Conflict loop
@@ -157,12 +168,29 @@ const useOfflineSync = () => {
 
     window.addEventListener("online", handleOnline);
 
+    let idleId = null;
+    let timeoutId = null;
+
     if (navigator.onLine) {
-      handleOnline();
+      if (typeof window.requestIdleCallback === "function") {
+        idleId = window.requestIdleCallback(() => {
+          handleOnline();
+        });
+      } else {
+        timeoutId = setTimeout(() => {
+          handleOnline();
+        }, 200);
+      }
     }
 
     return () => {
       window.removeEventListener("online", handleOnline);
+      if (idleId !== null) {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+      }
     };
   }, [token]);
 };

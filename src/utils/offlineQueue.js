@@ -76,13 +76,14 @@ export const pushToQueue = async (item) => {
   const queue = getQueue();
   if (queue.length >= 15) {
     console.warn('Offline queue limit reached. Dropping item to prevent local overflow.');
-    return;
+    return false;
   }
   queue.push(actionItem);
   try {
     localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
   } catch (error) {
     console.error('Error writing localStorage backup:', error);
+    return false;
   }
 
   // 2. Async IndexedDB background write
@@ -95,8 +96,10 @@ export const pushToQueue = async (item) => {
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
+    return true;
   } catch (err) {
     console.error("IndexedDB push failed:", err);
+    return true; // Still queued in localStorage fallback
   }
 };
 

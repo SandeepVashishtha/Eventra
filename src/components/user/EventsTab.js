@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import {
@@ -81,7 +81,7 @@ const EmptyState = () => {
   );
 };
 
-const EventCard = ({ event, index, onRemoveRegistration, showCancel }) => {
+const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
   const fadeUpVariants = fadeUp(prefersReducedMotion);
   const status = getEventStatus(event);
@@ -176,21 +176,31 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel }) => {
 
       <div className="px-6 py-4 flex gap-3 bg-gradient-to-r from-gray-50/30 to-white/60 dark:from-gray-800/30 dark:to-gray-900/60 border-t border-gray-200/60 dark:border-gray-700/50 mt-auto">
         {showCancel ? (
-          <button
-            className="group/btn flex-1"
-            onClick={() => onRemoveRegistration?.(event?.id, event?.title)}
-          >
-            <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white px-5 py-2.5 text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-900 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
-              <Trash2 size={13} className="relative" />
-              <span className="relative">Cancel</span>
-            </div>
-          </button>
+          <>
+            <button
+              className="group/btn flex-1"
+              onClick={() => onRemoveRegistration?.(event?.id, event?.title)}
+            >
+              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+                <Trash2 size={13} className="relative" />
+                <span className="relative">Cancel</span>
+              </div>
+            </button>
+            <button
+              className="group/btn flex-1"
+              onClick={() => onViewTicket?.(event)}
+            >
+              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-650 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+                <Ticket size={13} className="relative" />
+                <span className="relative">Ticket</span>
+              </div>
+            </button>
+          </>
         ) : (
           <div className="flex-1" />
         )}
         <Link to={`/events/${event?.id}`} className="group/btn flex-1">
-          <div className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-5 py-2.5 text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-300 w-full">
+          <div className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-300 w-full">
             <span>{showCancel ? "View Details" : "Open Event"}</span>
           </div>
         </Link>
@@ -199,7 +209,7 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel }) => {
   );
 };
 
-const EventsTab = ({ hostedEvents = [] }) => {
+const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
   const fadeUpVariants = fadeUp(prefersReducedMotion);
   const staggerVariants = stagger(prefersReducedMotion);
@@ -440,6 +450,7 @@ const EventsTab = ({ hostedEvents = [] }) => {
                     index={index}
                     onRemoveRegistration={handleCancelClick}
                     showCancel
+                    onViewTicket={onViewTicket}
                   />
                 ))}
               </motion.div>

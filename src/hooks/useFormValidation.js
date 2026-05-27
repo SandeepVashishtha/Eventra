@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export const useFormValidation = (initialState, validationRules, options = {}) => {
   const { debounceMs = 300, validateOnBlur = false } = options;
+  const timeoutRef = useRef(null);
   
   const [values, setValues] = useState(initialState);
   const [errors, setErrors] = useState({});
@@ -55,14 +56,23 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
     
     // Debounced validation
     if (validationRules[name] && !validateOnBlur) {
-      const timeoutId = setTimeout(() => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      
+      timeoutRef.current = setTimeout(() => {
         const error = validateField(name, value, { ...values, [name]: value });
         setErrors(prev => ({ ...prev, [name]: error }));
       }, debounceMs);
-      
-      return () => clearTimeout(timeoutId);
     }
   }, [validationRules, validateOnBlur, debounceMs, validateField, values]);
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   // Handle blur for validation
   const handleBlur = useCallback((e) => {
