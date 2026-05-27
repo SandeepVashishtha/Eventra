@@ -15,6 +15,7 @@ import { filterHackathons } from "./hackathonFilterUtils.mjs";
 import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 
 import useReducedMotion from "../../hooks/useReducedMotion.js";
+import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
 // NEW: Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
   <motion.div
@@ -576,6 +577,7 @@ const HackathonHub = () => {
         </motion.div>
 
         {/* Hackathons Grid */}
+        <SectionErrorBoundary label="Hackathons">
         <AnimatePresence mode="wait">
          {isLoading ? (
   <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
@@ -713,6 +715,7 @@ const HackathonHub = () => {
             </motion.div>
           )}
         </AnimatePresence>
+        </SectionErrorBoundary>
       </div>
       <HackathonCTA></HackathonCTA>
       <BackToTopButton />

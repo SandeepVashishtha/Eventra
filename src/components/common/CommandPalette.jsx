@@ -66,13 +66,13 @@ export default function CommandPalette({
       type: "action",
       icon: MousePointer
     },
-    {
-      name: "Sign Out / Logout of Account",
-      action: "logout",
-      category: "System Actions",
-      type: "action",
-      icon: LogOut
-    },
+    ...(isAuthenticated ? [{
+  name: "Sign Out / Logout of Account",
+  action: "logout",
+  category: "System Actions",
+  type: "action",
+  icon: LogOut
+}] : []),
 
     // ── Sample Events ────────────────────────────────────────────────────────
     { name: "Web3 Buildathon 2026", href: "/hackathons", category: "Hackathons", type: "nav", icon: Sparkles },
@@ -80,7 +80,7 @@ export default function CommandPalette({
     { name: "React Advanced Core Workshop", href: "/events", category: "Events", type: "nav", icon: Calendar },
     { name: "Next.js Fullstack Sprint", href: "/events", category: "Events", type: "nav", icon: Calendar },
     { name: "Global Open Source Hackfest", href: "/hackathons", category: "Hackathons", type: "nav", icon: Sparkles }
-  ], [isDarkMode, cursorEnabled]);
+  ], [isDarkMode, cursorEnabled, isAuthenticated]);
 
   // Fuzzy match query ranking helper
   const getFuzzyScore = (text, queryStr) => {
@@ -294,7 +294,7 @@ export default function CommandPalette({
                           `}
                         >
                           <div className="flex items-center gap-3">
-                            <Icon className={`h-4.5 w-4.5 ${active ? "text-white" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600"}`} />
+                            <Icon className={`h-5 w-5 ${active ? "text-white" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600"}`} />
                             <span className="text-sm font-semibold tracking-tight">{name}</span>
                           </div>
                           {active && (

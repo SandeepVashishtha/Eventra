@@ -1,6 +1,7 @@
 import React, { lazy } from 'react';
 import { Route } from 'react-router-dom';
 import PageLayout from '../Layout/PageLayout';
+import SectionErrorBoundary from '../common/SectionErrorBoundary';
 
 // Auth guard — redirects unauthenticated users to /login
 import ProtectedRoute from '../auth/ProtectedRoute';
@@ -64,24 +65,28 @@ export const getPublicRoutes = () => [
   <Route key="/" path="/" element={<HomePage />} />,
   <Route key="/events" path="/events" element={<EventsPage />} />,
   <Route key="/event-details" path="/events/:eventId" element={<EventDetails />} />,
-  <Route key="/register" path="/events/:eventId/register" element={<EventRegistration />} />,
+  // Registration writes to an authenticated backend endpoint; keep guarded.
+  <Route
+    key="/register"
+    path="/events/:eventId/register"
+    element={
+      <ProtectedRoute>
+        <EventRegistration />
+      </ProtectedRoute>
+    }
+  />,
   <Route key="/hackathons" path="/hackathons" element={<HackathonPage />} />,
   <Route key="/hackathon-details" path="/hackathons/:hackathonId" element={<HackathonDetailsPage />} />,
   <Route key="/hackathons-lifecycle" path="/hackathons/:id/lifecycle" element={<HackathonLifecycle />} />,
   <Route key="/projects" path="/projects" element={<ProjectsPage />} />,
 
   // Mock API endpoints (demo/documentation purposes)
-  <Route key="/api/hackathons" path="/api/hackathons" element={<MockApiResponse />} />,
-  <Route key="/api/projects" path="/api/projects" element={<MockApiResponse />} />,
+  <Route key="/api/hackathons"  path="/api/hackathons"  element={<MockApiResponse />} />,
+  <Route key="/api/projects"    path="/api/projects"    element={<MockApiResponse />} />,
   <Route key="/api/contributors" path="/api/contributors" element={<MockApiResponse />} />,
   <Route key="/api/leaderboard" path="/api/leaderboard" element={<MockApiResponse />} />,
 
   // ── Auth-protected routes (login required) ─────────────────────────────────
-  // Each of these routes exposes personal data or allows data mutations that
-  // require a verified user identity. ProtectedRoute checks the session token
-  // and redirects to /login if the user is not authenticated.
-
-  // /bookmarks — shows the signed-in user's personal saved events list
   <Route
     key="/bookmarks"
     path="/bookmarks"
@@ -90,9 +95,8 @@ export const getPublicRoutes = () => [
         <BookmarkedEvents />
       </ProtectedRoute>
     }
-  />,
+   />,
 
-  // /reminders — shows the signed-in user's personal event reminders
   <Route
     key="/reminders"
     path="/reminders"
@@ -101,9 +105,8 @@ export const getPublicRoutes = () => [
         <RemindersPage />
       </ProtectedRoute>
     }
-  />,
+   />,
 
-  // /calendar — personal calendar tied to the user's registered events
   <Route
     key="/calendar"
     path="/calendar"
@@ -112,16 +115,48 @@ export const getPublicRoutes = () => [
         <MyCalendar />
       </ProtectedRoute>
     }
-  />,
+   />,
 
   // ── PageLayout-wrapped routes ──────────────────────────────────────────────
   <Route key="/contributors" path="/contributors" element={<PageLayout><Contributors /></PageLayout>} />,
   <Route key="/communityEvent" path="/communityEvent" element={<PageLayout><CommunityEvent /></PageLayout>} />,
   <Route key="/community-event" path="/community-event" element={<PageLayout><CommunityEvent /></PageLayout>} />,
-  <Route key="/leaderBoard" path="/leaderBoard" element={<PageLayout><LeaderBoard /></PageLayout>} />,
-  <Route key="/leaderboard" path="/leaderboard" element={<PageLayout><LeaderBoard /></PageLayout>} />,
-  <Route key="/contributorguide" path="/contributorguide" element={<PageLayout><ContributorGuide /></PageLayout>} />,
-  <Route key="/contributor-guide" path="/contributor-guide" element={<PageLayout><ContributorGuide /></PageLayout>} />,
+  <Route
+    key="/leaderBoard"
+    path="/leaderBoard"
+    element={
+      <ProtectedRoute>
+        <PageLayout><SectionErrorBoundary label="Leaderboard"><LeaderBoard /></SectionErrorBoundary></PageLayout>
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/leaderboard"
+    path="/leaderboard"
+    element={
+      <ProtectedRoute>
+        <PageLayout><SectionErrorBoundary label="Leaderboard"><LeaderBoard /></SectionErrorBoundary></PageLayout>
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/contributorguide"
+    path="/contributorguide"
+    element={
+      <ProtectedRoute>
+        <PageLayout><ContributorGuide /></PageLayout>
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/contributor-guide"
+    path="/contributor-guide"
+    element={
+      <ProtectedRoute>
+        <PageLayout><ContributorGuide /></PageLayout>
+      </ProtectedRoute>
+    }
+  />,
   <Route key="/about" path="/about" element={<PageLayout><AboutPage /></PageLayout>} />,
   <Route key="/about-fallback" path="/about/*" element={<PageLayout><AboutPage /></PageLayout>} />,
   <Route key="/faq" path="/faq" element={<PageLayout><FAQPage /></PageLayout>} />,
@@ -134,41 +169,54 @@ export const getPublicRoutes = () => [
   <Route key="/feedback" path="/feedback" element={<PageLayout><FeedbackPage /></PageLayout>} />,
   <Route key="/documentation" path="/documentation" element={<PageLayout><DocumentationPage /></PageLayout>} />,
 
-
-  < Route
-    key = "/analytics"
-    path = "/analytics"
-    element = {
-      < PageLayout >
-  <ProtectedRoute>
-    <EventAnalyticsDashboard />
-  </ProtectedRoute>
-      </PageLayout >
+  /*
+    /analytics — exposes organisation-level event analytics data.
+    Requires authentication so that only registered users can view
+    aggregate participant and event metrics.
+  */
+  <Route
+    key="/analytics"
+    path="/analytics"
+    element={
+      <PageLayout>
+        <ProtectedRoute>
+          <EventAnalyticsDashboard />
+        </ProtectedRoute>
+      </PageLayout>
     }
-  />,
+   />,
 
-<Route
-  key="/events/:eventId/floor-plan"
-  path="/events/:eventId/floor-plan"
-  element={
-    <PageLayout>
-      <ProtectedRoute>
-        <FloorPlanDesignerPage />
-      </ProtectedRoute>
-    </PageLayout>
-  }
-/>,
+  /*
+    /events/:eventId/floor-plan — venue floor plan designer.
+    Requires authentication; only event organisers should be able
+    to view or edit a floor plan layout.
+  */
+  <Route
+    key="/events/:eventId/floor-plan"
+    path="/events/:eventId/floor-plan"
+    element={
+      <PageLayout>
+        <ProtectedRoute>
+          <FloorPlanDesignerPage />
+        </ProtectedRoute>
+      </PageLayout>
+    }
+   />,
 
-<Route
-  key="/submit-project"
-  path="/submit-project"
-  element={
-    <PageLayout>
-      <ProtectedRoute>
-        <SubmitProject />
-      </ProtectedRoute>
-    </PageLayout>
-  }
-/>
+  /*
+    /submit-project — allows users to submit projects to hackathons.
+    Requires authentication so submissions are linked to a verified
+    user account and cannot be made anonymously.
+  */
+  <Route
+    key="/submit-project"
+    path="/submit-project"
+    element={
+      <PageLayout>
+        <ProtectedRoute>
+          <SubmitProject />
+        </ProtectedRoute>
+      </PageLayout>
+    }
+   />
 ];
-
