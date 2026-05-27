@@ -1,3 +1,4 @@
+import TeamMatchmaking from "./components/TeamMatchmaking";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -13,6 +14,7 @@ import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { filterHackathons } from "./hackathonFilterUtils.mjs";
 import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 
+import useReducedMotion from "../../hooks/useReducedMotion.js";
 // NEW: Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
   <motion.div
@@ -32,6 +34,7 @@ const Tag = ({ tag, onRemove }) => (
 );
 
 const HackathonHub = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [hackathons, setHackathons] = useState([]);
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -113,7 +116,7 @@ const HackathonHub = () => {
       y: 0,
       opacity: 1,
       transition: {
-        duration: 0.6,
+        duration: prefersReducedMotion ? 0 : 0.6,
         ease: [0.16, 1, 0.3, 1],
       },
     },
@@ -368,6 +371,9 @@ const HackathonHub = () => {
         ))}
       </motion.div>
 
+{/* TEAM MATCHMAKING SECTION */}
+<TeamMatchmaking />
+
       {/* Featured Hackathons */}
       {!isLoading && featuredHackathons.length > 0 && (
         <div
@@ -471,7 +477,7 @@ const HackathonHub = () => {
                 initial={{ opacity: 0, y: -12, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -12, scale: 0.98 }}
-                transition={{ duration: 0.35, ease: "easeOut" }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.35, ease: "easeOut" }}
                 className="
                 relative overflow-hidden mb-6
                 rounded-2xl
@@ -600,7 +606,7 @@ const HackathonHub = () => {
               className="relative overflow-hidden rounded-3xl p-10 text-center shadow-md dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)] border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-800"
               initial={{ opacity: 0, y: 30, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" }}
             >
               <motion.div
                 className="absolute inset-0 -z-10 bg-indigo-50/50 dark:bg-black/30 blur-3xl"
@@ -610,7 +616,7 @@ const HackathonHub = () => {
                   rotate: [0, 10, -10, 0],
                 }}
                 transition={{
-                  duration: 8,
+                  duration: prefersReducedMotion ? 0 : 8,
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
@@ -645,7 +651,7 @@ const HackathonHub = () => {
                         scale: [1, 1.2, 1],
                       }}
                       transition={{
-                        duration: 6 + i,
+                        duration: prefersReducedMotion ? 0 : 6 + i,
                         repeat: Infinity,
                         ease: "easeInOut",
                         delay: i * 0.5,
@@ -659,7 +665,7 @@ const HackathonHub = () => {
                 <motion.div
                   animate={{ y: [0, -8, 0] }}
                   transition={{
-                    duration: 3,
+                    duration: prefersReducedMotion ? 0 : 3,
                     repeat: Infinity,
                     ease: "easeInOut",
                   }}

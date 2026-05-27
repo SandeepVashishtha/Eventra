@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
 import { Search, Calendar, Trophy, Code, ExternalLink } from "lucide-react";
 
+import useReducedMotion from "../../../hooks/useReducedMotion.js";
 // Import mock data
 import eventsData from "../../Events/eventsMockData.json";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
@@ -16,6 +17,7 @@ import useDocumentTitle from "../../../hooks/useDocumentTitle";
 const MotionLink = motion(Link);
 
 const Hero = () => {
+  const prefersReducedMotion = useReducedMotion();
   useDocumentTitle("Eventra | Home");
   const phrases = [
     "Amazing Tech Events",
@@ -30,6 +32,9 @@ const Hero = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [statsReady, setStatsReady] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(
+    typeof window !== "undefined" ? window.innerWidth <= 420 : false
+  );
   const [isDark, setIsDark] = useState(
     document.documentElement.classList.contains("dark")
   );
@@ -62,8 +67,19 @@ const Hero = () => {
   }, [controls]);
 
   useEffect(() => {
+    const onResize = () => setIsMobileView(window.innerWidth <= 420);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
     setStatsReady(true);
   }, []);
+  // FIXED
+useEffect(() => {
+  const timer = setTimeout(() => setStatsReady(true), 100);
+  return () => clearTimeout(timer);
+}, []);
 
   // Global search functionality
   const createSearchItem = (item, type, searchType) => ({
@@ -76,7 +92,6 @@ const Hero = () => {
     category: item.category,
     author: item.author,
     organizer: item.organizer,
-    type,
     searchType,
   });
 
@@ -151,14 +166,14 @@ const Hero = () => {
 
   const fadeUp = {
     hidden: { y: 40, opacity: 0 },
-    show: { y: 0, opacity: 1, transition: { duration: 0.8, ease: "easeOut" } },
+    show: { y: 0, opacity: 1, transition: { duration: prefersReducedMotion ? 0 : 0.8, ease: "easeOut" } },
   };
 
   const floatShape = (i) => ({
     y: [0, -20 - i * 5, 0],
     x: [0, 20 + i * 5, 0],
     rotate: [0, 15, -15, 0],
-    transition: { duration: 4.4 + i * 0.7, repeat: Infinity, ease: "easeInOut" },
+    transition: { duration: prefersReducedMotion ? 0 : 4.4 + i * 0.7, repeat: Infinity, ease: "easeInOut" },
   });
 
   // Vibrant colors for light mode, soft pastels for dark mode
@@ -212,11 +227,11 @@ border-b border-gray-100 dark:border-slate-900">
           <MotionConfig reducedMotion="never">
             {/* Headline */}
             <motion.h1
-              className="mx-auto max-w-4xl mt-6 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-6 leading-tight tracking-tight text-gray-900 dark:text-white px-2 sm:px-0"
+              className="mx-auto max-w-4xl mt-6 flex flex-col items-center gap-5 sm:gap-6 text-lg sm:text-xl md:text-4xl lg:text-5xl font-black mb-6 leading-relaxed tracking-tight text-gray-900 dark:text-white px-2 sm:px-0 text-center overflow-visible"
               style={{ fontFamily: '"Inter", sans-serif' }}
             >
               <motion.span
-                className="block text-gray-900 dark:text-gray-400 mb-2 md:mb-0"
+                className="block text-gray-900 dark:text-gray-400"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
@@ -224,25 +239,30 @@ border-b border-gray-100 dark:border-slate-900">
                 <RespawningText texts={["Discover & Join", "Innovate & Create", "Learn & Grow"]} />
               </motion.span>
 
-              <div className="relative mx-auto h-14 sm:h-24 md:h-28 lg:h-32 overflow-hidden flex justify-center items-center max-w-full">
+              {/* Static phrase for smallest screens (no motion) */}
+              <span className="block sm:hidden text-indigo-600 dark:text-indigo-500 font-extrabold drop-shadow-sm mt-3 text-lg text-center">
+                {phrases[index]}
+              </span>
+
+              <div className="relative mx-auto w-full min-h-[7.5rem] sm:min-h-[9rem] md:min-h-[10rem] lg:min-h-[11rem] overflow-hidden flex justify-center items-center max-w-full px-1 mt-2 py-4 ">
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={index}
-                    className="block mt-2 text-gray-900 dark:text-white mb-4 pb-2 whitespace-normal text-center px-1"
+                    className="block mt-2 text-gray-900 dark:text-white mb-4 pb-4 whitespace-normal text-center px-1 leading-tight"
                     initial={{ opacity: 0, y: 40 }}
                     animate={{
                       opacity: 1,
                       y: 0,
-                      transition: { duration: 0.8, ease: "easeOut" },
+                      transition: { duration: prefersReducedMotion ? 0 : 0.8, ease: "easeOut" },
                     }}
                     exit={{
                       opacity: 0,
                       y: -40,
-                      transition: { duration: 0.5, ease: "easeIn" },
+                      transition: { duration: prefersReducedMotion ? 0 : 0.5, ease: "easeIn" },
                     }}
                   >
-                    <span className="text-indigo-600 dark:text-indigo-500 font-extrabold drop-shadow-sm">
-                    {phrases[index]}
+                    <span className="text-indigo-600 dark:text-indigo-500 font-extrabold drop-shadow-sm text-2xl sm:text-3xl md:text-5xl lg:text-6xl">
+                      {phrases[index]}
                     </span>
                   </motion.span>
                 </AnimatePresence>
@@ -275,7 +295,7 @@ border-b border-gray-100 dark:border-slate-900">
                     initial={{ opacity: 0, y: -10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
+                    transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
                     className="absolute top-full left-0 right-0 mt-3 
                      bg-white dark:bg-slate-900
 rounded-xl
@@ -334,7 +354,7 @@ text-gray-600 dark:text-gray-300"
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 10 }}
-                          transition={{ duration: 0.25, ease: "easeOut" }}
+                          transition={{ duration: prefersReducedMotion ? 0 : 0.25, ease: "easeOut" }}
                           className="text-center text-gray-500 dark:text-gray-400 py-10 text-base"
                         >
                           No results match "
@@ -439,20 +459,19 @@ text-gray-600 dark:text-gray-300"
                   key={i}
                   variants={fadeUp}
                   whileHover={{ y: -5 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
                   className="flex flex-col items-center justify-center p-6 bg-white/60 dark:bg-gray-900/40 backdrop-blur-md rounded-2xl border border-gray-200/60 dark:border-gray-800/60 shadow-sm"
                 >
                   
                   <p className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
                     {statsReady ? (
-                      <CountUp
-                        start={0}
-                        end={Number.isFinite(stat.value) ? stat.value : 0}
-                        duration={2.5}
-                        suffix={stat.suffix || ""}
-                        enableScrollSpy
-                        scrollSpyOnce
-                      />
+                      // AFTER
+<CountUp
+  start={0}
+  end={Number.isFinite(stat.value) ? stat.value : 0}
+  duration={2.5}
+  suffix={stat.suffix || ""}
+/>
                     ) : (
                       <>
                         {stat.value}

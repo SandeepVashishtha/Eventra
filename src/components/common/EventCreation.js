@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { Download } from "lucide-react";
+import useReducedMotion from "../../hooks/useReducedMotion";
 import {} from "../../utils/eventDraftUtils";
-
+import CharacterCounter
+from "../../components/common/CharacterCounter";
 import { exportAttendeesToCSV } from "../../utils/exportCsv";
 import {
   ArrowRightIcon,
@@ -35,10 +37,13 @@ import {
   Upload,
   Plus,
 } from "lucide-react";
+import { useFormSubmit } from "../../hooks/useFormSubmit";
+import { LoadingButton } from "../ui/LoadingButton";
 
 const DRAFT_KEY = "eventra_create_event_draft";
 
 const EventCreation = () => {
+  const prefersReducedMotion = useReducedMotion();
   const mockAttendees = [
     {
       name: "John Doe",
@@ -60,7 +65,41 @@ const EventCreation = () => {
     },
   ];
   const [currentStep, setCurrentStep] = useState("form");
-  const [loading, setLoading] = useState(false);
+
+  const { handleSubmit: submitEventForm, isSubmitting, error: submitError, success: submitSuccess } = useFormSubmit(async (eventData) => {
+    const token = sessionStorage.getItem("token");
+    if (!token) {
+      throw new Error("Authentication required. Please log in and try again.");
+    }
+
+    if (!API_ENDPOINTS.EVENTS.CREATE || process.env.NODE_ENV === "development") {
+      console.warn("⚠️ Mocking event creation success (API inactive)");
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return;
+    }
+
+    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData, {
+      headers: {
+        Authorization: token
+      }
+    });
+    const result = response.data;
+
+    if (!(response.status === 200 && result.success)) {
+      const errorMessage = result.message || result.error || `Server error: ${response.status}`;
+      throw new Error(errorMessage);
+    }
+  });
+
+  useEffect(() => {
+    if (submitSuccess) {
+      toast.success("Event created successfully!");
+      resetForm();
+      setCurrentStep("form");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [submitSuccess]);
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -324,8 +363,7 @@ const EventCreation = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [generalError, setGeneralError] = useState("");
 
-  const createEvent = async () => {
-    setLoading(true);
+  const createEvent = () => {
     setSuccessMessage("");
     setGeneralError("");
     try {
@@ -386,40 +424,7 @@ const EventCreation = () => {
           })),
       };
 
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error("Authentication required. Please log in and try again.");
-        setCurrentStep("form");
-        return;
-      }
-
-      // Mock success if API inactive
-      if (
-        !API_ENDPOINTS.EVENTS.CREATE ||
-        (process.env.NODE_ENV === "development" && process.env.REACT_APP_USE_REAL_API === "true")
-      ) {
-        console.warn("⚠️ Mocking event creation success (API inactive)");
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        toast.success("Event created successfully!");
-        resetForm();
-        setCurrentStep("form");
-        window.scrollTo({ top: 0, behavior: "smooth" });
-        setLoading(false);
-        return;
-      }
-
-      const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData, token);
-      const result = response.data;
-
-      if (result.success) {
-        toast.success("Event created successfully!");
-        resetForm();
-        setCurrentStep("form");
-      } else {
-        const errorMessage = result.message || result.error || "Event creation failed.";
-        toast.error(`❌ Error creating event: ${errorMessage}`);
-        setCurrentStep("form");
-      }
+      submitEventForm(eventData);
     } catch (error) {
       console.error("Error creating event:", error);
       const backendMessage = error.response?.data?.message || error.response?.data?.error;
@@ -433,8 +438,6 @@ const EventCreation = () => {
       }
       toast.error(errorMessage);
       setCurrentStep("form");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -729,7 +732,7 @@ const EventCreation = () => {
           <motion.div
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
             className="text-center mb-10"
           >
             <h1 className="text-4xl sm:text-5xl font-extrabold text-indigo-800 dark:text-indigo-300 mb-4">
@@ -745,7 +748,7 @@ const EventCreation = () => {
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
             className="w-full max-w-4xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-2xl p-6 mb-10"
           >
             <div className="flex items-center gap-2 mb-3">
@@ -794,7 +797,7 @@ const EventCreation = () => {
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
             className="w-full max-w-4xl bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 border border-indigo-300 dark:border-gray-700"
           >
             <div className="space-y-6">
@@ -803,7 +806,7 @@ const EventCreation = () => {
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
               >
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <FileText className="w-5 h-5 text-indigo-500 inline-block mr-2" />
@@ -828,7 +831,7 @@ const EventCreation = () => {
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.1 }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.1 }}
               >
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
                   <Image className="w-5 h-5 text-indigo-500 inline-block mr-2" />
@@ -918,12 +921,25 @@ const EventCreation = () => {
                   {/* Preview Section */}
                   {formData.bannerPreview && (
                     <div className="rounded-lg overflow-hidden border border-indigo-200 dark:border-gray-700 shadow-md">
-                      <img
-                        loading="lazy"
-                        src={formData.bannerPreview}
-                        alt="Banner preview"
-                        className="w-full h-48 object-cover hover:scale-[1.02] transition-transform duration-300"
-                      />
+                     <img
+  loading="lazy"
+  decoding="async"
+  src={formData.bannerPreview}
+  alt="Banner preview"
+  className="
+    w-full
+    h-48
+    sm:h-56
+    md:h-64
+    object-cover
+    rounded-xl
+    hover:scale-[1.02]
+    transition-all
+    duration-300
+    bg-slate-200
+    dark:bg-slate-800
+  "
+/>
                     </div>
                   )}
                 </div>
@@ -1078,7 +1094,7 @@ const EventCreation = () => {
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.1 }}
                 >
                   {/* Start Date */}
                   <div>
@@ -1165,7 +1181,7 @@ const EventCreation = () => {
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.1 }}
                 >
                   {/* Event Date */}
                   <div>
@@ -1304,7 +1320,7 @@ const EventCreation = () => {
                     initial={{ opacity: 0, x: -20 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: 0.1 }}
+                    transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.1 }}
                   >
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       <Map className="w-5 h-5 text-indigo-500 inline-block mr-2" />
@@ -1562,15 +1578,42 @@ const EventCreation = () => {
                           )}
                         </div>
                       </div>
-                      <textarea
-                        placeholder="Description"
-                        value={tier.description}
-                        onChange={(e) =>
-                          handleTicketTierChange(index, "description", e.target.value)
-                        }
-                        rows={2}
-                        className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                      />
+                     <div className="space-y-2">
+  <textarea
+    placeholder="Description"
+    value={tier.description}
+    onChange={(e) =>
+      handleTicketTierChange(
+        index,
+        "description",
+        e.target.value
+      )
+    }
+    rows={2}
+    maxLength={200}
+    className="
+      w-full
+      border border-gray-300
+      dark:border-gray-600
+      rounded-lg
+      p-3
+      bg-white dark:bg-gray-600
+      text-gray-900 dark:text-gray-100
+      focus:outline-none
+      focus:ring-1
+      focus:ring-indigo-500
+    "
+  />
+
+  <div className="flex justify-end">
+    <CharacterCounter
+      current={
+        tier.description.length
+      }
+      max={200}
+    />
+  </div>
+</div>
                     </div>
                   </div>
                 ))}
@@ -1839,52 +1882,34 @@ const EventCreation = () => {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 mt-8 justify-center">
-            <motion.button
-              onClick={() => setCurrentStep("form")}
-              disabled={loading}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center justify-center gap-2 bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 border-2 border-indigo-500 font-semibold px-8 py-3 rounded-xl shadow-lg hover:bg-indigo-50 dark:hover:bg-gray-600 transition-all duration-300"
-            >
-              <PencilIcon className="w-5 h-5" />
-              Edit Event
-            </motion.button>
+          <div className="mt-8 flex flex-col items-center">
+            {submitError && (
+              <div className="error-banner w-full mb-4" role="alert">
+                ❌ {submitError}
+              </div>
+            )}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center w-full">
+              <motion.button
+                onClick={() => setCurrentStep("form")}
+                disabled={isSubmitting}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center justify-center gap-2 bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 border-2 border-indigo-500 font-semibold px-8 py-3 rounded-xl shadow-lg hover:bg-indigo-50 dark:hover:bg-gray-600 transition-all duration-300"
+              >
+                <PencilIcon className="w-5 h-5" />
+                Edit Event
+              </motion.button>
 
-            <motion.button
-              onClick={createEvent}
-              disabled={loading}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center justify-center gap-2 bg-black text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:bg-zinc-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <>
-                  <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      fill="none"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  Creating Event...
-                </>
-              ) : (
-                <>
-                  <CheckCircleIcon className="w-5 h-5" />
-                  Create Event
-                </>
-              )}
-            </motion.button>
+              <LoadingButton
+                onClick={createEvent}
+                isLoading={isSubmitting}
+                loadingText="Creating Event..."
+                className="flex items-center justify-center gap-2 bg-black text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:bg-zinc-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <CheckCircleIcon className="w-5 h-5" />
+                Create Event
+              </LoadingButton>
+            </div>
           </div>
         </motion.div>
       )}

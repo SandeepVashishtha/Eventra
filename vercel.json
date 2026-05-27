@@ -44,11 +44,11 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "camera=(), microphone=(), geolocation=()"
+          "value": "camera=(), microphone=(), geolocation=(), browsing-topics=(), interest-cohort=(), payment=(), usb=(), bluetooth=()"
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; connect-src 'self' https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net https://accounts.google.com https://www.googleapis.com https://api.emailjs.com https://api.github.com; font-src 'self' data: https://fonts.gstatic.com; frame-src 'self' https://accounts.google.com"
+          "value": "default-src 'self'; script-src 'self' https://accounts.google.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; connect-src 'self' https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net https://accounts.google.com https://www.googleapis.com https://api.emailjs.com https://api.github.com; font-src 'self' data: https://fonts.gstatic.com; frame-src 'self' https://accounts.google.com"
         }
       ]
     },
@@ -66,7 +66,7 @@
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
-          "value": "https://eventra-psi.vercel.app"
+          "value": "https://eventra.sandeepvashishtha.tech"
         },
         {
           "key": "Access-Control-Allow-Credentials",
@@ -74,7 +74,7 @@
         },
         {
           "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS"
+          "value": "GET, POST, PUT, PATCH, DELETE, OPTIONS"
         },
         {
           "key": "Access-Control-Allow-Headers",

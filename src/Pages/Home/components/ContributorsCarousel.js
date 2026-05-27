@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
+import useReducedMotion from "../../../hooks/useReducedMotion.js";
   FaGithub,
   FaExternalLinkAlt,
   FaCodeBranch,
@@ -21,6 +22,7 @@ const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
 
 // Role assignment
 const getRoleByGitHubActivity = (contributor) => {
+  const prefersReducedMotion = useReducedMotion();
   const { contributions, followers = 0, login } = contributor;
   if (login === "sandeepvashishtha") return "Project Lead";
 
@@ -226,7 +228,7 @@ const Contributors = () => {
           className="text-5xl font-extrabold text-center mb-16 text-gray-800 dark:text-gray-100 tracking-tight"
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" }}
           // AOS Implementation (Title)
           data-aos="fade-zoom-in"
           data-aos-once="true"
@@ -264,7 +266,7 @@ const Contributors = () => {
             <motion.div
               className="flex gap-6 items-stretch"
               animate={{ x: 0 }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.5, ease: "easeInOut" }}
             >
               {visibleContributors.map((c, i) => (
                 <motion.div

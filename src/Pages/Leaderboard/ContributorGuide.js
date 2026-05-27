@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
   FiCopy,
   FiCheck,
@@ -28,6 +29,7 @@ import {
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 const ContributorGuide = () => {
+  const prefersReducedMotion = useReducedMotion();
   useDocumentTitle("Eventra | Contributor Guide")
   const [expandedFAQ, setExpandedFAQ] = useState(null);
   const [copied, setCopied] = useState("");
@@ -267,7 +269,7 @@ const ContributorGuide = () => {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: index * 0.1 }}
               className="border-l-4 border-sky-200 dark:border-sky-300 p-4 bg-gray-200 dark:bg-gray-800 rounded shadow-sm"
             >
               <div className="flex items-center mb-2">
@@ -600,7 +602,7 @@ const ContributorGuide = () => {
         <motion.h2
           initial={{ opacity: 0, y: -20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" }}
           style={{fontFamily: '"Big Shoulders Display", sans-serif'}}
           className="relative text-3xl md:text-4xl font-extrabold tracking-tight text-black dark:text-white mb-10 text-center"
         >
@@ -608,7 +610,7 @@ const ContributorGuide = () => {
           <motion.span
             initial={{ width: 0 }}
             animate={{ width: "60%" }}
-            transition={{ duration: 0.8, delay: 0.3 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.8, delay: 0.3 }}
             className="absolute left-1/2 -translate-x-1/2 -bottom-2 h-1 rounded-full bg-black"
           />
         </motion.h2>
@@ -639,7 +641,7 @@ const ContributorGuide = () => {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.3 }}
+                      transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
                       className="pl-9 pr-2 pb-3 text-gray-700 dark:text-gray-300 leading-relaxed"
                     >
                       {faq.answer}
