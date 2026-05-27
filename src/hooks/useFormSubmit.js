@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 /**
  * Prevents double-submission by tracking in-flight state.
@@ -9,6 +9,14 @@ export function useFormSubmit(submitFn) {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const isInFlight = useRef(false); // extra guard against React batching
+  const isMounted = useRef(true); // guard against unmounted state updates
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const handleSubmit = async (data) => {
     // ✅ Double-submit guard — blocks if request already in-flight
@@ -21,12 +29,18 @@ export function useFormSubmit(submitFn) {
 
     try {
       await submitFn(data);
-      setSuccess(true);
+      if (isMounted.current) {
+        setSuccess(true);
+      }
     } catch (err) {
-      setError(err?.response?.data?.message || err.message || "Something went wrong.");
+      if (isMounted.current) {
+        setError(err?.response?.data?.message || err.message || "Something went wrong.");
+      }
     } finally {
-      setIsSubmitting(false);
       isInFlight.current = false;
+      if (isMounted.current) {
+        setIsSubmitting(false);
+      }
     }
   };
 
