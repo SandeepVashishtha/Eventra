@@ -4,10 +4,15 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   const { debounceMs = 300, validateOnBlur = false } = options;
   const timeoutRef = useRef(null);
   const validationRulesRef = useRef(validationRules);
+  const initialStateRef = useRef(initialState);
 
   useEffect(() => {
     validationRulesRef.current = validationRules;
   }, [validationRules]);
+
+  useEffect(() => {
+    initialStateRef.current = initialState;
+  }, [initialState]);
   
   const [values, setValues] = useState(initialState);
   const [errors, setErrors] = useState({});
@@ -99,11 +104,11 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
 
   // Reset form
   const resetForm = useCallback(() => {
-    setValues(initialState);
+    setValues(initialStateRef.current);
     setErrors({});
     setTouched({});
     setIsFormValid(false);
-  }, [initialState]);
+  }, []);
 
   return {
     values,
