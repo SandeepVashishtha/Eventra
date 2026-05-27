@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 import { API_ENDPOINTS } from '../config/api';
+import { logger } from "../utils/logger";
 import { getQueueIndexedDB, setQueue, clearQueue, filterQueueByOwnership } from '../utils/offlineQueue';
 import { isTokenValid } from '../utils/tokenUtils';
 
@@ -70,7 +71,7 @@ const useOfflineSync = () => {
       // is never permanently frozen by an unanswered modal.
       const timerId = setTimeout(() => {
         cleanup();
-        console.warn(
+        logger.warn(
           `[useOfflineSync] Conflict modal for item ${item.id} timed out after ${AUTO_DISMISS_MS / 1000}s. Discarding local change.`
         );
         resolve({ resolution: "server" });
@@ -119,7 +120,7 @@ const useOfflineSync = () => {
       if (response.ok) return { status: "success" };
 
       if (response.status >= 400 && response.status < 500) {
-        console.warn(
+        logger.warn(
           `Offline queue: server rejected item with ${response.status} — dropping.`,
           await response.text().catch(() => '')
         );
@@ -155,7 +156,7 @@ const useOfflineSync = () => {
       // This prevents User A's queued actions from executing under User B's session.
       const currentUserId = user?.id;
       if (!currentUserId) {
-        console.error('[Security] Cannot sync queue: current user ID is missing');
+        logger.error('[Security] Cannot sync queue: current user ID is missing');
         toast.error(
           "Unable to verify offline actions ownership. Please refresh the page.",
           { autoClose: 6000 }
@@ -169,7 +170,7 @@ const useOfflineSync = () => {
       // If all actions were filtered out due to ownership mismatch,
       // clear the queue to prevent re-checks on every session
       if (validatedQueue.length === 0 && queue.length > 0) {
-        console.warn(
+        logger.warn(
           '[Security] Clearing offline queue: all actions belong to different user(s). ' +
           'This prevents cross-user action replay.'
         );
@@ -276,7 +277,7 @@ const useOfflineSync = () => {
         try {
           const parsed = JSON.parse(lockVal);
           if (parsed && parsed.timestamp && now - parsed.timestamp < LOCK_TIMEOUT_MS) {
-            console.log("[useOfflineSync] Local sync lock is held by another active tab. Skipping.");
+            logger.log("[useOfflineSync] Local sync lock is held by another active tab. Skipping.");
             return;
           }
         } catch (e) {}
@@ -325,13 +326,13 @@ const useOfflineSync = () => {
         try {
           await navigator.locks.request("eventra_offline_sync_lock", { ifAvailable: true }, async (lock) => {
             if (!lock) {
-              console.log("[useOfflineSync] Sync lock is held by another tab via Web Locks. Skipping.");
+              logger.log("[useOfflineSync] Sync lock is held by another tab via Web Locks. Skipping.");
               return;
             }
             await executeSync();
           });
         } catch (err) {
-          console.warn("[useOfflineSync] Web Locks request failed, falling back to LocalStorage lock:", err);
+          logger.warn("[useOfflineSync] Web Locks request failed, falling back to LocalStorage lock:", err);
           await executeSyncWithLocalLock();
         }
       } else {

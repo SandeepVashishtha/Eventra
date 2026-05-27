@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { safeJsonParse } from "../utils/safeJsonParse";
+import { logger } from "../utils/logger";
 
 const SessionRecoveryContext = createContext();
 
@@ -87,7 +88,7 @@ export const SessionRecoveryProvider = ({ children }) => {
         }
       }
     } catch (e) {
-      console.error("Failed to load session:", e);
+      logger.error("Failed to load session:", e);
     }
   }, []);
 
@@ -107,7 +108,7 @@ export const SessionRecoveryProvider = ({ children }) => {
         setSessionData(currentSession);
         setHasSession(true);
       } catch (e) {
-        console.error("Failed to save session:", e);
+        logger.error("Failed to save session:", e);
       }
     }, 1000);
   }, []);
@@ -119,7 +120,7 @@ export const SessionRecoveryProvider = ({ children }) => {
       setHasSession(false);
       setShowRecoveryPrompt(false);
     } catch (e) {
-      console.error("Failed to clear session:", e);
+      logger.error("Failed to clear session:", e);
     }
   }, []);
 

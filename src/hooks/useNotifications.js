@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { logger } from "../utils/logger";
 
 const STORAGE_KEY = "eventra_notifications";
 
@@ -12,7 +13,7 @@ export const useNotifications = () => {
       try {
         setNotifications(JSON.parse(stored));
       } catch (error) {
-        console.error("Failed to parse notifications from local storage", error);
+        logger.error("Failed to parse notifications from local storage", error);
         setNotifications([]);
       }
     }
