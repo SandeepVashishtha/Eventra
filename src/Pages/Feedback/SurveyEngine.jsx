@@ -11,6 +11,7 @@ import {
 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import SurveyAnalytics from "../../components/admin/SurveyAnalytics";
 
 const SurveyEngine = () => {
   useDocumentTitle("Eventra | Dynamic Survey Engine");
@@ -237,21 +238,34 @@ const SurveyEngine = () => {
           
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setActiveTab(activeTab === "builder" ? "preview" : "builder")}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold hover:border-indigo-500 dark:hover:border-indigo-400 transition-all"
-            >
-              <FiEye className="w-5 h-5 text-indigo-500" />
-              {activeTab === "builder" ? "Live Preview" : "Back to Editor"}
-            </button>
-            
-            <button
               onClick={handleSaveSurvey}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all"
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all cursor-pointer"
             >
               <FiSave className="w-5 h-5" />
               Publish Survey
             </button>
           </div>
+        </div>
+
+        {/* HIGH-FIDELITY NAVIGATION TABS */}
+        <div className="flex border-b border-slate-200 dark:border-slate-800 mb-8 overflow-x-auto gap-8">
+          {[
+            { id: "builder", label: "Survey Builder" },
+            { id: "preview", label: "Live Preview" },
+            { id: "analytics", label: "Submission Analytics" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`pb-4 px-1 text-sm font-bold border-b-2 transition-all shrink-0 cursor-pointer ${
+                activeTab === tab.id
+                  ? "border-indigo-550 text-indigo-600 dark:text-indigo-400"
+                  : "border-transparent text-slate-450 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         {/* MAIN LAYOUT */}
@@ -558,6 +572,15 @@ const SurveyEngine = () => {
                   Submit Survey Feedback
                 </button>
               </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="analytics-tab"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+            >
+              <SurveyAnalytics questions={questions} />
             </motion.div>
           )}
         </AnimatePresence>
