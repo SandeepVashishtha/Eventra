@@ -82,6 +82,8 @@ All API routes are prefixed with `/api`.
 
 ## 4. Roles & Permissions Model
 
+> **📖 For comprehensive details on RBAC, role hierarchy, permission scopes, and access control patterns, see the [Architecture & Roles Guide](ARCHITECTURE_AND_ROLES.md#-role-based-access-control-rbac).**
+
 ### Roles (from `src/config/roles.js`)
 | Role | Description |
 |------|-------------|
@@ -407,9 +409,31 @@ POST /api/events/create
 PUT /api/events/{id}
 ```
 
-**Auth Required:** Yes — Roles: `ADMIN`, `ORGANIZER` (own events), `SUPER_ADMIN`  
-**Request Body:** Same as create, fields optional for partial updates  
-**Success Response `200`:** Updated event object
+**Auth Required:** Yes — Roles: `ADMIN`, `ORGANIZER`  
+**Description:** Updates an existing event. Companion update for issue #2099.  
+**Request Body:**
+```json
+{
+  "title": "Updated Event",
+  "description": "Updated event description",
+  "location": "Updated Location",
+  "eventDate": "2026-12-30T10:00:00",
+  "capacity": 150,
+  "isPublic": true
+}
+```
+
+**Field Constraints:**
+- `registeredCount` is preserved and cannot be directly edited.
+- `capacity` cannot be reduced below current `registeredCount`.
+- Owner-only authorization is not enforced as the Event model currently lacks ownership tracking.
+
+**Success Response `200`:** Updated event object  
+**Error Responses:**
+- `400` — Invalid payload
+- `403` — Forbidden (e.g., CLIENT role)
+- `404` — Event not found
+- `409` — Conflict (capacity < registeredCount)
 
 ---
 
@@ -1342,3 +1366,7 @@ Please agree on and document which format you will use before implementation.
    * Parameter descriptions
    * Example response values where applicable
 
+
+
+### Event Registration Constraint
+- **Duplicate Prevention**: Implemented a check to prevent users from registering multiple times for the same event, throwing an HTTP 409 Conflict exception if a duplicate registration is attempted.

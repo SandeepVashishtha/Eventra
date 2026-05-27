@@ -13,6 +13,7 @@ import RespawningText from "../../../jhalak/RespawningText";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
 import CountUp from "react-countup";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
+import SectionErrorBoundary from "../../../components/common/SectionErrorBoundary";
 
 const MotionLink = motion(Link);
 
@@ -249,10 +250,10 @@ border-b border-gray-100 dark:border-slate-900">
               background: `linear-gradient(135deg, ${isDark ? shape.darkColor : shape.lightColor}22, ${isDark ? shape.darkColor : shape.lightColor}66)`,
               filter: "blur(2px)",
               boxShadow: `0 8px 32px 0 ${isDark ? shape.darkColor : shape.lightColor}0a`,
-              y: shapeTransforms[i],
+              y: prefersReducedMotion ? 0 : shapeTransforms[i],
               willChange: "transform",
             }}
-            animate={floatShape(i)}
+            animate={prefersReducedMotion ? {} : floatShape(i)}
           />
         ))}
       </div>
@@ -267,7 +268,7 @@ border-b border-gray-100 dark:border-slate-900">
           backgroundRepeat: "no-repeat",
           minHeight: "100vh",
           width: "100vw",
-          y: isTouch ? 0 : yText,
+           y: (isTouch || prefersReducedMotion) ? 0 : yText,
           opacity: isTouch ? 1 : opacityHero,
           willChange: "transform, opacity",
         }}
@@ -505,10 +506,11 @@ text-gray-600 dark:text-gray-300"
 
           {/* Animated Stats Cards */}
           {!searchQuery.trim() && (
+            <SectionErrorBoundary label="Statistics">
             <motion.div
               variants={fadeUp}
               style={{
-                y: isTouch ? 0 : yStats,
+                y: (isTouch || prefersReducedMotion) ? 0 : yStats,
                 willChange: "transform",
               }}
               className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
@@ -546,6 +548,7 @@ text-gray-600 dark:text-gray-300"
                 </motion.div>
               ))}
             </motion.div>
+            </SectionErrorBoundary>
           )}
         </motion.div>
       </motion.div>
@@ -554,3 +557,4 @@ text-gray-600 dark:text-gray-300"
 };
 
 export default Hero;
+

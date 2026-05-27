@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
+import { fetchGitHubRepo, getGitHubRepoDetails } from "../../utils/githubApiClient.js";
 import {
   FiStar,
   FiGithub,
@@ -16,16 +17,6 @@ import {
 // Cache Keys & Constants
 const CACHE_KEY = "eventra_github_metrics_cache";
 const CACHE_TTL = 1 * 60 * 60 * 1000; // 1 hour expiration
-
-// Parse Owner & Repo from GitHub URL
-const getRepoDetails = (url) => {
-  if (!url) return null;
-  const match = url.match(/github\.com\/([^/]+)\/([^/]+)/);
-  if (match) {
-    return { owner: match[1], repo: match[2].replace(/\.git$/, "") };
-  }
-  return null;
-};
 
 // Status Badge Styling Helper
 const getStatusColor = (status) => {
@@ -190,7 +181,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
     e.preventDefault();
     e.stopPropagation();
     
-    const repoDetails = getRepoDetails(project.githubUrl);
+    const repoDetails = getGitHubRepoDetails(project.githubUrl);
     const key = repoDetails ? `${repoDetails.owner}/${repoDetails.repo}` : `mock-${project.id}`;
     
     setMetrics(prev => {
@@ -212,7 +203,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
     e.preventDefault();
     e.stopPropagation();
     
-    const repoDetails = getRepoDetails(project.githubUrl);
+    const repoDetails = getGitHubRepoDetails(project.githubUrl);
     const key = repoDetails ? `${repoDetails.owner}/${repoDetails.repo}` : `mock-${project.id}`;
     
     setMetrics(prev => {
@@ -232,7 +223,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
 
   // GitHub metrics loading with LocalStorage caching system
   useEffect(() => {
-    const repoDetails = getRepoDetails(project.githubUrl);
+    const repoDetails = getGitHubRepoDetails(project.githubUrl);
 
     if (!repoDetails) {
       // Fallback directly to mock data if there is no valid repo
@@ -266,11 +257,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           return;
         }
 
-        // Fetch live metadata
-        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`);
-        if (!res.ok) throw new Error("API Failure");
-
-        const data = await res.json();
+        const data = await fetchGitHubRepo({ owner, repo });
         const freshMetrics = {
           stars: data.stargazers_count || 0,
           forks: data.forks_count || 0,
@@ -509,4 +496,5 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
   );
 };
 
-export default ProjectCard;
+
+export default memo(ProjectCard);

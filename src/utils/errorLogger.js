@@ -1,3 +1,21 @@
+import * as Sentry from "@sentry/react";
+
+const dsn = process.env.REACT_APP_SENTRY_DSN;
+const isProduction = process.env.NODE_ENV === "production";
+
+if (isProduction && dsn) {
+  Sentry.init({
+    dsn: dsn,
+    tracesSampleRate: 1.0,
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0,
+    integrations: [
+      Sentry.browserTracingIntegration(),
+      Sentry.replayIntegration(),
+    ],
+  });
+}
+
 export const logError = (
   error,
   errorInfo
@@ -13,11 +31,15 @@ export const logError = (
       errorInfo
     );
 
-    // Future Monitoring Integration:
-    // Sentry
-    // LogRocket
-    // Datadog
+    if (isProduction && dsn) {
+      Sentry.withScope((scope) => {
+        if (errorInfo && errorInfo.componentStack) {
+          scope.setExtra("componentStack", errorInfo.componentStack);
+        }
+        Sentry.captureException(error);
+      });
+    }
   } catch (_) {
-    // silent fail
+    console.warn("[ErrorLogger] Failed to log error to Sentry:", _);
   }
-};
+};
