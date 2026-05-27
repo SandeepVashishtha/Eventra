@@ -29,6 +29,7 @@ import { toast } from "react-toastify";
 import mockEvents from "./eventsMockData.json";
 import { pushToQueue } from "../../utils/offlineQueue";
 import EventConflictModal from "../../components/EventConflictModal";
+import ConfettiCanvas from "../../components/common/ConfettiCanvas";
 
 const MAX_NOTES_CHARS = 500;
 
@@ -44,7 +45,7 @@ function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
       to_name: userName,
       event_name: eventName,
       event_date: eventDate,
-    }).catch(() => {});
+    }).catch(() => { });
   }
 }
 
@@ -86,93 +87,6 @@ const getRegistrationFailureMessage = (error) => {
 //   2. Always generated a 1-hour end time, ignoring event.durationMinutes.
 // See issue #2015 for details.
 
-const ConfettiCanvas = () => {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    let animationFrameId;
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const handleResize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    window.addEventListener("resize", handleResize);
-
-    const colors = ["#6366f1", "#a855f7", "#ec4899", "#10b981", "#3b82f6", "#f59e0b"];
-    const particles = [];
-
-    for (let i = 0; i < 150; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * -canvas.height - 20,
-        size: Math.random() * 8 + 4,
-        speedX: Math.random() * 4 - 2,
-        speedY: Math.random() * 3 + 4,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        rotation: Math.random() * Math.PI,
-        rotationSpeed: Math.random() * 0.05 - 0.025,
-      });
-    }
-
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      let finished = true;
-
-      particles.forEach((p) => {
-        if (p.y < canvas.height) {
-          finished = false;
-        }
-        
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rotation);
-        ctx.fillStyle = p.color;
-        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
-        ctx.restore();
-
-        p.x += p.speedX;
-        p.y += p.speedY;
-        p.rotation += p.rotationSpeed;
-
-        if (p.x < 0) p.x = canvas.width;
-        if (p.x > canvas.width) p.x = 0;
-      });
-
-      if (!finished) {
-        animationFrameId = requestAnimationFrame(draw);
-      }
-    };
-
-    draw();
-
-    const timer = setTimeout(() => {
-      if (canvas) {
-        canvas.style.opacity = "0";
-        canvas.style.transition = "opacity 1.5s ease-out";
-      }
-    }, 4000);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      cancelAnimationFrame(animationFrameId);
-      clearTimeout(timer);
-    };
-  }, []);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-[9999]"
-      style={{ mixBlendMode: "screen" }}
-    />
-  );
-};
 
 // Registration lock map to prevent concurrent registrations for the same event
 const registrationLocks = new Map();
@@ -232,10 +146,10 @@ const EventRegistration = () => {
       setLoading(true);
       // Find event from mock data
       const foundEvent = mockEvents.find((e) => e.id === parseInt(eventId));
-      
+
       if (foundEvent) {
         setEvent({ ...foundEvent, status: getEventStatus(foundEvent) });
-        
+
         // Pre-fill form if user is authenticated
         if (isAuthenticated() && user) {
           setValues((prev) => ({
@@ -294,7 +208,7 @@ const EventRegistration = () => {
 
     // Check for scheduling conflicts
     const conflictCheck = checkRegistrationConflict(event, myEvents);
-    
+
     if (conflictCheck.hasConflict) {
       // Get alternative suggestions
       const suggestions = suggestAlternativeEvents(event, mockEvents, myEvents);
@@ -314,15 +228,20 @@ const EventRegistration = () => {
   const proceedWithRegistration = async () => {
     // Close modal if open
     setShowConflictModal(false);
-    
+
     // Set lock and submission state
     registrationLocks.set(eventId, true);
     isSubmittingRef.current = true;
     setSubmitting(true);
 
+    const isEventFull = event ? event.attendees >= event.maxAttendees : false;
+    const endpoint = isEventFull
+      ? `/api/events/${eventId}/waitlist`
+      : (API_ENDPOINTS.EVENTS?.REGISTER ? API_ENDPOINTS.EVENTS.REGISTER(eventId) : `/api/events/${eventId}/register`);
+
     try {
       await apiUtils.post(
-        API_ENDPOINTS.EVENTS.REGISTER(eventId),
+        endpoint,
         {
           ...formData,
           eventId: parseInt(eventId),
@@ -336,7 +255,7 @@ const EventRegistration = () => {
       sendConfirmationEmail(formData.email, formData.fullName, event?.title, event?.date);
       addRegistration(event, formData);
       clearSession();
-    
+
     } catch (error) {
       const failureMessage = getRegistrationFailureMessage(error);
       const isOfflineFailure = error?.isNetworkError || error?.isTimeout;
@@ -350,20 +269,26 @@ const EventRegistration = () => {
           userId: user?.id || null,
         };
 
-        pushToQueue({ eventId: parseInt(eventId), payload });
+        const success = await pushToQueue({ eventId: parseInt(eventId), payload });
 
-        setRegistered(true);
-        addRegistration(event, formData);
-        clearSession();
-        toast.warning(
-          "Network error. Registration queued and will sync when you are online.",
-          { autoClose: 4000 }
-        );
+        if (success) {
+          setRegistered(true);
+          addRegistration(event, formData);
+          clearSession();
+          toast.warning(
+            "Network error. Registration queued and will sync when you are online.",
+            { autoClose: 4000 }
+          );
+        } else {
+          toast.error("Offline registration queue is full. Please reconnect to the internet to register.");
+        }
         return;
       }
 
       if (isAlreadyRegistered) {
         setRegistered(true);
+        toast.success(isEventFull ? "Successfully joined waitlist!" : "Registration successful!");
+        // ── Save to My Events ──
         addRegistration(event, formData);
         clearSession();
         toast.info(failureMessage);
@@ -420,18 +345,18 @@ const EventRegistration = () => {
     );
   }
 
+  const isEventFull = event ? event.attendees >= event.maxAttendees : false;
   const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
-  const isEventFull = event.attendees >= event.maxAttendees;
 
-  if (isPastEvent || isEventFull) {
+  if (isPastEvent) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
           Registration Unavailable
         </h2>
         <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
-          {isPastEvent 
-            ? "This event has already ended." 
+          {isPastEvent
+            ? "This event has already ended."
             : "This event is currently full. You can still check back later in case a spot opens up."}
         </p>
         <Link
@@ -450,7 +375,7 @@ const EventRegistration = () => {
     const outlookCalendarUrl = getOutlookCalendarUrl(event);
     const shareText = `I'm attending ${event.title} on Eventra! Join me there!`;
     const shareUrl = `${window.location.origin}/events/${event.id}`;
-    
+
     const handleNativeShare = () => {
       if (navigator.share) {
         navigator.share({
@@ -504,7 +429,7 @@ const EventRegistration = () => {
             <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 truncate">
               {event.title}
             </h3>
-            
+
             <div className="space-y-2.5 text-xs text-gray-600 dark:text-gray-400">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-indigo-500" />
@@ -517,7 +442,7 @@ const EventRegistration = () => {
                   })}
                 </span>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-pink-500" />
                 <span>{event.time}</span>
@@ -542,7 +467,7 @@ const EventRegistration = () => {
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                  <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
                 </svg>
                 Google
               </a>
@@ -553,7 +478,7 @@ const EventRegistration = () => {
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                  <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
                 </svg>
                 Outlook
               </a>
@@ -573,7 +498,7 @@ const EventRegistration = () => {
                 title="Share on Twitter / X"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                 </svg>
               </a>
               <a
@@ -584,7 +509,7 @@ const EventRegistration = () => {
                 title="Share on LinkedIn"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                  <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
                 </svg>
               </a>
               <button
@@ -660,7 +585,7 @@ const EventRegistration = () => {
             </div>
           </div>
 
-          {/* Registration Form */}
+          {isEventFull ? "Waitlist Joined!" : "Registration Confirmed!"}
           <div className="p-8">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
               Register for this Event
@@ -684,11 +609,10 @@ const EventRegistration = () => {
                     value={formData.fullName}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${
-                      errors.fullName && touched.fullName
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${errors.fullName && touched.fullName
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
-                    }`}
+                      }`}
                     placeholder="Enter your full name"
                   />
                 </div>
@@ -714,11 +638,10 @@ const EventRegistration = () => {
                     value={formData.email}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${
-                      errors.email && touched.email
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${errors.email && touched.email
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
-                    }`}
+                      }`}
                     placeholder="your.email@example.com"
                   />
                 </div>
@@ -744,11 +667,10 @@ const EventRegistration = () => {
                     value={formData.phone}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${
-                      errors.phone && touched.phone
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${errors.phone && touched.phone
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
-                    }`}
+                      }`}
                     placeholder="+1 (555) 123-4567"
                   />
                 </div>
@@ -807,22 +729,22 @@ const EventRegistration = () => {
                   Additional Information (Optional)
                 </label>
                 <textarea
-                    id="additionalInfo"
-                    name="additionalInfo"
-                    value={formData.additionalInfo}
-                    onChange={handleChange}
-                    maxLength={MAX_NOTES_CHARS} // 👈 Limits characters strictly
-                    rows="4"
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
-                    placeholder="Any special requirements or questions?"
-                  ></textarea>
+                  id="additionalInfo"
+                  name="additionalInfo"
+                  value={formData.additionalInfo}
+                  onChange={handleChange}
+                  maxLength={MAX_NOTES_CHARS} // 👈 Limits characters strictly
+                  rows="4"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
+                  placeholder="Any special requirements or questions?"
+                ></textarea>
 
-                  {/* 👈 Dynamic counter box directly below */}
-                  <div className="flex justify-end text-xs mt-1 text-gray-400 dark:text-gray-500">
-                    <span className={(formData.additionalInfo?.length || 0) >= MAX_NOTES_CHARS - 20 ? "text-red-500 font-medium animate-pulse" : ""}>
-                      {formData.additionalInfo?.length || 0} / {MAX_NOTES_CHARS} characters
-                    </span>
-                  </div>
+                {/* 👈 Dynamic counter box directly below */}
+                <div className="flex justify-end text-xs mt-1 text-gray-400 dark:text-gray-500">
+                  <span className={(formData.additionalInfo?.length || 0) >= MAX_NOTES_CHARS - 20 ? "text-red-500 font-medium animate-pulse" : ""}>
+                    {formData.additionalInfo?.length || 0} / {MAX_NOTES_CHARS} characters
+                  </span>
+                </div>
               </div>
 
 
@@ -843,10 +765,10 @@ const EventRegistration = () => {
                   {submitting ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Registering...
+                      {isEventFull ? "Joining Waitlist..." : "Registering..."}
                     </>
                   ) : (
-                    "Complete Registration"
+                    isEventFull ? "Join Waitlist" : "Complete Registration"
                   )}
                 </button>
               </div>

@@ -1,3 +1,4 @@
+import NotificationBell from "../common/NotificationBell.jsx";
 import { useTheme } from "../../context/ThemeContext";
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -371,10 +372,13 @@ const MobileDrawerFooter = ({
       <div className="flex gap-3 mt-4">
         <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={true} />
         <CursorToggleButton
-          cursorEnabled={cursorEnabled}
-          toggleCursor={toggleCursor}
-          isMobile={true}
-        />
+  cursorEnabled={cursorEnabled}
+  toggleCursor={toggleCursor}
+  isMobile={true}
+/>
+
+<NotificationBell />
+        
       </div>
     </div>
   </div>
@@ -547,10 +551,7 @@ const MobileUserSection = ({
 
 const NAV_ITEMS = [
   { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
-  { name: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
-  { name: "Calendar", href: "/calendar", icon: <CalendarDays className="w-5 h-5" /> },
-  { name: "Bookmarks", href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
-  { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
+ 
   {
     name: "Event Tools",
     icon: <Calendar className="w-5 h-5" />,
@@ -567,6 +568,7 @@ const NAV_ITEMS = [
     name: "Community",
     icon: <Users className="w-5 h-5" />,
     subItems: [
+
       { name: "Leaderboard", href: "/leaderBoard", icon: <Trophy className="w-5 h-5" /> },
       { name: "Contributors", href: "/contributors", icon: <Users className="w-5 h-5" /> },
       { name: "Contributors Guide", href: "/contributorguide", icon: <Book className="w-5 h-5" /> },
@@ -577,6 +579,7 @@ const NAV_ITEMS = [
     name: "More",
     icon: <MoreHorizontal className="w-5 h-5" />,
     subItems: [
+      
       { name: "About", href: "/about", icon: <Info className="w-5 h-5" /> },
       { name: "FAQ", href: "/faq", icon: <HelpCircle className="w-5 h-5" /> },
       { name: "Contact", href: "/contact", icon: <MessageSquare className="w-5 h-5" /> },

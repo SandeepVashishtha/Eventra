@@ -23,6 +23,7 @@ import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
 import ShareMenu from "../../components/common/ShareMenu";
 import { generateEventSharingData } from "../../utils/shareUtils";
 import StatusBadge from "../../components/common/StatusBadge";
+import LazyImage from "../../components/common/LazyImage";
 import { getEventStatus } from "../../utils/eventUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
 import ReminderControls from "../../components/reminders/ReminderControls";
@@ -267,11 +268,11 @@ const EventCard = ({ event }) => {
 
       {/* Image */}
       <div className="relative h-40 overflow-hidden">
-        <img
-          loading="lazy"
-          decoding="async"
+        <LazyImage
           src={event.image}
           alt={`${event.title} event thumbnail`}
+          width={800}
+          height={160}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />

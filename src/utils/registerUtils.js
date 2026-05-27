@@ -8,7 +8,8 @@ const readRegistrations = () => {
     const data = localStorage.getItem(STORAGE_KEY);
     return data ? JSON.parse(data) : {};
   } catch (error) {
-    console.warn("Failed to parse eventRegistrations from localStorage.", error);
+    // eslint-disable-next-line no-console
+    console.warn("[RegisterUtils] Failed to read registrations:", error);
     return {};
   }
 };

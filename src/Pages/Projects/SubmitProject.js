@@ -26,6 +26,7 @@ import {
   ArchiveBoxIcon,
   DocumentTextIcon,
   PencilSquareIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/solid";
 
 const SubmitProject = () => {
@@ -58,6 +59,49 @@ const SubmitProject = () => {
     targetAudience: "", // Added to state
   });
   const [errors, setErrors] = useState({});
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    processFile(file);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    processFile(file);
+  };
+
+  const processFile = (file) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file!");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setFormData((prev) => ({ ...prev, projectImage: event.target.result }));
+      setErrors((prev) => ({ ...prev, projectImage: "" }));
+      toast.success("Image uploaded successfully!");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = (e) => {
+    e.stopPropagation();
+    setFormData((prev) => ({ ...prev, projectImage: "" }));
+  };
 
   const inputRefs = {
     projectName: useRef(null),
@@ -130,8 +174,11 @@ const SubmitProject = () => {
     if (data.liveDemoLink?.trim() && !urlRegex.test(data.liveDemoLink)) {
       newErrors.liveDemoLink = "Please enter a valid URL.";
     }
-    if (data.projectImage?.trim() && !urlRegex.test(data.projectImage)) {
-      newErrors.projectImage = "Please enter a valid image URL.";
+    if (data.projectImage?.trim()) {
+      const isBase64 = data.projectImage.startsWith("data:image/");
+      if (!isBase64 && !urlRegex.test(data.projectImage)) {
+        newErrors.projectImage = "Please enter a valid image URL.";
+      }
     }
     if (data.description && data.description.trim().length < 10) {
       newErrors.description =
@@ -417,15 +464,64 @@ const SubmitProject = () => {
                   <span className="text-red-500 ml-1">*</span>
                 )}
               </label>
-              <input
-                type={field.type}
-                name={field.name}
-                value={formData[field.name]}
-                onChange={handleChange}
-                placeholder={field.placeholder}
-                ref={inputRefs[field.name]}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
-              />
+              {field.name === "projectImage" ? (
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`w-full border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${
+                    isDragging
+                      ? "border-indigo-500 bg-indigo-50/30 dark:bg-indigo-950/20"
+                      : "border-gray-300 hover:border-indigo-500 hover:bg-slate-50/50 dark:border-gray-650 dark:hover:border-indigo-400 dark:hover:bg-slate-800/10"
+                  }`}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                  {formData.projectImage ? (
+                    <div className="relative w-full max-w-[200px] aspect-square flex items-center justify-center rounded-lg border border-gray-250 dark:border-gray-700 overflow-hidden bg-gray-50/50 dark:bg-gray-900 group">
+                      <img
+                        src={formData.projectImage}
+                        alt="Project Preview"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="absolute top-2 right-2 p-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-full shadow-md transition-all duration-200 cursor-pointer"
+                        title="Remove image"
+                      >
+                        <XMarkIcon className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-center space-y-2 pointer-events-none">
+                      <ArrowUpTrayIcon className={`w-8 h-8 mx-auto text-indigo-500 transition-transform duration-300 ${isDragging ? "animate-bounce" : ""}`} />
+                      <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                        Drag and drop your project logo here, or <span className="text-indigo-650 dark:text-indigo-400 underline decoration-wavy">browse</span>
+                      </div>
+                      <div className="text-xs text-slate-400 dark:text-slate-500">
+                        Supports PNG, JPG, JPEG, SVG up to 5MB
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <input
+                  type={field.type}
+                  name={field.name}
+                  value={formData[field.name]}
+                  onChange={handleChange}
+                  placeholder={field.placeholder}
+                  ref={inputRefs[field.name]}
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
+                />
+              )}
               {errors[field.name] && (
                 <p className="text-red-500 text-xs mt-1">
                   {errors[field.name]}
