@@ -20,12 +20,6 @@ export const fetchGitHubJson = async (path, queryParams = {}, options = {}) => {
   );
 
   return data;
-
-  if (!response.ok) {
-    throw new Error(`GitHub proxy request failed with status ${response.status}`);
-  }
-
-  return response.json();
 };
 
 export const fetchGitHubRepo = ({ owner, repo }, options = {}) => {

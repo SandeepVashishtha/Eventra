@@ -238,11 +238,7 @@ export default function LeaderBoard() {
       let hasMore = true;
 
       const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(`/repos/${GITHUB_REPO}/contributors`)}`;
-      const { data: contributorsData } =
-        await fetchWithTimeout(proxyUrl);
-
-      if (!contributorsRes.ok) throw new Error("Failed to fetch contributors");
-      const contributorsData = await contributorsRes.json();
+      const { data: contributorsData } = await fetchWithTimeout(proxyUrl);
       const contributorsInfo = {};
 
       contributorsData.forEach((contributor) => {
