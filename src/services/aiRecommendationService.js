@@ -1,13 +1,8 @@
-const GROQ_API_KEY =
-  process.env.REACT_APP_GROQ_API_KEY;
-  console.log(GROQ_API_KEY);
+import { apiUtils } from "../config/api";
 
-export const generateAIInsights =
-  async (event, profile) => {
-
-    try {
-
-      const prompt = `
+export const generateAIInsights = async (event, profile) => {
+  try {
+    const prompt = `
 You are an AI event recommendation assistant.
 
 User Profile:
@@ -24,56 +19,28 @@ Event:
 Explain in 3 concise bullet points why this event matches the user.
 `;
 
-      const response = await fetch(
-        "https://api.groq.com/openai/v1/chat/completions",
-        {
-          method: "POST",
+    // Make request to our secure backend proxy instead of exposing the API key to the frontend
+    const response = await fetch("/api/ai-recommendations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ prompt }),
+    });
 
-          headers: {
-            "Content-Type": "application/json",
+    const data = await response.json();
 
-            Authorization:
-              `Bearer ${GROQ_API_KEY}`,
-          },
-
-          body: JSON.stringify({
-            model: "llama-3.1-8b-instant",
-
-            messages: [
-              {
-                role: "user",
-                content: prompt,
-              },
-            ],
-
-            temperature: 0.7,
-          }),
-        }
-      );
-
-     const data =
-  await response.json();
-
-console.log(data);
-
-if (!response.ok) {
-
-  console.error(data);
-
-  return "Groq API request failed.";
-
-}
-
-return data.choices?.[0]
-  ?.message?.content ||
-  "No AI response generated.";
-
-    } catch (error) {
-
-      console.error(error);
-
-      return "Unable to generate AI insights.";
-
+    if (!response.ok) {
+      console.error("[aiRecommendationService] Server error:", data);
+      return "Unable to generate AI insights. The service is currently unavailable.";
     }
 
+    return (
+      data.choices?.[0]?.message?.content ||
+      "No AI response generated."
+    );
+  } catch (error) {
+    console.error("[aiRecommendationService] Network/Parsing error:", error);
+    return "Unable to connect to the recommendation service.";
+  }
 };
