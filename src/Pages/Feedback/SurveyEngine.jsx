@@ -12,6 +12,7 @@ import {
 import { toast } from "react-toastify";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import SurveyAnalytics from "../../components/admin/SurveyAnalytics";
+import { validate } from "../../validation";
 
 const SurveyEngine = () => {
   useDocumentTitle("Eventra | Dynamic Survey Engine");
@@ -135,8 +136,13 @@ const SurveyEngine = () => {
 
   // Update question properties
   const updateQuestionText = (id, text) => {
+    // Show validation notifications if HTML is detected
+    if (validate.detectHTML(text)) {
+      toast.warning("HTML elements detected. They will be automatically sanitized to prevent XSS.");
+    }
+    const sanitized = validate.sanitizeSurveyPrompt(text);
     setQuestions(
-      questions.map((q) => (q.id === id ? { ...q, questionText: text } : q))
+      questions.map((q) => (q.id === id ? { ...q, questionText: sanitized } : q))
     );
   };
 
@@ -172,11 +178,15 @@ const SurveyEngine = () => {
   };
 
   const updateOptionText = (questionId, optionIndex, text) => {
+    if (validate.detectHTML(text)) {
+      toast.warning("HTML elements detected. They will be automatically sanitized to prevent XSS.");
+    }
+    const sanitized = validate.sanitizeSurveyOption(text);
     setQuestions(
       questions.map((q) => {
         if (q.id === questionId) {
           const updatedOptions = [...q.options];
-          updatedOptions[optionIndex] = text;
+          updatedOptions[optionIndex] = sanitized;
           return { ...q, options: updatedOptions };
         }
         return q;
@@ -367,6 +377,18 @@ const SurveyEngine = () => {
                             placeholder="Type your question prompt here..."
                             className="w-full text-lg font-semibold bg-transparent border-b border-slate-200 dark:border-slate-800 focus:border-indigo-500 outline-none pb-1 transition-all"
                           />
+                          
+                          {/* REAL-TIME VALIDATION WARNINGS & COUNTERS */}
+                          <div className="flex justify-between items-center text-[10px] font-semibold pt-1">
+                            <div className="text-rose-500 flex items-center gap-1">
+                              {question.questionText.length >= 140 && (
+                                <span>⚠️ Reached character boundary limit (150 max)</span>
+                              )}
+                            </div>
+                            <span className={`text-[10px] ${question.questionText.length >= 140 ? "text-rose-500 font-extrabold" : "text-slate-400"}`}>
+                              {question.questionText.length} / 150
+                            </span>
+                          </div>
                         </div>
 
                         <div className="flex items-center gap-1 shrink-0">
@@ -426,17 +448,25 @@ const SurveyEngine = () => {
                                 className="flex items-center gap-3"
                               >
                                 <div className="w-4 h-4 rounded-full border-2 border-slate-300 dark:border-slate-700 bg-transparent" />
-                                <input
-                                  type="text"
-                                  value={option}
-                                  onChange={(e) =>
-                                    updateOptionText(question.id, optIdx, e.target.value)
-                                  }
-                                  className="flex-1 max-w-md bg-transparent border-b border-slate-100 dark:border-slate-800 focus:border-indigo-500 outline-none text-sm py-0.5"
-                                />
+                                <div className="flex-1 max-w-md space-y-1">
+                                  <input
+                                    type="text"
+                                    value={option}
+                                    onChange={(e) =>
+                                      updateOptionText(question.id, optIdx, e.target.value)
+                                    }
+                                    className="w-full bg-transparent border-b border-slate-100 dark:border-slate-800 focus:border-indigo-500 outline-none text-sm py-0.5"
+                                  />
+                                  <div className="flex justify-between items-center text-[9px] font-semibold text-slate-400">
+                                    <span className="text-rose-500">
+                                      {option.length >= 70 && "⚠️ Option near max limit (80 max)"}
+                                    </span>
+                                    <span>{option.length} / 80</span>
+                                  </div>
+                                </div>
                                 <button
                                   onClick={() => setConfirmModal({ open: true, type: "option", questionId: question.id, optionIndex: optIdx }) }
-                                  className="text-slate-400 hover:text-red-500 p-1"
+                                  className="text-slate-400 hover:text-red-500 p-1 self-start"
                                 >
                                   <FiTrash2 className="w-4 h-4" />
                                 </button>
