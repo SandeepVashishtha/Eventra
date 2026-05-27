@@ -160,6 +160,7 @@ Cookies Enabled: ${navigator.cookieEnabled}
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
+
     this.state = {
       hasError: false,
       error: null,
@@ -180,7 +181,10 @@ class ErrorBoundary extends React.Component {
     return {
       hasError: true,
       error,
+<<<<<<< HEAD
       errorId: generateErrorId(),
+=======
+>>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
     };
   }
 
@@ -289,6 +293,7 @@ class ErrorBoundary extends React.Component {
 
   /** Copy the full diagnostic report to clipboard */
   handleCopyReport = () => {
+<<<<<<< HEAD
     const { error, errorInfo, errorId } = this.state;
     const report = buildDiagnosticReport(errorId, error, errorInfo);
 
@@ -305,6 +310,42 @@ class ErrorBoundary extends React.Component {
     } else {
       this._fallbackCopy(report);
     }
+=======
+    const { error, errorInfo } = this.state;
+
+    const report = `
+EVENTRA DIAGNOSTICS
+
+Timestamp:
+${new Date().toISOString()}
+
+URL:
+${window.location.href}
+
+Error:
+${error?.toString() || "Unknown error"}
+
+Stack:
+${error?.stack || "No stack"}
+
+Component Stack:
+${errorInfo?.componentStack || "Unavailable"}
+
+Local Storage:
+${JSON.stringify(localStorage, null, 2)}
+`;
+
+    navigator.clipboard
+      .writeText(report)
+      .then(() => {
+        this.setState({ copied: true });
+
+        setTimeout(() => {
+          this.setState({ copied: false });
+        }, 2000);
+      })
+      .catch(console.error);
+>>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
   };
 
   _fallbackCopy = (text) => {
@@ -337,6 +378,7 @@ class ErrorBoundary extends React.Component {
       return this.props.children;
     }
 
+<<<<<<< HEAD
     const { error, errorInfo, errorId, copied, showDiagnostics, retryCount, isRecovering, recoveryMessage } = this.state;
     const tooManyRetries = retryCount >= 3;
 
@@ -575,6 +617,160 @@ class ErrorBoundary extends React.Component {
             </div>
           </div>
         </div>
+=======
+    const timestamp = new Date().toLocaleString();
+    const url = window.location.href;
+    const userAgent = navigator.userAgent;
+    const errorText =
+      this.state.error?.toString() || "Unknown runtime error";
+
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-5 text-white relative overflow-hidden">
+
+        {/* subtle glow */}
+        <div className="absolute top-0 left-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 bg-rose-500/5 rounded-full blur-3xl" />
+
+        <div className="relative z-10 w-full max-w-xl rounded-2xl border border-white/10 bg-slate-900/90 shadow-2xl p-6">
+
+          {/* HEADER */}
+          <div className="flex flex-col items-center text-center">
+
+            <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-5">
+              <svg
+                className="w-8 h-8 text-rose-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 9v2m0 4h.01m-7 4h14L12 4 5 19z"
+                />
+              </svg>
+            </div>
+
+            <h1 className="text-2xl font-semibold text-white">
+              System Crash Prevented
+            </h1>
+
+            <p className="text-sm text-slate-400 mt-3 max-w-md">
+              We detected an unexpected issue and stopped it before it affected
+              your session. You can safely reload or retry.
+            </p>
+          </div>
+
+          {/* ERROR */}
+          <div className="mt-6 rounded-xl border border-rose-500/20 bg-rose-500/5 p-4">
+
+            <div className="text-xs uppercase text-rose-400 font-semibold mb-2">
+              Error Message
+            </div>
+
+            <div className="text-sm font-mono break-all text-slate-200">
+              {errorText}
+            </div>
+
+          </div>
+
+          {/* METADATA */}
+          <div className="mt-5 grid gap-3">
+
+            <div className="rounded-xl bg-white/5 p-3">
+              <div className="text-xs text-slate-400 mb-1">
+                Current URL
+              </div>
+
+              <div className="text-xs break-all">
+                {url}
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-white/5 p-3">
+              <div className="text-xs text-slate-400 mb-1">
+                Timestamp
+              </div>
+
+              <div className="text-xs">
+                {timestamp}
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-white/5 p-3">
+              <div className="text-xs text-slate-400 mb-1">
+                User Agent
+              </div>
+
+              <div className="text-xs break-all">
+                {userAgent}
+              </div>
+            </div>
+
+          </div>
+
+          {/* ACTIONS */}
+          <div className="mt-6 flex flex-col gap-3">
+
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 transition font-medium"
+            >
+              Reload Page
+            </button>
+
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition"
+            >
+              Try Again
+            </button>
+
+            <button
+              onClick={this.handleResetCache}
+              className="text-sm text-slate-400 hover:text-white transition"
+            >
+              Reset Cache
+            </button>
+
+          </div>
+
+          {/* DIAGNOSTICS */}
+          <details className="mt-6 rounded-xl border border-white/10 overflow-hidden">
+
+            <summary className="cursor-pointer px-4 py-3 text-sm text-slate-300">
+              Diagnostics
+            </summary>
+
+            <div className="p-4 border-t border-white/10">
+
+              <pre className="text-xs bg-black/30 rounded-lg p-3 overflow-auto max-h-56 whitespace-pre-wrap">
+                {this.state.error?.stack}
+
+                {this.state.errorInfo?.componentStack}
+              </pre>
+
+              <button
+                onClick={this.handleCopyReport}
+                className={`mt-4 w-full rounded-xl py-2 transition ${
+                  this.state.copied
+                    ? "bg-emerald-600"
+                    : "bg-slate-800 hover:bg-slate-700"
+                }`}
+              >
+                {this.state.copied
+                  ? "Diagnostic Report Copied"
+                  : "Copy Diagnostic Report"}
+              </button>
+
+            </div>
+
+          </details>
+
+        </div>
+
+>>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
       </div>
     );
   }
