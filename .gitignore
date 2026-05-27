@@ -3,6 +3,7 @@
 
 node_modules
 build
+.DS_Store
 
 # Secret Files - DO NOT COMMIT
 *.SECRETS.*

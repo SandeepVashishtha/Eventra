@@ -315,26 +315,27 @@ const CalendarPage = () => {
           </div>
         ) : null}
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <div className="mt-8 grid gap-6 grid-cols-1 lg:grid-cols-2 items-start">
           <div className="eventra-calendar rounded-3xl bg-white/80 p-4 shadow-lg backdrop-blur-sm dark:bg-slate-950/80">
-            <Calendar
-              localizer={localizer}
-              events={calendarEvents}
-              defaultView="month"
-              views={["month"]}
-              toolbar
-              popup
-              selectable
-              onSelectSlot={handleSelectSlot}
-              onSelectEvent={handleSelectEvent}
-              onNavigate={handleNavigate}
-              dayPropGetter={dayPropGetter}
-              style={{ height: 620 }}
-              components={{ toolbar: CalendarToolbar }}
-            />
+            <div className="h-[450px] lg:h-[620px]">
+              <Calendar
+                localizer={localizer}
+                events={calendarEvents}
+                defaultView="month"
+                views={["month"]}
+                toolbar
+                popup
+                selectable
+                onSelectSlot={handleSelectSlot}
+                onSelectEvent={handleSelectEvent}
+                onNavigate={handleNavigate}
+                dayPropGetter={dayPropGetter}
+                components={{ toolbar: CalendarToolbar }}
+              />
+            </div>
           </div>
 
-          <aside className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg dark:border-slate-800 dark:bg-slate-950">
+          <aside className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-6 shadow-lg dark:border-slate-800 dark:bg-slate-950 mt-2 lg:mt-0">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">

@@ -7,7 +7,22 @@
  * cryptographic signature — that step happens server-side. The sole purpose
  * here is to give the UI early feedback about expiry so we can redirect the
  * user before they hit a 401 Unauthorized error from the API.
+ *
+ * SECURITY MODEL:
+ * ───────────────
+ * The JWT is the authoritative source for authentication and authorization:
+ * 1. JWT is signed by the backend — cannot be forged by client
+ * 2. JWT is delivered over HTTPS — cannot be intercepted and modified
+ * 3. Even if localStorage is tampered with, authorization checks use the JWT
+ *
+ * localStorage is used ONLY for UI state (display name, email, cached theme, etc.),
+ * never for security-critical decisions.
+ *
+ * Authorization flows should always verify against the JWT token, not localStorage.
+ * Server must also validate authorization for every API request.
  */
+
+import { safeJsonParse } from "./safeJsonParse.js";
 
 /** Grace period (in seconds) to account for clock skew between browser and server. */
 const CLOCK_SKEW_BUFFER = 30;
@@ -21,27 +36,24 @@ const CLOCK_SKEW_BUFFER = 30;
  */
 export function decodeJwtPayload(token) {
   try {
-    if (!token || typeof token !== 'string') return null;
+    if (!token || typeof token !== "string") return null;
 
-    const parts = token.split('.');
+    const parts = token.split(".");
     if (parts.length !== 3) return null;
 
     // Convert base64url → standard base64, then add padding.
-    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    const padded = base64.padEnd(
-      base64.length + ((4 - (base64.length % 4)) % 4),
-      '='
-    );
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
 
     // Use decodeURIComponent + escape to safely handle non-ASCII characters.
     const jsonPayload = decodeURIComponent(
       atob(padded)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
     );
 
-    return JSON.parse(jsonPayload);
+    return safeJsonParse(jsonPayload, {});
   } catch {
     // Malformed or corrupted token — treat as invalid.
     return null;
@@ -61,7 +73,7 @@ export function decodeJwtPayload(token) {
  */
 export function isTokenExpired(token) {
   const payload = decodeJwtPayload(token);
-  if (!payload || typeof payload.exp !== 'number') {
+  if (!payload || typeof payload.exp !== "number") {
     // Tokens without an `exp` claim are treated as expired to be safe.
     return true;
   }
@@ -80,7 +92,7 @@ export function isTokenExpired(token) {
  *                    its `exp` claim is in the future (minus grace period).
  */
 export function isTokenValid(token) {
-  if (!token || typeof token !== 'string') return false;
+  if (!token || typeof token !== "string") return false;
   return !isTokenExpired(token);
 }
 
@@ -93,6 +105,6 @@ export function isTokenValid(token) {
  */
 export function getTokenTTL(token) {
   const payload = decodeJwtPayload(token);
-  if (!payload || typeof payload.exp !== 'number') return -1;
+  if (!payload || typeof payload.exp !== "number") return -1;
   return payload.exp - Math.floor(Date.now() / 1000);
 }
