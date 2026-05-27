@@ -334,8 +334,8 @@ const CollaborationHub = () => {
         )}
 
         {activeSection === 'create-request' && (
-          <div className="create-request-section">
-            <h2>Create Collaboration Request</h2>
+          <div className="create-request-section" role="region" aria-labelledby="form-heading">
+            <h2 id="form-heading">Create Collaboration Request</h2>
             <form onSubmit={handleRequestSubmit} className="request-form">
               <div className="form-group">
                 <label htmlFor="collab-title">Project Title *</label>
@@ -347,16 +347,24 @@ const CollaborationHub = () => {
                   onChange={handleRequestChange}
                   placeholder="Enter your collaboration project title" 
                   required
+                  aria-required="true"
+                  aria-invalid={newRequest.title.trim() === '' ? "true" : "false"}
+                  aria-describedby="title-hint"
                 />
+                <span id="title-hint" className="sr-only">Please enter a descriptive title for your project</span>
               </div>
               
               <div className="form-group">
-                <label>Collaboration Type *</label>
+                <label htmlFor="collab-type">Collaboration Type *</label>
                 <select 
+                  id="collab-type"
                   name="type"
                   value={newRequest.type}
                   onChange={handleRequestChange}
                   required
+                  aria-required="true"
+                  aria-invalid={newRequest.type === '' ? "true" : "false"}
+                  aria-describedby="type-hint"
                 >
                   <option value="">Select type</option>
                   <option value="Sponsorship">Sponsorship</option>
@@ -364,11 +372,13 @@ const CollaborationHub = () => {
                   <option value="Venue Partnership">Venue Partnership</option>
                   <option value="Technical Support">Technical Support</option>
                 </select>
+                <span id="type-hint" className="sr-only">Select the type of collaboration partnership</span>
               </div>
               
               <div className="form-group">
-                <label>Description *</label>
+                <label htmlFor="collab-desc">Description *</label>
                 <textarea 
+                  id="collab-desc"
                   name="description"
                   value={newRequest.description}
                   onChange={handleRequestChange}
@@ -376,16 +386,22 @@ const CollaborationHub = () => {
                   maxLength={300}
                   placeholder="Describe partnership goals / Sponsorship details / Collaboration ideas..."
                   required
+                  aria-required="true"
+                  aria-invalid={newRequest.description.trim() === '' ? "true" : "false"}
+                  aria-describedby="desc-hint"
                 ></textarea>
+                <span id="desc-hint" className="sr-only">Provide context and objectives of the collaboration. Maximum 300 characters.</span>
               </div>
               
               <div className="form-row">
                 <div className="form-group">
-                  <label>Budget Range</label>
+                  <label htmlFor="collab-budget">Budget Range</label>
                   <select 
+                    id="collab-budget"
                     name="budget"
                     value={newRequest.budget}
                     onChange={handleRequestChange}
+                    aria-describedby="budget-hint"
                   >
                     <option value="">Select budget</option>
                     <option value="$1,000 - $5,000">$1,000 - $5,000</option>
@@ -394,28 +410,35 @@ const CollaborationHub = () => {
                     <option value="$25,000+">$25,000+</option>
                     <option value="Revenue Share">Revenue Share</option>
                   </select>
+                  <span id="budget-hint" className="sr-only">Select the financial budget range if applicable</span>
                 </div>
                 
                 <div className="form-group">
-                  <label>Deadline</label>
+                  <label htmlFor="collab-deadline">Deadline</label>
                   <input 
+                    id="collab-deadline"
                     type="date" 
                     name="deadline"
                     value={newRequest.deadline}
                     onChange={handleRequestChange}
+                    aria-describedby="deadline-hint"
                   />
+                  <span id="deadline-hint" className="sr-only">Select target completion date</span>
                 </div>
               </div>
               
               <div className="form-group">
-                <label>Required Skills</label>
+                <label htmlFor="collab-skills">Required Skills</label>
                 <input 
+                  id="collab-skills"
                   type="text" 
                   name="skills"
                   value={newRequest.skills}
                   onChange={handleRequestChange}
                   placeholder="e.g., Event Management, Marketing, Design" 
+                  aria-describedby="skills-hint"
                 />
+                <span id="skills-hint" className="sr-only">Comma separated list of required skills</span>
               </div>
               
               <button type="submit" className="btn-primary submit-btn">Create Collaboration Request</button>
