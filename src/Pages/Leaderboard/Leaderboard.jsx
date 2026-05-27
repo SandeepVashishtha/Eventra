@@ -247,7 +247,7 @@ export default function LeaderBoard() {
     lastAppliedSyncRef.current = lastSynced;
     setContributors(streamContributors);
     setLastUpdated(`Live update: ${new Date(lastSynced).toLocaleString()}`);
-    storageManager.set(
+    storageManager.setAsync(
       STORAGE_KEYS.LEADERBOARD_CACHE,
       {
         data: streamContributors,
@@ -357,7 +357,7 @@ export default function LeaderBoard() {
 
       setContributors(sortedContributors);
       setLastUpdated(new Date().toLocaleString());
-      storageManager.set(
+      storageManager.setAsync(
         STORAGE_KEYS.LEADERBOARD_CACHE,
         {
           data: sortedContributors,
@@ -375,7 +375,7 @@ export default function LeaderBoard() {
   useEffect(() => {
     const doLoad = async () => {
       setLoading(true);
-      const cachedData = storageManager.get(
+      const cachedData = await storageManager.getAsync(
         STORAGE_KEYS.LEADERBOARD_CACHE,
         validators.isObject
       );

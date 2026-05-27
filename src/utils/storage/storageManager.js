@@ -1,4 +1,5 @@
 import { validators } from "./storageValidators";
+import { get as idbGet, set as idbSet, del as idbDel } from "idb-keyval";
 
 const DEFAULT_EXPIRY = 1000 * 60 * 60; // 1 hour
 
@@ -62,6 +63,50 @@ export const storageManager = {
       localStorage.clear();
     } catch (error) {
       console.error("Storage clear error:", error);
+    }
+  },
+
+  async setAsync(key, value, expiry = DEFAULT_EXPIRY) {
+    try {
+      const payload = {
+        value,
+        expiry: Date.now() + expiry,
+        version: 1,
+      };
+      await idbSet(key, JSON.stringify(payload));
+    } catch (error) {
+      console.error(`Async storage set error for ${key}:`, error);
+    }
+  },
+
+  async getAsync(key, validator = null) {
+    try {
+      const raw = await idbGet(key);
+      if (!raw) return null;
+
+      const parsed = JSON.parse(raw);
+
+      if (!parsed?.value) {
+        await idbDel(key);
+        return null;
+      }
+
+      if (parsed.expiry && Date.now() > parsed.expiry) {
+        await idbDel(key);
+        return null;
+      }
+
+      if (validator && !validator(parsed.value)) {
+        console.warn(`Async validation failed for storage key: ${key}`);
+        await idbDel(key);
+        return null;
+      }
+
+      return parsed.value;
+    } catch (error) {
+      console.error(`Async storage get error for ${key}:`, error);
+      await idbDel(key).catch(() => {});
+      return null;
     }
   },
 };

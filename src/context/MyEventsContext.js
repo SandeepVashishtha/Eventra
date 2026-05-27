@@ -20,6 +20,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useAuth } from "./AuthContext";
+import { get as idbGet, set as idbSet } from "idb-keyval";
 
 const MyEventsContext = createContext(null);
 
@@ -27,22 +28,22 @@ const MyEventsContext = createContext(null);
 
 const storageKey = (userId) => `my_events_${userId}`;
 
-const loadFromStorage = (userId) => {
+const loadFromStorage = async (userId) => {
   if (!userId) return [];
   try {
-    const raw = localStorage.getItem(storageKey(userId));
+    const raw = await idbGet(storageKey(userId));
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
   }
 };
 
-const saveToStorage = (userId, data) => {
+const saveToStorage = async (userId, data) => {
   if (!userId) return;
   try {
-    localStorage.setItem(storageKey(userId), JSON.stringify(data));
+    await idbSet(storageKey(userId), JSON.stringify(data));
   } catch {
-    // localStorage might be full — fail silently
+    // IDB might fail silently
   }
 };
 
@@ -55,19 +56,27 @@ export const MyEventsProvider = ({ children }) => {
   const [myEvents, setMyEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Load from localStorage whenever the logged-in user changes
+  // Load from IndexedDB whenever the logged-in user changes
   useEffect(() => {
-    setLoading(true);
-    setMyEvents(loadFromStorage(userId));
-    setLoading(false);
+    let active = true;
+    const fetchEvents = async () => {
+      setLoading(true);
+      const events = await loadFromStorage(userId);
+      if (active) {
+        setMyEvents(events);
+        setLoading(false);
+      }
+    };
+    fetchEvents();
+    return () => { active = false; };
   }, [userId]);
 
-  // Persist to localStorage whenever myEvents changes
+  // Persist to IndexedDB whenever myEvents changes
   useEffect(() => {
-    if (userId !== null) {
+    if (userId !== null && !loading) {
       saveToStorage(userId, myEvents);
     }
-  }, [myEvents, userId]);
+  }, [myEvents, userId, loading]);
 
   /**
    * addRegistration — call this after a successful event registration.

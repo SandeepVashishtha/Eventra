@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { get as idbGet, set as idbSet } from "idb-keyval";
 
 const STORAGE_KEY = "eventra_notifications";
 
@@ -6,18 +7,17 @@ export const useNotifications = () => {
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-
-    if (stored) {
-      setNotifications(JSON.parse(stored));
-    }
+    idbGet(STORAGE_KEY).then(stored => {
+      if (stored) {
+        setNotifications(JSON.parse(stored));
+      }
+    }).catch(console.error);
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(notifications)
-    );
+    if (notifications.length > 0) {
+      idbSet(STORAGE_KEY, JSON.stringify(notifications)).catch(console.error);
+    }
   }, [notifications]);
 
   const requestPermission = async () => {
