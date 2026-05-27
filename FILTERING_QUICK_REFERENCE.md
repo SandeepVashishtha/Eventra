@@ -2,6 +2,8 @@
 
 ## ✅ Implementation Complete
 
+**For complete system architecture and feature context, see:** [Architecture & Roles Guide](docs/ARCHITECTURE_AND_ROLES.md)
+
 ### 📦 Components & Files Overview
 
 ```
