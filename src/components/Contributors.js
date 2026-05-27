@@ -170,7 +170,8 @@ const Contributors = () => {
           );
         }
 
-        const validContributors = data.filter((c) => c && c.login);
+        // Support anonymous contributors by checking for either login or name
+        const validContributors = data.filter((c) => c && (c.login || c.name));
 
         if (validContributors.length === 0) hasMore = false;
         else {
@@ -336,7 +337,7 @@ const Contributors = () => {
                       decoding="async"
                       width="80"
                       height="80"
-                      src={c.avatar_url}
+                      src={c.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name || "Anon")}&background=random`}
                       alt={`${c.name || c.login || "Contributor"}'s GitHub profile picture`}
                       className="w-20 h-20 rounded-full border-4 border-black shadow-xl"
                     />
