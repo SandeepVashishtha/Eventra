@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import FeatureErrorBoundary from "../../components/common/FeatureErrorBoundary";
 import {
   FaCode,
   FaStar,
@@ -470,7 +471,8 @@ export default function LeaderBoard() {
   const top3 = sortedContributors.slice(0, 3);
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 pt-20 md:pt-24 py-12 sm:py-16 transition-colors duration-300">
+    <FeatureErrorBoundary>
+      <div className="bg-slate-50 dark:bg-slate-950 pt-20 md:pt-24 py-12 sm:py-16 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* HERO TITLE */}
@@ -966,5 +968,6 @@ export default function LeaderBoard() {
       </div>
       <GSSoCContribution />
     </div>
+    </FeatureErrorBoundary>
   );
 }
