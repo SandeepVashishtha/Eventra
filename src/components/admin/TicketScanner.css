@@ -1,0 +1,108 @@
+/* TicketScanner.css */
+
+.ts-root {
+  background: var(--bg-card, #ffffff);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom scanner guides & animations */
+#html5-qr-reader {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  background-color: #0b0f19 !important;
+  object-fit: cover !important;
+  transform: scaleX(-1); /* mirror camera for intuitive scanning */
+}
+
+#html5-qr-reader video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+/* Red bouncing laser scanning beam */
+@keyframes bounceBeam {
+  0%, 100% {
+    top: 15%;
+  }
+  50% {
+    top: 85%;
+  }
+}
+
+.animate-bounce {
+  animation: bounceBeam 2s infinite ease-in-out;
+}
+
+/* Fade in scanning feedback overlays */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Scrollbar customizations for scanning history */
+.ts-root .overflow-y-auto::-webkit-scrollbar {
+  width: 5px;
+}
+
+.ts-root .overflow-y-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ts-root .overflow-y-auto::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.2);
+  border-radius: 99px;
+}
+
+.ts-root .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.4);
+}
+
+/* Dark Mode Styles override helper */
+.dark .ts-root {
+  background: #0f172a;
+  border-color: #1e293b;
+}
+
+.dark #html5-qr-reader {
+  background-color: #020617 !important;
+}
+
+.dark .ts-root input,
+.dark .ts-root select {
+  background: #020617;
+  border-color: #1e293b;
+  color: #f1f5f9;
+}
+
+.dark .ts-root input:focus,
+.dark .ts-root select:focus {
+  border-color: #6366f1;
+}
+
+.dark .ts-root .bg-slate-50 {
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.dark .ts-root .bg-white {
+  background: #0f172a;
+}
+
+.dark .ts-root .border-slate-150 {
+  border-color: #1e293b;
+}
+
+.dark .ts-root .text-slate-850 {
+  color: #f8fafc;
+}

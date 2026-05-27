@@ -78,10 +78,36 @@ function AnalyticsStreamBadge({ status }) {
   );
 }
 
+const LOCAL_STORAGE_KEY = "eventra_checkins";
+
 const AnalyticsDashboard = () => {
-  const [checkins, setCheckins] = useState(MOCK_CHECKINS);
+  // Merge real scanned check-ins from localStorage (set by TicketScanner) with mock defaults
+  const getInitialCheckins = () => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
+      if (saved.length > 0) {
+        // Merge: show real scanned check-ins first, then pad with mocks if fewer than 5
+        const merged = [...saved.slice(0, 5), ...MOCK_CHECKINS].slice(0, 5);
+        return merged;
+      }
+    } catch (e) {
+      // fallback to mock if localStorage is corrupted
+    }
+    return MOCK_CHECKINS;
+  };
+
+  const getInitialLiveCount = () => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
+      return 342 + saved.filter((c) => c.status === "Verified").length;
+    } catch (e) {
+      return 342;
+    }
+  };
+
+  const [checkins, setCheckins] = useState(getInitialCheckins);
   const [hourlyData, setHourlyData] = useState(INITIAL_HOURLY_DATA);
-  const [liveCount, setLiveCount] = useState(342);
+  const [liveCount, setLiveCount] = useState(getInitialLiveCount);
   const [activeCheckinsPerMinute, setActiveCheckinsPerMinute] = useState(5.4);
 
   // Real-time SSE stream — takes priority over the local simulation when connected

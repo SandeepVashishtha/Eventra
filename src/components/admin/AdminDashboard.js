@@ -6,7 +6,7 @@ import {
   Users, Calendar, Activity, Shield, LogOut, Plus,
   Search, ChevronRight, BarChart2,
   Trash2, Edit2, AlertCircle,
-  TrendingUp, Download, ChevronDown
+  TrendingUp, Download, ChevronDown, QrCode
 } from 'lucide-react';
 import { exportToCSV, exportToJSON } from '../../utils/exportUtils';
 import {
@@ -17,6 +17,7 @@ import {
 import StatusBadge from "../common/StatusBadge";
 import './AdminDashboard.css';
 import AnalyticsDashboard from './AnalyticsDashboard';
+import TicketScanner from './TicketScanner';
 import SectionErrorBoundary from '../common/SectionErrorBoundary';
 import { toast } from 'react-toastify';
 
@@ -244,6 +245,7 @@ const AdminDashboard = () => {
     { id: 'users',     icon: <Users     size={17} />, label: 'Users'      },
     { id: 'events',    icon: <Calendar  size={17} />, label: 'Events'     },
     { id: 'analytics', icon: <BarChart2 size={17} />, label: 'Analytics'  },
+    { id: 'scanner',   icon: <QrCode    size={17} />, label: 'Scan Tickets' },
   ];
 
   return (
@@ -595,6 +597,15 @@ const AdminDashboard = () => {
                     <AnalyticsDashboard />
                   </SectionErrorBoundary>
                 </div>
+              </motion.div>
+            )}
+
+            {/* ── Scanner ── */}
+            {activeTab === 'scanner' && (
+              <motion.div key="scanner" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="ad-section">
+                <SectionErrorBoundary label="Ticket Scanner">
+                  <TicketScanner />
+                </SectionErrorBoundary>
               </motion.div>
             )}
 
