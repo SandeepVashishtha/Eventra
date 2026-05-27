@@ -81,10 +81,10 @@ export const getPublicRoutes = () => [
   <Route key="/projects" path="/projects" element={<ProjectsPage />} />,
 
   // Mock API endpoints (demo/documentation purposes)
-  <Route key="/api/hackathons"  path="/api/hackathons"  element={<MockApiResponse />} />,
-  <Route key="/api/projects"    path="/api/projects"    element={<MockApiResponse />} />,
-  <Route key="/api/contributors" path="/api/contributors" element={<MockApiResponse />} />,
-  <Route key="/api/leaderboard" path="/api/leaderboard" element={<MockApiResponse />} />,
+  <Route key="/mock-api/hackathons" path="/mock-api/hackathons" element={<MockApiResponse />} />,
+  <Route key="/mock-api/projects" path="/mock-api/projects" element={<MockApiResponse />} />,
+  <Route key="/mock-api/contributors" path="/mock-api/contributors" element={<MockApiResponse />} />,
+  <Route key="/mock-api/leaderboard" path="/mock-api/leaderboard" element={<MockApiResponse />} />,
 
   // ── Auth-protected routes (login required) ─────────────────────────────────
   <Route

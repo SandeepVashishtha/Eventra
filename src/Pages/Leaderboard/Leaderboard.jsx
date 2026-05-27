@@ -26,6 +26,7 @@ import { logger } from "../../utils/logger";
 import { storageManager } from "../../utils/storage/storageManager";
 import { STORAGE_KEYS } from "../../utils/storage/storageKeys";
 import { validators } from "../../utils/storage/storageValidators";
+import { ENV } from "../../config/env";
 
 // ─── Category filter definitions ───────────────────────────────────────────────
 const CATEGORY_FILTERS = [
@@ -84,8 +85,6 @@ function RankMovementIndicator({ username }) {
 }
 
 // Repository constant — update if the leaderboard should point to another repo
-import { ENV } from "../../config/env";
-
 const GITHUB_REPO = ENV.GITHUB_REPO;
 // Token is managed securely by the backend proxy
 
