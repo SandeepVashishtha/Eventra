@@ -54,8 +54,9 @@ const checkCollision = (el1, el2) => {
   );
 };
 
-const FloorPlanDesigner = ({ eventId = "default" }) => {
+const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   const [elements, setElements] = useState([]);
+  const [lastSavedElementsStr, setLastSavedElementsStr] = useState("");
   const [selectedId, setSelectedId] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   
@@ -73,22 +74,49 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
   const elementStartRef = useRef({ x: 0, y: 0 });
   const panStartRef = useRef({ x: 0, y: 0 });
 
+  const isDirty = !!(lastSavedElementsStr && JSON.stringify(elements) !== lastSavedElementsStr);
+
+  useEffect(() => {
+    if (onDirtyChange) {
+      onDirtyChange(isDirty);
+    }
+  }, [isDirty, onDirtyChange]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = "You have unsaved changes on your floor plan layout. Are you sure you want to leave?";
+        return e.returnValue;
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isDirty]);
+
   // Load layout from local storage or set preset
   useEffect(() => {
     const savedLayout = localStorage.getItem(`eventra_floorplan_${eventId}`);
+    let initialElements = [];
     if (savedLayout) {
       try {
-        setElements(JSON.parse(savedLayout));
+        initialElements = JSON.parse(savedLayout);
       } catch (e) {
-        setElements(PRESETS.banquet);
+        initialElements = PRESETS.banquet;
       }
     } else {
-      setElements(PRESETS.banquet);
+      initialElements = PRESETS.banquet;
     }
+    setElements(initialElements);
+    setLastSavedElementsStr(JSON.stringify(initialElements));
   }, [eventId]);
 
   const saveLayout = () => {
-    localStorage.setItem(`eventra_floorplan_${eventId}`, JSON.stringify(elements));
+    const serialized = JSON.stringify(elements);
+    localStorage.setItem(`eventra_floorplan_${eventId}`, serialized);
+    setLastSavedElementsStr(serialized);
     toast.success("Venue floor plan successfully saved!");
   };
 
