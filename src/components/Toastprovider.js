@@ -6,6 +6,7 @@ const ToastProvider = () => {
   const { theme } = useContext(ThemeContext);
   const toastTimersRef = useRef(new Map());
   const [toasts, setToasts] = useState([]);
+  const [announcement, setAnnouncement] = useState("");
 
   const dismissToast = (id) => {
     if (id == null) {
@@ -34,6 +35,9 @@ const ToastProvider = () => {
           const filtered = prev.filter((item) => item.id !== incomingToast.id);
           return [...filtered, incomingToast];
         });
+        
+        // programmatically trigger visually-hidden live region announcement
+        setAnnouncement(incomingToast.message);
 
         if (incomingToast.autoClose === false) {
           return;
@@ -90,21 +94,41 @@ const ToastProvider = () => {
   };
 
   return (
-    <div
-      aria-live="polite"
-      aria-atomic="false"
-      aria-label="Notifications"
-      style={{
-        position: "fixed",
-        top: "1rem",
-        right: "1rem",
-        zIndex: 2147483647,
-        display: "flex",
-        flexDirection: "column",
-        gap: "0.6rem",
-        pointerEvents: "none",
-      }}
-    >
+    <>
+      {/* Visually hidden screen reader live region */}
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        style={{
+          position: "absolute",
+          width: "1px",
+          height: "1px",
+          padding: 0,
+          margin: "-1px",
+          overflow: "hidden",
+          clip: "rect(0, 0, 0, 0)",
+          whiteSpace: "nowrap",
+          border: 0,
+        }}
+      >
+        {announcement}
+      </div>
+
+      <div
+        aria-live="polite"
+        aria-atomic="false"
+        aria-label="Notifications"
+        style={{
+          position: "fixed",
+          top: "1rem",
+          right: "1rem",
+          zIndex: 2147483647,
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.6rem",
+          pointerEvents: "none",
+        }}
+      >
       {toasts.map((item) => {
         const accent = accentByType[item.type] || accentByType.info;
 
@@ -153,6 +177,7 @@ const ToastProvider = () => {
         );
       })}
     </div>
+    </>
   );
 };
 

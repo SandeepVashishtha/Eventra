@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import FeatureErrorBoundary from "../../components/common/FeatureErrorBoundary";
 import {
@@ -20,11 +20,9 @@ import StyledDropdown from "../../components/StyledDropdown";
 import SkeletonLeaderboard from "../../components/common/SkeletonLeaderboard";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useLeaderboardStream, SSE_STATUS } from "../../context/RealTimeContext";
-import {
-  storageManager,
-  STORAGE_KEYS,
-  validators,
-} from "../../utils/storage/storageManager";
+import { storageManager } from "../../utils/storage/storageManager";
+import { STORAGE_KEYS } from "../../utils/storage/storageKeys";
+import { validators } from "../../utils/storage/storageValidators";
 
 // ─── Category filter definitions ───────────────────────────────────────────────
 const CATEGORY_FILTERS = [
@@ -80,7 +78,7 @@ function RankMovementIndicator({ username }) {
 }
 
 // Repository constant — update if the leaderboard should point to another repo
-const GITHUB_REPO = "SandeepVashishtha/Eventra";
+const GITHUB_REPO = process.env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra";
 // Token is managed securely by the backend proxy
 
 // Points mapping for PR labels (keeps scoring logic centralized)
@@ -420,32 +418,36 @@ export default function LeaderBoard() {
       updatedSearches
     );
   };
-  const filteredContributors = contributors.filter((c) => {
-    const q = search.trim().toLowerCase();
-    const matchSearch = !q || c.username.toLowerCase().includes(q) || (c.name && c.name.toLowerCase().includes(q));
-    if (!matchSearch) return false;
+  const filteredContributors = useMemo(() => {
+    return contributors.filter((c) => {
+      const q = search.trim().toLowerCase();
+      const matchSearch = !q || c.username.toLowerCase().includes(q) || (c.name && c.name.toLowerCase().includes(q));
+      if (!matchSearch) return false;
 
-    // Category filters (deterministic simulation based on username hash)
-    if (activeCategory === "monthly") {
-      // Show top ~40% as "monthly stars" based on points threshold
-      const threshold = contributors.length > 0
-        ? contributors[Math.floor(contributors.length * 0.4)]?.points || 0
-        : 0;
-      return c.points >= threshold;
-    }
-    if (activeCategory === "mentors") {
-      // Show contributors with 5+ PRs as "mentors"
-      return c.prs >= 5;
-    }
-    return true; // "overall" shows everyone
-  });
+      // Category filters (deterministic simulation based on username hash)
+      if (activeCategory === "monthly") {
+        // Show top ~40% as "monthly stars" based on points threshold
+        const threshold = contributors.length > 0
+          ? contributors[Math.floor(contributors.length * 0.4)]?.points || 0
+          : 0;
+        return c.points >= threshold;
+      }
+      if (activeCategory === "mentors") {
+        // Show contributors with 5+ PRs as "mentors"
+        return c.prs >= 5;
+      }
+      return true; // "overall" shows everyone
+    });
+  }, [contributors, search, activeCategory]);
 
-  const sortedContributors = [...filteredContributors].sort((a, b) => {
-    if (sortBy === "points") return b.points - a.points;
-    if (sortBy === "prs") return b.prs - a.prs;
-    if (sortBy === "username") return a.username.localeCompare(b.username);
-    return 0;
-  });
+  const sortedContributors = useMemo(() => {
+    return [...filteredContributors].sort((a, b) => {
+      if (sortBy === "points") return b.points - a.points;
+      if (sortBy === "prs") return b.prs - a.prs;
+      if (sortBy === "username") return a.username.localeCompare(b.username);
+      return 0;
+    });
+  }, [filteredContributors, sortBy]);
 
   const indexOfLast = currentPage * CONTRIBUTORS_PER_PAGE;
   const indexOfFirst = indexOfLast - CONTRIBUTORS_PER_PAGE;

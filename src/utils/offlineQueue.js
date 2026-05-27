@@ -33,7 +33,8 @@ export const getQueue = () => {
   try {
     const raw = localStorage.getItem(QUEUE_KEY);
     return raw ? JSON.parse(raw) : [];
-  } catch {
+  } catch (error) {
+    console.error('[OfflineQueue] Failed to parse offline queue:', error);
     return [];
   }
 };

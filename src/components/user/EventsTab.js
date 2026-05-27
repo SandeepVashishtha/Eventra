@@ -16,6 +16,7 @@ import {
 import { Link } from "react-router-dom";
 import { useMyEvents } from "../../context/MyEventsContext";
 import StatusBadge from "../common/StatusBadge";
+import { safeParseJson } from "../../utils/jsonUtils";
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
@@ -233,12 +234,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
     [myEvents]
   );
   useEffect(() => {
-    const saved =
-      JSON.parse(
-        localStorage.getItem(
-          "recentSearches"
-        )
-      ) || [];
+    const saved = safeParseJson(localStorage.getItem("recentSearches"), []);
 
     setRecentSearches(saved);
   }, []);

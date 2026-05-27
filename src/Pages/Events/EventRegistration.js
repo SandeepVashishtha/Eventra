@@ -180,6 +180,34 @@ const EventRegistration = () => {
     loadEvent();
   }, [eventId, user, isAuthenticated, setValues]);
 
+  const checkEventCapacity = async (id, currentEvent) => {
+    try {
+      const freshRes = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(id));
+      if (freshRes.status === 200) {
+        const freshEvent = freshRes.data;
+        return freshEvent.attendees >= freshEvent.maxAttendees;
+      }
+    } catch {
+      // If the re-fetch fails, fall back to the cached snapshot
+      return currentEvent.attendees >= currentEvent.maxAttendees;
+    }
+    return false;
+  };
+
+  const checkAndHandleConflicts = () => {
+    const conflictCheck = checkRegistrationConflict(event, myEvents);
+    if (conflictCheck.hasConflict) {
+      const suggestions = suggestAlternativeEvents(event, mockEvents, myEvents);
+      setConflictData({
+        conflicts: conflictCheck.conflicts,
+        suggestions,
+      });
+      setShowConflictModal(true);
+      return true;
+    }
+    return false;
+  };
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -202,40 +230,14 @@ const EventRegistration = () => {
     }
 
     // Quick UX hint based on the latest visible event snapshot.
-    // The backend still enforces capacity at submit time.
-    try {
-      const freshRes = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
-      if (freshRes.status === 200) {
-        const freshEvent = freshRes.data;
-        if (freshEvent.attendees >= freshEvent.maxAttendees) {
-          toast.error("This event is currently full. Registration may no longer be available.");
-          return;
-        }
-      }
-    } catch {
-      // If the re-fetch fails, fall back to the cached snapshot so the user
-      // can still attempt registration rather than being silently blocked.
-      if (event.attendees >= event.maxAttendees) {
-        toast.error("This event is currently full. Registration may no longer be available.");
-        return;
-      }
+    const isFull = await checkEventCapacity(eventId, event);
+    if (isFull) {
+      toast.error("This event is currently full. Registration may no longer be available.");
+      return;
     }
 
     // Check for scheduling conflicts
-    const conflictCheck = checkRegistrationConflict(event, myEvents);
-
-    if (conflictCheck.hasConflict) {
-      // Get alternative suggestions
-      // TODO: In production, alternative events should be fetched from backend API
-      // for accurate availability and pricing. Mock data is used as a fallback.
-      const suggestions = suggestAlternativeEvents(event, mockEvents, myEvents);
-      setConflictData({
-        conflicts: conflictCheck.conflicts,
-        suggestions,
-      });
-      setShowConflictModal(true);
-      return;
-    }
+    if (checkAndHandleConflicts()) return;
 
     // Proceed with registration if no conflicts
     proceedWithRegistration();
@@ -410,6 +412,9 @@ const EventRegistration = () => {
       } else {
         navigator.clipboard.writeText(shareUrl).then(() => {
           toast.success("Event link copied to clipboard!");
+        }).catch((err) => {
+          console.error("Failed to copy link:", err);
+          toast.error("Could not copy link. Please copy manually.");
         });
       }
     };

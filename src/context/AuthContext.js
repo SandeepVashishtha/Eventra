@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from '../config/api';
 import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
 import { toast } from 'react-toastify';
-import { ROLES } from '../config/roles';
+import { ROLES, ROLE_PERMISSIONS } from '../config/roles';
 import { decodeJwtPayload } from '../utils/auth';
 
 
@@ -62,6 +62,56 @@ export const AuthProvider = ({ children }) => {
       autoClose: 5000,
     });
   }, [clearSession]);
+
+  const normalizeRoles = useCallback((roles = []) => {
+    return roles.map((role) => {
+      const normalized = String(role).toUpperCase();
+
+      if (normalized === 'EVENT_MANAGER') {
+        return ROLES.ORGANIZER;
+      }
+
+      return normalized;
+    });
+  }, []);
+
+  /**
+   * SECURITY: Extract authorization data from the signed JWT token.
+   *
+   * The JWT is the authoritative source for route authorization because
+   * localStorage and React state are user-editable. Server-side checks remain
+   * mandatory for every protected API operation.
+   */
+  const extractAuthorizationFromToken = useCallback((token) => {
+    if (!token) return null;
+
+    const payload = decodeJwtPayload(token);
+    if (!payload) return null;
+
+    // Extract roles and permissions from the JWT payload only. localStorage is
+    // user-editable, so it must never be the source for route authorization.
+    const tokenRoles = Array.isArray(payload.roles)
+      ? payload.roles
+      : payload.role
+        ? [payload.role]
+        : [];
+    const normalizedRoles = normalizeRoles(tokenRoles);
+    const tokenPermissions = Array.isArray(payload.permissions)
+      ? payload.permissions.map((permission) => String(permission))
+      : [];
+    const rolePermissions = normalizedRoles.flatMap(
+      (role) => ROLE_PERMISSIONS[role] || []
+    );
+    const permissions = Array.from(new Set([...tokenPermissions, ...rolePermissions]));
+
+    const scopes = normalizedRoles.includes(ROLES.SUPER_ADMIN) || normalizedRoles.includes(ROLES.ADMIN)
+      ? ['admin:all', 'event:write', 'event:read', 'hackathon:write', 'hackathon:read']
+      : normalizedRoles.includes(ROLES.ORGANIZER)
+        ? ['event:write', 'event:read', 'hackathon:write', 'hackathon:read']
+        : ['event:read', 'hackathon:read'];
+
+    return { roles: normalizedRoles, permissions, scopes };
+  }, [normalizeRoles]);
 
   useEffect(() => {
     const validateSession = async () => {
@@ -186,6 +236,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+<<<<<<< HEAD
   const normalizeRoles = (roles = []) => {
     return roles.map((role) => {
       const normalized = String(role).toUpperCase();
@@ -231,6 +282,8 @@ export const AuthProvider = ({ children }) => {
 
     return { roles: normalizedRoles, scopes };
   };
+=======
+>>>>>>> upstream/master
   const extractSession = (res, data, fallbackEmail) => {
     let sessionToken = data?.token ?? data?.accessToken ?? null;
 
@@ -392,7 +445,13 @@ export const AuthProvider = ({ children }) => {
     return user.roles.includes(targetRole);
   };
 
-  const hasPermission = (permissionName) => user?.permissions?.includes(permissionName) || false;
+  const hasPermission = (permissionName) => {
+    // With HttpOnly cookies, we cannot extract permissions from the JWT client-side.
+    // We rely on the validated user profile from the server for UI rendering.
+    if (!user?.permissions) return false;
+
+    return user.permissions.includes(permissionName);
+  };
 
   const hasAnyRole = (...roleNames) => roleNames.some((role) => hasRole(role));
 
