@@ -61,6 +61,10 @@ const EventCard = ({ event }) => {
     id: event.id,
   });
 
+  // Defensive date parsing: guard against missing or malformed dates
+  const parsedDate = event && event.date ? new Date(event.date) : null;
+  const hasValidDate = parsedDate instanceof Date && !isNaN(parsedDate.getTime());
+
   const handleBookmarkToggle = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -116,7 +120,7 @@ const EventCard = ({ event }) => {
             {event.category || "General"}
           </span>
           <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-            {getSmartDateLabel(event.date)}
+            {hasValidDate ? getSmartDateLabel(parsedDate.toISOString()) : "Date TBA"}
           </span>
         </div>
 
@@ -134,11 +138,11 @@ const EventCard = ({ event }) => {
         <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-600 dark:text-slate-300">
           <span className="inline-flex items-center gap-1">
             <Calendar size={14} className="text-indigo-500" />
-            {new Date(event.date).toLocaleDateString()}
+            {hasValidDate ? parsedDate.toLocaleDateString() : "TBA"}
           </span>
           <span className="inline-flex items-center gap-1">
             <Clock size={14} className="text-indigo-500" />
-            {new Date(event.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            {hasValidDate ? parsedDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--"}
           </span>
           <span className="inline-flex items-center gap-1">
             <MapPin size={14} className="text-indigo-500" />

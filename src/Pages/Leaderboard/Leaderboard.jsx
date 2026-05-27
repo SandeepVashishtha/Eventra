@@ -12,8 +12,6 @@ import StyledDropdown from "../../components/StyledDropdown";
 
 // Repository constant — update if the leaderboard should point to another repo
 const GITHUB_REPO = "SandeepVashishtha/Eventra";
-// Token read from env for higher rate limits (optional)
-const TOKEN = process.env.REACT_APP_GITHUB_TOKEN || "";
 const LEADERBOARD_CACHE_KEY = "leaderboardData:v2";
 
 // Points mapping for PR labels (keeps scoring logic centralized)
@@ -95,9 +93,10 @@ export default function LeaderBoard() {
       let hasMore = true;
 
       // Fetch contributor metadata (avatar, profile)
+      // Use the local proxy to avoid exposing tokens in the client bundle
       const contributorsRes = await fetch(
-        `https://api.github.com/repos/${GITHUB_REPO}/contributors`,
-        { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} }
+        `/api/github-proxy?path=/repos/${GITHUB_REPO}/contributors`,
+        { headers: { Accept: "application/vnd.github.v3+json" } }
       );
 
       if (!contributorsRes.ok) throw new Error("Failed to fetch contributors");
@@ -117,8 +116,8 @@ export default function LeaderBoard() {
       // Paginate through closed PRs to find merged GSoc-related PRs
       while (hasMore) {
         const res = await fetch(
-          `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`,
-          { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} }
+          `/api/github-proxy?path=/repos/${GITHUB_REPO}/pulls&state=closed&per_page=100&page=${page}`,
+          { headers: { Accept: "application/vnd.github.v3+json" } }
         );
 
         if (!res.ok) {
