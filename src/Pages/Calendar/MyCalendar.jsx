@@ -23,12 +23,37 @@ import SkeletonCalendar from "../../components/common/SkeletonCalendar";
 
 // Category Configuration Map
 const CATEGORIES = [
-  { id: "all", label: "All Events", color: "from-indigo-500 to-indigo-600", glow: "shadow-indigo-500/20" },
+  {
+    id: "all",
+    label: "All Events",
+    color: "from-indigo-500 to-indigo-600",
+    glow: "shadow-indigo-500/20",
+  },
   { id: "gssoc", label: "GSSoC", color: "from-pink-500 to-rose-600", glow: "shadow-pink-500/20" },
-  { id: "ai/web3", label: "AI / Web3", color: "from-purple-500 to-violet-600", glow: "shadow-purple-500/20" },
-  { id: "workshops", label: "Workshops", color: "from-cyan-500 to-blue-600", glow: "shadow-cyan-500/20" },
-  { id: "hackathons", label: "Hackathons", color: "from-emerald-500 to-teal-600", glow: "shadow-emerald-500/20" },
-  { id: "community", label: "Community", color: "from-amber-500 to-orange-600", glow: "shadow-amber-500/20" },
+  {
+    id: "ai/web3",
+    label: "AI / Web3",
+    color: "from-purple-500 to-violet-600",
+    glow: "shadow-purple-500/20",
+  },
+  {
+    id: "workshops",
+    label: "Workshops",
+    color: "from-cyan-500 to-blue-600",
+    glow: "shadow-cyan-500/20",
+  },
+  {
+    id: "hackathons",
+    label: "Hackathons",
+    color: "from-emerald-500 to-teal-600",
+    glow: "shadow-emerald-500/20",
+  },
+  {
+    id: "community",
+    label: "Community",
+    color: "from-amber-500 to-orange-600",
+    glow: "shadow-amber-500/20",
+  },
 ];
 
 const MyCalendar = () => {
@@ -47,8 +72,18 @@ const MyCalendar = () => {
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
 
   const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -69,13 +104,17 @@ const MyCalendar = () => {
   const prevMonth = () => {
     const newDate = new Date(currentYear, currentMonth - 1, 1);
     setCurrentDate(newDate);
-    setAnnouncement(`Switched to calendar view for ${monthNames[newDate.getMonth()]} ${newDate.getFullYear()}`);
+    setAnnouncement(
+      `Switched to calendar view for ${monthNames[newDate.getMonth()]} ${newDate.getFullYear()}`
+    );
   };
 
   const nextMonth = () => {
     const newDate = new Date(currentYear, currentMonth + 1, 1);
     setCurrentDate(newDate);
-    setAnnouncement(`Switched to calendar view for ${monthNames[newDate.getMonth()]} ${newDate.getFullYear()}`);
+    setAnnouncement(
+      `Switched to calendar view for ${monthNames[newDate.getMonth()]} ${newDate.getFullYear()}`
+    );
   };
 
   const handleDayKeyDown = (e, day) => {
@@ -194,7 +233,6 @@ const MyCalendar = () => {
       </div>
 
       <div className="max-w-6xl mx-auto space-y-8">
-
         {/* HEADER SECTION */}
         <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-b border-slate-200 dark:border-slate-800/80 pb-6">
           <div>
@@ -206,7 +244,8 @@ const MyCalendar = () => {
               Registrations Calendar
             </h1>
             <p className="text-slate-550 dark:text-slate-400 mt-2 text-xs sm:text-sm max-w-2xl leading-relaxed">
-              Organize, filter, and synchronize your GSSoC registrations. Switch between high-contrast calendar matrices and interactive chronological timelines.
+              Organize, filter, and synchronize your GSSoC registrations. Switch between
+              high-contrast calendar matrices and interactive chronological timelines.
             </p>
           </div>
 
@@ -215,10 +254,11 @@ const MyCalendar = () => {
             <div className="flex items-center gap-2 bg-slate-150/80 dark:bg-slate-900/60 p-1.5 rounded-2xl border border-slate-200/40 dark:border-slate-800/30 backdrop-blur-xs shadow-inner">
               <button
                 onClick={() => setViewMode("grid")}
-                className={`p-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${viewMode === "grid"
+                className={`p-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
+                  viewMode === "grid"
                     ? "bg-white dark:bg-slate-800 shadow-md text-indigo-650 dark:text-indigo-400"
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-                  }`}
+                }`}
                 aria-label="Grid calendar view"
               >
                 <Grid className="w-3.5 h-3.5" />
@@ -226,10 +266,11 @@ const MyCalendar = () => {
               </button>
               <button
                 onClick={() => setViewMode("timeline")}
-                className={`p-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${viewMode === "timeline"
+                className={`p-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
+                  viewMode === "timeline"
                     ? "bg-white dark:bg-slate-800 shadow-md text-indigo-650 dark:text-indigo-400"
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-                  }`}
+                }`}
                 aria-label="Chronological timeline view"
               >
                 <Activity className="w-3.5 h-3.5" />
@@ -252,14 +293,8 @@ const MyCalendar = () => {
         </header>
 
         {loading ? (
-          <div
-            role="status"
-            aria-live="polite"
-            aria-label="Loading calendar"
-          >
-            <span className="sr-only">
-              Loading calendar registrations...
-            </span>
+          <div role="status" aria-live="polite" aria-label="Loading calendar">
+            <span className="sr-only">Loading calendar registrations...</span>
             <SkeletonCalendar />
           </div>
         ) : (
@@ -279,10 +314,11 @@ const MyCalendar = () => {
                       whileHover={{ scale: 1.04 }}
                       whileTap={{ scale: 0.96 }}
                       onClick={() => setActiveCategory(cat.id)}
-                      className={`relative p-2.5 px-4 rounded-xl text-xs font-black tracking-wide border cursor-pointer transition-all ${isActive
+                      className={`relative p-2.5 px-4 rounded-xl text-xs font-black tracking-wide border cursor-pointer transition-all ${
+                        isActive
                           ? "bg-gradient-to-r from-indigo-500/10 to-indigo-600/15 border-indigo-500 text-indigo-600 dark:text-indigo-400 shadow-md shadow-indigo-500/5"
                           : "bg-white/50 dark:bg-slate-900/30 border-slate-200/50 dark:border-slate-800/40 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:border-slate-350 dark:hover:border-slate-700"
-                        }`}
+                      }`}
                     >
                       <span className="relative z-10 flex items-center gap-2">
                         <span className={`w-2 h-2 rounded-full bg-gradient-to-r ${cat.color}`} />
@@ -335,7 +371,9 @@ const MyCalendar = () => {
                         className="grid grid-cols-7 gap-2.5 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"
                       >
                         {daysOfWeek.map((day) => (
-                          <div key={day} role="columnheader">{day}</div>
+                          <div key={day} role="columnheader">
+                            {day}
+                          </div>
                         ))}
                       </div>
 
@@ -367,14 +405,17 @@ const MyCalendar = () => {
                               onClick={() => selectDay(day)}
                               onKeyDown={(e) => handleDayKeyDown(e, day)}
                               aria-selected={selected}
-                              className={`aspect-square rounded-2xl border p-2 flex flex-col justify-between items-start cursor-pointer transition-all ${selected
+                              className={`aspect-square rounded-2xl border p-2 flex flex-col justify-between items-start cursor-pointer transition-all ${
+                                selected
                                   ? "bg-indigo-650 border-indigo-600 text-white shadow-lg shadow-indigo-600/10 scale-102"
                                   : isToday
                                     ? "bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900 text-indigo-755 dark:text-indigo-400 font-extrabold"
                                     : "bg-white dark:bg-slate-900 border-slate-200/60 dark:border-slate-800/70 hover:border-slate-350 dark:hover:border-slate-700"
-                                }`}
+                              }`}
                             >
-                              <span className={`text-[11px] font-black ${selected ? "text-white" : "text-slate-400 dark:text-slate-500"}`}>
+                              <span
+                                className={`text-[11px] font-black ${selected ? "text-white" : "text-slate-400 dark:text-slate-500"}`}
+                              >
                                 {day}
                               </span>
                               {dayEvents.length > 0 && (
@@ -384,8 +425,9 @@ const MyCalendar = () => {
                                     return (
                                       <span
                                         key={i}
-                                        className={`w-1.5 h-1.5 rounded-full ${selected ? "bg-white" : `bg-gradient-to-r ${theme.color}`
-                                          }`}
+                                        className={`w-1.5 h-1.5 rounded-full ${
+                                          selected ? "bg-white" : `bg-gradient-to-r ${theme.color}`
+                                        }`}
                                       />
                                     );
                                   })}
@@ -428,11 +470,18 @@ const MyCalendar = () => {
                                 </h4>
                                 <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 mt-2">
                                   <Clock className="w-3.5 h-3.5" aria-hidden="true" />
-                                  <span>{new Date(item.event.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                                  <span>
+                                    {new Date(item.event.date).toLocaleTimeString([], {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                  </span>
                                 </div>
                                 <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 mt-1">
                                   <MapPin className="w-3.5 h-3.5" aria-hidden="true" />
-                                  <span className="truncate max-w-[200px]">{item.event.location || "Virtual / Online"}</span>
+                                  <span className="truncate max-w-[200px]">
+                                    {item.event.location || "Virtual / Online"}
+                                  </span>
                                 </div>
                               </div>
                               {/* EXPORT BUTTONS */}
@@ -453,7 +502,10 @@ const MyCalendar = () => {
                                   rel="noopener noreferrer"
                                   className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl border border-slate-250 bg-white hover:bg-slate-50 text-[11px] font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 transition"
                                 >
-                                  <ExternalLink className="w-3 h-3 text-indigo-500" aria-hidden="true" />
+                                  <ExternalLink
+                                    className="w-3 h-3 text-indigo-500"
+                                    aria-hidden="true"
+                                  />
                                   Google Calendar
                                 </a>
                               </div>
@@ -461,9 +513,13 @@ const MyCalendar = () => {
                           ))
                         ) : (
                           <div className="flex flex-col items-center justify-center py-10 text-center space-y-3">
-                            <AlertCircle className="w-8 h-8 text-slate-350 dark:text-slate-655" aria-hidden="true" />
+                            <AlertCircle
+                              className="w-8 h-8 text-slate-350 dark:text-slate-655"
+                              aria-hidden="true"
+                            />
                             <p className="text-slate-400 text-xs leading-relaxed max-w-[200px]">
-                              No registrations scheduled for this date. Check active events or registration forms.
+                              No registrations scheduled for this date. Check active events or
+                              registration forms.
                             </p>
                           </div>
                         )}
@@ -484,7 +540,10 @@ const MyCalendar = () => {
                     className="bg-white dark:bg-slate-900 border border-slate-250/60 dark:border-slate-800/80 rounded-3xl p-6 shadow-md"
                     aria-labelledby="registered-events-title"
                   >
-                    <h3 id="registered-events-title" className="text-lg font-black text-slate-900 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <h3
+                      id="registered-events-title"
+                      className="text-lg font-black text-slate-900 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800 pb-3"
+                    >
                       📝 Registered Events Schedule ({myEvents.length})
                     </h3>
                     <div className="mt-6 space-y-4">
@@ -511,15 +570,27 @@ const MyCalendar = () => {
                               </p>
                               <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 mt-2">
                                 <span className="flex items-center gap-1">
-                                  <CalendarIcon className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
+                                  <CalendarIcon
+                                    className="w-3.5 h-3.5 text-indigo-500"
+                                    aria-hidden="true"
+                                  />
                                   {new Date(item.event.date).toLocaleDateString()}
                                 </span>
                                 <span className="flex items-center gap-1">
-                                  <Clock className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
-                                  {new Date(item.event.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                  <Clock
+                                    className="w-3.5 h-3.5 text-indigo-500"
+                                    aria-hidden="true"
+                                  />
+                                  {new Date(item.event.date).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
                                 </span>
                                 <span className="flex items-center gap-1">
-                                  <MapPin className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
+                                  <MapPin
+                                    className="w-3.5 h-3.5 text-indigo-500"
+                                    aria-hidden="true"
+                                  />
                                   {item.event.location || "Online"}
                                 </span>
                               </div>
@@ -548,11 +619,17 @@ const MyCalendar = () => {
                         ))
                       ) : (
                         <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                          <CalendarIcon className="w-12 h-12 text-slate-300 dark:text-slate-700 animate-pulse" aria-hidden="true" />
+                          <CalendarIcon
+                            className="w-12 h-12 text-slate-300 dark:text-slate-700 animate-pulse"
+                            aria-hidden="true"
+                          />
                           <div>
-                            <h4 className="font-extrabold text-slate-800 dark:text-slate-205">No Active Registrations</h4>
+                            <h4 className="font-extrabold text-slate-800 dark:text-slate-205">
+                              No Active Registrations
+                            </h4>
                             <p className="text-slate-400 text-sm leading-relaxed max-w-sm mt-1 mx-auto">
-                              Get involved by exploring the Eventra portal events, team projects, and registering yourself to compile your grid schedule!
+                              Get involved by exploring the Eventra portal events, team projects,
+                              and registering yourself to compile your grid schedule!
                             </p>
                           </div>
                         </div>

@@ -9,11 +9,7 @@ const readBookmarks = () => {
 
   try {
     const rawBookmarks = window.localStorage.getItem(BOOKMARKS_STORAGE_KEY);
-    const parsedBookmarks =
-      safeJsonParse(
-        rawBookmarks,
-        [],
-      );
+    const parsedBookmarks = safeJsonParse(rawBookmarks, []);
     return Array.isArray(parsedBookmarks) ? parsedBookmarks : [];
   } catch {
     return [];
