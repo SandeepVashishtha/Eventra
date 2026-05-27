@@ -240,6 +240,7 @@ const useOfflineSync = () => {
               failedQueue.push({ ...item, retryCount: retries + 1 });
             }
           } catch (error) {
+            logger.error("[useOfflineSync] Sync failed for queued item:", error);
             failedQueue.push({ ...item, retryCount: retries + 1 });
           }
         }
@@ -348,11 +349,11 @@ const useOfflineSync = () => {
     if (navigator.onLine) {
       if (typeof window.requestIdleCallback === "function") {
         idleId = window.requestIdleCallback(() => {
-          handleOnline();
+          void handleOnline();
         });
       } else {
         timeoutId = setTimeout(() => {
-          handleOnline();
+          void handleOnline();
         }, 200);
       }
     }
