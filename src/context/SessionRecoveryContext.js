@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 const SessionRecoveryContext = createContext();
 
@@ -65,7 +66,10 @@ export const SessionRecoveryProvider = ({ children }) => {
     try {
       const saved = localStorage.getItem(SESSION_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved);
+        const parsed = safeJsonParse(
+          saved,
+          {},
+        );
         const now = Date.now();
 
         const isValidTimestamp =

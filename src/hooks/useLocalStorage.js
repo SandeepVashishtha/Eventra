@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 /**
  * useLocalStorage
@@ -24,7 +25,10 @@ const useLocalStorage = (key, initialValue) => {
     if (typeof window === "undefined") return initialValueRef.current;
     try {
       const item = window.localStorage.getItem(key);
-      return item !== null ? JSON.parse(item) : initialValueRef.current;
+      return safeJsonParse(
+        item,
+        initialValueRef.current,
+      );
     } catch (error) {
       console.warn(`useLocalStorage: error reading key "${key}":`, error);
       return initialValueRef.current;
