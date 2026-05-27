@@ -1,4 +1,4 @@
-const isDevelopment = import.meta.env.DEV;
+const isDevelopment = process.env.NODE_ENV === "development";
 
 const formatMessage = (level, message) => {
   return `[${level.toUpperCase()}] ${message}`;
