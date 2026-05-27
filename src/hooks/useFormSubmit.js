@@ -4,7 +4,7 @@ export function useFormSubmit(submitFn) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
-  const isInFlight = useRef(false); 
+  const isInFlight = useRef(false);
   const isMounted = useRef(true);
 
   useEffect(() => {

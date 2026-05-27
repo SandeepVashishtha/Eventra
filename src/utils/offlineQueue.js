@@ -16,6 +16,7 @@ const openDB = () => {
       reject(new Error("IndexedDB is not supported in this environment"));
       return;
     }
+
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = (e) => {
       const db = e.target.result;
@@ -197,7 +198,7 @@ export const setQueue = async (newQueue) => {
 
         let completed = 0;
         newQueue.forEach((item) => {
-          const putReq = store.add(item);
+          const putReq = store.put(item);
           putReq.onsuccess = () => {
             completed++;
             if (completed === newQueue.length) resolve();
