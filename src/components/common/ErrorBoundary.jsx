@@ -83,8 +83,17 @@ class GlobalErrorBoundary extends React.Component {
   // Clear Client Storage Cache
   handleClearCache() {
     try {
+      // Keep critical items
+      const token = localStorage.getItem('token');
+      const offlineQueue = localStorage.getItem('offline_registration_queue');
+      
       localStorage.clear();
       sessionStorage.clear();
+      
+      // Restore critical items
+      if (token) localStorage.setItem('token', token);
+      if (offlineQueue) localStorage.setItem('offline_registration_queue', offlineQueue);
+      
       window.location.reload();
     } catch (e) {
       console.error("Failed to clear browser cache:", e);

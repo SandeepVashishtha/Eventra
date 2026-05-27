@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate, Navigate, useLocation } from 'react-router-dom';
+import { useNavigate, Navigate, useLocation, Link } from 'react-router-dom';
 import {
   Users, Calendar, Activity, Shield, LogOut, Plus,
   Search, ChevronRight, BarChart2,
@@ -558,6 +558,22 @@ const AdminDashboard = () => {
 
           </AnimatePresence>
         </div>
+
+        {/* Futuristic Admin Dashboard Footer */}
+        <footer className="ad-footer">
+          <div className="ad-footer-divider" />
+          <div className="ad-footer-content">
+            <p className="ad-footer-copyright">
+              © {new Date().getFullYear()} Eventra. Admin Control Panel.
+            </p>
+            <div className="ad-footer-links">
+              <Link to="/helpcenter" className="ad-footer-link">Help Center</Link>
+              <a href="https://github.com/sandeepvashishtha/Eventra" target="_blank" rel="noopener noreferrer" className="ad-footer-link">GitHub</a>
+              <Link to="/privacy" className="ad-footer-link">Privacy Policy</Link>
+              <Link to="/terms" className="ad-footer-link">Terms of Service</Link>
+            </div>
+          </div>
+        </footer>
       </main>
 
       {/* Confirm modal */}

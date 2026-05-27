@@ -71,9 +71,9 @@ export const SessionRecoveryProvider = ({ children }) => {
         const isValidTimestamp =
           parsed &&
           parsed.timestamp &&
-          parsed.timestamp &&
           typeof parsed.timestamp === "number" &&
-          !isNaN(parsed.timestamp);
+          !isNaN(parsed.timestamp) &&
+          parsed.timestamp > 0;
 
         if (isValidTimestamp && now - parsed.timestamp < SESSION_TIMEOUT) {
           setSessionData(parsed);
