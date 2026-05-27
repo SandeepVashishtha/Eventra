@@ -1,5 +1,4 @@
-global.IS_REACT_ACT_ENVIRONMENT = true;
-
+/* eslint-disable testing-library/no-unnecessary-act */
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { act } from 'react';
@@ -7,7 +6,7 @@ import useOfflineSync from './useOfflineSync';
 import { getQueueIndexedDB, setQueue, clearQueue } from '../utils/offlineQueue';
 
 jest.mock('../context/AuthContext', () => ({
-  useAuth: () => ({ token: 'mock-valid-token' }),
+  useAuth: () => ({ token: 'mock-valid-token', user: { id: 'mock-user-id' } }),
 }));
 
 jest.mock('../utils/tokenUtils', () => ({
@@ -18,7 +17,10 @@ jest.mock('../utils/offlineQueue', () => ({
   getQueueIndexedDB: jest.fn(),
   setQueue: jest.fn(),
   clearQueue: jest.fn(),
+  filterQueueByOwnership: jest.fn((queue) => queue),
 }));
+
+global.IS_REACT_ACT_ENVIRONMENT = true;
 
 describe('useOfflineSync', () => {
   let container;
@@ -44,6 +46,10 @@ describe('useOfflineSync', () => {
         status: 200,
         text: () => Promise.resolve('ok'),
       })
+    );
+
+    jest.requireMock('../utils/offlineQueue').filterQueueByOwnership.mockImplementation(
+      (queue) => queue
     );
   });
 
@@ -74,7 +80,7 @@ describe('useOfflineSync', () => {
       return null;
     };
 
-    act(() => {
+    await act(async () => {
       root = createRoot(container);
       root.render(<TestComponent />);
     });
@@ -83,7 +89,6 @@ describe('useOfflineSync', () => {
     // Trigger online event to run the sync
     await act(async () => {
       window.dispatchEvent(new Event('online'));
-      // Flush the microtasks
       await new Promise((resolve) => setTimeout(resolve, 100));
     });
 
@@ -111,7 +116,7 @@ describe('useOfflineSync', () => {
       return null;
     };
 
-    act(() => {
+    await act(async () => {
       root = createRoot(container);
       root.render(<TestComponent />);
     });
