@@ -183,7 +183,7 @@ const RegistrationsTab = ({
             </button>
           )}
         </div>
-      </div>
+
 
       {/* Content */}
       {loading ? (
