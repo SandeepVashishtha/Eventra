@@ -117,8 +117,34 @@ const HackathonLifecycle = () => {
   const [selectedPhaseId, setSelectedPhaseId] = useState(2); // Selected phase to view
   const [phasesList, setPhasesList] = useState(PHASES);
   const [isOrganizerMode, setIsOrganizerMode] = useState(false);
+  const [newTaskText, setNewTaskText] = useState("");
 
   const selectedPhase = phasesList.find((p) => p.id === selectedPhaseId);
+
+  const handleAddTask = (e) => {
+    e.preventDefault();
+    if (!newTaskText.trim()) return;
+
+    const newTask = {
+      id: `custom-${Date.now()}`,
+      text: newTaskText.trim(),
+      done: false,
+    };
+
+    setPhasesList(
+      phasesList.map((phase) => {
+        if (phase.id === selectedPhaseId) {
+          return {
+            ...phase,
+            tasks: [...phase.tasks, newTask],
+          };
+        }
+        return phase;
+      })
+    );
+
+    setNewTaskText("");
+  };
 
   // Toggle dynamic checklist tasks
   const toggleTask = (phaseId, taskId) => {
@@ -387,6 +413,29 @@ const HackathonLifecycle = () => {
                 <p className="text-xs text-slate-400 mt-2 mb-4">
                   Check off finished milestones to maintain operational track records.
                 </p>
+
+                {isOrganizerMode && (
+                  <form
+                    onSubmit={handleAddTask}
+                    className="flex gap-2 mb-5"
+                  >
+                    <input
+                      type="text"
+                      value={newTaskText}
+                      onChange={(e) => setNewTaskText(e.target.value)}
+                      placeholder="Add custom phase task..."
+                      className="flex-1 min-w-0 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-indigo-500 dark:focus:border-indigo-400 outline-none transition-colors"
+                      maxLength={100}
+                    />
+                    <button
+                      type="submit"
+                      className="px-4 py-2 rounded-xl bg-indigo-650 hover:bg-indigo-700 text-sm font-bold text-white shadow-sm transition shrink-0"
+                    >
+                      Add Task
+                    </button>
+                  </form>
+                )}
+
                 <div className="space-y-3.5">
                   {selectedPhase.tasks.map((task) => (
                     <button
