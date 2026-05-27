@@ -117,17 +117,25 @@ export const pushToQueue = async (item) => {
   const queue = getQueue();
   if (queue.length >= 15) {
     console.warn('Offline queue limit reached. Dropping item to prevent local overflow.');
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent('eventra-offline-queue-full', {
+        detail: { eventId: item.eventId, limit: 15 }
+      }));
+    }
     return false;
   }
   queue.push(actionItem);
+
+  let localStorageSuccess = false;
   try {
     localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+    localStorageSuccess = true;
   } catch (error) {
     console.error('Error writing localStorage backup:', error);
-    return false;
   }
 
   // 2. Async IndexedDB background write
+  let indexedDbSuccess = false;
   try {
     const db = await openDB();
     await new Promise((resolve, reject) => {
@@ -137,11 +145,13 @@ export const pushToQueue = async (item) => {
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
-    return true;
+    indexedDbSuccess = true;
   } catch (err) {
     console.error("IndexedDB push failed:", err);
-    return true; // Still queued in localStorage fallback
   }
+
+  // Return true if either storage successfully queued the item to prevent data loss
+  return localStorageSuccess || indexedDbSuccess;
 };
 
 /**
