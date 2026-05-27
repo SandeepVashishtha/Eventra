@@ -22,9 +22,10 @@
  * Server must also validate authorization for every API request.
  */
 
+import { safeJsonParse } from "./safeJsonParse.js";
+
 /** Grace period (in seconds) to account for clock skew between browser and server. */
 const CLOCK_SKEW_BUFFER = 30;
-import { safeJsonParse } from "./safeJsonParse.js";
 
 /**
  * Decode a JWT payload without verification (client-side only).
