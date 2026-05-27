@@ -249,33 +249,23 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
   </div>
 );
 
-const DesktopNavLink = ({ item, isActive }) => (
+const DesktopNavLink = ({ item, isActive, onClick }) => (
   <Link
     to={item.href}
-    className={`relative group text-[13px] font-semibold transition-all duration-200 whitespace-nowrap px-3.5 py-2 rounded-full ${
+    onClick={onClick}
+    className={`relative group text-[13px] font-semibold transition-all duration-200 whitespace-nowrap px-3.5 py-1.5 rounded-lg border ${
       isActive
-        ? "text-indigo-600 dark:text-indigo-400 font-semibold"
-        : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
+        ? "text-indigo-600 dark:text-indigo-400 bg-indigo-100/70 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 shadow-sm"
+        : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50 border-transparent"
     }`}
   >
-    <span className="relative z-10">{item.name}</span>
-
+    {item.name}
     {isActive && (
-      <>
-        <motion.span
-          layoutId="activeBox"
-          className="absolute inset-0 bg-indigo-100/60 dark:bg-indigo-500/20 border border-indigo-200/80 dark:border-indigo-500/50 rounded-lg -z-0"
-          transition={{ type: "spring", stiffness: 380, damping: 30 }}
-        />
-        <motion.span
-          layoutId="activeBoxGlow"
-          className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
-          transition={{ type: "spring", stiffness: 380, damping: 30 }}
-        />
-      </>
+      <span className="absolute bottom-0 left-3 right-3 h-[2px] rounded-full bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1px]" />
     )}
   </Link>
 );
+
 
 const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location }) => {
   const btnRef = useRef(null);
@@ -295,10 +285,10 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
       <button
         ref={btnRef}
         onClick={onToggle}
-        className={`relative group flex items-center gap-1 text-[12px] xl:text-[13px] font-medium transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-lg ${
+        className={`relative group flex items-center gap-1 text-[12px] xl:text-[13px] font-semibold transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-lg border ${
           isActive || isOpen
-            ? "text-indigo-600 dark:text-indigo-400 font-semibold"
-            : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
+            ? "text-indigo-600 dark:text-indigo-400 bg-indigo-100/70 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 shadow-sm"
+            : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50 border-transparent"
         }`}
       >
         <span className="relative z-10 flex items-center gap-1">
@@ -307,20 +297,8 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
             className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
           />
         </span>
-
-        {(isActive || isOpen) && (
-          <>
-            <motion.span
-              layoutId="activeBox"
-              className="absolute inset-0 bg-indigo-100/60 dark:bg-indigo-500/20 border border-indigo-200/80 dark:border-indigo-500/50 rounded-lg -z-0"
-              transition={{ type: "spring", stiffness: 380, damping: 30 }}
-            />
-            <motion.span
-              layoutId="activeBoxGlow"
-              className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
-              transition={{ type: "spring", stiffness: 380, damping: 30 }}
-            />
-          </>
+        {isActive && (
+          <span className="absolute bottom-0 left-3 right-3 h-[2px] rounded-full bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1px]" />
         )}
       </button>
 
@@ -643,7 +621,7 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
         return isMobile ? (
           <MobileNavLink key={item.name} item={item} isActive={isActive} onClick={onLinkClick} />
         ) : (
-          <DesktopNavLink key={item.name} item={item} isActive={isActive} />
+          <DesktopNavLink key={item.name} item={item} isActive={isActive} onClick={onLinkClick} />
         );
       })}
     </>
@@ -659,6 +637,7 @@ const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
           location={location}
           openDropdown={openDropdown}
           onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)}
+          onLinkClick={() => setOpenDropdown(null)}
           isMobile={false}
         />
       </div>
