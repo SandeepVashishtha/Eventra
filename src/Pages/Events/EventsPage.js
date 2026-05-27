@@ -4,6 +4,7 @@ import mockEvents from "./eventsMockData.json";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
 import { getEventStatus } from "../../utils/eventUtils";
+import { useSearchParams } from "react-router-dom";
 import {
   Grid,
   List,
@@ -23,6 +24,8 @@ import { darkTheme } from "../../components/styles/theme";
 import BackToTopButton from "../../components/common/BackToTopButton";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
 import { getRouteSearchResults } from "../../utils/searchUtils";
+
+
 
 const EVENT_SEARCH_KEYS = [
   "title",
@@ -158,6 +161,7 @@ const EventsPage = () => {
 } = useFilters();
   useDocumentTitle("Eventra | Events");
   const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   // FIX: Derive routeSearchQuery inline — no need to store in state and sync
   // via a separate useEffect, which caused an extra render on mount
@@ -189,12 +193,7 @@ const EventsPage = () => {
     const filter = searchParams.get("filter") || "all";
     const sort = searchParams.get("sort") || "latest";
     const view = searchParams.get("view") || "grid";
-    listing.setSafePage(page);
-    listing.setEventsPerPage(perPage);
-    listing.setSearchQuery(search);
-    listing.setFilterType(filter);
-    listing.setSortType(sort);
-    listing.setViewMode(view);
+    
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const timer = setTimeout(() => {
       setEvents(
