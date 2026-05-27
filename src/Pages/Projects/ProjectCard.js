@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiStar,
@@ -444,4 +444,4 @@ const ProjectCard = ({ project, index }) => {
   );
 };
 
-export default ProjectCard;
+export default memo(ProjectCard);
