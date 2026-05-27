@@ -9,7 +9,12 @@ export const useNotifications = () => {
     const stored = localStorage.getItem(STORAGE_KEY);
 
     if (stored) {
-      setNotifications(JSON.parse(stored));
+      try {
+        setNotifications(JSON.parse(stored));
+      } catch (error) {
+        console.error("Failed to parse notifications from local storage", error);
+        setNotifications([]);
+      }
     }
   }, []);
 
