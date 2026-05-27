@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   FaGithub,
   FaExternalLinkAlt,
@@ -15,34 +15,37 @@ import FeatureErrorBoundary from "./common/FeatureErrorBoundary";
 import { storageManager } from "../utils/storage/storageManager";
 import { STORAGE_KEYS } from "../utils/storage/storageKeys";
 import { validators } from "../utils/storage/storageValidators";
+import { fetchWithTimeout } from "../utils/fetchWithTimeout";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
 const REQUEST_TIMEOUT = 10000;
 const MAX_CONTRIBUTOR_PAGES = 10;
+const PROFILE_FETCH_DELAY_MS = 100; // Throttle profile API calls to avoid rate limiting
+
+let profileFetchCounter = 0;
+const throttleProfileFetch = async () => {
+  profileFetchCounter++;
+  if (profileFetchCounter % 5 === 0) {
+    await new Promise(resolve => setTimeout(resolve, PROFILE_FETCH_DELAY_MS));
+  }
+};
 
 const fetchJsonWithTimeout = async (url) => {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
-
-  const proxyUrl = url.startsWith("https://api.github.com") 
-    ? `/api/github-proxy?path=${encodeURIComponent(url.replace("https://api.github.com", ""))}` 
+  const proxyUrl = url.startsWith("https://api.github.com")
+    ? `/api/github-proxy?path=${encodeURIComponent(
+        url.replace("https://api.github.com", "")
+      )}`
     : url;
 
-  try {
-    const res = await fetch(proxyUrl, {
-      signal: controller.signal,
-    });
+  const { data } = await fetchWithTimeout(
+    proxyUrl,
+    {},
+    REQUEST_TIMEOUT
+  );
 
-    if (!res.ok) {
-      throw new Error(`GitHub request failed with status ${res.status}`);
-    }
-
-    return await res.json();
-  } finally {
-    clearTimeout(timeout);
-  }
+  return data;
 };
 
 // Role assignment
@@ -90,9 +93,12 @@ const Contributors = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const fetchControllerRef = useRef(null);
+  const isFetchingRef = useRef(false);
 
   // Fetch GitHub profile details
   const fetchGitHubProfile = useCallback(async (username) => {
+    await throttleProfileFetch();
     if (!username) {
       return {
         followers: 0,
@@ -130,12 +136,22 @@ const Contributors = () => {
 
   // Fetch contributors
   const fetchContributors = useCallback(async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     setLoading(true);
     setError("");
+
+    // Cancel any in-flight request
+    if (fetchControllerRef.current) {
+      fetchControllerRef.current.abort();
+    }
+    fetchControllerRef.current = new AbortController();
+
     const cached = getCachedContributors();
     if (cached) {
       setContributors(cached);
       setLoading(false);
+      isFetchingRef.current = false;
       return;
     }
 
@@ -166,6 +182,7 @@ const Contributors = () => {
 
       if (allContributors.length === 0) {
         setContributors([]);
+        isFetchingRef.current = false;
         return;
       }
 
@@ -184,6 +201,7 @@ const Contributors = () => {
       setContributors(enhanced);
       cacheContributors(enhanced);
     } catch (err) {
+      if (err.name === "AbortError") return;
       setError(
         err?.name === "AbortError"
           ? "GitHub took too long to respond. Please try again."
@@ -192,6 +210,7 @@ const Contributors = () => {
       setContributors([]);
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
   }, [fetchGitHubProfile]);
 

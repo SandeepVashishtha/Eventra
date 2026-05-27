@@ -71,6 +71,22 @@ const REQUIRED_VARS = [
   'REACT_APP_API_URL',
 ];
 
+// Variables that require proper format validation
+const FORMAT_VALIDATED_VARS = {
+  'REACT_APP_API_URL': {
+    pattern: /^https?:\/\/.+/,
+    message: 'REACT_APP_API_URL must be a valid HTTP/HTTPS URL (e.g., https://api.example.com)',
+  },
+  'REACT_APP_GOOGLE_CLIENT_ID': {
+    pattern: /^[a-zA-Z0-9_-]+\.apps\.googleusercontent\.com$/,
+    message: 'REACT_APP_GOOGLE_CLIENT_ID must be a valid Google OAuth client ID format',
+  },
+  'REACT_APP_SSE_URL': {
+    pattern: /^https?:\/\/.+/,
+    message: 'REACT_APP_SSE_URL must be a valid HTTP/HTTPS URL',
+  },
+};
+
 // Optional REACT_APP_ variables that may enable extra features.
 const OPTIONAL_VARS = [
   'REACT_APP_GOOGLE_CLIENT_ID',
@@ -106,6 +122,22 @@ for (const varName of OPTIONAL_VARS) {
     console.log(`  -  ${varName} (not set — feature may be disabled)`);
   } else {
     console.log(`  ✓  ${varName} = [set]`);
+  }
+}
+
+// Format validation for specific variables
+console.log('\n🔍 Validating format of specific environment variables...');
+for (const [varName, config] of Object.entries(FORMAT_VALIDATED_VARS)) {
+  const value = process.env[varName];
+  if (value) {
+    if (!config.pattern.test(value)) {
+      const msg = `[FORMAT ERROR] ${varName}: ${config.message}`;
+      errors.push(msg);
+      hasErrors = true;
+      console.error(`  ✗  ${msg}`);
+    } else {
+      console.log(`  ✓  ${varName} format is valid`);
+    }
   }
 }
 
@@ -156,11 +188,20 @@ if (errors.length > 0) {
 }
 
 // Exit with result
-if (hasErrors) {
+const criticalErrors = errors.filter(e => e.includes('[SECURITY LEAK]') || e.includes('[FORMAT ERROR]'));
+if (criticalErrors.length > 0) {
   console.error(
-    `\n❌ [validate-env] BUILD ABORTED: ${errors.length} sensitive credential leak(s) detected.\n` +
-    '  Fix the issues above before building. Private credentials must NEVER\n' +
-    '  be prefixed with REACT_APP_ or they will be exposed to end-users.\n'
+    `\n❌ [validate-env] BUILD ABORTED: ${criticalErrors.length} critical issue(s) detected.\n` +
+    '  ─────────────────────────────────────────────────────────────────────\n' +
+    '  Security Leaks (must fix before building):\n' +
+    errors.filter(e => e.includes('[SECURITY LEAK]')).map(e => `    • ${e}`).join('\n') + '\n' +
+    '  ─────────────────────────────────────────────────────────────────────\n' +
+    (errors.filter(e => e.includes('[FORMAT ERROR]')).length > 0
+      ? '  Format Errors (must fix before building):\n' +
+        errors.filter(e => e.includes('[FORMAT ERROR]')).map(e => `    • ${e}`).join('\n') + '\n' +
+        '  ─────────────────────────────────────────────────────────────────────\n'
+      : '') +
+    '  Private credentials must NEVER be prefixed with REACT_APP_.\n'
   );
   process.exit(1);
 } else {
@@ -168,4 +209,5 @@ if (hasErrors) {
     `\n✅ [validate-env] Environment check passed — no credential leaks detected.\n` +
     `  Scanned ${reactAppVars.length} REACT_APP_* variable(s).\n`
   );
+  process.exit(0);
 }
