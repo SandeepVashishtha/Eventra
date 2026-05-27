@@ -1,6 +1,6 @@
 import EventRecommendation from "./Pages/EventRecommendation/EventRecommendation";
 import React, { useState, useEffect, lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom"; 
+import { Routes, Route, useLocation } from "react-router-dom"; 
 import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
