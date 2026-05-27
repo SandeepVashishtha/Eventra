@@ -362,6 +362,65 @@ POST /api/events/1/register
 
 ---
 
+## My Registered Events
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/users/my-events` |
+
+Returns the events registered by the currently authenticated user. Requires JWT authentication.
+
+### Request Headers
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+### Example Request
+
+```bash
+GET /api/users/my-events
+```
+
+### Successful Response (200)
+
+```json
+[
+  {
+    "registrationId": 101,
+    "eventId": 1,
+    "title": "Tech Conference 2026",
+    "description": "Annual developer meetup featuring talks and workshops",
+    "location": "Mumbai",
+    "eventDate": "2026-08-15T10:00:00",
+    "date": "2026-08-15",
+    "time": "10:00:00",
+    "registeredAt": "2026-05-20T14:30:00",
+    "status": "CONFIRMED"
+  }
+]
+```
+
+### Empty Response (200)
+
+```json
+[]
+```
+
+### Error Response (401)
+
+```json
+{
+  "status": 401,
+  "error": "Unauthorized",
+  "message": "Full authentication is required to access this resource",
+  "path": "/api/users/my-events",
+  "timestamp": "2026-05-27T12:20:31"
+}
+```
+
+---
+
 ## Create Event
 
 | Method | Endpoint |
