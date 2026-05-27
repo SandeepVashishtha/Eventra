@@ -238,6 +238,39 @@ Authenticates the user via Google OAuth and returns a JWT token. Creates a new u
 
 ---
 
+## Logout
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/auth/logout` |
+
+Logs out the authenticated user and invalidates their JWT token. Requires JWT authentication.
+
+### Request Headers
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+### Successful Response (200)
+
+```json
+{
+  "message": "Logged out successfully",
+  "timestamp": "2026-05-27T16:00:00.000Z"
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `401 Unauthorized` | Missing, invalid, or expired token |
+| `401 Unauthorized` | Token has already been invalidated (logged out) |
+| `405 Method Not Allowed` | Invalid HTTP method (only POST allowed) |
+
+---
+
 # Event APIs
 
 ## Create Event

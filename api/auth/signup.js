@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
 
 // ---------------------------------------------------------------------------
 // In-memory user storage (replace with database in production)
@@ -11,8 +12,7 @@ const users = new Map();
 // JWT Configuration
 // ---------------------------------------------------------------------------
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-jwt-key-change-in-production";
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+const JWT_SECRET = getJwtSecret();
 
 // ---------------------------------------------------------------------------
 // Validation Helpers
