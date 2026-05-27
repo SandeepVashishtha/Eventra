@@ -36,7 +36,7 @@
     "react-scripts": "^5.0.1",
     "react-toastify": "^11.1.0",
     "recharts": "^3.8.1",
-    "@sentry/react": "^7.114.0"
+    "@sentry/react": "^10.54.0"
   },
   "scripts": {
     "dev": "set DISABLE_ESLINT_PLUGIN=true && react-scripts start",

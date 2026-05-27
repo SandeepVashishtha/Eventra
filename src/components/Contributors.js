@@ -11,11 +11,12 @@ import {
 import { motion } from "framer-motion";
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { ContributorCardSkeleton } from "./common/SkeletonLoaders";
+import FeatureErrorBoundary from "./common/FeatureErrorBoundary";
 import {
   storageManager,
   STORAGE_KEYS,
   validators,
-} from "../utils/storageManager";
+} from "../utils/storage/storageManager";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
