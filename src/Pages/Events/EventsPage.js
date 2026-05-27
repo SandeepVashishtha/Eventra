@@ -101,6 +101,8 @@ const EventsPage = () => {
   useDocumentTitle("Eventra | Events");
   const location = useLocation();
   const [searchParams] = useSearchParams();
+  const routeSearchQuery =
+  new URLSearchParams(location.search).get("search") || "";
 
   const listing = useEventListing();
   const cardSectionRef = useRef();
