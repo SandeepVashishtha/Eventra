@@ -219,7 +219,7 @@ export const AuthProvider = ({ children }) => {
     if (!payload) return null;
 
     // Extract roles from the JWT payload (backend-signed, cannot be forged)
-    const tokenRoles = (payload.roles || payload.role ? [payload.role] : []) || [];
+    const tokenRoles = payload.roles || (payload.role ? [payload.role] : []);
     const normalizedRoles = normalizeRoles(tokenRoles);
 
     // Compute scopes from the authoritative roles in the token
