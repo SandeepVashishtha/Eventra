@@ -434,7 +434,6 @@ const EventRegistration = () => {
   const isEventFull = event ? event.attendees >= event.maxAttendees : false;
   const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
 
-
   if (isPastEvent) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
