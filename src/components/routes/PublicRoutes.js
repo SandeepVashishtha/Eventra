@@ -71,17 +71,12 @@ export const getPublicRoutes = () => [
   <Route key="/projects" path="/projects" element={<ProjectsPage />} />,
 
   // Mock API endpoints (demo/documentation purposes)
-  <Route key="/api/hackathons" path="/api/hackathons" element={<MockApiResponse />} />,
-  <Route key="/api/projects" path="/api/projects" element={<MockApiResponse />} />,
+  <Route key="/api/hackathons"  path="/api/hackathons"  element={<MockApiResponse />} />,
+  <Route key="/api/projects"    path="/api/projects"    element={<MockApiResponse />} />,
   <Route key="/api/contributors" path="/api/contributors" element={<MockApiResponse />} />,
   <Route key="/api/leaderboard" path="/api/leaderboard" element={<MockApiResponse />} />,
 
   // ── Auth-protected routes (login required) ─────────────────────────────────
-  // Each of these routes exposes personal data or allows data mutations that
-  // require a verified user identity. ProtectedRoute checks the session token
-  // and redirects to /login if the user is not authenticated.
-
-  // /bookmarks — shows the signed-in user's personal saved events list
   <Route
     key="/bookmarks"
     path="/bookmarks"
@@ -90,9 +85,8 @@ export const getPublicRoutes = () => [
         <BookmarkedEvents />
       </ProtectedRoute>
     }
-  />,
+   />,
 
-  // /reminders — shows the signed-in user's personal event reminders
   <Route
     key="/reminders"
     path="/reminders"
@@ -101,9 +95,8 @@ export const getPublicRoutes = () => [
         <RemindersPage />
       </ProtectedRoute>
     }
-  />,
+   />,
 
-  // /calendar — personal calendar tied to the user's registered events
   <Route
     key="/calendar"
     path="/calendar"
@@ -112,7 +105,7 @@ export const getPublicRoutes = () => [
         <MyCalendar />
       </ProtectedRoute>
     }
-  />,
+   />,
 
   // ── PageLayout-wrapped routes ──────────────────────────────────────────────
   <Route key="/contributors" path="/contributors" element={<PageLayout><Contributors /></PageLayout>} />,
@@ -134,41 +127,39 @@ export const getPublicRoutes = () => [
   <Route key="/feedback" path="/feedback" element={<PageLayout><FeedbackPage /></PageLayout>} />,
   <Route key="/documentation" path="/documentation" element={<PageLayout><DocumentationPage /></PageLayout>} />,
 
-
-  < Route
-    key = "/analytics"
-    path = "/analytics"
-    element = {
-      < PageLayout >
-  <ProtectedRoute>
-    <EventAnalyticsDashboard />
-  </ProtectedRoute>
-      </PageLayout >
+  <Route
+    key="/analytics"
+    path="/analytics"
+    element={
+      <PageLayout>
+        <ProtectedRoute>
+          <EventAnalyticsDashboard />
+        </ProtectedRoute>
+      </PageLayout>
     }
-  />,
+   />,
 
-<Route
-  key="/events/:eventId/floor-plan"
-  path="/events/:eventId/floor-plan"
-  element={
-    <PageLayout>
-      <ProtectedRoute>
-        <FloorPlanDesignerPage />
-      </ProtectedRoute>
-    </PageLayout>
-  }
-/>,
+  <Route
+    key="/events/:eventId/floor-plan"
+    path="/events/:eventId/floor-plan"
+    element={
+      <PageLayout>
+        <ProtectedRoute>
+          <FloorPlanDesignerPage />
+        </ProtectedRoute>
+      </PageLayout>
+    }
+   />,
 
-<Route
-  key="/submit-project"
-  path="/submit-project"
-  element={
-    <PageLayout>
-      <ProtectedRoute>
-        <SubmitProject />
-      </ProtectedRoute>
-    </PageLayout>
-  }
-/>
+  <Route
+    key="/submit-project"
+    path="/submit-project"
+    element={
+      <PageLayout>
+        <ProtectedRoute>
+          <SubmitProject />
+        </ProtectedRoute>
+      </PageLayout>
+    }
+   />
 ];
-
