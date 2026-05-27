@@ -1,9 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const SSE_BASE_URL =
-  process.env.REACT_APP_SSE_URL ||
-  process.env.REACT_APP_API_URL ||
-  "http://localhost:8080/api/v1";
+const getSseBaseUrl = () => {
+  const envUrl = process.env.REACT_APP_SSE_URL || process.env.REACT_APP_API_URL;
+  if (envUrl) {
+    return envUrl;
+  }
+  if (process.env.NODE_ENV === "production") {
+    console.warn("REACT_APP_SSE_URL or REACT_APP_API_URL environment variable is missing in production. Defaulting to relative SSE connection.");
+    return "/api/v1";
+  }
+  return "http://localhost:8080/api/v1";
+};
+
+const SSE_BASE_URL = getSseBaseUrl();
 
 const BACKOFF_CAP_MS = 30_000;
 

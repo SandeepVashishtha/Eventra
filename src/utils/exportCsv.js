@@ -1,3 +1,10 @@
+const sanitizeCSVField = (field) => {
+  const value = String(field ?? "");
+  const safeValue = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+
+  return `"${safeValue.replace(/"/g, '""')}"`;
+};
+
 export const exportAttendeesToCSV = (
   attendees,
   filename = "event-attendees.csv"
@@ -13,16 +20,24 @@ export const exportAttendeesToCSV = (
     "Ticket Type",
   ];
 
+  const sanitizeCsvCell = (value) => {
+    const str = String(value ?? "");
+    if (/^[=+\-@\t\r]/.test(str)) {
+      return "'" + str;
+    }
+    return str;
+  };
+
   const rows = attendees.map((attendee) => [
-    attendee.name || "",
-    attendee.email || "",
-    attendee.registrationDate || "",
-    attendee.ticketType || "General",
+    sanitizeCsvCell(attendee.name || ""),
+    sanitizeCsvCell(attendee.email || ""),
+    sanitizeCsvCell(attendee.registrationDate || ""),
+    sanitizeCsvCell(attendee.ticketType || "General"),
   ]);
 
   const csvContent = [headers, ...rows]
     .map((row) =>
-      row.map((field) => `"${field}"`).join(",")
+      row.map(sanitizeCSVField).join(",")
     )
     .join("\n");
 
@@ -45,7 +60,13 @@ export const exportAttendeesToCSV = (
 
   document.body.appendChild(link);
 
-  link.click();
+  try {
+    link.click();
+  } finally {
+    document.body.removeChild(link);
 
-  document.body.removeChild(link);
+    setTimeout(() => {
+      window.URL.revokeObjectURL(url);
+    }, 100);
+  }
 };

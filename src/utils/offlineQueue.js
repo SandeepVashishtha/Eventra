@@ -1,17 +1,33 @@
 // ---------------------------------------------------------------------------
-// Shared Offline Queue Utility
+// Self-Healing Offline Queue Utility (IndexedDB backed with LocalStorage Backup)
 // ---------------------------------------------------------------------------
-// Single source of truth for the offline registration queue stored in
-// localStorage. Both EventRegistration (producer) and useOfflineSync
-// (consumer) import from here instead of defining their own logic.
 
 const QUEUE_KEY = 'eventra_offline_queue';
+const DB_NAME = 'eventra_offline_db';
+const STORE_NAME = 'actions_queue';
+const DB_VERSION = 1;
+
+// Open Promise-based IndexedDB connection
+const openDB = () => {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) {
+      reject(new Error("IndexedDB is not supported in this environment"));
+      return;
+    }
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: "id", autoIncrement: true });
+      }
+    };
+    request.onsuccess = (e) => resolve(e.target.result);
+    request.onerror = (e) => reject(e.target.error);
+  });
+};
 
 /**
- * Read the current offline queue from localStorage.
- * Returns an empty array if the key is missing or the JSON is malformed.
- *
- * @returns {Array} The current queue entries.
+ * Read the current offline queue from localStorage (Synchronous fallback).
  */
 export const getQueue = () => {
   try {
@@ -23,49 +39,135 @@ export const getQueue = () => {
 };
 
 /**
- * Append a single item to the offline queue.
- *
- * @param {object} item - The queue entry to store (e.g. { eventId, payload }).
+ * Read the current offline queue from IndexedDB (Asynchronous core).
  */
-export const pushToQueue = (item) => {
+export const getQueueIndexedDB = async () => {
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readonly");
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  } catch (err) {
+    console.warn("IndexedDB getQueue failed, falling back to localStorage:", err);
+    return getQueue();
+  }
+};
+
+/**
+ * Append a single item to both localStorage mirror and IndexedDB.
+ */
+export const pushToQueue = async (item) => {
+  // Add metadata tracking
+  const actionItem = {
+    id: item.id || Date.now() + Math.random().toString(36).substring(2, 7),
+    timestamp: item.timestamp || new Date().toISOString(),
+    retryCount: item.retryCount || 0,
+    actionType: item.actionType || "REGISTER_EVENT",
+    eventId: item.eventId || null,
+    payload: item.payload || {},
+    endpoint: item.endpoint || null
+  };
+
+  // 1. Sync mirror updates immediately (Synchronous fallback)
   const queue = getQueue();
-  if (queue.length >= 5) {
-    console.warn('Offline queue limit reached (max 5). Dropping new registration to prevent local DoS.');
+  if (queue.length >= 15) {
+    console.warn('Offline queue limit reached. Dropping item to prevent local overflow.');
     return;
   }
-  queue.push(item);
+  queue.push(actionItem);
   try {
     localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
   } catch (error) {
-    console.error('Error adding to offline queue:', error);
+    console.error('Error writing localStorage backup:', error);
+  }
+
+  // 2. Async IndexedDB background write
+  try {
+    const db = await openDB();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.put(actionItem);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  } catch (err) {
+    console.error("IndexedDB push failed:", err);
   }
 };
 
 /**
- * Overwrite the queue with a new array (used after partial sync to keep
- * only the items that failed).
- *
- * @param {Array} queue - The replacement queue.
+ * Overwrite the queue in both storages (Used after resolving conflicts or updates).
  */
-export const setQueue = (queue) => {
+export const setQueue = async (newQueue) => {
+  // 1. Sync mirror updates immediately
   try {
-    if (queue.length === 0) {
+    if (newQueue.length === 0) {
       localStorage.removeItem(QUEUE_KEY);
     } else {
-      localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+      localStorage.setItem(QUEUE_KEY, JSON.stringify(newQueue));
     }
   } catch (error) {
-    console.error('Error setting offline queue:', error);
+    console.error('Error setting localStorage backup:', error);
+  }
+
+  // 2. Sync IndexedDB in background
+  try {
+    const db = await openDB();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      
+      const clearReq = store.clear();
+      clearReq.onsuccess = () => {
+        if (newQueue.length === 0) {
+          resolve();
+          return;
+        }
+        
+        let completed = 0;
+        newQueue.forEach(item => {
+          const putReq = store.add(item);
+          putReq.onsuccess = () => {
+            completed++;
+            if (completed === newQueue.length) resolve();
+          };
+          putReq.onerror = () => reject(putReq.error);
+        });
+      };
+      clearReq.onerror = () => reject(clearReq.error);
+    });
+  } catch (err) {
+    console.error("IndexedDB setQueue failed:", err);
   }
 };
 
 /**
- * Remove the offline queue entirely from localStorage.
+ * Clear all offline actions from database and localStorage.
  */
-export const clearQueue = () => {
+export const clearQueue = async () => {
+  // 1. Sync mirror
   try {
     localStorage.removeItem(QUEUE_KEY);
   } catch (error) {
-    console.error('Error clearing offline queue:', error);
+    console.error('Error clearing localStorage backup:', error);
+  }
+
+  // 2. Sync IndexedDB
+  try {
+    const db = await openDB();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.clear();
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  } catch (err) {
+    console.error("IndexedDB clear failed:", err);
   }
 };

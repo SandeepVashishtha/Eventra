@@ -1,7 +1,9 @@
 import Hero from "./components/Hero";
 import WhatsHappening from "./components/WhatsHappening";
 import HomeCTA from "./components/HomeCTA";
-import RecommendedEvents from "../../components/user/RecommendedEvents";
+import RecommendationBanner from "./components/RecommendationBanner";
+import CollaborationNetworkMap from "../../components/visual/CollaborationNetworkMap";
+
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 import RecentlyViewedEvents from '../../components/common/RecentlyViewedEvents';
@@ -15,9 +17,10 @@ const HomePage = () => {
     <>
       <Hero />
       <WhatsHappening />
-      <RecommendedEvents />
-      <RecentlyViewedEvents />
-      <HomeCTA />
+      <RecommendationBanner />
+      <CollaborationNetworkMap />
+      <HomeCTA></HomeCTA>
+
     </>
   );
 };

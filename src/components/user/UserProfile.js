@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import {
   User,
   AtSign,
@@ -22,14 +23,14 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import "./UserProfile.css";
 
-const fadeUp = {
+const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
   visible: (i = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.08, duration: 0.4, ease: "easeOut" },
+    transition: { delay: prefersReducedMotion ? 0 : i * 0.08, duration: prefersReducedMotion ? 0 : 0.4, ease: "easeOut" },
   }),
-};
+});
 
 const stagger = {
   hidden: {},
@@ -45,6 +46,7 @@ const ACTIVITY_STATS = [
 ];
 
 export default function UserProfile() {
+  const prefersReducedMotion = useReducedMotion();
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading]   = useState(true);
@@ -102,7 +104,7 @@ export default function UserProfile() {
         animate="visible"
       >
         {/* ── Hero / Avatar card ── */}
-        <motion.div custom={0} variants={fadeUp} className="upv-hero-card">
+        <motion.div custom={0} variants={fadeUp(prefersReducedMotion)} className="upv-hero-card">
           <div className="upv-hero-bg" />
 
           <div className="upv-hero-content">
