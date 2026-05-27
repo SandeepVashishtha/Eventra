@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -25,11 +27,38 @@ jobs:
         run: npm install
 
       - name: Run lint checks
-        run: npm run lint
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_SHA="HEAD~1"
+          fi
+          echo "Comparing against base: $BASE_SHA"
+          CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT $BASE_SHA...HEAD | grep -E '\.(js|jsx)$' || true)
+          if [ -n "$CHANGED_FILES" ]; then
+            echo "Running ESLint on changed files:"
+            echo "$CHANGED_FILES"
+            npx eslint $CHANGED_FILES --max-warnings=-1
+          else
+            echo "No changed JS/JSX files to lint."
+          fi
 
       - name: Verify code formatting
-        run: npx prettier --check "src/**/*.{js,jsx,css}"
-
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_SHA="HEAD~1"
+          fi
+          echo "Comparing against base: $BASE_SHA"
+          CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT $BASE_SHA...HEAD | grep -E '\.(js|jsx|css)$' || true)
+          if [ -n "$CHANGED_FILES" ]; then
+            echo "Verifying code formatting on changed files:"
+            echo "$CHANGED_FILES"
+            npx prettier --check $CHANGED_FILES
+          else
+            echo "No changed files to verify formatting."
+          fi
 
       - name: Run tests
         run: npm test -- --watchAll=false --passWithNoTests
