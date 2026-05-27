@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import ConfirmationModal from "../common/ConfirmationModal";
 import {
   Plus, Minus, Trash2, Save, RotateCcw,
@@ -68,6 +74,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
 
   // References
   const canvasRef = useRef(null);
+  const animationFrameRef = useRef(null);
   const isDraggingRef = useRef(false);
   const isPanningRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
@@ -112,7 +119,14 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
     setElements(initialElements);
     setLastSavedElementsStr(JSON.stringify(initialElements));
   }, [eventId]);
-
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
+  
   const saveLayout = () => {
     const serialized = JSON.stringify(elements);
     localStorage.setItem(`eventra_floorplan_${eventId}`, serialized);
@@ -418,12 +432,19 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
       newX = Math.max(10, Math.min(990, newX));
       newY = Math.max(10, Math.min(990, newY));
 
-      setElements(elements.map(el => {
-        if (el.id === selectedId) {
-          return { ...el, x: newX, y: newY };
-        }
-        return el;
-      }));
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+
+      animationFrameRef.current = requestAnimationFrame(() => {
+        setElements((prev) =>
+          prev.map((el) =>
+            el.id === selectedId
+              ? { ...el, x: newX, y: newY }
+              : el
+          )
+        );
+      });
     }
   };
 
@@ -432,10 +453,12 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
     isPanningRef.current = false;
   };
 
-  const activeElement = elements.find(el => el.id === selectedId);
+  const activeElement = useMemo(() => {
+    return elements.find(el => el.id === selectedId);
+  }, [elements, selectedId]);
 
   // Math calculation of seat position around tables
-  const getSeatPositions = (el) => {
+  const getSeatPositions = useCallback((el) => {
     const positions = [];
     const count = el.seatsCount;
     if (count <= 0) return positions;
@@ -499,21 +522,41 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
       }
     }
     return positions;
-  };
+  }, []);
 
   // Get seats calculation count statistics
-  const totalOccupiedSeats = elements.reduce((acc, el) => {
-    return acc + Object.keys(el.assignedAttendees || {}).length;
-  }, 0);
+  const totalOccupiedSeats = useMemo(() => {
+    return elements.reduce((acc, el) => {
+      return acc + Object.keys(el.assignedAttendees || {}).length;
+    }, 0);
+  }, [elements]);
 
-  const totalMaxSeats = elements.reduce((acc, el) => {
-    return acc + (el.seatsCount || 0);
-  }, 0);
+  const totalMaxSeats = useMemo(() => {
+    return elements.reduce((acc, el) => {
+      return acc + (el.seatsCount || 0);
+    }, 0);
+  }, [elements]);
 
   // Computes whether there is ANY overlap / collision currently detected on the canvas
-  const anyCollision = elements.some(el =>
-    elements.some(other => other.id !== el.id && checkCollision(el, other))
-  );
+  const collisionMap = useMemo(() => {
+    const collisions = new Map();
+
+    for (let i = 0; i < elements.length; i++) {
+      for (let j = i + 1; j < elements.length; j++) {
+        const el1 = elements[i];
+        const el2 = elements[j];
+
+        if (checkCollision(el1, el2)) {
+          collisions.set(el1.id, true);
+          collisions.set(el2.id, true);
+        }
+      }
+    }
+
+    return collisions;
+  }, [elements]);
+
+  const anyCollision = collisionMap.size > 0;
 
   return (
     <div className="fp-container">
@@ -745,7 +788,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
             {/* Elements render */}
             {elements.map((el) => {
               const isSelected = el.id === selectedId;
-              const isColliding = elements.some(other => other.id !== el.id && checkCollision(el, other));
+              const isColliding = collisionMap.has(el.id);
 
               // 2.5D visual projection offsets
               const projOffset = 10;
