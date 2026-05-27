@@ -1,4 +1,5 @@
 const SAFE_GITHUB_PATH_PATTERNS = [
+  /^\/repos\/[^/?#]+\/[^/?#]+$/,
   /^\/repos\/[^/?#]+\/[^/?#]+\/contributors$/,
   /^\/repos\/[^/?#]+\/[^/?#]+\/pulls$/,
   /^\/users\/[^/?#]+$/,
