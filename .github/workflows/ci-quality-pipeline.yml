@@ -25,7 +25,11 @@ jobs:
         run: npm install
 
       - name: Run lint checks
-        run: echo "Lint skipped"
+        run: npm run lint
+
+      - name: Verify code formatting
+        run: npx prettier --check "src/**/*.{js,jsx,css}"
+
 
       - name: Run tests
         run: npm test -- --watchAll=false --passWithNoTests
