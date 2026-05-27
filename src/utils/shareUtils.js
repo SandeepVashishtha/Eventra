@@ -66,7 +66,7 @@ export const generateSharingUrl = (shareData, platform) => {
  */
 export const generateEventSharingData = (event, baseUrl = null) => {
   // Determine the correct base URL for sharing
-  const deployedDomain = 'eventra.sandeepvashishtha.tech';
+  const deployedDomain = process.env.REACT_APP_PUBLIC_URL || 'eventra.sandeepvashishtha.tech';
   
   // If baseUrl is provided, use it, otherwise detect
   if (!baseUrl) {
@@ -80,7 +80,7 @@ export const generateEventSharingData = (event, baseUrl = null) => {
         baseUrl = window.location.origin;
       }
     } else {
-      baseUrl = `https://${deployedDomain}`; // Fallback for SSR/Node
+      baseUrl = process.env.REACT_APP_PUBLIC_URL || `https://${deployedDomain}`; // Fallback for SSR/Node
     }
   }
   

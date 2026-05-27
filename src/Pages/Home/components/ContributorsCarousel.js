@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import {
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
+import {
   FaGithub,
   FaExternalLinkAlt,
   FaCodeBranch,
@@ -13,16 +13,17 @@ import useReducedMotion from "../../../hooks/useReducedMotion.js";
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { fetchWithTimeout } from "../../../utils/fetchWithTimeout";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
 
 const STORAGE_KEY = "github_contributors";
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
+const REQUEST_TIMEOUT = 10000;
 
 // Role assignment
 const getRoleByGitHubActivity = (contributor) => {
-  const prefersReducedMotion = useReducedMotion();
   const { contributions, followers = 0, login } = contributor;
   if (login === "sandeepvashishtha") return "Project Lead";
 
@@ -53,6 +54,7 @@ const cacheContributors = (data) => {
 };
 
 const Contributors = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -97,12 +99,19 @@ const Contributors = () => {
   }, []);
 
   // Fetch GitHub profile details
+
   const fetchGitHubProfile = useCallback(async (username) => {
     try {
-      const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(`/users/${username}`)}`;
-      const res = await fetch(proxyUrl);
-      if (!res.ok) throw new Error("Profile fetch failed");
-      const profile = await res.json();
+      const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(
+        `/users/${username}`
+      )}`;
+
+      const { data: profile } = await fetchWithTimeout(
+        proxyUrl,
+        {},
+        REQUEST_TIMEOUT
+      );
+
       return {
         followers: profile.followers || 0,
         public_repos: profile.public_repos || 0,
@@ -138,9 +147,15 @@ const Contributors = () => {
       let page = 1;
       let hasMore = true;
       while (hasMore) {
-        const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(`/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`)}`;
-        const res = await fetch(proxyUrl);
-        const data = await res.json();
+        const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(
+          `/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`
+        )}`;
+
+        const { data } = await fetchWithTimeout(
+          proxyUrl,
+          {},
+          REQUEST_TIMEOUT
+        );
         if (!Array.isArray(data) || data.length === 0) hasMore = false;
         else {
           allContributors = [...allContributors, ...data];
@@ -293,7 +308,7 @@ const Contributors = () => {
                     <div className="relative">
                       <img loading="lazy" decoding="async" width="65" height="65"
   src={c.avatar_url}
-  alt={c.login}
+  alt={`${c.name || c.login || "Contributor"}'s GitHub profile picture`}
   className="w-[65px] h-[65px] rounded-full border-4 border-black shadow-md relative z-10"
 />
                       <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 blur-sm -z-10"></div>

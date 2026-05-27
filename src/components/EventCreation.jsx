@@ -2,11 +2,12 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { Download } from "lucide-react";
-import useReducedMotion from "../../hooks/useReducedMotion";
-import {} from "../../utils/eventDraftUtils";
+import useReducedMotion from "../hooks/useReducedMotion";
+import {} from "../utils/eventDraftUtils";
 import CharacterCounter
-from "../../components/common/CharacterCounter";
-import { exportAttendeesToCSV } from "../../utils/exportCsv";
+from "./common/CharacterCounter";
+import { exportAttendeesToCSV } from "../utils/exportCsv";
+import { logger } from "../utils/logger";
 import {
   ArrowRightIcon,
   CalendarIcon,
@@ -18,7 +19,7 @@ import {
   CheckCircleIcon,
   PencilIcon,
 } from "@heroicons/react/24/solid";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { API_ENDPOINTS, apiUtils } from "../config/api";
 import {
   Calendar,
   MapPin,
@@ -37,8 +38,8 @@ import {
   Upload,
   Plus,
 } from "lucide-react";
-import { useFormSubmit } from "../../hooks/useFormSubmit";
-import { LoadingButton } from "../ui/LoadingButton";
+import { useFormSubmit } from "../hooks/useFormSubmit";
+import { LoadingButton } from "./ui/LoadingButton";
 
 const DRAFT_KEY = "eventra_create_event_draft";
 
@@ -72,8 +73,11 @@ const EventCreation = () => {
       throw new Error("Authentication required. Please log in and try again.");
     }
 
-    if (!API_ENDPOINTS.EVENTS.CREATE || process.env.NODE_ENV === "development") {
-      // Mock event creation success (API inactive)
+    // SECURITY: Respect API configuration from environment, not NODE_ENV.
+    // Only use mock behavior when API endpoint is not configured.
+    // This allows developers to test real API behavior in development mode.
+    if (!API_ENDPOINTS.EVENTS.CREATE) {
+      // Mock event creation success (API endpoint not configured)
       await new Promise((resolve) => setTimeout(resolve, 1000));
       return;
     }
@@ -426,7 +430,7 @@ const EventCreation = () => {
 
       submitEventForm(eventData);
     } catch (error) {
-      console.error("Error creating event:", error);
+      logger.error("Error creating event:", error);
       const backendMessage = error.response?.data?.message || error.response?.data?.error;
       let errorMessage = "Failed to create event. ";
       if (backendMessage) {
@@ -467,7 +471,7 @@ const EventCreation = () => {
         toast.success("Draft restored successfully!");
       }
     } catch (error) {
-      console.error(error);
+      logger.error(error);
     }
 
     setShowRestoreModal(false);

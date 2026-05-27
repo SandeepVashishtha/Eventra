@@ -12,7 +12,17 @@
   padding: 0;
   box-sizing: border-box;
 }
-
+.responsive-btn {
+  @apply
+    max-w-full
+    min-w-0
+    whitespace-nowrap
+    overflow-hidden
+    text-ellipsis
+    px-4
+    sm:px-5
+    md:px-6;
+}
 .sr-only {
   position: absolute;
   width: 1px;
@@ -47,7 +57,10 @@ html {
 
   --border-color: #e1e5e9;
   --card-bg-color: #ffffff;
-
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
   --scrollbar-track-color: #f1f1f1;
   --scrollbar-thumb-color: #000000;
   --scrollbar-thumb-hover-color: #262626;
@@ -502,6 +515,15 @@ table {
   content: none;
 }
 
+/* NavbarIssueFix: Scrollable navbar links — hides scrollbar while keeping scroll */
+.navbar-links-scroll {
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE/Edge */
+}
+.navbar-links-scroll::-webkit-scrollbar {
+  display: none;               /* Chrome/Safari/Opera */
+}
+
 /* Sidebar */
 .theme-sidebar {
   background-color: var(--sidebar-bg);
@@ -649,4 +671,23 @@ select,
 }
 .animate-spin {
   animation: spin 0.7s linear infinite;
+}
+
+/* WCAG AA Accessibility Contrast Overrides (Light Mode) */
+/* Overriding standard Tailwind light mode gray utilities that fail the 4.5:1 contrast check on white backgrounds */
+html:not(.dark) .text-gray-400 {
+  color: #5a6578 !important; /* Gray 500/600 hybrid, passes WCAG AA 4.5:1 */
+}
+
+html:not(.dark) .text-gray-500 {
+  color: #4b5563 !important; /* Gray 600, passes WCAG AA 4.5:1 */
+}
+
+html:not(.dark) .text-gray-600 {
+  color: #374151 !important; /* Gray 700, passes WCAG AAA 7:1 */
+}
+
+html:not(.dark) .placeholder-gray-400::placeholder,
+html:not(.dark) ::placeholder {
+  color: #5a6578 !important; /* Ensure accessible placeholder contrast */
 }

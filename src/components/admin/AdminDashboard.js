@@ -6,8 +6,9 @@ import {
   Users, Calendar, Activity, Shield, LogOut, Plus,
   Search, ChevronRight, BarChart2,
   Trash2, Edit2, AlertCircle,
-  TrendingUp
+  TrendingUp, Download, ChevronDown
 } from 'lucide-react';
+import { exportToCSV, exportToJSON } from '../../utils/exportUtils';
 import {
   AdminListCardSkeleton,
   AdminStatCardSkeleton,
@@ -16,6 +17,7 @@ import {
 import StatusBadge from "../common/StatusBadge";
 import './AdminDashboard.css';
 import AnalyticsDashboard from './AnalyticsDashboard';
+import SectionErrorBoundary from '../common/SectionErrorBoundary';
 import { toast } from 'react-toastify';
 
 import { ROLES,PERMISSIONS } from "../../config/roles";
@@ -193,6 +195,7 @@ const AdminDashboard = () => {
   const [searchEvent, setSearchEvent] = useState('');
   const [confirmModal, setConfirmModal] = useState({ open: false, type: '', id: null });
   const [loading, setLoading] = useState(true);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
 
   const firstName = user?.firstName || user?.username || 'Admin';
 
@@ -398,7 +401,44 @@ const AdminDashboard = () => {
                       onChange={e => setSearchUser(e.target.value)}
                     />
                   </div>
-                  <span className="ad-count">{filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''}</span>
+                  <div className="ad-toolbar-right flex items-center gap-3">
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowExportDropdown(!showExportDropdown)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
+                      >
+                        <Download size={13} />
+                        Export
+                        <ChevronDown size={12} className={`transition-transform duration-200 ${showExportDropdown ? 'rotate-180' : ''}`} />
+                      </button>
+                      {showExportDropdown && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setShowExportDropdown(false)} />
+                          <div className="absolute right-0 mt-1.5 w-36 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg py-1 z-20 animate-fadeIn">
+                            <button
+                              onClick={() => {
+                                exportToCSV(filteredUsers, 'users_list');
+                                setShowExportDropdown(false);
+                              }}
+                              className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-850 transition"
+                            >
+                              Export as CSV
+                            </button>
+                            <button
+                              onClick={() => {
+                                exportToJSON(filteredUsers, 'users_list');
+                                setShowExportDropdown(false);
+                              }}
+                              className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-850 transition"
+                            >
+                              Export as JSON
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    <span className="ad-count">{filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''}</span>
+                  </div>
                 </div>
 
                 <div className="ad-table-wrap">
@@ -420,7 +460,15 @@ const AdminDashboard = () => {
                       {filteredUsers.length === 0
                         ? <tr><td colSpan={6} className="ad-table-empty">No users found.</td></tr>
                         : filteredUsers.map(u => (
-                          <tr key={u.id}>
+                        <tr
+  key={u.id}
+  className="
+    transition-colors
+    duration-200
+    hover:bg-slate-50
+    dark:hover:bg-slate-800/50
+  "
+>
                             <td>
                               <div className="ad-table-user">
                                 <div className="ad-table-avatar">{u.firstName.charAt(0)}</div>
@@ -493,8 +541,15 @@ const AdminDashboard = () => {
                       {filteredEvents.length === 0
                         ? <tr><td colSpan={6} className="ad-table-empty">No events found.</td></tr>
                         : filteredEvents.map(ev => (
-                          <tr key={ev.id}>
-                            <td className="ad-table-bold">{ev.title}</td>
+<tr
+  key={ev.id}
+  className="
+    transition-colors
+    duration-200
+    hover:bg-slate-50
+    dark:hover:bg-slate-800/50
+  "
+>                            <td className="ad-table-bold">{ev.title}</td>
                             <td>
                               <StatusBadge status={ev.type} />
                               
@@ -551,7 +606,9 @@ const AdminDashboard = () => {
 
                 {/* Dynamic Analytics Dashboard */}
                 <div style={{ marginTop: '1.5rem' }}>
-                  <AnalyticsDashboard />
+                  <SectionErrorBoundary label="Analytics Dashboard">
+                    <AnalyticsDashboard />
+                  </SectionErrorBoundary>
                 </div>
               </motion.div>
             )}
