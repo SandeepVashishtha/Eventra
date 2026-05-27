@@ -29,7 +29,7 @@
     "react-is": "^19.2.6",
     "react-qr-code": "^2.0.21",
     "react-router-dom": "^7.15.1",
-    "react-scripts": "^5.0.1",
+    "react-scripts": "0.0.0",
     "react-toastify": "^11.1.0",
     "recharts": "^3.8.1"
   },
@@ -72,7 +72,7 @@
     "@storybook/addon-a11y": "^10.4.1",
     "@storybook/addon-docs": "^10.4.1",
     "@storybook/addon-onboarding": "^10.4.1",
-    "@storybook/preset-create-react-app": "^10.4.1",
+    "@storybook/preset-create-react-app": "10.4.1",
     "@storybook/react-webpack5": "^10.4.1",
     "@tailwindcss/line-clamp": "^0.4.4",
     "autoprefixer": "^10.4.21",
