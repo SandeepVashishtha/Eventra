@@ -893,7 +893,7 @@ const AdminDashboard = () => {
                 Help Center
               </Link>
               <a
-                href="https://github.com/sandeepvashishtha/Eventra"
+                href={`https://github.com/${process.env.REACT_APP_GITHUB_REPO || 'sandeepvashishtha/Eventra'}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="ad-footer-link"
