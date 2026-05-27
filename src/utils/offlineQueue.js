@@ -91,7 +91,7 @@ export const getQueueIndexedDB = async () => {
  * @returns {string} A collision-resistant unique ID string
  */
 const generateQueueId = () => {
-  if (typeof crypto?.randomUUID === "function") {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
   }
   // Fallback: timestamp + 9 random base-36 chars (36^9 ≈ 101 billion combinations)
