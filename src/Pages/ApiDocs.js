@@ -24,7 +24,7 @@ const endpoints = [
     url: "/api/hackathons",
     example: `fetch("/api/hackathons")
 .then(res => res.json())
-.then(data => console.log(data))
+.then(data => { /* handle response */ })
 .catch(err => console.error(err))`,
     response: `[
     
