@@ -1,3 +1,4 @@
+import SavedEventsPage from './Pages/SavedEventsPage';
 import EventRecommendation from "./Pages/EventRecommendation/EventRecommendation";
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom"; 
@@ -150,6 +151,7 @@ function App() {
                   >
                     <Routes>
                       <Route path="/register/:id" element={<RegistrationPage />} />
+                      <Route path="/saved" element={<SavedEventsPage />} />
 
                       <Route
                         path="/event-recommendation"
