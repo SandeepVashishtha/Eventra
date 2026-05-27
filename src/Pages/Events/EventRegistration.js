@@ -410,6 +410,9 @@ const EventRegistration = () => {
       } else {
         navigator.clipboard.writeText(shareUrl).then(() => {
           toast.success("Event link copied to clipboard!");
+        }).catch((err) => {
+          console.error("Failed to copy link:", err);
+          toast.error("Could not copy link. Please copy manually.");
         });
       }
     };
