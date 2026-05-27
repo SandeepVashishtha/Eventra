@@ -236,54 +236,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-<<<<<<< HEAD
-  const normalizeRoles = (roles = []) => {
-    return roles.map((role) => {
-      const normalized = String(role).toUpperCase();
-
-      if (normalized === 'EVENT_MANAGER') {
-        return ROLES.ORGANIZER;
-      }
-
-      return normalized;
-    });
-  };
-
-  /**
-   * SECURITY: Extract roles from the signed JWT token.
-   *
-   * The JWT is the authoritative source for roles and permissions because:
-   * 1. It's signed by the backend — the client cannot forge it
-   * 2. It's delivered over HTTPS — it cannot be intercepted and modified
-   * 3. Even if localStorage is tampered with, authorization checks use the JWT
-   *
-   * localStorage is used ONLY for UI state (caching display name, email, etc.),
-   * never for security-critical decisions.
-   *
-   * @param {string} token - JWT token from sessionStorage
-   * @returns {object|null} { roles, scopes } extracted from token, or null if invalid
-   */
-  const extractRolesFromToken = (token) => {
-    if (!token) return null;
-
-    const payload = decodeJwtPayload(token);
-    if (!payload) return null;
-
-    // Extract roles from the JWT payload (backend-signed, cannot be forged)
-    const tokenRoles = payload.roles || (payload.role ? [payload.role] : []);
-    const normalizedRoles = normalizeRoles(tokenRoles);
-
-    // Compute scopes from the authoritative roles in the token
-    const scopes = normalizedRoles.includes(ROLES.ADMIN)
-      ? ['admin:all', 'event:write', 'event:read', 'hackathon:write', 'hackathon:read']
-      : normalizedRoles.includes(ROLES.ORGANIZER)
-        ? ['event:write', 'event:read', 'hackathon:write', 'hackathon:read']
-        : ['event:read', 'hackathon:read'];
-
-    return { roles: normalizedRoles, scopes };
-  };
-=======
->>>>>>> upstream/master
   const extractSession = (res, data, fallbackEmail) => {
     let sessionToken = data?.token ?? data?.accessToken ?? null;
 
