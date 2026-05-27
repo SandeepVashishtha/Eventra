@@ -97,14 +97,25 @@ const Hero = () => {
   }, [controls]);
 
   useEffect(() => {
-    const onResize = () => setIsMobileView(window.innerWidth <= 420);
+    let timeoutId;
+
+    const onResize = () => {
+      if (typeof window === "undefined") return;
+      clearTimeout(timeoutId);
+
+      timeoutId = setTimeout(() => {
+        setIsMobileView(window.innerWidth <= 420);
+      }, 150);
+    };
+
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener("resize", onResize);
+    };
   }, []);
 
-  useEffect(() => {
-    setStatsReady(true);
-  }, []);
   // FIXED
 useEffect(() => {
   const timer = setTimeout(() => setStatsReady(true), 100);
@@ -261,8 +272,10 @@ border-b border-gray-100 dark:border-slate-900">
       {/* Hero Content */}
       <motion.div 
         className="mx-auto px-6 lg:px-8 relative z-10 pt-20"
-        style={{
-          backgroundImage: "url('/background.png')",
+       style={{
+  backgroundImage: isDark
+    ? "url('/background-dark.png')"
+    : "url('/background.png')",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",

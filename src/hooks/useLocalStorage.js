@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { safeJsonParse } from "../utils/safeJsonParse";
+import { safeJsonParse } from "../utils/safeJsonParse.js";
 
 const useLocalStorage = (key, initialValue) => {
   const initialValueRef = useRef(initialValue);
@@ -9,10 +9,7 @@ const useLocalStorage = (key, initialValue) => {
     if (typeof window === "undefined") return initialValueRef.current;
     try {
       const item = window.localStorage.getItem(key);
-      return safeJsonParse(
-        item,
-        initialValueRef.current,
-      );
+      return safeJsonParse(item, initialValueRef.current);
     } catch (error) {
       console.warn(`useLocalStorage: error reading key "${key}":`, error);
       return initialValueRef.current;
@@ -21,19 +18,17 @@ const useLocalStorage = (key, initialValue) => {
 
   const [storedValue, setStoredValue] = useState(readValue);
 
-  const storedValueRef = useRef(storedValue);
-  useEffect(() => {
-    storedValueRef.current = storedValue;
-  }, [storedValue]);
-
   const setValue = useCallback(
     (value) => {
       try {
-        const newValue = value instanceof Function ? value(storedValueRef.current) : value;
-        window.localStorage.setItem(key, JSON.stringify(newValue));
-        setStoredValue(newValue);
-        // Notify other hook instances with the same key (cross-tab sync)
-        window.dispatchEvent(new Event("local-storage"));
+        setStoredValue((currentVal) => {
+          const newValue = value instanceof Function ? value(currentVal) : value;
+          window.localStorage.setItem(key, JSON.stringify(newValue));
+
+          // Notify other hook instances with the same key (cross-tab sync)
+          window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
+          return newValue;
+        });
       } catch (error) {
         console.warn(`useLocalStorage: error setting key "${key}":`, error);
       }
@@ -45,7 +40,8 @@ const useLocalStorage = (key, initialValue) => {
     try {
       window.localStorage.removeItem(key);
       setStoredValue(initialValueRef.current);
-      window.dispatchEvent(new Event("local-storage"));
+      // Notify other hook instances with the same key (cross-tab sync)
+      window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
     } catch (error) {
       console.warn(`useLocalStorage: error removing key "${key}":`, error);
     }
@@ -53,7 +49,7 @@ const useLocalStorage = (key, initialValue) => {
 
   useEffect(() => {
     const handleStorageChange = (event) => {
-      if (event.key === key || event.type === "local-storage") {
+      if (event.key === key || (event.type === "local-storage" && event.detail?.key === key)) {
         setStoredValue(readValue());
       }
     };
