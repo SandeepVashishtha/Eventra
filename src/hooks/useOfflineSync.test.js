@@ -7,7 +7,10 @@ import useOfflineSync from './useOfflineSync';
 import { getQueueIndexedDB, setQueue, clearQueue } from '../utils/offlineQueue';
 
 jest.mock('../context/AuthContext', () => ({
-  useAuth: () => ({ token: 'mock-valid-token' }),
+  useAuth: () => ({ 
+    token: 'mock-valid-token',
+    user: { id: 'mock-user-id' }
+  }),
 }));
 
 jest.mock('../utils/tokenUtils', () => ({
@@ -18,6 +21,7 @@ jest.mock('../utils/offlineQueue', () => ({
   getQueueIndexedDB: jest.fn(),
   setQueue: jest.fn(),
   clearQueue: jest.fn(),
+  filterQueueByOwnership: (queue) => queue || [],
 }));
 
 describe('useOfflineSync', () => {
