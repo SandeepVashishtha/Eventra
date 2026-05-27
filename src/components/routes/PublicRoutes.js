@@ -72,16 +72,11 @@ export const getPublicRoutes = () => [
 
   // Mock API endpoints (demo/documentation purposes)
   <Route key="/api/hackathons"  path="/api/hackathons"  element={<MockApiResponse />} />,
-  <Route key="/api/projects"   path="/api/projects"    element={<MockApiResponse />} />,
+  <Route key="/api/projects"    path="/api/projects"    element={<MockApiResponse />} />,
   <Route key="/api/contributors" path="/api/contributors" element={<MockApiResponse />} />,
   <Route key="/api/leaderboard" path="/api/leaderboard" element={<MockApiResponse />} />,
 
   // ── Auth-protected routes (login required) ─────────────────────────────────
-  // Each of these routes exposes personal data or allows data mutations that
-  // require a verified user identity. ProtectedRoute checks the session token
-  // and redirects to /login if the user is not authenticated.
-
-  // /bookmarks — shows the signed-in user's personal saved events list
   <Route
     key="/bookmarks"
     path="/bookmarks"
@@ -90,9 +85,8 @@ export const getPublicRoutes = () => [
         <BookmarkedEvents />
       </ProtectedRoute>
     }
-  />,
+   />,
 
-  // /reminders — shows the signed-in user's personal event reminders
   <Route
     key="/reminders"
     path="/reminders"
@@ -101,9 +95,8 @@ export const getPublicRoutes = () => [
         <RemindersPage />
       </ProtectedRoute>
     }
-  />,
+   />,
 
-  // /calendar — personal calendar tied to the user's registered events
   <Route
     key="/calendar"
     path="/calendar"
@@ -112,7 +105,7 @@ export const getPublicRoutes = () => [
         <MyCalendar />
       </ProtectedRoute>
     }
-  />,
+   />,
 
   // ── PageLayout-wrapped routes ──────────────────────────────────────────────
   <Route key="/contributors"   path="/contributors"   element={<PageLayout><Contributors /></PageLayout>} />,
@@ -134,11 +127,6 @@ export const getPublicRoutes = () => [
   <Route key="/feedback"       path="/feedback"       element={<PageLayout><FeedbackPage /></PageLayout>} />,
   <Route key="/documentation"  path="/documentation"  element={<PageLayout><DocumentationPage /></PageLayout>} />,
 
-  {/*
-    /analytics — exposes organisation-level event analytics data.
-    Requires authentication so that only registered users can view
-    aggregate participant and event metrics.
-  */},
   <Route
     key="/analytics"
     path="/analytics"
@@ -149,13 +137,8 @@ export const getPublicRoutes = () => [
         </ProtectedRoute>
       </PageLayout>
     }
-  />,
+   />,
 
-  {/*
-    /events/:eventId/floor-plan — venue floor plan designer.
-    Requires authentication; only event organisers should be able
-    to view or edit a floor plan layout.
-  */},
   <Route
     key="/events/:eventId/floor-plan"
     path="/events/:eventId/floor-plan"
@@ -166,13 +149,8 @@ export const getPublicRoutes = () => [
         </ProtectedRoute>
       </PageLayout>
     }
-  />,
+   />,
 
-  {/*
-    /submit-project — allows users to submit projects to hackathons.
-    Requires authentication so submissions are linked to a verified
-    user account and cannot be made anonymously.
-  */},
   <Route
     key="/submit-project"
     path="/submit-project"
@@ -183,5 +161,5 @@ export const getPublicRoutes = () => [
         </ProtectedRoute>
       </PageLayout>
     }
-  />,
+   />
 ];
