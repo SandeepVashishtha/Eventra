@@ -55,7 +55,6 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const clearExpiredSession = useCallback(() => {
-    // eslint-disable-next-line no-console
     console.warn("[AuthContext] Session expiration detected. Clearing session state immediately.");
     clearSession();
 
@@ -153,12 +152,9 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      validateSession();
-    } else if (isMountedRef.current) {
-      setLoading(false);
-    }
+    // 🔥 THE FIX: We removed the `if (localStorage.getItem("user"))` check! 🔥
+    // The app will now ALWAYS ping the backend to verify HttpOnly cookies on load.
+    validateSession();
   }, [clearSession, extractSession]);
 
   useEffect(() => {
@@ -229,7 +225,6 @@ export const AuthProvider = ({ children }) => {
     try {
       localStorage.setItem("user", JSON.stringify(sessionUser));
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error("[AuthContext] Error persisting user profile:", error);
     }
 
