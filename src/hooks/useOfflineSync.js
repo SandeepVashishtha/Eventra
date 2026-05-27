@@ -115,7 +115,7 @@ const useOfflineSync = () => {
               url,
               item.payload,
               token,
-              retries
+              0
             );
 
             // Handle Conflict loop
@@ -168,12 +168,29 @@ const useOfflineSync = () => {
 
     window.addEventListener("online", handleOnline);
 
+    let idleId = null;
+    let timeoutId = null;
+
     if (navigator.onLine) {
-      handleOnline();
+      if (typeof window.requestIdleCallback === "function") {
+        idleId = window.requestIdleCallback(() => {
+          handleOnline();
+        });
+      } else {
+        timeoutId = setTimeout(() => {
+          handleOnline();
+        }, 200);
+      }
     }
 
     return () => {
       window.removeEventListener("online", handleOnline);
+      if (idleId !== null) {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+      }
     };
   }, [token]);
 };

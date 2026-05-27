@@ -13,13 +13,11 @@ import {
   Grid,
   Filter,
   Activity,
-  Share2,
 } from "lucide-react";
 import {
   downloadICSFile,
   downloadBulkICSFile,
   generateGoogleCalendarLink,
-  generateOutlookLink,
 } from "../../utils/calendarExporter";
 import SkeletonCalendar from "../../components/common/SkeletonCalendar";
 
@@ -537,6 +535,7 @@ const MyCalendar = () => {
                 </div>
               </div>
             </div>
+          </motion.div>
         ) : (
           /* EVENT LIST VIEW */
           <section className="bg-white dark:bg-slate-900 border border-slate-250/60 dark:border-slate-800/80 rounded-3xl p-6 shadow-md" aria-labelledby="registered-events-title">
@@ -619,7 +618,6 @@ const MyCalendar = () => {
             </div>
           </section>
         )}
-        </motion.div>
       ) : (
         <motion.div
           key="timeline-container"

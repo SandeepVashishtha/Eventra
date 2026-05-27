@@ -73,7 +73,7 @@ const EventCreation = () => {
     }
 
     if (!API_ENDPOINTS.EVENTS.CREATE || process.env.NODE_ENV === "development") {
-      console.warn("⚠️ Mocking event creation success (API inactive)");
+      // Mock event creation success (API inactive)
       await new Promise((resolve) => setTimeout(resolve, 1000));
       return;
     }

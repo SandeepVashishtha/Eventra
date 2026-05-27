@@ -237,9 +237,7 @@ export default function HackathonHero({
                   duration={2.5}
                   prefix={stat.prefix}
                   suffix={stat.suffix}
-                  enableScrollSpy
-                  scrollSpyOnce
-                />
+                  />
               </p>
               <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">
                 {stat.label}
@@ -251,3 +249,4 @@ export default function HackathonHero({
     </div>
   );
 }
+
