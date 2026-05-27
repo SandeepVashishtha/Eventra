@@ -98,7 +98,10 @@ const useOfflineSync = () => {
 
     const postWithBackoff = async (url, payload, authToken, attempt = 0, forceOverride = false) => {
       if (attempt > 0) {
-        const delayMs = BASE_BACKOFF_MS * Math.pow(2, attempt - 1);
+        const baseDelayMs = BASE_BACKOFF_MS * Math.pow(2, attempt - 1);
+        const jitterMs = Math.random() * 500;
+        const delayMs = baseDelayMs + jitterMs;
+
         await new Promise((resolve) => setTimeout(resolve, delayMs));
       }
 
