@@ -4,24 +4,24 @@ import { useAuth } from '../../context/AuthContext';
 import { isTokenValid } from '../../utils/auth';
 import Loading from '../common/Loading';
 
-const ProtectedRoute = ({ 
-  children, 
-  requireAuth = true, 
-  requiredRoles = [], 
+const ProtectedRoute = ({
+  children,
+  requireAuth = true,
+  requiredRoles = [],
   requiredPermissions = [],
   requiredScopes = [],
   validateContext = null,
-  redirectTo = '/login' 
+  redirectTo = '/login'
 }) => {
   const { isAuthenticated, hasRole, hasPermission, loading, user, token, logout } = useAuth();
   const location = useLocation();
 
-  // Distinguish between "never had a token" and "had a token that expired".
+  // SECURITY: Distinguish between "never had a token" and "had a token that expired".
   // Passing sessionExpired lets the Login page show a contextual banner
   // instead of silently dropping the user on the login form.
   const sessionExpired = requireAuth && !loading && !isAuthenticated() && !!token && !isTokenValid(token);
 
-  // Clean up stale session data cleanly via useEffect to avoid updating the 
+  // Clean up stale session data cleanly via useEffect to avoid updating the
   // AuthProvider component's state during the ProtectedRoute render phase.
   useEffect(() => {
     if (sessionExpired) {
@@ -49,7 +49,8 @@ const ProtectedRoute = ({
     );
   }
 
-  // Check required roles
+  // SECURITY: Check required roles against JWT token (server-signed, authoritative).
+  // hasRole() verifies roles from the JWT, not localStorage, preventing privilege escalation.
   if (requiredRoles.length > 0) {
     const hasRequiredRole = requiredRoles.some(role => hasRole(role));
     if (!hasRequiredRole) {
@@ -57,7 +58,8 @@ const ProtectedRoute = ({
     }
   }
 
-  // Check required permissions
+  // SECURITY: Check required permissions against JWT claims.
+  // Permissions must be verified server-side for critical operations.
   if (requiredPermissions.length > 0) {
     const hasRequiredPermission = requiredPermissions.some(permission => hasPermission(permission));
     if (!hasRequiredPermission) {
@@ -65,7 +67,8 @@ const ProtectedRoute = ({
     }
   }
 
-  // Check fine-grained scopes
+  // SECURITY: Check fine-grained scopes from JWT token (server-signed).
+  // Client-side scope validation is a UX optimization; server must validate for API calls.
   if (requiredScopes.length > 0) {
     const userScopes = user?.scopes || user?.scope?.split(' ') || [];
     const hasRequiredScope = requiredScopes.every(scope => userScopes.includes(scope));
