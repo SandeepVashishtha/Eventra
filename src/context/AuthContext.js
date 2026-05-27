@@ -99,8 +99,85 @@ export const AuthProvider = ({ children }) => {
       const rawRoles = rawUser?.roles ?? (rawUser?.role ? [rawUser.role] : []);
       const resolvedRoles = normalizeRoles(rawRoles);
       const tokenPermissions = Array.isArray(rawUser?.permissions)
-    return () => setOnUnauthorizedHandler(null);
+        ? rawUser.permissions.map((permission) => String(permission))
+        : [];
+      const rolePermissions = resolvedRoles.flatMap((role) => ROLE_PERMISSIONS[role] || []);
+      const permissions = Array.from(new Set([...tokenPermissions, ...rolePermissions]));
+
+      const scopes =
+        rawUser?.scopes ??
+        (resolvedRoles.includes(ROLES.SUPER_ADMIN) || resolvedRoles.includes(ROLES.ADMIN)
+          ? ["admin:all", "event:write", "event:read", "hackathon:write", "hackathon:read"]
+          : resolvedRoles.includes(ROLES.ORGANIZER)
+            ? ["event:write", "event:read", "hackathon:write", "hackathon:read"]
+            : ["event:read", "hackathon:read"]);
+
+      const sessionUser = {
+        ...(rawUser || {}),
+        firstName: rawUser?.firstName ?? "",
+        lastName: rawUser?.lastName ?? "",
+        email: rawUser?.email ?? fallbackEmail ?? "",
+        username: rawUser?.username ?? fallbackEmail ?? "",
+        role: rawUser?.role ?? resolvedRoles[0] ?? "",
+        roles: resolvedRoles,
+        permissions,
+        scopes,
+      };
+
+      return { sessionToken, sessionUser };
+    },
+    [normalizeRoles]
+  );
+
+  useEffect(() => {
+    const validateSession = async () => {
+      try {
+        const res = await apiUtils.get(API_ENDPOINTS.USERS.PROFILE);
+        if (!isMountedRef.current) return;
+
+        if (res.ok && res.data) {
+          const { sessionToken, sessionUser } = extractSession(res, res.data, null);
+          if (!isMountedRef.current) return;
+          setToken(sessionToken || "cookie-managed");
+          setUser(sessionUser);
+        } else {
+          clearSession();
+        }
+      } catch {
+        if (!isMountedRef.current) return;
+        clearSession();
+      } finally {
+        if (isMountedRef.current) {
+          setLoading(false);
+        }
+      }
+    };
+
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      validateSession();
+    } else if (isMountedRef.current) {
+      setLoading(false);
+    }
+  }, [clearSession, extractSession]);
+
+  // --- FIX: Stable Global 401 handler ---
+  const clearExpiredSessionRef = useRef(clearExpiredSession);
+
+  // Keep the ref updated whenever the function changes
+  useEffect(() => {
+    clearExpiredSessionRef.current = clearExpiredSession;
   }, [clearExpiredSession]);
+
+  // Register handler once on mount, referencing the latest logic via the ref
+  useEffect(() => {
+    setOnUnauthorizedHandler(() => {
+      clearExpiredSessionRef.current();
+    });
+
+    // Cleanup only on unmount
+    return () => setOnUnauthorizedHandler(null);
+  }, []); // <--- Empty array here ensures it only runs once!
 
   useEffect(() => {
     if (needsExpiryCleanupRef.current) {

@@ -7,7 +7,7 @@ import {
   LogOut, User, Plus, Search, X
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Component } from "react";
 import { useAuth } from "../../context/AuthContext";
 import StatusBadge from "../common/StatusBadge";
 import EventsTab from "./EventsTab";
@@ -25,6 +25,37 @@ import {
 } from "../common/SkeletonLoaders";
 import "./UserDashboard.css";
 import EventTicket from "./EventTicket";
+import EmptyState from "../common/EmptyState";
+
+// ✅ FIX 1: Define FeatureErrorBoundary — was used but never defined/imported
+class FeatureErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, info) {
+    console.error("FeatureErrorBoundary caught:", error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="ud-error-state">
+          <p>Something went wrong loading this section.</p>
+          <button onClick={() => this.setState({ hasError: false, error: null })}>
+            Retry
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 24 },
@@ -38,8 +69,6 @@ const stagger = (prefersReducedMotion) => ({
   hidden: {},
   visible: { transition: { staggerChildren: prefersReducedMotion ? 0 : 0.08 } }
 });
-
-// ✅ Removed STATUS_COLORS and TYPE_ICON — moved to relevant components
 
 const MOCK_DATA = [
   { id: 1, type: "Event", title: "Tech Talk: AI in 2025", date: "2025-06-15", location: "Mumbai", status: "Completed", projectStatus: "Done", lastUpdate: "-", participationType: "Registered" },
@@ -101,9 +130,10 @@ export default function UserDashboard() {
     projectsActive: MOCK_DATA.filter(d => d.type === "Project" && d.projectStatus !== "Done").length,
   };
 
-  const upcomingEvents = MOCK_DATA.filter(d => d.type === "Event" && d.status === "Upcoming");
-  const upcomingHackathons = MOCK_DATA.filter(d => d.type === "Hackathon" && d.status === "Upcoming");
-  const activeProjects = MOCK_DATA.filter(d => d.type === "Project" && d.projectStatus !== "Done");
+  const safeData = Array.isArray(MOCK_DATA) ? MOCK_DATA : [];
+  const upcomingEvents = safeData.filter(d => d && d.type === "Event" && d.status === "Upcoming");
+  const upcomingHackathons = safeData.filter(d => d && d.type === "Hackathon" && d.status === "Upcoming");
+  const activeProjects = safeData.filter(d => d && d.type === "Project" && d.projectStatus !== "Done");
 
   const filteredData = MOCK_DATA.filter(item => {
     const matchSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -228,10 +258,10 @@ export default function UserDashboard() {
           </div>
         </header>
 
+        {/* ✅ FIX 2: Single AnimatePresence wrapping all tab content correctly */}
         <AnimatePresence mode="wait">
-          {/* Overview */}
           {activeTab === "overview" && (
-            <motion.div key="overview" variants={stagger} initial="hidden" animate="visible" exit={{ opacity: 0 }} className="ud-content">
+            <motion.div key="overview" variants={stagger(prefersReducedMotion)} initial="hidden" animate="visible" exit={{ opacity: 0 }} className="ud-content">
               {loading ? (
                 <>
                   <div className="ud-stats-grid">
@@ -257,107 +287,118 @@ export default function UserDashboard() {
                 </>
               ) : (
                 <>
-              <motion.div variants={stagger} className="ud-stats-grid">
-                {[
-                  { label: "Events", value: stats.eventsTotal, sub: `${stats.eventsCreated} hosted · ${stats.eventsJoined} joined`, icon: <Calendar size={20} />, accent: "#6366f1" },
-                  { label: "Hackathons", value: stats.hackathonsTotal, sub: `${stats.hackathonsHosted} hosted · ${stats.hackathonsJoined} joined`, icon: <Trophy size={20} />, accent: "#ec4899" },
-                  { label: "Projects", value: stats.projectsTotal, sub: `${stats.projectsDone} done · ${stats.projectsActive} active`, icon: <FolderOpen size={20} />, accent: "#8b5cf6" },
-                  { label: "Upcoming", value: upcomingEvents.length + upcomingHackathons.length, sub: `${upcomingEvents.length} events · ${upcomingHackathons.length} hackathons`, icon: <Clock size={20} />, accent: "#10b981" },
-                ].map((s, i) => (
-                  <motion.div key={s.label} custom={i} variants={fadeUp} className="ud-stat-card">
-                    <div className="ud-stat-icon" style={{ background: s.accent + "18", color: s.accent }}>{s.icon}</div>
-                    <div className="ud-stat-info">
-                      <p className="ud-stat-label">{s.label}</p>
-                      <p className="ud-stat-value">{s.value}</p>
-                      <p className="ud-stat-sub">{s.sub}</p>
-                    </div>
+                  <motion.div variants={stagger(prefersReducedMotion)} className="ud-stats-grid">
+                    {[
+                      { label: "Events", value: stats.eventsTotal, sub: `${stats.eventsCreated} hosted · ${stats.eventsJoined} joined`, icon: <Calendar size={20} />, accent: "#6366f1" },
+                      { label: "Hackathons", value: stats.hackathonsTotal, sub: `${stats.hackathonsHosted} hosted · ${stats.hackathonsJoined} joined`, icon: <Trophy size={20} />, accent: "#ec4899" },
+                      { label: "Projects", value: stats.projectsTotal, sub: `${stats.projectsDone} done · ${stats.projectsActive} active`, icon: <FolderOpen size={20} />, accent: "#8b5cf6" },
+                      { label: "Upcoming", value: upcomingEvents.length + upcomingHackathons.length, sub: `${upcomingEvents.length} events · ${upcomingHackathons.length} hackathons`, icon: <Clock size={20} />, accent: "#10b981" },
+                    ].map((s, i) => (
+                      <motion.div key={s.label} custom={i} variants={fadeUp(prefersReducedMotion)} className="ud-stat-card">
+                        <div className="ud-stat-icon" style={{ background: s.accent + "18", color: s.accent }}>{s.icon}</div>
+                        <div className="ud-stat-info">
+                          <p className="ud-stat-label">{s.label}</p>
+                          <p className="ud-stat-value">{s.value}</p>
+                          <p className="ud-stat-sub">{s.sub}</p>
+                        </div>
+                      </motion.div>
+                    ))}
                   </motion.div>
-                ))}
-              </motion.div>
 
-              <motion.section custom={1} variants={fadeUp}>
-                <h2 className="ud-section-title"><Zap size={17} /> Quick Actions</h2>
-                <div className="ud-quick-grid">
-                  {QUICK_ACTIONS.map(a => (
-                    <Link key={a.label} to={a.to} className="ud-quick-card" style={{ "--qa-color": a.color }}>
-                      <span className="ud-quick-icon" style={{ color: a.color, background: a.color + "18" }}>{a.icon}</span>
-                      <span className="ud-quick-label">{a.label}</span>
-                      <ChevronRight size={14} className="ud-quick-arrow" />
-                    </Link>
-                  ))}
-                  <Link to="/create-event" className="ud-quick-card ud-quick-new" style={{ "--qa-color": "#6366f1" }}>
-                    <span className="ud-quick-icon" style={{ color: "#6366f1", background: "#6366f118" }}><Plus size={22} /></span>
-                    <span className="ud-quick-label">New Event</span>
-                    <ChevronRight size={14} className="ud-quick-arrow" />
-                  </Link>
-                </div>
-              </motion.section>
+                  <motion.section custom={1} variants={fadeUp(prefersReducedMotion)}>
+                    <h2 className="ud-section-title"><Zap size={17} /> Quick Actions</h2>
+                    <div className="ud-quick-grid">
+                      {QUICK_ACTIONS.map(a => (
+                        <Link key={a.label} to={a.to} className="ud-quick-card" style={{ "--qa-color": a.color }}>
+                          <span className="ud-quick-icon" style={{ color: a.color, background: a.color + "18" }}>{a.icon}</span>
+                          <span className="ud-quick-label">{a.label}</span>
+                          <ChevronRight size={14} className="ud-quick-arrow" />
+                        </Link>
+                      ))}
+                      <Link to="/create-event" className="ud-quick-card ud-quick-new" style={{ "--qa-color": "#6366f1" }}>
+                        <span className="ud-quick-icon" style={{ color: "#6366f1", background: "#6366f118" }}><Plus size={22} /></span>
+                        <span className="ud-quick-label">New Event</span>
+                        <ChevronRight size={14} className="ud-quick-arrow" />
+                      </Link>
+                    </div>
+                  </motion.section>
 
-              <div className="ud-three-col">
-                {/* Upcoming Events */}
-                <motion.section custom={2} variants={fadeUp} className="ud-card">
-                  <div className="ud-card-head">
-                    <span className="ud-card-icon" style={{ background: "#6366f118", color: "#6366f1" }}><Clock size={16} /></span>
-                    <h3>Upcoming Events</h3>
-                    <Link to="/events" className="ud-card-link">See all <ChevronRight size={13} /></Link>
-                  </div>
-                  {upcomingEvents.length === 0
-                    ? <p className="ud-empty">No upcoming events.</p>
-                    : upcomingEvents.map(ev => (
-                      <div key={ev.id} className="ud-list-item">
-                        <div>
-                          <p className="ud-list-title">{ev.title}</p>
-                          <p className="ud-list-meta"><Calendar size={12} /> {getSmartDateLabel(ev.date)} · <MapPin size={12} /> {ev.location}</p>
-                        </div>
-                        {/* ✅ StatusBadge replaces ud-badge span */}
-                        <StatusBadge status={ev.participationType} />
+                  <div className="ud-three-col">
+                    {/* Upcoming Events */}
+                    <motion.section custom={2} variants={fadeUp(prefersReducedMotion)} className="ud-card">
+                      <div className="ud-card-head">
+                        <span className="ud-card-icon" style={{ background: "#6366f118", color: "#6366f1" }}><Clock size={16} /></span>
+                        <h3>Upcoming Events</h3>
+                        <Link to="/events" className="ud-card-link">See all <ChevronRight size={13} /></Link>
                       </div>
-                    ))
-                  }
-                </motion.section>
+                      {upcomingEvents.length === 0 ? (
+                        <EmptyState
+                          title="No Upcoming Events"
+                          message="You haven't registered or joined any events yet. Check out the Events tab to find one!"
+                        />
+                      ) : (
+                        upcomingEvents.map(ev => (
+                          <div key={ev.id} className="ud-list-item">
+                            <div>
+                              <p className="ud-list-title">{ev.title}</p>
+                              <p className="ud-list-meta"><Calendar size={12} /> {getSmartDateLabel(ev.date)}</p>
+                            </div>
+                            <StatusBadge status={ev.participationType} />
+                          </div>
+                        ))
+                      )}
+                    </motion.section>
 
-                {/* Upcoming Hackathons */}
-                <motion.section custom={3} variants={fadeUp} className="ud-card">
-                  <div className="ud-card-head">
-                    <span className="ud-card-icon" style={{ background: "#ec489918", color: "#ec4899" }}><Trophy size={16} /></span>
-                    <h3>Upcoming Hackathons</h3>
-                    <Link to="/hackathons" className="ud-card-link">See all <ChevronRight size={13} /></Link>
-                  </div>
-                  {upcomingHackathons.length === 0
-                    ? <p className="ud-empty">No upcoming hackathons.</p>
-                    : upcomingHackathons.map(h => (
-                      <div key={h.id} className="ud-list-item">
-                        <div>
-                          <p className="ud-list-title">{h.title}</p>
-                          <p className="ud-list-meta"><Calendar size={12} /> {getSmartDateLabel(h.date)} · <MapPin size={12} /> {h.location}</p>
-                        </div>
-                        <StatusBadge status={h.participationType} />
+                    {/* Upcoming Hackathons */}
+                    <motion.section custom={3} variants={fadeUp(prefersReducedMotion)} className="ud-card">
+                      <div className="ud-card-head">
+                        <span className="ud-card-icon" style={{ background: "#ec489918", color: "#ec4899" }} />
+                        <h3>Upcoming Hackathons</h3>
+                        <Link to="/hackathons" className="ud-card-link">See all <ChevronRight size={14} /></Link>
                       </div>
-                    ))
-                  }
-                </motion.section>
+                      {upcomingHackathons.length === 0 ? (
+                        <EmptyState
+                          title="No Active Hackathons"
+                          message="There are currently no upcoming hackathons in your schedule."
+                        />
+                      ) : (
+                        upcomingHackathons.map(h => (
+                          <div key={h.id} className="ud-list-item">
+                            <div>
+                              <p className="ud-list-title">{h.title}</p>
+                              <p className="ud-list-meta"><Calendar size={12} /> {getSmartDateLabel(h.date)}</p>
+                            </div>
+                            <StatusBadge status={h.participationType} />
+                          </div>
+                        ))
+                      )}
+                    </motion.section>
 
-                {/* Active Projects */}
-                <motion.section custom={4} variants={fadeUp} className="ud-card">
-                  <div className="ud-card-head">
-                    <span className="ud-card-icon" style={{ background: "#8b5cf618", color: "#8b5cf6" }}><FolderOpen size={16} /></span>
-                    <h3>Active Projects</h3>
-                    <Link to="/projects" className="ud-card-link">See all <ChevronRight size={13} /></Link>
-                  </div>
-                  {activeProjects.length === 0
-                    ? <p className="ud-empty">No active projects.</p>
-                    : activeProjects.map(p => (
-                      <div key={p.id} className="ud-list-item">
-                        <div>
-                          <p className="ud-list-title">{p.title}</p>
-                          <p className="ud-list-meta">Updated: {p.lastUpdate}</p>
-                        </div>
-                        <StatusBadge status={p.projectStatus} />
+                    {/* Active Projects */}
+                    <motion.section custom={4} variants={fadeUp(prefersReducedMotion)} className="ud-card">
+                      <div className="ud-card-head">
+                        <span className="ud-card-icon" style={{ background: "#8b5cf618", color: "#8b5cf6" }} />
+                        <h3>Active Projects</h3>
+                        <Link to="/projects" className="ud-card-link">See all <ChevronRight size={14} /></Link>
                       </div>
-                    ))
-                  }
-                </motion.section>
-              </div>
+                      {activeProjects.length === 0 ? (
+                        <EmptyState
+                          title="No Active Projects"
+                          message="All your tracked development projects are currently completed or inactive."
+                        />
+                      ) : (
+                        activeProjects.map(p => (
+                          <div key={p.id} className="ud-list-item">
+                            <div>
+                              <p className="ud-list-title">{p.title}</p>
+                              <p className="ud-list-meta">Updated: {p.lastUpdate}</p>
+                            </div>
+                            <StatusBadge status={p.projectStatus} />
+                          </div>
+                        ))
+                      )}
+                    </motion.section>
+                  </div>
                 </>
               )}
             </motion.div>
@@ -365,45 +406,61 @@ export default function UserDashboard() {
 
           {/* Events tab */}
           {activeTab === "events" && (
-            <EventsTab
-              hostedEvents={MOCK_DATA.filter((d) => d.type === "Event" && d.participationType === "Hosted")}
-              onViewTicket={setSelectedTicketEvent}
-            />
+            <motion.div key="events" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <FeatureErrorBoundary>
+                <EventsTab
+                  hostedEvents={MOCK_DATA.filter(d => d.type === "Event" && d.participationType)}
+                  onViewTicket={setSelectedTicketEvent}
+                />
+              </FeatureErrorBoundary>
+            </motion.div>
           )}
 
           {/* Hackathons tab */}
           {activeTab === "hackathons" && (
-            <HackathonsTab
-              hackathons={MOCK_DATA.filter(d => d.type === "Hackathon")}
-              loading={loading}
-              fadeUp={fadeUp}
-            />
+            <motion.div key="hackathons" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <FeatureErrorBoundary>
+                <HackathonsTab
+                  hackathons={MOCK_DATA.filter(d => d.type === "Hackathon")}
+                  loading={loading}
+                  fadeUp={fadeUp(prefersReducedMotion)}
+                />
+              </FeatureErrorBoundary>
+            </motion.div>
           )}
 
           {/* Projects tab */}
           {activeTab === "projects" && (
-            <ProjectsTab
-              projects={MOCK_DATA.filter(d => d.type === "Project")}
-              loading={loading}
-              fadeUp={fadeUp}
-            />
+            <motion.div key="projects" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <FeatureErrorBoundary>
+                <ProjectsTab
+                  projects={MOCK_DATA.filter(d => d.type === "Project")}
+                  loading={loading}
+                  fadeUp={fadeUp(prefersReducedMotion)}
+                />
+              </FeatureErrorBoundary>
+            </motion.div>
           )}
 
           {/* Registrations tab */}
           {activeTab === "registrations" && (
-            <RegistrationsTab
-              filteredData={filteredData}
-              loading={loading}
-              filterType={filterType}
-              setFilterType={setFilterType}
-              filterStatus={filterStatus}
-              setFilterStatus={setFilterStatus}
-              setSelectedTicketEvent={setSelectedTicketEvent}
-            />
+            <motion.div key="registrations" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <FeatureErrorBoundary>
+                <RegistrationsTab
+                  filteredData={filteredData}
+                  loading={loading}
+                  filterType={filterType}
+                  setFilterType={setFilterType}
+                  filterStatus={filterStatus}
+                  setFilterStatus={setFilterStatus}
+                  setSelectedTicketEvent={setSelectedTicketEvent}
+                />
+              </FeatureErrorBoundary>
+            </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Futuristic Dashboard Footer */}
+        {/* Footer */}
         <footer className="ud-footer">
           <div className="ud-footer-divider" />
           <div className="ud-footer-content">
@@ -418,16 +475,16 @@ export default function UserDashboard() {
             </div>
           </div>
         </footer>
-      </main>
 
-      {/* Futuristic Ticket Preview Modal */}
-      {selectedTicketEvent && (
-        <EventTicket
-          event={selectedTicketEvent}
-          user={user}
-          onClose={() => setSelectedTicketEvent(null)}
-        />
-      )}
+        {/* Ticket Preview Modal */}
+        {selectedTicketEvent && (
+          <EventTicket
+            event={selectedTicketEvent}
+            user={user}
+            onClose={() => setSelectedTicketEvent(null)}
+          />
+        )}
+      </main>
     </div>
   );
 }
