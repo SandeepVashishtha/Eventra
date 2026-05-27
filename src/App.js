@@ -1,6 +1,6 @@
 import EventRecommendation from "./Pages/EventRecommendation/EventRecommendation";
 import React, { useState, useEffect, lazy, Suspense } from "react";
-import { Routes, Route, useLocation } from "react-router-dom"; 
+import { Routes, Route, useLocation } from "react-router-dom";
 import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
@@ -61,8 +61,7 @@ function App() {
     setCursorEnabled(newValue);
     try {
       localStorage.setItem("cursor", newValue ? "on" : "off");
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   useEffect(() => {
@@ -112,25 +111,27 @@ function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-      <NotificationProvider>
-        <MyEventsProvider>
-          <SessionRecoveryProvider>
-            <ReminderChecker />
-            <NotificationToastContainer />
-            <OfflineSyncManager />
+        <NotificationProvider>
+          <MyEventsProvider>
+            <SessionRecoveryProvider>
+              <ReminderChecker />
+              <NotificationToastContainer />
+              <OfflineSyncManager />
 
-            <div className="App">
-              <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
-              <OfflineBanner />
-              <OfflineConflictModal />
-              <KeyboardShortcutsModal
-                isOpen={showKeyboardModal}
-                onClose={() => setShowKeyboardModal(false)}
-              />
-              <OnboardingChecklist />
+              <div className="App">
+                <SectionErrorBoundary label="Navigation Bar">
+                  <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+                </SectionErrorBoundary>
+                <OfflineBanner />
+                <OfflineConflictModal />
+                <KeyboardShortcutsModal
+                  isOpen={showKeyboardModal}
+                  onClose={() => setShowKeyboardModal(false)}
+                />
+                <OnboardingChecklist />
 
-              <main
-                className="
+                <main
+                  className="
                   relative
                   z-10
                   min-h-[85vh]
@@ -141,61 +142,61 @@ function App() {
                   transition-colors
                   duration-300
                 "
-              >
-                <PageTransition>
-                  <SectionErrorBoundary label="Page Content">
-                    <Suspense
-                      fallback={
-                        <div className="flex items-center justify-center min-h-screen">
-                          Loading...
-                        </div>
-                      }
-                    >
-                      <Routes>
-                        {/* Registration writes user-specific data and must stay behind auth. */}
-                        <Route
-                          path="/register/:id"
-                          element={
-                            <ProtectedRoute>
-                              <RegistrationPage />
-                            </ProtectedRoute>
-                          }
-                        />
+                >
+                  <PageTransition>
+                    <SectionErrorBoundary label="Page Content">
+                      <Suspense
+                        fallback={
+                          <div className="flex items-center justify-center min-h-screen">
+                            Loading...
+                          </div>
+                        }
+                      >
+                        <Routes>
+                          {/* Registration writes user-specific data and must stay behind auth. */}
+                          <Route
+                            path="/register/:id"
+                            element={
+                              <ProtectedRoute>
+                                <RegistrationPage />
+                              </ProtectedRoute>
+                            }
+                          />
 
-                        <Route
-                          path="/event-recommendation"
-                          element={<EventRecommendation />}
-                        />
+                          <Route path="/event-recommendation" element={<EventRecommendation />} />
 
-                        <Route
-                          path="*"
-                          element={<AppRoutes />}
-                        />
-                      </Routes>
-                    </Suspense>
-                  </SectionErrorBoundary>
-                </PageTransition>
-              </main>
+                          <Route path="*" element={<AppRoutes />} />
+                        </Routes>
+                      </Suspense>
+                    </SectionErrorBoundary>
+                  </PageTransition>
+                </main>
 
-              <ScrollToTop />
-              
-              {/* FIXED THE TAG BELOW: Added the missing '>' closure */}
-              <Suspense fallback={null}>
-                <Chatbot />
-                {!isDashboardOrAdmin && <Footer />}
-              </Suspense>
+                <ScrollToTop />
 
-              <BackToTopButton />
-              <FeedbackButton />
-              <ThemeCustomizerDrawer />
-              <SessionRecovery />
-              <FluidCursor enabled={cursorEnabled} />
-            </div>
-          </SessionRecoveryProvider>
-        </MyEventsProvider>
-      </NotificationProvider>
-    </AuthProvider>
-  </ErrorBoundary>
+                <SectionErrorBoundary label="Chatbot Assist" silent>
+                  <Suspense fallback={null}>
+                    <Chatbot />
+                  </Suspense>
+                </SectionErrorBoundary>
+
+                <SectionErrorBoundary label="Footer">
+                  <Suspense fallback={null}>{!isDashboardOrAdmin && <Footer />}</Suspense>
+                </SectionErrorBoundary>
+
+                <BackToTopButton />
+                <FeedbackButton />
+                <ThemeCustomizerDrawer />
+                <SessionRecovery />
+                <SectionErrorBoundary label="Custom Cursor" silent>
+                  <FluidCursor enabled={cursorEnabled} />
+                </SectionErrorBoundary>
+              </div>
+            </SessionRecoveryProvider>
+          </MyEventsProvider>
+        </NotificationProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

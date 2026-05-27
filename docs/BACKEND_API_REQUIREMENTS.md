@@ -323,14 +323,14 @@ GET /api/events
 **Auth Required:** No (public)  
 **Query Parameters (recommended for filtering & pagination):**
 
-| Param | Type | Description |
-|-------|------|-------------|
-| `page` | int | Page number (0-indexed) |
-| `size` | int | Items per page (default: 10) |
-| `category` | string | Filter by category |
-| `status` | string | `upcoming`, `ongoing`, `completed` |
-| `search` | string | Search by title/description |
-| `type` | string | `Event` or `Hackathon` |
+| Param | Type | Description                                |
+|-------|------|--------------------------------------------|
+| `page` | int | Page number (0-indexed)                    |
+| `size` | int | Items per page (default: 10)               |
+| `category` | string | Filter by category                         |
+| `status` | string | `upcoming`, `ongoing`, `past`, `cancelled` |
+| `search` | string | Search by title/description/location       |
+| `type` | string | `Event` or `Hackathon`                     |
 
 **Success Response `200`:**
 ```json
@@ -409,8 +409,8 @@ POST /api/events/create
 PUT /api/events/{id}
 ```
 
-**Auth Required:** Yes — Roles: `ADMIN`, `ORGANIZER`  
-**Description:** Updates an existing event. Companion update for issue #2099.  
+**Auth Required:** Yes — Roles: `ADMIN`, `ORGANIZER`
+**Description:** Updates an existing event. Companion update for issue #2099.
 **Request Body:**
 ```json
 {
@@ -428,7 +428,7 @@ PUT /api/events/{id}
 - `capacity` cannot be reduced below current `registeredCount`.
 - Owner-only authorization is not enforced as the Event model currently lacks ownership tracking.
 
-**Success Response `200`:** Updated event object  
+**Success Response `200`:** Updated event object
 **Error Responses:**
 - `400` — Invalid payload
 - `403` — Forbidden (e.g., CLIENT role)
