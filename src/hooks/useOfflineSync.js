@@ -2,14 +2,14 @@ import { useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 import { API_ENDPOINTS } from '../config/api';
-import { getQueueIndexedDB, setQueue, clearQueue } from '../utils/offlineQueue';
+import { getQueueIndexedDB, setQueue, clearQueue, filterQueueByOwnership } from '../utils/offlineQueue';
 import { isTokenValid } from '../utils/tokenUtils';
 
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 1_000;
 
 const useOfflineSync = () => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const isSyncing = useRef(false);
 
   useEffect(() => {
@@ -133,11 +133,7 @@ const useOfflineSync = () => {
     // when the useEffect is cleaned up (component unmount or token change).
     const conflictController = new AbortController();
 
-    const handleOnline = async () => {
-      if (isSyncing.current) {
-        return;
-      }
-
+    const executeSync = async () => {
       const queue = await getQueueIndexedDB();
       if (queue.length === 0) {
         return;
@@ -154,10 +150,46 @@ const useOfflineSync = () => {
         return;
       }
 
+      // SECURITY: Validate queue ownership to prevent cross-user action replay.
+      // Only replay actions that were queued by the currently logged-in user.
+      // This prevents User A's queued actions from executing under User B's session.
+      const currentUserId = user?.id;
+      if (!currentUserId) {
+        console.error('[Security] Cannot sync queue: current user ID is missing');
+        toast.error(
+          "Unable to verify offline actions ownership. Please refresh the page.",
+          { autoClose: 6000 }
+        );
+        return;
+      }
+
+      // Filter queue to only include actions owned by current user
+      const validatedQueue = filterQueueByOwnership(queue, currentUserId);
+
+      // If all actions were filtered out due to ownership mismatch,
+      // clear the queue to prevent re-checks on every session
+      if (validatedQueue.length === 0 && queue.length > 0) {
+        console.warn(
+          '[Security] Clearing offline queue: all actions belong to different user(s). ' +
+          'This prevents cross-user action replay.'
+        );
+        await clearQueue();
+        toast.warning(
+          "Offline actions from a previous session have been cleared for security.",
+          { autoClose: 5000 }
+        );
+        return;
+      }
+
+      // If queue is now empty after validation, return early
+      if (validatedQueue.length === 0) {
+        return;
+      }
+
       isSyncing.current = true;
 
       try {
-        toast.info(`Syncing ${queue.length} cached offline action(s)...`, {
+        toast.info(`Syncing ${validatedQueue.length} cached offline action(s)...`, {
           autoClose: 2000,
         });
 
@@ -165,11 +197,12 @@ const useOfflineSync = () => {
         let successCount = 0;
         let droppedCount = 0;
 
-        for (const item of queue) {
+        for (const item of validatedQueue) {
           const retries = item.retryCount ?? 0;
 
           if (retries >= MAX_RETRIES) {
             droppedCount++;
+            failedQueue.push(item);
             continue;
           }
 
@@ -187,7 +220,7 @@ const useOfflineSync = () => {
             // is cancelled cleanly if the component unmounts mid-sync
             if (res.status === "conflict") {
               const resolution = await resolveConflict(item, res.serverState, conflictController.signal);
-              
+
               if (resolution.resolution === "local") {
                 // Retry with force flag
                 res = await postWithBackoff(url, item.payload, token, 0, true);
@@ -224,11 +257,85 @@ const useOfflineSync = () => {
 
         if (droppedCount > 0) {
           toast.error(
-            `${droppedCount} registration(s) dropped after ${MAX_RETRIES} attempts.`,
+            `${droppedCount} registration(s) paused after ${MAX_RETRIES} failed attempts. Retained in local drafts.`,
           );
         }
       } finally {
         isSyncing.current = false;
+      }
+    };
+
+    const executeSyncWithLocalLock = async () => {
+      const LOCK_KEY = "eventra_offline_sync_local_lock";
+      const LOCK_TIMEOUT_MS = 30_000;
+
+      const now = Date.now();
+      const lockVal = localStorage.getItem(LOCK_KEY);
+
+      if (lockVal) {
+        try {
+          const parsed = JSON.parse(lockVal);
+          if (parsed && parsed.timestamp && now - parsed.timestamp < LOCK_TIMEOUT_MS) {
+            console.log("[useOfflineSync] Local sync lock is held by another active tab. Skipping.");
+            return;
+          }
+        } catch (e) {}
+      }
+
+      const currentTabId = Math.random().toString(36).slice(2, 9);
+      const lockData = JSON.stringify({ timestamp: now, tabId: currentTabId });
+      
+      try {
+        localStorage.setItem(LOCK_KEY, lockData);
+      } catch (e) {
+        // If localStorage fails (private mode etc.), run sync directly to avoid blocking
+        await executeSync();
+        return;
+      }
+
+      const heartbeatInterval = setInterval(() => {
+        try {
+          localStorage.setItem(LOCK_KEY, JSON.stringify({ timestamp: Date.now(), tabId: currentTabId }));
+        } catch (e) {}
+      }, 10_000);
+
+      try {
+        await executeSync();
+      } finally {
+        clearInterval(heartbeatInterval);
+        try {
+          const checkVal = localStorage.getItem(LOCK_KEY);
+          if (checkVal) {
+            const parsed = JSON.parse(checkVal);
+            if (parsed && parsed.tabId === currentTabId) {
+              localStorage.removeItem(LOCK_KEY);
+            }
+          }
+        } catch (e) {}
+      }
+    };
+
+    const handleOnline = async () => {
+      if (isSyncing.current) {
+        return;
+      }
+
+      // Check if navigator.locks is supported natively (modern browsers)
+      if (typeof navigator?.locks?.request === "function") {
+        try {
+          await navigator.locks.request("eventra_offline_sync_lock", { ifAvailable: true }, async (lock) => {
+            if (!lock) {
+              console.log("[useOfflineSync] Sync lock is held by another tab via Web Locks. Skipping.");
+              return;
+            }
+            await executeSync();
+          });
+        } catch (err) {
+          console.warn("[useOfflineSync] Web Locks request failed, falling back to LocalStorage lock:", err);
+          await executeSyncWithLocalLock();
+        }
+      } else {
+        await executeSyncWithLocalLock();
       }
     };
 
@@ -261,7 +368,7 @@ const useOfflineSync = () => {
         clearTimeout(timeoutId);
       }
     };
-  }, [token]);
+  }, [token, user]);
 };
 
 export default useOfflineSync;

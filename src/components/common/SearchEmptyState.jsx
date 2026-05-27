@@ -102,7 +102,7 @@ const SearchEmptyState = ({
           shadow-sm
         "
       >
-        <X size={16} />
+        <X size={16} aria-hidden="true" />
         Clear Search
       </button>
 

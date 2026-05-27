@@ -2,6 +2,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
+import DOMPurify from "dompurify";
 import { toast } from "react-toastify";
 import { Link, useParams } from "react-router-dom";
 import { Calendar, MapPin, Clock, Tag } from "lucide-react";
@@ -21,6 +22,8 @@ import LazyImage from "../../components/common/LazyImage";
 import { useAuth } from "../../context/AuthContext";
 import { exportToCSV, exportToJSON } from "../../utils/exportUtils";
 import { ROLES } from "../../config/roles";
+import { marked } from 'marked';
+import { safeParseJson } from "../../utils/jsonUtils";
 
 const EventDetails = () => {
   const { eventId } = useParams();
@@ -45,10 +48,7 @@ const EventDetails = () => {
   useEffect(() => {
     if (!event) return;
 
-    const viewedEvents =
-      JSON.parse(
-        localStorage.getItem("recentlyViewedEvents")
-      ) || [];
+    const viewedEvents = safeParseJson(localStorage.getItem("recentlyViewedEvents"), []);
 
     const updatedEvents = [
       event,
@@ -106,9 +106,10 @@ const EventDetails = () => {
             <h1 className="mt-4 text-4xl sm:text-5xl font-extrabold tracking-tight">
               {event.title}
             </h1>
-            <p className="mt-4 max-w-2xl text-gray-600 dark:text-gray-300">
-              {event.description}
-            </p>
+            <div
+              className="mt-4 max-w-2xl text-gray-600 dark:text-gray-300 prose prose-indigo dark:prose-invert"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(event.description)) }}
+            />
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -279,9 +280,10 @@ const EventDetails = () => {
             </div>
             <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
               <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Summary</h3>
-              <p className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-6">
-                {event.description}
-              </p>
+              <div
+                className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-6 prose prose-indigo dark:prose-invert"
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(event.description)) }}
+              />
             </div>
           </aside>
 

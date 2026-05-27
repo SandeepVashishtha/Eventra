@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import FeatureErrorBoundary from "../../components/common/FeatureErrorBoundary";
 import {
   FaCode,
   FaStar,
@@ -16,11 +17,12 @@ import {
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
 import StyledDropdown from "../../components/StyledDropdown";
-import SkeletonLeaderboard, {
-  LeaderboardStatCardSkeleton,
-} from "../../components/common/SkeletonLeaderboard";
+import SkeletonLeaderboard from "../../components/common/SkeletonLeaderboard";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useLeaderboardStream, SSE_STATUS } from "../../context/RealTimeContext";
+import { storageManager } from "../../utils/storage/storageManager";
+import { STORAGE_KEYS } from "../../utils/storage/storageKeys";
+import { validators } from "../../utils/storage/storageValidators";
 
 // ─── Category filter definitions ───────────────────────────────────────────────
 const CATEGORY_FILTERS = [
@@ -76,9 +78,8 @@ function RankMovementIndicator({ username }) {
 }
 
 // Repository constant — update if the leaderboard should point to another repo
-const GITHUB_REPO = "SandeepVashishtha/Eventra";
+const GITHUB_REPO = process.env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra";
 // Token is managed securely by the backend proxy
-const LEADERBOARD_CACHE_KEY = "leaderboardData:v2";
 
 // Points mapping for PR labels (keeps scoring logic centralized)
 const POINTS = {
@@ -243,18 +244,20 @@ export default function LeaderBoard() {
     lastAppliedSyncRef.current = lastSynced;
     setContributors(streamContributors);
     setLastUpdated(`Live update: ${new Date(lastSynced).toLocaleString()}`);
-    localStorage.setItem(
-      LEADERBOARD_CACHE_KEY,
-      JSON.stringify({ data: streamContributors, timestamp: lastSynced }),
+    storageManager.set(
+      STORAGE_KEYS.LEADERBOARD_CACHE,
+      {
+        data: streamContributors,
+        timestamp: lastSynced,
+      }
     );
   }, [streamContributors, lastSynced]);
 
   useEffect(() => {
   const savedSearches =
-    JSON.parse(
-      localStorage.getItem(
-        "recentSearches"
-      )
+    storageManager.get(
+      STORAGE_KEYS.RECENT_SEARCHES,
+      validators.isArray
     ) || [];
 
   setRecentSearches(
@@ -351,9 +354,12 @@ export default function LeaderBoard() {
 
       setContributors(sortedContributors);
       setLastUpdated(new Date().toLocaleString());
-      localStorage.setItem(
-        LEADERBOARD_CACHE_KEY,
-        JSON.stringify({ data: sortedContributors, timestamp: Date.now() })
+      storageManager.set(
+        STORAGE_KEYS.LEADERBOARD_CACHE,
+        {
+          data: sortedContributors,
+          timestamp: Date.now(),
+        }
       );
     } catch (err) {
       console.error("Error fetching contributors:", err);
@@ -366,22 +372,24 @@ export default function LeaderBoard() {
   useEffect(() => {
     const doLoad = async () => {
       setLoading(true);
-      const cachedData = localStorage.getItem(LEADERBOARD_CACHE_KEY);
+      const cachedData = storageManager.get(
+        STORAGE_KEYS.LEADERBOARD_CACHE,
+        validators.isObject
+      );
       const now = Date.now();
 
-      if (cachedData) {
-        try {
-          const { data, timestamp } = JSON.parse(cachedData);
-          if (now - timestamp < 60 * 60 * 1000) {
-            setContributors(data);
-            setLastUpdated(
-              `Last updated: ${new Date(timestamp).toLocaleString()} (cached)`
-            );
-            setLoading(false);
-            return;
-          }
-        } catch (error) {
-          console.error("Error parsing cached data:", error);
+      if (cachedData?.data && cachedData?.timestamp) {
+        if (now - cachedData.timestamp < 60 * 60 * 1000) {
+          setContributors(cachedData.data);
+
+          setLastUpdated(
+            `Last updated: ${new Date(
+              cachedData.timestamp
+            ).toLocaleString()} (cached)`
+          );
+
+          setLoading(false);
+          return;
         }
       }
       await fetchContributors();
@@ -405,39 +413,41 @@ export default function LeaderBoard() {
       updatedSearches
     );
 
-    localStorage.setItem(
-      "recentSearches",
-      JSON.stringify(
-        updatedSearches
-      )
+    storageManager.set(
+      STORAGE_KEYS.RECENT_SEARCHES,
+      updatedSearches
     );
   };
-  const filteredContributors = contributors.filter((c) => {
-    const q = search.trim().toLowerCase();
-    const matchSearch = !q || c.username.toLowerCase().includes(q) || (c.name && c.name.toLowerCase().includes(q));
-    if (!matchSearch) return false;
+  const filteredContributors = useMemo(() => {
+    return contributors.filter((c) => {
+      const q = search.trim().toLowerCase();
+      const matchSearch = !q || c.username.toLowerCase().includes(q) || (c.name && c.name.toLowerCase().includes(q));
+      if (!matchSearch) return false;
 
-    // Category filters (deterministic simulation based on username hash)
-    if (activeCategory === "monthly") {
-      // Show top ~40% as "monthly stars" based on points threshold
-      const threshold = contributors.length > 0
-        ? contributors[Math.floor(contributors.length * 0.4)]?.points || 0
-        : 0;
-      return c.points >= threshold;
-    }
-    if (activeCategory === "mentors") {
-      // Show contributors with 5+ PRs as "mentors"
-      return c.prs >= 5;
-    }
-    return true; // "overall" shows everyone
-  });
+      // Category filters (deterministic simulation based on username hash)
+      if (activeCategory === "monthly") {
+        // Show top ~40% as "monthly stars" based on points threshold
+        const threshold = contributors.length > 0
+          ? contributors[Math.floor(contributors.length * 0.4)]?.points || 0
+          : 0;
+        return c.points >= threshold;
+      }
+      if (activeCategory === "mentors") {
+        // Show contributors with 5+ PRs as "mentors"
+        return c.prs >= 5;
+      }
+      return true; // "overall" shows everyone
+    });
+  }, [contributors, search, activeCategory]);
 
-  const sortedContributors = [...filteredContributors].sort((a, b) => {
-    if (sortBy === "points") return b.points - a.points;
-    if (sortBy === "prs") return b.prs - a.prs;
-    if (sortBy === "username") return a.username.localeCompare(b.username);
-    return 0;
-  });
+  const sortedContributors = useMemo(() => {
+    return [...filteredContributors].sort((a, b) => {
+      if (sortBy === "points") return b.points - a.points;
+      if (sortBy === "prs") return b.prs - a.prs;
+      if (sortBy === "username") return a.username.localeCompare(b.username);
+      return 0;
+    });
+  }, [filteredContributors, sortBy]);
 
   const indexOfLast = currentPage * CONTRIBUTORS_PER_PAGE;
   const indexOfFirst = indexOfLast - CONTRIBUTORS_PER_PAGE;
@@ -470,7 +480,8 @@ export default function LeaderBoard() {
   const top3 = sortedContributors.slice(0, 3);
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 pt-20 md:pt-24 py-12 sm:py-16 transition-colors duration-300">
+    <FeatureErrorBoundary>
+      <div className="bg-slate-50 dark:bg-slate-950 pt-20 md:pt-24 py-12 sm:py-16 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* HERO TITLE */}
@@ -966,5 +977,6 @@ export default function LeaderBoard() {
       </div>
       <GSSoCContribution />
     </div>
+    </FeatureErrorBoundary>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from "react";
 
 /**
  * useLocalStorage
@@ -17,16 +17,19 @@ import { useState, useEffect, useCallback, useRef } from 'react';
  * removeValue();             // removes the key and resets to initialValue
  */
 const useLocalStorage = (key, initialValue) => {
+  const initialValueRef = useRef(initialValue);
+  initialValueRef.current = initialValue;
+
   const readValue = useCallback(() => {
-    if (typeof window === 'undefined') return initialValue;
+    if (typeof window === "undefined") return initialValueRef.current;
     try {
       const item = window.localStorage.getItem(key);
-      return item !== null ? JSON.parse(item) : initialValue;
+      return item !== null ? JSON.parse(item) : initialValueRef.current;
     } catch (error) {
       console.warn(`useLocalStorage: error reading key "${key}":`, error);
-      return initialValue;
+      return initialValueRef.current;
     }
-  }, [key, initialValue]);
+  }, [key]);
 
   const [storedValue, setStoredValue] = useState(readValue);
 
@@ -43,7 +46,7 @@ const useLocalStorage = (key, initialValue) => {
         window.localStorage.setItem(key, JSON.stringify(newValue));
         setStoredValue(newValue);
         // Notify other hook instances with the same key (cross-tab sync)
-        window.dispatchEvent(new Event('local-storage'));
+        window.dispatchEvent(new Event("local-storage"));
       } catch (error) {
         console.warn(`useLocalStorage: error setting key "${key}":`, error);
       }
@@ -54,27 +57,27 @@ const useLocalStorage = (key, initialValue) => {
   const removeValue = useCallback(() => {
     try {
       window.localStorage.removeItem(key);
-      setStoredValue(initialValue);
-      window.dispatchEvent(new Event('local-storage'));
+      setStoredValue(initialValueRef.current);
+      window.dispatchEvent(new Event("local-storage"));
     } catch (error) {
       console.warn(`useLocalStorage: error removing key "${key}":`, error);
     }
-  }, [key, initialValue]);
+  }, [key]);
 
   // Keep in sync with other tabs / windows
   useEffect(() => {
     const handleStorageChange = (event) => {
-      if (event.key === key || event.type === 'local-storage') {
+      if (event.key === key || event.type === "local-storage") {
         setStoredValue(readValue());
       }
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('local-storage', handleStorageChange);
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("local-storage", handleStorageChange);
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('local-storage', handleStorageChange);
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("local-storage", handleStorageChange);
     };
   }, [key, readValue]);
 

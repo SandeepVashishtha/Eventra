@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import {
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
+import {
   FaGithub,
   FaExternalLinkAlt,
   FaCodeBranch,
@@ -22,7 +22,6 @@ const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
 
 // Role assignment
 const getRoleByGitHubActivity = (contributor) => {
-  const prefersReducedMotion = useReducedMotion();
   const { contributions, followers = 0, login } = contributor;
   if (login === "sandeepvashishtha") return "Project Lead";
 
@@ -53,6 +52,7 @@ const cacheContributors = (data) => {
 };
 
 const Contributors = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -293,7 +293,7 @@ const Contributors = () => {
                     <div className="relative">
                       <img loading="lazy" decoding="async" width="65" height="65"
   src={c.avatar_url}
-  alt={c.login}
+  alt={`${c.name || c.login || "Contributor"}'s GitHub profile picture`}
   className="w-[65px] h-[65px] rounded-full border-4 border-black shadow-md relative z-10"
 />
                       <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 blur-sm -z-10"></div>

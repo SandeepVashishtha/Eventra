@@ -96,3 +96,31 @@ export const prepareSafeSearchQuery = (rawQuery = '') => {
 
   return sanitizeSearchQuery(rawQuery);
 };
+
+/**
+ * Sanitize plain user text input.
+ * Strips HTML tags entirely and entity-escapes special characters to prevent XSS.
+ *
+ * @param {string} text - Raw input text from the UI
+ * @returns {string} - Clean, safe plain-text
+ */
+export const sanitizeInputText = (text = '') => {
+  if (typeof text !== 'string') {
+    return '';
+  }
+
+  // 1. Strip all HTML elements
+  let cleaned = text.replace(/<\/?[^>]+(>|$)/g, "");
+
+  // 2. Escape HTML special characters for absolute safety
+  const htmlEscapes = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#x27;',
+    '/': '&#x2F;'
+  };
+
+  return cleaned.replace(/[&<>"'/]/g, (match) => htmlEscapes[match]);
+};
