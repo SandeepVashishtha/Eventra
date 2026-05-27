@@ -16,7 +16,9 @@ import {
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
 import StyledDropdown from "../../components/StyledDropdown";
-import { LeaderboardTableSkeleton } from "../../components/common/SkeletonLoaders";
+import SkeletonLeaderboard, {
+  LeaderboardStatCardSkeleton,
+} from "../../components/common/SkeletonLeaderboard";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useLeaderboardStream, SSE_STATUS } from "../../context/RealTimeContext";
 
@@ -75,8 +77,7 @@ function RankMovementIndicator({ username }) {
 
 // Repository constant — update if the leaderboard should point to another repo
 const GITHUB_REPO = "SandeepVashishtha/Eventra";
-// Token read from env for higher rate limits (optional)
-const TOKEN = process.env.REACT_APP_GITHUB_TOKEN || "";
+// Token is managed securely by the backend proxy
 const LEADERBOARD_CACHE_KEY = "leaderboardData:v2";
 
 // Points mapping for PR labels (keeps scoring logic centralized)
@@ -194,6 +195,14 @@ export default function LeaderBoard() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState("");
   const [search, setSearch] = useState("");
+  const [
+  debouncedSearch,
+  setDebouncedSearch,
+] = useState(search);
+  const [
+  recentSearches,
+  setRecentSearches,
+] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("points");
   const [activeCategory, setActiveCategory] = useState("overall");
@@ -205,6 +214,14 @@ export default function LeaderBoard() {
   // Constants for pagination and UI
   const CONTRIBUTORS_PER_PAGE = 10;
 
+  useEffect(() => {
+  const timer = setTimeout(() => {
+    setDebouncedSearch(search);
+  }, 400);
+
+  return () =>
+    clearTimeout(timer);
+}, [search]);
   // 🎉 Celebratory confetti on load
   useEffect(() => {
     confetti({
@@ -232,6 +249,18 @@ export default function LeaderBoard() {
     );
   }, [streamContributors, lastSynced]);
 
+  useEffect(() => {
+  const savedSearches =
+    JSON.parse(
+      localStorage.getItem(
+        "recentSearches"
+      )
+    ) || [];
+
+  setRecentSearches(
+    savedSearches
+  );
+}, []);
   // Load data from cache or network will be handled by effect below
 
   const fetchContributors = async () => {
@@ -240,10 +269,8 @@ export default function LeaderBoard() {
       let page = 1;
       let hasMore = true;
 
-      const contributorsRes = await fetch(
-        `https://api.github.com/repos/${GITHUB_REPO}/contributors`,
-        { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} }
-      );
+      const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(`/repos/${GITHUB_REPO}/contributors`)}`;
+      const contributorsRes = await fetch(proxyUrl);
 
       if (!contributorsRes.ok) throw new Error("Failed to fetch contributors");
       const contributorsData = await contributorsRes.json();
@@ -258,10 +285,8 @@ export default function LeaderBoard() {
       });
 
       while (hasMore) {
-        const res = await fetch(
-          `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`,
-          { headers: TOKEN ? { Authorization: `token ${TOKEN}` } : {} }
-        );
+        const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(`/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`)}`;
+        const res = await fetch(proxyUrl);
 
         if (!res.ok) {
           console.warn(`GitHub API request failed with status: ${res.status}`);
@@ -365,6 +390,28 @@ export default function LeaderBoard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchContributors is stable across renders
   }, []);
 
+  const saveRecentSearch =
+  (query) => {
+    if (!query.trim()) return;
+
+    const updatedSearches = [
+      query,
+      ...recentSearches.filter(
+        (item) => item !== query
+      ),
+    ].slice(0, 5);
+
+    setRecentSearches(
+      updatedSearches
+    );
+
+    localStorage.setItem(
+      "recentSearches",
+      JSON.stringify(
+        updatedSearches
+      )
+    );
+  };
   const filteredContributors = contributors.filter((c) => {
     const q = search.trim().toLowerCase();
     const matchSearch = !q || c.username.toLowerCase().includes(q) || (c.name && c.name.toLowerCase().includes(q));
@@ -647,11 +694,17 @@ export default function LeaderBoard() {
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-4 rounded-2xl shadow-sm border border-slate-200/50 dark:border-slate-800/40">
           <input
             type="text"
+            
             value={search}
             onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
+  setSearch(e.target.value);
+
+  saveRecentSearch(
+    e.target.value
+  );
+
+  setCurrentPage(1);
+}}
             placeholder="Search creators..."
             className="w-full sm:max-w-xs px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-slate-950 dark:text-white"
           />
@@ -669,58 +722,75 @@ export default function LeaderBoard() {
             placeholder="Sort by"
           />
         </div>
+{/* AGGREGATED STATS CARDS */}
+<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+  {[
+    {
+      title: "Active Contributors",
+      value: stats.totalContributors,
+      color:
+        "from-blue-500/10 to-indigo-500/10 border-blue-100 dark:border-blue-900/30 text-blue-600 dark:text-blue-400",
+      icon: FaUsers,
+    },
+    {
+      title: "Merged Pull Requests",
+      value: stats.flooredTotalPRs,
+      color:
+        "from-emerald-500/10 to-teal-500/10 border-emerald-100 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400",
+      icon: FaCode,
+    },
+    {
+      title: "Aggregated Arena Points",
+      value: stats.flooredTotalPoints,
+      color:
+        "from-amber-500/10 to-orange-500/10 border-amber-100 dark:border-amber-900/30 text-amber-600 dark:text-amber-400",
+      icon: FaStar,
+    },
+  ].map((card, idx) => (
+    <motion.div
+      key={idx}
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: idx * 0.1 }}
+      className={`p-6 rounded-2xl bg-gradient-to-br ${card.color} border shadow-sm flex items-center gap-4`}
+    >
+      <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 shadow-sm">
+        <card.icon className="text-2xl" />
+      </div>
 
-        {/* AGGREGATED STATS CARDS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {[
-            {
-              title: "Active Contributors",
-              value: stats.totalContributors,
-              color: "from-blue-500/10 to-indigo-500/10 border-blue-100 dark:border-blue-900/30 text-blue-600 dark:text-blue-400",
-              icon: FaUsers,
-            },
-            {
-              title: "Merged Pull Requests",
-              value: stats.flooredTotalPRs,
-              color: "from-emerald-500/10 to-teal-500/10 border-emerald-100 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400",
-              icon: FaCode,
-            },
-            {
-              title: "Aggregated Arena Points",
-              value: stats.flooredTotalPoints,
-              color: "from-amber-500/10 to-orange-500/10 border-amber-100 dark:border-amber-900/30 text-amber-600 dark:text-amber-400",
-              icon: FaStar,
-            },
-          ].map((card, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              className={`p-6 rounded-2xl bg-gradient-to-br ${card.color} border shadow-sm flex items-center gap-4`}
-            >
-              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 shadow-sm">
-                <card.icon className="text-2xl" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  {card.title}
-                </p>
-                <p className="text-3xl font-extrabold text-slate-950 dark:text-white mt-1">
-                  {loading ? "..." : <AnimatedCounter value={card.value} />}
-                </p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          {card.title}
+        </p>
 
+        <p className="text-3xl font-extrabold text-slate-950 dark:text-white mt-1">
+          {loading ? (
+            "..."
+          ) : (
+            <AnimatedCounter value={card.value} />
+          )}
+        </p>
+      </div>
+    </motion.div>
+  ))}
+</div>
+
+        {/* UPDATED: Table container */}
+        <section className="bg-gray-50 dark:bg-gray-900 rounded-2xl shadow-lg overflow-hidden" aria-labelledby="leaderboard-table-title">
+          <h2 id="leaderboard-table-title" className="sr-only">
+            Contributor leaderboard table
+          </h2>
         {/* LEADERBOARD ARENA GRID */}
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden">
           {loading ? (
-            <LeaderboardTableSkeleton rows={CONTRIBUTORS_PER_PAGE} />
+            <div role="status" aria-live="polite" aria-label="Loading leaderboard contributors">
+              <span className="sr-only">Loading leaderboard contributors...</span>
+              <SkeletonLeaderboard rows={CONTRIBUTORS_PER_PAGE} />
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
+
                 <thead className="bg-slate-50 dark:bg-slate-900/50">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -868,7 +938,6 @@ export default function LeaderBoard() {
                     >
                       <FaChevronLeft className="w-3 h-3" />
                     </button>
-                    
                     <button
                       onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                       disabled={currentPage === totalPages}
@@ -879,8 +948,10 @@ export default function LeaderBoard() {
                   </div>
                 </div>
               )}
+
             </div>
           )}
+        </div>
 
           {/* Table footer: last updated + live connection badge */}
           <div className="bg-gray-50 dark:bg-black/70 px-6 py-2 flex items-center justify-between border-t border-gray-200 dark:border-gray-700">
@@ -891,7 +962,7 @@ export default function LeaderBoard() {
             )}
             <LiveStatusBadge status={streamStatus} />
           </div>
-        </div>
+        </section>
       </div>
       <GSSoCContribution />
     </div>

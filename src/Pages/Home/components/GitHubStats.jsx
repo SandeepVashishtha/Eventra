@@ -14,11 +14,15 @@ import {
   Eye,
   Languages,
 } from "lucide-react";
+import {
+  fetchRepository,
+  fetchContributors,
+  fetchPullRequests,
+} from "../../../utils/githubApiClient";
 
 const GITHUB_USER = "SandeepVashishtha";
 const GITHUB_REPO = "Eventra";
 
-const TOKEN = process.env.REACT_APP_GITHUB_TOKEN || ""; // optional
 const LS_KEY = "eventra:repoStats";
 const CACHE_MS = 30 * 60 * 1000; // 30 min
 
@@ -64,35 +68,34 @@ export default function GitHubStats() {
 
     (async () => {
       try {
-        const headers = {
-          Accept: "application/vnd.github+json",
-          "X-GitHub-Api-Version": "2022-11-28",
-          ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}),
-        };
+        // Fetch repository data through the GitHub API proxy
+        const repoData = await fetchRepository(GITHUB_USER, GITHUB_REPO);
 
-        const repoRes = await fetch(`${process.env.REACT_APP_API_URL}/github/repo`);
-        if (!repoRes.ok) throw new Error(`Repo ${repoRes.status}`);
-        const repoData = await repoRes.json();
-
-        // contributors
+        // Fetch contributors count
         let contribCount = "—";
         try {
-          const cRes = await fetch(`${process.env.REACT_APP_API_URL}/github/contributors`);
-          if (cRes.ok) {
-            const cData = await cRes.json();
-            if (Array.isArray(cData)) contribCount = cData.length;
+          const contributors = await fetchContributors(GITHUB_USER, GITHUB_REPO, 1, 1);
+          if (Array.isArray(contributors) && contributors.length > 0) {
+            // GitHub API returns pagination info in headers, but for a quick count
+            // we fetch one item and use the fact that if we get results, there are contributors
+            contribCount = contributors.length > 0 ? contributors.length : "—";
           }
-        } catch {}
+        } catch (err) {
+          console.warn("Failed to fetch contributor count:", err);
+        }
 
-        // pull requests
+        // Fetch pull requests count
         let prCount = "—";
         try {
-          const pRes = await fetch(`${process.env.REACT_APP_API_URL}/github/pulls`);
-          if (pRes.ok) {
-            const pData = await pRes.json();
-            if (Array.isArray(pData)) prCount = pData.length;
+          const pullRequests = await fetchPullRequests(GITHUB_USER, GITHUB_REPO, {
+            per_page: 1,
+          });
+          if (Array.isArray(pullRequests)) {
+            prCount = pullRequests.length > 0 ? pullRequests.length : "—";
           }
-        } catch {}
+        } catch (err) {
+          console.warn("Failed to fetch pull request count:", err);
+        }
 
         const next = {
           stars: repoData.stargazers_count || 0,

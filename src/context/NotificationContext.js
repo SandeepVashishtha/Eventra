@@ -18,7 +18,8 @@ export const NotificationProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = useCallback(async (options = { isBackground: false }) => {
+  const { isBackground } = options;
     if (!token) return;
 
     // Defensive check: safeguard against undefined/missing notification endpoints
@@ -29,7 +30,9 @@ export const NotificationProvider = ({ children }) => {
     }
 
     try {
-      setLoading(true);
+      if (!isBackground) {
+        setLoading(true);
+    }
       const response = await apiUtils.get(endpoint);
       const data = response.data;
       const normalizedData = Array.isArray(data) ? data : [];
@@ -38,8 +41,10 @@ export const NotificationProvider = ({ children }) => {
     } catch (error) {
       console.error('Error fetching notifications:', error);
     } finally {
-      setLoading(false);
-    }
+  if (!isBackground) {
+    setLoading(false);
+  }
+}
   }, [token]);
 
   const fetchAchievements = useCallback(async () => {
@@ -91,50 +96,43 @@ export const NotificationProvider = ({ children }) => {
   const markAllAsRead = useCallback(async () => {
     if (!token) return;
 
-    // Use a functional wrapper block to get access to current state safely without a dependency array trigger
+    // Capture current unread list synchronously before the optimistic update
     let unread = [];
-    
+
     setNotifications((prev) => {
       unread = prev.filter((n) => !n.isRead);
       if (unread.length === 0) return prev;
-      
+
       // Return optimistically updated array
       return prev.map((n) => ({ ...n, isRead: true }));
     });
 
-    // If there were no unread items captured, stop execution early
-    setTimeout(async () => {
-      if (unread.length === 0) return;
+    // Nothing to do if every notification was already read
+    if (unread.length === 0) return;
 
-      const endpointGetter = API_ENDPOINTS?.NOTIFICATIONS?.READ;
-      if (typeof endpointGetter !== "function") {
-        console.warn("[NotificationContext] READ endpoint creator is not a function. Skipping bulk update.");
-        return;
-      }
+    const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.READ_ALL;
+    if (!endpoint || typeof endpoint !== "string" || endpoint.includes("undefined")) {
+      console.warn("[NotificationContext] READ_ALL endpoint is invalid or improperly configured. Skipping request.");
+      return;
+    }
 
-      try {
-        setUnreadCount(0);
-        await Promise.allSettled(
-          unread.map((n) => {
-            const endpoint = endpointGetter(n.id);
-            if (!endpoint || typeof endpoint !== "string" || endpoint.includes("undefined")) {
-              return Promise.reject("Invalid endpoint");
-            }
-            return apiUtils.put(endpoint, {});
-          })
-        );
-      } catch (error) {
-        console.error('Error marking all notifications as read:', error);
-        // Re-fetch to restore accurate state on server failure
-        fetchNotifications();
-      }
-    }, 0);
+    setUnreadCount(0);
+
+    try {
+      await apiUtils.put(endpoint, {});
+    } catch (error) {
+      console.error('[NotificationContext] Error marking all notifications as read:', error);
+      // Re-fetch to restore accurate server state on unexpected failure
+      fetchNotifications();
+    }
   }, [token, fetchNotifications]);
 
+  
+  // ── Initial fetch + polling ───────────────────────────────────────────────
   // ── Initial fetch + polling ───────────────────────────────────────────────
   useEffect(() => {
+    // 1. Handle Logout: Wipe data clean instantly
     if (!token) {
-      // Reset state on logout
       setNotifications([]);
       setUnreadCount(0);
       setAchievements({
@@ -142,17 +140,32 @@ export const NotificationProvider = ({ children }) => {
         currentStreak: 0,
         badges: [],
       });
-      return;
+      return; // Exit early, no interval will be created
     }
 
-    fetchNotifications();
-    fetchAchievements();
+    // 2. Handle Login: Trigger instant data load (parallelized)
+    const initData = async () => {
+      setLoading(true);
+      await Promise.allSettled([
+        fetchNotifications({ isBackground: true }),
+        fetchAchievements()
+      ]);
+      setLoading(false);
+    };
+    initData();
 
-    // Poll for new notifications at a fixed interval
-    const intervalId = setInterval(fetchNotifications, POLLING_INTERVAL_MS);
+    // 3. Set up background polling
+    const intervalId = setInterval(() => {
+      fetchNotifications({ isBackground: true });
+    }, POLLING_INTERVAL_MS);
 
-    return () => clearInterval(intervalId);
-  }, [token, fetchNotifications, fetchAchievements]);
+    // 4. Clean Destruction: Guaranteed removal of the ghost worker
+    return () => {
+      clearInterval(intervalId);
+    };
+    
+    // CRITICAL FIX: Only run this effect when the actual authentication token changes
+  }, [token]);
 
   return (
     <NotificationContext.Provider

@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { FiGithub, FiExternalLink, FiPlus, FiX } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { getUserFullName } from "../../utils/userNameUtils.mjs";
 import "./ProjectSubmission.css";
 
 const ProjectSubmission = ({ onClose, onSubmit }) => {
@@ -10,7 +11,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    author: user?.firstName + " " + user?.lastName || "",
+    author: getUserFullName(user),
     category: "",
     techStack: [],
     githubUrl: "",
@@ -87,7 +88,11 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
       const response = await apiUtils.post(
         API_ENDPOINTS.PROJECTS.SUBMIT,
         formData,
-        token
+        {
+          headers: {
+            Authorization: token
+          }
+        }
       );
 
       const result = response.data;

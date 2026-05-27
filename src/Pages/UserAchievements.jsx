@@ -3,6 +3,7 @@ import { useNotification } from '../context/NotificationContext';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import QuestCenter from '../components/gamification/QuestCenter';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-toastify';
 import {
   Award,
   Zap,
@@ -14,12 +15,17 @@ import {
   ChevronDown,
   Sparkles,
   Trophy,
+  Linkedin,
+  Twitter,
+  Share2,
+  X,
 } from 'lucide-react';
 
 export default function UserAchievements() {
   useDocumentTitle("Eventra | Achievements");
   const { achievements, fetchAchievements } = useNotification();
   const [expandedBadgeId, setExpandedBadgeId] = useState(null);
+  const [activeShareBadge, setActiveShareBadge] = useState(null);
 
   useEffect(() => {
     fetchAchievements();
@@ -126,6 +132,67 @@ export default function UserAchievements() {
   const toggleExpand = (badgeId) => {
     setExpandedBadgeId(expandedBadgeId === badgeId ? null : badgeId);
   };
+
+  const handleShareTwitter = (badge) => {
+    const text = `I just unlocked the '${badge.name}' milestone badge on Eventra! 🏆 ${badge.description} Check it out: https://eventra.dev`;
+    const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    window.open(shareUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const handleShareLinkedIn = (badge) => {
+    const text = `I just unlocked the '${badge.name}' milestone badge on Eventra! 🏆 ${badge.description}`;
+    const shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent("https://eventra.dev")}&summary=${encodeURIComponent(text)}`;
+    window.open(shareUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const handleNativeShare = async (badge) => {
+    const title = `Unlocked '${badge.name}' Badge on Eventra!`;
+    const text = `I just unlocked the '${badge.name}' milestone badge on Eventra! 🏆 ${badge.description}`;
+    const url = "https://eventra.dev";
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text, url });
+      } catch (error) {
+        console.error("Native share failed:", error);
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(`${text} Check it out: ${url}`);
+        toast.info("Milestone details copied to clipboard!");
+      } catch (err) {
+        toast.error("Failed to copy milestone details.");
+      }
+    }
+  };
+
+  // Mock download badge certificate SVG
+  const handleDownloadSVG = (badge) => {
+    const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="250" viewBox="0 0 400 250">
+      <rect width="100%" height="100%" fill="#0f172a" rx="20"/>
+      <circle cx="200" cy="80" r="40" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/>
+      <text x="200" y="88" font-family="Arial" font-size="36" text-anchor="middle" fill="#fff">${badge.icon}</text>
+      <text x="200" y="150" font-family="Arial" font-size="20" font-weight="bold" text-anchor="middle" fill="#e2e8f0">${badge.name}</text>
+      <text x="200" y="175" font-family="Arial" font-size="12" text-anchor="middle" fill="#94a3b8">EVENTRA ACHIEVER TOKEN</text>
+      <text x="200" y="205" font-family="Arial" font-size="10" text-anchor="middle" fill="#6366f1">Level ${currentLevel} Developer</text>
+    </svg>`;
+    const blob = new Blob([svgContent], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${badge.id}-certificate.svg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Certificate Badge graphic downloaded!");
+  };
+
+  // Onboarding Checklist configuration
+  const onboardingQuests = [
+    { id: 'step1', title: 'Register for your first event', description: 'Unlock your first registration milestone', done: totalEvents >= 1 },
+    { id: 'step2', title: 'Start a streak', description: 'Participate in multiple events consecutively', done: currentStreak >= 1 },
+    { id: 'step3', title: 'Unlock a milestone token', description: 'Complete requirements to claim a badge', done: unlockedCount >= 1 },
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-20 px-4 md:px-8 transition-colors duration-300">
@@ -308,6 +375,48 @@ export default function UserAchievements() {
           </div>
         </div>
 
+        {/* ONBOARDING CHECKLIST FOR USERS WITH ZERO ACHIEVEMENTS */}
+        {unlockedCount === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-br from-indigo-900/40 via-purple-900/35 to-slate-900/60 border border-indigo-500/20 backdrop-blur-xl rounded-3xl p-6 shadow-lg space-y-4"
+          >
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-yellow-450 animate-bounce" />
+              <h2 className="text-md font-black tracking-tight text-white uppercase">
+                Gamified Onboarding Checklist
+              </h2>
+            </div>
+            <p className="text-xs text-slate-350 max-w-xl leading-relaxed">
+              You haven't unlocked any milestone tokens yet. Complete the steps below to claim your first developer badge:
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              {onboardingQuests.map((quest) => (
+                <div
+                  key={quest.id}
+                  className={`p-4 rounded-2xl border transition ${
+                    quest.done
+                      ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-350"
+                      : "bg-slate-950/40 border-slate-900 text-slate-400"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Quest</span>
+                    {quest.done ? (
+                      <span className="bg-emerald-500/20 text-emerald-450 px-2 py-0.5 rounded text-[8px] font-black uppercase">COMPLETED</span>
+                    ) : (
+                      <span className="bg-slate-800/80 text-slate-500 px-2 py-0.5 rounded text-[8px] font-black uppercase">PENDING</span>
+                    )}
+                  </div>
+                  <h4 className="text-xs font-extrabold text-white">{quest.title}</h4>
+                  <p className="text-[10px] text-slate-400 mt-1">{quest.description}</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
         {/* MILESTONE BADGES SECTION */}
         <section className="space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-850 pb-3">
@@ -417,6 +526,24 @@ export default function UserAchievements() {
                           </div>
                         </div>
 
+                        {/* Share section */}
+                        {badge.earned && (
+                          <div className="pt-4 border-t border-dashed border-slate-200 dark:border-slate-850/50 space-y-2.5" onClick={(e) => e.stopPropagation()}>
+                            <span className="block text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none">
+                              Share Achievement
+                            </span>
+                            <div className="flex flex-wrap gap-2 pt-0.5">
+                              <button
+                                onClick={() => setActiveShareBadge(badge)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold rounded-xl bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white transition-all cursor-pointer shadow-xs hover:scale-[1.03]"
+                              >
+                                <Share2 className="w-3.5 h-3.5" />
+                                <span>Share Certificate</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Lock Warning if locked */}
                         {!badge.earned && (
                           <div className="flex items-center gap-1.5 p-2 px-3 rounded-xl bg-rose-50/50 dark:bg-rose-950/15 border border-rose-100/20 dark:border-rose-900/10 text-[9px] font-bold text-rose-600 dark:text-rose-400 leading-tight">
@@ -440,6 +567,88 @@ export default function UserAchievements() {
         />
 
       </div>
+
+      {/* SHARE CARD GENERATOR OVERLAY MODAL */}
+      <AnimatePresence>
+        {activeShareBadge && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl relative space-y-6"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setActiveShareBadge(null)}
+                className="absolute right-4 top-4 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+
+              <div className="text-center space-y-2">
+                <h3 className="text-sm font-black text-indigo-400 uppercase tracking-widest">Share Achievement Card</h3>
+                <p className="text-xs text-slate-400">Generate a custom visual certificate for your milestone.</p>
+              </div>
+
+              {/* The Certificate card graphic container */}
+              <div className="p-6 bg-gradient-to-br from-slate-950 via-indigo-950/80 to-slate-955 border border-indigo-500/35 rounded-2xl relative overflow-hidden shadow-inner text-center space-y-5">
+                {/* Visual decorations */}
+                <div className="absolute top-0 right-0 w-24 h-24 bg-pink-500/10 rounded-full blur-2xl" />
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl" />
+                
+                <div className="text-xs font-black uppercase text-indigo-450 tracking-widest border-b border-indigo-500/20 pb-2">
+                  🏆 Eventra Achiever Certificate
+                </div>
+
+                <div className="inline-flex p-4 rounded-3xl bg-indigo-900/30 border border-indigo-500/20 shadow-md text-4xl mx-auto animate-bounce">
+                  {activeShareBadge.icon}
+                </div>
+
+                <div className="space-y-1">
+                  <h4 className="text-lg font-black text-white tracking-tight">{activeShareBadge.name}</h4>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wider font-extrabold">Milestone Achieved</p>
+                </div>
+
+                <p className="text-xs text-slate-300 max-w-xs mx-auto leading-relaxed italic">
+                  "This digital token certifies that a developer has completed the '{activeShareBadge.name}' challenges on Eventra."
+                </p>
+
+                <div className="flex items-center justify-between text-[9px] font-black uppercase text-slate-500 pt-3 border-t border-slate-950">
+                  <span>Level {currentLevel} Member</span>
+                  <span>XP Gained: +{activeShareBadge.rewardXP}</span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => handleShareLinkedIn(activeShareBadge)}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-slate-850 text-xs font-bold text-slate-350 transition cursor-pointer"
+                >
+                  <Linkedin size={14} className="text-blue-500" />
+                  <span>LinkedIn</span>
+                </button>
+                <button
+                  onClick={() => handleShareTwitter(activeShareBadge)}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-slate-850 text-xs font-bold text-slate-350 transition cursor-pointer"
+                >
+                  <Twitter size={14} className="text-sky-400" />
+                  <span>Twitter / X</span>
+                </button>
+                
+                <button
+                  onClick={() => handleDownloadSVG(activeShareBadge)}
+                  className="col-span-2 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-indigo-650 hover:bg-indigo-700 text-xs font-bold text-white transition cursor-pointer shadow-md shadow-indigo-500/10"
+                >
+                  <Share2 size={14} />
+                  <span>Download SVG Certificate</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

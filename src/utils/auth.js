@@ -7,6 +7,19 @@
  * cryptographic signature — that step happens server-side. The sole purpose
  * here is to give the UI early feedback about expiry so we can redirect the
  * user before they hit a 401 Unauthorized error from the API.
+ *
+ * SECURITY MODEL:
+ * ───────────────
+ * The JWT is the authoritative source for authentication and authorization:
+ * 1. JWT is signed by the backend — cannot be forged by client
+ * 2. JWT is delivered over HTTPS — cannot be intercepted and modified
+ * 3. Even if localStorage is tampered with, authorization checks use the JWT
+ *
+ * localStorage is used ONLY for UI state (display name, email, cached theme, etc.),
+ * never for security-critical decisions.
+ *
+ * Authorization flows should always verify against the JWT token, not localStorage.
+ * Server must also validate authorization for every API request.
  */
 
 /** Grace period (in seconds) to account for clock skew between browser and server. */

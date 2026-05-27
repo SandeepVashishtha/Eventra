@@ -93,6 +93,7 @@ const ToastProvider = () => {
     <div
       aria-live="polite"
       aria-atomic="false"
+      aria-label="Notifications"
       style={{
         position: "fixed",
         top: "1rem",
@@ -110,7 +111,8 @@ const ToastProvider = () => {
         return (
           <div
             key={item.id}
-            role="status"
+            role={item.type === "error" ? "alert" : "status"}
+            aria-live={item.type === "error" ? "assertive" : "polite"}
             style={{
               width: "min(360px, calc(100vw - 2rem))",
               background: palette.bg,
