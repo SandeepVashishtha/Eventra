@@ -493,6 +493,22 @@ export default function UserDashboard() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Futuristic Dashboard Footer */}
+        <footer className="ud-footer">
+          <div className="ud-footer-divider" />
+          <div className="ud-footer-content">
+            <p className="ud-footer-copyright">
+              © {new Date().getFullYear()} Eventra. All rights reserved.
+            </p>
+            <div className="ud-footer-links">
+              <Link to="/helpcenter" className="ud-footer-link">Help Center</Link>
+              <Link to="/feedback" className="ud-footer-link">Feedback</Link>
+              <Link to="/privacy" className="ud-footer-link">Privacy Policy</Link>
+              <Link to="/terms" className="ud-footer-link">Terms of Service</Link>
+            </div>
+          </div>
+        </footer>
       </main>
 
       {/* Futuristic Ticket Preview Modal */}
