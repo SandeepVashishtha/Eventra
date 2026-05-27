@@ -8,10 +8,6 @@ import CountUp from "react-countup";
 import { darkTheme } from "../../components/styles/theme";
 import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
 
-const SEARCH_HISTORY_KEY = "eventra.events.searchHistory";
-
-const TRENDING_SEARCHES = ["Workshop", "Hackathon", "Open Source", "Conference", "AI", "Web Development"];
-
 const getStoredSearchHistory = () => {
   try {
     const stored = JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY) || "[]");
@@ -20,8 +16,44 @@ const getStoredSearchHistory = () => {
     return [];
   }
 };
+const SEARCH_HISTORY_KEY =
+  "eventra.events.searchHistory";
 
-export default function EventHero({ searchQuery, handleSearch, filteredEvents, scrollToCard }) {
+const TRENDING_SEARCHES = [
+  "Workshop",
+  "Hackathon",
+  "Open Source",
+  "Conference",
+  "AI",
+  "Web Development",
+];
+
+const getStoredSearchHistory =
+  () => {
+    try {
+      const storedHistory =
+        JSON.parse(
+          localStorage.getItem(
+            SEARCH_HISTORY_KEY
+          ) || "[]"
+        );
+
+      return Array.isArray(
+        storedHistory
+      )
+        ? storedHistory.slice(0, 5)
+        : [];
+
+    } catch {
+      return [];
+    }
+  };
+export default function EventHero({
+  searchQuery,
+  handleSearch,
+  filteredEvents,
+  scrollToCard,
+}) {
   const prefersReducedMotion = useReducedMotion();
   const navigate = useNavigate();
 
@@ -67,14 +99,11 @@ export default function EventHero({ searchQuery, handleSearch, filteredEvents, s
     [searchHistory, persistSearchHistory]
   );
 
-  const selectSearchQuery = useCallback(
-    (query) => {
-      handleSearch(query);
-      saveSearchQuery(query);
-      setIsSearchFocused(false);
-    },
-    [handleSearch, saveSearchQuery]
-  );
+  const selectSearchQuery = (query) => {
+    handleSearch(query);
+    saveSearchQuery(query);
+    saveRecentSearch(query);
+  };
 
   const clearSearchHistory = useCallback(() => {
     persistSearchHistory([]);
@@ -127,8 +156,8 @@ export default function EventHero({ searchQuery, handleSearch, filteredEvents, s
           </span>
           .
         </p>
-
-        <div ref={searchContainerRef} className="w-full max-w-3xl mx-auto mt-8 sm:mt-12 relative">
+  
+        <div className="w-full max-w-3xl mx-auto mt-8 sm:mt-12 px-4 sm:px-0">
           <ModernSearchInput
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
