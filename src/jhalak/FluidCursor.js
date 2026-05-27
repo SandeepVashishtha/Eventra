@@ -1,10 +1,12 @@
 "use client";
 import React, { useEffect, useRef } from "react";
 import { useState } from "react";
+import { useReducedMotion } from "../hooks/useReducedMotion";
 
 const FluidCursor = ({ enabled = true }) => {
   const canvasRef = useRef(null);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 768px), (pointer: coarse)");
@@ -1241,7 +1243,7 @@ const FluidCursor = ({ enabled = true }) => {
     };
   }, [enabled, isMobileViewport]);
 
-  if (!enabled || isMobileViewport) {
+  if (!enabled || isMobileViewport || prefersReducedMotion) {
     return null;
   }
 

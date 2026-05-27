@@ -32,7 +32,6 @@ jobs:
               'level:critical':     { color: 'B60205', description: 'Major / core-repository change' },
             };
 
-            // Paths whose modification alone escalates to level:critical
             const CORE_PATTERNS = [
               /^\.github\/workflows\//,
               /^package(-lock)?\.json$/,
@@ -44,11 +43,12 @@ jobs:
               /^src\/utils\/auth\.(js|ts)$/,
             ];
 
+            const ALWAYS_CRITICAL_PATTERNS = [
+              /^src\/index\.(js|jsx|ts|tsx)$/,
+              /^src\/components\/routes\//,
+            ];
+
             // ── Helpers ────────────────────────────────────────────────────
-            /**
-             * Ensure every difficulty label exists in the repo.
-             * Creates missing ones in a single pass; skips existing ones silently.
-             */
             async function ensureLabels() {
               await Promise.all(
                 Object.entries(LABEL_META).map(async ([name, { color, description }]) => {
@@ -63,7 +63,6 @@ jobs:
               );
             }
 
-            /** Fetch all changed files for this PR (handles pagination). */
             async function getFiles() {
               return github.paginate(github.rest.pulls.listFiles, {
                 ...repo,
@@ -72,48 +71,48 @@ jobs:
               });
             }
 
-            /** Fetch the current labels applied to the PR. */
             async function getCurrentLabels() {
               const { data } = await github.rest.issues.get({ ...repo, issue_number: prNum });
               return data.labels.map(l => (typeof l === 'string' ? l : l.name));
             }
 
-            /**
-             * Classify PR difficulty from file stats.
-             * Thresholds (files × lines):  beginner ≤3×50 | intermediate ≤10×250 | advanced ≤25×800 | critical
-             */
-            function classify({ filesChanged, linesChanged, hasCoreChanges }) {
-              if (hasCoreChanges)                                return 'level:critical';
+            function classify({ filesChanged, linesChanged, hasCoreChanges, hasAlwaysCritical }) {
+              if (hasAlwaysCritical)                              return 'level:critical';
+              if (filesChanged > 25 || linesChanged > 800)       return 'level:critical';
+              if (hasCoreChanges && (filesChanged > 10 || linesChanged > 300))
+                                                                  return 'level:critical';
               if (filesChanged <=  3 && linesChanged <=  50)    return 'level:beginner';
               if (filesChanged <= 10 && linesChanged <= 250)    return 'level:intermediate';
-              if (filesChanged <= 25 && linesChanged <= 800)    return 'level:advanced';
-              return 'level:critical';
+              return 'level:advanced';
             }
 
             /**
-             * Swap the difficulty label on the PR:
-             *   - Remove any stale difficulty labels in one pass.
-             *   - Add the target label only if it is not already present.
+             * Swap ONLY the difficulty label on the PR.
+             * ⚠️  We NEVER touch labels outside DIFFICULTY_LABELS — other workflows own those.
              */
             async function applyLabel(targetLabel) {
-              const current     = await getCurrentLabels();
+              const current = await getCurrentLabels();
+
+              // Only remove OTHER difficulty labels (not the target) — never touch any other label
               const staleLabels = current.filter(l => DIFFICULTY_LABELS.includes(l) && l !== targetLabel);
 
-              // Remove stale labels in parallel
               await Promise.all(
                 staleLabels.map(name =>
                   github.rest.issues.removeLabel({ ...repo, issue_number: prNum, name })
-                    .then(() => console.log(`🗑 Removed: ${name}`))
+                    .then(() => console.log(`🗑 Removed stale difficulty label: ${name}`))
                 )
               );
 
+              // Only add if not already present (idempotency guard)
               if (current.includes(targetLabel) && staleLabels.length === 0) {
-                console.log(`✔ Already correct: ${targetLabel}`);
+                console.log(`✔ Difficulty label already correct: ${targetLabel} — skipping.`);
                 return;
               }
 
-              await github.rest.issues.addLabels({ ...repo, issue_number: prNum, labels: [targetLabel] });
-              console.log(`🏷 Applied: ${targetLabel}`);
+              if (!current.includes(targetLabel)) {
+                await github.rest.issues.addLabels({ ...repo, issue_number: prNum, labels: [targetLabel] });
+                console.log(`🏷 Applied difficulty label: ${targetLabel}`);
+              }
             }
 
             // ── Main ───────────────────────────────────────────────────────
@@ -123,14 +122,15 @@ jobs:
             const deletions    = files.reduce((s, f) => s + f.deletions, 0);
             const linesChanged = additions + deletions;
             const filesChanged = files.length;
-            const hasCoreChanges = files.some(f => CORE_PATTERNS.some(p => p.test(f.filename)));
+            const hasCoreChanges     = files.some(f => CORE_PATTERNS.some(p => p.test(f.filename)));
+            const hasAlwaysCritical  = files.some(f => ALWAYS_CRITICAL_PATTERNS.some(p => p.test(f.filename)));
 
-            const targetLabel = classify({ filesChanged, linesChanged, hasCoreChanges });
+            const targetLabel = classify({ filesChanged, linesChanged, hasCoreChanges, hasAlwaysCritical });
 
             console.log(`PR #${prNum} — "${pr.title}"`);
             console.log(`  Files : ${filesChanged}  |  Lines: +${additions} -${deletions} = ${linesChanged}`);
-            console.log(`  Core changes: ${hasCoreChanges}`);
-            console.log(`  → ${targetLabel}`);
+            console.log(`  Core changes: ${hasCoreChanges}  |  Always-critical paths: ${hasAlwaysCritical}`);
+            console.log(`  → Difficulty: ${targetLabel}`);
 
             await ensureLabels();
             await applyLabel(targetLabel);

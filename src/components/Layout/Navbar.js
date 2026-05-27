@@ -1,10 +1,11 @@
+import NotificationBell from "../common/NotificationBell.jsx";
 import { useTheme } from "../../context/ThemeContext";
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
-import ConfirmationModal from "../common/ConfirmationModal";
-import { toast } from "react-toastify";
+
 import { UserCog } from "lucide-react";
 import {
   Home,
@@ -32,7 +33,7 @@ import {
   Search,
   Palette,
 } from "lucide-react";
-import CommandPalette from "../common/CommandPalette";
+
 
 // --- Helpers to reduce complexity ---
 const getUserDisplayNames = (user) => {
@@ -68,9 +69,7 @@ const setBodyScrollStyles = (top) => {
   });
 };
 
-const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
-  const { setIsCustomizerOpen } = useTheme();
-
+const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile, setIsCustomizerOpen }) => {
   if (isMobile) {
     return (
       <div className="flex flex-col gap-2.5 w-full">
@@ -88,11 +87,11 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
         </motion.button>
         <motion.button
           whileTap={{ scale: 0.95 }}
-          onClick={() => setIsCustomizerOpen(true)}
+          onClick={() => setIsCustomizerOpen && setIsCustomizerOpen(true)}
           className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-pink-500 text-white font-semibold border-none shadow-md hover:shadow-lg transition-all cursor-pointer"
         >
           <Palette className="w-5 h-5" />
-          <span>Theme Skins Panel</span>
+          <span>THEME Customizer</span>
         </motion.button>
       </div>
     );
@@ -104,7 +103,7 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
         whileTap={{ scale: 0.95 }}
         onClick={toggleTheme}
         title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-        className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group cursor-pointer"
+        aria-label={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
       >
         <motion.span
           key={isDarkMode ? "sun" : "moon"}
@@ -121,7 +120,7 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
       <motion.button
         whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.92 }}
-        onClick={() => setIsCustomizerOpen(true)}
+        onClick={() => setIsCustomizerOpen && setIsCustomizerOpen(true)}
         title="Open Theme Customizer"
         className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 focus:outline-none bg-gradient-to-r from-indigo-500/10 to-pink-500/10 hover:from-indigo-500/20 hover:to-pink-500/20 border border-indigo-200/50 dark:border-indigo-800/40 hover:shadow-[0_0_12px_rgba(236,72,153,0.3)] text-indigo-550 dark:text-indigo-400 cursor-pointer"
       >
@@ -144,7 +143,7 @@ const CursorToggleButton = ({ cursorEnabled, toggleCursor, isMobile }) => {
         ) : (
           <MousePointer className="w-5 h-5 text-zinc-400" />
         )}
-        <span>{cursorEnabled ? "Cursor: FLUID" : "Cursor: STATIC"}</span>
+        <span>{cursorEnabled ? "Fluid Cursor" : "Static Cursor"}</span>
       </motion.button>
     );
   }
@@ -249,31 +248,25 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
   </div>
 );
 
-const DesktopNavLink = ({ item, isActive }) => (
+const DesktopNavLink = ({ item, isActive, onClick }) => (
   <Link
     to={item.href}
     className={`relative group text-[12px] font-semibold transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-full ${
       isActive
-        ? "text-indigo-600 dark:text-indigo-400 font-semibold"
-        : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
+        ? "text-indigo-700 dark:text-indigo-300"
+        : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
     }`}
+    style={
+      isActive
+        ? {
+            backgroundColor: 'rgba(99, 102, 241, 0.12)',
+            border: '1.5px solid rgba(99, 102, 241, 0.45)',
+            boxShadow: '0 0 0 3px rgba(99, 102, 241, 0.08)',
+          }
+        : { border: '1.5px solid transparent' }
+    }
   >
-    <span className="relative z-10">{item.name}</span>
-
-    {isActive && (
-      <>
-        <motion.span
-          layoutId="activeBox"
-          className="absolute inset-0 bg-indigo-100/60 dark:bg-indigo-500/20 border border-indigo-200/80 dark:border-indigo-500/50 rounded-lg -z-0"
-          transition={{ type: "spring", stiffness: 380, damping: 30 }}
-        />
-        <motion.span
-          layoutId="activeBoxGlow"
-          className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
-          transition={{ type: "spring", stiffness: 380, damping: 30 }}
-        />
-      </>
-    )}
+    {item.name}
   </Link>
 );
 
@@ -281,7 +274,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
   <div className="relative">
     <button
       onClick={onToggle}
-      className={`relative group flex items-center gap-1 text-[12px] font-medium transition-all duration-200 whitespace-nowrap px-2 py-1.5 rounded-lg ${
+      className={`relative group flex items-center gap-1 text-[12px] xl:text-[13px] font-medium transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-lg ${
         isActive || isOpen
           ? "text-indigo-600 dark:text-indigo-400 font-semibold"
           : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
@@ -294,7 +287,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
         />
       </span>
 
-      {isActive && (
+      {(isActive || isOpen) && (
         <>
           <motion.span
             layoutId="activeBox"
@@ -310,39 +303,52 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
       )}
     </button>
 
-    {isOpen && (
-      <motion.div
-        initial={{ opacity: 0, y: 15, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-        transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        className="absolute left-1/2 -translate-x-1/2 mt-4 w-60 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-3xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(99,102,241,0.1)] rounded-2xl z-50 border border-white/40 dark:border-zinc-700/40 p-2 overflow-hidden"
-      >
-        {item.subItems.map((sub) => (
-          <Link
-            key={sub.name}
-            to={sub.href}
-            onClick={() => setOpenDropdown(null)}
-            className={`group flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium rounded-lg transition-all duration-200 border ${
-              location.pathname.startsWith(sub.href)
-                ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
-                : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-transparent"
-            }`}
+      {/* Render dropdown via portal so it's never clipped by overflow-x-auto */}
+      <AnimatePresence>
+        {isOpen && createPortal(
+          <motion.div
+            key={`dd-${item.name}`}
+            initial={{ opacity: 0, y: 15, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            style={{
+              position: 'fixed',
+              top: `${dropPos.top}px`,
+              left: `${dropPos.left}px`,
+              transform: 'translateX(-50%)',
+              zIndex: 9999,
+            }}
+            className="w-60 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-3xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(99,102,241,0.1)] rounded-2xl border border-white/40 dark:border-zinc-700/40 p-2 overflow-hidden"
           >
-            {React.cloneElement(sub.icon, {
-              className: `w-5 h-5 transition-colors ${
-                location.pathname.startsWith(sub.href)
-                  ? "text-indigo-600 dark:text-indigo-400"
-                  : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
-              }`,
-            })}
-            {sub.name}
-          </Link>
-        ))}
-      </motion.div>
-    )}
-  </div>
-);
+            {item.subItems.map((sub) => (
+              <Link
+                key={sub.name}
+                to={sub.href}
+                onClick={() => setOpenDropdown(null)}
+                className={`group flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium rounded-lg transition-all duration-200 border ${
+                  location.pathname.startsWith(sub.href)
+                    ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
+                    : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-transparent"
+                }`}
+              >
+                {React.cloneElement(sub.icon, {
+                  className: `w-5 h-5 transition-colors ${
+                    location.pathname.startsWith(sub.href)
+                      ? "text-indigo-600 dark:text-indigo-400"
+                      : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
+                  }`,
+                })}
+                {sub.name}
+              </Link>
+            ))}
+          </motion.div>,
+          document.body
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 const MobileDrawerFooter = ({
   isAuthenticated,
   user,
@@ -373,10 +379,13 @@ const MobileDrawerFooter = ({
       <div className="flex gap-3 mt-4">
         <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={true} />
         <CursorToggleButton
-          cursorEnabled={cursorEnabled}
-          toggleCursor={toggleCursor}
-          isMobile={true}
-        />
+  cursorEnabled={cursorEnabled}
+  toggleCursor={toggleCursor}
+  isMobile={true}
+/>
+
+<NotificationBell />
+        
       </div>
     </div>
   </div>
@@ -549,11 +558,12 @@ const MobileUserSection = ({
 
 const NAV_ITEMS = [
   { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
+  { name: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
   { name: "Calendar", href: "/calendar", icon: <CalendarDays className="w-5 h-5" /> },
   { name: "Bookmarks", href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
   { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
   {
-    name: "Events",
+    name: "Event Tools",
     icon: <Calendar className="w-5 h-5" />,
     subItems: [
       { name: "Explore Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
@@ -568,6 +578,7 @@ const NAV_ITEMS = [
     name: "Community",
     icon: <Users className="w-5 h-5" />,
     subItems: [
+
       { name: "Leaderboard", href: "/leaderBoard", icon: <Trophy className="w-5 h-5" /> },
       { name: "Contributors", href: "/contributors", icon: <Users className="w-5 h-5" /> },
       { name: "Contributors Guide", href: "/contributorguide", icon: <Book className="w-5 h-5" /> },
@@ -578,6 +589,7 @@ const NAV_ITEMS = [
     name: "More",
     icon: <MoreHorizontal className="w-5 h-5" />,
     subItems: [
+      
       { name: "About", href: "/about", icon: <Info className="w-5 h-5" /> },
       { name: "FAQ", href: "/faq", icon: <HelpCircle className="w-5 h-5" /> },
       { name: "Contact", href: "/contact", icon: <MessageSquare className="w-5 h-5" /> },
@@ -588,14 +600,9 @@ const NAV_ITEMS = [
 const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile }) => (
   <>
     {NAV_ITEMS.map((item) => {
-        // Check if any top-level direct-href item already claims this path.
-        // If so, groups must not also flag isActive (prevents dual active boxes).
-        const topLevelDirectMatch = NAV_ITEMS.some(
-          n => n.href && n.href !== "/" && location.pathname.startsWith(n.href)
-        );
         const isActive = item.href
           ? (item.href === "/" ? location.pathname === "/" : location.pathname.startsWith(item.href))
-          : (!topLevelDirectMatch && item.subItems?.some(s => location.pathname.startsWith(s.href)));
+          : item.subItems?.some(s => location.pathname.startsWith(s.href));
 
         if (item.subItems) {
           return isMobile ? (
@@ -604,19 +611,19 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
             <DesktopNavGroup key={item.name} item={item} isActive={isActive} isOpen={openDropdown === item.name} onToggle={(e) => { e.stopPropagation(); onToggleGroup(item.name); }} setOpenDropdown={onToggleGroup} location={location} />
           );
         }
-      return isMobile ? (
-        <MobileNavLink key={item.name} item={item} isActive={isActive} onClick={onLinkClick} />
-      ) : (
-        <DesktopNavLink key={item.name} item={item} isActive={isActive} />
-      );
-    })}
-  </>
-);
+        return isMobile ? (
+          <MobileNavLink key={item.name} item={item} isActive={isActive} onClick={onLinkClick} />
+        ) : (
+          <DesktopNavLink key={item.name} item={item} isActive={isActive} onClick={onLinkClick} />
+        );
+      })}
+    </>
+  );
+};
 
 const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
-  const location = useLocation();
   return (
-    <div className="hidden xl:flex items-center justify-start flex-shrink px-2 gap-0.5">
+    <div className="hidden lg:flex items-center justify-center flex-1 min-w-0 pl-6">
       <NavList 
         location={location} 
         openDropdown={openDropdown} 
@@ -671,7 +678,6 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
 
           <div className="flex-grow p-3.5 sm:p-4 space-y-2 overflow-y-auto">
             <NavList
-              location={location}
               openDropdown={openDropdown}
               onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)}
               onLinkClick={closeAllMenus}
@@ -844,21 +850,23 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         data-aos="fade-down"
         data-aos-once="true"
         data-aos-duration="1000"
-        className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 transition-colors duration-300"
+        className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 transition-colors duration-300 overflow-visible"
       >
         <div className="neon-navbar-border"></div>
 
-        <div className="max-w-screen-2xl mx-auto flex items-center justify-between h-[68px] px-4 md:px-6 xl:px-10 w-full">
-          {/* Logo — hidden on desktop to free nav space, visible on mobile */}
-          <div className="flex-shrink-0 xl:hidden">
-            <Link to="/" className="flex items-center z-20">
-              <img
-                src="/Eventra.png"
-                alt="Eventra Logo"
-                className="h-9 w-auto object-contain"
-              />
-            </Link>
-          </div>
+        <div className="max-w-screen-2xl mx-auto flex items-center justify-between h-[68px] px-4 md:px-6 xl:px-10 gap-4 w-full overflow-hidden">
+          
+          {/* Logo */}
+          <Link
+            to="/"
+            className="flex items-center shrink-0 z-20 mr-2"
+          >
+            <img
+              src="/Eventra.png"
+              alt="Eventra Logo"
+              className="h-9 w-auto object-contain"
+            />
+          </Link>
 
           {/* Centered Desktop Nav Links */}
           <div className="flex-1 flex justify-start min-w-0">
@@ -968,6 +976,8 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         onClose={() => setShowCommandPalette(false)}
         isDarkMode={isDarkMode}
         toggleTheme={toggleTheme}
+        cursorEnabled={cursorEnabled}
+        toggleCursor={toggleCursor}
         isAuthenticated={isAuthenticated}
         handleLogoutClick={handleLogoutClick}
       />

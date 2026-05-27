@@ -18,11 +18,81 @@ const shortcutData = [
     workflow: "Navigation"
   },
   {
+    action: "Open Command Palette",
+    shortcut: "Ctrl + K / ⌘ + K",
+    keys: ["control", "k"],
+    category: "General",
+    workflow: "Quick Search"
+  },
+  {
     action: "Navigate to Home",
     shortcut: "g + h",
     keys: ["g", "h"],
     category: "Navigation",
     workflow: "Dashboard"
+  },
+  {
+    action: "Navigate to Events",
+    shortcut: "g + e",
+    keys: ["g", "e"],
+    category: "Navigation",
+    workflow: "Events"
+  },
+  {
+    action: "Navigate to Calendar",
+    shortcut: "g + c",
+    keys: ["g", "c"],
+    category: "Navigation",
+    workflow: "Events"
+  },
+  {
+    action: "Navigate to Bookmarks",
+    shortcut: "g + b",
+    keys: ["g", "b"],
+    category: "Navigation",
+    workflow: "User"
+  },
+  {
+    action: "Navigate to Reminders",
+    shortcut: "g + r",
+    keys: ["g", "r"],
+    category: "Navigation",
+    workflow: "User"
+  },
+  {
+    action: "Navigate to Hackathons",
+    shortcut: "g + k",
+    keys: ["g", "k"],
+    category: "Navigation",
+    workflow: "Events"
+  },
+  {
+    action: "Navigate to Projects",
+    shortcut: "g + p",
+    keys: ["g", "p"],
+    category: "Navigation",
+    workflow: "Developer"
+  },
+  {
+    action: "Navigate to Leaderboard",
+    shortcut: "g + a",
+    keys: ["g", "a"],
+    category: "Navigation",
+    workflow: "Community"
+  },
+  {
+    action: "Navigate to FAQ",
+    shortcut: "g + f",
+    keys: ["g", "f"],
+    category: "Navigation",
+    workflow: "Help & Guidance"
+  },
+  {
+    action: "Navigate to Dashboard",
+    shortcut: "g + d",
+    keys: ["g", "d"],
+    category: "Navigation",
+    workflow: "User"
   },
   {
     action: "Navigate to Login",
@@ -46,9 +116,18 @@ const virtualKeys = [
   { label: "Ctrl", id: "control" },
   { label: "Alt", id: "alt" },
   { label: "Cmd / Win", id: "meta" },
+  { label: "a", id: "a" },
+  { label: "b", id: "b" },
+  { label: "c", id: "c" },
+  { label: "d", id: "d" },
+  { label: "e", id: "e" },
+  { label: "f", id: "f" },
   { label: "g", id: "g" },
   { label: "h", id: "h" },
+  { label: "k", id: "k" },
   { label: "l", id: "l" },
+  { label: "p", id: "p" },
+  { label: "r", id: "r" },
   { label: "s", id: "s" },
   { label: "? / /", id: "/" },
   { label: "Spacebar", id: " " }
@@ -106,7 +185,9 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
         return;
       }
       
-      const key = e.key.toLowerCase();
+      let key = e.key.toLowerCase();
+      if (key === "?") key = "/";
+
       setPressedKeys((prev) => {
         const next = new Set(prev);
         next.add(key);
@@ -120,7 +201,9 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
     };
 
     const handleKeyUp = (e) => {
-      const key = e.key.toLowerCase();
+      let key = e.key.toLowerCase();
+      if (key === "?") key = "/";
+
       setPressedKeys((prev) => {
         const next = new Set(prev);
         next.delete(key);

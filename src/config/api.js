@@ -1,4 +1,5 @@
 import axios from "axios";
+import { ENV } from "./env";
 
 // ---------------------------------------------------------------------------
 // Base API URL
@@ -13,27 +14,26 @@ const normalizeApiBaseUrl = (value = "") => {
 
   try {
     const parsed = new URL(trimmed);
-    const hostname = parsed.hostname.toLowerCase();
-
-    if (
-      hostname === "localhost" ||
-      hostname === "127.0.0.1" ||
-      hostname === "0.0.0.0" ||
-      hostname === "::1"
-    ) {
-      return "";
-    }
-
     return `${parsed.origin}${parsed.pathname === "/" ? "" : parsed.pathname}`;
   } catch {
-    return /localhost|127\.0\.0\.1|0\.0\.0\.0|::1/i.test(trimmed) ? "" : trimmed;
+    return trimmed;
   }
 };
 
-const isDevelopment = process.env.NODE_ENV === "development";
+const isDev = process.env.NODE_ENV === "development";
 
 const resolveEnvApiBaseUrl = () => {
-  return normalizeApiBaseUrl(process.env.REACT_APP_API_URL || "http://localhost:8080");
+  const envUrl = ENV.API_URL;
+  if (envUrl) {
+    return normalizeApiBaseUrl(envUrl);
+  }
+  if (process.env.NODE_ENV === "production") {
+    if (isDev) {
+      console.warn("REACT_APP_API_URL environment variable is missing in production. Defaulting to relative API requests.");
+    }
+    return "";
+  }
+  return "http://localhost:8080";
 };
 
 export const API_BASE_URL = resolveEnvApiBaseUrl();
@@ -64,7 +64,6 @@ const REQUEST_TIMEOUT_MS = 15_000;
 const RETRYABLE_STATUS_CODES = [502, 503, 504];
 const MAX_RETRIES = 1;
 const RETRY_DELAY_MS = 1_000;
-const isDev = isDevelopment;
 
 // ---------------------------------------------------------------------------
 // Normalized API Error
@@ -103,21 +102,14 @@ export const setOnUnauthorizedHandler = (handler) => {
   onUnauthorized = handler;
 };
 
-const normalizeRequestConfig = (configOrToken = {}, maybeToken) => {
+const normalizeRequestConfig = (configOrToken = {}) => {
   const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
-  const token =
-    typeof configOrToken === "string"
-      ? configOrToken
-      : typeof maybeToken === "string"
-        ? maybeToken
-        : localStorage.getItem("token") || "";
-
-  if (token) {
-    config.headers = {
-      ...(config.headers || {}),
-      Authorization: `Bearer ${token}`,
-    };
+  
+  if ("skipAuth" in config) {
+    delete config.skipAuth;
   }
+  // With HttpOnly cookies, the browser automatically sends the session cookie.
+  // We no longer manually append the Authorization header here.
 
   return config;
 };
@@ -223,20 +215,22 @@ export const API_ENDPOINTS = {
   },
   EVENTS: {
     CREATE: buildApiUrl("/api/events/create"),
-    ALL: buildApiUrl("/api/events"),
     LIST: buildApiUrl("/api/events"),
     DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
   },
   PROJECTS: {
-    ALL: buildApiUrl("/api/projects"),
     LIST: buildApiUrl("/api/projects"),
     DETAIL: (id) => buildApiUrl(`/api/projects/${id}`),
     CATEGORIES: buildApiUrl("/api/projects/categories"),
     SUBMIT: buildApiUrl("/api/projects"),
   },
+  HACKATHONS: {
+    LIST: buildApiUrl("/api/hackathons"),
+    DETAIL: (id) => buildApiUrl(`/api/hackathons/${id}`),
+    HOST: buildApiUrl("/api/hackathons"),
+  },
   NOTIFICATIONS: {
-    ALL: buildApiUrl("/api/notifications"),
     BASE: buildApiUrl("/api/notifications"),
     READ: (id) => (id ? buildApiUrl(`/api/notifications/${id}/read`) : ""),
     READ_ALL: buildApiUrl("/api/notifications/read-all"),
@@ -248,16 +242,24 @@ export const API_ENDPOINTS = {
 };
 
 export const apiUtils = {
-  get: (url, configOrToken = {}, maybeToken) =>
-    API.get(url, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  post: (url, data = {}, configOrToken = {}, maybeToken) =>
-    API.post(url, data, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  put: (url, data = {}, configOrToken = {}, maybeToken) =>
-    API.put(url, data, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  patch: (url, data = {}, configOrToken = {}, maybeToken) =>
-    API.patch(url, data, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  delete: (url, configOrToken = {}, maybeToken) =>
-    API.delete(url, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
+  get: (url, config = {}) =>
+    API.get(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  post: (url, data = {}, config = {}) =>
+    API.post(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  put: (url, data = {}, config = {}) =>
+    API.put(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  patch: (url, data = {}, config = {}) =>
+    API.patch(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  delete: (url, config = {}) =>
+    API.delete(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
 };
 
 export default API;
+
+export const API_ENDPOINTS_UPDATED = {
+  ...API_ENDPOINTS,
+  NOTIFICATIONS: {
+    ...API_ENDPOINTS.NOTIFICATIONS,
+    READ_ALL: buildApiUrl("/api/notifications/read-all"),
+  }
+};

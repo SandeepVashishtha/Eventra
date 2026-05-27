@@ -41,12 +41,21 @@ export default function ThemeCustomizerDrawer() {
     }
   };
 
+  // Prevent scroll event propagation to backdrop
+  const handleScrollPropagation = (e) => {
+    e.stopPropagation();
+  };
+
   return (
     <AnimatePresence>
       {isCustomizerOpen && (
         <div
           onClick={handleBackdropClick}
-          className="fixed inset-0 z-50 flex justify-end bg-black/40 dark:bg-black/60 backdrop-blur-xs transition-opacity duration-300"
+          onWheel={handleScrollPropagation}
+          onTouchMove={handleScrollPropagation}
+          className="fixed inset-0 z-50 flex justify-end bg-black/40 dark:bg-black/60 backdrop-blur-xs transition-opacity duration-300 overscroll-contain"
+          style={{ overscrollBehavior: "contain" }}
+          data-lenis-prevent
         >
           {/* Drawer Container */}
           <motion.div
@@ -55,7 +64,11 @@ export default function ThemeCustomizerDrawer() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: "100%", opacity: 0.9 }}
             transition={{ type: "spring", stiffness: 220, damping: 24 }}
-            className="w-full sm:w-[420px] h-full bg-white/70 dark:bg-slate-950/75 backdrop-blur-xl border-l border-slate-200/50 dark:border-slate-800/40 p-6 flex flex-col justify-between shadow-2xl relative"
+            onWheel={handleScrollPropagation}
+            onTouchMove={handleScrollPropagation}
+            className="w-full sm:w-[420px] h-full bg-white/70 dark:bg-slate-950/75 backdrop-blur-xl border-l border-slate-200/50 dark:border-slate-800/40 p-6 flex flex-col shadow-2xl relative overflow-hidden overscroll-contain"
+            style={{ overscrollBehavior: "contain" }}
+            data-lenis-prevent
           >
             {/* Header */}
             <div>
@@ -80,7 +93,13 @@ export default function ThemeCustomizerDrawer() {
               </div>
 
               {/* Theme Settings Sections */}
-              <div className="py-6 space-y-8 overflow-y-auto max-h-[calc(100vh-210px)] pr-1">
+              <div
+                className="flex-1 min-h-0 py-6 space-y-8 overflow-y-auto pr-1 overscroll-contain"
+                style={{ overscrollBehavior: "contain" }}
+                onWheel={handleScrollPropagation}
+                onTouchMove={handleScrollPropagation}
+                data-lenis-prevent
+              >
                 {/* Mode Selector (Light vs Dark) */}
                 <div className="space-y-3">
                   <span className="text-xs font-black uppercase tracking-widest text-indigo-500">
@@ -179,7 +198,7 @@ export default function ThemeCustomizerDrawer() {
             </div>
 
             {/* Footer / Premium Banner */}
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800/40 flex flex-col gap-3">
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-800/40 flex flex-col gap-3 shrink-0">
               <div className="p-3 bg-gradient-to-br from-indigo-500/10 to-pink-500/5 rounded-2xl border border-indigo-100/20 dark:border-indigo-900/20 flex items-center gap-3">
                 <div className="p-2 bg-indigo-500/20 rounded-xl text-indigo-500 dark:text-indigo-400">
                   <FiPocket className="w-4 h-4" />
