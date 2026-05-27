@@ -44,10 +44,7 @@ const getCachedContributors = () => {
 };
 const cacheContributors = (data) => {
   try {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ data, timestamp: Date.now() })
-    );
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
   } catch {}
 };
 
@@ -200,15 +197,10 @@ const Contributors = () => {
   // UPDATED: Loading text color
   if (loading)
     return (
-      <p className="text-center py-20 text-gray-600 dark:text-gray-400">
-        Loading contributors...
-      </p>
+      <p className="text-center py-20 text-gray-600 dark:text-gray-400">Loading contributors...</p>
     );
 
-  const visibleContributors = contributors.slice(
-    currentIndex,
-    currentIndex + itemsPerView
-  );
+  const visibleContributors = contributors.slice(currentIndex, currentIndex + itemsPerView);
   const totalSlides = Math.ceil(contributors.length / itemsPerView);
   const currentSlide = Math.floor(currentIndex / itemsPerView);
 
@@ -234,9 +226,7 @@ const Contributors = () => {
           data-aos-once="true"
         >
           Our Amazing {/* UPDATED: Gradient text for dark mode */}
-          <span className="text-black animate-pulse">
-            Contributors
-          </span>
+          <span className="text-black animate-pulse">Contributors</span>
         </motion.h2>
 
         <div className="relative p-2 mb-2">
@@ -273,9 +263,7 @@ const Contributors = () => {
                   key={c.id}
                   className="relative bg-white/95 backdrop-blur-xl p-4 pt-10 rounded-xl shadow-md border border-gray-200 flex flex-col items-center text-center mb-6 transition-all duration-300 ease-out flex-shrink-0"
                   style={{
-                    flex: `0 0 calc((100% - ${
-                      itemsPerView - 1
-                    } * 1.5rem) / ${itemsPerView})`,
+                    flex: `0 0 calc((100% - ${itemsPerView - 1} * 1.5rem) / ${itemsPerView})`,
                   }}
                   initial={{ opacity: 0, y: 40 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -291,11 +279,15 @@ const Contributors = () => {
                   {/* Avatar */}
                   <div className="absolute top-3 mt-3 left-1/2 -translate-x-1/2">
                     <div className="relative">
-                      <img loading="lazy" decoding="async" width="65" height="65"
-  src={c.avatar_url}
-  alt={c.login}
-  className="w-[65px] h-[65px] rounded-full border-4 border-black shadow-md relative z-10"
-/>
+                      <img
+                        loading="lazy"
+                        decoding="async"
+                        width="65"
+                        height="65"
+                        src={c.avatar_url}
+                        alt={c.login}
+                        className="w-[65px] h-[65px] rounded-full border-4 border-black shadow-md relative z-10"
+                      />
                       <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 blur-sm -z-10"></div>
                     </div>
                   </div>
@@ -306,8 +298,7 @@ const Contributors = () => {
                       {c.name ? c.name : c.login || "Unknown Contributor"}
                     </h3>
                     <p className="text-black text-sm font-medium mb-3 flex items-center justify-center gap-1">
-                      <FaMedal className="text-yellow-500 animate-bounce" />{" "}
-                      {c.role}
+                      <FaMedal className="text-yellow-500 animate-bounce" /> {c.role}
                     </p>
 
                     {/* UPDATED: Contribution Badges */}
@@ -334,23 +325,17 @@ const Contributors = () => {
                     <div className="flex flex-col items-center bg-white/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
                       <FaCodeBranch className="text-black mb-1" />
                       <span className="font-semibold">{c.public_repos}</span>
-                      <span className="text-xs text-black">
-                        Repos
-                      </span>
+                      <span className="text-xs text-black">Repos</span>
                     </div>
                     <div className="flex flex-col items-center bg-white/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
                       <FaUserFriends className="text-black mb-1" />
                       <span className="font-semibold">{c.followers}</span>
-                      <span className="text-xs text-black">
-                        Followers
-                      </span>
+                      <span className="text-xs text-black">Followers</span>
                     </div>
                     <div className="flex flex-col items-center bg-white/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
                       <FaCodeBranch className="text-black mb-1" />
                       <span className="font-semibold">{c.contributions}</span>
-                      <span className="text-xs text-black">
-                        Contribs
-                      </span>
+                      <span className="text-xs text-black">Contribs</span>
                     </div>
                   </div>
 
@@ -380,8 +365,8 @@ const Contributors = () => {
                     <a
                       href={c.html_url}
                       target="_blank"
-                      rel="noopener noreferrer"
                       className="group inline-flex items-center justify-center gap-2 bg-black text-white px-4 py-2 rounded-full text-sm font-semibold shadow hover:bg-zinc-800 hover:scale-105 transition-all duration-300 ease-out transform relative overflow-hidden"
+                      rel="noopener noreferrer"
                     >
                       {/* GitHub Icon with animation */}
                       <FaGithub className="text-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:text-gray-200" />
@@ -404,9 +389,7 @@ const Contributors = () => {
                 onClick={() => setCurrentIndex(index * itemsPerView)}
                 // UPDATED: Dot colors
                 className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  index === currentSlide
-                    ? "bg-black scale-125"
-                    : "bg-gray-300 hover:bg-gray-400"
+                  index === currentSlide ? "bg-black scale-125" : "bg-gray-300 hover:bg-gray-400"
                 }`}
               />
             ))}

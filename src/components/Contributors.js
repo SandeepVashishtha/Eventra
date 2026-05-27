@@ -23,8 +23,8 @@ const fetchJsonWithTimeout = async (url) => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
-  const proxyUrl = url.startsWith("https://api.github.com") 
-    ? `/api/github-proxy?path=${encodeURIComponent(url.replace("https://api.github.com", ""))}` 
+  const proxyUrl = url.startsWith("https://api.github.com")
+    ? `/api/github-proxy?path=${encodeURIComponent(url.replace("https://api.github.com", ""))}`
     : url;
 
   try {
@@ -67,10 +67,7 @@ const getCachedContributors = () => {
 };
 const cacheContributors = (data) => {
   try {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ data, timestamp: Date.now() }),
-    );
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
   } catch {}
 };
 
@@ -95,9 +92,7 @@ const Contributors = () => {
     }
 
     try {
-      const profile = await fetchJsonWithTimeout(
-        `https://api.github.com/users/${username}`,
-      );
+      const profile = await fetchJsonWithTimeout(`https://api.github.com/users/${username}`);
       return {
         followers: profile.followers || 0,
         public_repos: profile.public_repos || 0,
@@ -135,13 +130,11 @@ const Contributors = () => {
       let hasMore = true;
       while (hasMore && page <= MAX_CONTRIBUTOR_PAGES) {
         const data = await fetchJsonWithTimeout(
-          `https://api.github.com/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`,
+          `https://api.github.com/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`
         );
 
         if (!Array.isArray(data)) {
-          throw new Error(
-            "GitHub returned an unexpected contributors response",
-          );
+          throw new Error("GitHub returned an unexpected contributors response");
         }
 
         const validContributors = data.filter((c) => c && c.login);
@@ -167,7 +160,7 @@ const Contributors = () => {
             ...profile,
             role: getRoleByGitHubActivity({ ...c, ...profile }),
           };
-        }),
+        })
       );
 
       enhanced.sort((a, b) => b.contributions - a.contributions);
@@ -177,7 +170,7 @@ const Contributors = () => {
       setError(
         err?.name === "AbortError"
           ? "GitHub took too long to respond. Please try again."
-          : "Unable to load contributors from GitHub right now. Please try again.",
+          : "Unable to load contributors from GitHub right now. Please try again."
       );
       setContributors([]);
     } finally {
@@ -196,7 +189,7 @@ const Contributors = () => {
       (c.login || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       (c.role || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       (c.location || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (c.company || "").toLowerCase().includes(searchTerm.toLowerCase()),
+      (c.company || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // UPDATED: Loading skeleton grid
@@ -257,9 +250,7 @@ const Contributors = () => {
           transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" }}
         >
           🌟 Our Amazing {/* UPDATED: Gradient text for dark mode */}
-          <span className="text-black dark:text-white animate-pulse">
-            Contributors
-          </span>
+          <span className="text-black dark:text-white animate-pulse">Contributors</span>
         </motion.h2>
 
         {filteredContributors.length === 0 ? (
@@ -282,7 +273,7 @@ const Contributors = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12">
             {filteredContributors.map((c, i) => (
-<motion.div
+              <motion.div
                 key={c.id}
                 className="relative bg-white/95 dark:bg-gray-800/90 backdrop-blur-xl p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 flex flex-col items-center text-center transition-all duration-300 ease-out"
                 initial={{ opacity: 0, y: 40 }}
@@ -313,12 +304,9 @@ const Contributors = () => {
                 {/* Name + Role + Badge */}
                 <div className="mt-16">
                   {/* UPDATED: Name and role text */}
-                  <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
-                    {c.name}
-                  </h3>
+                  <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">{c.name}</h3>
                   <p className="text-black dark:text-white text-sm font-medium mb-3 flex items-center justify-center gap-1">
-                    <FaMedal className="text-amber-300 animate-bounce" />{" "}
-                    {c.role}
+                    <FaMedal className="text-amber-300 animate-bounce" /> {c.role}
                   </p>
                   {/* UPDATED: Contribution Badges */}
                   {i === 0 && (
@@ -343,25 +331,17 @@ const Contributors = () => {
                   <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
                     <FaCodeBranch className="text-black dark:text-white mb-1" />
                     <span className="font-semibold">{c.public_repos}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      Repos
-                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Repos</span>
                   </div>
                   <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
                     <FaUserFriends className="text-black dark:text-white mb-1" />
                     <span className="font-semibold">{c.followers}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      Followers
-                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Followers</span>
                   </div>
                   <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                    <span className="text-black dark:text-white font-bold">
-                      🔥
-                    </span>
+                    <span className="text-black dark:text-white font-bold">🔥</span>
                     <span className="font-semibold">{c.contributions}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      Contribs
-                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Contribs</span>
                   </div>
                 </div>
 
@@ -370,9 +350,7 @@ const Contributors = () => {
                   <div
                     className="h-2 bg-black"
                     style={{
-                      width: `${
-                        (c.contributions / contributors[0].contributions) * 100
-                      }%`,
+                      width: `${(c.contributions / contributors[0].contributions) * 100}%`,
                     }}
                   ></div>
                 </div>
@@ -396,12 +374,8 @@ const Contributors = () => {
                   <a
                     href={c.html_url}
                     target="_blank"
+                    className="group inline-flex items-center justify-center gap-2 bg-black text-white px-5 py-2.5 rounded-full text-sm font-semibold shadow hover:bg-zinc-800 transition-all duration-300 ease-out transform hover:scale-105 relative overflow-hidden"
                     rel="noopener noreferrer"
-                    className="group inline-flex items-center justify-center gap-2
-                    bg-black text-white
-                    px-5 py-2.5 rounded-full text-sm font-semibold shadow
-                    hover:bg-zinc-800
-                    transition-all duration-300 ease-out transform hover:scale-105 relative overflow-hidden"
                   >
                     {/* GitHub Icon with animation */}
                     <FaGithub className="text-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:text-blue-200" />

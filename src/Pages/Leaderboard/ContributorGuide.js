@@ -667,7 +667,7 @@ const ContributorGuide = () => {
         </p>
         <motion.a
           href="https://github.com/SandeepVashishtha/Eventra"
-          target="_blank"
+          target="_blank" rel="noopener noreferrer"
           rel="noreferrer"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
