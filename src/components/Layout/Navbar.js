@@ -98,7 +98,7 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
     );
   }
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-2">
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
@@ -252,7 +252,7 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
 const DesktopNavLink = ({ item, isActive }) => (
   <Link
     to={item.href}
-    className={`relative group text-[13px] font-semibold transition-all duration-200 whitespace-nowrap px-3.5 py-2 rounded-full ${
+    className={`relative group text-[12px] font-semibold transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-full ${
       isActive
         ? "text-indigo-600 dark:text-indigo-400 font-semibold"
         : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
@@ -281,7 +281,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
   <div className="relative">
     <button
       onClick={onToggle}
-      className={`relative group flex items-center gap-1 text-[12px] xl:text-[13px] font-medium transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-lg ${
+      className={`relative group flex items-center gap-1 text-[12px] font-medium transition-all duration-200 whitespace-nowrap px-2 py-1.5 rounded-lg ${
         isActive || isOpen
           ? "text-indigo-600 dark:text-indigo-400 font-semibold"
           : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
@@ -294,7 +294,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
         />
       </span>
 
-      {(isActive || isOpen) && (
+      {isActive && (
         <>
           <motion.span
             layoutId="activeBox"
@@ -549,7 +549,6 @@ const MobileUserSection = ({
 
 const NAV_ITEMS = [
   { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
-  { name: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
   { name: "Calendar", href: "/calendar", icon: <CalendarDays className="w-5 h-5" /> },
   { name: "Bookmarks", href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
   { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
@@ -589,9 +588,14 @@ const NAV_ITEMS = [
 const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile }) => (
   <>
     {NAV_ITEMS.map((item) => {
+        // Check if any top-level direct-href item already claims this path.
+        // If so, groups must not also flag isActive (prevents dual active boxes).
+        const topLevelDirectMatch = NAV_ITEMS.some(
+          n => n.href && n.href !== "/" && location.pathname.startsWith(n.href)
+        );
         const isActive = item.href
           ? (item.href === "/" ? location.pathname === "/" : location.pathname.startsWith(item.href))
-          : item.subItems?.some(s => location.pathname.startsWith(s.href));
+          : (!topLevelDirectMatch && item.subItems?.some(s => location.pathname.startsWith(s.href)));
 
         if (item.subItems) {
           return isMobile ? (
@@ -612,7 +616,7 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
 const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   const location = useLocation();
   return (
-    <div className="hidden lg:flex items-center justify-center flex-1 min-w-0 pl-6">
+    <div className="hidden xl:flex items-center justify-start flex-shrink px-2 gap-0.5">
       <NavList 
         location={location} 
         openDropdown={openDropdown} 
@@ -844,31 +848,31 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       >
         <div className="neon-navbar-border"></div>
 
-        <div className="max-w-screen-2xl mx-auto flex items-center justify-between h-[68px] px-4 md:px-6 xl:px-10 gap-4 w-full overflow-hidden">
-          
-          {/* Logo */}
-          <Link
-            to="/"
-            className="flex items-center shrink-0 z-20 mr-2"
-          >
-            <img
-              src="/Eventra.png"
-              alt="Eventra Logo"
-              className="h-9 w-auto object-contain"
-            />
-          </Link>
+        <div className="max-w-screen-2xl mx-auto flex items-center justify-between h-[68px] px-4 md:px-6 xl:px-10 w-full">
+          {/* Logo — hidden on desktop to free nav space, visible on mobile */}
+          <div className="flex-shrink-0 xl:hidden">
+            <Link to="/" className="flex items-center z-20">
+              <img
+                src="/Eventra.png"
+                alt="Eventra Logo"
+                className="h-9 w-auto object-contain"
+              />
+            </Link>
+          </div>
 
-          {/* Desktop Nav Links */}
-          <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
+          {/* Centered Desktop Nav Links */}
+          <div className="flex-1 flex justify-start min-w-0">
+            <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
+          </div>
 
           {/* Right Controls */}
-          <div className="hidden lg:flex items-center gap-2 shrink-0 pl-2">
+          <div className="hidden xl:flex items-center gap-4 shrink-0">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowCommandPalette(true)}
               title="Open Command Palette (⌘K)"
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group mr-1"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group"
             >
               <Search className="w-4 h-4 text-zinc-500 dark:text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400" />
               <div className="flex items-center gap-0.5 text-[9px] font-black tracking-widest text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 uppercase">
@@ -889,8 +893,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               isMobile={false}
             />
 
-            <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700"></div>
-
             {isAuthenticated() ? (
               <UserProfileDropdown
                 user={user}
@@ -907,7 +909,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="lg:hidden ml-auto">
+          <div className="xl:hidden flex-shrink-0">
             <button
               ref={toggleBtnRef}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
