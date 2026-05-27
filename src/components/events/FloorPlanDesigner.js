@@ -114,7 +114,6 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
     // Set width and height explicitly to matching the viewBox dimensions for high resolution
     clonedSvg.setAttribute("width", "1000");
     clonedSvg.setAttribute("height", "800");
-
     // Restore selected shape's default stroke so it looks clean in the exported snapshot
     const selectedShape = clonedSvg.querySelector(".fp-svg-element-selected");
     if (selectedShape) {
@@ -556,7 +555,6 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
 
           <div className="fp-sidebar-section">
             <div className="fp-section-title">Designer Settings</div>
-
             <div className="fp-toggle-container mb-4">
               <span className="text-xs font-semibold text-gray-300 dark:text-gray-400">Snap to 20px Grid</span>
               <label className="fp-switch">

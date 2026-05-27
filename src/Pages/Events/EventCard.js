@@ -8,7 +8,6 @@ import {
   BookmarkCheck,
   Calendar,
   MapPin,
-  
   Tag,
   Star,
   Heart,
