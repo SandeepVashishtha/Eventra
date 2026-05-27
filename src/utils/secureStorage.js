@@ -215,41 +215,26 @@ const cryptoSupported = isCryptoAvailable();
  * @param {string} token - The Eventra-issued JWT returned by the backend
  */
 export const setToken = (token) => {
-  try {
-    sessionStorage.setItem('token', token);
-  } catch (error) {
-    console.error('[secureStorage] Error setting token:', error);
-  }
+  // Migrated to HttpOnly cookies. Backend should set the cookie in the response.
+  console.debug('[secureStorage] setToken is deprecated. Token is managed via HttpOnly cookie.');
 };
 
 /**
- * Retrieves the stored JWT from sessionStorage.
+ * Retrieves the stored JWT.
  *
- * TODO: Remove once the backend manages the token via an HttpOnly cookie.
- *
- * @returns {string|null} The stored JWT, or null if not present
+ * @returns {string|null} null since tokens are now in HttpOnly cookies
  */
 export const getToken = () => {
-  try {
-    return sessionStorage.getItem('token');
-  } catch (error) {
-    console.error('[secureStorage] Error getting token:', error);
-    return null;
-  }
+  console.debug('[secureStorage] getToken is deprecated. Token is managed via HttpOnly cookie.');
+  return null;
 };
 
 /**
- * Removes the stored JWT from sessionStorage on logout.
- *
- * TODO: Replace with a call to POST /api/auth/logout once the backend
- * manages the session via HttpOnly cookies.
+ * Removes the stored JWT.
  */
 export const removeToken = () => {
-  try {
-    sessionStorage.removeItem('token');
-  } catch (error) {
-    console.error('[secureStorage] Error removing token:', error);
-  }
+  // Migrated to HttpOnly cookies. Backend should clear the cookie via a logout endpoint.
+  console.debug('[secureStorage] removeToken is deprecated. Token is cleared via backend HttpOnly cookie deletion.');
 };
 
 // ---------------------------------------------------------------------------

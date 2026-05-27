@@ -6,6 +6,8 @@ import {
   FiEye,
   FiPlusCircle,
   FiSave,
+  FiArrowUp,
+  FiArrowDown,
 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
@@ -146,6 +148,14 @@ const SurveyEngine = () => {
   const deleteQuestion = (id) => {
     setQuestions(questions.filter((q) => q.id !== id));
     toast.warn("Question removed");
+  };
+
+  const moveQuestion = (index, direction) => {
+    const nextIndex = direction === "up" ? index - 1 : index + 1;
+    if (nextIndex < 0 || nextIndex >= questions.length) return;
+    const updated = [...questions];
+    [updated[index], updated[nextIndex]] = [updated[nextIndex], updated[index]];
+    setQuestions(updated);
   };
 
   // Multiple choice option helpers
@@ -345,22 +355,48 @@ const SurveyEngine = () => {
                           />
                         </div>
 
-                        <button
-                           id="ymjlwm"
-onClick={() =>
-  setConfirmModal({
-    open: true,
-    type: "question",
-    questionId: question.id
-  })
-}
-
-
-                          className="p-2.5 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all"
-                          title="Remove question"
-                        >
-                          <FiTrash2 className="w-5 h-5" />
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() => moveQuestion(index, "up")}
+                            disabled={index === 0}
+                            className={`p-2 rounded-xl border transition-all ${
+                              index === 0
+                                ? "text-slate-300 border-slate-100 dark:border-slate-800/40 dark:text-slate-700 cursor-not-allowed opacity-40"
+                                : "text-slate-500 border-slate-200 dark:border-slate-800 dark:text-slate-400 hover:text-indigo-500 hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 cursor-pointer"
+                            }`}
+                            title="Move question up"
+                          >
+                            <FiArrowUp className="w-4 h-4" />
+                          </button>
+                          
+                          <button
+                            onClick={() => moveQuestion(index, "down")}
+                            disabled={index === questions.length - 1}
+                            className={`p-2 rounded-xl border transition-all ${
+                              index === questions.length - 1
+                                ? "text-slate-300 border-slate-100 dark:border-slate-800/40 dark:text-slate-700 cursor-not-allowed opacity-40"
+                                : "text-slate-500 border-slate-200 dark:border-slate-800 dark:text-slate-400 hover:text-indigo-500 hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 cursor-pointer"
+                            }`}
+                            title="Move question down"
+                          >
+                            <FiArrowDown className="w-4 h-4" />
+                          </button>
+                          
+                          <button
+                            id="ymjlwm"
+                            onClick={() =>
+                              setConfirmModal({
+                                open: true,
+                                type: "question",
+                                questionId: question.id
+                              })
+                            }
+                            className="p-2.5 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all cursor-pointer ml-1"
+                            title="Remove question"
+                          >
+                            <FiTrash2 className="w-5 h-5" />
+                          </button>
+                        </div>
                       </div>
 
                       {/* CHOICE SELECTIONS CREATOR */}
