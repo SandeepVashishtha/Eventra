@@ -1,3 +1,4 @@
+
 export function getRelativeTime(dateInput) {
   if (!dateInput) return null;
   const now = new Date();

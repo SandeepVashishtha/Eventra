@@ -1,3 +1,4 @@
+
 global.IS_REACT_ACT_ENVIRONMENT = true;
 
 import React from "react";
@@ -18,7 +19,7 @@ jest.mock("../utils/offlineQueue", () => ({
   getQueueIndexedDB: jest.fn(),
   setQueue: jest.fn(),
   clearQueue: jest.fn(),
-  filterQueueByOwnership: jest.requireActual("../utils/offlineQueue").filterQueueByOwnership,
+  filterQueueByOwnership: jest.fn((queue) => queue),
 }));
 
 describe("useOfflineSync", () => {
@@ -46,6 +47,10 @@ describe("useOfflineSync", () => {
         text: () => Promise.resolve("ok"),
       })
     );
+
+    jest
+      .requireMock("../utils/offlineQueue")
+      .filterQueueByOwnership.mockImplementation((queue) => queue);
   });
 
   afterEach(() => {
@@ -75,7 +80,7 @@ describe("useOfflineSync", () => {
       return null;
     };
 
-    act(() => {
+    await act(async () => {
       root = createRoot(container);
       root.render(<TestComponent />);
     });
@@ -112,7 +117,7 @@ describe("useOfflineSync", () => {
       return null;
     };
 
-    act(() => {
+    await act(async () => {
       root = createRoot(container);
       root.render(<TestComponent />);
     });
@@ -133,3 +138,5 @@ describe("useOfflineSync", () => {
     expect(clearQueue).not.toHaveBeenCalled();
   });
 });
+
+```

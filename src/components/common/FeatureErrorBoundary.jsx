@@ -9,9 +9,9 @@ import { logger } from "../../utils/logger";
  * Shows a compact inline error card with retry support.
  *
  * Props:
- *  - featureName {string}   Optional name of the feature for better error messages
- *  - onError     {function} Optional callback invoked with (error, errorInfo)
- *  - fallback    {ReactNode} Optional custom fallback node
+ * - featureName {string}   Optional name of the feature for better error messages
+ * - onError     {function} Optional callback invoked with (error, errorInfo)
+ * - fallback    {ReactNode} Optional custom fallback node
  */
 class FeatureErrorBoundary extends React.Component {
   constructor(props) {
@@ -63,15 +63,17 @@ class FeatureErrorBoundary extends React.Component {
   };
 
   render() {
+    // 1. If everything is fine, render the children normally
     if (!this.state.hasError) {
       return this.props.children;
     }
 
-    // Custom fallback
+    // 2. If there is an error but a custom fallback is provided, use that
     if (this.props.fallback) {
       return this.props.fallback;
     }
 
+    // 3. Otherwise, render the default advanced error UI
     const { featureName = "Feature" } = this.props;
     const { retryCount } = this.state;
     const tooManyRetries = retryCount >= 3;

@@ -1,4 +1,5 @@
-const isDevelopment = process.env.NODE_ENV !== "production";
+const isDevelopment =
+  typeof process !== "undefined" && process.env && process.env.NODE_ENV !== "production";
 
 const formatMessage = (level, message) => {
   return `[${level.toUpperCase()}] ${message}`;
