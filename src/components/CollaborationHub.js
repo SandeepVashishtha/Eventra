@@ -4,8 +4,8 @@ import { motion } from 'framer-motion';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { toast } from 'react-toastify';
 import './components.css';
-import CharacterCounter
-from "../../components/common/CharacterCounter";
+import CharacterCounter from "../../components/common/CharacterCounter";
+import { sanitizeInputText } from "../utils/inputSanitization";
 
 const CollaborationHub = () => {
   const prefersReducedMotion = useReducedMotion();
@@ -86,18 +86,22 @@ const CollaborationHub = () => {
       return;
     }
 
+    const sanitizedTitle = sanitizeInputText(newRequest.title);
+    const sanitizedDescription = sanitizeInputText(newRequest.description);
+    const sanitizedBudget = newRequest.budget ? sanitizeInputText(newRequest.budget) : "Not Specified";
+
     const skillsArray = newRequest.skills
-      ? newRequest.skills.split(',').map(s => s.trim()).filter(s => s.length > 0)
+      ? newRequest.skills.split(',').map(s => sanitizeInputText(s)).filter(s => s.length > 0)
       : [];
 
     const newOpp = {
       id: Date.now(),
-      title: newRequest.title.trim(),
+      title: sanitizedTitle,
       organizer: "You (Organizer)",
       type: newRequest.type,
-      description: newRequest.description.trim(),
+      description: sanitizedDescription,
       skills: skillsArray,
-      budget: newRequest.budget || "Not Specified",
+      budget: sanitizedBudget,
       deadline: newRequest.deadline || new Date().toISOString().split('T')[0],
       applicants: 0,
       status: "open"
@@ -117,6 +121,21 @@ const CollaborationHub = () => {
       skills: ''
     });
     setActiveSection('opportunities');
+  };
+
+  const handleApplySubmit = (e) => {
+    e.preventDefault();
+    if (!applicationText.trim()) {
+      toast.error('Please enter a proposal message.');
+      return;
+    }
+    
+    // Sanitize user proposal pitch text
+    const sanitizedPitch = sanitizeInputText(applicationText);
+    toast.success('Your partnership proposal has been submitted successfully!');
+    setApplicationText('');
+    setProposalFile(null);
+    setSelectedOpportunity(null);
   };
 
   const myCollaborations = [
