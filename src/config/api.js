@@ -232,6 +232,7 @@ export const API_ENDPOINTS = {
     LIST: buildApiUrl("/api/events"),
     DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
+    REGISTRANTS: (id) => buildApiUrl(`/api/events/${id}/registrants`),
   },
   PROJECTS: {
     LIST: buildApiUrl("/api/projects"),
