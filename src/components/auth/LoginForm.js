@@ -5,10 +5,8 @@ import { useAuth } from '../../context/AuthContext';
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
 import { LogIn, Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import useReducedMotion from '../../hooks/useReducedMotion';
 
 const LoginForm = () => {
-  const prefersReducedMotion = useReducedMotion();
   const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState({});

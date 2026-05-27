@@ -1,9 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from '../config/api';
 import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
 import { toast } from 'react-toastify';
-import { ROLES, ROLE_PERMISSIONS } from '../config/roles';
-import { decodeJwtPayload } from '../utils/auth';
+import { ROLES } from '../config/roles';
 import { logger } from "../utils/logger";
 
 
@@ -76,42 +75,41 @@ export const AuthProvider = ({ children }) => {
     });
   }, []);
 
-  /**
-   * SECURITY: Extract authorization data from the signed JWT token.
-   *
-   * The JWT is the authoritative source for route authorization because
-   * localStorage and React state are user-editable. Server-side checks remain
-   * mandatory for every protected API operation.
-   */
-  const extractAuthorizationFromToken = useCallback((token) => {
-    if (!token) return null;
+  const extractSession = useCallback((res, data, fallbackEmail) => {
+    let sessionToken = data?.token ?? data?.accessToken ?? null;
 
-    const payload = decodeJwtPayload(token);
-    if (!payload) return null;
+    if (!sessionToken) {
+      const authHeader = res.headers?.['authorization'] || res.headers?.['Authorization'] || null;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        sessionToken = authHeader.substring(7);
+      }
+    }
 
-    // Extract roles and permissions from the JWT payload only. localStorage is
-    // user-editable, so it must never be the source for route authorization.
-    const tokenRoles = Array.isArray(payload.roles)
-      ? payload.roles
-      : payload.role
-        ? [payload.role]
-        : [];
-    const normalizedRoles = normalizeRoles(tokenRoles);
-    const tokenPermissions = Array.isArray(payload.permissions)
-      ? payload.permissions.map((permission) => String(permission))
-      : [];
-    const rolePermissions = normalizedRoles.flatMap(
-      (role) => ROLE_PERMISSIONS[role] || []
-    );
-    const permissions = Array.from(new Set([...tokenPermissions, ...rolePermissions]));
+    const rawUser = data?.user ?? data?.data ?? data ?? null;
+    const rawRoles =
+      rawUser?.roles ??
+      (rawUser?.role ? [rawUser.role] : []);
 
-    const scopes = normalizedRoles.includes(ROLES.SUPER_ADMIN) || normalizedRoles.includes(ROLES.ADMIN)
-      ? ['admin:all', 'event:write', 'event:read', 'hackathon:write', 'hackathon:read']
-      : normalizedRoles.includes(ROLES.ORGANIZER)
-        ? ['event:write', 'event:read', 'hackathon:write', 'hackathon:read']
-        : ['event:read', 'hackathon:read'];
+    const resolvedRoles = normalizeRoles(rawRoles);
+    const sessionUser = {
+      ...(rawUser || {}),
+      firstName: rawUser?.firstName ?? "",
+      lastName: rawUser?.lastName ?? "",
+      email: rawUser?.email ?? fallbackEmail ?? "",
+      username: rawUser?.username ?? fallbackEmail ?? "",
+      role: rawUser?.role ?? resolvedRoles[0] ?? "",
+      roles: resolvedRoles,
+      permissions: rawUser?.permissions ?? [],
+      scopes: rawUser?.scopes ?? (
+        resolvedRoles.includes(ROLES.ADMIN)
+          ? ["admin:all", "event:write", "event:read", "hackathon:write", "hackathon:read"]
+          : resolvedRoles.includes(ROLES.ORGANIZER)
+            ? ["event:write", "event:read", "hackathon:write", "hackathon:read"]
+            : ["event:read", "hackathon:read"]
+      ),
+    };
 
-    return { roles: normalizedRoles, permissions, scopes };
+    return { sessionToken, sessionUser };
   }, [normalizeRoles]);
 
   useEffect(() => {
@@ -139,7 +137,7 @@ export const AuthProvider = ({ children }) => {
     } else {
       setLoading(false);
     }
-  }, [clearSession]);
+  }, [clearSession, extractSession]);
 
   // --- Global 401 handler ---
   useEffect(() => {
@@ -222,7 +220,7 @@ export const AuthProvider = ({ children }) => {
     };
   }, [token, clearExpiredSession]);
 
-  const persistSession = (sessionToken, sessionUser) => {
+  const persistSession = useCallback((sessionToken, sessionUser) => {
     setToken(sessionToken);
     setUser(sessionUser);
     
@@ -235,51 +233,14 @@ export const AuthProvider = ({ children }) => {
       // eslint-disable-next-line no-console
       logger.error('[AuthContext] Error persisting user profile:', error);
     }
-  };
+  }, []);
 
-  const extractSession = (res, data, fallbackEmail) => {
-    let sessionToken = data?.token ?? data?.accessToken ?? null;
-
-    if (!sessionToken) {
-      const authHeader = res.headers?.['authorization'] || res.headers?.['Authorization'] || null;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        sessionToken = authHeader.substring(7);
-      }
-    }
-
-    const rawUser = data?.user ?? data?.data ?? data ?? null;
-    const rawRoles =
-      rawUser?.roles ??
-      (rawUser?.role ? [rawUser.role] : []);
-
-    const resolvedRoles = normalizeRoles(rawRoles);
-    const sessionUser = {
-      ...(rawUser || {}),
-      firstName: rawUser?.firstName ?? "",
-      lastName: rawUser?.lastName ?? "",
-      email: rawUser?.email ?? fallbackEmail ?? "",
-      username: rawUser?.username ?? fallbackEmail ?? "",
-      role: rawUser?.role ?? resolvedRoles[0] ?? "",
-      roles: resolvedRoles,
-      permissions: rawUser?.permissions ?? [],
-      scopes: rawUser?.scopes ?? (
-        resolvedRoles.includes(ROLES.ADMIN)
-          ? ["admin:all", "event:write", "event:read", "hackathon:write", "hackathon:read"]
-          : resolvedRoles.includes(ROLES.ORGANIZER)
-            ? ["event:write", "event:read", "hackathon:write", "hackathon:read"]
-            : ["event:read", "hackathon:read"]
-      ),
-    };
-
-    return { sessionToken, sessionUser };
-  };
-
-  const setAuthSession = (sessionToken, sessionUser) => {
+  const setAuthSession = useCallback((sessionToken, sessionUser) => {
     persistSession(sessionToken, sessionUser);
     return true;
-  };
+  }, [persistSession]);
 
-  const login = async (usernameOrEmail, password) => {
+  const login = useCallback(async (usernameOrEmail, password) => {
     const res = await apiUtils.post(API_ENDPOINTS.AUTH.LOGIN, {
       usernameOrEmail,
       password,
@@ -299,7 +260,7 @@ export const AuthProvider = ({ children }) => {
 
     persistSession(sessionToken, sessionUser);
     return true;
-  };
+  }, [extractSession, persistSession]);
 
   /**
    * Sign in with a Google credential returned by @react-oauth/google.
@@ -325,7 +286,7 @@ export const AuthProvider = ({ children }) => {
    * @throws {Error} If the credential is missing, the backend rejects it,
    *                 or the response does not contain an Eventra token
    */
-  const signInWithGoogle = async (credential) => {
+  const signInWithGoogle = useCallback(async (credential) => {
     if (!credential) {
       throw new Error("Google Sign-In failed: missing credential");
     }
@@ -371,11 +332,11 @@ export const AuthProvider = ({ children }) => {
     // ── Step 4: Persist the Eventra JWT (never the raw Google token) ─────────
     persistSession(sessionToken, sessionUser);
     return true;
-  };
+  }, [extractSession, persistSession]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     clearSession();
-  };
+  }, [clearSession]);
 
   const isAuthenticated = useCallback(() => {
     if (!user || !token) return false;
@@ -386,9 +347,9 @@ export const AuthProvider = ({ children }) => {
       return false;
     }
     return true;
-  }, [user]);
+  }, [token, user]);
 
-  const hasRole = (roleName) => {
+  const hasRole = useCallback((roleName) => {
     if (!user?.roles) return false;
 
     // With HttpOnly cookies, we cannot extract roles from the JWT client-side.
@@ -396,34 +357,36 @@ export const AuthProvider = ({ children }) => {
     // Real security enforcement happens on the backend.
     const targetRole = String(roleName).toUpperCase();
     return user.roles.includes(targetRole);
-  };
+  }, [user]);
 
-  const hasPermission = (permissionName) => {
+  const hasPermission = useCallback((permissionName) => {
     // With HttpOnly cookies, we cannot extract permissions from the JWT client-side.
     // We rely on the validated user profile from the server for UI rendering.
     if (!user?.permissions) return false;
 
     return user.permissions.includes(permissionName);
-  };
+  }, [user]);
 
-  const hasAnyRole = (...roleNames) => roleNames.some((role) => hasRole(role));
+  const hasAnyRole = useCallback((...roleNames) => roleNames.some((role) => hasRole(role)), [hasRole]);
 
-  const hasAnyPermission = (...permissionNames) =>
-    permissionNames.some((permission) => hasPermission(permission));
+  const hasAnyPermission = useCallback(
+    (...permissionNames) => permissionNames.some((permission) => hasPermission(permission)),
+    [hasPermission]
+  );
 
-  const isAdmin = () => hasRole(ROLES.ADMIN);
+  const isAdmin = useCallback(() => hasRole(ROLES.ADMIN), [hasRole]);
 
-  const isEventManager = () => hasRole(ROLES.ORGANIZER);
+  const isEventManager = useCallback(() => hasRole(ROLES.ORGANIZER), [hasRole]);
 
-  const isSuperAdmin = () => hasRole(ROLES.SUPER_ADMIN);
+  const isSuperAdmin = useCallback(() => hasRole(ROLES.SUPER_ADMIN), [hasRole]);
 
-  const isOrganizer = () => hasRole(ROLES.ORGANIZER);
+  const isOrganizer = useCallback(() => hasRole(ROLES.ORGANIZER), [hasRole]);
 
-  const isVolunteer = () => hasRole(ROLES.VOLUNTEER);
+  const isVolunteer = useCallback(() => hasRole(ROLES.VOLUNTEER), [hasRole]);
 
-  const isAttendee = () => hasRole(ROLES.ATTENDEE);
+  const isAttendee = useCallback(() => hasRole(ROLES.ATTENDEE), [hasRole]);
 
-  const value = {
+  const value = useMemo(() => ({
     user,
     token,
     loading,
@@ -443,7 +406,26 @@ export const AuthProvider = ({ children }) => {
     isOrganizer,
     isVolunteer,
     isAttendee,
-  };
+  }), [
+    user,
+    token,
+    loading,
+    login,
+    logout,
+    signInWithGoogle,
+    setAuthSession,
+    isAuthenticated,
+    hasRole,
+    hasPermission,
+    hasAnyRole,
+    hasAnyPermission,
+    isAdmin,
+    isEventManager,
+    isSuperAdmin,
+    isOrganizer,
+    isVolunteer,
+    isAttendee,
+  ]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

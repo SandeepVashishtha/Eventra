@@ -56,7 +56,6 @@ const GoogleLoginButton = () => {
     } catch (error) {
       // Show a user-friendly toast; the underlying error is already logged
       // by signInWithGoogle via the apiUtils interceptor.
-      console.error("Google Sign-In error:", error);
       toast.error(
         error?.message ||
           "Google Sign-In failed. Please try again or use email/password."
