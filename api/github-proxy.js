@@ -10,7 +10,7 @@ const SAFE_GITHUB_PATH_PATTERNS = [
 const ALLOWED_QUERY_PARAMS = new Set(["per_page", "page", "state", "sort", "direction"]);
 
 const normalizePath = (path) => {
-  const rawPath = Array.isArray(path) ? path[0] : path;
+  const rawPath = Array.isArray(path) ? path.join("/") : path;
   if (!rawPath || typeof rawPath !== "string") {
     return "";
   }

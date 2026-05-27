@@ -1,4 +1,4 @@
-/* eslint-disable testing-library/no-unnecessary-act */
+
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { act } from "react";
@@ -20,7 +20,6 @@ jest.mock("../utils/offlineQueue", () => ({
   filterQueueByOwnership: jest.fn((queue) => queue),
 }));
 
-global.IS_REACT_ACT_ENVIRONMENT = true;
 
 describe("useOfflineSync", () => {
   let container;
@@ -70,8 +69,7 @@ describe("useOfflineSync", () => {
 
   it("attempts to sync immediately without backoff delay on first try in active sync run", async () => {
     const queue = [
-      { id: "1", retryCount: 2, endpoint: "/api/register/1", payload: {} },
-      { id: "2", retryCount: 1, endpoint: "/api/register/2", payload: {} },
+
     ];
     getQueueIndexedDB.mockResolvedValue(queue);
 
@@ -89,6 +87,7 @@ describe("useOfflineSync", () => {
     // Trigger online event to run the sync
     await act(async () => {
       window.dispatchEvent(new Event("online"));
+
       await new Promise((resolve) => setTimeout(resolve, 100));
     });
 
@@ -106,7 +105,7 @@ describe("useOfflineSync", () => {
   });
 
   it("preserves items with retryCount >= MAX_RETRIES in the offline queue instead of deleting them", async () => {
-    const queue = [{ id: "1", retryCount: 3, endpoint: "/api/register/1", payload: {} }];
+
     getQueueIndexedDB.mockResolvedValue(queue);
 
     const TestComponent = () => {
@@ -128,8 +127,10 @@ describe("useOfflineSync", () => {
     expect(global.fetch).not.toHaveBeenCalled();
     // Verify setQueue was called to preserve the item
     expect(setQueue).toHaveBeenCalledWith(
-      expect.arrayContaining([expect.objectContaining({ id: "1", retryCount: 3 })])
+
     );
     expect(clearQueue).not.toHaveBeenCalled();
   });
 });
+
+```

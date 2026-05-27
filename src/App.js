@@ -1,7 +1,7 @@
 import SavedEventsPage from './Pages/SavedEventsPage';
 import EventRecommendation from "./Pages/EventRecommendation/EventRecommendation";
 import React, { useState, useEffect, lazy, Suspense } from "react";
-import { Routes, Route, useLocation } from "react-router-dom"; 
+import { Routes, Route, useLocation } from "react-router-dom";
 import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
@@ -111,6 +111,9 @@ function App() {
 
               <div className="App">
                 <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+                <SectionErrorBoundary label="Navigation Bar">
+                  <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+                </SectionErrorBoundary>
                 <OfflineBanner />
                 <OfflineConflictModal />
                 <KeyboardShortcutsModal
@@ -126,6 +129,16 @@ function App() {
                     text-black dark:text-white
                     transition-colors duration-300
                   "
+                  relative
+                  z-10
+                  min-h-[85vh]
+                  bg-white
+                  dark:bg-slate-950
+                  text-black
+                  dark:text-white
+                  transition-colors
+                  duration-300
+                "
                 >
                   <PageTransition>
                     <SectionErrorBoundary label="Page Content">
@@ -137,6 +150,7 @@ function App() {
                         }
                       >
                         <Routes>
+                          {/* Registration writes user-specific data and must stay behind auth. */}
                           <Route
                             path="/register/:id"
                             element={
@@ -150,6 +164,9 @@ function App() {
                             path="/event-recommendation"
                             element={<EventRecommendation />}
                           />
+
+                          <Route path="/event-recommendation" element={<EventRecommendation />} />
+
                           <Route path="*" element={<AppRoutes />} />
                         </Routes>
                       </Suspense>
@@ -162,11 +179,25 @@ function App() {
                   <Chatbot />
                   {!isDashboardOrAdmin && <Footer />}
                 </Suspense>
+
+                <SectionErrorBoundary label="Chatbot Assist" silent>
+                  <Suspense fallback={null}>
+                    <Chatbot />
+                  </Suspense>
+                </SectionErrorBoundary>
+
+                <SectionErrorBoundary label="Footer">
+                  <Suspense fallback={null}>{!isDashboardOrAdmin && <Footer />}</Suspense>
+                </SectionErrorBoundary>
+
                 <BackToTopButton />
                 <FeedbackButton />
                 <ThemeCustomizerDrawer />
                 <SessionRecovery />
                 <FluidCursor enabled={cursorEnabled} />
+                <SectionErrorBoundary label="Custom Cursor" silent>
+                  <FluidCursor enabled={cursorEnabled} />
+                </SectionErrorBoundary>
               </div>
             </SessionRecoveryProvider>
           </MyEventsProvider>
