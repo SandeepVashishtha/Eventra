@@ -88,6 +88,18 @@ const MyCalendar = () => {
     return CATEGORIES[0];
   };
 
+  // Maps category theme to a concrete hex color for inline styles (e.g., timeline node borders)
+  const getCategoryBorderColor = (theme) => {
+    const colorMap = {
+      "gssoc": "#ec4899",       // pink-500
+      "ai/web3": "#a855f7",     // purple-500
+      "workshops": "#06b6d4",   // cyan-500
+      "hackathons": "#10b981",  // emerald-500
+      "community": "#f59e0b",   // amber-500
+    };
+    return colorMap[theme.id] || "#6366f1"; // default indigo-500
+  };
+
   // Filter events registered in the current displayed month & selected category
   const getEventsForDate = (day) => {
     return myEvents.filter((item) => {
@@ -472,7 +484,7 @@ const MyCalendar = () => {
                       >
                         {/* Timeline Node Point */}
                         <div className="absolute -left-[30px] sm:-left-[37px] top-1.5 w-5 h-5 rounded-full bg-white dark:bg-slate-950 border-4 flex items-center justify-center z-10 transition-transform duration-300 hover:scale-130"
-                             style={{ borderColor: `var(--indigo-color, ${theme.from === CATEGORIES[0].from ? "#6366f1" : "rgb(99, 102, 241)"})` }}
+                             style={{ borderColor: getCategoryBorderColor(theme) }}
                         >
                           <span className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${theme.color} animate-ping`} />
                         </div>
