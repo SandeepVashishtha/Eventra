@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from "react";
 
 const useLocalStorage = (key, initialValue) => {
   const initialValueRef = useRef(initialValue);
+  initialValueRef.current = initialValue;
 
   const readValue = useCallback(() => {
-    if (typeof window === 'undefined') return initialValueRef.current;
+    if (typeof window === "undefined") return initialValueRef.current;
     try {
       const item = window.localStorage.getItem(key);
       return item !== null ? JSON.parse(item) : initialValueRef.current;
@@ -27,7 +28,8 @@ const useLocalStorage = (key, initialValue) => {
         const newValue = value instanceof Function ? value(storedValueRef.current) : value;
         window.localStorage.setItem(key, JSON.stringify(newValue));
         setStoredValue(newValue);
-        window.dispatchEvent(new Event('local-storage'));
+        // Notify other hook instances with the same key (cross-tab sync)
+        window.dispatchEvent(new Event("local-storage"));
       } catch (error) {
         console.warn(`useLocalStorage: error setting key "${key}":`, error);
       }
@@ -39,7 +41,7 @@ const useLocalStorage = (key, initialValue) => {
     try {
       window.localStorage.removeItem(key);
       setStoredValue(initialValueRef.current);
-      window.dispatchEvent(new Event('local-storage'));
+      window.dispatchEvent(new Event("local-storage"));
     } catch (error) {
       console.warn(`useLocalStorage: error removing key "${key}":`, error);
     }
@@ -47,17 +49,17 @@ const useLocalStorage = (key, initialValue) => {
 
   useEffect(() => {
     const handleStorageChange = (event) => {
-      if (event.key === key || event.type === 'local-storage') {
+      if (event.key === key || event.type === "local-storage") {
         setStoredValue(readValue());
       }
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('local-storage', handleStorageChange);
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("local-storage", handleStorageChange);
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('local-storage', handleStorageChange);
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("local-storage", handleStorageChange);
     };
   }, [key, readValue]);
 

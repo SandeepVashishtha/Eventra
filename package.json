@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "A modern website for Eventra - platform for builders",
   "private": true,
+  "engines": {
+    "node": ">=20.19.0",
+    "npm": ">=9.6.4"
+  },
   "dependencies": {
     "@headlessui/react": "^2.2.8",
     "@heroicons/react": "^2.0.16",

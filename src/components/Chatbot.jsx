@@ -142,7 +142,7 @@ export default function Chatbot() {
                   <button
                     type="button"
                     onClick={handleMinimize}
-                    className="rounded-xl p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+                    className="rounded-xl p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                     aria-label="Expand assistant"
                   >
                     <ChevronUp className="h-4 w-4" />
@@ -150,7 +150,7 @@ export default function Chatbot() {
                   <button
                     type="button"
                     onClick={handleClose}
-                    className="rounded-xl p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+                    className="rounded-xl p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                     aria-label="Close assistant"
                   >
                     <X className="h-4 w-4" />
@@ -169,7 +169,7 @@ export default function Chatbot() {
               rounded-full bg-gradient-to-br from-indigo-600 to-pink-600 text-white
               shadow-[0_8px_30px_rgb(99,102,241,0.4)]
               hover:shadow-[0_8px_30px_rgb(236,72,153,0.5)]
-              focus:outline-none focus:ring-4 focus:ring-indigo-300
+              focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2
               transition-all duration-200 hover:scale-110
               fixed-floating-widget
               ${isMinimized ? "sm:hidden" : ""}
@@ -228,7 +228,7 @@ export default function Chatbot() {
                 <button
                   type="button"
                   onClick={handleClearConversation}
-                  className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-red-400 transition-colors"
+                  className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-red-400 transition-colors focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   title="Clear conversation"
                   aria-label="Clear conversation"
                 >
@@ -237,7 +237,7 @@ export default function Chatbot() {
                 <button
                   type="button"
                   onClick={handleMinimize}
-                  className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white"
+                  className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   aria-label="Minimize assistant"
                 >
                   <Minus className="h-4 w-4" />
@@ -245,7 +245,7 @@ export default function Chatbot() {
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white"
+                  className="rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   aria-label="Close assistant"
                 >
                   <X className="h-4 w-4" />
@@ -324,7 +324,7 @@ export default function Chatbot() {
                     key={prompt}
                     type="button"
                     onClick={() => sendMessage(prompt)}
-                    className="rounded-full border border-slate-200/60 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-950/40 px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-gradient-to-r hover:from-indigo-600 hover:to-pink-600 hover:text-white hover:border-transparent transition-all duration-300 transform hover:scale-[1.03]"
+                    className="rounded-full border border-slate-200/60 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-950/40 px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-gradient-to-r hover:from-indigo-600 hover:to-pink-600 hover:text-white hover:border-transparent transition-all duration-300 transform hover:scale-[1.03] focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   >
                     {prompt}
                   </button>
@@ -338,7 +338,7 @@ export default function Chatbot() {
                     <Link
                       key={`${label}-${to}`}
                       to={to}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-950 dark:bg-slate-950 dark:hover:bg-black border border-white/10 px-3 py-2 text-xs font-bold text-white hover:scale-[1.03] transition-all duration-300 shadow"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-950 dark:bg-slate-950 dark:hover:bg-black border border-white/10 px-3 py-2 text-xs font-bold text-white hover:scale-[1.03] transition-all duration-300 shadow focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                     >
                       <Icon className="h-3.5 w-3.5" />
                       {label}
@@ -360,14 +360,14 @@ export default function Chatbot() {
                   onChange={(e) => setDraft(e.target.value)}
                   placeholder="Ask about Eventra..."
                   aria-label="Message input"
-                  className="min-w-0 flex-1 rounded-xl border border-slate-200/60 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-950/30 px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 dark:focus:border-indigo-400 transition-colors"
+                  className="min-w-0 flex-1 rounded-xl border border-slate-200/60 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-950/30 px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-colors"
                 />
                 <button
                   type="submit"
                   disabled={!draft.trim() || isTyping}
                   aria-label="Send message"
                   title="Send message"
-                  className="rounded-xl bg-slate-900 dark:bg-white p-2.5 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 transition-all shadow hover:scale-105 active:scale-95"
+                  className="rounded-xl bg-slate-900 dark:bg-white p-2.5 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 transition-all shadow hover:scale-105 active:scale-95 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 >
                   <Send className="h-4 w-4" />
                 </button>

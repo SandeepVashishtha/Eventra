@@ -30,7 +30,25 @@ const EventConflictModal = ({
   strictMode = false,
 }) => {
   const modalRef = useRef(null);
+  const previousFocusRef = useRef(null);
   const userTimezone = getUserTimezone();
+
+  useEffect(() => {
+    if (isOpen) {
+      previousFocusRef.current = document.activeElement;
+    } else {
+      if (previousFocusRef.current) {
+        previousFocusRef.current.focus();
+        previousFocusRef.current = null;
+      }
+    }
+    return () => {
+      // Restore focus if the component is unmounted while open
+      if (previousFocusRef.current) {
+        previousFocusRef.current.focus();
+      }
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -49,26 +67,42 @@ const EventConflictModal = ({
   useEffect(() => {
     if (!isOpen || !modalRef.current) return;
 
-    const focusableElements = modalRef.current.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex="0"]'
-    );
+    const getFocusableElements = () => {
+      return modalRef.current.querySelectorAll(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]'
+      );
+    };
+
+    const focusableElements = getFocusableElements();
     const firstElement = focusableElements[0];
     const lastElement = focusableElements[focusableElements.length - 1];
 
-    // Focus the first element when modal opens
-    firstElement?.focus();
+    // Focus the first element when modal opens, with a tiny timeout to ensure rendering is complete
+    const timeoutId = setTimeout(() => {
+      if (firstElement) {
+        firstElement.focus();
+      } else {
+        modalRef.current?.focus();
+      }
+    }, 50);
 
     const handleTabKey = (e) => {
       if (e.key !== 'Tab') return;
 
+      const currentFocusable = getFocusableElements();
+      if (currentFocusable.length === 0) return;
+
+      const first = currentFocusable[0];
+      const last = currentFocusable[currentFocusable.length - 1];
+
       if (e.shiftKey) {
-        if (document.activeElement === firstElement) {
-          lastElement?.focus();
+        if (document.activeElement === first) {
+          last?.focus();
           e.preventDefault();
         }
       } else {
-        if (document.activeElement === lastElement) {
-          firstElement?.focus();
+        if (document.activeElement === last) {
+          first?.focus();
           e.preventDefault();
         }
       }
@@ -77,6 +111,7 @@ const EventConflictModal = ({
     const modalNode = modalRef.current;
     modalNode.addEventListener('keydown', handleTabKey);
     return () => {
+      clearTimeout(timeoutId);
       modalNode.removeEventListener('keydown', handleTabKey);
     };
   }, [isOpen]);
@@ -96,6 +131,7 @@ const EventConflictModal = ({
         ref={modalRef}
         role="dialog"
         aria-modal="true"
+        aria-labelledby="modal-title"
         className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
       >
         {/* Close Button */}
@@ -114,7 +150,7 @@ const EventConflictModal = ({
               <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <h2 id="modal-title" className="text-2xl font-bold text-gray-900 dark:text-white">
                 Scheduling Conflict Detected
               </h2>
               <p className="mt-1 text-gray-600 dark:text-gray-400">
