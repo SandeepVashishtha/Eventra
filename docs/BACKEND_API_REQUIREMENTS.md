@@ -323,14 +323,14 @@ GET /api/events
 **Auth Required:** No (public)  
 **Query Parameters (recommended for filtering & pagination):**
 
-| Param | Type | Description |
-|-------|------|-------------|
-| `page` | int | Page number (0-indexed) |
-| `size` | int | Items per page (default: 10) |
-| `category` | string | Filter by category |
-| `status` | string | `upcoming`, `ongoing`, `completed` |
-| `search` | string | Search by title/description |
-| `type` | string | `Event` or `Hackathon` |
+| Param | Type | Description                                |
+|-------|------|--------------------------------------------|
+| `page` | int | Page number (0-indexed)                    |
+| `size` | int | Items per page (default: 10)               |
+| `category` | string | Filter by category                         |
+| `status` | string | `upcoming`, `ongoing`, `past`, `cancelled` |
+| `search` | string | Search by title/description/location       |
+| `type` | string | `Event` or `Hackathon`                     |
 
 **Success Response `200`:**
 ```json
