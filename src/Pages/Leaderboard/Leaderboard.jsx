@@ -16,11 +16,14 @@ import {
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
 import StyledDropdown from "../../components/StyledDropdown";
-import SkeletonLeaderboard, {
-  LeaderboardStatCardSkeleton,
-} from "../../components/common/SkeletonLeaderboard";
+import SkeletonLeaderboard from "../../components/common/SkeletonLeaderboard";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useLeaderboardStream, SSE_STATUS } from "../../context/RealTimeContext";
+import {
+  storageManager,
+  STORAGE_KEYS,
+  validators,
+} from "../../utils/storageManager";
 
 // ─── Category filter definitions ───────────────────────────────────────────────
 const CATEGORY_FILTERS = [
@@ -78,7 +81,6 @@ function RankMovementIndicator({ username }) {
 // Repository constant — update if the leaderboard should point to another repo
 const GITHUB_REPO = "SandeepVashishtha/Eventra";
 // Token is managed securely by the backend proxy
-const LEADERBOARD_CACHE_KEY = "leaderboardData:v2";
 
 // Points mapping for PR labels (keeps scoring logic centralized)
 const POINTS = {
@@ -243,18 +245,20 @@ export default function LeaderBoard() {
     lastAppliedSyncRef.current = lastSynced;
     setContributors(streamContributors);
     setLastUpdated(`Live update: ${new Date(lastSynced).toLocaleString()}`);
-    localStorage.setItem(
-      LEADERBOARD_CACHE_KEY,
-      JSON.stringify({ data: streamContributors, timestamp: lastSynced }),
+    storageManager.set(
+      STORAGE_KEYS.LEADERBOARD_CACHE,
+      {
+        data: streamContributors,
+        timestamp: lastSynced,
+      }
     );
   }, [streamContributors, lastSynced]);
 
   useEffect(() => {
   const savedSearches =
-    JSON.parse(
-      localStorage.getItem(
-        "recentSearches"
-      )
+    storageManager.get(
+      STORAGE_KEYS.RECENT_SEARCHES,
+      validators.isArray
     ) || [];
 
   setRecentSearches(
@@ -351,9 +355,12 @@ export default function LeaderBoard() {
 
       setContributors(sortedContributors);
       setLastUpdated(new Date().toLocaleString());
-      localStorage.setItem(
-        LEADERBOARD_CACHE_KEY,
-        JSON.stringify({ data: sortedContributors, timestamp: Date.now() })
+      storageManager.set(
+        STORAGE_KEYS.LEADERBOARD_CACHE,
+        {
+          data: sortedContributors,
+          timestamp: Date.now(),
+        }
       );
     } catch (err) {
       console.error("Error fetching contributors:", err);
@@ -366,22 +373,24 @@ export default function LeaderBoard() {
   useEffect(() => {
     const doLoad = async () => {
       setLoading(true);
-      const cachedData = localStorage.getItem(LEADERBOARD_CACHE_KEY);
+      const cachedData = storageManager.get(
+        STORAGE_KEYS.LEADERBOARD_CACHE,
+        validators.isObject
+      );
       const now = Date.now();
 
-      if (cachedData) {
-        try {
-          const { data, timestamp } = JSON.parse(cachedData);
-          if (now - timestamp < 60 * 60 * 1000) {
-            setContributors(data);
-            setLastUpdated(
-              `Last updated: ${new Date(timestamp).toLocaleString()} (cached)`
-            );
-            setLoading(false);
-            return;
-          }
-        } catch (error) {
-          console.error("Error parsing cached data:", error);
+      if (cachedData?.data && cachedData?.timestamp) {
+        if (now - cachedData.timestamp < 60 * 60 * 1000) {
+          setContributors(cachedData.data);
+
+          setLastUpdated(
+            `Last updated: ${new Date(
+              cachedData.timestamp
+            ).toLocaleString()} (cached)`
+          );
+
+          setLoading(false);
+          return;
         }
       }
       await fetchContributors();
@@ -405,11 +414,9 @@ export default function LeaderBoard() {
       updatedSearches
     );
 
-    localStorage.setItem(
-      "recentSearches",
-      JSON.stringify(
-        updatedSearches
-      )
+    storageManager.set(
+      STORAGE_KEYS.RECENT_SEARCHES,
+      updatedSearches
     );
   };
   const filteredContributors = contributors.filter((c) => {
