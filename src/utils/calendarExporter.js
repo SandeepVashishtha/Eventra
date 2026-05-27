@@ -7,8 +7,9 @@
 
 // Helper to format Date objects into YYYYMMDDTHHmmSSZ format required by RFC 5545
 const formatToICSDate = (dateStr) => {
+  if (!dateStr) return null;
   const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  if (isNaN(date.getTime())) return null;
   return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
 };
 
@@ -28,7 +29,12 @@ export const downloadICSFile = (event) => {
   const { title, description, date, endDate, location, id } = event;
   
   const formattedStart = formatToICSDate(date);
-  const formattedEnd = endDate ? formatToICSDate(endDate) : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000)); // Default 2 hours duration
+  if (!formattedStart) {
+    console.error("Invalid event date provided for ICS export.");
+    return;
+  }
+  
+  const formattedEnd = endDate ? formatToICSDate(endDate) : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
   const createdDate = formatToICSDate(new Date());
 
   const icsLines = [
@@ -70,6 +76,8 @@ export const downloadICSFile = (event) => {
 export const generateGoogleCalendarLink = (event) => {
   const { title, description, date, endDate, location } = event;
   const start = formatToICSDate(date);
+  if (!start) return null;
+  
   const end = endDate ? formatToICSDate(endDate) : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
   
   const baseUrl = "https://calendar.google.com/calendar/render";
@@ -91,8 +99,11 @@ export const generateGoogleCalendarLink = (event) => {
  */
 export const generateOutlookLink = (event) => {
   const { title, description, date, endDate, location } = event;
-  const start = new Date(date).toISOString();
-  const end = endDate ? new Date(endDate).toISOString() : new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000).toISOString();
+  const startDate = new Date(date);
+  if (isNaN(startDate.getTime())) return null;
+  
+  const start = startDate.toISOString();
+  const end = endDate ? new Date(endDate).toISOString() : new Date(startDate.getTime() + 2 * 60 * 60 * 1000).toISOString();
 
   const baseUrl = "https://outlook.live.com/calendar/0/deeplink/compose";
   const params = new URLSearchParams({
@@ -131,6 +142,8 @@ export const downloadBulkICSFile = (events, filename = "registered-events") => {
     const { title, description, date, endDate, location, id } = eventObj;
     
     const formattedStart = formatToICSDate(date);
+    if (!formattedStart) return; // Skip invalid event
+    
     const formattedEnd = endDate ? formatToICSDate(endDate) : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
 
     icsLines.push(

@@ -37,7 +37,7 @@ export function useDebouncedSearch(initialValue = '', delay = 300) {
         clearTimeout(timerRef.current);
       }
     };
-  }, [searchTerm, delay, debouncedTerm]);
+  }, [searchTerm, delay]);
 
   const clear = useCallback(() => {
     setSearchTerm('');
