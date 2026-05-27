@@ -140,26 +140,41 @@ const EventRegistration = () => {
     { debounceMs: 300 }
   );
 
-  // Load event data
+  // Load event data from backend API
   useEffect(() => {
-    const loadEvent = () => {
+    const loadEvent = async () => {
       setLoading(true);
-      // Find event from mock data
-      const foundEvent = mockEvents.find((e) => e.id === parseInt(eventId));
 
-      if (foundEvent) {
-        setEvent({ ...foundEvent, status: getEventStatus(foundEvent) });
+      try {
+        // BACKEND FIX: Fetch authoritative event data from the backend API,
+        // not from local mock JSON. This ensures:
+        // - Users see real event details, pricing, and availability
+        // - Registration state matches backend state
+        // - No mismatch between mock data and production backend
+        const response = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
 
-        // Pre-fill form if user is authenticated
-        if (isAuthenticated() && user) {
-          setValues((prev) => ({
-            ...prev,
-            fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
-            email: user.email || "",
-          }));
+        if (response.status === 200 && response.data) {
+          const fetchedEvent = {
+            ...response.data,
+            status: getEventStatus(response.data),
+          };
+          setEvent(fetchedEvent);
+
+          // Pre-fill form if user is authenticated
+          if (isAuthenticated() && user) {
+            setValues((prev) => ({
+              ...prev,
+              fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
+              email: user.email || "",
+            }));
+          }
         }
+      } catch (error) {
+        console.error("Failed to load event details:", error);
+        // Don't set event — will show "Event Not Found" UI
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     loadEvent();
@@ -211,6 +226,8 @@ const EventRegistration = () => {
 
     if (conflictCheck.hasConflict) {
       // Get alternative suggestions
+      // TODO: In production, alternative events should be fetched from backend API
+      // for accurate availability and pricing. Mock data is used as a fallback.
       const suggestions = suggestAlternativeEvents(event, mockEvents, myEvents);
       setConflictData({
         conflicts: conflictCheck.conflicts,
