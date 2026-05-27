@@ -20,6 +20,7 @@ import ReminderChecker from "./components/reminders/ReminderChecker";
 import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
 import ThemeCustomizerDrawer from "./components/common/ThemeCustomizerDrawer";
 import SessionRecovery from "./components/SessionRecovery";
+import ErrorBoundary from "./components/common/ErrorBoundary";
 import OnboardingChecklist from "./components/user/OnboardingChecklist";
 
 import NotificationToastContainer from "./components/common/NotificationProvider";
@@ -113,7 +114,8 @@ function App() {
   }, []); // <--- The missing bracket and closure are fixed!
 
   return (
-    <AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
       <NotificationProvider>
         <MyEventsProvider>
           <SessionRecoveryProvider>
@@ -184,6 +186,7 @@ function App() {
         </MyEventsProvider>
       </NotificationProvider>
     </AuthProvider>
+  </ErrorBoundary>
   );
 }
 
