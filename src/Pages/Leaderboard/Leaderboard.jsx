@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import FeatureErrorBoundary from "../../components/common/FeatureErrorBoundary";
+import { fetchWithTimeout } from "../../utils/fetchWithTimeout";
 import {
   FaCode,
   FaStar,
@@ -25,6 +26,7 @@ import { logger } from "../../utils/logger";
 import { storageManager } from "../../utils/storage/storageManager";
 import { STORAGE_KEYS } from "../../utils/storage/storageKeys";
 import { validators } from "../../utils/storage/storageValidators";
+import { ENV } from "../../config/env";
 
 // ─── Category filter definitions ───────────────────────────────────────────────
 const CATEGORY_FILTERS = [
@@ -83,7 +85,7 @@ function RankMovementIndicator({ username }) {
 }
 
 // Repository constant — update if the leaderboard should point to another repo
-const GITHUB_REPO = process.env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra";
+const GITHUB_REPO = ENV.GITHUB_REPO;
 // Token is managed securely by the backend proxy
 
 // Points mapping for PR labels (keeps scoring logic centralized)
@@ -235,10 +237,7 @@ export default function LeaderBoard() {
       let hasMore = true;
 
       const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(`/repos/${GITHUB_REPO}/contributors`)}`;
-      const contributorsRes = await fetch(proxyUrl);
-
-      if (!contributorsRes.ok) throw new Error("Failed to fetch contributors");
-      const contributorsData = await contributorsRes.json();
+      const { data: contributorsData } = await fetchWithTimeout(proxyUrl);
       const contributorsInfo = {};
 
       contributorsData.forEach((contributor) => {

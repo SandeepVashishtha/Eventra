@@ -63,10 +63,7 @@ class FeatureErrorBoundary extends React.Component {
   };
 
   render() {
-    // 1. If everything is fine, render the children normally
-    if (!this.state.hasError) {
-      return this.props.children;
-    }
+
 
     // 2. If there is an error but a custom fallback is provided, use that
     if (this.props.fallback) {

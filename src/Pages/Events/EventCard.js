@@ -1,4 +1,5 @@
 import { useEffect, useId, useState, memo } from "react";
+import { logger } from "../../utils/logger";
 import { getUserTimezone } from "../../utils/timezoneUtils";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -97,7 +98,7 @@ const EventCard = ({ event }) => {
         });
       })
       .catch((err) => {
-        console.error("Failed to copy: ", err);
+        logger.error("Failed to copy: ", err);
         toast.error("Could not copy link. Please try again.", {
           autoClose: 2500,
         });

@@ -55,6 +55,8 @@ export const ThemeProvider = ({ children }) => {
 
   // Apply themes, custom HSL variable overrides, and sync storage
   useEffect(() => {
+    if (!activeThemeId) return;
+
     const root = document.documentElement;
 
     root.classList.remove("light", "dark");

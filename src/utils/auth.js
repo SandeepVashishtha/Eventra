@@ -1,4 +1,10 @@
+
 import { safeJsonParse } from "./safeJsonParse";
+
+import { safeJsonParse } from "./safeJsonParse";
+
+import { safeJsonParse } from "./safeJsonParse.js";
+
 
 const CLOCK_SKEW_BUFFER = 30;
 
@@ -28,6 +34,7 @@ export function decodeJwtPayload(token) {
 export function isTokenExpired(token) {
   const payload = decodeJwtPayload(token);
   if (!payload || typeof payload.exp !== "number") {
+
     return true;
   }
 
