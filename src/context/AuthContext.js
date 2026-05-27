@@ -6,18 +6,18 @@ import React, {
   useCallback,
   useRef,
   useState,
-} from 'react';
-import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from '../config/api';
-import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
-import { toast } from 'react-toastify';
-import { ROLES, ROLE_PERMISSIONS } from '../config/roles';
+} from "react";
+import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from "../config/api";
+import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils";
+import { toast } from "react-toastify";
+import { ROLES, ROLE_PERMISSIONS } from "../config/roles";
 
 const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
@@ -48,17 +48,15 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setToken(null);
     document.cookie =
-      'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; HttpOnly; SameSite=Strict';
-    sessionStorage.removeItem('token');
-    localStorage.removeItem('user');
+      "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; HttpOnly; SameSite=Strict";
+    sessionStorage.removeItem("token");
+    localStorage.removeItem("user");
     return true;
   }, []);
 
   const clearExpiredSession = useCallback(() => {
     // eslint-disable-next-line no-console
-    console.warn(
-      '[AuthContext] Session expiration detected. Clearing session state immediately.'
-    );
+    console.warn("[AuthContext] Session expiration detected. Clearing session state immediately.");
     clearSession();
 
     if (expiryToastShownRef.current) {
@@ -66,8 +64,8 @@ export const AuthProvider = ({ children }) => {
     }
 
     expiryToastShownRef.current = true;
-    toast.info('Session expired. Please log in again.', {
-      toastId: 'session-expired',
+    toast.info("Session expired. Please log in again.", {
+      toastId: "session-expired",
       autoClose: 5000,
     });
   }, [clearSession]);
@@ -82,7 +80,7 @@ export const AuthProvider = ({ children }) => {
   const normalizeRoles = useCallback((roles = []) => {
     return roles.map((role) => {
       const normalized = String(role).toUpperCase();
-      return normalized === 'EVENT_MANAGER' ? ROLES.ORGANIZER : normalized;
+      return normalized === "EVENT_MANAGER" ? ROLES.ORGANIZER : normalized;
     });
   }, []);
 
@@ -91,9 +89,8 @@ export const AuthProvider = ({ children }) => {
       let sessionToken = data?.token ?? data?.accessToken ?? null;
 
       if (!sessionToken) {
-        const authHeader =
-          res.headers?.authorization || res.headers?.Authorization || null;
-        if (authHeader && authHeader.startsWith('Bearer ')) {
+        const authHeader = res.headers?.authorization || res.headers?.Authorization || null;
+        if (authHeader && authHeader.startsWith("Bearer ")) {
           sessionToken = authHeader.substring(7);
         }
       }
@@ -104,27 +101,24 @@ export const AuthProvider = ({ children }) => {
       const tokenPermissions = Array.isArray(rawUser?.permissions)
         ? rawUser.permissions.map((permission) => String(permission))
         : [];
-      const rolePermissions = resolvedRoles.flatMap(
-        (role) => ROLE_PERMISSIONS[role] || []
-      );
+      const rolePermissions = resolvedRoles.flatMap((role) => ROLE_PERMISSIONS[role] || []);
       const permissions = Array.from(new Set([...tokenPermissions, ...rolePermissions]));
 
       const scopes =
         rawUser?.scopes ??
-        (resolvedRoles.includes(ROLES.SUPER_ADMIN) ||
-        resolvedRoles.includes(ROLES.ADMIN)
-          ? ['admin:all', 'event:write', 'event:read', 'hackathon:write', 'hackathon:read']
+        (resolvedRoles.includes(ROLES.SUPER_ADMIN) || resolvedRoles.includes(ROLES.ADMIN)
+          ? ["admin:all", "event:write", "event:read", "hackathon:write", "hackathon:read"]
           : resolvedRoles.includes(ROLES.ORGANIZER)
-            ? ['event:write', 'event:read', 'hackathon:write', 'hackathon:read']
-            : ['event:read', 'hackathon:read']);
+            ? ["event:write", "event:read", "hackathon:write", "hackathon:read"]
+            : ["event:read", "hackathon:read"]);
 
       const sessionUser = {
         ...(rawUser || {}),
-        firstName: rawUser?.firstName ?? '',
-        lastName: rawUser?.lastName ?? '',
-        email: rawUser?.email ?? fallbackEmail ?? '',
-        username: rawUser?.username ?? fallbackEmail ?? '',
-        role: rawUser?.role ?? resolvedRoles[0] ?? '',
+        firstName: rawUser?.firstName ?? "",
+        lastName: rawUser?.lastName ?? "",
+        email: rawUser?.email ?? fallbackEmail ?? "",
+        username: rawUser?.username ?? fallbackEmail ?? "",
+        role: rawUser?.role ?? resolvedRoles[0] ?? "",
         roles: resolvedRoles,
         permissions,
         scopes,
@@ -144,7 +138,7 @@ export const AuthProvider = ({ children }) => {
         if (res.ok && res.data) {
           const { sessionToken, sessionUser } = extractSession(res, res.data, null);
           if (!isMountedRef.current) return;
-          setToken(sessionToken || 'cookie-managed');
+          setToken(sessionToken || "cookie-managed");
           setUser(sessionUser);
         } else {
           clearSession();
@@ -159,7 +153,7 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    const storedUser = localStorage.getItem('user');
+    const storedUser = localStorage.getItem("user");
     if (storedUser) {
       validateSession();
     } else if (isMountedRef.current) {
@@ -187,7 +181,7 @@ export const AuthProvider = ({ children }) => {
 
     expiryToastShownRef.current = false;
 
-    if (token === 'cookie-managed') {
+    if (token === "cookie-managed") {
       return;
     }
 
@@ -196,7 +190,7 @@ export const AuthProvider = ({ children }) => {
 
     let timeoutId;
 
-    if (typeof expSeconds === 'number') {
+    if (typeof expSeconds === "number") {
       const nowMs = Date.now();
       const expiresAtMs = expSeconds * 1000;
       const delayMs = Math.max(expiresAtMs - nowMs + 1000, 0);
@@ -230,22 +224,24 @@ export const AuthProvider = ({ children }) => {
     setToken(sessionToken);
     setUser(sessionUser);
 
-    document.cookie =
-      `token=${sessionToken}; path=/; Secure; HttpOnly; SameSite=Strict`;
+    document.cookie = `token=${sessionToken}; path=/; Secure; HttpOnly; SameSite=Strict`;
 
     try {
-      localStorage.setItem('user', JSON.stringify(sessionUser));
+      localStorage.setItem("user", JSON.stringify(sessionUser));
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('[AuthContext] Error persisting user profile:', error);
+      console.error("[AuthContext] Error persisting user profile:", error);
     }
 
     return true;
   }, []);
 
-  const setAuthSession = useCallback((sessionToken, sessionUser) => {
-    return persistSession(sessionToken, sessionUser);
-  }, [persistSession]);
+  const setAuthSession = useCallback(
+    (sessionToken, sessionUser) => {
+      return persistSession(sessionToken, sessionUser);
+    },
+    [persistSession]
+  );
 
   const login = useCallback(
     async (usernameOrEmail, password) => {
@@ -262,17 +258,13 @@ export const AuthProvider = ({ children }) => {
         const data = res.data;
 
         if (res.status !== 200) {
-          throw new Error(data?.message || data?.error || 'Invalid credentials');
+          throw new Error(data?.message || data?.error || "Invalid credentials");
         }
 
-        const { sessionToken, sessionUser } = extractSession(
-          res,
-          data,
-          usernameOrEmail
-        );
+        const { sessionToken, sessionUser } = extractSession(res, data, usernameOrEmail);
 
         if (!sessionToken) {
-          throw new Error('Login failed: token missing from response');
+          throw new Error("Login failed: token missing from response");
         }
 
         const persisted = persistSession(sessionToken, sessionUser);
@@ -292,7 +284,7 @@ export const AuthProvider = ({ children }) => {
   const signInWithGoogle = useCallback(
     async (credential) => {
       if (!credential) {
-        const error = new Error('Google Sign-In failed: missing credential');
+        const error = new Error("Google Sign-In failed: missing credential");
         setAuthRequestState({ loading: false, error });
         throw error;
       }
@@ -307,7 +299,7 @@ export const AuthProvider = ({ children }) => {
       } catch (networkError) {
         const error = new Error(
           `Google Sign-In failed: could not reach the server. ${
-            networkError?.message || 'Please check your connection and try again.'
+            networkError?.message || "Please check your connection and try again."
           }`
         );
         if (!isMountedRef.current) return false;
@@ -319,9 +311,7 @@ export const AuthProvider = ({ children }) => {
 
       if (res.status !== 200) {
         const error = new Error(
-          data?.message ||
-            data?.error ||
-            `Google Sign-In failed: server returned ${res.status}`
+          data?.message || data?.error || `Google Sign-In failed: server returned ${res.status}`
         );
         if (!isMountedRef.current) return false;
         setAuthRequestState({ loading: false, error });
@@ -332,7 +322,7 @@ export const AuthProvider = ({ children }) => {
 
       if (!sessionToken) {
         const error = new Error(
-          'Google Sign-In failed: the server did not return an authentication token.'
+          "Google Sign-In failed: the server did not return an authentication token."
         );
         if (!isMountedRef.current) return false;
         setAuthRequestState({ loading: false, error });
@@ -355,7 +345,7 @@ export const AuthProvider = ({ children }) => {
 
   const isAuthenticated = useCallback(() => {
     if (!user || !token) return false;
-    if (token !== 'cookie-managed' && !isTokenValid(token)) {
+    if (token !== "cookie-managed" && !isTokenValid(token)) {
       needsExpiryCleanupRef.current = true;
       return false;
     }
