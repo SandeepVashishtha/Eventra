@@ -20,11 +20,9 @@ import StyledDropdown from "../../components/StyledDropdown";
 import SkeletonLeaderboard from "../../components/common/SkeletonLeaderboard";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useLeaderboardStream, SSE_STATUS } from "../../context/RealTimeContext";
-import {
-  storageManager,
-  STORAGE_KEYS,
-  validators,
-} from "../../utils/storageManager";
+import { storageManager } from "../../utils/storage/storageManager";
+import { STORAGE_KEYS } from "../../utils/storage/storageKeys";
+import { validators } from "../../utils/storage/storageValidators";
 
 // ─── Category filter definitions ───────────────────────────────────────────────
 const CATEGORY_FILTERS = [
