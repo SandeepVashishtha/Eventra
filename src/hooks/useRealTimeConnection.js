@@ -1,7 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const SSE_BASE_URL =
-  process.env.REACT_APP_API_URL || "http://localhost:8080/api/v1";
+const getSseBaseUrl = () => {
+  const envUrl = process.env.REACT_APP_SSE_URL || process.env.REACT_APP_API_URL;
+  if (envUrl) {
+    return envUrl;
+  }
+  if (process.env.NODE_ENV === "production") {
+    console.warn("REACT_APP_SSE_URL or REACT_APP_API_URL environment variable is missing in production. Defaulting to relative SSE connection.");
+    return "/api/v1";
+  }
+  return "http://localhost:8080/api/v1";
+};
+
+const SSE_BASE_URL = getSseBaseUrl();
 
 const BACKOFF_CAP_MS = 30_000;
 
@@ -20,11 +31,19 @@ export const SSE_STATUS = {
 
 /**
  * Manages an SSE (Server-Sent Events) connection with exponential backoff.
+ * 
+ * By default, the base URL is derived from:
+ * 1. REACT_APP_SSE_URL (explicit SSE endpoint)
+ * 2. REACT_APP_API_URL (general API base URL, e.g. http://localhost:8080/api/v1)
+ * 3. Fallback to "http://localhost:8080/api/v1"
+ * 
+ * When testing with the local sse-mock-server, set:
+ * REACT_APP_SSE_URL=http://localhost:4001
  *
  * Reconnection schedule: 1s → 2s → 4s → … → 30s (capped), plus ±500ms jitter.
  * Retries indefinitely so the client self-heals when the backend adds SSE support.
  *
- * @param {string} path - Endpoint path, e.g. "/stream/leaderboard"
+ * @param {string} path - Endpoint path, e.g. "/stream/leaderboard" or "/stream/analytics"
  * @param {object} [options]
  * @param {function} [options.onMessage] - Called with (parsedData, eventType) on each event
  * @param {boolean} [options.enabled=true]  - Set false to disable the connection

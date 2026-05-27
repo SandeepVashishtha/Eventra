@@ -12,6 +12,8 @@ The APIs support:
 - Structured error handling
 - Swagger/OpenAPI integration
 
+**For detailed information on authentication flows, role-based access control, and how permissions work, see the [Architecture & Roles Guide](ARCHITECTURE_AND_ROLES.md#-route-protection--authentication-flow).**
+
 ---
 
 # Swagger/OpenAPI Documentation
@@ -81,6 +83,24 @@ POST /api/auth/login
 
 ---
 
+## Alternative: Google OAuth Login
+
+### Endpoint
+
+```bash
+POST /api/auth/google
+```
+
+### Request Body
+
+```json
+{
+  "credential": "GOOGLE_ID_TOKEN_FROM_GOOGLE_OAUTH"
+}
+```
+
+---
+
 ## Step 3 — Copy JWT Token
 
 Successful login returns:
@@ -135,6 +155,86 @@ Creates a new user account and returns a JWT token.
 | POST | `/api/auth/login` |
 
 Authenticates the user and returns a JWT token.
+
+### Request Body
+
+```json
+{
+  "usernameOrEmail": "john@example.com",
+  "password": "password123"
+}
+```
+
+### Successful Response (200)
+
+```json
+{
+  "message": "Login successful",
+  "token": "JWT_TOKEN",
+  "tokenType": "Bearer",
+  "id": 1,
+  "firstName": "john",
+  "lastName": "doe",
+  "email": "john@example.com",
+  "username": "john",
+  "role": "ATTENDEE",
+  "roles": ["USER"],
+  "permissions": ["events:view", "events:register", ...]
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `400 Bad Request` | Missing username/email or password |
+| `401 Unauthorized` | Invalid credentials |
+
+---
+
+## Google OAuth Login
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/auth/google` |
+
+Authenticates the user via Google OAuth and returns a JWT token. Creates a new user if they don't exist.
+
+### Request Body
+
+```json
+{
+  "credential": "GOOGLE_ID_TOKEN"
+}
+```
+
+### Successful Response (200)
+
+```json
+{
+  "message": "Login successful via Google",
+  "token": "JWT_TOKEN",
+  "tokenType": "Bearer",
+  "id": 1,
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john@example.com",
+  "username": "john@example.com",
+  "role": "ATTENDEE",
+  "roles": ["USER"],
+  "permissions": ["events:view", "events:register", ...],
+  "avatarUrl": "https://lh3.googleusercontent.com/...",
+  "emailVerified": true,
+  "provider": "google"
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `400 Bad Request` | Missing Google credential |
+| `401 Unauthorized` | Invalid or expired Google token |
 
 ---
 
@@ -257,43 +357,50 @@ GET /api/events
 
 ---
 
-## Get Public Event By ID
+### Get Event By ID
+
+---
+
 
 | Method | Endpoint |
 |--------|----------|
 | GET | `/api/events/{id}` |
 
-Returns a public event if available.
+Returns complete details for an event by its ID. Requires JWT authentication.
+
+This endpoint retrieves the event directly by ID and does not apply public-only filtering. If the event exists, both public and private/non-public events can be returned to an authenticated requester.
+
+### Request Headers
+
+    Authorization: Bearer YOUR_JWT_TOKEN
 
 ### Example Request
 
-```bash
-GET /api/events/1
-```
+    GET /api/events/1
 
 ### Successful Response (200)
 
 ```json
-{
-  "id": 1,
-  "title": "Tech Conference",
-  "description": "Annual developer meetup",
-  "location": "Mumbai",
-  "eventDate": "2026-05-19T18:30:00",
-  "public": true
-}
+    {
+      "id": 1,
+      "title": "Tech Conference",
+      "description": "Annual developer meetup",
+      "location": "Mumbai",
+      "eventDate": "2026-05-19T18:30:00",
+      "public": false
+    }
 ```
 
 ### Error Response (404)
 
 ```json
-{
-  "status": 404,
-  "error": "Not Found",
-  "message": "Event not found or is not public with id: 888",
-  "path": "/api/events/888",
-  "timestamp": "2026-05-19T12:20:31"
-}
+    {
+      "status": 404,
+      "error": "Not Found",
+      "message": "Event not found with id: 888",
+      "path": "/api/events/888",
+      "timestamp": "2026-05-19T12:20:31"
+    }
 ```
 
 ---
@@ -352,6 +459,135 @@ POST /api/events/1/register
   "timestamp": "2026-05-19T12:20:31"
 }
 ```
+
+---
+
+## My Registered Events
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/users/my-events` |
+
+Returns the events registered by the currently authenticated user. Requires JWT authentication.
+
+### Request Headers
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+### Example Request
+
+```bash
+GET /api/users/my-events
+```
+
+### Successful Response (200)
+
+```json
+[
+  {
+    "registrationId": 101,
+    "eventId": 1,
+    "title": "Tech Conference 2026",
+    "description": "Annual developer meetup featuring talks and workshops",
+    "location": "Mumbai",
+    "eventDate": "2026-08-15T10:00:00",
+    "date": "2026-08-15",
+    "time": "10:00:00",
+    "registeredAt": "2026-05-20T14:30:00",
+    "status": "CONFIRMED"
+  }
+]
+```
+
+### Empty Response (200)
+
+```json
+[]
+```
+
+### Error Response (401)
+
+```json
+{
+  "status": 401,
+  "error": "Unauthorized",
+  "message": "Full authentication is required to access this resource",
+  "path": "/api/users/my-events",
+  "timestamp": "2026-05-27T12:20:31"
+}
+```
+
+---
+
+## Create Event
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/events/create` |
+
+Creates a new event. This endpoint is restricted to authenticated users with `ORGANIZER` or `ADMIN` authority.
+
+
+### Authentication
+
+---
+
+Requires a valid JWT token.
+
+```http
+Authorization: Bearer <token>
+```
+
+#### Request Body
+
+```json
+{
+  "title": "Manual Create Event Test",
+  "description": "Testing event creation manually",
+  "location": "Online",
+  "eventDate": "2026-07-15T10:00:00",
+  "capacity": 50,
+  "isPublic": true
+}
+```
+
+#### Field Notes
+
+- `title`, `description`, `location`, and `eventDate` are required.
+- `eventDate` must be a future date/time.
+- `capacity` is optional, but must be positive when provided.
+- `isPublic` is optional and defaults to `true`.
+- `registeredCount` is managed by the backend and defaults to `0`.
+
+#### Success Response
+
+```http
+201 Created
+```
+
+```json
+{
+  "id": 1,
+  "title": "Manual Create Event Test",
+  "description": "Testing event creation manually",
+  "location": "Online",
+  "eventDate": "2026-07-15T10:00:00",
+  "capacity": 50,
+  "registeredCount": 0,
+  "public": true
+}
+```
+
+#### Error Responses
+
+| Status | Reason |
+|---|---|
+| `400 Bad Request` | Invalid event payload |
+| `401 Unauthorized` | Missing or invalid JWT |
+| `403 Forbidden` | Authenticated user is not an `ORGANIZER` or `ADMIN` |
+
 
 ---
 
@@ -488,7 +724,7 @@ The backend returns standardized JSON error responses for better frontend integr
 {
   "status": 404,
   "error": "Not Found",
-  "message": "Event not found or is not public with id: 888",
+  "message": "Event not found with id: 888",
   "path": "/api/events/888",
   "timestamp": "2026-05-19T12:20:31"
 }

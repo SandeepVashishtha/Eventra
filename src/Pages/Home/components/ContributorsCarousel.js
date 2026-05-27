@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import useReducedMotion from "../../../hooks/useReducedMotion.js";
 import {
   FaGithub,
   FaExternalLinkAlt,
@@ -15,7 +16,6 @@ import { Link } from "react-router-dom";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
-const TOKEN = process.env.REACT_APP_GITHUB_TOKEN || "";
 
 const STORAGE_KEY = "github_contributors";
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
@@ -52,6 +52,7 @@ const cacheContributors = (data) => {
 };
 
 const Contributors = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -98,9 +99,8 @@ const Contributors = () => {
   // Fetch GitHub profile details
   const fetchGitHubProfile = useCallback(async (username) => {
     try {
-      const res = await fetch(`https://api.github.com/users/${username}`, {
-        headers: TOKEN ? { Authorization: `token ${TOKEN}` } : undefined,
-      });
+      const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(`/users/${username}`)}`;
+      const res = await fetch(proxyUrl);
       if (!res.ok) throw new Error("Profile fetch failed");
       const profile = await res.json();
       return {
@@ -138,12 +138,8 @@ const Contributors = () => {
       let page = 1;
       let hasMore = true;
       while (hasMore) {
-        const res = await fetch(
-          `https://api.github.com/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`,
-          {
-            headers: TOKEN ? { Authorization: `token ${TOKEN}` } : undefined,
-          }
-        );
+        const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(`/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`)}`;
+        const res = await fetch(proxyUrl);
         const data = await res.json();
         if (!Array.isArray(data) || data.length === 0) hasMore = false;
         else {
@@ -232,7 +228,7 @@ const Contributors = () => {
           className="text-5xl font-extrabold text-center mb-16 text-gray-800 dark:text-gray-100 tracking-tight"
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" }}
           // AOS Implementation (Title)
           data-aos="fade-zoom-in"
           data-aos-once="true"
@@ -270,7 +266,7 @@ const Contributors = () => {
             <motion.div
               className="flex gap-6 items-stretch"
               animate={{ x: 0 }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.5, ease: "easeInOut" }}
             >
               {visibleContributors.map((c, i) => (
                 <motion.div

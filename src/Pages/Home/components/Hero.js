@@ -1,9 +1,10 @@
-import { motion, useAnimation, AnimatePresence, MotionConfig } from "framer-motion";
-import { useEffect, useState } from "react";
+import { motion, useAnimation, AnimatePresence, MotionConfig, useScroll, useTransform } from "framer-motion";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
-import { Search, Calendar, Trophy, Code, ExternalLink, ArrowRight } from "lucide-react";
+import { Search, Calendar, Trophy, Code, ExternalLink } from "lucide-react";
 
+import useReducedMotion from "../../../hooks/useReducedMotion.js";
 // Import mock data
 import eventsData from "../../Events/eventsMockData.json";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
@@ -16,6 +17,7 @@ import useDocumentTitle from "../../../hooks/useDocumentTitle";
 const MotionLink = motion(Link);
 
 const Hero = () => {
+  const prefersReducedMotion = useReducedMotion();
   useDocumentTitle("Eventra | Home");
   const phrases = [
     "Amazing Tech Events",
@@ -24,12 +26,44 @@ const Hero = () => {
     "Cutting-Edge Tech Meetups",
   ];
 
+  const containerRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end start"],
+  });
+
+  // Check if device has pointer: coarse (touch screen) to preserve native feel
+  const [isTouch, setIsTouch] = useState(false);
+  useEffect(() => {
+    setIsTouch(window.matchMedia("(pointer: coarse)").matches);
+  }, []);
+
+  // Parallax scroll-driven transforms (only active on non-touch devices to ensure hardware performance)
+  const yText = useTransform(scrollYProgress, [0, 1], [0, 180]);
+  const yStats = useTransform(scrollYProgress, [0, 1], [0, 60]);
+  const opacityHero = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
+
+  // Different parallax speeds for each shape
+  const yShape0 = useTransform(scrollYProgress, [0, 1], [0, 220]);
+  const yShape1 = useTransform(scrollYProgress, [0, 1], [0, -150]);
+  const yShape2 = useTransform(scrollYProgress, [0, 1], [0, 100]);
+  const yShape3 = useTransform(scrollYProgress, [0, 1], [0, -180]);
+  const yShape4 = useTransform(scrollYProgress, [0, 1], [0, 130]);
+  const yShape5 = useTransform(scrollYProgress, [0, 1], [0, -80]);
+  const yShape6 = useTransform(scrollYProgress, [0, 1], [0, 250]);
+  const yShape7 = useTransform(scrollYProgress, [0, 1], [0, -120]);
+  const yShape8 = useTransform(scrollYProgress, [0, 1], [0, 70]);
+
+  const shapeTransforms = [yShape0, yShape1, yShape2, yShape3, yShape4, yShape5, yShape6, yShape7, yShape8];
 
   const [index, setIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [statsReady, setStatsReady] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(
+    typeof window !== "undefined" ? window.innerWidth <= 420 : false
+  );
   const [isDark, setIsDark] = useState(
     document.documentElement.classList.contains("dark")
   );
@@ -62,8 +96,19 @@ const Hero = () => {
   }, [controls]);
 
   useEffect(() => {
+    const onResize = () => setIsMobileView(window.innerWidth <= 420);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
     setStatsReady(true);
   }, []);
+  // FIXED
+useEffect(() => {
+  const timer = setTimeout(() => setStatsReady(true), 100);
+  return () => clearTimeout(timer);
+}, []);
 
   // Global search functionality
   const createSearchItem = (item, type, searchType) => ({
@@ -76,7 +121,6 @@ const Hero = () => {
     category: item.category,
     author: item.author,
     organizer: item.organizer,
-    type,
     searchType,
   });
 
@@ -151,14 +195,14 @@ const Hero = () => {
 
   const fadeUp = {
     hidden: { y: 40, opacity: 0 },
-    show: { y: 0, opacity: 1, transition: { duration: 0.8, ease: "easeOut" } },
+    show: { y: 0, opacity: 1, transition: { duration: prefersReducedMotion ? 0 : 0.8, ease: "easeOut" } },
   };
 
   const floatShape = (i) => ({
     y: [0, -20 - i * 5, 0],
     x: [0, 20 + i * 5, 0],
     rotate: [0, 15, -15, 0],
-    transition: { duration: 4.4 + i * 0.7, repeat: Infinity, ease: "easeInOut" },
+    transition: { duration: prefersReducedMotion ? 0 : 4.4 + i * 0.7, repeat: Infinity, ease: "easeInOut" },
   });
 
   // Vibrant colors for light mode, soft pastels for dark mode
@@ -182,6 +226,7 @@ const Hero = () => {
 
   return (
     <section
+      ref={containerRef}
       aria-label="Hero section"
       className="relative overflow-hidden 
 bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white
@@ -189,16 +234,43 @@ dark:from-slate-950 dark:via-slate-900 dark:to-black
 text-slate-900 dark:text-gray-100 
 pb-16 sm:pb-20 md:pb-24
 border-b border-gray-100 dark:border-slate-900">
+      {/* Decorative Parallax Shapes */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        {!isTouch && shapes.map((shape, i) => (
+          <motion.div
+            key={i}
+            style={{
+              position: "absolute",
+              top: shape.pos.top,
+              left: shape.pos.left,
+              width: shape.size,
+              height: shape.size,
+              borderRadius: "30% 70% 70% 30% / 30% 30% 70% 70%", // Organic blob shape
+              background: `linear-gradient(135deg, ${isDark ? shape.darkColor : shape.lightColor}22, ${isDark ? shape.darkColor : shape.lightColor}66)`,
+              filter: "blur(2px)",
+              boxShadow: `0 8px 32px 0 ${isDark ? shape.darkColor : shape.lightColor}0a`,
+              y: shapeTransforms[i],
+              willChange: "transform",
+            }}
+            animate={floatShape(i)}
+          />
+        ))}
+      </div>
+
       {/* Hero Content */}
-      <div className=" mx-auto px-6 lg:px-8 relative z-10 pt-20"
-      style={{
-    backgroundImage: "url('/background.png')",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    backgroundRepeat: "no-repeat",
-    minHeight: "100vh",
-    width:"100vw"
-  }}
+      <motion.div 
+        className="mx-auto px-6 lg:px-8 relative z-10 pt-20"
+        style={{
+          backgroundImage: "url('/background.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          minHeight: "100vh",
+          width: "100vw",
+          y: isTouch ? 0 : yText,
+          opacity: isTouch ? 1 : opacityHero,
+          willChange: "transform, opacity",
+        }}
       >
         <motion.div
           className="text-center"
@@ -212,11 +284,11 @@ border-b border-gray-100 dark:border-slate-900">
           <MotionConfig reducedMotion="never">
             {/* Headline */}
             <motion.h1
-              className="mx-auto max-w-4xl mt-6 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-6 leading-tight tracking-tight text-gray-900 dark:text-white px-2 sm:px-0"
+              className="mx-auto max-w-4xl mt-6 flex flex-col items-center gap-5 sm:gap-6 text-lg sm:text-xl md:text-4xl lg:text-5xl font-black mb-6 leading-relaxed tracking-tight text-gray-900 dark:text-white px-2 sm:px-0 text-center overflow-visible"
               style={{ fontFamily: '"Inter", sans-serif' }}
             >
               <motion.span
-                className="block text-gray-900 dark:text-white mb-2 md:mb-0"
+                className="block text-gray-900 dark:text-gray-400"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
@@ -224,25 +296,30 @@ border-b border-gray-100 dark:border-slate-900">
                 <RespawningText texts={["Discover & Join", "Innovate & Create", "Learn & Grow"]} />
               </motion.span>
 
-              <div className="relative mx-auto h-14 sm:h-24 md:h-28 lg:h-32 overflow-hidden flex justify-center items-center max-w-full">
+              {/* Static phrase for smallest screens (no motion) */}
+              <span className="block sm:hidden text-indigo-600 dark:text-indigo-500 font-extrabold drop-shadow-sm mt-3 text-lg text-center">
+                {phrases[index]}
+              </span>
+
+              <div className="relative mx-auto w-full min-h-[7.5rem] sm:min-h-[9rem] md:min-h-[10rem] lg:min-h-[11rem] overflow-hidden flex justify-center items-center max-w-full px-1 mt-2 py-4 ">
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={index}
-                    className="block mt-2 text-gray-900 dark:text-white mb-4 pb-2 whitespace-normal text-center px-1"
+                    className="block mt-2 text-gray-900 dark:text-white mb-4 pb-4 whitespace-normal text-center px-1 leading-tight"
                     initial={{ opacity: 0, y: 40 }}
                     animate={{
                       opacity: 1,
                       y: 0,
-                      transition: { duration: 0.8, ease: "easeOut" },
+                      transition: { duration: prefersReducedMotion ? 0 : 0.8, ease: "easeOut" },
                     }}
                     exit={{
                       opacity: 0,
                       y: -40,
-                      transition: { duration: 0.5, ease: "easeIn" },
+                      transition: { duration: prefersReducedMotion ? 0 : 0.5, ease: "easeIn" },
                     }}
                   >
-                    <span className="text-indigo-600 dark:text-indigo-500 font-extrabold drop-shadow-sm">
-                    {phrases[index]}
+                    <span className="text-indigo-600 dark:text-indigo-500 font-extrabold drop-shadow-sm text-2xl sm:text-3xl md:text-5xl lg:text-6xl">
+                      {phrases[index]}
                     </span>
                   </motion.span>
                 </AnimatePresence>
@@ -253,7 +330,7 @@ border-b border-gray-100 dark:border-slate-900">
           {/* Subtext */}
           <motion.p
             variants={fadeUp}
-            className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
+            className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-800 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
           >
             Connect with developers, learn new skills, and grow your network at
             the best tech events, hackathons, and workshops in your area.
@@ -275,7 +352,7 @@ border-b border-gray-100 dark:border-slate-900">
                     initial={{ opacity: 0, y: -10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
+                    transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
                     className="absolute top-full left-0 right-0 mt-3 
                      bg-white dark:bg-slate-900
 rounded-xl
@@ -334,7 +411,7 @@ text-gray-600 dark:text-gray-300"
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 10 }}
-                          transition={{ duration: 0.25, ease: "easeOut" }}
+                          transition={{ duration: prefersReducedMotion ? 0 : 0.25, ease: "easeOut" }}
                           className="text-center text-gray-500 dark:text-gray-400 py-10 text-base"
                         >
                           No results match "
@@ -363,7 +440,7 @@ text-gray-600 dark:text-gray-300"
                 className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-500 dark:bg-blue-900 text-white dark:text-white font-bold shadow-md shadow-blue-200 dark:shadow-none overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-600 dark:hover:bg-blue-800"
               >
                 <span className="relative z-10 flex items-center">
-                  <img src="/assets/events.svg" alt="" className="mr-2"/>
+                  <img src="/assets/events.svg" alt="events" className="mr-2"/>
                   Explore Events
                   <svg
                     className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
@@ -386,7 +463,7 @@ text-gray-600 dark:text-gray-300"
                 aria-label="Join upcoming hackathons"
                 className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-amber-400 dark:bg-yellow-900 border border-amber-300 dark:border-yellow-700 text-white dark:text-white font-semibold shadow-md shadow-amber-100 dark:shadow-none hover:shadow-lg hover:bg-amber-500 dark:hover:bg-yellow-800 hover:scale-105 transition-all duration-300"
               >
-                <img src="/assets/hackathons.svg" alt="" className="mr-2"/>
+                <img src="/assets/hackathons.svg" alt="hackaton" className="mr-2"/>
                 Join Hackathons
                 <svg
                     className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
@@ -409,7 +486,7 @@ text-gray-600 dark:text-gray-300"
                 aria-label="Learn more about Eventra"
                 className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-pink-500 dark:bg-pink-900 text-white dark:text-white font-semibold shadow-md shadow-pink-100 dark:shadow-none transform transition-all duration-300 hover:scale-105 hover:bg-pink-600 dark:hover:bg-pink-800"
               >
-                <img src="/assets/learnmore.svg" alt="" className="mr-2"/>
+                <img src="/assets/learnmore.svg" alt="learnmore" className="mr-2"/>
                 Learn More
                 <svg
                   className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
@@ -430,6 +507,10 @@ text-gray-600 dark:text-gray-300"
           {!searchQuery.trim() && (
             <motion.div
               variants={fadeUp}
+              style={{
+                y: isTouch ? 0 : yStats,
+                willChange: "transform",
+              }}
               className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
               role="region"
               aria-label="Platform statistics"
@@ -439,20 +520,19 @@ text-gray-600 dark:text-gray-300"
                   key={i}
                   variants={fadeUp}
                   whileHover={{ y: -5 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
                   className="flex flex-col items-center justify-center p-6 bg-white/60 dark:bg-gray-900/40 backdrop-blur-md rounded-2xl border border-gray-200/60 dark:border-gray-800/60 shadow-sm"
                 >
                   
                   <p className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
                     {statsReady ? (
-                      <CountUp
-                        start={0}
-                        end={Number.isFinite(stat.value) ? stat.value : 0}
-                        duration={2.5}
-                        suffix={stat.suffix || ""}
-                        enableScrollSpy
-                        scrollSpyOnce
-                      />
+                      // AFTER
+<CountUp
+  start={0}
+  end={Number.isFinite(stat.value) ? stat.value : 0}
+  duration={2.5}
+  suffix={stat.suffix || ""}
+/>
                     ) : (
                       <>
                         {stat.value}
@@ -460,7 +540,7 @@ text-gray-600 dark:text-gray-300"
                       </>
                     )}
                   </p>
-                  <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-semibold uppercase tracking-wider">
+                  <p className="text-gray-500 dark:text-gray-600 text-xs sm:text-sm font-semibold uppercase tracking-wider">
                     {stat.label}
                   </p>
                 </motion.div>
@@ -468,9 +548,10 @@ text-gray-600 dark:text-gray-300"
             </motion.div>
           )}
         </motion.div>
-      </div>
+      </motion.div>
     </section>
   );
 };
 
 export default Hero;
+

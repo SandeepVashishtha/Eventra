@@ -1,3 +1,4 @@
+import NotificationBell from "../common/NotificationBell.jsx";
 import { useTheme } from "../../context/ThemeContext";
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -9,27 +10,28 @@ import { UserCog } from "lucide-react";
 import {
   Home,
   Calendar,
+  CalendarDays,
   Sparkles,
   FolderKanban,
-  Trophy,
   Users,
+  Trophy,
+  Info,
   LayoutDashboard,
   User as UserIcon,
   LogOut,
   LogIn,
+  MessageSquare,
+  Book,
   Bookmark,
   Bell,
+  HelpCircle,
   ChevronDown,
   MousePointer,
   Moon,
   Sun,
+  MoreHorizontal,
   Search,
   Palette,
-  Book,
-  MoreHorizontal,
-  Info,
-  HelpCircle,
-  MessageSquare,
 } from "lucide-react";
 import CommandPalette from "../common/CommandPalette";
 
@@ -67,9 +69,7 @@ const setBodyScrollStyles = (top) => {
   });
 };
 
-const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
-  const { setIsCustomizerOpen } = useTheme();
-
+const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile, setIsCustomizerOpen }) => {
   if (isMobile) {
     return (
       <div className="flex flex-col gap-2.5 w-full">
@@ -87,11 +87,11 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
         </motion.button>
         <motion.button
           whileTap={{ scale: 0.95 }}
-          onClick={() => setIsCustomizerOpen(true)}
+          onClick={() => setIsCustomizerOpen && setIsCustomizerOpen(true)}
           className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-pink-500 text-white font-semibold border-none shadow-md hover:shadow-lg transition-all cursor-pointer"
         >
           <Palette className="w-5 h-5" />
-          <span>Theme Skins Panel</span>
+          <span>THEME Customizer</span>
         </motion.button>
       </div>
     );
@@ -103,7 +103,7 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
         whileTap={{ scale: 0.95 }}
         onClick={toggleTheme}
         title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-        className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group cursor-pointer"
+        aria-label={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
       >
         <motion.span
           key={isDarkMode ? "sun" : "moon"}
@@ -120,7 +120,7 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
       <motion.button
         whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.92 }}
-        onClick={() => setIsCustomizerOpen(true)}
+        onClick={() => setIsCustomizerOpen && setIsCustomizerOpen(true)}
         title="Open Theme Customizer"
         className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 focus:outline-none bg-gradient-to-r from-indigo-500/10 to-pink-500/10 hover:from-indigo-500/20 hover:to-pink-500/20 border border-indigo-200/50 dark:border-indigo-800/40 hover:shadow-[0_0_12px_rgba(236,72,153,0.3)] text-indigo-550 dark:text-indigo-400 cursor-pointer"
       >
@@ -143,7 +143,7 @@ const CursorToggleButton = ({ cursorEnabled, toggleCursor, isMobile }) => {
         ) : (
           <MousePointer className="w-5 h-5 text-zinc-400" />
         )}
-        <span>{cursorEnabled ? "Cursor: FLUID" : "Cursor: STATIC"}</span>
+        <span>{cursorEnabled ? "Fluid Cursor" : "Static Cursor"}</span>
       </motion.button>
     );
   }
@@ -372,10 +372,13 @@ const MobileDrawerFooter = ({
       <div className="flex gap-3 mt-4">
         <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={true} />
         <CursorToggleButton
-          cursorEnabled={cursorEnabled}
-          toggleCursor={toggleCursor}
-          isMobile={true}
-        />
+  cursorEnabled={cursorEnabled}
+  toggleCursor={toggleCursor}
+  isMobile={true}
+/>
+
+<NotificationBell />
+        
       </div>
     </div>
   </div>
@@ -461,12 +464,12 @@ const UserProfileDropdown = ({
               Achievements
             </Link>
             <Link
-              to="/profile"
+              to="/dashboard/profile"
               onClick={() => setShowProfileDropdown(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/profile" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/dashboard/profile" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
             >
               <UserCog className="w-4 h-4" />
-              Edit Profile
+              View Profile
             </Link>
           </div>
           <div className="p-2 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
@@ -529,12 +532,12 @@ const MobileUserSection = ({
       Achievements
     </Link>
     <Link
-      to="/profile"
+      to="/dashboard/profile"
       onClick={closeAllMenus}
-      className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors text-lg font-medium ${location.pathname === "/profile" ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"}`}
+      className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors text-lg font-medium ${location.pathname === "/dashboard/profile" ? "bg-black/10 dark:bg-white/15 border border-black/10 dark:border-white/20 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10"}`}
     >
       <UserCog className="w-5 h-5" />
-      Edit Profile
+      View Profile
     </Link>
     <button
       onClick={handleLogoutClick}
@@ -548,15 +551,15 @@ const MobileUserSection = ({
 
 const NAV_ITEMS = [
   { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
-  { name: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
-  { name: "Bookmarks", href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
-  { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
+ 
   {
-    name: "Bookmarks",
-    icon: <Bookmark className="w-5 h-5" />,
+    name: "Event Tools",
+    icon: <Calendar className="w-5 h-5" />,
     subItems: [
-      { name: "Saved Events", href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
-      { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
+      { name: "Explore Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
+      { name: "Event Calendar", href: "/calendar", icon: <CalendarDays className="w-5 h-5" /> },
+      { name: "Saved Events",   href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
+      { name: "Reminders",      href: "/reminders", icon: <Bell className="w-5 h-5" /> },
     ],
   },
   { name: "Hackathons", href: "/hackathons", icon: <Trophy className="w-5 h-5" /> },
@@ -565,6 +568,7 @@ const NAV_ITEMS = [
     name: "Community",
     icon: <Users className="w-5 h-5" />,
     subItems: [
+
       { name: "Leaderboard", href: "/leaderBoard", icon: <Trophy className="w-5 h-5" /> },
       { name: "Contributors", href: "/contributors", icon: <Users className="w-5 h-5" /> },
       { name: "Contributors Guide", href: "/contributorguide", icon: <Book className="w-5 h-5" /> },
@@ -575,6 +579,7 @@ const NAV_ITEMS = [
     name: "More",
     icon: <MoreHorizontal className="w-5 h-5" />,
     subItems: [
+      
       { name: "About", href: "/about", icon: <Info className="w-5 h-5" /> },
       { name: "FAQ", href: "/faq", icon: <HelpCircle className="w-5 h-5" /> },
       { name: "Contact", href: "/contact", icon: <MessageSquare className="w-5 h-5" /> },
@@ -599,7 +604,7 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
       return isMobile ? (
         <MobileNavLink key={item.name} item={item} isActive={isActive} onClick={onLinkClick} />
       ) : (
-        <DesktopNavLink key={item.name} item={item} nowisActive={isActive} />
+        <DesktopNavLink key={item.name} item={item} isActive={isActive} />
       );
     })}
   </>
@@ -836,30 +841,28 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         data-aos="fade-down"
         data-aos-once="true"
         data-aos-duration="1000"
-        className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 transition-colors duration-300"
+        className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 transition-colors duration-300 overflow-visible"
       >
         <div className="neon-navbar-border"></div>
 
-        <div className="max-w-screen-2xl mx-auto flex items-center justify-between h-[68px] px-4 md:px-6 xl:px-10 gap-4 w-full overflow-hidden">
-          <Link to="/" className="flex items-center shrink-0 z-20 pr-2">
-            <h2
-              className="bg-gradient-to-r from-zinc-950 via-indigo-600 to-violet-600 dark:from-white dark:via-indigo-300 dark:to-indigo-500 bg-clip-text text-transparent"
-              style={{
-                fontFamily: "'Oxanium', monospace",
-                fontSize: "1.44rem",
-                fontWeight: 800,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                margin: 0,
-                lineHeight: 1,
-              }}
-            >
-              Eventra
-            </h2>
+        <div className="max-w-screen-2xl mx-auto flex items-center justify-between min-h-[68px] px-4 md:px-6 xl:px-10 gap-4 w-full overflow-visible">
+          
+          {/* Logo */}
+          <Link
+            to="/"
+            className="flex items-center shrink-0 z-20 mr-2"
+          >
+            <img
+              src="/Eventra.png"
+              alt="Eventra Logo"
+              className="h-9 w-auto object-contain"
+            />
           </Link>
 
+          {/* Desktop Nav Links */}
           <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
 
+          {/* Right Controls */}
           <div className="hidden lg:flex items-center gap-2 shrink-0 pl-2">
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -903,33 +906,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               <AuthButtons isMobile={false} />
             )}
           </div>
-    {/* Mobile Menu Button */}
-    <div className="lg:hidden ml-auto">
-      <button
-        ref={toggleBtnRef}
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        aria-expanded={isMobileMenuOpen}
-        aria-controls="mobile-drawer"
-        aria-label={
-          isMobileMenuOpen ? "Close navigation" : "Open navigation"
-        }
-        className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10"
-      >
-        <svg
-          className="h-5 w-5 sm:h-6 sm:w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 6h16M4 12h16M4 18h16"
-          />
-        </svg>
-      </button>
-    </div>
 
           {/* Mobile Menu Button */}
           <div className="lg:hidden ml-auto">
@@ -991,6 +967,8 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         onClose={() => setShowCommandPalette(false)}
         isDarkMode={isDarkMode}
         toggleTheme={toggleTheme}
+        cursorEnabled={cursorEnabled}
+        toggleCursor={toggleCursor}
         isAuthenticated={isAuthenticated}
         handleLogoutClick={handleLogoutClick}
       />

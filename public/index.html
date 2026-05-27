@@ -3,8 +3,40 @@
   <head>
     <meta charset="utf-8" />
 
-    <!-- Favicon -->
-    <link rel="icon" href="%PUBLIC_URL%/Eventra.png" />
+    <!-- Favicons -->
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="%PUBLIC_URL%/favicon.ico"
+    />       
+<link
+  rel="shortcut icon"
+  href="%PUBLIC_URL%/favicon.ico"
+/>
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="%PUBLIC_URL%/favicon-32x32.png"
+    />
+
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="%PUBLIC_URL%/favicon-16x16.png"
+    />
+
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="%PUBLIC_URL%/apple-touch-icon.png"
+    />
+
+    <link
+      rel="manifest"
+      href="%PUBLIC_URL%/manifest.json"
+    />
 
     <!-- Responsive -->
     <meta
@@ -15,92 +47,26 @@
     <!-- Theme -->
     <meta
       name="theme-color"
-      content="#000000"
+      content="#0f172a"
     />
+<meta
+  name="apple-mobile-web-app-capable"
+  content="yes"
+/>
 
+<meta
+  name="apple-mobile-web-app-status-bar-style"
+  content="black-translucent"
+/>
+
+<meta
+  name="apple-mobile-web-app-title"
+  content="Eventra"
+/>
     <!-- Primary SEO -->
     <meta
       name="description"
       content="Open-source event management platform for communities, colleges, and organizations worldwide"
-    />
-
-    <meta
-      name="keywords"
-      content="Eventra, event management, open source events, community events, college events, conferences, meetups, event booking platform"
-    />
-
-    <meta
-      name="author"
-      content="Eventra Team"
-    />
-
-    <meta
-      name="robots"
-      content="index, follow"
-    />
-
-    <!-- Canonical URL -->
-    <link
-      rel="canonical"
-      href="https://eventra.vercel.app/"
-    />
-
-    <!-- Open Graph Meta Tags -->
-    <meta
-      property="og:type"
-      content="website"
-    />
-
-    <meta
-      property="og:title"
-      content="Eventra - Open Source Event Management Platform"
-    />
-
-    <meta
-      property="og:description"
-      content="Open-source event management platform for communities, colleges, and organizations worldwide"
-    />
-
-    <meta
-      property="og:image"
-      content="%PUBLIC_URL%/Eventra.png"
-    />
-
-    <meta
-      property="og:url"
-      content="https://eventra.vercel.app/"
-    />
-
-    <meta
-      property="og:site_name"
-      content="Eventra"
-    />
-
-    <!-- Twitter Card Meta Tags -->
-    <meta
-      name="twitter:card"
-      content="summary_large_image"
-    />
-
-    <meta
-      name="twitter:title"
-      content="Eventra - Open Source Event Management Platform"
-    />
-
-    <meta
-      name="twitter:description"
-      content="Open-source event management platform for communities, colleges, and organizations worldwide"
-    />
-
-    <meta
-      name="twitter:image"
-      content="%PUBLIC_URL%/Eventra.png"
-    />
-
-    <!-- Apple Touch Icon -->
-    <link
-      rel="apple-touch-icon"
-      href="%PUBLIC_URL%/logo192.png"
     />
 
     <!-- Preconnect for faster external resource loading -->
@@ -128,12 +94,6 @@
       crossorigin
     />
 
-    <!-- Manifest -->
-    <link
-      rel="manifest"
-      href="%PUBLIC_URL%/manifest.json"
-    />
-
     <!-- Fonts -->
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
@@ -149,22 +109,37 @@
       />
     </noscript>
 
-    <!-- Preload Hero Image -->
-    <link
-      rel="preload"
-      href="%PUBLIC_URL%/Eventra.png"
-      as="image"
-    />
-
     <!-- Prevent Theme Flickering -->
     <script>
+      (() => {
+        try {
+          const savedTheme = localStorage.getItem("theme");
+          const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          const theme = savedTheme || (systemDark ? "dark" : "light");
 
+          document.documentElement.classList.add("no-transition");
+          document.documentElement.classList.remove("light", "dark");
+          document.documentElement.classList.add(theme);
+          document.documentElement.style.colorScheme = theme;
+
+          window.addEventListener("load", () => {
+            document.documentElement.classList.remove("no-transition");
+          });
+        } catch (e) {
+          console.error("Theme initialization failed:", e);
+        }
+      })();
     </script>
 
     <!-- Title -->
     <title>
       Eventra - Open Source Event Management Platform
     </title>
+    <meta property="og:title" content="Eventra - Platform for Builders" />
+    <meta property="og:description" content="A premium, modern platform for organizing and attending events, hackathons, and projects." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://eventra.vercel.app/" />
+    <meta property="og:image" content="%PUBLIC_URL%/Eventra.png" />
 
     <!-- Google Sign In -->
     <meta
@@ -189,6 +164,7 @@
     <noscript>
       You need to enable JavaScript to run this app.
     </noscript>
+
     <div id="root"></div>
   </body>
 </html>

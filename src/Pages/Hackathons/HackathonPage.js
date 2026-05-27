@@ -1,19 +1,20 @@
+import TeamMatchmaking from "./components/TeamMatchmaking";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import mockHackathons from "./hackathonMockData.json";
 import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
-import FeedbackButton from "../../components/FeedbackButton";
 import { FiCode, FiRotateCw, FiCompass, FiChevronDown, FiX } from "react-icons/fi";
 import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
-import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 import BackToTopButton from "../../components/common/BackToTopButton";
-import PageLoader from "../../components/common/PageLoader";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { filterHackathons } from "./hackathonFilterUtils.mjs";
+import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 
+import useReducedMotion from "../../hooks/useReducedMotion.js";
 // NEW: Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
   <motion.div
@@ -33,6 +34,7 @@ const Tag = ({ tag, onRemove }) => (
 );
 
 const HackathonHub = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [hackathons, setHackathons] = useState([]);
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -114,7 +116,7 @@ const HackathonHub = () => {
       y: 0,
       opacity: 1,
       transition: {
-        duration: 0.6,
+        duration: prefersReducedMotion ? 0 : 0.6,
         ease: [0.16, 1, 0.3, 1],
       },
     },
@@ -154,39 +156,11 @@ const HackathonHub = () => {
     ? fuse.search(searchQuery).map((result) => result.item)
     : hackathons;
 
-  // UPDATED: Filter hackathons based on selected tags
-  const filteredHackathons = searchedHackathons
-    .filter((hackathon) => {
-      if (activeTab === "all") return true;
-      return hackathon.status === activeTab;
-    })
-    .filter((hackathon) => {
-      if (filters.difficulty && hackathon.difficulty !== filters.difficulty) {
-        return false;
-      }
-      if (
-        filters.prize &&
-        !hackathon.prize.toLowerCase().includes(filters.prize.toLowerCase())
-      ) {
-        return false;
-      }
-      if (
-        filters.location &&
-        !hackathon.location
-          .toLowerCase()
-          .includes(filters.location.toLowerCase())
-      ) {
-        return false;
-      }
-
-      // NEW: Filter by selected tags
-      if (selectedTags.length > 0) {
-        const hackathonTags = hackathon.techStack || [];
-        return selectedTags.some((tag) => hackathonTags.includes(tag));
-      }
-
-      return true;
-    });
+  const filteredHackathons = filterHackathons(searchedHackathons, {
+    activeTab,
+    filters,
+    selectedTags,
+  });
 
   const featuredHackathons = [...hackathons]
     .filter((h) => h.featured)
@@ -397,6 +371,9 @@ const HackathonHub = () => {
         ))}
       </motion.div>
 
+{/* TEAM MATCHMAKING SECTION */}
+<TeamMatchmaking />
+
       {/* Featured Hackathons */}
       {!isLoading && featuredHackathons.length > 0 && (
         <div
@@ -500,7 +477,7 @@ const HackathonHub = () => {
                 initial={{ opacity: 0, y: -12, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -12, scale: 0.98 }}
-                transition={{ duration: 0.35, ease: "easeOut" }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.35, ease: "easeOut" }}
                 className="
                 relative overflow-hidden mb-6
                 rounded-2xl
@@ -600,9 +577,13 @@ const HackathonHub = () => {
 
         {/* Hackathons Grid */}
         <AnimatePresence mode="wait">
-          {isLoading ? (
-            <PageLoader text="Loading hackathons..." />
-          ) : filteredHackathons.length > 0 ? (
+         {isLoading ? (
+  <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+    {[...Array(6)].map((_, i) => (
+      <HackathonCardSkeleton key={`skeleton-${i}`} />
+    ))}
+  </div>
+) : filteredHackathons.length > 0 ? (
             <motion.div
               key={activeTab}
               className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
@@ -625,7 +606,7 @@ const HackathonHub = () => {
               className="relative overflow-hidden rounded-3xl p-10 text-center shadow-md dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)] border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-800"
               initial={{ opacity: 0, y: 30, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" }}
             >
               <motion.div
                 className="absolute inset-0 -z-10 bg-indigo-50/50 dark:bg-black/30 blur-3xl"
@@ -635,7 +616,7 @@ const HackathonHub = () => {
                   rotate: [0, 10, -10, 0],
                 }}
                 transition={{
-                  duration: 8,
+                  duration: prefersReducedMotion ? 0 : 8,
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
@@ -670,7 +651,7 @@ const HackathonHub = () => {
                         scale: [1, 1.2, 1],
                       }}
                       transition={{
-                        duration: 6 + i,
+                        duration: prefersReducedMotion ? 0 : 6 + i,
                         repeat: Infinity,
                         ease: "easeInOut",
                         delay: i * 0.5,
@@ -684,7 +665,7 @@ const HackathonHub = () => {
                 <motion.div
                   animate={{ y: [0, -8, 0] }}
                   transition={{
-                    duration: 3,
+                    duration: prefersReducedMotion ? 0 : 3,
                     repeat: Infinity,
                     ease: "easeInOut",
                   }}
@@ -734,9 +715,6 @@ const HackathonHub = () => {
         </AnimatePresence>
       </div>
       <HackathonCTA></HackathonCTA>
-
-      {/* Feedback Button */}
-      <FeedbackButton />
       <BackToTopButton />
     </div>
   );
