@@ -116,9 +116,14 @@ const EventRegistration = () => {
 
     setSubmitting(true);
 
+    const isEventFull = event ? event.attendees >= event.maxAttendees : false;
+    const endpoint = isEventFull 
+      ? `/api/events/${eventId}/waitlist`
+      : (API_ENDPOINTS.EVENTS?.REGISTER ? API_ENDPOINTS.EVENTS.REGISTER(eventId) : `/api/events/${eventId}/register`);
+
     try {
       // API call to register for event
-      const response = await fetch(API_ENDPOINTS.EVENTS.REGISTER(eventId), {
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -133,7 +138,7 @@ const EventRegistration = () => {
 
       if (response.ok) {
         setRegistered(true);
-        toast.success("Registration successful!");
+        toast.success(isEventFull ? "Successfully joined waitlist!" : "Registration successful!");
         // ── Save to My Events ──
         addRegistration(event, formData);
         // Redirect to event details after 2 seconds
@@ -202,16 +207,20 @@ const EventRegistration = () => {
     );
   }
 
+  const isEventFull = event ? event.attendees >= event.maxAttendees : false;
+
   if (registered) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 px-4">
         <div className="text-center">
           <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-4" />
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Registration Successful!
+            {isEventFull ? "Waitlist Joined!" : "Registration Successful!"}
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            You have successfully registered for {event.title}
+            {isEventFull 
+              ? `You have been added to the waitlist for ${event.title}`
+              : `You have successfully registered for ${event.title}`}
           </p>
           <Link
             to="/events"
@@ -441,10 +450,10 @@ const EventRegistration = () => {
                   {submitting ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Registering...
+                      {isEventFull ? "Joining Waitlist..." : "Registering..."}
                     </>
                   ) : (
-                    "Complete Registration"
+                    isEventFull ? "Join Waitlist" : "Complete Registration"
                   )}
                 </button>
               </div>
