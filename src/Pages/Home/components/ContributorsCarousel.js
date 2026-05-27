@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import {
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
+import {
   FaGithub,
   FaExternalLinkAlt,
   FaCodeBranch,
@@ -22,7 +22,6 @@ const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
 
 // Role assignment
 const getRoleByGitHubActivity = (contributor) => {
-  const prefersReducedMotion = useReducedMotion();
   const { contributions, followers = 0, login } = contributor;
   if (login === "sandeepvashishtha") return "Project Lead";
 
@@ -53,6 +52,7 @@ const cacheContributors = (data) => {
 };
 
 const Contributors = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);

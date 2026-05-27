@@ -82,6 +82,8 @@ All API routes are prefixed with `/api`.
 
 ## 4. Roles & Permissions Model
 
+> **📖 For comprehensive details on RBAC, role hierarchy, permission scopes, and access control patterns, see the [Architecture & Roles Guide](ARCHITECTURE_AND_ROLES.md#-role-based-access-control-rbac).**
+
 ### Roles (from `src/config/roles.js`)
 | Role | Description |
 |------|-------------|
@@ -1342,3 +1344,7 @@ Please agree on and document which format you will use before implementation.
    * Parameter descriptions
    * Example response values where applicable
 
+
+
+### Event Registration Constraint
+- **Duplicate Prevention**: Implemented a check to prevent users from registering multiple times for the same event, throwing an HTTP 409 Conflict exception if a duplicate registration is attempted.

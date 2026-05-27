@@ -265,3 +265,4 @@ function MissionSection({ anim, prefersReducedMotion }) {
     </section>
   );
 }
+

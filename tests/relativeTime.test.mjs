@@ -1,8 +1,16 @@
 import assert from "node:assert/strict";
 import { getRelativeTime, getSmartDateLabel } from "../src/utils/relativeTime.js";
 
-// Test invalid date
+// Test invalid, null, undefined, and empty date inputs
 assert.equal(getRelativeTime("invalid-date"), null);
+assert.equal(getRelativeTime(null), null);
+assert.equal(getRelativeTime(undefined), null);
+assert.equal(getRelativeTime(""), null);
+
+assert.equal(getSmartDateLabel("invalid-date"), "—");
+assert.equal(getSmartDateLabel(null), "—");
+assert.equal(getSmartDateLabel(undefined), "—");
+assert.equal(getSmartDateLabel(""), "—");
 
 const now = new Date();
 

@@ -119,8 +119,16 @@ const ProjectGallery = () => {
         setIsLoading(true);
         setError("");
 
+        const publicRequestConfig = {
+          skipAuth: true,
+          withCredentials: false,
+        };
+
         // --- PRODUCTION LOGIC: attempt real API call to Spring Boot backend ---
-        const response = await apiUtils.get(API_ENDPOINTS.PROJECTS.LIST);
+        const response = await apiUtils.get(
+          API_ENDPOINTS.PROJECTS.LIST,
+          publicRequestConfig
+        );
         const projectsData = response.data;
 
         // only use API data if it is non-empty; otherwise fall back to mock
@@ -130,7 +138,8 @@ const ProjectGallery = () => {
           // Attempt to fetch categories from API
           try {
             const categoriesResponse = await apiUtils.get(
-              API_ENDPOINTS.PROJECTS.CATEGORIES
+              API_ENDPOINTS.PROJECTS.CATEGORIES,
+              publicRequestConfig
             );
             const categoriesData = categoriesResponse.data;
             setCategories(["all", ...categoriesData]);
@@ -151,6 +160,18 @@ const ProjectGallery = () => {
         setCategories(["all", ...mockUniqueCategories]);
       } catch (err) {
         console.error("Error fetching projects:", err);
+
+        if (err?.status === 401) {
+          console.warn(
+            "Projects API returned 401 for unauthenticated access — loading public mock data fallback."
+          );
+          setProjects(mockProjects);
+          const fallbackCategories = [
+            ...new Set(mockProjects.map((p) => p.category)),
+          ];
+          setCategories(["all", ...fallbackCategories]);
+          return;
+        }
 
         // Fall back to mock data in development so local work is unaffected
         if (process.env.NODE_ENV === "development") {

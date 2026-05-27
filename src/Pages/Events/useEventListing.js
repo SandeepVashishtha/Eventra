@@ -46,20 +46,6 @@ const useEventListing = () => {
   const [advancedFilters, setAdvancedFilters] = useState(getDefaultFilters());
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const normalizedEvents = mockEvents.map((event) => ({
-        ...event,
-        status: getEventStatus(event),
-      }));
-
-      setEvents(normalizedEvents);
-
-      setIsLoading(false);
-    }, 800);
-
-    return () => clearTimeout(timer);
-  }, []);
   const fetchEvents = useCallback(async () => {
     setIsLoading(true);
     setLoadError("");
@@ -69,8 +55,15 @@ const useEventListing = () => {
       const apiEvents = Array.isArray(response.data) ? response.data : [];
       setEvents(apiEvents.map((event) => ({ ...event, status: getEventStatus(event) })));
     } catch (error) {
+      // SECURITY/RACE CONDITION FIX: Only use mock data as fallback in dev mode,
+      // never overwrite real API data with mock data in production.
+      // Mock data is a development-only fallback, not a concurrent operation.
       if (process.env.NODE_ENV === "development") {
-        setEvents(mockEvents.map((event) => ({ ...event, status: getEventStatus(event) })));
+        const normalizedMockEvents = mockEvents.map((event) => ({
+          ...event,
+          status: getEventStatus(event),
+        }));
+        setEvents(normalizedMockEvents);
       } else {
         setEvents([]);
         setLoadError(error?.message || "Failed to load events. Please try again.");
@@ -80,6 +73,19 @@ const useEventListing = () => {
     }
   }, []);
 
+  // RACE CONDITION FIX: Call fetchEvents immediately on mount, without scheduling
+  // mock data concurrently. This prevents race conditions where mock data could
+  // overwrite real API responses based on timing.
+  //
+  // Previous implementation:
+  // - useEffect 1: Scheduled mock data to load after 800ms
+  // - useEffect 2: Called fetchEvents() for API request
+  // - Result: If API took >800ms, mock data would overwrite real results
+  //
+  // New implementation:
+  // - Single fetchEvents() call that uses mock data only as a failure fallback
+  // - No concurrent timers that could race with network requests
+  // - Mock data is development-only fallback logic, not a production path
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);

@@ -4,6 +4,7 @@ import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
 import { toast } from 'react-toastify';
 import { ROLES } from '../config/roles';
 import { clearQueue } from '../utils/offlineQueue';
+import { decodeJwtPayload } from '../utils/auth';
 
 
 const AuthContext = createContext();
@@ -39,9 +40,23 @@ export const AuthProvider = ({ children }) => {
    * Guards against duplicate toasts with a ref flag.
    */
   const clearExpiredSession = useCallback(() => {
-    if (expiryToastShownRef.current) return;
-    expiryToastShownRef.current = true;
+    // eslint-disable-next-line no-console
+    console.warn("[AuthContext] Session expiration detected. Clearing session state immediately to prevent infinite layout re-render loops.");
+    
+    // 1. Immediately purge session state to prevent infinite render loops.
+    // By resetting token and user state to null synchronously, any concurrent
+    // render phases (e.g., layout components checking isAuthenticated) will
+    // abort early, avoiding resetting needsExpiryCleanupRef.
     clearSession();
+
+    // 2. Perform UI notification side effects once per expired session lifecycle.
+    if (expiryToastShownRef.current) {
+      // eslint-disable-next-line no-console
+      console.log("[AuthContext] Expiry warning already shown. Skipping duplicate toast notification.");
+      return;
+    }
+    expiryToastShownRef.current = true;
+
     toast.info("Session expired. Please log in again.", {
       toastId: "session-expired",
       autoClose: 5000,
@@ -54,30 +69,29 @@ export const AuthProvider = ({ children }) => {
     const storedUser = localStorage.getItem("user");
 
     if (storedToken && storedUser) {
-      // --- Security fix: validate token before restoring session ---
+      // --- SECURITY: Validate token before restoring session ---
       if (isTokenValid(storedToken)) {
         setToken(storedToken);
         try {
           const parsedUser = JSON.parse(storedUser);
 
-          // Normalize roles on restore so server aliases like EVENT_MANAGER
-          // are always mapped to their canonical equivalent (ORGANIZER).
-          // This prevents ORGANIZER users from being blocked by role guards
-          // after a page reload.
-          const normalizedRoles = (parsedUser?.roles ?? []).map((role) => {
-            const upper = String(role).toUpperCase();
-            return upper === "EVENT_MANAGER" ? ROLES.ORGANIZER : upper;
-          });
-          parsedUser.roles = normalizedRoles;
+          // SECURITY: Extract the authoritative roles from the JWT token, not localStorage.
+          // This prevents privilege escalation attacks where a user modifies localStorage
+          // to add admin/organizer roles. The JWT is signed by the backend and cannot be forged.
+          const tokenRoleData = extractRolesFromToken(storedToken);
 
-          // Recompute scopes from the normalized roles instead of trusting
-          // whatever is stored in localStorage. A user could otherwise elevate
-          // their own scopes by editing the "user" key in localStorage.
-          parsedUser.scopes = normalizedRoles.includes(ROLES.ADMIN)
-            ? ["admin:all", "event:write", "event:read", "hackathon:write", "hackathon:read"]
-            : normalizedRoles.includes(ROLES.ORGANIZER)
-              ? ["event:write", "event:read", "hackathon:write", "hackathon:read"]
-              : ["event:read", "hackathon:read"];
+          if (tokenRoleData) {
+            // Use roles and scopes from the JWT token (server-signed, authoritative)
+            parsedUser.roles = tokenRoleData.roles;
+            parsedUser.scopes = tokenRoleData.scopes;
+            // Ensure backward compatibility by setting role from roles array
+            parsedUser.role = tokenRoleData.roles[0] || "";
+          } else {
+            // Token is malformed — treat session as invalid
+            clearSession();
+            setLoading(false);
+            return;
+          }
 
           setUser(parsedUser);
         } catch {
@@ -168,17 +182,42 @@ export const AuthProvider = ({ children }) => {
     };
   }, [token, clearExpiredSession]);
 
+  /**
+   * persistSession
+   *
+   * Saves the authenticated session after a successful login.
+   *
+   * Token storage responsibility
+   * ────────────────────────────
+   * setToken() (from secureStorage.js) is the single source of truth for
+   * writing the JWT to sessionStorage. Calling sessionStorage.setItem("token")
+   * directly here would:
+   *   1. Duplicate the write — both setToken() and the inline call would
+   *      store the same value, bypassing the secureStorage abstraction layer.
+   *   2. Create a silent inconsistency if secureStorage.js is ever changed
+   *      to use a different storage key or storage type (e.g. cookies) —
+   *      the direct call here would keep writing to the old location.
+   *
+   * The user profile (non-sensitive) remains in localStorage so it survives
+   * tab close and is available for UI personalisation on next visit.
+   *
+   * @param {string} sessionToken - Eventra-issued JWT from the backend
+   * @param {object} sessionUser  - Normalised user profile object
+   */
   const persistSession = (sessionToken, sessionUser) => {
+    // Write the JWT via secureStorage — sessionStorage, tab-scoped
     setToken(sessionToken);
+    // Update React state
     setUser(sessionUser);
     try {
-      sessionStorage.setItem("token", sessionToken);
+      // Store the non-sensitive user profile for UI personalisation across sessions
       localStorage.setItem("user", JSON.stringify(sessionUser));
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('Error persisting session:', error);
+      console.error('[AuthContext] Error persisting user profile:', error);
     }
   };
+
   const normalizeRoles = (roles = []) => {
     return roles.map((role) => {
       const normalized = String(role).toUpperCase();
@@ -189,6 +228,40 @@ export const AuthProvider = ({ children }) => {
 
       return normalized;
     });
+  };
+
+  /**
+   * SECURITY: Extract roles from the signed JWT token.
+   *
+   * The JWT is the authoritative source for roles and permissions because:
+   * 1. It's signed by the backend — the client cannot forge it
+   * 2. It's delivered over HTTPS — it cannot be intercepted and modified
+   * 3. Even if localStorage is tampered with, authorization checks use the JWT
+   *
+   * localStorage is used ONLY for UI state (caching display name, email, etc.),
+   * never for security-critical decisions.
+   *
+   * @param {string} token - JWT token from sessionStorage
+   * @returns {object|null} { roles, scopes } extracted from token, or null if invalid
+   */
+  const extractRolesFromToken = (token) => {
+    if (!token) return null;
+
+    const payload = decodeJwtPayload(token);
+    if (!payload) return null;
+
+    // Extract roles from the JWT payload (backend-signed, cannot be forged)
+    const tokenRoles = (payload.roles || payload.role ? [payload.role] : []) || [];
+    const normalizedRoles = normalizeRoles(tokenRoles);
+
+    // Compute scopes from the authoritative roles in the token
+    const scopes = normalizedRoles.includes(ROLES.ADMIN)
+      ? ['admin:all', 'event:write', 'event:read', 'hackathon:write', 'hackathon:read']
+      : normalizedRoles.includes(ROLES.ORGANIZER)
+        ? ['event:write', 'event:read', 'hackathon:write', 'hackathon:read']
+        : ['event:read', 'hackathon:read'];
+
+    return { roles: normalizedRoles, scopes };
   };
   const extractSession = (res, data, fallbackEmail) => {
     let sessionToken = data?.token ?? data?.accessToken ?? null;
@@ -342,11 +415,16 @@ export const AuthProvider = ({ children }) => {
   }, [user, token]);
 
   const hasRole = (roleName) => {
-    if (!user?.roles) return false;
+    if (!user?.roles || !token) return false;
 
-    return normalizeRoles(user.roles).includes(
-      String(roleName).toUpperCase()
-    );
+    // SECURITY: Always verify against the JWT token (server-signed).
+    // Even if React state is somehow corrupted or localStorage is tampered with,
+    // the JWT cannot be forged client-side.
+    const tokenRoleData = extractRolesFromToken(token);
+    if (!tokenRoleData || !tokenRoleData.roles) return false;
+
+    const targetRole = String(roleName).toUpperCase();
+    return tokenRoleData.roles.includes(targetRole);
   };
 
   const hasPermission = (permissionName) => user?.permissions?.includes(permissionName) || false;

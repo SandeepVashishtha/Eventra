@@ -512,9 +512,7 @@ export default function EventHero({
                   duration={2.5}
                   prefix={stat.prefix}
                   suffix={stat.suffix}
-                  enableScrollSpy
-                  scrollSpyOnce
-                />
+                  />
               </p>
 
               <p
@@ -535,3 +533,4 @@ export default function EventHero({
     </div>
   );
 }
+
