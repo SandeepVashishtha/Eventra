@@ -1,9 +1,8 @@
-import useFilters from "../../hooks/useFilters";
-import { useState, useEffect, useRef, useCallback } from "react";
-import mockEvents from "./eventsMockData.json";
+import { useEffect, useRef } from "react";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
 import { getEventStatus } from "../../utils/eventUtils";
+import { useSearchParams } from "react-router-dom";
 import {
   Grid,
   List,
@@ -19,10 +18,10 @@ import useDocumentTitle from "../../hooks/useDocumentTitle";
 import ActiveFilters from "./ActiveFilters";
 import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
-import { darkTheme } from "../../components/styles/theme";
-import BackToTopButton from "../../components/common/BackToTopButton";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
 import { getRouteSearchResults } from "../../utils/searchUtils";
+
+
 
 const EVENT_SEARCH_KEYS = [
   "title",
@@ -42,84 +41,33 @@ const FILTERS = [
   { key: "workshop", label: "Workshops" },
 ];
 
-// FIX: Extracted sort logic to a pure function — eliminates duplication
-// between handleSortChange and the sort useEffect
-const sortEvents = (
-  events,
-  sortType
+const renderCardSection = (
+  isLoading,
+  paginatedEvents,
+  viewMode,
+  searchQuery,
+  onClearSearch
 ) => {
-  const sorted = [...events];
-
-  if (sortType === "Newest") {
-    sorted.sort(
-      (a, b) =>
-        new Date(b.date) -
-        new Date(a.date)
-    );
-
-  } else if (
-    sortType === "Upcoming" ||
-    sortType === "upcoming"
-  ) {
-    sorted.sort(
-      (a, b) =>
-        new Date(a.date) -
-        new Date(b.date)
-    );
-
-  } else if (
-    sortType === "Popular"
-  ) {
-    sorted.sort(
-      (a, b) =>
-        (b.attendees || 0) -
-        (a.attendees || 0)
+  if (isLoading) {
+    return (
+      <div>
+        <div className="mb-4 text-sm text-gray-500 dark:text-gray-400">
+          Loading events...
+        </div>
+        <div
+          className="animate-pulse transition-all duration-300 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+          role="status"
+          aria-label="Loading events"
+        >
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <EventCardSkeleton key={`skeleton-${i}`} />
+          ))}
+        </div>
+      </div>
     );
   }
 
-  return sorted;
-};
-
-const renderCardSection = (
-  isLoading,
-  filteredEvents,
-  viewMode,
-  filterType,
-  searchQuery,
-  onClearSearch,
-) => {
-  if (isLoading) {
-  return (
-    <div>
-      <div className="mb-4 text-sm text-gray-500 dark:text-gray-400">
-        Loading events...
-      </div>
-
-      <div
-        className="
-  animate-pulse
-  transition-all
-  duration-300
-          grid
-          gap-6
-          grid-cols-1
-          sm:grid-cols-2
-          lg:grid-cols-3
-        "
-        role="status"
-        aria-label="Loading events"
-      >
-        {[1, 2, 3, 4, 5, 6].map((i) => (
-          <EventCardSkeleton
-            key={`skeleton-${i}`}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-  if (filteredEvents.length === 0) {
+  if (paginatedEvents.length === 0) {
     return (
       <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
         <SearchEmptyState
@@ -136,14 +84,13 @@ const renderCardSection = (
 
   return (
     <div
-      key={filterType + viewMode}
       className={`grid gap-6 ${
         viewMode === "grid"
           ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
           : "grid-cols-1 max-w-4xl mx-auto"
       }`}
     >
-      {filteredEvents.map((event) => (
+      {paginatedEvents.map((event) => (
         <EventCard key={event.id} event={event} />
       ))}
     </div>
@@ -151,123 +98,37 @@ const renderCardSection = (
 };
 
 const EventsPage = () => {
-  const {
-  filters: urlFilters,
-  updateFilters,
-  clearFilters,
-} = useFilters();
   useDocumentTitle("Eventra | Events");
   const location = useLocation();
-
-  // FIX: Derive routeSearchQuery inline — no need to store in state and sync
-  // via a separate useEffect, which caused an extra render on mount
+  const [searchParams] = useSearchParams();
   const routeSearchQuery =
-    new URLSearchParams(location.search).get("search") || "";
+  new URLSearchParams(location.search).get("search") || "";
 
-  const [events, setEvents] = useState([]);
-  
-  const [viewMode, setViewMode] = useState(
-  urlFilters.view || "grid"
-);const [filterType, setFilterType] = useState(
-  urlFilters.category[0] || "all"
-);
-  const [searchQuery, setSearchQuery] = useState(
-  urlFilters.search || routeSearchQuery
-);
-  const [filteredEvents, setFilteredEvents] = useState([]);
-  const [sortType, setSortType] = useState(
-  urlFilters.sort || "Newest"
-);
-  const [isLoading, setIsLoading] = useState(true);
+  const listing = useEventListing();
   const cardSectionRef = useRef();
 
-  // Load events with simulated delay
+  // Initialize state from URL params on mount only
   useEffect(() => {
     const page = parseInt(searchParams.get("page")) || 1;
     const perPage = parseInt(searchParams.get("perPage")) || 6;
-    const search = prepareSafeSearchQuery(searchParams.get("search") || "");
+    const search = prepareSafeSearchQuery(routeSearchQuery);
     const filter = searchParams.get("filter") || "all";
-    const sort = searchParams.get("sort") || "latest";
+    const sort = searchParams.get("sort") || "Newest";
     const view = searchParams.get("view") || "grid";
-    listing.setSafePage(page);
-    listing.setEventsPerPage(perPage);
-    listing.setSearchQuery(search);
-    listing.setFilterType(filter);
-    listing.setSortType(sort);
-    listing.setViewMode(view);
+    
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    const timer = setTimeout(() => {
-      setEvents(
-        mockEvents.map((event) => ({
-          ...event,
-          status: getEventStatus(event),
-        })),
-      );
-      setIsLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
   }, []);
 
   // Sync search query when URL param changes (e.g. navigating from navbar search)
   useEffect(() => {
-    setSearchQuery(routeSearchQuery);
+    if (routeSearchQuery !== listing.searchQuery) {
+      listing.setSearchQuery(routeSearchQuery);
+    }
   }, [routeSearchQuery]);
-
-  // FIX: Removed filterType from handleSearch — filtering is a separate concern.
-  // Previously, filterType in deps caused handleSearch to recreate → the effect
-  // below re-ran → double filtering on every filter button click.
-  const handleSearch = useCallback(
-    (query = "") => {
-      setSearchQuery(query);
-
-      let results = events;
-      if (query.trim()) {
-        results = getRouteSearchResults(events, query, EVENT_SEARCH_KEYS, {
-          threshold: 0.35,
-        });
-      }
-      return results;
-    },
-    [events],
-  );
-  useEffect(() => {
-  updateFilters({
-    search: searchQuery,
-    category:
-      filterType !== "all"
-        ? [filterType]
-        : [],
-    sort: sortType,
-    view: viewMode,
-  });
-}, [
-  searchQuery,
-  filterType,
-  sortType,
-  viewMode,
-]);
-
-  // FIX: Single unified effect that handles search + filter + sort together.
-  // Replaces the old handleSortChange function AND the separate sort useEffect
-  // which were both modifying filteredEvents, causing double sorts.
-  useEffect(() => {
-    const searched = handleSearch(searchQuery);
-
-    const filtered = searched.filter((event) => {
-      return (
-        filterType === "all" ||
-        (filterType === "upcoming" && event.status === "upcoming") ||
-        (filterType === "past" && event.status === "past") ||
-        event.type === filterType
-      );
-    });
-
-    setFilteredEvents(sortEvents(filtered, sortType));
-  }, [handleSearch, searchQuery, filterType, sortType]);
 
   // Scroll to card section after loading when a route search is active
   useEffect(() => {
-    if (!isLoading && routeSearchQuery) {
+    if (!listing.isLoading && routeSearchQuery) {
       setTimeout(() => {
         cardSectionRef.current?.scrollIntoView({
           behavior: "smooth",
@@ -275,29 +136,31 @@ const EventsPage = () => {
         });
       }, 100);
     }
-  }, [isLoading, routeSearchQuery]);
+  }, [listing.isLoading, routeSearchQuery]);
 
   const scrollToCard = () => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const clearSearchAndFilters = () => {
-    setSearchQuery("");
-    setFilterType("all");
-    setSortType("Newest");
-    clearFilters();
+    listing.setSearchQuery("");
+    listing.setFilterType("all");
+    listing.setSortType("Newest");
   };
 
   const hasActiveFilters =
-    filterType !== "all" || sortType !== "Newest" || searchQuery !== "";
+    listing.filterType !== "all" || listing.sortType !== "Newest" || listing.searchQuery !== "";
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 overflow-x-hidden">
       <EventHero
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        filteredEvents={filteredEvents}
-        handleSearch={handleSearch}
+        searchQuery={listing.searchQuery}
+        setSearchQuery={listing.setSearchQuery}
+        filteredEvents={listing.filteredEvents}
+        handleSearch={(query) => {
+          listing.setSearchQuery(query);
+          return listing.filteredEvents; 
+        }}
         scrollToCard={scrollToCard}
       />
 
@@ -307,17 +170,16 @@ const EventsPage = () => {
       >
         <div className="mb-5 sm:mb-6 flex flex-col gap-3">
           <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center sm:justify-start">
-            {/* FIX: Removed unused `index` from map callback */}
             {FILTERS.map((filter) => (
               <button
                 key={filter.key}
-                onClick={() => setFilterType(filter.key)}
+                onClick={() => listing.setFilterType(filter.key)}
                 className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-lg transition ${
-                  filterType === filter.key
+                  listing.filterType === filter.key
                     ? "bg-blue-600 text-white dark:bg-blue-600 dark:text-white"
                     : "border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:text-gray-300 dark:border-slate-700 dark:hover:bg-slate-800"
                 }`}
-                aria-pressed={filterType === filter.key}
+                aria-pressed={listing.filterType === filter.key}
               >
                 {filter.label}
               </button>
@@ -340,39 +202,35 @@ const EventsPage = () => {
               </label>
               <StyledDropdown
                 label=""
-                value={sortType}
-                onChange={setSortType}
-                options={[
-  "Newest",
-  "Upcoming",
-  "Popular",
-]}
+                value={listing.sortType}
+                onChange={listing.setSortType}
+                options={["Newest", "Upcoming", "Popular"]}
                 placeholder="Sort by Date"
               />
             </div>
 
             <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
               <button
-                onClick={() => setViewMode("grid")}
+                onClick={() => listing.setViewMode("grid")}
                 className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
-                  viewMode === "grid"
+                  listing.viewMode === "grid"
                     ? "bg-black text-white shadow-md dark:bg-white dark:text-black"
                     : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                 }`}
                 aria-label="Grid view"
-                aria-pressed={viewMode === "grid"}
+                aria-pressed={listing.viewMode === "grid"}
               >
                 <Grid size={16} />
               </button>
               <button
-                onClick={() => setViewMode("list")}
+                onClick={() => listing.setViewMode("list")}
                 className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
-                  viewMode === "list"
+                  listing.viewMode === "list"
                     ? "bg-black text-white shadow-md dark:bg-white dark:text-black"
                     : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                 }`}
                 aria-label="List view"
-                aria-pressed={viewMode === "list"}
+                aria-pressed={listing.viewMode === "list"}
               >
                 <List size={16} />
               </button>
@@ -381,23 +239,32 @@ const EventsPage = () => {
         </div>
 
         <ActiveFilters
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          filterType={filterType}
-          setFilterType={setFilterType}
-          sortType={sortType}
-          setSortType={setSortType}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
+          searchQuery={listing.searchQuery}
+          setSearchQuery={listing.setSearchQuery}
+          filterType={listing.filterType}
+          setFilterType={listing.setFilterType}
+          sortType={listing.sortType}
+          setSortType={listing.setSortType}
+          viewMode={listing.viewMode}
+          setViewMode={listing.setViewMode}
         />
 
         {renderCardSection(
-          isLoading,
-          filteredEvents,
-          viewMode,
-          filterType,
-          searchQuery,
-          clearSearchAndFilters,
+          listing.isLoading,
+          listing.paginatedEvents,
+          listing.viewMode,
+          listing.searchQuery,
+          clearSearchAndFilters
+        )}
+
+        {!listing.isLoading && listing.totalPages > 1 && (
+          <div className="mt-8 flex justify-center">
+            <PaginationControls
+              currentPage={listing.currentPage}
+              totalPages={listing.totalPages}
+              onPageChange={listing.setSafePage}
+            />
+          </div>
         )}
       </div>
 

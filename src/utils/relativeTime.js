@@ -5,6 +5,7 @@ export function getRelativeTime(dateInput) {
 
   if (isNaN(date.getTime())) return null;
 
+
   const diffMs = date - now;
   const diffSec = Math.round(diffMs / 1000);
   const diffMin = Math.round(diffSec / 60);

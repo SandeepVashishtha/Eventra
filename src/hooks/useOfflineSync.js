@@ -13,25 +13,86 @@ const useOfflineSync = () => {
   const isSyncing = useRef(false);
 
   useEffect(() => {
-    // Helper to resolve conflict events sequentially
-    const resolveConflict = (item, serverState) => {
-      return new Promise((resolve) => {
-        const handleResolution = (e) => {
-          if (e.detail.itemId === item.id) {
-            window.removeEventListener("eventra-offline-conflict-resolved", handleResolution);
-            resolve(e.detail);
-          }
-        };
-        window.addEventListener("eventra-offline-conflict-resolved", handleResolution);
-        
-        // Dispatch event for conflict modal UI
-        window.dispatchEvent(
-          new CustomEvent("eventra-offline-conflict", {
-            detail: { item, serverState }
-          })
+  /**
+   * resolveConflict
+   *
+   * Dispatches a conflict event to the UI (which renders a modal) and
+   * waits for the user to choose how to handle it.
+   *
+   * Problems with the original implementation
+   * ─────────────────────────────────────────
+   * The original code created a bare Promise that only resolved when the
+   * user clicked a button in the conflict modal. This meant:
+   *
+   *  1. If the user never saw or dismissed the modal (tab close, navigation,
+   *     render failure), the sync loop would hang indefinitely because the
+   *     Promise never resolved.
+   *
+   *  2. isSyncing.current would remain true forever, silently blocking all
+   *     future sync attempts for the rest of the session.
+   *
+   *  3. The window event listener was never removed on early exit (component
+   *     unmount, abort), creating a memory leak and potentially handling
+   *     conflict events intended for a different item.
+   *
+   * Fix
+   * ───
+   *  - Added a 60-second auto-dismiss timeout. If the user does not respond
+   *    in time, the conflict is resolved in favour of the server version so
+   *    the sync loop can continue.
+   *  - Added AbortSignal support so the conflict waiter is cancelled cleanly
+   *    when the enclosing useEffect is torn down (component unmount).
+   *  - The window event listener is always removed before the Promise
+   *    resolves, in all code paths (user response, timeout, abort).
+   *
+   * @param {object} item        - The queued offline action that caused the conflict
+   * @param {object} serverState - Current server-side state for the conflicted resource
+   * @param {AbortSignal} signal - Optional signal to cancel waiting on unmount
+   * @returns {Promise<{resolution: string, mergedPayload?: object}>}
+   */
+  const resolveConflict = (item, serverState, signal) => {
+    return new Promise((resolve) => {
+      const AUTO_DISMISS_MS = 60_000; // 60 s — avoid hanging the sync loop forever
+
+      const cleanup = () => {
+        window.removeEventListener("eventra-offline-conflict-resolved", handleResolution);
+        clearTimeout(timerId);
+      };
+
+      const handleResolution = (e) => {
+        // Ignore events intended for a different queued item
+        if (e.detail.itemId !== item.id) return;
+        cleanup();
+        resolve(e.detail);
+      };
+
+      // Auto-discard after 60 s: keep the server version so the sync loop
+      // is never permanently frozen by an unanswered modal.
+      const timerId = setTimeout(() => {
+        cleanup();
+        console.warn(
+          `[useOfflineSync] Conflict modal for item ${item.id} timed out after ${AUTO_DISMISS_MS / 1000}s. Discarding local change.`
         );
-      });
-    };
+        resolve({ resolution: "server" });
+      }, AUTO_DISMISS_MS);
+
+      // Cancel if the enclosing useEffect is cleaned up (component unmount)
+      signal?.addEventListener("abort", () => {
+        cleanup();
+        resolve({ resolution: "server" });
+      }, { once: true });
+
+      window.addEventListener("eventra-offline-conflict-resolved", handleResolution);
+
+      // Notify the UI to open the conflict resolution modal
+      window.dispatchEvent(
+        new CustomEvent("eventra-offline-conflict", {
+          detail: { item, serverState },
+        })
+      );
+    });
+  };
+
 
     const postWithBackoff = async (url, payload, authToken, attempt = 0, forceOverride = false) => {
       if (attempt > 0) {
@@ -67,6 +128,10 @@ const useOfflineSync = () => {
 
       throw new Error(`Sync failed with status: ${response.status}`);
     };
+
+    // AbortController used to cancel any in-progress resolveConflict() wait
+    // when the useEffect is cleaned up (component unmount or token change).
+    const conflictController = new AbortController();
 
     const handleOnline = async () => {
       if (isSyncing.current) {
@@ -118,9 +183,10 @@ const useOfflineSync = () => {
               0
             );
 
-            // Handle Conflict loop
+            // Handle Conflict loop — pass the abort signal so the waiter
+            // is cancelled cleanly if the component unmounts mid-sync
             if (res.status === "conflict") {
-              const resolution = await resolveConflict(item, res.serverState);
+              const resolution = await resolveConflict(item, res.serverState, conflictController.signal);
               
               if (resolution.resolution === "local") {
                 // Retry with force flag
@@ -185,6 +251,9 @@ const useOfflineSync = () => {
 
     return () => {
       window.removeEventListener("online", handleOnline);
+      // Abort any in-progress conflict resolution waiter so its event
+      // listener is removed and the sync loop exits cleanly on unmount.
+      conflictController.abort();
       if (idleId !== null) {
         window.cancelIdleCallback(idleId);
       }
