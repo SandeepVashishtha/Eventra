@@ -17,6 +17,28 @@ const log = (...args) => {
   }
 };
 
+const MAX_SW_RETRIES = 3;
+const SW_RETRY_DELAY = 2000;
+
+const retryServiceWorkerOperation = async (
+  operation,
+  retries = MAX_SW_RETRIES
+) => {
+  try {
+    return await operation();
+  } catch (error) {
+    if (retries <= 0) {
+      throw error;
+    }
+
+    await new Promise((resolve) =>
+      setTimeout(resolve, SW_RETRY_DELAY)
+    );
+
+    return retryServiceWorkerOperation(operation, retries - 1);
+  }
+};
+
 export function register(config) {
   if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
     // The URL constructor is available in all browsers that support SW.
@@ -48,8 +70,9 @@ export function register(config) {
 }
 
 function registerValidSW(swUrl, config) {
-  navigator.serviceWorker
-    .register(swUrl)
+  retryServiceWorkerOperation(() =>
+    navigator.serviceWorker.register(swUrl)
+  )
     .then((registration) => {
       navigator.serviceWorker.addEventListener('message', (event) => {
         if (event.data && event.data.type === 'CACHE_UPDATED') {
@@ -91,7 +114,12 @@ function registerValidSW(swUrl, config) {
       };
     })
     .catch((error) => {
-      console.error('Error during service worker registration:', error);
+      if (isDev) {
+        console.error(
+          'Error during service worker registration:',
+          error
+        );
+      }
     });
 }
 
@@ -130,7 +158,9 @@ export function unregister() {
         registration.unregister();
       })
       .catch((error) => {
-        console.error(error.message);
+        if (isDev) {
+          console.error(error.message);
+        }
       });
   }
 }

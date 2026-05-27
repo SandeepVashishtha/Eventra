@@ -1,23 +1,25 @@
 import { useState, useRef, useEffect } from "react";
 
-/**
- * Prevents double-submission by tracking in-flight state.
- * Returns isSubmitting flag + a wrapped submit handler.
- */
 export function useFormSubmit(submitFn) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
-  const isInFlight = useRef(false); 
+  //const isInFlight = useRef(false); 
   
   // FIX: Track component mount status to prevent memory leaks
-  const isMounted = useRef(true);
+  //const isMounted = useRef(true);
 
-  useEffect(() => {
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
+  //useEffect(() => {
+  const isInFlight = useRef(false);
+const isMounted = useRef(true);
+
+useEffect(() => {
+  isMounted.current = true;
+
+  return () => {
+    isMounted.current = false;
+  };
+}, []);
 
   const handleSubmit = async (data) => {
     if (isInFlight.current) return;
