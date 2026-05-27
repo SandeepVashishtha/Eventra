@@ -104,7 +104,8 @@ const EventsPage = () => {
 
   const listing = useEventListing();
   const cardSectionRef = useRef();
-  const routeSearchQuery = searchParams.get("search") || "";
+  const routeSearchQuery =
+  new URLSearchParams(location.search).get("search") || "";
 
   // Initialize state from URL params on mount only
   useEffect(() => {

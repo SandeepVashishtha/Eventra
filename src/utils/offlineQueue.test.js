@@ -45,4 +45,20 @@ describe('offlineQueue', () => {
     await clearQueue();
     expect(getQueue().length).toBe(0);
   });
+
+  it('returns true when localStorage setItem fails but IndexedDB succeeds', async () => {
+    // Mock localStorage.setItem to throw an error
+    const originalSetItem = window.localStorage.setItem;
+    window.localStorage.setItem = jest.fn().mockImplementation(() => {
+      throw new Error("QuotaExceededError");
+    });
+
+    const item = { eventId: 999, payload: { name: 'Resilient User' } };
+    const success = await pushToQueue(item);
+
+    expect(success).toBe(true);
+
+    // Restore original setItem
+    window.localStorage.setItem = originalSetItem;
+  });
 });

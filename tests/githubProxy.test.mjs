@@ -58,9 +58,16 @@ assert.equal(
 );
 assert.equal(fetchCalls[0].options.headers.Authorization, "token test-token");
 
+const repoResponse = createResponse();
+await handler({ query: { path: "/repos/Eventra/Eventra" } }, repoResponse);
+
+assert.equal(repoResponse.statusCode, 200);
+assert.equal(fetchCalls.length, 2);
+assert.equal(fetchCalls[1].url, "https://api.github.com/repos/Eventra/Eventra");
+
 const usersResponse = createResponse();
 await handler({ query: { path: "/users/octocat" } }, usersResponse);
 
 assert.equal(usersResponse.statusCode, 200);
-assert.equal(fetchCalls.length, 2);
-assert.equal(fetchCalls[1].url, "https://api.github.com/users/octocat");
+assert.equal(fetchCalls.length, 3);
+assert.equal(fetchCalls[2].url, "https://api.github.com/users/octocat");

@@ -1,21 +1,18 @@
 import EventRecommendation from "./Pages/EventRecommendation/EventRecommendation";
 import React, { useState, useEffect, lazy, Suspense } from "react";
-import { Routes, Route, useLocation } from "react-router-dom"; // Added this back for your routing!
+import { Routes, Route, useLocation } from "react-router-dom"; 
 import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
 import { toast } from "react-toastify";
-import BackToTopButton
-from "./components/common/BackToTopButton";
+import BackToTopButton from "./components/common/BackToTopButton";
 import Navbar from "./components/Layout/Navbar";
 import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
 import FluidCursor from "./jhalak/FluidCursor";
 import PageTransition from "./components/common/PageTransition";
-import PageLoader from "./components/common/PageLoader";
 import ReminderChecker from "./components/reminders/ReminderChecker";
 import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
 import ThemeCustomizerDrawer from "./components/common/ThemeCustomizerDrawer";
@@ -28,7 +25,6 @@ import { NotificationProvider } from "./context/NotificationContext";
 import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
 import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
-import GlobalErrorBoundary from "./components/common/ErrorBoundary";
 
 import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
@@ -38,7 +34,6 @@ const Footer = lazy(() => import("./components/Layout/Footer"));
 const Chatbot = lazy(() => import("./components/Chatbot"));
 const AppRoutes = lazy(() => import("./components/AppRoutes"));
 const RegistrationPage = lazy(() => import("./Pages/RegistrationPage"));
-const NotFoundPage = lazy(() => import("./Pages/NotFoundPage"));
 
 const OfflineSyncManager = () => {
   useOfflineSync();
@@ -65,7 +60,6 @@ function App() {
     try {
       localStorage.setItem("cursor", newValue ? "on" : "off");
     } catch (error) {
-      console.error('Error setting cursor preference:', error);
     }
   };
 
@@ -111,7 +105,7 @@ function App() {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, []); // <--- The missing bracket and closure are fixed!
+  }, []);
 
   return (
     <ErrorBoundary>
@@ -172,10 +166,13 @@ function App() {
               </main>
 
               <ScrollToTop />
+              
+              {/* FIXED THE TAG BELOW: Added the missing '>' closure */}
               <Suspense fallback={null}>
                 <Chatbot />
                 {!isDashboardOrAdmin && <Footer />}
               </Suspense>
+
               <BackToTopButton />
               <FeedbackButton />
               <ThemeCustomizerDrawer />

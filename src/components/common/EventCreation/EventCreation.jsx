@@ -3,10 +3,13 @@ import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { Download } from "lucide-react";
 import useReducedMotion from "../../hooks/useReducedMotion";
-import {} from "../../utils/eventDraftUtils";
-import CharacterCounter
-from "../../components/common/CharacterCounter";
+import TicketTiersSection from "./components/TicketTiersSection";
 import { exportAttendeesToCSV } from "../../utils/exportCsv";
+import {
+  DRAFT_KEY,
+  categories,
+  mockAttendees,
+} from "./constants/eventConstants";
 import {
   ArrowRightIcon,
   CalendarIcon,
@@ -40,30 +43,10 @@ import {
 import { useFormSubmit } from "../../hooks/useFormSubmit";
 import { LoadingButton } from "../ui/LoadingButton";
 
-const DRAFT_KEY = "eventra_create_event_draft";
 
 const EventCreation = () => {
   const prefersReducedMotion = useReducedMotion();
-  const mockAttendees = [
-    {
-      name: "John Doe",
-      email: "john@example.com",
-      registrationDate: "2026-08-15",
-      ticketType: "VIP",
-    },
-    {
-      name: "Sarah Smith",
-      email: "sarah@example.com",
-      registrationDate: "2026-08-16",
-      ticketType: "General",
-    },
-    {
-      name: "Alex Johnson",
-      email: "alex@example.com",
-      registrationDate: "2026-08-17",
-      ticketType: "Workshop",
-    },
-  ];
+  
   const [currentStep, setCurrentStep] = useState("form");
 
   const { handleSubmit: submitEventForm, isSubmitting, error: submitError, success: submitSuccess } = useFormSubmit(async (eventData) => {
@@ -138,18 +121,7 @@ const EventCreation = () => {
   // Track whether draft has been loaded to avoid overwriting on initial mount
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
-  const categories = [
-    { label: "Conference", value: "CONFERENCE" },
-    { label: "Workshop", value: "WORKSHOP" },
-    { label: "Meetup", value: "MEETUP" },
-    { label: "Webinar", value: "WEBINAR" },
-    { label: "Social", value: "SOCIAL" },
-    { label: "Sports", value: "SPORTS" },
-    { label: "Cultural", value: "CULTURAL" },
-    { label: "Business", value: "BUSINESS" },
-    { label: "Charity", value: "CHARITY" },
-    { label: "Other", value: "OTHER" },
-  ];
+  
 
   const todayString = new Date().toISOString().split("T")[0];
 
@@ -274,42 +246,9 @@ const EventCreation = () => {
     }
   };
 
-  const handleTicketTierChange = (index, field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      ticketTiers: prev.ticketTiers.map((tier, i) =>
-        i === index ? { ...tier, [field]: value } : tier
-      ),
-    }));
-    const errorKey = `ticketTier_${index}_${field}`;
-    if (errors[errorKey]) {
-      setErrors((prev) => ({ ...prev, [errorKey]: "" }));
-    }
-  };
 
-  const addTicketTier = () => {
-    setFormData((prev) => ({
-      ...prev,
-      ticketTiers: [
-        ...prev.ticketTiers,
-        {
-          name: "",
-          price: 0,
-          capacity: "",
-          description: "",
-        },
-      ],
-    }));
-  };
 
-  const removeTicketTier = (index) => {
-    if (formData.ticketTiers.length > 1) {
-      setFormData((prev) => ({
-        ...prev,
-        ticketTiers: prev.ticketTiers.filter((_, i) => i !== index),
-      }));
-    }
-  };
+
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -1481,143 +1420,12 @@ const EventCreation = () => {
                 </label>
               </motion.div>
 
-              {/* Ticket Tiers Section */}
-              {/* Ticket Tiers Section */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.9 }}
-                className="border-t border-gray-200 dark:border-gray-600 pt-6"
-              >
-                {/* Header with "Add Tier" button */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <TicketIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                    <label className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                      Ticket Tiers
-                    </label>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={addTicketTier}
-                    className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-3xl text-sm font-medium shadow-md hover:bg-zinc-800 transition-all duration-300 transform hover:scale-[1.03] active:scale-[0.97]"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Tier
-                  </button>
-                </div>
-
-                {formData.ticketTiers.map((tier, index) => (
-                  <div
-                    key={index}
-                    className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4 mb-4"
-                  >
-                    <div className="flex justify-between items-center mb-3">
-                      <h4 className="font-semibold text-gray-700 dark:text-gray-300">
-                        Tier {index + 1}
-                      </h4>
-                      {formData.ticketTiers.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeTicketTier(index)}
-                          className="text-red-500 hover:text-red-700 text-sm font-medium"
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </div>
-                    <div className="space-y-3">
-                      <div>
-                        <input
-                          type="text"
-                          placeholder="Tier name"
-                          value={tier.name}
-                          onChange={(e) => handleTicketTierChange(index, "name", e.target.value)}
-                          className={`w-full border ${errors[`ticketTier_${index}_name`] ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500`}
-                        />
-                        {errors[`ticketTier_${index}_name`] && (
-                          <span className="text-red-500 text-sm mt-1 block">
-                            {errors[`ticketTier_${index}_name`]}
-                          </span>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <input
-                            type="number"
-                            placeholder="Price"
-                            min="0"
-                            step="0.01"
-                            value={tier.price}
-                            onChange={(e) => handleTicketTierChange(index, "price", e.target.value)}
-                            className={`w-full border ${errors[`ticketTier_${index}_price`] ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500`}
-                          />
-                          {errors[`ticketTier_${index}_price`] && (
-                            <span className="text-red-500 text-sm mt-1 block">
-                              {errors[`ticketTier_${index}_price`]}
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          <input
-                            type="number"
-                            placeholder="Capacity (optional)"
-                            min="1"
-                            value={tier.capacity}
-                            onChange={(e) =>
-                              handleTicketTierChange(index, "capacity", e.target.value)
-                            }
-                            className={`w-full border ${errors[`ticketTier_${index}_capacity`] ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500`}
-                          />
-                          {errors[`ticketTier_${index}_capacity`] && (
-                            <span className="text-red-500 text-sm mt-1 block">
-                              {errors[`ticketTier_${index}_capacity`]}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                     <div className="space-y-2">
-  <textarea
-    placeholder="Description"
-    value={tier.description}
-    onChange={(e) =>
-      handleTicketTierChange(
-        index,
-        "description",
-        e.target.value
-      )
-    }
-    rows={2}
-    maxLength={200}
-    className="
-      w-full
-      border border-gray-300
-      dark:border-gray-600
-      rounded-lg
-      p-3
-      bg-white dark:bg-gray-600
-      text-gray-900 dark:text-gray-100
-      focus:outline-none
-      focus:ring-1
-      focus:ring-indigo-500
-    "
-  />
-
-  <div className="flex justify-end">
-    <CharacterCounter
-      current={
-        tier.description.length
-      }
-      max={200}
-    />
-  </div>
-</div>
-                    </div>
-                  </div>
-                ))}
-              </motion.div>
+              <TicketTiersSection
+                formData={formData}
+                setFormData={setFormData}
+                errors={errors}
+                setErrors={setErrors}
+              />
 
               {/* Tags Section */}
               <motion.div
