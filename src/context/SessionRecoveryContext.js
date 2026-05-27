@@ -3,6 +3,7 @@ import CryptoJS from "crypto-js";
 import { safeJsonParse } from "../utils/safeJsonParse";
 import { logger } from "../utils/logger";
 import { sanitizeSessionState } from "../utils/sessionSanitization";
+import { getDeviceFingerprint } from "../utils/deviceFingerprint";
 
 const SessionRecoveryContext = createContext();
 
@@ -109,6 +110,19 @@ export const SessionRecoveryProvider = ({ children }) => {
             parsed.timestamp > 0;
 
           if (isValidTimestamp && now - parsed.timestamp < SESSION_TIMEOUT) {
+            // Verify that the restored session matches the exact same device fingerprint
+            const currentFingerprint = getDeviceFingerprint();
+            if (!parsed.deviceFingerprint || parsed.deviceFingerprint !== currentFingerprint) {
+              logger.error("Security Alert: Session recovery attempted from a mismatched device/browser fingerprint. Rejecting session restoration.");
+              localStorage.removeItem(SESSION_KEY);
+              
+              // Safely redirect in browser environments
+              if (typeof window !== "undefined" && window.location) {
+                window.location.href = "/login";
+              }
+              return;
+            }
+
             setSessionData(parsed);
             setHasSession(true);
             setShowRecoveryPrompt(true);
@@ -147,6 +161,7 @@ export const SessionRecoveryProvider = ({ children }) => {
           ...sanitizedState,
           timestamp: Date.now(),
           lastActivity: lastActivityRef.current,
+          deviceFingerprint: getDeviceFingerprint(),
         };
 
         // Encrypt the state before persistently writing it to localStorage
