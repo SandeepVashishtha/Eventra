@@ -11,7 +11,7 @@
     "@headlessui/react": "^2.2.8",
     "@heroicons/react": "^2.0.16",
     "@react-oauth/google": "^0.13.5",
-    "@sentry/react": "^7.114.0",
+    "@sentry/react": "^10.54.0",
     "@studio-freight/lenis": "^1.0.42",
     "@tailwindcss/postcss": "4.3.0",
     "aos": "^2.3.4",

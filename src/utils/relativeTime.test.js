@@ -24,14 +24,14 @@ describe('relativeTime utilities', () => {
   });
 
   describe('getSmartDateLabel', () => {
-    it('returns "—" for falsy, null, or undefined date inputs', () => {
-      expect(getSmartDateLabel('')).toBe('—');
-      expect(getSmartDateLabel(null)).toBe('—');
-      expect(getSmartDateLabel(undefined)).toBe('—');
+    it('returns "TBD" for falsy, null, or undefined date inputs', () => {
+      expect(getSmartDateLabel('')).toBe('TBD');
+      expect(getSmartDateLabel(null)).toBe('TBD');
+      expect(getSmartDateLabel(undefined)).toBe('TBD');
     });
 
-    it('returns "—" for invalid date inputs', () => {
-      expect(getSmartDateLabel('invalid-date')).toBe('—');
+    it('returns "TBD" for invalid date inputs', () => {
+      expect(getSmartDateLabel('invalid-date')).toBe('TBD');
     });
 
     it('returns relative description if available', () => {
