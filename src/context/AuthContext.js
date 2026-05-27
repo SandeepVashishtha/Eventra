@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }) => {
   const clearSession = useCallback(() => {
     setUser(null);
     setToken(null);
-    sessionStorage.removeItem("token");
+    // Token is stored in HttpOnly cookie now. Backend should clear the cookie.
     localStorage.removeItem("user");
   }, []);
 
@@ -51,41 +51,17 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check for existing authentication on app start
-    const storedToken = sessionStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
 
-    if (storedToken && storedUser) {
-      // --- SECURITY: Validate token before restoring session ---
-      if (isTokenValid(storedToken)) {
-        setToken(storedToken);
-        try {
-          const parsedUser = JSON.parse(storedUser);
-
-          // SECURITY: Extract the authoritative roles from the JWT token, not localStorage.
-          // This prevents privilege escalation attacks where a user modifies localStorage
-          // to add admin/organizer roles. The JWT is signed by the backend and cannot be forged.
-          const tokenRoleData = extractRolesFromToken(storedToken);
-
-          if (tokenRoleData) {
-            // Use roles and scopes from the JWT token (server-signed, authoritative)
-            parsedUser.roles = tokenRoleData.roles;
-            parsedUser.scopes = tokenRoleData.scopes;
-            // Ensure backward compatibility by setting role from roles array
-            parsedUser.role = tokenRoleData.roles[0] || "";
-          } else {
-            // Token is malformed — treat session as invalid
-            clearSession();
-            setLoading(false);
-            return;
-          }
-
-          setUser(parsedUser);
-        } catch {
-          // Corrupted user data in localStorage -- clear everything.
-          clearSession();
-        }
-      } else {
-        // Token is expired or invalid -- clean up stale session data.
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        
+        // Since token is in an HttpOnly cookie, we cannot validate it or extract roles client-side
+        // on initial load. We trust the cached user object until an API call returns 401 Unauthorized.
+        setUser(parsedUser);
+      } catch {
+        // Corrupted user data in localStorage -- clear everything.
         clearSession();
       }
     }
@@ -390,27 +366,20 @@ export const AuthProvider = ({ children }) => {
   };
 
   const isAuthenticated = useCallback(() => {
-    if (!user || !token) return false;
-    if (!isTokenValid(token)) {
-      // Token expired mid-session — flag for deferred cleanup.
-      // Cannot call clearSession() here because this runs during render.
-      needsExpiryCleanupRef.current = true;
-      return false;
-    }
+    if (!user) return false;
+    // We can no longer synchronously check token expiry client-side with HttpOnly cookies.
+    // The session is considered valid until an API call returns 401 Unauthorized.
     return true;
-  }, [user, token]);
+  }, [user]);
 
   const hasRole = (roleName) => {
-    if (!user?.roles || !token) return false;
+    if (!user?.roles) return false;
 
-    // SECURITY: Always verify against the JWT token (server-signed).
-    // Even if React state is somehow corrupted or localStorage is tampered with,
-    // the JWT cannot be forged client-side.
-    const tokenRoleData = extractRolesFromToken(token);
-    if (!tokenRoleData || !tokenRoleData.roles) return false;
-
+    // With HttpOnly cookies, we cannot extract roles from the JWT client-side.
+    // We rely on the cached user roles for UI rendering.
+    // Real security enforcement happens on the backend.
     const targetRole = String(roleName).toUpperCase();
-    return tokenRoleData.roles.includes(targetRole);
+    return user.roles.includes(targetRole);
   };
 
   const hasPermission = (permissionName) => user?.permissions?.includes(permissionName) || false;

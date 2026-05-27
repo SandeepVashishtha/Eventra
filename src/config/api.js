@@ -101,28 +101,15 @@ export const setOnUnauthorizedHandler = (handler) => {
   onUnauthorized = handler;
 };
 
-const normalizeRequestConfig = (configOrToken = {}, maybeToken) => {
+const normalizeRequestConfig = (configOrToken = {}) => {
   const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
-  const skipAuth = config.skipAuth === true;
+  
   if ("skipAuth" in config) {
     delete config.skipAuth;
   }
 
-  const token =
-    skipAuth
-      ? ""
-      : typeof configOrToken === "string"
-      ? configOrToken
-      : typeof maybeToken === "string"
-        ? maybeToken
-        : sessionStorage.getItem("token") || "";
-
-  if (token) {
-    config.headers = {
-      ...(config.headers || {}),
-      Authorization: `Bearer ${token}`,
-    };
-  }
+  // With HttpOnly cookies, the browser automatically sends the session cookie.
+  // We no longer manually append the Authorization header here.
 
   return config;
 };
@@ -255,16 +242,16 @@ export const API_ENDPOINTS = {
 };
 
 export const apiUtils = {
-  get: (url, configOrToken = {}, maybeToken) =>
-    API.get(url, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  post: (url, data = {}, configOrToken = {}, maybeToken) =>
-    API.post(url, data, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  put: (url, data = {}, configOrToken = {}, maybeToken) =>
-    API.put(url, data, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  patch: (url, data = {}, configOrToken = {}, maybeToken) =>
-    API.patch(url, data, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  delete: (url, configOrToken = {}, maybeToken) =>
-    API.delete(url, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
+  get: (url, config = {}) =>
+    API.get(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  post: (url, data = {}, config = {}) =>
+    API.post(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  put: (url, data = {}, config = {}) =>
+    API.put(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  patch: (url, data = {}, config = {}) =>
+    API.patch(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  delete: (url, config = {}) =>
+    API.delete(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
 };
 
 export default API;
