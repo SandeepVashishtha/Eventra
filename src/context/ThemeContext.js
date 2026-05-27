@@ -163,8 +163,6 @@ export const ThemeProvider = ({ children }) => {
       activeThemeId,
       setActiveThemeId,
       THEMES,
-      isCustomizerOpen,
-      setIsCustomizerOpen,
       customHsl,
       setCustomHsl,
       reducedMotion,
