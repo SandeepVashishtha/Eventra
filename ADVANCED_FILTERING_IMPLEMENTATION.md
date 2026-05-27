@@ -4,6 +4,8 @@
 
 A comprehensive advanced event filtering and search system has been successfully implemented for the Eventra platform, enabling users to discover relevant events using modern, scalable filtering capabilities.
 
+**For architectural context on filtering in the system, see:** [Architecture & Roles: Advanced Search & Filtering](docs/ARCHITECTURE_AND_ROLES.md#advanced-search--filtering)
+
 ## ✅ Completed Features
 
 ### 1. **Enhanced Event Data Structure**
