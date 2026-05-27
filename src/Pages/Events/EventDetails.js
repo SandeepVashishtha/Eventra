@@ -52,16 +52,16 @@ const EventDetails = () => {
   useEffect(() => {
     if (!event) return;
 
-    const viewedEvents = safeParseJson(localStorage.getItem("recentlyViewedEvents"), []);
-    const updatedEvents = [
-      event,
-      ...viewedEvents.filter((item) => item.id !== event.id),
-    ].slice(0, 6);
-
     try {
+      const viewedEvents = safeParseJson(localStorage.getItem("recentlyViewedEvents"), []);
+      const updatedEvents = [
+        event,
+        ...viewedEvents.filter((item) => item.id !== event.id),
+      ].slice(0, 6);
+
       localStorage.setItem("recentlyViewedEvents", JSON.stringify(updatedEvents));
     } catch (error) {
-      console.warn("[EventDetails] Failed to save recently viewed events:", error);
+      console.warn("[EventDetails] Failed to access or save recently viewed events in localStorage:", error);
     }
   }, [event]);
 
