@@ -2,8 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from '../config/api';
 import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
 import { toast } from 'react-toastify';
-import { ROLES, ROLE_PERMISSIONS } from '../config/roles';
-import { decodeJwtPayload } from '../utils/auth';
+import { ROLES } from '../config/roles';
 import { logger } from "../utils/logger";
 
 
@@ -21,6 +20,10 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authRequest, setAuthRequest] = useState({
+    loading: false,
+    error: null,
+  });
 
   // Ref-based flag so isAuthenticated() can request cleanup without
   // mutating state during a render (React rule).
@@ -31,10 +34,63 @@ export const AuthProvider = ({ children }) => {
   const clearSession = useCallback(() => {
     setUser(null);
     setToken(null);
+    setAuthRequest({
+      loading: false,
+      error: null,
+    });
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; HttpOnly; SameSite=Strict";
     sessionStorage.removeItem("token");
     localStorage.removeItem("user");
   }, []);
+
+  const normalizeRoles = useCallback((roles = []) => {
+    return roles.map((role) => {
+      const normalized = String(role).toUpperCase();
+
+      if (normalized === 'EVENT_MANAGER') {
+        return ROLES.ORGANIZER;
+      }
+
+      return normalized;
+    });
+  }, []);
+
+  const extractSession = useCallback((res, data, fallbackEmail) => {
+    let sessionToken = data?.token ?? data?.accessToken ?? null;
+
+    if (!sessionToken) {
+      const authHeader = res.headers?.['authorization'] || res.headers?.['Authorization'] || null;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        sessionToken = authHeader.substring(7);
+      }
+    }
+
+    const rawUser = data?.user ?? data?.data ?? data ?? null;
+    const rawRoles =
+      rawUser?.roles ??
+      (rawUser?.role ? [rawUser.role] : []);
+
+    const resolvedRoles = normalizeRoles(rawRoles);
+    const sessionUser = {
+      ...(rawUser || {}),
+      firstName: rawUser?.firstName ?? "",
+      lastName: rawUser?.lastName ?? "",
+      email: rawUser?.email ?? fallbackEmail ?? "",
+      username: rawUser?.username ?? fallbackEmail ?? "",
+      role: rawUser?.role ?? resolvedRoles[0] ?? "",
+      roles: resolvedRoles,
+      permissions: rawUser?.permissions ?? [],
+      scopes: rawUser?.scopes ?? (
+        resolvedRoles.includes(ROLES.ADMIN)
+          ? ["admin:all", "event:write", "event:read", "hackathon:write", "hackathon:read"]
+          : resolvedRoles.includes(ROLES.ORGANIZER)
+            ? ["event:write", "event:read", "hackathon:write", "hackathon:read"]
+            : ["event:read", "hackathon:read"]
+      ),
+    };
+
+    return { sessionToken, sessionUser };
+  }, [normalizeRoles]);
 
   /**
    * Clear the session AND notify the user via toast.
@@ -64,56 +120,6 @@ export const AuthProvider = ({ children }) => {
     });
   }, [clearSession]);
 
-  const normalizeRoles = useCallback((roles = []) => {
-    return roles.map((role) => {
-      const normalized = String(role).toUpperCase();
-
-      if (normalized === 'EVENT_MANAGER') {
-        return ROLES.ORGANIZER;
-      }
-
-      return normalized;
-    });
-  }, []);
-
-  /**
-   * SECURITY: Extract authorization data from the signed JWT token.
-   *
-   * The JWT is the authoritative source for route authorization because
-   * localStorage and React state are user-editable. Server-side checks remain
-   * mandatory for every protected API operation.
-   */
-  const extractAuthorizationFromToken = useCallback((token) => {
-    if (!token) return null;
-
-    const payload = decodeJwtPayload(token);
-    if (!payload) return null;
-
-    // Extract roles and permissions from the JWT payload only. localStorage is
-    // user-editable, so it must never be the source for route authorization.
-    const tokenRoles = Array.isArray(payload.roles)
-      ? payload.roles
-      : payload.role
-        ? [payload.role]
-        : [];
-    const normalizedRoles = normalizeRoles(tokenRoles);
-    const tokenPermissions = Array.isArray(payload.permissions)
-      ? payload.permissions.map((permission) => String(permission))
-      : [];
-    const rolePermissions = normalizedRoles.flatMap(
-      (role) => ROLE_PERMISSIONS[role] || []
-    );
-    const permissions = Array.from(new Set([...tokenPermissions, ...rolePermissions]));
-
-    const scopes = normalizedRoles.includes(ROLES.SUPER_ADMIN) || normalizedRoles.includes(ROLES.ADMIN)
-      ? ['admin:all', 'event:write', 'event:read', 'hackathon:write', 'hackathon:read']
-      : normalizedRoles.includes(ROLES.ORGANIZER)
-        ? ['event:write', 'event:read', 'hackathon:write', 'hackathon:read']
-        : ['event:read', 'hackathon:read'];
-
-    return { roles: normalizedRoles, permissions, scopes };
-  }, [normalizeRoles]);
-
   useEffect(() => {
     const validateSession = async () => {
       try {
@@ -139,7 +145,7 @@ export const AuthProvider = ({ children }) => {
     } else {
       setLoading(false);
     }
-  }, [clearSession]);
+  }, [clearSession, extractSession]);
 
   // --- Global 401 handler ---
   useEffect(() => {
@@ -237,68 +243,58 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const extractSession = (res, data, fallbackEmail) => {
-    let sessionToken = data?.token ?? data?.accessToken ?? null;
-
-    if (!sessionToken) {
-      const authHeader = res.headers?.['authorization'] || res.headers?.['Authorization'] || null;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        sessionToken = authHeader.substring(7);
-      }
-    }
-
-    const rawUser = data?.user ?? data?.data ?? data ?? null;
-    const rawRoles =
-      rawUser?.roles ??
-      (rawUser?.role ? [rawUser.role] : []);
-
-    const resolvedRoles = normalizeRoles(rawRoles);
-    const sessionUser = {
-      ...(rawUser || {}),
-      firstName: rawUser?.firstName ?? "",
-      lastName: rawUser?.lastName ?? "",
-      email: rawUser?.email ?? fallbackEmail ?? "",
-      username: rawUser?.username ?? fallbackEmail ?? "",
-      role: rawUser?.role ?? resolvedRoles[0] ?? "",
-      roles: resolvedRoles,
-      permissions: rawUser?.permissions ?? [],
-      scopes: rawUser?.scopes ?? (
-        resolvedRoles.includes(ROLES.ADMIN)
-          ? ["admin:all", "event:write", "event:read", "hackathon:write", "hackathon:read"]
-          : resolvedRoles.includes(ROLES.ORGANIZER)
-            ? ["event:write", "event:read", "hackathon:write", "hackathon:read"]
-            : ["event:read", "hackathon:read"]
-      ),
-    };
-
-    return { sessionToken, sessionUser };
-  };
-
   const setAuthSession = (sessionToken, sessionUser) => {
     persistSession(sessionToken, sessionUser);
     return true;
   };
 
+  const getAuthErrorMessage = (error, fallbackMessage) => {
+    return (
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      error?.message ||
+      fallbackMessage
+    );
+  };
+
   const login = async (usernameOrEmail, password) => {
-    const res = await apiUtils.post(API_ENDPOINTS.AUTH.LOGIN, {
-      usernameOrEmail,
-      password,
+    setAuthRequest({
+      loading: true,
+      error: null,
     });
 
-    const data = res.data;
+    try {
+      const res = await apiUtils.post(API_ENDPOINTS.AUTH.LOGIN, {
+        usernameOrEmail,
+        password,
+      });
 
-    if (res.status !== 200) {
-      throw new Error(data?.message || data?.error || "Invalid credentials");
+      const data = res.data;
+
+      if (res.status !== 200) {
+        throw new Error(data?.message || data?.error || "Invalid credentials");
+      }
+
+      const { sessionToken, sessionUser } = extractSession(res, data, usernameOrEmail);
+
+      if (!sessionToken) {
+        throw new Error("Login failed: token missing from response");
+      }
+
+      persistSession(sessionToken, sessionUser);
+      return true;
+    } catch (error) {
+      setAuthRequest((prev) => ({
+        ...prev,
+        error: getAuthErrorMessage(error, "Login failed. Please try again."),
+      }));
+      throw error;
+    } finally {
+      setAuthRequest((prev) => ({
+        ...prev,
+        loading: false,
+      }));
     }
-
-    const { sessionToken, sessionUser } = extractSession(res, data, usernameOrEmail);
-
-    if (!sessionToken) {
-      throw new Error("Login failed: token missing from response");
-    }
-
-    persistSession(sessionToken, sessionUser);
-    return true;
   };
 
   /**
@@ -327,50 +323,70 @@ export const AuthProvider = ({ children }) => {
    */
   const signInWithGoogle = async (credential) => {
     if (!credential) {
-      throw new Error("Google Sign-In failed: missing credential");
+      const error = new Error("Google Sign-In failed: missing credential");
+      setAuthRequest({
+        loading: false,
+        error: error.message,
+      });
+      throw error;
     }
 
     // ── Step 1: Exchange the Google credential with the Eventra backend ──────
     // The backend is the only party that can verify the token's signature.
+    setAuthRequest({
+      loading: true,
+      error: null,
+    });
+
     let res;
     try {
       res = await apiUtils.post(API_ENDPOINTS.AUTH.GOOGLE, { token: credential });
-    } catch (networkError) {
-      // Surface network/timeout errors with a friendlier message
-      throw new Error(
-        `Google Sign-In failed: could not reach the server. ${
-          networkError?.message || "Please check your connection and try again."
-        }`
-      );
+      // ── Step 2: Parse the backend response ───────────────────────────────────
+      const data = res.data;
+
+      if (res.status !== 200) {
+        // The backend rejected the credential (bad token, wrong audience, etc.)
+        throw new Error(
+          data?.message ||
+            data?.error ||
+            `Google Sign-In failed: server returned ${res.status}`
+        );
+      }
+
+      // ── Step 3: Extract and validate the Eventra-issued token ────────────────
+      // extractSession normalises the response shape (handles token / accessToken
+      // in body as well as a Bearer header), and builds a canonical sessionUser
+      // with normalised roles and computed scopes.
+      const { sessionToken, sessionUser } = extractSession(res, data, null);
+
+      if (!sessionToken) {
+        throw new Error(
+          "Google Sign-In failed: the server did not return an authentication token."
+        );
+      }
+
+      // ── Step 4: Persist the Eventra JWT (never the raw Google token) ─────────
+      persistSession(sessionToken, sessionUser);
+      return true;
+    } catch (error) {
+      const message = error?.message?.includes("could not reach the server")
+        ? error.message
+        : getAuthErrorMessage(
+            error,
+            "Google Sign-In failed. Please try again or use email/password."
+          );
+
+      setAuthRequest((prev) => ({
+        ...prev,
+        error: message,
+      }));
+      throw error;
+    } finally {
+      setAuthRequest((prev) => ({
+        ...prev,
+        loading: false,
+      }));
     }
-
-    // ── Step 2: Parse the backend response ───────────────────────────────────
-    const data = res.data;
-
-    if (res.status !== 200) {
-      // The backend rejected the credential (bad token, wrong audience, etc.)
-      throw new Error(
-        data?.message ||
-          data?.error ||
-          `Google Sign-In failed: server returned ${res.status}`
-      );
-    }
-
-    // ── Step 3: Extract and validate the Eventra-issued token ────────────────
-    // extractSession normalises the response shape (handles token / accessToken
-    // in body as well as a Bearer header), and builds a canonical sessionUser
-    // with normalised roles and computed scopes.
-    const { sessionToken, sessionUser } = extractSession(res, data, null);
-
-    if (!sessionToken) {
-      throw new Error(
-        "Google Sign-In failed: the server did not return an authentication token."
-      );
-    }
-
-    // ── Step 4: Persist the Eventra JWT (never the raw Google token) ─────────
-    persistSession(sessionToken, sessionUser);
-    return true;
   };
 
   const logout = () => {
@@ -386,7 +402,7 @@ export const AuthProvider = ({ children }) => {
       return false;
     }
     return true;
-  }, [user]);
+  }, [token, user]);
 
   const hasRole = (roleName) => {
     if (!user?.roles) return false;
@@ -427,6 +443,7 @@ export const AuthProvider = ({ children }) => {
     user,
     token,
     loading,
+    authRequest,
     login,
     logout,
     signInWithGoogle,

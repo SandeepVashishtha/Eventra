@@ -5,18 +5,15 @@ import { useAuth } from '../../context/AuthContext';
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
 import { LogIn, Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import useReducedMotion from '../../hooks/useReducedMotion';
 
 const LoginForm = () => {
-  const prefersReducedMotion = useReducedMotion();
   const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState({});
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, authRequest } = useAuth();
   const from = location.state?.from;
   const redirectPath =
     typeof from === "string"
@@ -56,7 +53,6 @@ const LoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-    setLoading(true);
 
     try {
       const ok = await login(formData.usernameOrEmail, formData.password);
@@ -70,10 +66,7 @@ const LoginForm = () => {
         // eslint-disable-next-line no-console
         console.error("Login error:", err);
       }
-      setError({ general: err.message || "Invalid email or password" });
       toast.error(err.message || 'Login failed. Please check your credentials.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -126,7 +119,7 @@ const LoginForm = () => {
               value={formData.usernameOrEmail}
               onChange={handleChange}
               required
-              disabled={loading}
+              disabled={authRequest.loading}
               placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
               aria-invalid={!!error.usernameOrEmail}
               aria-describedby={error.usernameOrEmail ? "usernameOrEmail-error" : undefined}
@@ -156,7 +149,7 @@ const LoginForm = () => {
               value={formData.password}
               onChange={handleChange}
               required
-              disabled={loading}
+              disabled={authRequest.loading}
               placeholder="Create a secure password"
               aria-invalid={!!error.password}
               aria-describedby={error.password ? "password-error" : undefined}
@@ -187,9 +180,9 @@ const LoginForm = () => {
           </div>
         </div>
 
-        {error.general && (
+        {authRequest.error && (
           <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm">
-            {error.general}
+            {authRequest.error}
           </div>
         )}
 
@@ -197,12 +190,12 @@ const LoginForm = () => {
           whileHover={{ scale: 1.03, boxShadow: '0 0 30px rgba(59,130,246,0.6)' }}
           whileTap={{ scale: 0.97 }}
           type="submit"
-          disabled={loading}
+          disabled={authRequest.loading}
           className="relative w-full overflow-hidden flex justify-center py-3.5 px-4 rounded-xl text-sm font-bold text-[#0f172a] bg-gradient-to-r from-blue-400 to-indigo-400 hover:from-blue-300 hover:to-indigo-300 shadow-[0_0_20px_rgba(59,130,246,0.4)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0f172a] focus:ring-blue-500 transition-all duration-300 group"
         >
           {/* Shimmer overlay */}
           <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
-          {loading ? (
+          {authRequest.loading ? (
             <div className="flex items-center gap-2 relative z-10">
               <div className="w-4 h-4 border-2 border-[#0f172a] border-t-transparent rounded-full animate-spin"></div>
               <span>Signing In...</span>
