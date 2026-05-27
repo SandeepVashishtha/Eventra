@@ -14,6 +14,55 @@ function generateErrorId() {
   return id;
 }
 
+/** 
+ * Attempt to recover component state from sessionStorage
+ * This preserves state across soft retries and reloads
+ */
+function attemptStateRecovery() {
+  try {
+    const savedState = sessionStorage.getItem("eventra_component_state_backup");
+    if (savedState) {
+      window.__EVENTRA_RECOVERED_STATE__ = JSON.parse(savedState);
+      sessionStorage.removeItem("eventra_component_state_backup");
+      return true;
+    }
+  } catch (_) {
+    // State recovery failed silently
+  }
+  return false;
+}
+
+/** Save critical app state before attempting cache reset */
+function saveAppStateSnapshot() {
+  try {
+    const snapshot = {
+      timestamp: new Date().toISOString(),
+      url: window.location.href,
+      localStorage: (() => {
+        const snap = {};
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && !k.includes("token") && !k.includes("password")) {
+            snap[k] = localStorage.getItem(k)?.slice(0, 100);
+          }
+        }
+        return snap;
+      })(),
+      sessionStorage: (() => {
+        const snap = {};
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const k = sessionStorage.key(i);
+          if (k && !k.includes("token") && !k.includes("password")) {
+            snap[k] = sessionStorage.getItem(k)?.slice(0, 100);
+          }
+        }
+        return snap;
+      })(),
+    };
+    sessionStorage.setItem("eventra_state_snapshot", JSON.stringify(snapshot));
+  } catch (_) {}
+}
+
 /** Persist error info to localStorage for post-reload diagnosis */
 function persistErrorLog(errorId, error, errorInfo) {
   try {
@@ -25,6 +74,14 @@ function persistErrorLog(errorId, error, errorInfo) {
       message: error ? error.toString() : "Unknown error",
       stack: error?.stack || "",
       componentStack: errorInfo?.componentStack || "",
+      screenResolution: `${window.innerWidth}x${window.innerHeight}`,
+      appState: (() => {
+        try {
+          return window.__EVENTRA_APP_STATE__ || {};
+        } catch (_) {
+          return {};
+        }
+      })(),
     };
     const existing = JSON.parse(localStorage.getItem("eventra_error_log") || "[]");
     existing.unshift(log);
@@ -35,7 +92,7 @@ function persistErrorLog(errorId, error, errorInfo) {
   }
 }
 
-/** Build a readable diagnostic text report */
+/** Build a readable diagnostic text report with enhanced information */
 function buildDiagnosticReport(errorId, error, errorInfo) {
   const lsSnapshot = (() => {
     try {
@@ -52,11 +109,29 @@ function buildDiagnosticReport(errorId, error, errorInfo) {
     }
   })();
 
+  const sessionSnapshot = (() => {
+    try {
+      const snap = {};
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const k = sessionStorage.key(i);
+        if (k && !k.includes("token") && !k.includes("password")) {
+          snap[k] = sessionStorage.getItem(k)?.slice(0, 200);
+        }
+      }
+      return JSON.stringify(snap, null, 2);
+    } catch (_) {
+      return "Unable to read sessionStorage";
+    }
+  })();
+
   return `=== EVENTRA DIAGNOSTIC REPORT ===
-Error ID   : ${errorId}
-Timestamp  : ${new Date().toISOString()}
-URL        : ${window.location.href}
-User-Agent : ${navigator.userAgent}
+Error ID      : ${errorId}
+Timestamp     : ${new Date().toISOString()}
+URL           : ${window.location.href}
+User-Agent    : ${navigator.userAgent}
+Screen Size   : ${window.innerWidth}x${window.innerHeight}
+Device Pixel  : ${window.devicePixelRatio}
+Online Status : ${navigator.onLine}
 
 --- Error ---
 ${error ? error.toString() : "Unknown error"}
@@ -69,6 +144,14 @@ ${errorInfo?.componentStack || "No component stack"}
 
 --- LocalStorage Snapshot ---
 ${lsSnapshot}
+
+--- SessionStorage Snapshot ---
+${sessionSnapshot}
+
+--- Browser Info ---
+Language: ${navigator.language}
+Platform: ${navigator.platform}
+Cookies Enabled: ${navigator.cookieEnabled}
 ==================================`;
 }
 
@@ -85,7 +168,12 @@ class ErrorBoundary extends React.Component {
       copied: false,
       showDiagnostics: false,
       retryCount: 0,
+      isRecovering: false,
+      recoveryMessage: "",
     };
+    
+    // Attempt to recover state on mount
+    this.hasRecoveredState = attemptStateRecovery();
   }
 
   static getDerivedStateFromError(error) {
@@ -104,13 +192,20 @@ class ErrorBoundary extends React.Component {
 
     // Persist to localStorage so the error survives a reload
     persistErrorLog(this.state.errorId || "EV-UNKNOWN", error, errorInfo);
+    
+    // Save app state snapshot
+    saveAppStateSnapshot();
   }
 
   // ── Recovery Actions ────────────────────────────────────────────────────────
 
   /** Hard reload — fastest recovery */
   handleReload = () => {
-    window.location.reload();
+    this.setState({ isRecovering: true, recoveryMessage: "Reloading page..." });
+    // Give UI time to update before reload
+    setTimeout(() => {
+      window.location.reload();
+    }, 300);
   };
 
   /**
@@ -122,15 +217,23 @@ class ErrorBoundary extends React.Component {
     const { retryCount } = this.state;
     if (retryCount >= 3) {
       // Too many retries — fall back to hard reload
-      window.location.reload();
+      this.handleReload();
       return;
     }
-    this.setState((prev) => ({
-      hasError: false,
-      error: null,
-      errorInfo: null,
-      retryCount: prev.retryCount + 1,
-    }));
+    
+    this.setState({ isRecovering: true, recoveryMessage: "Attempting recovery..." });
+    
+    // Clear error after a brief delay to show feedback
+    setTimeout(() => {
+      this.setState((prev) => ({
+        hasError: false,
+        error: null,
+        errorInfo: null,
+        isRecovering: false,
+        recoveryMessage: "",
+        retryCount: prev.retryCount + 1,
+      }));
+    }, 600);
   };
 
   /**
@@ -138,12 +241,15 @@ class ErrorBoundary extends React.Component {
    * so the user stays logged in after the reload.
    */
   handleResetCache = () => {
+    this.setState({ isRecovering: true, recoveryMessage: "Clearing cache..." });
+    
     try {
       const SESSION_KEYS_TO_PRESERVE = [
         "eventra_user",
         "eventra_token",
         "eventra_refresh_token",
         "eventra_theme",
+        "eventra_preferences",
         "cursor",
       ];
 
@@ -154,16 +260,31 @@ class ErrorBoundary extends React.Component {
         if (val !== null) preserved[key] = val;
       });
 
+      // Clear all localStorage
       localStorage.clear();
 
       // Restore session data
       Object.entries(preserved).forEach(([key, val]) => {
         localStorage.setItem(key, val);
       });
-    } catch (_) {
+      
+      // Also clear sessionStorage (non-critical data)
+      sessionStorage.clear();
+      
+      // Update feedback
+      this.setState({ recoveryMessage: "Cache cleared. Reloading..." });
+      
+      setTimeout(() => {
+        window.location.reload();
+      }, 800);
+    } catch (err) {
       // If localStorage is unavailable, just reload
+      console.warn("Cache reset failed:", err);
+      this.setState({ recoveryMessage: "Reloading..." });
+      setTimeout(() => {
+        window.location.reload();
+      }, 800);
     }
-    window.location.reload();
   };
 
   /** Copy the full diagnostic report to clipboard */
@@ -192,13 +313,17 @@ class ErrorBoundary extends React.Component {
       ta.value = text;
       ta.style.position = "fixed";
       ta.style.left = "-9999px";
+      ta.style.top = "-9999px";
+      ta.style.opacity = "0";
       document.body.appendChild(ta);
       ta.select();
       document.execCommand("copy");
       document.body.removeChild(ta);
       this.setState({ copied: true });
       setTimeout(() => this.setState({ copied: false }), 2500);
-    } catch (_) {}
+    } catch (_) {
+      console.warn("Fallback copy failed");
+    }
   };
 
   toggleDiagnostics = () => {
@@ -212,7 +337,7 @@ class ErrorBoundary extends React.Component {
       return this.props.children;
     }
 
-    const { error, errorInfo, errorId, copied, showDiagnostics, retryCount } = this.state;
+    const { error, errorInfo, errorId, copied, showDiagnostics, retryCount, isRecovering, recoveryMessage } = this.state;
     const tooManyRetries = retryCount >= 3;
 
     const lsSnapshot = (() => {
@@ -237,12 +362,13 @@ class ErrorBoundary extends React.Component {
         aria-modal="true"
         aria-labelledby="eb-title"
         aria-describedby="eb-description"
+        aria-busy={isRecovering}
       >
         {/* Animated background glows */}
         <div className="eb-bg-glow eb-bg-glow--1" aria-hidden="true" />
         <div className="eb-bg-glow eb-bg-glow--2" aria-hidden="true" />
 
-        <div className="eb-card" role="document">
+        <div className={`eb-card ${isRecovering ? "eb-card--recovering" : ""}`} role="document">
           {/* Glow orbs inside card */}
           <div className="eb-glow-1" aria-hidden="true" />
           <div className="eb-glow-2" aria-hidden="true" />
@@ -295,27 +421,40 @@ class ErrorBoundary extends React.Component {
             <button
               className="eb-btn-primary"
               onClick={this.handleReload}
+              disabled={isRecovering}
               aria-label="Reload the page"
+              title={isRecovering ? "Reloading..." : "Reload the page"}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
-              Reload Page
+              {isRecovering ? "Reloading..." : "Reload Page"}
             </button>
 
             <button
               className="eb-btn-secondary"
               onClick={this.handleTryAgain}
-              disabled={tooManyRetries}
+              disabled={tooManyRetries || isRecovering}
               aria-label={
-                tooManyRetries
+                isRecovering
+                  ? "Recovery in progress..."
+                  : tooManyRetries
                   ? "Maximum retries reached — please reload"
                   : `Try again without reloading (attempt ${retryCount + 1} of 3)`
               }
-              title={tooManyRetries ? "Too many retries — reloading instead" : "Try again"}
+              title={tooManyRetries ? "Too many retries — reloading instead" : isRecovering ? "Recovering..." : "Try again"}
             >
-              {tooManyRetries ? "Reload Instead" : "Try Again"}
-              {retryCount > 0 && !tooManyRetries && (
+              {isRecovering ? (
+                <>
+                  <span className="eb-spinner" aria-hidden="true" />
+                  Recovering...
+                </>
+              ) : tooManyRetries ? (
+                "Reload Instead"
+              ) : (
+                "Try Again"
+              )}
+              {retryCount > 0 && !tooManyRetries && !isRecovering && (
                 <span className="eb-retry-badge" aria-hidden="true">
                   {retryCount}/3
                 </span>
@@ -328,19 +467,23 @@ class ErrorBoundary extends React.Component {
             <button
               className="eb-btn-reset-cache"
               onClick={this.handleResetCache}
+              disabled={isRecovering}
               aria-label="Reset app cache and reload. Your session will be preserved."
+              title={isRecovering ? "Operation in progress..." : "Clear local cache and reload"}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
-              Reset Cache
+              {isRecovering ? "Clearing..." : "Reset Cache"}
             </button>
 
             <button
               className={`eb-btn-copy-report ${copied ? "eb-btn-copy-report--copied" : ""}`}
               onClick={this.handleCopyReport}
+              disabled={isRecovering}
               aria-label={copied ? "Report copied to clipboard" : "Copy diagnostic report to clipboard"}
               aria-live="polite"
+              title={copied ? "Copied!" : "Copy error details for reporting"}
             >
               {copied ? (
                 <>
@@ -354,18 +497,28 @@ class ErrorBoundary extends React.Component {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
-                  Copy Diagnostic Report
+                  Copy Report
                 </>
               )}
             </button>
           </div>
 
+          {/* ── Recovery Status Message ── */}
+          {recoveryMessage && (
+            <div className="eb-recovery-message" role="status" aria-live="polite">
+              <span className="eb-recovery-spinner" aria-hidden="true" />
+              {recoveryMessage}
+            </div>
+          )}
+
           {/* ── Diagnostics Toggle ── */}
           <button
             className="eb-diagnostics-toggle"
             onClick={this.toggleDiagnostics}
+            disabled={isRecovering}
             aria-expanded={showDiagnostics}
             aria-controls="eb-diagnostics-panel"
+            title={isRecovering ? "Operation in progress..." : (showDiagnostics ? "Hide diagnostic information" : "Show diagnostic information")}
           >
             <svg
               width="14"

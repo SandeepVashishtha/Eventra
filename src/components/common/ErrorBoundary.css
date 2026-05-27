@@ -85,6 +85,19 @@
     0 24px 64px -12px rgba(102, 126, 234, 0.12);
 }
 
+/* ── Recovering state ───────────────────────────────────────── */
+.eb-card--recovering {
+  opacity: 0.8;
+}
+.eb-card--recovering .eb-btn-primary,
+.eb-card--recovering .eb-btn-secondary,
+.eb-card--recovering .eb-btn-reset-cache,
+.eb-card--recovering .eb-btn-copy-report,
+.eb-card--recovering .eb-diagnostics-toggle {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
 /* ── Entrance animation ─────────────────────────────────────── */
 @keyframes eb-fade-up {
   from { opacity: 0; transform: translateY(28px) scale(0.97); }
@@ -266,6 +279,8 @@
     background 0.2s ease,
     opacity 0.2s ease;
   white-space: nowrap;
+  min-height: 40px;
+  min-width: 40px;
 }
 .eb-btn-primary:hover,
 .eb-btn-secondary:hover,
@@ -290,6 +305,60 @@
   outline-offset: 3px;
 }
 
+/* ── Spinner animation ──────────────────────────────────────── */
+@keyframes eb-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes eb-pulse-opacity {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.6; }
+}
+
+.eb-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: rgba(255, 255, 255, 1);
+  border-radius: 50%;
+  animation: eb-spin 0.8s linear infinite;
+}
+
+.eb-recovery-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(102, 126, 234, 0.08);
+  border: 1px solid rgba(102, 126, 234, 0.15);
+  border-radius: 10px;
+  font-size: 0.875rem;
+  color: #667eea;
+  margin-top: 12px;
+  animation: eb-pulse-opacity 2s ease-in-out infinite;
+  position: relative;
+  z-index: 1;
+}
+.dark .eb-recovery-message {
+  background: rgba(102, 126, 234, 0.12);
+  border-color: rgba(102, 126, 234, 0.22);
+  color: #818cf8;
+}
+
+.eb-recovery-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(102, 126, 234, 0.3);
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: eb-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
 /* ── Primary: Reload ────────────────────────────────────────── */
 .eb-btn-primary {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -310,7 +379,7 @@
   color: #cbd5e1;
   border-color: #475569;
 }
-.eb-btn-secondary:hover {
+.eb-btn-secondary:hover:not(:disabled) {
   border-color: #667eea;
   color: #667eea;
   background: rgba(102, 126, 234, 0.06);
@@ -389,15 +458,20 @@
   position: relative;
   z-index: 1;
 }
-.eb-diagnostics-toggle:hover {
+.eb-diagnostics-toggle:hover:not(:disabled) {
   color: #667eea;
   background: rgba(102, 126, 234, 0.07);
+}
+.eb-diagnostics-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .dark .eb-diagnostics-toggle {
   color: #94a3b8;
 }
-.dark .eb-diagnostics-toggle:hover {
+.dark .eb-diagnostics-toggle:hover:not(:disabled) {
   color: #818cf8;
+}
 }
 
 .eb-diagnostics-chevron {
@@ -510,22 +584,42 @@
   border-radius: 999px;
 }
 
-/* ── Responsive ─────────────────────────────────────────────── */
-@media (max-width: 540px) {
+/* ── Responsive: Tablet (768px and below) ────────────────────── */
+@media (max-width: 768px) {
+  .eb-overlay {
+    padding: 12px;
+  }
+
   .eb-card {
-    padding: 36px 20px 28px;
+    padding: 32px 24px 24px;
     border-radius: 20px;
+    max-width: 100%;
   }
 
   .eb-title {
-    font-size: 1.35rem;
+    font-size: 1.375rem;
   }
 
   .eb-message {
-    font-size: 0.875rem;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+  }
+
+  .eb-icon-wrapper {
+    width: 68px;
+    height: 68px;
+  }
+
+  .eb-icon {
+    width: 32px;
+    height: 32px;
   }
 
   .eb-actions {
+    gap: 8px;
+  }
+
+  .eb-actions--secondary {
     flex-direction: column;
     align-items: stretch;
   }
@@ -534,25 +628,253 @@
   .eb-btn-secondary,
   .eb-btn-reset-cache,
   .eb-btn-copy-report {
+    min-height: 44px;
+    padding: 12px 16px;
+    font-size: 0.9375rem;
+    flex: 1;
+  }
+
+  .eb-actions--secondary .eb-btn-reset-cache,
+  .eb-actions--secondary .eb-btn-copy-report {
     width: 100%;
-    justify-content: center;
-    padding: 13px 16px;
   }
 
   .eb-meta-grid {
     grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 12px;
   }
+
   .eb-meta-item--full {
     grid-column: 1;
   }
+
+  .eb-meta-label {
+    font-size: 0.625rem;
+  }
+
+  .eb-meta-value {
+    font-size: 0.75rem;
+  }
+
+  .eb-stack {
+    max-height: 200px;
+    font-size: 0.7rem;
+    padding: 12px;
+  }
+
+  .eb-diagnostics-panel--open {
+    max-height: 600px;
+  }
+
+  .eb-error-message-box {
+    padding: 12px 14px;
+    margin-bottom: 18px;
+  }
+
+  .eb-error-text {
+    font-size: 0.8rem;
+  }
 }
 
-@media (max-width: 360px) {
-  .eb-card {
-    padding: 28px 16px 24px;
+/* ── Responsive: Mobile (540px and below) ────────────────────── */
+@media (max-width: 540px) {
+  .eb-overlay {
+    padding: 8px;
   }
+
+  .eb-card {
+    padding: 28px 18px 22px;
+    border-radius: 16px;
+  }
+
   .eb-title {
-    font-size: 1.2rem;
+    font-size: 1.25rem;
+    line-height: 1.25;
+    margin-bottom: 10px;
+  }
+
+  .eb-message {
+    font-size: 0.875rem;
+    line-height: 1.55;
+    margin-bottom: 12px;
+    max-width: 100%;
+  }
+
+  .eb-icon-wrapper {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 18px;
+  }
+
+  .eb-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .eb-error-id {
+    font-size: 0.75rem;
+    margin-bottom: 16px;
+  }
+
+  .eb-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .eb-btn-primary,
+  .eb-btn-secondary,
+  .eb-btn-reset-cache,
+  .eb-btn-copy-report {
+    width: 100%;
+    justify-content: center;
+    padding: 14px 12px;
+    min-height: 48px;
+    font-size: 0.875rem;
+    border-radius: 10px;
+  }
+
+  .eb-actions--secondary {
+    flex-direction: column;
+    margin-bottom: 12px;
+  }
+
+  .eb-actions--secondary .eb-btn-reset-cache,
+  .eb-actions--secondary .eb-btn-copy-report {
+    width: 100%;
+  }
+
+  .eb-meta-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 10px;
+    margin-bottom: 12px;
+  }
+
+  .eb-meta-item {
+    gap: 2px;
+  }
+
+  .eb-meta-label {
+    font-size: 0.6rem;
+  }
+
+  .eb-meta-value {
+    font-size: 0.7rem;
+  }
+
+  .eb-stack {
+    max-height: 180px;
+    font-size: 0.65rem;
+    padding: 10px;
+    line-height: 1.5;
+  }
+
+  .eb-diagnostics-panel--open {
+    max-height: 500px;
+    margin-top: 16px;
+  }
+
+  .eb-error-message-box {
+    padding: 10px 12px;
+    margin-bottom: 14px;
+    border-radius: 10px;
+  }
+
+  .eb-error-label {
+    font-size: 0.65rem;
+  }
+
+  .eb-error-text {
+    font-size: 0.75rem;
+  }
+
+  .eb-diagnostics-toggle {
+    font-size: 0.75rem;
+    padding: 5px 10px;
+    margin-top: 2px;
+  }
+
+  .eb-diagnostic-section {
+    margin-bottom: 12px;
+  }
+
+  .eb-section-title {
+    font-size: 0.7rem;
+  }
+}
+
+/* ── Responsive: Very Small Mobile (360px and below) ──────────── */
+@media (max-width: 360px) {
+  .eb-overlay {
+    padding: 4px;
+  }
+
+  .eb-card {
+    padding: 22px 14px 18px;
+    border-radius: 14px;
+  }
+
+  .eb-title {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+  }
+
+  .eb-message {
+    font-size: 0.8125rem;
+    margin-bottom: 10px;
+  }
+
+  .eb-icon-wrapper {
+    width: 52px;
+    height: 52px;
+    margin-bottom: 14px;
+  }
+
+  .eb-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .eb-bg-glow {
+    filter: blur(80px);
+  }
+
+  .eb-bg-glow--1 {
+    width: 300px;
+    height: 300px;
+    top: -80px;
+    left: -80px;
+  }
+
+  .eb-bg-glow--2 {
+    width: 280px;
+    height: 280px;
+    bottom: -60px;
+    right: -60px;
+  }
+
+  .eb-btn-primary,
+  .eb-btn-secondary,
+  .eb-btn-reset-cache,
+  .eb-btn-copy-report {
+    padding: 12px 10px;
+    min-height: 44px;
+    font-size: 0.8125rem;
+    gap: 5px;
+  }
+
+  .eb-meta-grid {
+    padding: 8px;
+    gap: 4px;
+  }
+
+  .eb-stack {
+    max-height: 150px;
+    font-size: 0.6rem;
+    padding: 8px;
   }
 }
 
