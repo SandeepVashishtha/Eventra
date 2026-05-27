@@ -57,6 +57,8 @@ const EventCreation = () => {
   const prefersReducedMotion = useReducedMotion();
 
   const [currentStep, setCurrentStep] = useState("form");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [generalError, setGeneralError] = useState("");
 
   const { handleSubmit: submitEventForm, isSubmitting, error: submitError, success: submitSuccess } = useFormSubmit(async (eventData) => {
     const token = sessionStorage.getItem("token");

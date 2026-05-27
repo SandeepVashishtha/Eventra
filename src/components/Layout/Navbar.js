@@ -1,4 +1,7 @@
 import NotificationBell from "../common/NotificationBell.jsx";
+import { toast } from "react-toastify";
+import ConfirmationModal from "../common/ConfirmationModal";
+import CommandPalette from "../common/CommandPalette.jsx";
 import { useTheme } from "../../context/ThemeContext";
 import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";

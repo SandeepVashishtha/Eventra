@@ -82,7 +82,6 @@ export default function EventHero({
   const selectSearchQuery = (query) => {
     handleSearch(query);
     saveSearchQuery(query);
-    saveRecentSearch(query);
   };
 
   const clearSearchHistory = useCallback(() => {

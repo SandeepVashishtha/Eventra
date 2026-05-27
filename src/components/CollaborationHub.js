@@ -1,6 +1,7 @@
 import StatusBadge from "./common/StatusBadge";
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Plus, Check, X, Briefcase as BriefcaseIcon, DollarSign, Calendar, Users, Send } from 'lucide-react';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { toast } from 'react-toastify';
 import './components.css';
@@ -290,8 +291,9 @@ const CollaborationHub = () => {
             </div>
             
             <div className="opportunities-grid">
-              {filteredOpportunities.map((opportunity, index) => (
-                <motion.div
+              {filteredOpportunities.length > 0 ? (
+                filteredOpportunities.map((opportunity, index) => (
+                  <motion.div
                   key={opportunity.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -321,16 +323,6 @@ const CollaborationHub = () => {
                     </div>
                   </div>
                   
-                  <div className="opportunity-details">
-                    <div className="detail-item">
-                      <span className="label">Budget:</span>
-                      <span className="value">{opportunity.budget}</span>
-                    </div>
-                    <div className="detail-item">
-                      <span className="label">Deadline:</span>
-                      <span className="value">{new Date(opportunity.deadline).toLocaleDateString()}</span>
-                    </div>
-                    
                     <div>
                       <div className="opportunity-details grid grid-cols-2 gap-3 mb-5 border-t border-slate-100 dark:border-slate-800/60 pt-4">
                         <div className="detail-item">
@@ -452,30 +444,32 @@ const CollaborationHub = () => {
             </div>
             
             <div className="networking-requests">
-              {filteredNetworking.map((request, index) => (
-                <motion.div
-                  key={request.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: prefersReducedMotion ? 0 : index * 0.1, duration: prefersReducedMotion ? 0 : 0.6 }}
-                  className="networking-card"
-                >
-                  <div className="networking-header">
-                    <div className="profile-info">
-                      <span className="avatar">{request.avatar}</span>
-                      <div className="name-role">
-                        <h3>{request.name}</h3>
-                        <p>{request.role} at {request.company}</p>
+              {filteredNetworking.length > 0 ? (
+                filteredNetworking.map((request, index) => (
+                  <motion.div
+                    key={request.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: prefersReducedMotion ? 0 : index * 0.1, duration: prefersReducedMotion ? 0 : 0.6 }}
+                    className="networking-card"
+                  >
+                    <div className="networking-header">
+                      <div className="profile-info">
+                        <span className="avatar">{request.avatar}</span>
+                        <div className="name-role">
+                          <h3>{request.name}</h3>
+                          <p>{request.role} at {request.company}</p>
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div className="networking-actions flex gap-2">
-                      <button className="flex-1 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1">
-                        <Check size={14} /> Accept Connection
-                      </button>
-                      <button className="px-3 py-2 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all">
-                        Message
-                      </button>
+                      
+                      <div className="networking-actions flex gap-2">
+                        <button className="flex-1 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1">
+                          <Check size={14} /> Accept Connection
+                        </button>
+                        <button className="px-3 py-2 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all">
+                          Message
+                        </button>
+                      </div>
                     </div>
                   </motion.div>
                 ))
@@ -484,7 +478,11 @@ const CollaborationHub = () => {
                   No networking matches found.
                 </div>
               )}
-            <        {activeSection === 'create-request' && (
+            </div>
+          </div>
+        )}
+
+        {activeSection === 'create-request' && (
           <div className="create-request-section max-w-2xl mx-auto" role="region" aria-labelledby="form-heading">
             <h2 id="form-heading" className="text-xl font-bold text-slate-900 dark:text-white mb-6">Create Collaboration Request</h2>
             <form onSubmit={handleRequestSubmit} className="request-form p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl space-y-5">

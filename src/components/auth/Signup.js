@@ -142,7 +142,8 @@ const useSignupForm = (onSuccess) => {
 
   return {
     formData, errors, touched, loading, submitStatus,
-    updateField, handleBlur, validateForm, setLoading, setSubmitStatus, resetForm
+    updateField, handleBlur, validateForm, setLoading, setSubmitStatus, resetForm,
+    setTouched, setErrors
   };
 };
 
@@ -154,7 +155,8 @@ const Signup = () => {
   
   const {
     formData, errors, touched, loading, submitStatus,
-    updateField, handleBlur, validateForm, setLoading, setSubmitStatus
+    updateField, handleBlur, validateForm, setLoading, setSubmitStatus,
+    setTouched, setErrors
   } = useSignupForm();
 
   const passwordStrength = useMemo(() => 
