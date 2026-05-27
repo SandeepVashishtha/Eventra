@@ -320,9 +320,14 @@ const EventRegistration = () => {
     isSubmittingRef.current = true;
     setSubmitting(true);
 
+    const isEventFull = event ? event.attendees >= event.maxAttendees : false;
+    const endpoint = isEventFull 
+      ? `/api/events/${eventId}/waitlist`
+      : (API_ENDPOINTS.EVENTS?.REGISTER ? API_ENDPOINTS.EVENTS.REGISTER(eventId) : `/api/events/${eventId}/register`);
+
     try {
       await apiUtils.post(
-        API_ENDPOINTS.EVENTS.REGISTER(eventId),
+        endpoint,
         {
           ...formData,
           eventId: parseInt(eventId),
@@ -368,6 +373,8 @@ const EventRegistration = () => {
 
       if (isAlreadyRegistered) {
         setRegistered(true);
+        toast.success(isEventFull ? "Successfully joined waitlist!" : "Registration successful!");
+        // ── Save to My Events ──
         addRegistration(event, formData);
         clearSession();
         toast.info(failureMessage);
@@ -424,10 +431,11 @@ const EventRegistration = () => {
     );
   }
 
+  const isEventFull = event ? event.attendees >= event.maxAttendees : false;
   const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
   const isEventFull = event.attendees >= event.maxAttendees;
 
-  if (isPastEvent || isEventFull) {
+  if (isPastEvent) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
@@ -664,7 +672,7 @@ const EventRegistration = () => {
             </div>
           </div>
 
-          {/* Registration Form */}
+          {isEventFull ? "Waitlist Joined!" : "Registration Confirmed!"}
           <div className="p-8">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
               Register for this Event
@@ -847,10 +855,10 @@ const EventRegistration = () => {
                   {submitting ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Registering...
+                      {isEventFull ? "Joining Waitlist..." : "Registering..."}
                     </>
                   ) : (
-                    "Complete Registration"
+                    isEventFull ? "Join Waitlist" : "Complete Registration"
                   )}
                 </button>
               </div>
