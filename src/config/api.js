@@ -103,8 +103,15 @@ export const setOnUnauthorizedHandler = (handler) => {
 
 const normalizeRequestConfig = (configOrToken = {}, maybeToken) => {
   const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
+  const skipAuth = config.skipAuth === true;
+  if ("skipAuth" in config) {
+    delete config.skipAuth;
+  }
+
   const token =
-    typeof configOrToken === "string"
+    skipAuth
+      ? ""
+      : typeof configOrToken === "string"
       ? configOrToken
       : typeof maybeToken === "string"
         ? maybeToken
@@ -261,3 +268,11 @@ export const apiUtils = {
 };
 
 export default API;
+
+export const API_ENDPOINTS_UPDATED = {
+  ...API_ENDPOINTS,
+  NOTIFICATIONS: {
+    ...API_ENDPOINTS.NOTIFICATIONS,
+    READ_ALL: buildApiUrl("/api/notifications/read-all"),
+  }
+};

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
@@ -509,4 +509,5 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
   );
 };
 
-export default ProjectCard;
+
+export default memo(ProjectCard);

@@ -66,17 +66,21 @@ export const generateSharingUrl = (shareData, platform) => {
  */
 export const generateEventSharingData = (event, baseUrl = null) => {
   // Determine the correct base URL for sharing
-  const currentUrl = window.location.href;
   const deployedDomain = 'eventra.sandeepvashishtha.tech';
   
   // If baseUrl is provided, use it, otherwise detect
   if (!baseUrl) {
-    // Check if we're on the deployed site
-    if (currentUrl.includes(deployedDomain)) {
-      baseUrl = `https://${deployedDomain}`;
+    if (typeof window !== 'undefined') {
+      const currentUrl = window.location.href;
+      // Check if we're on the deployed site
+      if (currentUrl.includes(deployedDomain)) {
+        baseUrl = `https://${deployedDomain}`;
+      } else {
+        // Use the current origin (localhost or other development environment)
+        baseUrl = window.location.origin;
+      }
     } else {
-      // Use the current origin (localhost or other development environment)
-      baseUrl = window.location.origin;
+      baseUrl = `https://${deployedDomain}`; // Fallback for SSR/Node
     }
   }
   

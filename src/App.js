@@ -3,6 +3,7 @@ import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom"; 
 import "./App.css";
 import "./styles/reduced-motion.css";
+import "./styles/print.css";
 import { toast } from "react-toastify";
 import BackToTopButton from "./components/common/BackToTopButton";
 import Navbar from "./components/Layout/Navbar";
@@ -16,6 +17,7 @@ import ReminderChecker from "./components/reminders/ReminderChecker";
 import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
 import ThemeCustomizerDrawer from "./components/common/ThemeCustomizerDrawer";
 import SessionRecovery from "./components/SessionRecovery";
+import ErrorBoundary from "./components/common/ErrorBoundary";
 import OnboardingChecklist from "./components/user/OnboardingChecklist";
 
 import NotificationToastContainer from "./components/common/NotificationProvider";
@@ -39,6 +41,8 @@ const OfflineSyncManager = () => {
 };
 
 function App() {
+  const location = useLocation();
+  const isDashboardOrAdmin = location.pathname === "/dashboard" || location.pathname === "/admin";
   const [cursorEnabled, setCursorEnabled] = useState(localStorage.getItem("cursor") !== "off");
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
 
@@ -104,7 +108,8 @@ function App() {
   }, []);
 
   return (
-    <AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
       <NotificationProvider>
         <MyEventsProvider>
           <SessionRecoveryProvider>
@@ -165,7 +170,7 @@ function App() {
               {/* FIXED THE TAG BELOW: Added the missing '>' closure */}
               <Suspense fallback={null}>
                 <Chatbot />
-                <Footer />
+                {!isDashboardOrAdmin && <Footer />}
               </Suspense>
 
               <BackToTopButton />
@@ -178,6 +183,7 @@ function App() {
         </MyEventsProvider>
       </NotificationProvider>
     </AuthProvider>
+  </ErrorBoundary>
   );
 }
 

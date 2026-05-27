@@ -7,40 +7,40 @@ import ProtectedRoute from '../auth/ProtectedRoute';
 
 // ─── Lazy-loaded page components ─────────────────────────────────────────────
 // All components are loaded on-demand to keep the initial bundle small.
-const MockApiResponse     = lazy(() => import('../MockApiResponse'));
-const HomePage            = lazy(() => import('../../Pages/Home/HomePage'));
-const EventDetails        = lazy(() => import('../../Pages/Events/EventDetails'));
-const EventRegistration   = lazy(() => import('../../Pages/Events/EventRegistration'));
-const HackathonLifecycle  = lazy(() => import('../../Pages/Hackathons/HackathonLifecycle'));
-const Contributors        = lazy(() => import('../Contributors'));
-const CommunityEvent      = lazy(() => import('../CommunityEvent'));
-const LeaderBoard         = lazy(() => import('../../Pages/Leaderboard/Leaderboard'));
-const ContributorGuide    = lazy(() => import('../../Pages/Leaderboard/ContributorGuide'));
-const AboutPage           = lazy(() => import('../../Pages/About/AboutPage'));
-const FAQPage             = lazy(() => import('../../Pages/FAQ/FAQPage'));
-const Terms               = lazy(() => import('../../Pages/Terms'));
-const Privacy             = lazy(() =>
+const MockApiResponse = lazy(() => import('../MockApiResponse'));
+const HomePage = lazy(() => import('../../Pages/Home/HomePage'));
+const EventDetails = lazy(() => import('../../Pages/Events/EventDetails'));
+const EventRegistration = lazy(() => import('../../Pages/Events/EventRegistration'));
+const HackathonLifecycle = lazy(() => import('../../Pages/Hackathons/HackathonLifecycle'));
+const Contributors = lazy(() => import('../Contributors'));
+const CommunityEvent = lazy(() => import('../CommunityEvent'));
+const LeaderBoard = lazy(() => import('../../Pages/Leaderboard/Leaderboard'));
+const ContributorGuide = lazy(() => import('../../Pages/Leaderboard/ContributorGuide'));
+const AboutPage = lazy(() => import('../../Pages/About/AboutPage'));
+const FAQPage = lazy(() => import('../../Pages/FAQ/FAQPage'));
+const Terms = lazy(() => import('../../Pages/Terms'));
+const Privacy = lazy(() =>
   import('../../Pages/Privacy').then((module) => ({ default: module.Privacy }))
 );
-const ApiDocs             = lazy(() => import('../../Pages/ApiDocs'));
-const HelpCenter          = lazy(() => import('../../Pages/HelpCenter'));
-const ContactUs           = lazy(() => import('../../Pages/Contact/ContactUs'));
-const FeedbackPage        = lazy(() => import('../../Pages/Feedback/FeedbackPage'));
-const DocumentationPage   = lazy(() => import('../../Pages/About/DocumentationPage'));
-const EventsPage          = lazy(() => import('../../Pages/Events/EventsPage'));
-const HackathonPage       = lazy(() => import('../../Pages/Hackathons/HackathonPage'));
+const ApiDocs = lazy(() => import('../../Pages/ApiDocs'));
+const HelpCenter = lazy(() => import('../../Pages/HelpCenter'));
+const ContactUs = lazy(() => import('../../Pages/Contact/ContactUs'));
+const FeedbackPage = lazy(() => import('../../Pages/Feedback/FeedbackPage'));
+const DocumentationPage = lazy(() => import('../../Pages/About/DocumentationPage'));
+const EventsPage = lazy(() => import('../../Pages/Events/EventsPage'));
+const HackathonPage = lazy(() => import('../../Pages/Hackathons/HackathonPage'));
 const HackathonDetailsPage = lazy(() => import('../../Pages/Hackathons/HackathonDetailsPage'));
-const ProjectsPage        = lazy(() => import('../../Pages/Projects/ProjectsPage'));
-const MyCalendar          = lazy(() => import('../../Pages/Calendar/MyCalendar'));
+const ProjectsPage = lazy(() => import('../../Pages/Projects/ProjectsPage'));
+const MyCalendar = lazy(() => import('../../Pages/Calendar/MyCalendar'));
 
 // ─── Auth-required page components ───────────────────────────────────────────
 // These are imported separately to make the intent explicit: they MUST be
 // wrapped with <ProtectedRoute> — do not move them to the public list above.
-const BookmarkedEvents       = lazy(() => import('../../Pages/Events/BookmarkedEvents'));
-const RemindersPage          = lazy(() => import('../../Pages/Events/RemindersPage'));
+const BookmarkedEvents = lazy(() => import('../../Pages/Events/BookmarkedEvents'));
+const RemindersPage = lazy(() => import('../../Pages/Events/RemindersPage'));
 const EventAnalyticsDashboard = lazy(() => import('../../Pages/Events/EventAnalyticsDashboard'));
-const FloorPlanDesignerPage  = lazy(() => import('../../Pages/Events/FloorPlanDesignerPage'));
-const SubmitProject          = lazy(() => import('../../Pages/Projects/SubmitProject'));
+const FloorPlanDesignerPage = lazy(() => import('../../Pages/Events/FloorPlanDesignerPage'));
+const SubmitProject = lazy(() => import('../../Pages/Projects/SubmitProject'));
 
 /**
  * getPublicRoutes
@@ -61,11 +61,11 @@ const SubmitProject          = lazy(() => import('../../Pages/Projects/SubmitPro
  */
 export const getPublicRoutes = () => [
   // ── Fully public routes (no login required) ────────────────────────────────
-  <Route key="/"         path="/"         element={<HomePage />} />,
-  <Route key="/events"   path="/events"   element={<EventsPage />} />,
-  <Route key="/event-details"  path="/events/:eventId"          element={<EventDetails />} />,
-  <Route key="/register"       path="/events/:eventId/register" element={<EventRegistration />} />,
-  <Route key="/hackathons"        path="/hackathons"              element={<HackathonPage />} />,
+  <Route key="/" path="/" element={<HomePage />} />,
+  <Route key="/events" path="/events" element={<EventsPage />} />,
+  <Route key="/event-details" path="/events/:eventId" element={<EventDetails />} />,
+  <Route key="/register" path="/events/:eventId/register" element={<EventRegistration />} />,
+  <Route key="/hackathons" path="/hackathons" element={<HackathonPage />} />,
   <Route key="/hackathon-details" path="/hackathons/:hackathonId" element={<HackathonDetailsPage />} />,
   <Route key="/hackathons-lifecycle" path="/hackathons/:id/lifecycle" element={<HackathonLifecycle />} />,
   <Route key="/projects" path="/projects" element={<ProjectsPage />} />,
@@ -108,24 +108,24 @@ export const getPublicRoutes = () => [
    />,
 
   // ── PageLayout-wrapped routes ──────────────────────────────────────────────
-  <Route key="/contributors"   path="/contributors"   element={<PageLayout><Contributors /></PageLayout>} />,
+  <Route key="/contributors" path="/contributors" element={<PageLayout><Contributors /></PageLayout>} />,
   <Route key="/communityEvent" path="/communityEvent" element={<PageLayout><CommunityEvent /></PageLayout>} />,
   <Route key="/community-event" path="/community-event" element={<PageLayout><CommunityEvent /></PageLayout>} />,
-  <Route key="/leaderBoard"    path="/leaderBoard"    element={<PageLayout><LeaderBoard /></PageLayout>} />,
-  <Route key="/leaderboard"    path="/leaderboard"    element={<PageLayout><LeaderBoard /></PageLayout>} />,
-  <Route key="/contributorguide"  path="/contributorguide"  element={<PageLayout><ContributorGuide /></PageLayout>} />,
+  <Route key="/leaderBoard" path="/leaderBoard" element={<PageLayout><LeaderBoard /></PageLayout>} />,
+  <Route key="/leaderboard" path="/leaderboard" element={<PageLayout><LeaderBoard /></PageLayout>} />,
+  <Route key="/contributorguide" path="/contributorguide" element={<PageLayout><ContributorGuide /></PageLayout>} />,
   <Route key="/contributor-guide" path="/contributor-guide" element={<PageLayout><ContributorGuide /></PageLayout>} />,
-  <Route key="/about"          path="/about"          element={<PageLayout><AboutPage /></PageLayout>} />,
-  <Route key="/about-fallback" path="/about/*"        element={<PageLayout><AboutPage /></PageLayout>} />,
-  <Route key="/faq"            path="/faq"            element={<PageLayout><FAQPage /></PageLayout>} />,
-  <Route key="/terms"          path="/terms"          element={<PageLayout><Terms /></PageLayout>} />,
-  <Route key="/privacy"        path="/privacy"        element={<PageLayout><Privacy /></PageLayout>} />,
-  <Route key="/apiDocs"        path="/apiDocs"        element={<PageLayout><ApiDocs /></PageLayout>} />,
-  <Route key="/api-docs"       path="/api-docs"       element={<PageLayout><ApiDocs /></PageLayout>} />,
-  <Route key="/helpcenter"     path="/helpcenter"     element={<PageLayout><HelpCenter /></PageLayout>} />,
-  <Route key="/contact"        path="/contact"        element={<PageLayout><ContactUs /></PageLayout>} />,
-  <Route key="/feedback"       path="/feedback"       element={<PageLayout><FeedbackPage /></PageLayout>} />,
-  <Route key="/documentation"  path="/documentation"  element={<PageLayout><DocumentationPage /></PageLayout>} />,
+  <Route key="/about" path="/about" element={<PageLayout><AboutPage /></PageLayout>} />,
+  <Route key="/about-fallback" path="/about/*" element={<PageLayout><AboutPage /></PageLayout>} />,
+  <Route key="/faq" path="/faq" element={<PageLayout><FAQPage /></PageLayout>} />,
+  <Route key="/terms" path="/terms" element={<PageLayout><Terms /></PageLayout>} />,
+  <Route key="/privacy" path="/privacy" element={<PageLayout><Privacy /></PageLayout>} />,
+  <Route key="/apiDocs" path="/apiDocs" element={<PageLayout><ApiDocs /></PageLayout>} />,
+  <Route key="/api-docs" path="/api-docs" element={<PageLayout><ApiDocs /></PageLayout>} />,
+  <Route key="/helpcenter" path="/helpcenter" element={<PageLayout><HelpCenter /></PageLayout>} />,
+  <Route key="/contact" path="/contact" element={<PageLayout><ContactUs /></PageLayout>} />,
+  <Route key="/feedback" path="/feedback" element={<PageLayout><FeedbackPage /></PageLayout>} />,
+  <Route key="/documentation" path="/documentation" element={<PageLayout><DocumentationPage /></PageLayout>} />,
 
   <Route
     key="/analytics"
