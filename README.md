@@ -226,6 +226,21 @@ We welcome contributions from the community! To get started, please follow these
 - To keep your assignment, please **open a draft Pull Request** within the 7-day period to show progress.
 - For more details, see our [Auto-unassign Documentation](.github/AUTO_UNASSIGN.md).
 
+### Automatic PR Labels
+
+This repository uses GitHub Actions with `actions/labeler`
+to automatically apply labels to pull requests based on changed files.
+
+Examples:
+- `docs/**` → `type:docs`
+- `tests/**` → `type:testing`
+- `.github/**` → `type:devops`
+- `src/**` → `type:refactor`
+- `public/**` → `type:design`
+
+The workflow runs automatically whenever a pull request is opened,
+updated, or reopened.
+
 ## License
 
 This project is licensed under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for details.
@@ -353,10 +368,13 @@ Update `.env.local` to point to the mock server. You have two options:
   ```env
   REACT_APP_SSE_URL=http://localhost:4001
   ```
-- **Option B**: Set the general `REACT_APP_API_URL` to point to the mock server port (this routes all endpoints through port 4001):
+- **Option B (Not Recommended)**: Set the general `REACT_APP_API_URL` to point to the mock server port (this routes all endpoints through port 4001):
   ```env
   REACT_APP_API_URL=http://localhost:4001
   ```
+  > [!WARNING]
+  > **Side-effects of Option B:** Setting the general `REACT_APP_API_URL` to the mock server port will break standard REST API calls (like fetching events, logging in, etc.) because the mock server does not proxy these requests. Use Option A for standard local development to prevent breaking your local environment.
+
 
 ---
 

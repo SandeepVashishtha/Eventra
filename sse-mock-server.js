@@ -5,9 +5,11 @@
  */
 const http = require("http");
 
-const PORT = 4001;
+const PORT = parseInt(process.env.SSE_MOCK_PORT || process.env.PORT || "4001", 10);
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "http://localhost:3000";
 
-const enableLogs = process.env.NODE_ENV !== "production";
+// Gated behind SSE_DEBUG env var in development to reduce console noise
+const enableLogs = process.env.NODE_ENV !== "production" && process.env.SSE_DEBUG === "true";
 
 const log = (...args) => {
   if (enableLogs) {
@@ -29,8 +31,7 @@ function sseHeaders(res) {
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
     "Connection": "keep-alive",
-    // Allow the React dev server origin
-    "Access-Control-Allow-Origin": "http://localhost:3000",
+    "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
     "Access-Control-Allow-Credentials": "true",
   });
 }
@@ -42,7 +43,7 @@ function send(res, data) {
 const server = http.createServer((req, res) => {
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
-      "Access-Control-Allow-Origin": "http://localhost:3000",
+      "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
       "Access-Control-Allow-Methods": "GET",
       "Access-Control-Allow-Headers": "Content-Type",
     });
@@ -101,12 +102,13 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`\nSSE mock server running on http://localhost:${PORT}`);
+  console.log(`\n[Dev Only] SSE mock server running on port ${PORT}`);
+  console.log(`Allowed Origin: ${ALLOWED_ORIGIN}`);
   console.log("Streams available:");
   console.log(`  GET http://localhost:${PORT}/stream/leaderboard`);
   console.log(`  GET http://localhost:${PORT}/stream/analytics`);
   console.log("\nNext steps:");
-  console.log("  1. Create .env.local with: REACT_APP_API_URL=http://localhost:4001");
+  console.log(`  1. Create/update .env.local with: REACT_APP_API_URL=http://localhost:${PORT}`);
   console.log("  2. Restart the React dev server (npm run dev)");
-  console.log("  3. Watch leaderboard and analytics update live\n");
+  console.log(`  3. Run with SSE_DEBUG=true to enable verbose streaming logs\n`);
 });

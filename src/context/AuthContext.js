@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from '../config/api';
 import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
-import { syncSecureStorage } from '../utils/secureStorage';
 import { toast } from 'react-toastify';
 import { ROLES } from '../config/roles';
+import { clearQueue } from '../utils/offlineQueue';
+
 
 const AuthContext = createContext();
 
@@ -29,7 +30,7 @@ export const AuthProvider = ({ children }) => {
   const clearSession = useCallback(() => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem("token");
+    sessionStorage.removeItem("token");
     localStorage.removeItem("user");
   }, []);
 
@@ -49,7 +50,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check for existing authentication on app start
-    const storedToken = localStorage.getItem("token");
+    const storedToken = sessionStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
 
     if (storedToken && storedUser) {
@@ -106,12 +107,20 @@ export const AuthProvider = ({ children }) => {
   // When isAuthenticated() detects an expired token during a render, it
   // sets needsExpiryCleanupRef. This effect runs AFTER render finishes
   // and performs the actual state cleanup + toast.
+  //
+  // FIX: Added [clearExpiredSession] dependency array.
+  // Without a dependency array this effect ran after EVERY render of the
+  // entire React tree (AuthProvider wraps everything). While the ref guard
+  // prevented duplicate cleanups, the unnecessary post-render calls added
+  // overhead and made the effect semantically misleading.
+  // With [clearExpiredSession] it only re-runs when that stable callback
+  // reference changes — which is effectively once on mount.
   useEffect(() => {
     if (needsExpiryCleanupRef.current) {
       needsExpiryCleanupRef.current = false;
       clearExpiredSession();
     }
-  });
+  }, [clearExpiredSession]);
 
   // --- Smart Token Expiry Timeout ---
   // Instead of polling every 15 s, compute the exact remaining TTL from the
@@ -159,16 +168,42 @@ export const AuthProvider = ({ children }) => {
     };
   }, [token, clearExpiredSession]);
 
+  /**
+   * persistSession
+   *
+   * Saves the authenticated session after a successful login.
+   *
+   * Token storage responsibility
+   * ────────────────────────────
+   * setToken() (from secureStorage.js) is the single source of truth for
+   * writing the JWT to sessionStorage. Calling sessionStorage.setItem("token")
+   * directly here would:
+   *   1. Duplicate the write — both setToken() and the inline call would
+   *      store the same value, bypassing the secureStorage abstraction layer.
+   *   2. Create a silent inconsistency if secureStorage.js is ever changed
+   *      to use a different storage key or storage type (e.g. cookies) —
+   *      the direct call here would keep writing to the old location.
+   *
+   * The user profile (non-sensitive) remains in localStorage so it survives
+   * tab close and is available for UI personalisation on next visit.
+   *
+   * @param {string} sessionToken - Eventra-issued JWT from the backend
+   * @param {object} sessionUser  - Normalised user profile object
+   */
   const persistSession = (sessionToken, sessionUser) => {
+    // Write the JWT via secureStorage — sessionStorage, tab-scoped
     setToken(sessionToken);
+    // Update React state
     setUser(sessionUser);
     try {
-      localStorage.setItem("token", sessionToken);
+      // Store the non-sensitive user profile for UI personalisation across sessions
       localStorage.setItem("user", JSON.stringify(sessionUser));
     } catch (error) {
-      console.error('Error persisting session:', error);
+      // eslint-disable-next-line no-console
+      console.error('[AuthContext] Error persisting user profile:', error);
     }
   };
+
   const normalizeRoles = (roles = []) => {
     return roles.map((role) => {
       const normalized = String(role).toUpperCase();
@@ -228,12 +263,9 @@ export const AuthProvider = ({ children }) => {
       password,
     });
 
-    const data = await res.json().catch((error) => {
-      console.error("Failed to parse login response JSON:", error);
-      return null;
-    });
+    const data = res.data;
 
-    if (!res.ok) {
+    if (res.status !== 200) {
       throw new Error(data?.message || data?.error || "Invalid credentials");
     }
 
@@ -247,47 +279,75 @@ export const AuthProvider = ({ children }) => {
     return true;
   };
 
-  // Decode a JWT payload (base64url) without external libraries
-  const decodeJwtPayload = (jwt) => {
-    try {
-      const base64Url = jwt.split(".")[1];
-      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-      const json = decodeURIComponent(
-        atob(base64)
-          .split("")
-          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-          .join("")
-      );
-      return JSON.parse(json);
-    } catch (err) {
-      console.error("Failed to decode Google credential:", err);
-      return null;
-    }
-  };
-
+  /**
+   * Sign in with a Google credential returned by @react-oauth/google.
+   *
+   * SECURITY NOTE
+   * -------------
+   * The Google ID token (credential) MUST be verified server-side.
+   * Client-side JWT decoding only reads the payload — it does NOT verify
+   * the cryptographic signature, audience (aud), issuer (iss), or expiry.
+   * Skipping the backend exchange would allow any Google-issued token
+   * (even one issued for a completely different application) to create a
+   * valid session in Eventra.
+   *
+   * Flow:
+   *  1. POST the raw Google credential to the Eventra backend.
+   *  2. The backend verifies it against Google's JWKS endpoint and checks
+   *     aud, iss, exp, and email_verified.
+   *  3. On success the backend returns an Eventra-signed JWT + user object.
+   *  4. We persist ONLY the Eventra JWT — never the raw Google token.
+   *
+   * @param {string} credential - Raw Google ID token from @react-oauth/google
+   * @returns {Promise<true>} Resolves to true on success
+   * @throws {Error} If the credential is missing, the backend rejects it,
+   *                 or the response does not contain an Eventra token
+   */
   const signInWithGoogle = async (credential) => {
     if (!credential) {
       throw new Error("Google Sign-In failed: missing credential");
     }
 
-    const payload = decodeJwtPayload(credential);
-    if (!payload || !payload.email) {
-      throw new Error("Google Sign-In failed: invalid credential");
+    // ── Step 1: Exchange the Google credential with the Eventra backend ──────
+    // The backend is the only party that can verify the token's signature.
+    let res;
+    try {
+      res = await apiUtils.post(API_ENDPOINTS.AUTH.GOOGLE, { token: credential });
+    } catch (networkError) {
+      // Surface network/timeout errors with a friendlier message
+      throw new Error(
+        `Google Sign-In failed: could not reach the server. ${
+          networkError?.message || "Please check your connection and try again."
+        }`
+      );
     }
 
-    const sessionUser = {
-      firstName: payload.given_name || "",
-      lastName: payload.family_name || "",
-      email: payload.email,
-      username: payload.email,
-      picture: payload.picture || "",
-      role: "",
-      roles: [],
-      permissions: [],
-      provider: "google",
-    };
+    // ── Step 2: Parse the backend response ───────────────────────────────────
+    const data = res.data;
 
-    persistSession(credential, sessionUser);
+    if (res.status !== 200) {
+      // The backend rejected the credential (bad token, wrong audience, etc.)
+      throw new Error(
+        data?.message ||
+          data?.error ||
+          `Google Sign-In failed: server returned ${res.status}`
+      );
+    }
+
+    // ── Step 3: Extract and validate the Eventra-issued token ────────────────
+    // extractSession normalises the response shape (handles token / accessToken
+    // in body as well as a Bearer header), and builds a canonical sessionUser
+    // with normalised roles and computed scopes.
+    const { sessionToken, sessionUser } = extractSession(res, data, null);
+
+    if (!sessionToken) {
+      throw new Error(
+        "Google Sign-In failed: the server did not return an authentication token."
+      );
+    }
+
+    // ── Step 4: Persist the Eventra JWT (never the raw Google token) ─────────
+    persistSession(sessionToken, sessionUser);
     return true;
   };
 

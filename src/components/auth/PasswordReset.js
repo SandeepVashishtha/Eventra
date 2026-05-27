@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { apiUtils } from '../../config/api';
+import { API_ENDPOINTS, apiUtils } from '../../config/api';
 import { motion } from "framer-motion";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 
@@ -34,7 +34,7 @@ const PasswordReset = () => {
   setLoading(true);
 
   try {
-    const response = await apiUtils.post('/api/auth/password-reset', { email });
+    const response = await apiUtils.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, { email });
     // Axios throws on non-2xx, so if we're here the request succeeded
     setMessage(response.data?.message || 'Password reset link sent! Check your email.');
     setTimeout(() => navigate('/login'), 3000);

@@ -9,6 +9,7 @@ import {
   FaMedal,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import { ContributorCardSkeleton } from "./common/SkeletonLoaders";
 
 // GitHub repo
@@ -74,6 +75,7 @@ const cacheContributors = (data) => {
 };
 
 const Contributors = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -190,11 +192,11 @@ const Contributors = () => {
   // Filter contributors based on search term
   const filteredContributors = contributors.filter(
     (c) =>
-      c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.login?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.role?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.company?.toLowerCase().includes(searchTerm.toLowerCase()),
+      (c.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.login || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.role || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.location || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.company || "").toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   // UPDATED: Loading skeleton grid
@@ -241,6 +243,7 @@ const Contributors = () => {
             placeholder="Search contributors by name, username, role, location, or company..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            aria-label="Search contributors"
             className="px-4 py-2 rounded-lg w-full max-w-2xl border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-black text-gray-900 dark:text-white bg-white dark:bg-gray-800"
           />
         </div>
@@ -251,7 +254,7 @@ const Contributors = () => {
           style={{ fontFamily: '"Anton", sans-serif' }}
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" }}
         >
           🌟 Our Amazing {/* UPDATED: Gradient text for dark mode */}
           <span className="text-black dark:text-white animate-pulse">
@@ -300,7 +303,7 @@ const Contributors = () => {
                       width="80"
                       height="80"
                       src={c.avatar_url}
-                      alt={c.login}
+                      alt={`${c.login}'s GitHub avatar`}
                       className="w-20 h-20 rounded-full border-4 border-black shadow-xl"
                     />
                     <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 blur-md"></div>

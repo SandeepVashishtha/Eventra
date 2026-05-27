@@ -1,19 +1,20 @@
-import StatusBadge from "../common/StatusBadge";
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate, Navigate,useLocation } from 'react-router-dom';
+import { useNavigate, Navigate, useLocation, Link } from 'react-router-dom';
 import {
   Users, Calendar, Activity, Shield, LogOut, Plus,
   Search, ChevronRight, BarChart2,
   Trash2, Edit2, AlertCircle,
-  TrendingUp
+  TrendingUp, Download, ChevronDown
 } from 'lucide-react';
+import { exportToCSV, exportToJSON } from '../../utils/exportUtils';
 import {
   AdminListCardSkeleton,
   AdminStatCardSkeleton,
   AdminTableSkeleton,
 } from '../common/SkeletonLoaders';
+import StatusBadge from "../common/StatusBadge";
 import './AdminDashboard.css';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import { toast } from 'react-toastify';
@@ -94,24 +95,79 @@ const MOCK_EVENTS = [
   { id: 5, title: 'Global AI Hackathon',    date: '2025-10-10', participantCount: 200, status: 'Upcoming',  type: 'Hackathon' },
 ];
 
+
 /* ─── Confirmation Modal ─── */
 function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
+
+useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') {
+        onCancel();
+      }
+    };
+
+    document.addEventListener('keydown', handleEsc);
+
+    return () => {
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [onCancel]);
+
+
+
   if (!open) return null;
+
   return (
-    <div className="ad-modal-overlay" onClick={onCancel}>
+    <div
+      className="ad-modal-overlay"
+      onClick={onCancel}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          onCancel();
+        }
+      }}
+      tabIndex={0}
+    >
       <motion.div
         className="ad-modal"
+        tabIndex={0}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="ad-modal-icon"><AlertCircle size={28} color="#ef4444" /></div>
+        <div className="ad-modal-icon">
+          <AlertCircle size={28} color="#ef4444" />
+        </div>
+
         <h3 className="ad-modal-title">{title}</h3>
+
         <p className="ad-modal-msg">{message}</p>
+
         <div className="ad-modal-actions">
-          <button className="ad-btn-ghost" onClick={onCancel}>Cancel</button>
-          <button className="ad-btn-danger" onClick={onConfirm}>Confirm</button>
+          <button
+            className="ad-btn-ghost"
+            onClick={onCancel}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                onCancel();
+              }
+            }}
+          >
+            Cancel
+          </button>
+
+          <button
+            className="ad-btn-danger"
+            onClick={onConfirm}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                onConfirm();
+              }
+            }}
+          >
+            Confirm
+          </button>
         </div>
       </motion.div>
     </div>
@@ -138,6 +194,7 @@ const AdminDashboard = () => {
   const [searchEvent, setSearchEvent] = useState('');
   const [confirmModal, setConfirmModal] = useState({ open: false, type: '', id: null });
   const [loading, setLoading] = useState(true);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
 
   const firstName = user?.firstName || user?.username || 'Admin';
 
@@ -343,7 +400,44 @@ const AdminDashboard = () => {
                       onChange={e => setSearchUser(e.target.value)}
                     />
                   </div>
-                  <span className="ad-count">{filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''}</span>
+                  <div className="ad-toolbar-right flex items-center gap-3">
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowExportDropdown(!showExportDropdown)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
+                      >
+                        <Download size={13} />
+                        Export
+                        <ChevronDown size={12} className={`transition-transform duration-200 ${showExportDropdown ? 'rotate-180' : ''}`} />
+                      </button>
+                      {showExportDropdown && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setShowExportDropdown(false)} />
+                          <div className="absolute right-0 mt-1.5 w-36 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg py-1 z-20 animate-fadeIn">
+                            <button
+                              onClick={() => {
+                                exportToCSV(filteredUsers, 'users_list');
+                                setShowExportDropdown(false);
+                              }}
+                              className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-850 transition"
+                            >
+                              Export as CSV
+                            </button>
+                            <button
+                              onClick={() => {
+                                exportToJSON(filteredUsers, 'users_list');
+                                setShowExportDropdown(false);
+                              }}
+                              className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-850 transition"
+                            >
+                              Export as JSON
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    <span className="ad-count">{filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''}</span>
+                  </div>
                 </div>
 
                 <div className="ad-table-wrap">
@@ -503,6 +597,22 @@ const AdminDashboard = () => {
 
           </AnimatePresence>
         </div>
+
+        {/* Futuristic Admin Dashboard Footer */}
+        <footer className="ad-footer">
+          <div className="ad-footer-divider" />
+          <div className="ad-footer-content">
+            <p className="ad-footer-copyright">
+              © {new Date().getFullYear()} Eventra. Admin Control Panel.
+            </p>
+            <div className="ad-footer-links">
+              <Link to="/helpcenter" className="ad-footer-link">Help Center</Link>
+              <a href="https://github.com/sandeepvashishtha/Eventra" target="_blank" rel="noopener noreferrer" className="ad-footer-link">GitHub</a>
+              <Link to="/privacy" className="ad-footer-link">Privacy Policy</Link>
+              <Link to="/terms" className="ad-footer-link">Terms of Service</Link>
+            </div>
+          </div>
+        </footer>
       </main>
 
       {/* Confirm modal */}

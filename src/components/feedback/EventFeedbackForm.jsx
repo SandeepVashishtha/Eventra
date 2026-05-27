@@ -1,6 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiStar, FiMessageSquare, FiSend, FiCheckCircle } from "react-icons/fi";
+import {
+  FiStar,
+  FiMessageSquare,
+  FiSend,
+  FiCheckCircle,
+} from "react-icons/fi";
+
+import { Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 
 const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
@@ -9,6 +16,13 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    const key = `feedback-submitted-${eventId}`;
+    if (localStorage.getItem(key)) {
+      setSubmitted(true);
+    }
+  }, [eventId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,6 +40,7 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
       // Simulate API submit delay
       await new Promise((resolve) => setTimeout(resolve, 800));
       
+      localStorage.setItem(`feedback-submitted-${eventId}`, "true");
       setSubmitted(true);
       toast.success("Feedback submitted! Thank you for sharing your thoughts.");
     } catch (err) {
@@ -110,9 +125,13 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
                   rows={4}
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
+                  maxLength={1000}
                   placeholder="What did you like? What can we do better?"
                   className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 resize-none"
                 />
+                <div className="text-right text-xs text-slate-400 mt-1">
+                  {comment.length} / 1000 characters
+                </div>
               </div>
             </div>
 
@@ -125,8 +144,18 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
               className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-lg shadow-indigo-600/15 disabled:opacity-75 transition-all"
             >
               {isSubmitting ? (
-                "Submitting..."
-              ) : (
+  <>
+    <Loader2
+      className="
+        w-4
+        h-4
+        animate-spin
+      "
+    />
+
+    Submitting...
+  </>
+) : (
                 <>
                   <FiSend className="w-4 h-4" />
                   Submit Feedback
@@ -152,19 +181,7 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
                 We've received your submission. Your rating and comments have been shared with the event organizers.
               </p>
             </div>
-            <div className="pt-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setRating(0);
-                  setComment("");
-                  setSubmitted(false);
-                }}
-                className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
-              >
-                Submit another response
-              </button>
-            </div>
+
           </motion.div>
         )}
       </AnimatePresence>

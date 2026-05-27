@@ -1,7 +1,7 @@
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const NotificationProvider = () => {
+const NotificationToastContainer = () => {
   return (
     <ToastContainer
       position="bottom-right"
@@ -24,4 +24,4 @@ const NotificationProvider = () => {
   );
 };
 
-export default NotificationProvider;
+export default NotificationToastContainer;
