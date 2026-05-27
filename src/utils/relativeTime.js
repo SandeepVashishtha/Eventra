@@ -1,9 +1,10 @@
 export function getRelativeTime(dateInput) {
-  const now = new Date();
+  if (!dateInput) return null;
+
   const date = new Date(dateInput);
+  if (isNaN(date.getTime()) || date.getTime() === 0) return null;
 
-  if (isNaN(date)) return null;
-
+  const now = new Date();
   const diffMs = date - now;
   const diffSec = Math.round(diffMs / 1000);
   const diffMin = Math.round(diffSec / 60);
@@ -30,13 +31,20 @@ export function getRelativeTime(dateInput) {
 }
 
 export function getSmartDateLabel(dateInput, timeInput = "") {
+  if (!dateInput) return "TBD";
+
+  const parsedDate = new Date(dateInput);
+  if (isNaN(parsedDate.getTime()) || parsedDate.getTime() === 0) {
+    return "TBD";
+  }
+
   const relative = getRelativeTime(
     timeInput ? `${dateInput} ${timeInput}` : dateInput
   );
 
   if (relative) return relative;
 
-  return new Date(dateInput).toLocaleDateString("en-US", {
+  return parsedDate.toLocaleDateString("en-US", {
     weekday: "short",
     day: "numeric",
     month: "short",
