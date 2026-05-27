@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Helmet } from "react-helmet-async";
 import DOMPurify from "dompurify";
 import { toast } from "react-toastify";
@@ -41,8 +41,10 @@ const EventDetails = () => {
 
   const { isRegistered } = useMyEvents();
 
-  const foundEvent = mockEvents.find((item) => String(item.id) === eventId);
-  const event = foundEvent ? { ...foundEvent, status: getEventStatus(foundEvent) } : null;
+  const event = useMemo(() => {
+    const foundEvent = mockEvents.find((item) => String(item.id) === eventId);
+    return foundEvent ? { ...foundEvent, status: getEventStatus(foundEvent) } : null;
+  }, [eventId]);
 
   // FIX: Safely handle localStorage with try-catch
   useEffect(() => {
