@@ -612,10 +612,11 @@ const NavList = ({ openDropdown, onToggleGroup, onLinkClick, isMobile }) => {
   // Call useLocation() directly so NavList always has the current pathname
   // from the Router context — never a stale prop from a parent render cycle.
   const location = useLocation();
-  // Prevent duplicate layoutId="activeBox": a group item (e.g. "Event Tools") should
-  // NOT be marked active when a standalone nav item already covers the same path.
-  // Having two <motion.span layoutId="activeBox"> mounted at the same time causes
-  // Framer Motion to conflict and the highlight disappears.
+  // When any dropdown is open, suppress the standalone-link active highlight so
+  // only one thing is visually "active" at a time (the open dropdown button).
+  // E.g. on /projects, opening Community should deactivate Projects' blue box.
+  const anyDropdownOpen = openDropdown !== null;
+
   const standaloneActive = NAV_ITEMS
     .filter(n => !n.subItems && n.href)
     .some(n =>
@@ -626,7 +627,9 @@ const NavList = ({ openDropdown, onToggleGroup, onLinkClick, isMobile }) => {
     <>
       {NAV_ITEMS.map((item) => {
         const isActive = item.href
-          ? (item.href === "/" ? location.pathname === "/" : location.pathname.startsWith(item.href))
+          // Standalone link: only active when no dropdown is open AND path matches
+          ? (!anyDropdownOpen && (item.href === "/" ? location.pathname === "/" : location.pathname.startsWith(item.href)))
+          // Group item: active when its sub-routes match (shown regardless of dropdown open state)
           : (!standaloneActive && item.subItems?.some(s => location.pathname.startsWith(s.href)));
 
         if (item.subItems) {
