@@ -28,37 +28,43 @@ jobs:
 
       - name: Run lint checks
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          if git rev-parse --verify HEAD^2 >/dev/null 2>&1; then
+            BASE_REF="HEAD^1"
           else
-            BASE_SHA="HEAD~1"
+            BASE_REF="HEAD~1"
           fi
-          echo "Comparing against base: $BASE_SHA"
-          CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT $BASE_SHA...HEAD | grep -E '\.(js|jsx)$' || true)
-          if [ -n "$CHANGED_FILES" ]; then
-            echo "Running ESLint on changed files:"
-            echo "$CHANGED_FILES"
-            npx eslint $CHANGED_FILES --max-warnings=-1
-          else
+          echo "Comparing against base: $BASE_REF"
+          
+          if ! CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT "$BASE_REF" HEAD | grep -E '\.(js|jsx)$'); then
             echo "No changed JS/JSX files to lint."
+            exit 0
           fi
+          
+          echo "Running ESLint on changed files:"
+          echo "$CHANGED_FILES"
+          
+          CHANGED_FILES_SPACE=$(echo "$CHANGED_FILES" | tr '\n' ' ')
+          npx eslint $CHANGED_FILES_SPACE --max-warnings=-1
 
       - name: Verify code formatting
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          if git rev-parse --verify HEAD^2 >/dev/null 2>&1; then
+            BASE_REF="HEAD^1"
           else
-            BASE_SHA="HEAD~1"
+            BASE_REF="HEAD~1"
           fi
-          echo "Comparing against base: $BASE_SHA"
-          CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT $BASE_SHA...HEAD | grep -E '\.(js|jsx|css)$' || true)
-          if [ -n "$CHANGED_FILES" ]; then
-            echo "Verifying code formatting on changed files:"
-            echo "$CHANGED_FILES"
-            npx prettier --check $CHANGED_FILES
-          else
+          echo "Comparing against base: $BASE_REF"
+          
+          if ! CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT "$BASE_REF" HEAD | grep -E '\.(js|jsx|css)$'); then
             echo "No changed files to verify formatting."
+            exit 0
           fi
+          
+          echo "Verifying code formatting on changed files:"
+          echo "$CHANGED_FILES"
+          
+          CHANGED_FILES_SPACE=$(echo "$CHANGED_FILES" | tr '\n' ' ')
+          npx prettier --check $CHANGED_FILES_SPACE
 
       - name: Run tests
         run: npm test -- --watchAll=false --passWithNoTests
