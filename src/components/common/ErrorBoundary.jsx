@@ -190,7 +190,7 @@ ${JSON.stringify(report.localStorage, null, 2)}
                   </>
                 )}
               </button>
-
+            </div>
           </div>
         </div>
       );

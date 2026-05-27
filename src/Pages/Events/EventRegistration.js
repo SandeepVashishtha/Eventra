@@ -433,7 +433,6 @@ const EventRegistration = () => {
 
   const isEventFull = event ? event.attendees >= event.maxAttendees : false;
   const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
-  const isEventFull = event.attendees >= event.maxAttendees;
 
   if (isPastEvent) {
     return (
