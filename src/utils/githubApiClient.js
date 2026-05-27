@@ -1,3 +1,4 @@
+import { fetchWithTimeout } from "./fetchWithTimeout";
 const GITHUB_HOST = "github.com";
 
 export const buildGitHubProxyUrl = (path, queryParams = {}) => {
@@ -13,7 +14,12 @@ export const buildGitHubProxyUrl = (path, queryParams = {}) => {
 };
 
 export const fetchGitHubJson = async (path, queryParams = {}, options = {}) => {
-  const response = await fetch(buildGitHubProxyUrl(path, queryParams), options);
+  const { data } = await fetchWithTimeout(
+    buildGitHubProxyUrl(path, queryParams),
+    options
+  );
+
+  return data;
 
   if (!response.ok) {
     throw new Error(`GitHub proxy request failed with status ${response.status}`);
