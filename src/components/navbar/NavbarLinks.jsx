@@ -13,7 +13,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
             ? "text-black dark:text-white border-black dark:border-white font-semibold bg-gray-100 dark:bg-gray-800"
             : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent hover:bg-gray-50 dark:hover:bg-gray-800/50"
         }`
-      : `flex gap-2 items-center text-sm font-medium transition-all duration-200 px-1 py-2 border-b-2 rounded-t-md ${
+      : `flex gap-1 items-center text-sm font-medium transition-all duration-200 px-1 lg:px-2 py-2 border-b-2 rounded-t-md whitespace-nowrap ${
           active
             ? "text-black dark:text-white border-black dark:border-white font-semibold"
             : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent hover:border-gray-300 dark:hover:border-gray-600"
@@ -21,12 +21,13 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
   };
 
   return (
-    <div
+    <nav
       className={`flex ${
         vertical
           ? "flex-col items-start w-full gap-2"
-          : "items-center gap-3 mx-7"
+          : "items-center gap-2 lg:gap-3 xl:gap-4 mx-2 lg:mx-4 min-w-0 flex-wrap"
       }`}
+      aria-label={vertical ? "Mobile primary links" : "Primary links"}
     >
       {NAV_ITEMS.map((item) => {
         const isSubItemActive = item.subItems?.some(
@@ -37,7 +38,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           return (
             <div
               key={item.name}
-              className={`relative group/nav flex items-center ${
+              className={`relative group/nav flex items-center shrink-0 ${
                 vertical ? "w-full flex-col items-start" : "flex-none"
               }`}
             >
@@ -101,7 +102,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           </NavLink>
         );
       })}
-    </div>
+    </nav>
   );
 };
 

@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
+import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
   Award,
   Calendar,
@@ -46,6 +47,7 @@ export default function EventHero({
   filteredEvents,
   scrollToCard,
 }) {
+  const prefersReducedMotion = useReducedMotion();
   const navigate = useNavigate();
 
   const [isSearchFocused, setIsSearchFocused] =
@@ -121,7 +123,7 @@ export default function EventHero({
   }}>
       <div className="relative px-4 flex flex-col items-center justify-center text-center z-10">
         <h1
-          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight px-4 sm:px-0 text-slate-900 dark:text-white drop-shadow-sm"
+          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight px-4 sm:px-0 text-slate-900 dark:text-gray-600 drop-shadow-sm"
           style={{ fontFamily: '"Big Shoulders Display", sans-seri' }}
         >
           Discover{" "}
@@ -130,10 +132,10 @@ export default function EventHero({
           </span>
         </h1>
 
-        <p className="mt-4 text-sm sm:text-base md:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto px-4 sm:px-0">
+        <p className="mt-4 text-sm sm:text-base md:text-lg text-slate-600 dark:text-gray-800 max-w-2xl mx-auto px-4 sm:px-0">
           Discover exciting events, compete with talented participants, learn
           new skills, and{" "}
-          <span className="font-semibold text-gray-900 dark:text-white">
+          <span className="font-semibold text-gray-900 dark:text-black">
             win rewards
           </span>
           .
@@ -172,7 +174,7 @@ export default function EventHero({
                     scale: 0.98,
                   }}
                   transition={{
-                    duration: 0.18,
+                    duration: prefersReducedMotion ? 0 : 0.18,
                     ease: "easeOut",
                   }}
                   onMouseDown={(event) =>
@@ -344,12 +346,13 @@ export default function EventHero({
             </div>
 
             <span
-              className={`
+              className="
+                dark:text-gray-600
                 text-xs sm:text-sm
                 font-semibold
                 whitespace-nowrap
                 ${darkTheme.textSecondary}
-              `}
+              "
             >
               {filteredEvents.length}{" "}
               {filteredEvents.length === 1
@@ -507,9 +510,7 @@ export default function EventHero({
                   duration={2.5}
                   prefix={stat.prefix}
                   suffix={stat.suffix}
-                  enableScrollSpy
-                  scrollSpyOnce
-                />
+                  />
               </p>
 
               <p
@@ -529,3 +530,4 @@ export default function EventHero({
     </div>
   );
 }
+

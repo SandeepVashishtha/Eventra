@@ -5,10 +5,13 @@ import { useAuth } from '../../context/AuthContext';
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
+import useReducedMotion from "../../hooks/useReducedMotion";
+import GoogleLoginButton from './GoogleLoginButton';
 import '../../styles/auth.css';
 
 const Login = () => {
   useDocumentTitle("Login | Eventra");
+  const prefersReducedMotion = useReducedMotion();
   const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState({});
@@ -16,7 +19,7 @@ const Login = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user, token } = useAuth();
   // If ProtectedRoute redirected here because the JWT expired, show a notice.
   const sessionExpired = location.state?.sessionExpired ?? false;
   const introPoints = [
@@ -31,41 +34,41 @@ const Login = () => {
     setError((prev) => ({ ...prev, [name]: "" }));
   };
 
- const validate = () => {
-  const newErrors = {};
+  const validate = () => {
+    const newErrors = {};
 
-  if (!formData.usernameOrEmail.trim()) {
-    newErrors.usernameOrEmail =
-      "Email or username is required";
-  } else if (
-    formData.usernameOrEmail.includes("@") &&
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
-      formData.usernameOrEmail
-    )
-  ) {
-    newErrors.usernameOrEmail =
-      "Invalid email format";
-  }
+    if (!formData.usernameOrEmail.trim()) {
+      newErrors.usernameOrEmail =
+        "Email or username is required";
+    } else if (
+      formData.usernameOrEmail.includes("@") &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+        formData.usernameOrEmail
+      )
+    ) {
+      newErrors.usernameOrEmail =
+        "Invalid email format";
+    }
 
-  if (!formData.password.trim()) {
-    newErrors.password =
-      "Password is required";
-  } else if (formData.password.length < 8) {
-    newErrors.password =
-      "Password must be at least 8 characters long";
-  }
+    if (!formData.password.trim()) {
+      newErrors.password =
+        "Password is required";
+    } else if (formData.password.length < 8) {
+      newErrors.password =
+        "Password must be at least 8 characters long";
+    }
 
-  setError(newErrors);
+    setError(newErrors);
 
-  return Object.keys(newErrors).length === 0;
-};
+    return Object.keys(newErrors).length === 0;
+  };
 
 
   useEffect(() => {
     if (isAuthenticated()) {
       navigate('/dashboard', { replace: true });
     }
-  }, [navigate, isAuthenticated]);
+  }, [navigate, isAuthenticated, user, token]);
 
 
   const handleSubmit = async (e) => {
@@ -95,26 +98,30 @@ const Login = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.6 }}
-      className="pastel-grid-bg min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-pink-50 dark:from-gray-950 dark:via-gray-900 dark:to-black py-12 px-4 sm:px-6 lg:px-8"
+      transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
+      className="pastel-grid-bg min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 section-theme"
     >
 
       <div className="max-w-4xl w-full mx-auto">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="relative w-full my-8 sm:my-12 overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-600 bg-white/80 dark:bg-gray-800/90 p-4 sm:p-6 lg:p-8 text-gray-900 shadow-lg backdrop-blur-sm transition-all duration-200 hover:shadow-xl dark:text-white"
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6, delay: prefersReducedMotion ? 0 : 0.2 }}
+          className="relative w-full my-8 sm:my-12 overflow-hidden rounded-2xl border p-4 sm:p-6 lg:p-8 shadow-lg backdrop-blur-sm transition-all duration-200 hover:shadow-xl card-theme"
         >
-            <div className="pointer-events-none absolute top-8 left-6 h-16 w-16 rounded-full bg-blue-100 opacity-60 blur-sm"></div>
-            <div className="pointer-events-none absolute bottom-10 left-20 h-20 w-20 rounded-full bg-pink-100 opacity-60 blur-sm"></div>
-            <div className="pointer-events-none absolute top-16 right-10 h-14 w-14 rounded-full bg-yellow-100 opacity-60 blur-sm"></div>
-            <div className="flex flex-col gap-6 md:flex-row md:gap-0">
+          <div className="pointer-events-none absolute top-8 left-6 h-16 w-16 rounded-full bg-blue-100 opacity-60 blur-sm"></div>
+          <div className="pointer-events-none absolute bottom-10 left-20 h-20 w-20 rounded-full bg-pink-100 opacity-60 blur-sm"></div>
+          <div className="pointer-events-none absolute top-16 right-10 h-14 w-14 rounded-full bg-yellow-100 opacity-60 blur-sm"></div>
+          <div className="flex flex-col gap-6 md:flex-row md:gap-0">
 
             {/* LEFT PANEL */}
-            <div className="relative z-10 w-full md:w-[38%] bg-gradient-to-br from-blue-100 via-yellow-50 to-pink-100 dark:from-gray-800 dark:via-gray-900 dark:to-black text-gray-900 dark:text-white p-8 sm:p-10 lg:p-12 flex flex-col justify-between rounded-2xl md:rounded-l-2xl md:rounded-r-none">
+            <div className="relative z-10 w-full md:w-[38%] p-8 sm:p-10 lg:p-12 flex flex-col justify-between rounded-2xl md:rounded-l-2xl md:rounded-r-none"
+              style={{
+                background: "var(--accent-gradient)",
+                color: "white"
+              }}>
               <div>
-                <h2 className="text-3xl sm:text-4xl text-center font-extrabold mb-5 md:text-left" style={{ fontFamily: '"Anton", sans-serif' }}>
+                <h2 className="text-3xl sm:text-4xl text-center font-extrabold mb-5 md:text-left" >
                   Welcome Back
                 </h2>
                 <p className="mb-8 text-base sm:text-lg opacity-90 leading-relaxed md:text-left">
@@ -124,7 +131,7 @@ const Login = () => {
                   {introPoints.map((point) => (
                     <div
                       key={point}
-                      className="flex items-start gap-3 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-gray-800 backdrop-blur-sm dark:text-gray-100"
+                      className="flex items-start gap-3 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white backdrop-blur-sm"
                     >
                       <span className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-500 shrink-0" />
                       <span className="leading-relaxed">{point}</span>
@@ -135,14 +142,14 @@ const Login = () => {
             </div>
 
             {/* RIGHT PANEL */}
-            <div className="md:w-3/5 p-10 space-y-6 bg-white/70 dark:bg-gray-900/90 backdrop-blur-xl">
+            <div className="md:w-3/5 p-10 space-y-6 backdrop-blur-xl section-theme">
 
               {/* ✅ Session-expired banner — shown only after an auto-logout */}
               {sessionExpired && (
                 <motion.div
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4 }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 0.4 }}
                   className="session-expired-banner"
                   role="alert"
                   aria-live="polite"
@@ -154,7 +161,7 @@ const Login = () => {
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.3, type: "spring", stiffness: 200 }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.3, type: "spring", stiffness: 200 }}
                 className="text-center space-y-4"
               >
                 <motion.div
@@ -176,10 +183,10 @@ const Login = () => {
                     />
                   </svg>
                 </motion.div>
-                <h1 className="text-gray-900 dark:text-white text-2xl font-bold mt-2">
+                <h1 className="text-2xl font-bold mt-2">
                   Welcome Back
                 </h1>
-                <p className="text-md text-gray-600 dark:text-gray-400">
+                <p className="text-md" style={{ color: "var(--text-color-light)" }}>
                   Sign in to your Eventra account
                 </p>
               </motion.div>
@@ -194,7 +201,8 @@ const Login = () => {
                 <div className="space-y-2">
                   <label
                     htmlFor="usernameOrEmail"
-                    className="block text-sm font-semibold text-gray-700 dark:text-gray-300"
+                    className="block text-sm font-semibold"
+                    style={{ color: "var(--text-color)" }}
                   >
                     Email or username <sup className='ml-1 text-sm text-red-500'>*</sup>
                   </label>
@@ -208,7 +216,7 @@ const Login = () => {
                       onChange={handleChange}
                       required
                       disabled={loading}
-                      placeholder="Enter your email address or username"
+                      placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
                       className="w-full pl-3 pr-4 py-3 
 bg-white dark:bg-gray-800
 border border-gray-200 dark:border-gray-600
@@ -236,14 +244,15 @@ text-gray-900 dark:text-white"
                 <div className="space-y-2">
                   <label
                     htmlFor="password"
-                    className="block text-sm font-semibold text-gray-700 dark:text-gray-300"
+                    className="block text-sm font-semibold"
+                    style={{ color: "var(--text-color)" }}
                   >
                     Password <sup className='ml-1 text-sm text-red-500'>*</sup>
                   </label>
                   <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <svg
-                        className="h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-500 transition-colors"
+                        className="h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -265,7 +274,7 @@ text-gray-900 dark:text-white"
                       onChange={handleChange}
                       required
                       disabled={loading}
-                      placeholder="Enter your password"
+                      placeholder="Enter secure password / Minimum 8 characters / Use strong password"
                       className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
                     />
 
@@ -324,9 +333,7 @@ text-gray-900 dark:text-white"
                   whileTap={{ scale: 0.98 }}
                   type="submit"
                   disabled={loading}
-                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 dark:bg-blue-600 
-hover:bg-blue-600 dark:hover:bg-blue-500 
-focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
+                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
                 >
                   {loading ? (
                     <div className="flex items-center gap-2">
@@ -340,11 +347,11 @@ focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:op
 
               </motion.form>
 
-              <GoogleLoginButton/>
+              <GoogleLoginButton />
 
               {/* Sign up link */}
               <div className="text-center">
-                <p className="text-gray-600">
+                <p style={{ color: "var(--text-color-light)" }}>
                   Don't have an account?{' '}
                   <Link
                     to="/signup"
@@ -356,7 +363,10 @@ focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:op
               </div>
 
               {/* Terms */}
-              <p className="text-xs text-center text-gray-500">
+              <p
+                className="text-xs text-center"
+                style={{ color: "var(--text-color-light)" }}
+              >
                 By signing in, you agree to our{' '}
                 <Link to="/terms" className="hover:underline text-blue-600 font-semibold">
                   Terms of Service
