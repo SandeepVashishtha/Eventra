@@ -21,6 +21,7 @@ import {
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { analyzeSentiment, getSentimentDisplay } from "../../utils/sentiment.js";
 
 // Star Rating Component
 const StarRating = ({ rating, onRatingChange, error }) => {
@@ -331,6 +332,19 @@ const FeedbackPage = () => {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);  
+  const [sentimentScore, setSentimentScore] = useState(0);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      const score = analyzeSentiment(formData.message);
+      setSentimentScore(score);
+    }, 300);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [formData.message]);
+
   const formRef = useRef(null);
   const feedbackTypes = [
     { value: "general", label: "General Feedback", icon: FaRegComment },
@@ -449,6 +463,7 @@ const FeedbackPage = () => {
         message: formData.message?.trim(),
         feedbackType: formData.feedbackType,
         rating: formData.rating,
+        sentimentScore: sentimentScore,
         submittedAt: new Date().toISOString(),
       };
 
@@ -464,6 +479,7 @@ const FeedbackPage = () => {
         message: "",
         rating: 0,
       });
+      setSentimentScore(0);
       setErrors({});
       setIsSubmitting(false);
     } catch (error) {
@@ -707,6 +723,45 @@ const FeedbackPage = () => {
                     <p className="text-red-500 text-xs mt-2 ml-1">
                       {errors.message}
                     </p>
+                  )}
+
+                  {/* Live Sentiment Indicator */}
+                  {formData.message && formData.message.trim().length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="mt-3.5 p-3.5 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 flex items-center justify-between transition-colors duration-300"
+                    >
+                      <div className="flex items-center gap-3">
+                        <motion.span
+                          className="text-3xl inline-block"
+                          animate={prefersReducedMotion ? {} : {
+                            rotate: sentimentScore > 1.5 ? [0, 10, -10, 10, 0] : 0,
+                            scale: sentimentScore < -1.5 ? [1, 1.05, 0.95, 1] : 1
+                          }}
+                          transition={{
+                            duration: 0.6,
+                            repeat: sentimentScore > 1.5 || sentimentScore < -1.5 ? Infinity : 0,
+                            repeatType: "reverse"
+                          }}
+                        >
+                          {getSentimentDisplay(sentimentScore).emoji}
+                        </motion.span>
+                        <div>
+                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                            Live Sentiment: <span className={getSentimentDisplay(sentimentScore).color}>{getSentimentDisplay(sentimentScore).label}</span>
+                          </p>
+                          <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                            Based on your live message description
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs font-mono font-bold bg-gray-100 dark:bg-gray-700 px-2.5 py-1 rounded-full text-gray-600 dark:text-gray-300">
+                          {sentimentScore > 0 ? `+${sentimentScore}` : sentimentScore}
+                        </span>
+                      </div>
+                    </motion.div>
                   )}
                 </div>
 

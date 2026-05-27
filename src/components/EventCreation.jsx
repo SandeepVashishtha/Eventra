@@ -7,6 +7,7 @@ import {} from "../utils/eventDraftUtils";
 import CharacterCounter
 from "./common/CharacterCounter";
 import { exportAttendeesToCSV } from "../utils/exportCsv";
+import { logger } from "../utils/logger";
 import {
   ArrowRightIcon,
   CalendarIcon,
@@ -72,8 +73,11 @@ const EventCreation = () => {
       throw new Error("Authentication required. Please log in and try again.");
     }
 
-    if (!API_ENDPOINTS.EVENTS.CREATE || process.env.NODE_ENV === "development") {
-      // Mock event creation success (API inactive)
+    // SECURITY: Respect API configuration from environment, not NODE_ENV.
+    // Only use mock behavior when API endpoint is not configured.
+    // This allows developers to test real API behavior in development mode.
+    if (!API_ENDPOINTS.EVENTS.CREATE) {
+      // Mock event creation success (API endpoint not configured)
       await new Promise((resolve) => setTimeout(resolve, 1000));
       return;
     }
@@ -426,7 +430,7 @@ const EventCreation = () => {
 
       submitEventForm(eventData);
     } catch (error) {
-      console.error("Error creating event:", error);
+      logger.error("Error creating event:", error);
       const backendMessage = error.response?.data?.message || error.response?.data?.error;
       let errorMessage = "Failed to create event. ";
       if (backendMessage) {
@@ -467,7 +471,7 @@ const EventCreation = () => {
         toast.success("Draft restored successfully!");
       }
     } catch (error) {
-      console.error(error);
+      logger.error(error);
     }
 
     setShowRestoreModal(false);

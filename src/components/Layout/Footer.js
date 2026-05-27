@@ -1,3 +1,4 @@
+// Enforced dynamic copyright rendering under issue #2211
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 

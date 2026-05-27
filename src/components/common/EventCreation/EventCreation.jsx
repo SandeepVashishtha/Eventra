@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { Download } from "lucide-react";
-import useReducedMotion from "../../hooks/useReducedMotion";
+import useReducedMotion from "../../../hooks/useReducedMotion";
 import TicketTiersSection from "./components/TicketTiersSection";
-import { exportAttendeesToCSV } from "../../utils/exportCsv";
+import { exportAttendeesToCSV } from "../../../utils/exportCsv";
 import {
   DRAFT_KEY,
   categories,
@@ -21,7 +21,7 @@ import {
   CheckCircleIcon,
   PencilIcon,
 } from "@heroicons/react/24/solid";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { API_ENDPOINTS, apiUtils } from "../../../config/api";
 import {
   Calendar,
   MapPin,
@@ -40,8 +40,8 @@ import {
   Upload,
   Plus,
 } from "lucide-react";
-import { useFormSubmit } from "../../hooks/useFormSubmit";
-import { LoadingButton } from "../ui/LoadingButton";
+import { useFormSubmit } from "../../../hooks/useFormSubmit";
+import { LoadingButton } from "../../ui/LoadingButton";
 
 
 const EventCreation = () => {

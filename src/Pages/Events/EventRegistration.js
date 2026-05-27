@@ -26,7 +26,7 @@ import { useSessionRecovery } from "../../context/SessionRecoveryContext";
 import { useFormValidation } from "../../hooks/useFormValidation";
 import { validate } from "../../validation";
 import { toast } from "react-toastify";
-import mockEvents from "./eventsMockData.json";
+
 import { pushToQueue } from "../../utils/offlineQueue";
 import EventConflictModal from "../../components/EventConflictModal";
 import ConfettiCanvas from "../../components/common/ConfettiCanvas";
@@ -95,9 +95,10 @@ const registrationLocks = new Map();
 const EventRegistration = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, token, isAuthenticated } = useAuth();
   const { addRegistration, myEvents } = useMyEvents();
   const { clearSession } = useSessionRecovery();
+  const registrationPath = `/events/${eventId}/register`;
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -140,34 +141,95 @@ const EventRegistration = () => {
     { debounceMs: 300 }
   );
 
-  // Load event data
+  // Load event data from backend API
   useEffect(() => {
-    const loadEvent = () => {
+    const loadEvent = async () => {
       setLoading(true);
-      // Find event from mock data
-      const foundEvent = mockEvents.find((e) => e.id === parseInt(eventId));
 
-      if (foundEvent) {
-        setEvent({ ...foundEvent, status: getEventStatus(foundEvent) });
+      try {
+        // BACKEND FIX: Fetch authoritative event data from the backend API,
+        // not from local mock JSON. This ensures:
+        // - Users see real event details, pricing, and availability
+        // - Registration state matches backend state
+        // - No mismatch between mock data and production backend
+        const response = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
 
-        // Pre-fill form if user is authenticated
-        if (isAuthenticated() && user) {
-          setValues((prev) => ({
-            ...prev,
-            fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
-            email: user.email || "",
-          }));
+        if (response.status === 200 && response.data) {
+          const fetchedEvent = {
+            ...response.data,
+            status: getEventStatus(response.data),
+          };
+          setEvent(fetchedEvent);
+
+          // Pre-fill form if user is authenticated
+          if (isAuthenticated() && user) {
+            setValues((prev) => ({
+              ...prev,
+              fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
+              email: user.email || "",
+            }));
+          }
         }
+      } catch (error) {
+        console.error("Failed to load event details:", error);
+        // Don't set event — will show "Event Not Found" UI
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     loadEvent();
   }, [eventId, user, isAuthenticated, setValues]);
 
+  const checkEventCapacity = async (id, currentEvent) => {
+    try {
+      const freshRes = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(id));
+      if (freshRes.status === 200) {
+        const freshEvent = freshRes.data;
+        return freshEvent.attendees >= freshEvent.maxAttendees;
+      }
+    } catch {
+      // If the re-fetch fails, fall back to the cached snapshot
+      return currentEvent.attendees >= currentEvent.maxAttendees;
+    }
+    return false;
+  };
+
+  const checkAndHandleConflicts = async () => {
+    const conflictCheck = checkRegistrationConflict(event, myEvents);
+    if (conflictCheck.hasConflict) {
+      try {
+        const res = await apiUtils.get(API_ENDPOINTS.EVENTS.LIST);
+        const realEvents = res.status === 200 ? res.data : [];
+        const suggestions = suggestAlternativeEvents(event, realEvents, myEvents);
+        setConflictData({
+          conflicts: conflictCheck.conflicts,
+          suggestions,
+        });
+      } catch (err) {
+        console.error("Failed to fetch alternative events", err);
+        setConflictData({
+          conflicts: conflictCheck.conflicts,
+          suggestions: [],
+        });
+      }
+      setShowConflictModal(true);
+      return true;
+    }
+    return false;
+  };
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!isAuthenticated() || !user?.id) {
+      toast.error("Please log in to register for events.");
+      navigate("/login", {
+        state: { from: registrationPath },
+      });
+      return;
+    }
 
     if (!validateAll()) {
       toast.error("Please fill in all required fields correctly");
@@ -187,38 +249,14 @@ const EventRegistration = () => {
     }
 
     // Quick UX hint based on the latest visible event snapshot.
-    // The backend still enforces capacity at submit time.
-    try {
-      const freshRes = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
-      if (freshRes.status === 200) {
-        const freshEvent = freshRes.data;
-        if (freshEvent.attendees >= freshEvent.maxAttendees) {
-          toast.error("This event is currently full. Registration may no longer be available.");
-          return;
-        }
-      }
-    } catch {
-      // If the re-fetch fails, fall back to the cached snapshot so the user
-      // can still attempt registration rather than being silently blocked.
-      if (event.attendees >= event.maxAttendees) {
-        toast.error("This event is currently full. Registration may no longer be available.");
-        return;
-      }
+    const isFull = await checkEventCapacity(eventId, event);
+    if (isFull) {
+      toast.error("This event is currently full. Registration may no longer be available.");
+      return;
     }
 
     // Check for scheduling conflicts
-    const conflictCheck = checkRegistrationConflict(event, myEvents);
-
-    if (conflictCheck.hasConflict) {
-      // Get alternative suggestions
-      const suggestions = suggestAlternativeEvents(event, mockEvents, myEvents);
-      setConflictData({
-        conflicts: conflictCheck.conflicts,
-        suggestions,
-      });
-      setShowConflictModal(true);
-      return;
-    }
+    if (await checkAndHandleConflicts()) return;
 
     // Proceed with registration if no conflicts
     proceedWithRegistration();
@@ -226,6 +264,14 @@ const EventRegistration = () => {
 
   // Proceed with registration after conflict check or user confirmation
   const proceedWithRegistration = async () => {
+    if (!isAuthenticated() || !user?.id) {
+      toast.error("Please log in to register for events.");
+      navigate("/login", {
+        state: { from: registrationPath },
+      });
+      return;
+    }
+
     // Close modal if open
     setShowConflictModal(false);
 
@@ -245,8 +291,11 @@ const EventRegistration = () => {
         {
           ...formData,
           eventId: parseInt(eventId),
-          userId: user?.id || null,
-        }
+          userId: user.id,
+        },
+        // Registration is authenticated server-side; send the active token
+        // explicitly instead of relying only on global storage lookup.
+        token
       );
 
       // Axios resolves for 2xx — treat as success
@@ -266,7 +315,7 @@ const EventRegistration = () => {
         // storing PII in localStorage.
         const payload = {
           eventId: parseInt(eventId),
-          userId: user?.id || null,
+          userId: user.id,
         };
 
         const success = await pushToQueue({ eventId: parseInt(eventId), payload });
@@ -390,6 +439,9 @@ const EventRegistration = () => {
       } else {
         navigator.clipboard.writeText(shareUrl).then(() => {
           toast.success("Event link copied to clipboard!");
+        }).catch((err) => {
+          console.error("Failed to copy link:", err);
+          toast.error("Could not copy link. Please copy manually.");
         });
       }
     };
