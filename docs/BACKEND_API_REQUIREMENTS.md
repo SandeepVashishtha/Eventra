@@ -409,8 +409,8 @@ POST /api/events/create
 PUT /api/events/{id}
 ```
 
-**Auth Required:** Yes — Roles: `ADMIN`, `ORGANIZER`  
-**Description:** Updates an existing event. Companion update for issue #2099.  
+**Auth Required:** Yes — Roles: `ADMIN`, `ORGANIZER`
+**Description:** Updates an existing event. Companion update for issue #2099.
 **Request Body:**
 ```json
 {
@@ -428,7 +428,7 @@ PUT /api/events/{id}
 - `capacity` cannot be reduced below current `registeredCount`.
 - Owner-only authorization is not enforced as the Event model currently lacks ownership tracking.
 
-**Success Response `200`:** Updated event object  
+**Success Response `200`:** Updated event object
 **Error Responses:**
 - `400` — Invalid payload
 - `403` — Forbidden (e.g., CLIENT role)

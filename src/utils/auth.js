@@ -21,6 +21,7 @@
  * Authorization flows should always verify against the JWT token, not localStorage.
  * Server must also validate authorization for every API request.
  */
+import { safeJsonParse } from "./safeJsonParse";
 
 import { safeJsonParse } from "./safeJsonParse.js";
 
