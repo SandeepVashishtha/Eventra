@@ -11,7 +11,7 @@ import {
 import { motion } from "framer-motion";
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { ContributorCardSkeleton } from "./common/SkeletonLoaders";
-import FeatureErrorBoundary from "../../components/common/FeatureErrorBoundary";
+import FeatureErrorBoundary from "./common/FeatureErrorBoundary";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";

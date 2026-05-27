@@ -11,6 +11,7 @@ import {
   isAlreadyRegistered,
   saveRegistration,
 } from "../utils/registerUtils";
+import FieldError from "../components/common/FieldError";
 
 const getRegistrationErrorMessage = (error) => {
   const message =
@@ -246,20 +247,7 @@ const RegistrationPage = () => {
                   aria-describedby={errors.fullName ? "fullName-error" : undefined}
                 />
               </div>
-              <AnimatePresence>
-                {errors.fullName && (
-                  <motion.div
-                    id="fullName-error"
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    className="flex items-center gap-1.5 text-rose-500 text-xs mt-1.5 pl-1"
-                  >
-                    <FiAlertCircle className="flex-shrink-0" />
-                    <span>{errors.fullName}</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <FieldError id="fullName-error" message={errors.fullName} />
             </div>
 
             {/* Email */}
@@ -283,20 +271,7 @@ const RegistrationPage = () => {
                 aria-invalid={!!errors.email}
                 aria-describedby={errors.email ? "email-error" : undefined}
               />
-              <AnimatePresence>
-                {errors.email && (
-                  <motion.div
-                    id="email-error"
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    className="flex items-center gap-1.5 text-rose-500 text-xs mt-1.5 pl-1"
-                  >
-                    <FiAlertCircle className="flex-shrink-0" />
-                    <span>{errors.email}</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <FieldError id="email-error" message={errors.email} />
             </div>
 
             {/* Phone */}
@@ -320,20 +295,7 @@ const RegistrationPage = () => {
                 aria-invalid={!!errors.phone}
                 aria-describedby={errors.phone ? "phone-error" : undefined}
               />
-              <AnimatePresence>
-                {errors.phone && (
-                  <motion.div
-                    id="phone-error"
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    className="flex items-center gap-1.5 text-rose-500 text-xs mt-1.5 pl-1"
-                  >
-                    <FiAlertCircle className="flex-shrink-0" />
-                    <span>{errors.phone}</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <FieldError id="phone-error" message={errors.phone} />
             </div>
 
             {/* Organization */}

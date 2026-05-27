@@ -120,11 +120,15 @@ const LoginForm = () => {
               required
               disabled={loading}
               placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
-              className="w-full pl-10 pr-4 py-3 bg-[#0f172a]/60 border border-slate-700/50 rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner"
+              aria-invalid={!!error.usernameOrEmail}
+              aria-describedby={error.usernameOrEmail ? "usernameOrEmail-error" : undefined}
+              className={`w-full pl-10 pr-4 py-3 bg-[#0f172a]/60 border ${
+                error.usernameOrEmail ? "border-red-500" : "border-slate-700/50"
+              } rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner`}
             />
           </div>
           {error.usernameOrEmail && (
-            <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-1 flex items-center gap-1">
+            <motion.p id="usernameOrEmail-error" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-1 flex items-center gap-1" role="alert">
               <span>⚠</span> {error.usernameOrEmail}
             </motion.p>
           )}
@@ -146,7 +150,11 @@ const LoginForm = () => {
               required
               disabled={loading}
               placeholder="Create a secure password"
-              className="w-full pl-10 pr-10 py-3 bg-[#0f172a]/60 border border-slate-700/50 rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner"
+              aria-invalid={!!error.password}
+              aria-describedby={error.password ? "password-error" : undefined}
+              className={`w-full pl-10 pr-10 py-3 bg-[#0f172a]/60 border ${
+                error.password ? "border-red-500" : "border-slate-700/50"
+              } rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner`}
             />
             <button
               type="button"
@@ -157,7 +165,7 @@ const LoginForm = () => {
             </button>
           </div>
           {error.password && (
-            <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-1 flex items-center gap-1">
+            <motion.p id="password-error" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-1 flex items-center gap-1" role="alert">
               <span>⚠</span> {error.password}
             </motion.p>
           )}
