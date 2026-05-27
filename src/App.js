@@ -3,6 +3,7 @@ import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom"; // Added this back for your routing!
 import "./App.css";
 import "./styles/reduced-motion.css";
+import "./styles/print.css";
 import { toast } from "react-toastify";
 import BackToTopButton
 from "./components/common/BackToTopButton";
