@@ -1,8 +1,13 @@
 const SAFE_GITHUB_PATH_PATTERNS = [
+  /^\/repos\/[^/?#]+\/[^/?#]+$/,
   /^\/repos\/[^/?#]+\/[^/?#]+\/contributors$/,
   /^\/repos\/[^/?#]+\/[^/?#]+\/pulls$/,
   /^\/users\/[^/?#]+$/,
 ];
+
+// Only these query parameters are forwarded to the GitHub API.
+// All other caller-supplied parameters are silently dropped.
+const ALLOWED_QUERY_PARAMS = new Set(["per_page", "page", "state", "sort", "direction"]);
 
 const normalizePath = (path) => {
   const rawPath = Array.isArray(path) ? path[0] : path;
@@ -37,6 +42,7 @@ export default async function handler(req, res) {
 
   const url = new URL(normalizedPath, "https://api.github.com");
   Object.entries(queryParams).forEach(([key, value]) => {
+    if (!ALLOWED_QUERY_PARAMS.has(key)) return;
     if (Array.isArray(value)) {
       value.forEach((item) => url.searchParams.append(key, item));
     } else if (value !== undefined) {
@@ -44,7 +50,7 @@ export default async function handler(req, res) {
     }
   });
 
-  const token = process.env.GITHUB_TOKEN || process.env.REACT_APP_GITHUB_TOKEN;
+  const token = process.env.GITHUB_TOKEN;
 
   try {
     const fetchRes = await fetch(url.toString(), {

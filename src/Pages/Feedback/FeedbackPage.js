@@ -21,6 +21,7 @@ import {
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { analyzeSentiment, getSentimentDisplay } from "../../utils/sentiment.js";
 
 // Star Rating Component
 const StarRating = ({ rating, onRatingChange, error }) => {
@@ -331,6 +332,19 @@ const FeedbackPage = () => {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);  
+  const [sentimentScore, setSentimentScore] = useState(0);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      const score = analyzeSentiment(formData.message);
+      setSentimentScore(score);
+    }, 300);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [formData.message]);
+
   const formRef = useRef(null);
   const feedbackTypes = [
     { value: "general", label: "General Feedback", icon: FaRegComment },
@@ -372,8 +386,8 @@ const FeedbackPage = () => {
     // Message validation
     if (!formData.message || !formData.message.trim()) {
       newErrors.message = "Message is required";
-    } else if (formData.message.trim().length < 10) {
-      newErrors.message = "Message must be at least 10 characters";
+    } else if (formData.message.trim().length < 20) {
+      newErrors.message = "Message must be at least 20 characters";
     }
 
     // Rating validation
@@ -449,6 +463,7 @@ const FeedbackPage = () => {
         message: formData.message?.trim(),
         feedbackType: formData.feedbackType,
         rating: formData.rating,
+        sentimentScore: sentimentScore,
         submittedAt: new Date().toISOString(),
       };
 
@@ -464,6 +479,7 @@ const FeedbackPage = () => {
         message: "",
         rating: 0,
       });
+      setSentimentScore(0);
       setErrors({});
       setIsSubmitting(false);
     } catch (error) {
@@ -620,11 +636,12 @@ const FeedbackPage = () => {
                       id="message"
                       name="message"
                       rows="4"
+                      maxLength={500}
                       value={formData.message}
                       onChange={handleChange}
                       className={`w-full px-4 pl-14 pt-6 pb-2 border-2 rounded-xl focus:ring-4 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-all duration-300 resize-none ${errors.message
-                          ? "border-red-500 focus:border-red-500 focus:ring-red-100"
-                          : "border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-100"
+                          ? "border-red-500 focus:border-red-500 focus:ring-red-100 dark:focus:ring-red-900/30"
+                          : "border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-100 dark:focus:ring-indigo-900/30"
                         }`}
                     />
 
@@ -644,10 +661,107 @@ const FeedbackPage = () => {
                     </label>
                   </div>
 
+                  {/* Character Counter & Animated Bar Meter */}
+                  {(() => {
+                    const messageLength = formData.message ? formData.message.length : 0;
+                    const MAX_MESSAGE_LENGTH = 500;
+                    const progressPercent = Math.min((messageLength / MAX_MESSAGE_LENGTH) * 100, 100);
+                    
+                    return (
+                      <div className="mt-2.5 space-y-1.5">
+                        {/* Animated Bar Meter */}
+                        <div className="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                          <motion.div
+                            className={`h-full rounded-full transition-all duration-300 ${
+                              messageLength === 0
+                                ? "bg-gray-300 dark:bg-gray-700"
+                                : messageLength < 20
+                                ? "bg-yellow-500 dark:bg-yellow-400"
+                                : messageLength >= 400
+                                ? "bg-amber-500 dark:bg-amber-400"
+                                : "bg-green-500 dark:bg-green-400"
+                            }`}
+                            style={{ width: `${progressPercent}%` }}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${progressPercent}%` }}
+                            transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
+                          />
+                        </div>
+
+                        <div className="flex justify-between items-start gap-3 text-xs">
+                          {/* Warning/Helper Message */}
+                          <span
+                            className={`font-medium transition-colors duration-300 flex-1 leading-relaxed ${
+                              messageLength === 0
+                                ? "text-gray-500 dark:text-gray-400"
+                                : messageLength < 20
+                                ? "text-yellow-600 dark:text-yellow-400"
+                                : messageLength >= 400
+                                ? messageLength === MAX_MESSAGE_LENGTH
+                                  ? "text-red-500 dark:text-red-400 font-semibold animate-pulse"
+                                  : "text-amber-600 dark:text-amber-400"
+                                : "text-green-600 dark:text-green-400"
+                            }`}
+                          >
+                            {messageLength === 0 && "Provide at least 20 characters."}
+                            {messageLength > 0 && messageLength < 20 && `⚠️ Write ${20 - messageLength} more character${20 - messageLength > 1 ? "s" : ""} to meet min length.`}
+                            {messageLength >= 20 && messageLength < 400 && "✅ Excellent message length!"}
+                            {messageLength >= 400 && messageLength < MAX_MESSAGE_LENGTH && "⚠️ Approaching character limit."}
+                            {messageLength === MAX_MESSAGE_LENGTH && "🚫 Character limit reached."}
+                          </span>
+
+                          {/* Character Counter */}
+                          <span className={`font-mono shrink-0 text-gray-500 dark:text-gray-400 ${messageLength === MAX_MESSAGE_LENGTH ? "text-red-500 dark:text-red-400 font-bold" : ""}`}>
+                            {messageLength} / {MAX_MESSAGE_LENGTH}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   {errors.message && (
                     <p className="text-red-500 text-xs mt-2 ml-1">
                       {errors.message}
                     </p>
+                  )}
+
+                  {/* Live Sentiment Indicator */}
+                  {formData.message && formData.message.trim().length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="mt-3.5 p-3.5 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 flex items-center justify-between transition-colors duration-300"
+                    >
+                      <div className="flex items-center gap-3">
+                        <motion.span
+                          className="text-3xl inline-block"
+                          animate={prefersReducedMotion ? {} : {
+                            rotate: sentimentScore > 1.5 ? [0, 10, -10, 10, 0] : 0,
+                            scale: sentimentScore < -1.5 ? [1, 1.05, 0.95, 1] : 1
+                          }}
+                          transition={{
+                            duration: 0.6,
+                            repeat: sentimentScore > 1.5 || sentimentScore < -1.5 ? Infinity : 0,
+                            repeatType: "reverse"
+                          }}
+                        >
+                          {getSentimentDisplay(sentimentScore).emoji}
+                        </motion.span>
+                        <div>
+                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                            Live Sentiment: <span className={getSentimentDisplay(sentimentScore).color}>{getSentimentDisplay(sentimentScore).label}</span>
+                          </p>
+                          <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                            Based on your live message description
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs font-mono font-bold bg-gray-100 dark:bg-gray-700 px-2.5 py-1 rounded-full text-gray-600 dark:text-gray-300">
+                          {sentimentScore > 0 ? `+${sentimentScore}` : sentimentScore}
+                        </span>
+                      </div>
+                    </motion.div>
                   )}
                 </div>
 

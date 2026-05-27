@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import {
@@ -16,6 +16,10 @@ import {
 import { Link } from "react-router-dom";
 import { useMyEvents } from "../../context/MyEventsContext";
 import StatusBadge from "../common/StatusBadge";
+import { safeParseJson } from "../../utils/jsonUtils";
+import StyledDropdown from "../StyledDropdown";
+import SearchEmptyState from "../common/SearchEmptyState";
+import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
@@ -81,7 +85,7 @@ const EmptyState = () => {
   );
 };
 
-const EventCard = ({ event, index, onRemoveRegistration, showCancel }) => {
+const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
   const fadeUpVariants = fadeUp(prefersReducedMotion);
   const status = getEventStatus(event);
@@ -176,21 +180,31 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel }) => {
 
       <div className="px-6 py-4 flex gap-3 bg-gradient-to-r from-gray-50/30 to-white/60 dark:from-gray-800/30 dark:to-gray-900/60 border-t border-gray-200/60 dark:border-gray-700/50 mt-auto">
         {showCancel ? (
-          <button
-            className="group/btn flex-1"
-            onClick={() => onRemoveRegistration?.(event?.id, event?.title)}
-          >
-            <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white px-5 py-2.5 text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-900 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
-              <Trash2 size={13} className="relative" />
-              <span className="relative">Cancel</span>
-            </div>
-          </button>
+          <>
+            <button
+              className="group/btn flex-1"
+              onClick={() => onRemoveRegistration?.(event?.id, event?.title)}
+            >
+              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+                <Trash2 size={13} className="relative" />
+                <span className="relative">Cancel</span>
+              </div>
+            </button>
+            <button
+              className="group/btn flex-1"
+              onClick={() => onViewTicket?.(event)}
+            >
+              <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-650 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+                <Ticket size={13} className="relative" />
+                <span className="relative">Ticket</span>
+              </div>
+            </button>
+          </>
         ) : (
           <div className="flex-1" />
         )}
         <Link to={`/events/${event?.id}`} className="group/btn flex-1">
-          <div className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-5 py-2.5 text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-300 w-full">
+          <div className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-300 w-full">
             <span>{showCancel ? "View Details" : "Open Event"}</span>
           </div>
         </Link>
@@ -199,13 +213,19 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel }) => {
   );
 };
 
-const EventsTab = ({ hostedEvents = [] }) => {
+const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
   const fadeUpVariants = fadeUp(prefersReducedMotion);
   const staggerVariants = stagger(prefersReducedMotion);
   const { myEvents, removeRegistration } = useMyEvents();
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const {
+    searchTerm: searchQuery,
+    debouncedTerm,
+    setSearchTerm: setSearchQuery,
+    isDebouncing,
+  } = useDebouncedSearch("", 300);
+
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterType, setFilterType] = useState("All");
   const [sortBy, setSortBy] = useState("soonest");
@@ -223,12 +243,7 @@ const EventsTab = ({ hostedEvents = [] }) => {
     [myEvents]
   );
   useEffect(() => {
-    const saved =
-      JSON.parse(
-        localStorage.getItem(
-          "recentSearches"
-        )
-      ) || [];
+    const saved = safeParseJson(localStorage.getItem("recentSearches"), []);
 
     setRecentSearches(saved);
   }, []);
@@ -242,7 +257,7 @@ const EventsTab = ({ hostedEvents = [] }) => {
     const pool = [...registeredEvents, ...hostedEvents];
     const result = pool.filter((event) => {
       const searchTarget = `${event?.title || ""} ${event?.location || ""} ${event?.description || ""} ${(event?.tags || []).join(" ")}`.toLowerCase();
-      const matchSearch = !searchQuery || searchTarget.includes(searchQuery.toLowerCase());
+      const matchSearch = !debouncedTerm || searchTarget.includes(debouncedTerm.toLowerCase());
       const status = getEventStatus(event);
       const matchStatus = filterStatus === "All" || status === filterStatus;
       const typeLabel = event?.type ? event.type.charAt(0).toUpperCase() + event.type.slice(1) : "";
@@ -268,7 +283,7 @@ const EventsTab = ({ hostedEvents = [] }) => {
     });
 
     return result;
-  }, [registeredEvents, hostedEvents, searchQuery, filterStatus, filterType, sortBy]);
+  }, [registeredEvents, hostedEvents, debouncedTerm, filterStatus, filterType, sortBy]);
 
   const filteredRegisteredEvents = filteredEvents.filter((event) => event.registeredAt);
   const filteredHostedEvents = filteredEvents.filter((event) => !event.registeredAt);
@@ -355,47 +370,61 @@ const EventsTab = ({ hostedEvents = [] }) => {
                 <X size={13} />
               </button>
             )}
+            {isDebouncing && (
+              <span
+                className="ud-search-spinner"
+                aria-label="Searching…"
+                style={{
+                  position: "absolute",
+                  right: searchQuery ? 32 : 10,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  width: 14,
+                  height: 14,
+                  border: "2px solid #6366f1",
+                  borderTopColor: "transparent",
+                  borderRadius: "50%",
+                  animation: "spin 0.6s linear infinite",
+                }}
+              />
+            )}
           </div>
 
-          <div className="my-events-filter-wrap">
-            <Filter size={13} className="my-events-filter-icon" />
-            <select
-              className="ud-select"
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-            >
-              {["All", "Upcoming", "Today", "Completed"].map((status) => (
-                <option key={status}>{status}</option>
-              ))}
-            </select>
-          </div>
+          <StyledDropdown
+            label=""
+            value={filterStatus === "All" ? "" : filterStatus}
+            placeholder="All Statuses"
+            options={["Upcoming", "Today", "Completed"]}
+            onChange={(val) => setFilterStatus(val || "All")}
+          />
 
           {availableTypes.length > 1 && (
-            <div className="my-events-filter-wrap">
-              <select
-                className="ud-select"
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-              >
-                {["All", ...availableTypes].map((type) => (
-                  <option key={type}>{type}</option>
-                ))}
-              </select>
-            </div>
+            <StyledDropdown
+              label=""
+              value={filterType === "All" ? "" : filterType}
+              placeholder="All Types"
+              options={availableTypes}
+              onChange={(val) => setFilterType(val || "All")}
+            />
           )}
 
-          <div className="my-events-filter-wrap">
-            <ArrowUpDown size={13} className="my-events-filter-icon" />
-            <select
-              className="ud-select"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-            >
-              <option value="soonest">Soonest First</option>
-              <option value="registered">Registration Date</option>
-              <option value="name">Event Name</option>
-            </select>
-          </div>
+          <StyledDropdown
+            label=""
+            value={
+              sortBy === "soonest"
+                ? "Soonest First"
+                : sortBy === "registered"
+                ? "Registration Date"
+                : "Event Name"
+            }
+            placeholder="Sort by"
+            options={["Soonest First", "Registration Date", "Event Name"]}
+            onChange={(val) => {
+              if (val === "Soonest First" || !val) setSortBy("soonest");
+              else if (val === "Registration Date") setSortBy("registered");
+              else if (val === "Event Name") setSortBy("name");
+            }}
+          />
         </div>
       )}
 
@@ -403,22 +432,22 @@ const EventsTab = ({ hostedEvents = [] }) => {
         <EmptyState />
       ) : filteredEvents.length === 0 ? (
         <motion.div
-          className="my-events-no-results"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
+          className="w-full mt-4"
         >
-          <p>No events match your search / filter.</p>
-          <button
-            className="my-events-clear-filters"
-            onClick={() => {
+          <SearchEmptyState
+            query={searchQuery}
+            itemLabel="events"
+            browseLabel="Browse Events"
+            browsePath="/events"
+            onClear={() => {
               setSearchQuery("");
               setFilterStatus("All");
               setFilterType("All");
               setSortBy("soonest");
             }}
-          >
-            Clear filters
-          </button>
+          />
         </motion.div>
       ) : (
         <>
@@ -440,6 +469,7 @@ const EventsTab = ({ hostedEvents = [] }) => {
                     index={index}
                     onRemoveRegistration={handleCancelClick}
                     showCancel
+                    onViewTicket={onViewTicket}
                   />
                 ))}
               </motion.div>

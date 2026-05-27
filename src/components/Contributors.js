@@ -11,10 +11,13 @@ import {
 import { motion } from "framer-motion";
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { ContributorCardSkeleton } from "./common/SkeletonLoaders";
+import FeatureErrorBoundary from "./common/FeatureErrorBoundary";
+import { storageManager } from "../utils/storage/storageManager";
+import { STORAGE_KEYS } from "../utils/storage/storageKeys";
+import { validators } from "../utils/storage/storageValidators";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
-const STORAGE_KEY = "github_contributors";
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
 const REQUEST_TIMEOUT = 10000;
 const MAX_CONTRIBUTOR_PAGES = 10;
@@ -55,23 +58,30 @@ const getRoleByGitHubActivity = (contributor) => {
 };
 
 // Local storage helpers
+// Centralized storage helpers
 const getCachedContributors = () => {
-  try {
-    const cachedData = localStorage.getItem(STORAGE_KEY);
-    if (!cachedData) return null;
-    const { data, timestamp } = JSON.parse(cachedData);
-    return Date.now() - timestamp > CACHE_DURATION ? null : data;
-  } catch {
+  const cachedData = storageManager.get(
+    STORAGE_KEYS.GITHUB_CONTRIBUTORS,
+    validators.isObject,
+  );
+
+  if (!cachedData?.data || !cachedData?.timestamp) {
     return null;
   }
+
+  return Date.now() - cachedData.timestamp > CACHE_DURATION
+    ? null
+    : cachedData.data;
 };
+
 const cacheContributors = (data) => {
-  try {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ data, timestamp: Date.now() }),
-    );
-  } catch {}
+  storageManager.set(
+    STORAGE_KEYS.GITHUB_CONTRIBUTORS,
+    {
+      data,
+      timestamp: Date.now(),
+    },
+  );
 };
 
 const Contributors = () => {
@@ -202,7 +212,8 @@ const Contributors = () => {
   // UPDATED: Loading skeleton grid
   if (loading) {
     return (
-      <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+      <FeatureErrorBoundary>
+        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12 mt-16">
             {[...Array(8)].map((_, i) => (
@@ -211,12 +222,14 @@ const Contributors = () => {
           </div>
         </div>
       </section>
+      </FeatureErrorBoundary>
     );
   }
 
   if (error)
     return (
-      <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+      <FeatureErrorBoundary>
+        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4">
             Contributors are unavailable
@@ -231,15 +244,17 @@ const Contributors = () => {
           </button>
         </div>
       </section>
+      </FeatureErrorBoundary>
     );
   return (
     // UPDATED: Section background
-    <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
-      <div className="max-w-7xl mx-auto px-6">
-        {/* Added The Search Bar */}
-        <div className="flex justify-center mb-8">
-          <input
-            type="text"
+    <FeatureErrorBoundary>
+      <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+        <div className="max-w-7xl mx-auto px-6">
+          {/* Added The Search Bar */}
+          <div className="flex justify-center mb-8">
+            <input
+              type="text"
             placeholder="Search contributors by name, username, role, location, or company..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -303,7 +318,7 @@ const Contributors = () => {
                       width="80"
                       height="80"
                       src={c.avatar_url}
-                      alt={`${c.login}'s GitHub avatar`}
+                      alt={`${c.name || c.login || "Contributor"}'s GitHub profile picture`}
                       className="w-20 h-20 rounded-full border-4 border-black shadow-xl"
                     />
                     <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 blur-md"></div>
@@ -417,6 +432,7 @@ const Contributors = () => {
         )}
       </div>
     </section>
+    </FeatureErrorBoundary>
   );
 };
 export default Contributors;

@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import { safeJsonParse } from "../utils/safeJsonParse";
+import { logger } from "../utils/logger";
 
 const SessionRecoveryContext = createContext();
 
@@ -27,7 +29,6 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   const updateActivity = useCallback(() => {
     const now = Date.now();
-    setLastActivity(now);
     lastActivityRef.current = now;
   }, []);
 
@@ -65,15 +66,18 @@ export const SessionRecoveryProvider = ({ children }) => {
     try {
       const saved = localStorage.getItem(SESSION_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved);
+        const parsed = safeJsonParse(
+          saved,
+          {},
+        );
         const now = Date.now();
 
         const isValidTimestamp =
           parsed &&
           parsed.timestamp &&
-          parsed.timestamp &&
           typeof parsed.timestamp === "number" &&
-          !isNaN(parsed.timestamp);
+          !isNaN(parsed.timestamp) &&
+          parsed.timestamp > 0;
 
         if (isValidTimestamp && now - parsed.timestamp < SESSION_TIMEOUT) {
           setSessionData(parsed);
@@ -84,7 +88,7 @@ export const SessionRecoveryProvider = ({ children }) => {
         }
       }
     } catch (e) {
-      console.error("Failed to load session:", e);
+      logger.error("Failed to load session:", e);
     }
   }, []);
 
@@ -104,7 +108,7 @@ export const SessionRecoveryProvider = ({ children }) => {
         setSessionData(currentSession);
         setHasSession(true);
       } catch (e) {
-        console.error("Failed to save session:", e);
+        logger.error("Failed to save session:", e);
       }
     }, 1000);
   }, []);
@@ -116,7 +120,7 @@ export const SessionRecoveryProvider = ({ children }) => {
       setHasSession(false);
       setShowRecoveryPrompt(false);
     } catch (e) {
-      console.error("Failed to clear session:", e);
+      logger.error("Failed to clear session:", e);
     }
   }, []);
 

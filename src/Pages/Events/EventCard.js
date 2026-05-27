@@ -1,5 +1,4 @@
 import { useEffect, useId, useState, memo } from "react";
-import { useEffect, useState, memo } from "react";
 import { getUserTimezone } from "../../utils/timezoneUtils";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,7 +8,6 @@ import {
   BookmarkCheck,
   Calendar,
   MapPin,
-  
   Tag,
   Star,
   Heart,
@@ -24,6 +22,7 @@ import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
 import ShareMenu from "../../components/common/ShareMenu";
 import { generateEventSharingData } from "../../utils/shareUtils";
 import StatusBadge from "../../components/common/StatusBadge";
+import LazyImage from "../../components/common/LazyImage";
 import { getEventStatus } from "../../utils/eventUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
 import ReminderControls from "../../components/reminders/ReminderControls";
@@ -35,12 +34,30 @@ import {
 } from "../../utils/bookmarkUtils";
 import { checkRegistrationConflict } from "../../utils/conflictDetection";
 
+const getCapacityStyles = (ratio, isFull) => {
+  if (isFull || ratio >= 0.85) {
+    return {
+      barColor: "bg-red-500",
+      textColor: "text-red-600 dark:text-red-400",
+    };
+  }
+  if (ratio >= 0.6) {
+    return {
+      barColor: "bg-amber-500",
+      textColor: "text-amber-600 dark:text-amber-400",
+    };
+  }
+  return {
+    barColor: "bg-emerald-500",
+    textColor: "text-emerald-600 dark:text-emerald-400",
+  };
+};
+
 const EventCard = ({ event }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const titleId = useId();
-  const { isRegistered } = useMyEvents();
-  const [showBookmarkTooltip, setShowBookmarkTooltip] = useState(false);
   const { myEvents, isRegistered } = useMyEvents();
+  const [showBookmarkTooltip, setShowBookmarkTooltip] = useState(false);
   const [randomIcon] = useState(() => {
     const icons = [
       <Star size={16} className="text-yellow-500" />,
@@ -129,28 +146,6 @@ const EventCard = ({ event }) => {
       data-aos-duration="800"
       aria-labelledby={titleId}
       className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm transition-all duration-300 flex flex-col z-10 hover:z-50 hover:shadow-2xl hover:-translate-y-2 overflow-hidden border border-gray-100 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-700"
-    >
-      {/* Action buttons */}
-      <div className="absolute top-[5.5rem] right-3 z-[200] flex space-x-1.5">
-        <button
-          type="button"
-          onClick={handleBookmarkToggle}
-          aria-label={isBookmarked ? "Remove event bookmark" : "Bookmark event"}
-          aria-pressed={isBookmarked}
-          title={isBookmarked ? "Remove bookmark" : "Bookmark event"}
-          className={`bg-white/90 backdrop-blur-sm rounded-full p-2 shadow cursor-pointer hover:shadow-md border transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-            isBookmarked
-              ? "border-indigo-200 text-indigo-600 bg-indigo-50/95"
-              : "border-gray-200 text-gray-600 hover:text-indigo-600 hover:border-indigo-200"
-          }`}
-        >
-          {isBookmarked ? (
-            <BookmarkCheck size={14} fill="currentColor" />
-          ) : (
-            <Bookmark size={14} />
-          )}
-        </button>
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm transition-all duration-300 flex flex-col z-10 hover:z-50 hover:shadow-2xl hover:-translate-y-2 border border-gray-100 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-700"
     >
       {/* Action buttons */}
       <div className="absolute top-[5.5rem] right-3 z-[200] flex space-x-1.5 items-center">
@@ -252,8 +247,6 @@ const EventCard = ({ event }) => {
       </div>
 
       {/* Header */}
-      <div className="flex items-center px-5 py-4 gap-4 bg-gradient-to-r from-white/80 to-indigo-50/60 dark:from-gray-900/80 dark:to-indigo-950/60 border-b border-gray-100 dark:border-gray-800">
-        <div className="p-2 bg-gradient-to-br from-gray-100 to-white dark:from-gray-800 dark:to-gray-700 rounded-xl shadow-inner flex-shrink-0" aria-hidden="true">
       <div className="flex items-center px-5 py-4 gap-4 bg-gradient-to-r from-white/80 to-indigo-50/60 dark:from-gray-900/80 dark:to-indigo-950/60 border-b border-gray-100 dark:border-gray-800 rounded-t-3xl">
         <div className="p-2 bg-gradient-to-br from-gray-100 to-white dark:from-gray-800 dark:to-gray-700 rounded-xl shadow-inner flex-shrink-0">
           {randomIcon}
@@ -293,11 +286,11 @@ const EventCard = ({ event }) => {
 
       {/* Image */}
       <div className="relative h-40 overflow-hidden">
-        <img
-          loading="lazy"
-          decoding="async"
+        <LazyImage
           src={event.image}
           alt={`${event.title} event thumbnail`}
+          width={800}
+          height={160}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
@@ -311,15 +304,6 @@ const EventCard = ({ event }) => {
       </div>
 
       {/* Info Grid */}
-      <div className="px-5 py-4 grid grid-cols-2 gap-x-4 gap-y-3 text-gray-600 dark:text-gray-400 text-sm bg-gray-50/50 dark:bg-gray-800/30">
-        <div className="flex items-center gap-2">
-          <MapPin size={14} className="text-pink-500 flex-shrink-0" aria-hidden="true" />
-          <span className="truncate">{event.location}</span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Clock size={14} className="text-blue-500 flex-shrink-0" aria-hidden="true" />
-          <span className="truncate">{event.time}</span>
       <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 text-gray-600 dark:text-gray-400 text-sm bg-gray-50/50 dark:bg-gray-800/30">
         {/* Location */}
         <div className="flex items-start gap-2">
@@ -338,29 +322,17 @@ const EventCard = ({ event }) => {
           <span className="truncate">{event.type}</span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Calendar size={14} className="text-indigo-500 flex-shrink-0" aria-hidden="true" />
-          <span className="truncate">
-            {new Date(event.date).toLocaleDateString("en-US", {
-              weekday: "short",
-              day: "numeric",
-              month: "short",
-            })}
-          </span>
         {/* Event Date */}
         <div className="flex items-start gap-2">
           <Calendar size={14} className="text-indigo-500 flex-shrink-0 mt-0.5" />
           <div className="flex flex-col">
             <span className="truncate">
-  {getSmartDateLabel(event.date, event.time)}
-</span>
-<span className="text-[11px] text-gray-500 dark:text-gray-400">
-  {new Date(event.date).toLocaleDateString("en-US", {
-    weekday: "short", day: "numeric", month: "short", year: "numeric",
-  })}
-</span>
+              {getSmartDateLabel(event.date, event.time)}
+            </span>
             <span className="text-[11px] text-gray-500 dark:text-gray-400">
-              Localized Event Time
+              {new Date(event.date).toLocaleDateString("en-US", {
+                weekday: "short", day: "numeric", month: "short", year: "numeric",
+              })}
             </span>
           </div>
         </div>
@@ -377,21 +349,7 @@ const EventCard = ({ event }) => {
         const percent = Math.round(ratio * 100);
         const spotsLeft = Math.max(capacity - registered, 0);
 
-        const barColor = isFull
-          ? "bg-red-500"
-          : ratio >= 0.85
-            ? "bg-red-500"
-            : ratio >= 0.6
-              ? "bg-amber-500"
-              : "bg-emerald-500";
-
-        const textColor = isFull
-          ? "text-red-600 dark:text-red-400"
-          : ratio >= 0.85
-            ? "text-red-600 dark:text-red-400"
-            : ratio >= 0.6
-              ? "text-amber-600 dark:text-amber-400"
-              : "text-emerald-600 dark:text-emerald-400";
+        const { barColor, textColor } = getCapacityStyles(ratio, isFull);
 
         return (
           <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">

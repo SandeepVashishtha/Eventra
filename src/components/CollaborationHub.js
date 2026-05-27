@@ -4,8 +4,8 @@ import { motion } from 'framer-motion';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { toast } from 'react-toastify';
 import './components.css';
-import CharacterCounter
-from "../../components/common/CharacterCounter";
+import CharacterCounter from "../../components/common/CharacterCounter";
+import { sanitizeInputText } from "../utils/inputSanitization";
 
 const CollaborationHub = () => {
   const prefersReducedMotion = useReducedMotion();
@@ -30,12 +30,86 @@ const CollaborationHub = () => {
     setNewRequest(prev => ({ ...prev, [name]: value }));
   };
 
+  const [collaborationOpportunities, setCollaborationOpportunities] = useState(() => {
+    const saved = localStorage.getItem('eventra_collaboration_opportunities');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed to parse collaboration opportunities from localStorage", e);
+      }
+    }
+    return [
+      {
+        id: 1,
+        title: "Tech Summit 2025 Partnership",
+        organizer: "TechCorp Inc.",
+        type: "Sponsorship",
+        description: "Looking for event technology partners for our annual tech summit. Great exposure opportunity.",
+        skills: ["Event Management", "Technology", "Marketing"],
+        budget: "$10,000 - $25,000",
+        deadline: "2025-08-15",
+        applicants: 12,
+        status: "open"
+      },
+      {
+        id: 2,
+        title: "Design Workshop Collaboration",
+        organizer: "Creative Studios",
+        type: "Content Partnership",
+        description: "Seeking design experts to co-host a series of UX/UI workshops for designers.",
+        skills: ["UX Design", "Teaching", "Workshop Facilitation"],
+        budget: "Revenue Share",
+        deadline: "2025-08-20",
+        applicants: 8,
+        status: "open"
+      },
+      {
+        id: 3,
+        title: "Startup Pitch Event",
+        organizer: "Innovation Hub",
+        type: "Venue Partnership",
+        description: "Partner with us to provide venue and networking space for monthly startup pitch events.",
+        skills: ["Venue Management", "Networking", "Startup Ecosystem"],
+        budget: "$5,000 - $8,000",
+        deadline: "2025-08-10",
+        applicants: 15,
+        status: "urgent"
+      }
+    ];
+  });
+
   const handleRequestSubmit = (e) => {
     e.preventDefault();
     if (!newRequest.title.trim() || !newRequest.type || !newRequest.description.trim()) {
       toast.error('Please fill in all required fields (Title, Type, and Description)');
       return;
     }
+
+    const sanitizedTitle = sanitizeInputText(newRequest.title);
+    const sanitizedDescription = sanitizeInputText(newRequest.description);
+    const sanitizedBudget = newRequest.budget ? sanitizeInputText(newRequest.budget) : "Not Specified";
+
+    const skillsArray = newRequest.skills
+      ? newRequest.skills.split(',').map(s => sanitizeInputText(s)).filter(s => s.length > 0)
+      : [];
+
+    const newOpp = {
+      id: Date.now(),
+      title: sanitizedTitle,
+      organizer: "You (Organizer)",
+      type: newRequest.type,
+      description: sanitizedDescription,
+      skills: skillsArray,
+      budget: sanitizedBudget,
+      deadline: newRequest.deadline || new Date().toISOString().split('T')[0],
+      applicants: 0,
+      status: "open"
+    };
+
+    const updatedOpportunities = [newOpp, ...collaborationOpportunities];
+    setCollaborationOpportunities(updatedOpportunities);
+    localStorage.setItem('eventra_collaboration_opportunities', JSON.stringify(updatedOpportunities));
     
     toast.success('Collaboration request created successfully!');
     setNewRequest({
@@ -52,53 +126,17 @@ const CollaborationHub = () => {
   const handleApplySubmit = (e) => {
     e.preventDefault();
     if (!applicationText.trim()) {
-      toast.error('Please explain why you want to collaborate.');
+      toast.error('Please enter a proposal message.');
       return;
     }
-    toast.success('Collaboration proposal submitted successfully!');
+    
+    // Sanitize user proposal pitch text
+    const sanitizedPitch = sanitizeInputText(applicationText);
+    toast.success('Your partnership proposal has been submitted successfully!');
     setApplicationText('');
     setProposalFile(null);
     setSelectedOpportunity(null);
   };
-
-  const collaborationOpportunities = [
-    {
-      id: 1,
-      title: "Tech Summit 2025 Partnership",
-      organizer: "TechCorp Inc.",
-      type: "Sponsorship",
-      description: "Looking for event technology partners for our annual tech summit. Great exposure opportunity.",
-      skills: ["Event Management", "Technology", "Marketing"],
-      budget: "$10,000 - $25,000",
-      deadline: "2025-08-15",
-      applicants: 12,
-      status: "open"
-    },
-    {
-      id: 2,
-      title: "Design Workshop Collaboration",
-      organizer: "Creative Studios",
-      type: "Content Partnership",
-      description: "Seeking design experts to co-host a series of UX/UI workshops for designers.",
-      skills: ["UX Design", "Teaching", "Workshop Facilitation"],
-      budget: "Revenue Share",
-      deadline: "2025-08-20",
-      applicants: 8,
-      status: "open"
-    },
-    {
-      id: 3,
-      title: "Startup Pitch Event",
-      organizer: "Innovation Hub",
-      type: "Venue Partnership",
-      description: "Partner with us to provide venue and networking space for monthly startup pitch events.",
-      skills: ["Venue Management", "Networking", "Startup Ecosystem"],
-      budget: "$5,000 - $8,000",
-      deadline: "2025-08-10",
-      applicants: 15,
-      status: "urgent"
-    }
-  ];
 
   const myCollaborations = [
     {
@@ -252,7 +290,7 @@ const CollaborationHub = () => {
             </div>
             
             <div className="opportunities-grid">
-              {collaborationOpportunities.map((opportunity, index) => (
+              {filteredOpportunities.map((opportunity, index) => (
                 <motion.div
                   key={opportunity.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -414,7 +452,7 @@ const CollaborationHub = () => {
             </div>
             
             <div className="networking-requests">
-              {networkingRequests.map((request, index) => (
+              {filteredNetworking.map((request, index) => (
                 <motion.div
                   key={request.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -446,13 +484,9 @@ const CollaborationHub = () => {
                   No networking matches found.
                 </div>
               )}
-            </div>
-          </div>
-        )}
-
-        {activeSection === 'create-request' && (
-          <div className="create-request-section max-w-2xl mx-auto">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Create Collaboration Request</h2>
+            <        {activeSection === 'create-request' && (
+          <div className="create-request-section max-w-2xl mx-auto" role="region" aria-labelledby="form-heading">
+            <h2 id="form-heading" className="text-xl font-bold text-slate-900 dark:text-white mb-6">Create Collaboration Request</h2>
             <form onSubmit={handleRequestSubmit} className="request-form p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl space-y-5">
               <div className="form-group flex flex-col gap-2">
                 <label htmlFor="collab-title" className="text-xs font-bold text-slate-700 dark:text-slate-300">Project Title *</label>
@@ -463,9 +497,13 @@ const CollaborationHub = () => {
                   value={newRequest.title}
                   onChange={handleRequestChange}
                   placeholder="Enter your collaboration project title" 
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
                   required
+                  aria-required="true"
+                  aria-invalid={newRequest.title.trim() === '' ? "true" : "false"}
+                  aria-describedby="title-hint"
                 />
+                <span id="title-hint" className="sr-only">Please enter a descriptive title for your project</span>
               </div>
               
               <div className="form-group flex flex-col gap-2">
@@ -475,8 +513,11 @@ const CollaborationHub = () => {
                   name="type"
                   value={newRequest.type}
                   onChange={handleRequestChange}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
                   required
+                  aria-required="true"
+                  aria-invalid={newRequest.type === '' ? "true" : "false"}
+                  aria-describedby="type-hint"
                 >
                   <option value="">Select type</option>
                   <option value="Sponsorship">Sponsorship</option>
@@ -484,44 +525,34 @@ const CollaborationHub = () => {
                   <option value="Venue Partnership">Venue Partnership</option>
                   <option value="Technical Support">Technical Support</option>
                 </select>
+                <span id="type-hint" className="sr-only">Select the type of collaboration partnership</span>
               </div>
               
-              <div className="form-group">
-                <label htmlFor="collab-desc">Description *</label>
-              <div className="space-y-2">
-  <textarea
-    id="collab-desc"
-    name="description"
-    value={newRequest.description}
-    onChange={handleRequestChange}
-    rows="4"
-    maxLength={300}
-    placeholder="Describe partnership goals / Sponsorship details / Collaboration ideas..."
-    required
-    className="
-      w-full
-      rounded-xl
-      border border-gray-300
-      dark:border-gray-700
-      bg-white dark:bg-gray-900
-      px-4 py-3
-      text-gray-900 dark:text-white
-      focus:outline-none
-      focus:ring-2
-      focus:ring-indigo-500
-      transition
-    "
-  />
-
-  <div className="flex justify-end">
-    <CharacterCounter
-      current={
-        newRequest.description.length
-      }
-      max={300}
-    />
-  </div>
-</div>
+              <div className="form-group flex flex-col gap-2">
+                <label htmlFor="collab-desc" className="text-xs font-bold text-slate-700 dark:text-slate-300">Description *</label>
+                <div className="space-y-2">
+                  <textarea 
+                    id="collab-desc"
+                    name="description"
+                    value={newRequest.description}
+                    onChange={handleRequestChange}
+                    rows="4" 
+                    maxLength={300}
+                    placeholder="Describe partnership goals / Sponsorship details / Collaboration ideas..."
+                    required
+                    className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                    aria-required="true"
+                    aria-invalid={newRequest.description.trim() === '' ? "true" : "false"}
+                    aria-describedby="desc-hint"
+                  ></textarea>
+                  <div className="flex justify-end">
+                    <CharacterCounter
+                      current={newRequest.description.length}
+                      max={300}
+                    />
+                  </div>
+                </div>
+                <span id="desc-hint" className="sr-only">Provide context and objectives of the collaboration. Maximum 300 characters.</span>
               </div>
               
               <div className="form-row grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -532,7 +563,8 @@ const CollaborationHub = () => {
                     name="budget"
                     value={newRequest.budget}
                     onChange={handleRequestChange}
-                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
+                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
+                    aria-describedby="budget-hint"
                   >
                     <option value="">Select budget</option>
                     <option value="$1,000 - $5,000">$1,000 - $5,000</option>
@@ -541,6 +573,7 @@ const CollaborationHub = () => {
                     <option value="$25,000+">$25,000+</option>
                     <option value="Revenue Share">Revenue Share</option>
                   </select>
+                  <span id="budget-hint" className="sr-only">Select the financial budget range if applicable</span>
                 </div>
                 
                 <div className="form-group flex flex-col gap-2">
@@ -552,7 +585,9 @@ const CollaborationHub = () => {
                     value={newRequest.deadline}
                     onChange={handleRequestChange}
                     className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
+                    aria-describedby="deadline-hint"
                   />
+                  <span id="deadline-hint" className="sr-only">Select target completion date</span>
                 </div>
               </div>
               
@@ -565,8 +600,10 @@ const CollaborationHub = () => {
                   value={newRequest.skills}
                   onChange={handleRequestChange}
                   placeholder="e.g., Event Management, Marketing, Design" 
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
+                  aria-describedby="skills-hint"
                 />
+                <span id="skills-hint" className="sr-only">Comma separated list of required skills</span>
               </div>
               
               <button type="submit" className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all">

@@ -1,5 +1,5 @@
-import { motion, useAnimation, AnimatePresence, MotionConfig } from "framer-motion";
-import { useEffect, useState } from "react";
+import { motion, useAnimation, AnimatePresence, MotionConfig, useScroll, useTransform } from "framer-motion";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
 import { Search, Calendar, Trophy, Code, ExternalLink } from "lucide-react";
@@ -13,6 +13,7 @@ import RespawningText from "../../../jhalak/RespawningText";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
 import CountUp from "react-countup";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
+import SectionErrorBoundary from "../../../components/common/SectionErrorBoundary";
 
 const MotionLink = motion(Link);
 
@@ -26,6 +27,35 @@ const Hero = () => {
     "Cutting-Edge Tech Meetups",
   ];
 
+  const containerRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end start"],
+  });
+
+  // Check if device has pointer: coarse (touch screen) to preserve native feel
+  const [isTouch, setIsTouch] = useState(false);
+  useEffect(() => {
+    setIsTouch(window.matchMedia("(pointer: coarse)").matches);
+  }, []);
+
+  // Parallax scroll-driven transforms (only active on non-touch devices to ensure hardware performance)
+  const yText = useTransform(scrollYProgress, [0, 1], [0, 180]);
+  const yStats = useTransform(scrollYProgress, [0, 1], [0, 60]);
+  const opacityHero = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
+
+  // Different parallax speeds for each shape
+  const yShape0 = useTransform(scrollYProgress, [0, 1], [0, 220]);
+  const yShape1 = useTransform(scrollYProgress, [0, 1], [0, -150]);
+  const yShape2 = useTransform(scrollYProgress, [0, 1], [0, 100]);
+  const yShape3 = useTransform(scrollYProgress, [0, 1], [0, -180]);
+  const yShape4 = useTransform(scrollYProgress, [0, 1], [0, 130]);
+  const yShape5 = useTransform(scrollYProgress, [0, 1], [0, -80]);
+  const yShape6 = useTransform(scrollYProgress, [0, 1], [0, 250]);
+  const yShape7 = useTransform(scrollYProgress, [0, 1], [0, -120]);
+  const yShape8 = useTransform(scrollYProgress, [0, 1], [0, 70]);
+
+  const shapeTransforms = [yShape0, yShape1, yShape2, yShape3, yShape4, yShape5, yShape6, yShape7, yShape8];
 
   const [index, setIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
@@ -197,6 +227,7 @@ useEffect(() => {
 
   return (
     <section
+      ref={containerRef}
       aria-label="Hero section"
       className="relative overflow-hidden 
 bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white
@@ -204,16 +235,43 @@ dark:from-slate-950 dark:via-slate-900 dark:to-black
 text-slate-900 dark:text-gray-100 
 pb-16 sm:pb-20 md:pb-24
 border-b border-gray-100 dark:border-slate-900">
+      {/* Decorative Parallax Shapes */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        {!isTouch && shapes.map((shape, i) => (
+          <motion.div
+            key={i}
+            style={{
+              position: "absolute",
+              top: shape.pos.top,
+              left: shape.pos.left,
+              width: shape.size,
+              height: shape.size,
+              borderRadius: "30% 70% 70% 30% / 30% 30% 70% 70%", // Organic blob shape
+              background: `linear-gradient(135deg, ${isDark ? shape.darkColor : shape.lightColor}22, ${isDark ? shape.darkColor : shape.lightColor}66)`,
+              filter: "blur(2px)",
+              boxShadow: `0 8px 32px 0 ${isDark ? shape.darkColor : shape.lightColor}0a`,
+              y: prefersReducedMotion ? 0 : shapeTransforms[i],
+              willChange: "transform",
+            }}
+            animate={prefersReducedMotion ? {} : floatShape(i)}
+          />
+        ))}
+      </div>
+
       {/* Hero Content */}
-      <div className=" mx-auto px-6 lg:px-8 relative z-10 pt-20"
-      style={{
-    backgroundImage: "url('/background.png')",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    backgroundRepeat: "no-repeat",
-    minHeight: "100vh",
-    width:"100vw"
-  }}
+      <motion.div 
+        className="mx-auto px-6 lg:px-8 relative z-10 pt-20"
+        style={{
+          backgroundImage: "url('/background.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          minHeight: "100vh",
+          width: "100vw",
+           y: (isTouch || prefersReducedMotion) ? 0 : yText,
+          opacity: isTouch ? 1 : opacityHero,
+          willChange: "transform, opacity",
+        }}
       >
         <motion.div
           className="text-center"
@@ -227,7 +285,7 @@ border-b border-gray-100 dark:border-slate-900">
           <MotionConfig reducedMotion="never">
             {/* Headline */}
             <motion.h1
-              className="mx-auto max-w-4xl mt-6 flex flex-col items-center gap-5 sm:gap-6 text-lg sm:text-xl md:text-4xl lg:text-5xl font-black mb-6 leading-relaxed tracking-tight text-gray-900 dark:text-white px-2 sm:px-0 text-center"
+              className="mx-auto max-w-4xl mt-6 flex flex-col items-center gap-5 sm:gap-6 text-lg sm:text-xl md:text-4xl lg:text-5xl font-black mb-6 leading-relaxed tracking-tight text-gray-900 dark:text-white px-2 sm:px-0 text-center overflow-visible"
               style={{ fontFamily: '"Inter", sans-serif' }}
             >
               <motion.span
@@ -244,11 +302,11 @@ border-b border-gray-100 dark:border-slate-900">
                 {phrases[index]}
               </span>
 
-              <div className="relative mx-auto w-full min-h-[7.5rem] sm:min-h-[9rem] md:min-h-[10rem] lg:min-h-[11rem] overflow-hidden flex justify-center items-center max-w-full px-1 mt-2">
+              <div className="relative mx-auto w-full min-h-[7.5rem] sm:min-h-[9rem] md:min-h-[10rem] lg:min-h-[11rem] overflow-hidden flex justify-center items-center max-w-full px-1 mt-2 py-4 ">
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={index}
-                    className="block mt-2 text-gray-900 dark:text-white mb-4 pb-2 whitespace-normal text-center px-1"
+                    className="block mt-2 text-gray-900 dark:text-white mb-4 pb-4 whitespace-normal text-center px-1 leading-tight"
                     initial={{ opacity: 0, y: 40 }}
                     animate={{
                       opacity: 1,
@@ -448,8 +506,13 @@ text-gray-600 dark:text-gray-300"
 
           {/* Animated Stats Cards */}
           {!searchQuery.trim() && (
+            <SectionErrorBoundary label="Statistics">
             <motion.div
               variants={fadeUp}
+              style={{
+                y: (isTouch || prefersReducedMotion) ? 0 : yStats,
+                willChange: "transform",
+              }}
               className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
               role="region"
               aria-label="Platform statistics"
@@ -485,11 +548,13 @@ text-gray-600 dark:text-gray-300"
                 </motion.div>
               ))}
             </motion.div>
+            </SectionErrorBoundary>
           )}
         </motion.div>
-      </div>
+      </motion.div>
     </section>
   );
 };
 
 export default Hero;
+

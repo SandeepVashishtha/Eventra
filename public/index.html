@@ -3,6 +3,17 @@
   <head>
     <meta charset="utf-8" />
 
+    <!-- Security: Content-Security-Policy fallback for non-Vercel environments -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://accounts.google.com https://cdn.jsdelivr.net 'sha256-WdPTKa22QQ+qLFD7bqcvSJCJcuIJGSbOFoBXGQCHhBk='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; connect-src 'self' https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net https://accounts.google.com https://www.googleapis.com https://api.emailjs.com https://api.github.com; font-src 'self' data: https://fonts.gstatic.com; frame-src 'self' https://accounts.google.com; base-uri 'self'; form-action 'self'"
+    />
+
+    <!-- Security: Prevent clickjacking in legacy browsers -->
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <!-- Security: Prevent MIME sniffing -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+
     <!-- Favicons -->
     <link
       rel="icon"
@@ -35,7 +46,7 @@
 
     <link
       rel="manifest"
-      href="%PUBLIC_URL%/site.webmanifest"
+      href="%PUBLIC_URL%/manifest.json"
     />
 
     <!-- Responsive -->
@@ -109,13 +120,6 @@
       />
     </noscript>
 
-    <!-- Preload Hero Image -->
-    <link
-      rel="preload"
-      href="%PUBLIC_URL%/Eventra.png"
-      as="image"
-    />
-
     <!-- Prevent Theme Flickering -->
     <script>
       (() => {
@@ -142,6 +146,11 @@
     <title>
       Eventra - Open Source Event Management Platform
     </title>
+    <meta property="og:title" content="Eventra - Platform for Builders" />
+    <meta property="og:description" content="A premium, modern platform for organizing and attending events, hackathons, and projects." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://eventra.vercel.app/" />
+    <meta property="og:image" content="%PUBLIC_URL%/Eventra.png" />
 
     <!-- Google Sign In -->
     <meta

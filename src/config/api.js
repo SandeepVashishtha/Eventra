@@ -22,7 +22,17 @@ const normalizeApiBaseUrl = (value = "") => {
 const isDev = process.env.NODE_ENV === "development";
 
 const resolveEnvApiBaseUrl = () => {
-  return normalizeApiBaseUrl(process.env.REACT_APP_API_URL || "http://localhost:8080");
+  const envUrl = process.env.REACT_APP_API_URL;
+  if (envUrl) {
+    return normalizeApiBaseUrl(envUrl);
+  }
+  if (process.env.NODE_ENV === "production") {
+    if (isDev) {
+      console.warn("REACT_APP_API_URL environment variable is missing in production. Defaulting to relative API requests.");
+    }
+    return "";
+  }
+  return "http://localhost:8080";
 };
 
 export const API_BASE_URL = resolveEnvApiBaseUrl();
@@ -91,21 +101,14 @@ export const setOnUnauthorizedHandler = (handler) => {
   onUnauthorized = handler;
 };
 
-const normalizeRequestConfig = (configOrToken = {}, maybeToken) => {
+const normalizeRequestConfig = (configOrToken = {}) => {
   const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
-  const token =
-    typeof configOrToken === "string"
-      ? configOrToken
-      : typeof maybeToken === "string"
-        ? maybeToken
-        : localStorage.getItem("token") || "";
-
-  if (token) {
-    config.headers = {
-      ...(config.headers || {}),
-      Authorization: `Bearer ${token}`,
-    };
+  
+  if ("skipAuth" in config) {
+    delete config.skipAuth;
   }
+  // With HttpOnly cookies, the browser automatically sends the session cookie.
+  // We no longer manually append the Authorization header here.
 
   return config;
 };
@@ -221,6 +224,11 @@ export const API_ENDPOINTS = {
     CATEGORIES: buildApiUrl("/api/projects/categories"),
     SUBMIT: buildApiUrl("/api/projects"),
   },
+  HACKATHONS: {
+    LIST: buildApiUrl("/api/hackathons"),
+    DETAIL: (id) => buildApiUrl(`/api/hackathons/${id}`),
+    HOST: buildApiUrl("/api/hackathons"),
+  },
   NOTIFICATIONS: {
     BASE: buildApiUrl("/api/notifications"),
     READ: (id) => (id ? buildApiUrl(`/api/notifications/${id}/read`) : ""),
@@ -233,16 +241,24 @@ export const API_ENDPOINTS = {
 };
 
 export const apiUtils = {
-  get: (url, configOrToken = {}, maybeToken) =>
-    API.get(url, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  post: (url, data = {}, configOrToken = {}, maybeToken) =>
-    API.post(url, data, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  put: (url, data = {}, configOrToken = {}, maybeToken) =>
-    API.put(url, data, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  patch: (url, data = {}, configOrToken = {}, maybeToken) =>
-    API.patch(url, data, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  delete: (url, configOrToken = {}, maybeToken) =>
-    API.delete(url, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
+  get: (url, config = {}) =>
+    API.get(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  post: (url, data = {}, config = {}) =>
+    API.post(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  put: (url, data = {}, config = {}) =>
+    API.put(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  patch: (url, data = {}, config = {}) =>
+    API.patch(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  delete: (url, config = {}) =>
+    API.delete(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
 };
 
 export default API;
+
+export const API_ENDPOINTS_UPDATED = {
+  ...API_ENDPOINTS,
+  NOTIFICATIONS: {
+    ...API_ENDPOINTS.NOTIFICATIONS,
+    READ_ALL: buildApiUrl("/api/notifications/read-all"),
+  }
+};

@@ -52,7 +52,7 @@ const getEffectiveDuration = (event, fallbackMinutes = 60) => {
 export const getEventUTCRange = (event, fallbackDuration = 60, timezone) => {
   if (!event) return null;
 
-  const tz = timezone || getUserTimezone();
+  const tz = event.timezone || event.timeZone || timezone || getUserTimezone();
   const startMs = parseEventToUTC(event.date, event.time, tz);
 
   if (startMs === null) return null;

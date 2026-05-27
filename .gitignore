@@ -3,6 +3,7 @@
 
 node_modules
 build
+.DS_Store
 
 # Secret Files - DO NOT COMMIT
 *.SECRETS.*
@@ -28,3 +29,8 @@ devserver.err.log
 *storybook.log
 storybook-static
 .storybook/cache/
+
+# Playwright
+playwright-report/
+test-results/
+playwright/.cache/

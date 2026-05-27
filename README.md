@@ -14,11 +14,11 @@ Eventra is a comprehensive, open-source platform designed to empower organizers 
 - [Overview](#overview)
 - [Live Demo](#live-demo)
 - [API Reference](#api-reference)
+- [Architecture & Roles](#-architecture--roles)
 - [Project Insights](#project-insights)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
-
 - [Environment Variables](#environment-variables)
 - [Project Structure](#project-structure)
 - [Deployment](#deployment)
@@ -50,6 +50,21 @@ This repository contains the React frontend application for Eventra. The backend
 The frontend communicates with the Spring Boot backend through `/api` routes. For local full-stack testing, run the backend service separately and configure the frontend API URL accordingly.
 
 Backend repository: https://github.com/SandeepVashishtha/Eventra-Backend
+
+## 🏗️ Architecture & Roles
+
+**New to Eventra?** Understand the complete system architecture, user roles, event lifecycle, and how everything works together:
+
+📖 **[Architecture & Roles Guide](docs/ARCHITECTURE_AND_ROLES.md)** – Comprehensive guide covering:
+- 👥 Role-Based Access Control (RBAC) with 5 roles
+- 🎟️ Event lifecycle stages and state transitions
+- 🏆 Hackathon workflow integration
+- 🔐 Authentication & route protection
+- 💬 Permission scopes and access control
+- 🌐 Real-time & offline features
+- 🧠 Contributor code map and implementation guide
+
+Perfect for new contributors and maintainers onboarding! 🚀
 
 ## Project Insights
 
@@ -363,20 +378,18 @@ SSE_MOCK_PORT=4005 ALLOWED_ORIGIN=http://localhost:3000 SSE_DEBUG=true node sse-
 ```
 
 ### 3. Configure the React Application
-Update `.env.local` to point to the mock server base URL:
-```env
-REACT_APP_API_URL=http://localhost:4001
-```
-*(Make sure to match the port number if a custom `SSE_MOCK_PORT` was configured.)*
 Update `.env.local` to point to the mock server. You have two options:
 - **Option A (Recommended)**: Set `REACT_APP_SSE_URL` to route only real-time connections to the mock server, keeping the rest of the application pointing to the real API:
   ```env
   REACT_APP_SSE_URL=http://localhost:4001
   ```
-- **Option B**: Set the general `REACT_APP_API_URL` to point to the mock server port (this routes all endpoints through port 4001):
+- **Option B (Not Recommended)**: Set the general `REACT_APP_API_URL` to point to the mock server port (this routes all endpoints through port 4001):
   ```env
   REACT_APP_API_URL=http://localhost:4001
   ```
+  > [!WARNING]
+  > **Side-effects of Option B:** Setting the general `REACT_APP_API_URL` to the mock server port will break standard REST API calls (like fetching events, logging in, etc.) because the mock server does not proxy these requests. Use Option A for standard local development to prevent breaking your local environment.
+
 
 ---
 

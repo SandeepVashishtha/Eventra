@@ -82,6 +82,8 @@ All API routes are prefixed with `/api`.
 
 ## 4. Roles & Permissions Model
 
+> **📖 For comprehensive details on RBAC, role hierarchy, permission scopes, and access control patterns, see the [Architecture & Roles Guide](ARCHITECTURE_AND_ROLES.md#-role-based-access-control-rbac).**
+
 ### Roles (from `src/config/roles.js`)
 | Role | Description |
 |------|-------------|
@@ -148,6 +150,21 @@ The frontend reads `error.response.data.message` or `error.response.data.error`.
 | `502/503/504` | Gateway/Service errors (frontend will retry once) |
 
 ---
+
+> Swagger/OpenAPI documentation is available at:
+>
+> ```bash
+> /swagger-ui/index.html
+> ```
+>
+> Protected endpoints in Swagger display a lock icon and require JWT authorization using:
+>
+> ```bash
+> Authorization: Bearer <JWT_TOKEN>
+> ```
+>
+> Developers can use the Swagger "Authorize" button to test secured APIs directly from the browser.
+
 
 ## 6. Auth APIs
 
@@ -427,8 +444,15 @@ GET /api/events/{id}/availability
   "spotsLeft": 55
 }
 ```
+The availability response schema is fully documented in Swagger/OpenAPI and includes:
 
-> This endpoint is referenced in Swagger as documented in the README.
+* Event capacity
+* Current registered count
+* Remaining spots
+* Full/available status
+
+This allows frontend developers to understand response fields directly from Swagger UI without inspecting backend source code.
+
 
 ---
 
@@ -1312,3 +1336,15 @@ Please agree on and document which format you will use before implementation.
 > 4. The `isRead` field on notifications must be a **boolean**, not `0`/`1`.
 > 5. Please enable **Swagger UI** at `/swagger-ui/index.html` for all endpoints.
 > 6. The frontend gracefully queues failed registration requests (offline queue) — the backend doesn't need to handle this, but should be idempotent for registration retries.
+> 7. Swagger/OpenAPI documentation should include:
+
+   * Response schemas
+   * Error response documentation
+   * Authentication requirements for protected endpoints
+   * Parameter descriptions
+   * Example response values where applicable
+
+
+
+### Event Registration Constraint
+- **Duplicate Prevention**: Implemented a check to prevent users from registering multiple times for the same event, throwing an HTTP 409 Conflict exception if a duplicate registration is attempted.
