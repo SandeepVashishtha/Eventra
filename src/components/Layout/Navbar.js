@@ -608,7 +608,10 @@ const NAV_ITEMS = [
   },
 ];
 
-const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile }) => {
+const NavList = ({ openDropdown, onToggleGroup, onLinkClick, isMobile }) => {
+  // Call useLocation() directly so NavList always has the current pathname
+  // from the Router context — never a stale prop from a parent render cycle.
+  const location = useLocation();
   // Prevent duplicate layoutId="activeBox": a group item (e.g. "Event Tools") should
   // NOT be marked active when a standalone nav item already covers the same path.
   // Having two <motion.span layoutId="activeBox"> mounted at the same time causes
@@ -644,12 +647,10 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
 };
 
 const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
-  const location = useLocation();
   return (
     <div className="hidden lg:flex items-center flex-1 min-w-0 pl-4 overflow-x-auto navbar-links-scroll">
       <div className="flex items-center gap-0.5 flex-nowrap w-max">
         <NavList
-          location={location}
           openDropdown={openDropdown}
           onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)}
           onLinkClick={() => setOpenDropdown(null)}
@@ -704,7 +705,6 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
 
           <div className="flex-grow p-3.5 sm:p-4 space-y-2 overflow-y-auto">
             <NavList
-              location={location}
               openDropdown={openDropdown}
               onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)}
               onLinkClick={closeAllMenus}
