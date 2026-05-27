@@ -1,21 +1,25 @@
-import StatusBadge from "../common/StatusBadge";
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate, useLocation, Link } from 'react-router-dom';
 import {
   Users, Calendar, Activity, Shield, LogOut, Plus,
   Search, ChevronRight, BarChart2,
-  Trash2, Edit2, CheckCircle, AlertCircle,
-  TrendingUp
+  Trash2, Edit2, AlertCircle,
+  TrendingUp, Download, ChevronDown
 } from 'lucide-react';
+import { exportToCSV, exportToJSON } from '../../utils/exportUtils';
 import {
   AdminListCardSkeleton,
   AdminStatCardSkeleton,
   AdminTableSkeleton,
 } from '../common/SkeletonLoaders';
+import StatusBadge from "../common/StatusBadge";
 import './AdminDashboard.css';
+import AnalyticsDashboard from './AnalyticsDashboard';
 import { toast } from 'react-toastify';
+
+import { ROLES,PERMISSIONS } from "../../config/roles";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -30,15 +34,59 @@ const stagger = {
   visible: { transition: { staggerChildren: 0.07 } }
 };
 
+
 /* ─── Mock data (replace with real API calls when endpoints are ready) ─── */
 const MOCK_USERS = [
-  { id: 1, firstName: 'Aarav', lastName: 'Sharma', email: 'aarav@example.com', roles: ['USER'], createdAt: '2025-01-15', status: 'Active' },
-  { id: 2, firstName: 'Priya', lastName: 'Mehta',  email: 'priya@example.com', roles: ['EVENT_MANAGER'], createdAt: '2025-02-20', status: 'Active' },
-  { id: 3, firstName: 'Rohan', lastName: 'Verma',  email: 'rohan@example.com', roles: ['USER'], createdAt: '2025-03-05', status: 'Inactive' },
-  { id: 4, firstName: 'Sneha', lastName: 'Patel',  email: 'sneha@example.com', roles: ['USER'], createdAt: '2025-04-12', status: 'Active' },
-  { id: 5, firstName: 'Karan', lastName: 'Joshi',  email: 'karan@example.com', roles: ['EVENT_MANAGER'], createdAt: '2025-05-01', status: 'Active' },
-];
+  {
+    id: 1,
+    firstName: 'Aarav',
+    lastName: 'Sharma',
+    email: 'aarav@example.com',
+    roles: [ROLES.ATTENDEE],
+    createdAt: '2025-01-15',
+    status: 'Active'
+  },
 
+  {
+    id: 2,
+    firstName: 'Priya',
+    lastName: 'Mehta',
+    email: 'priya@example.com',
+    roles: [ROLES.ORGANIZER],
+    createdAt: '2025-02-20',
+    status: 'Active'
+  },
+
+  {
+    id: 3,
+    firstName: 'Rohan',
+    lastName: 'Verma',
+    email: 'rohan@example.com',
+    roles: [ROLES.ATTENDEE],
+    createdAt: '2025-03-05',
+    status: 'Inactive'
+  },
+
+  {
+    id: 4,
+    firstName: 'Sneha',
+    lastName: 'Patel',
+    email: 'sneha@example.com',
+    roles: [ROLES.VOLUNTEER],
+    createdAt: '2025-04-12',
+    status: 'Active'
+  },
+
+  {
+    id: 5,
+    firstName: 'Karan',
+    lastName: 'Joshi',
+    email: 'karan@example.com',
+    roles: [ROLES.ADMIN],
+    createdAt: '2025-05-01',
+    status: 'Active'
+  },
+];
 const MOCK_EVENTS = [
   { id: 1, title: 'Tech Talk: AI in 2025', date: '2025-06-15', participantCount: 120, status: 'Completed', type: 'Event' },
   { id: 2, title: 'Web Dev Workshop',       date: '2025-09-10', participantCount: 45,  status: 'Upcoming',  type: 'Event' },
@@ -47,30 +95,79 @@ const MOCK_EVENTS = [
   { id: 5, title: 'Global AI Hackathon',    date: '2025-10-10', participantCount: 200, status: 'Upcoming',  type: 'Hackathon' },
 ];
 
-const STATUS_COLORS = {
-  Active: 'ad-badge-green', Inactive: 'ad-badge-gray',
-  Upcoming: 'ad-badge-blue', Completed: 'ad-badge-green',
-  USER: 'ad-badge-gray', EVENT_MANAGER: 'ad-badge-blue', ADMIN: 'ad-badge-purple',
-};
 
 /* ─── Confirmation Modal ─── */
 function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
+
+useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') {
+        onCancel();
+      }
+    };
+
+    document.addEventListener('keydown', handleEsc);
+
+    return () => {
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [onCancel]);
+
+
+
   if (!open) return null;
+
   return (
-    <div className="ad-modal-overlay" onClick={onCancel}>
+    <div
+      className="ad-modal-overlay"
+      onClick={onCancel}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          onCancel();
+        }
+      }}
+      tabIndex={0}
+    >
       <motion.div
         className="ad-modal"
+        tabIndex={0}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="ad-modal-icon"><AlertCircle size={28} color="#ef4444" /></div>
+        <div className="ad-modal-icon">
+          <AlertCircle size={28} color="#ef4444" />
+        </div>
+
         <h3 className="ad-modal-title">{title}</h3>
+
         <p className="ad-modal-msg">{message}</p>
+
         <div className="ad-modal-actions">
-          <button className="ad-btn-ghost" onClick={onCancel}>Cancel</button>
-          <button className="ad-btn-danger" onClick={onConfirm}>Confirm</button>
+          <button
+            className="ad-btn-ghost"
+            onClick={onCancel}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                onCancel();
+              }
+            }}
+          >
+            Cancel
+          </button>
+
+          <button
+            className="ad-btn-danger"
+            onClick={onConfirm}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                onConfirm();
+              }
+            }}
+          >
+            Confirm
+          </button>
         </div>
       </motion.div>
     </div>
@@ -80,7 +177,15 @@ function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
 /* ─── Main Component ─── */
 const AdminDashboard = () => {
   const { user, logout, hasPermission } = useAuth();
+  const userRoles = user?.roles || [];
   const navigate = useNavigate();
+  const location = useLocation();
+  const isAdmin =
+    userRoles.includes(ROLES.ADMIN) ||
+    userRoles.includes(ROLES.SUPER_ADMIN);
+
+  
+ 
 
   const [activeTab, setActiveTab] = useState('overview');
   const [users,  setUsers]  = useState(MOCK_USERS);
@@ -89,6 +194,7 @@ const AdminDashboard = () => {
   const [searchEvent, setSearchEvent] = useState('');
   const [confirmModal, setConfirmModal] = useState({ open: false, type: '', id: null });
   const [loading, setLoading] = useState(true);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
 
   const firstName = user?.firstName || user?.username || 'Admin';
 
@@ -96,12 +202,22 @@ const AdminDashboard = () => {
     const timer = window.setTimeout(() => setLoading(false), 700);
     return () => window.clearTimeout(timer);
   }, []);
+  useEffect(() => {
+  setActiveTab('overview');
+}, [location.pathname]);
 
+  if (!isAdmin) {
+    return <Navigate to="/unauthorized" replace />;
+  }
   /* Stats */
   const totalUsers  = users.length;
   const activeUsers = users.filter(u => u.status === 'Active').length;
   const totalEvents = events.length;
-  const upcoming    = events.filter(e => e.status === 'Upcoming').length;
+
+  const upcoming = events.filter(e =>
+    new Date(e.date) > new Date()
+  ).length;
+
   const totalParticipants = events.reduce((s, e) => s + e.participantCount, 0);
 
   /* Delete handlers */
@@ -180,7 +296,7 @@ const AdminDashboard = () => {
             </h1>
           </div>
           <div className="ad-topbar-right">
-            {activeTab === 'events' && hasPermission('CREATE_EVENT') && (
+            {activeTab === 'events' && hasPermission(PERMISSIONS.CREATE_EVENT) && (
               <button className="ad-btn-primary" onClick={() => navigate('/create-event')}>
                 <Plus size={15} /> New Event
               </button>
@@ -284,7 +400,44 @@ const AdminDashboard = () => {
                       onChange={e => setSearchUser(e.target.value)}
                     />
                   </div>
-                  <span className="ad-count">{filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''}</span>
+                  <div className="ad-toolbar-right flex items-center gap-3">
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowExportDropdown(!showExportDropdown)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
+                      >
+                        <Download size={13} />
+                        Export
+                        <ChevronDown size={12} className={`transition-transform duration-200 ${showExportDropdown ? 'rotate-180' : ''}`} />
+                      </button>
+                      {showExportDropdown && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setShowExportDropdown(false)} />
+                          <div className="absolute right-0 mt-1.5 w-36 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg py-1 z-20 animate-fadeIn">
+                            <button
+                              onClick={() => {
+                                exportToCSV(filteredUsers, 'users_list');
+                                setShowExportDropdown(false);
+                              }}
+                              className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-850 transition"
+                            >
+                              Export as CSV
+                            </button>
+                            <button
+                              onClick={() => {
+                                exportToJSON(filteredUsers, 'users_list');
+                                setShowExportDropdown(false);
+                              }}
+                              className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-850 transition"
+                            >
+                              Export as JSON
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    <span className="ad-count">{filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''}</span>
+                  </div>
                 </div>
 
                 <div className="ad-table-wrap">
@@ -323,12 +476,12 @@ const AdminDashboard = () => {
                             <td><StatusBadge status={u.status} /></td>
                             <td>
                               <div className="ad-action-btns">
-                                {hasPermission('EDIT_USER') && (
+                                {hasPermission(PERMISSIONS.EDIT_USER) && (
                                   <button className="ad-icon-action" title="Edit" onClick={() => toast.info('Edit coming soon')}>
                                     <Edit2 size={14} />
                                   </button>
                                 )}
-                                {hasPermission('DELETE_USER') && (
+                                {hasPermission(PERMISSIONS.DELETE_USER) && (
                                   <button className="ad-icon-action ad-icon-danger" title="Delete" onClick={() => confirmDelete('user', u.id)}>
                                     <Trash2 size={14} />
                                   </button>
@@ -391,12 +544,12 @@ const AdminDashboard = () => {
                             <td><StatusBadge status={ev.status} /></td>
                             <td>
                               <div className="ad-action-btns">
-                                {hasPermission('EDIT_EVENT') && (
+                                {hasPermission(PERMISSIONS.EDIT_EVENT) && (
                                   <button className="ad-icon-action" title="Edit" onClick={() => toast.info('Edit coming soon')}>
                                     <Edit2 size={14} />
                                   </button>
                                 )}
-                                {hasPermission('DELETE_EVENT') && (
+                                {hasPermission(PERMISSIONS.DELETE_EVENT) && (
                                   <button className="ad-icon-action ad-icon-danger" title="Delete" onClick={() => confirmDelete('event', ev.id)}>
                                     <Trash2 size={14} />
                                   </button>
@@ -435,53 +588,31 @@ const AdminDashboard = () => {
                   ))}
                 </motion.div>
 
-                {/* Event Breakdown */}
-                <motion.section custom={1} variants={fadeUp} className="ad-card" style={{ marginTop: '1.5rem' }}>
-                  <div className="ad-card-head">
-                    <span className="ad-card-icon" style={{ background: '#6366f118', color: '#6366f1' }}><BarChart2 size={15} /></span>
-                    <h3>Event Breakdown</h3>
-                  </div>
-                  <div className="ad-analytics-bars">
-                    {events.map(ev => (
-                      <div key={ev.id} className="ad-bar-row">
-                        <span className="ad-bar-label">{ev.title}</span>
-                        <div className="ad-bar-track">
-                          <motion.div
-                            className="ad-bar-fill"
-                            initial={{ width: 0 }}
-                            animate={{ width: `${(ev.participantCount / totalParticipants) * 100}%` }}
-                            transition={{ duration: 0.6, delay: 0.1 }}
-                          />
-                        </div>
-                        <span className="ad-bar-value">{ev.participantCount}</span>
-                      </div>
-                    ))}
-                  </div>
-                </motion.section>
-
-                {/* Role Distribution */}
-                <motion.section custom={2} variants={fadeUp} className="ad-card" style={{ marginTop: '1rem' }}>
-                  <div className="ad-card-head">
-                    <span className="ad-card-icon" style={{ background: '#ec489918', color: '#ec4899' }}><Shield size={15} /></span>
-                    <h3>Role Distribution</h3>
-                  </div>
-                  <div className="ad-role-chips">
-                    {['USER', 'EVENT_MANAGER', 'ADMIN'].map(role => {
-                      const count = users.filter(u => u.roles.includes(role)).length;
-                      return (
-                        <div key={role} className="ad-role-chip">
-                          <StatusBadge status={role} />
-                          <span className="ad-role-count">{count} user{count !== 1 ? 's' : ''}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </motion.section>
+                {/* Dynamic Analytics Dashboard */}
+                <div style={{ marginTop: '1.5rem' }}>
+                  <AnalyticsDashboard />
+                </div>
               </motion.div>
             )}
 
           </AnimatePresence>
         </div>
+
+        {/* Futuristic Admin Dashboard Footer */}
+        <footer className="ad-footer">
+          <div className="ad-footer-divider" />
+          <div className="ad-footer-content">
+            <p className="ad-footer-copyright">
+              © {new Date().getFullYear()} Eventra. Admin Control Panel.
+            </p>
+            <div className="ad-footer-links">
+              <Link to="/helpcenter" className="ad-footer-link">Help Center</Link>
+              <a href="https://github.com/sandeepvashishtha/Eventra" target="_blank" rel="noopener noreferrer" className="ad-footer-link">GitHub</a>
+              <Link to="/privacy" className="ad-footer-link">Privacy Policy</Link>
+              <Link to="/terms" className="ad-footer-link">Terms of Service</Link>
+            </div>
+          </div>
+        </footer>
       </main>
 
       {/* Confirm modal */}

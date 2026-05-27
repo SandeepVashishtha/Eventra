@@ -2,15 +2,16 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FiMessageSquare } from "react-icons/fi";
+import useReducedMotion from "../hooks/useReducedMotion";
 
 const FeedbackButton = () => {
+  const prefersReducedMotion = useReducedMotion();
 
   return (
     <motion.div
       layout 
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className={"fixed left-[1.625rem] z-[10] translate-y-1/2 bottom-6"
-      }
+      transition={prefersReducedMotion ? {} : { type: "spring", stiffness: 300, damping: 30 }}
+      className={"fixed left-[1.625rem] z-[100] translate-y-1/2 bottom-6 fixed-floating-widget transition-opacity duration-300"}
       initial={{ opacity: 0, scale: 0 }}
       animate={{ opacity: 1, scale: 1 }}
     >
@@ -23,7 +24,7 @@ const FeedbackButton = () => {
         <motion.div
           whileHover={{ scale: 1.1, rotate: 5 }}
           whileTap={{ scale: 0.95 }}
-          transition={{ duration: 0.2 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
         >
           <FiMessageSquare className="text-2xl" />
         </motion.div>

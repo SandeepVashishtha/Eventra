@@ -21,6 +21,9 @@
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   z-index: 9999;
 }
+.dark .eb-overlay {
+  background-color: #0f172a;
+}
 
 /* Central card */
 .eb-card {
@@ -130,6 +133,10 @@
   cursor: pointer;
   transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
+.dark .eb-btn-secondary {
+  color: #e2e8f0;
+  border-color: #475569;
+}
 
 .eb-btn-secondary:hover {
   border-color: #667eea;
@@ -140,6 +147,12 @@
 .eb-btn-secondary:active {
   transform: translateY(0);
 }
+.eb-btn-primary:focus,
+.eb-btn-secondary:focus {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
+}
+
 
 /* Collapsible dev-only error details */
 .eb-details {
@@ -176,9 +189,15 @@
   max-height: 200px;
   overflow-y: auto;
 }
+.dark .eb-stack {
+  background: #0f172a;
+  color: #f8fafc;
+}
 
 /* Dark mode overrides */
 .dark .eb-card {
+  background: #1e293b;
+  border-color: #334155;
   box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.3),
     0 20px 60px -10px rgba(102, 126, 234, 0.1);
@@ -203,4 +222,327 @@
     width: 100%;
     text-align: center;
   }
+}
+/* ============================================================
+   Advanced Recovery & Accessibility Enhancements
+============================================================ */
+
+/* Error ID */
+
+.eb-error-id {
+  margin-bottom: 24px;
+
+  font-size: 0.85rem;
+
+  color: var(
+    --text-color-light,
+    #6b7280
+  );
+
+  opacity: 0.9;
+}
+
+/* Copy Error Button */
+
+.eb-btn-copy {
+  background:
+    rgba(
+      239,
+      68,
+      68,
+      0.08
+    );
+
+  color: #ef4444;
+
+  padding: 12px 28px;
+
+  border: 1px solid
+    rgba(
+      239,
+      68,
+      68,
+      0.2
+    );
+
+  border-radius: 10px;
+
+  font-family: inherit;
+
+  font-size: var(
+    --font-body,
+    1rem
+  );
+
+  font-weight: var(
+    --fw-semibold,
+    600
+  );
+
+  cursor: pointer;
+
+  transition:
+    all 0.25s ease;
+}
+
+.eb-btn-copy:hover {
+  background:
+    rgba(
+      239,
+      68,
+      68,
+      0.15
+    );
+
+  transform:
+    translateY(-2px);
+}
+
+/* Better Focus Accessibility */
+
+.eb-btn-primary:focus-visible,
+.eb-btn-secondary:focus-visible,
+.eb-btn-reset-cache:focus-visible,
+.eb-btn-copy-report:focus-visible,
+.eb-btn-copy:focus-visible {
+  outline: 3px solid
+    rgba(
+      102,
+      126,
+      234,
+      0.35
+    );
+
+  outline-offset: 3px;
+}
+
+/* Reduced Motion Accessibility */
+
+@media (
+  prefers-reduced-motion: reduce
+) {
+  .eb-card,
+  .eb-btn-primary,
+  .eb-btn-secondary,
+  .eb-btn-reset-cache,
+  .eb-btn-copy-report,
+  .eb-btn-copy {
+    animation: none;
+
+    transition: none;
+  }
+}
+
+/* Glass Blur Enhancement */
+
+.eb-card {
+  backdrop-filter:
+    blur(14px);
+
+  -webkit-backdrop-filter:
+    blur(14px);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Glassmorphic Glows */
+.eb-glow-1, .eb-glow-2 {
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.25;
+}
+.eb-glow-1 {
+  top: -50px;
+  left: -50px;
+  background: #667eea;
+}
+.eb-glow-2 {
+  bottom: -50px;
+  right: -50px;
+  background: #764ba2;
+}
+
+/* New Buttons Styling */
+.eb-btn-reset-cache {
+  background: rgba(245, 158, 11, 0.08);
+  color: #d97706;
+  padding: 12px 28px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: var(--font-body, 1rem);
+  font-weight: var(--fw-semibold, 600);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.eb-btn-reset-cache:hover {
+  background: rgba(245, 158, 11, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.15);
+}
+.dark .eb-btn-reset-cache {
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.25);
+  background: rgba(251, 191, 36, 0.05);
+}
+.dark .eb-btn-reset-cache:hover {
+  background: rgba(251, 191, 36, 0.12);
+}
+
+.eb-btn-copy-report {
+  background: rgba(59, 130, 246, 0.08);
+  color: #2563eb;
+  padding: 12px 28px;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: var(--font-body, 1rem);
+  font-weight: var(--fw-semibold, 600);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.eb-btn-copy-report:hover {
+  background: rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.15);
+}
+.dark .eb-btn-copy-report {
+  color: #60a5fa;
+  border-color: rgba(96, 165, 250, 0.25);
+  background: rgba(96, 165, 250, 0.05);
+}
+.dark .eb-btn-copy-report:hover {
+  background: rgba(96, 165, 250, 0.12);
+}
+
+/* Diagnostic Accordion Content */
+.eb-diagnostics-content {
+  margin-top: 16px;
+  text-align: left;
+  border-top: 1px solid var(--border-color, #e1e5e9);
+  padding-top: 20px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.dark .eb-diagnostics-content {
+  border-color: #334155;
+}
+
+.eb-diagnostic-section {
+  margin-bottom: 20px;
+}
+.eb-section-title {
+  font-size: 0.9rem;
+  font-weight: var(--fw-bold, 700);
+  color: var(--text-color, #1a1a1a);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.dark .eb-section-title {
+  color: #f1f5f9;
+}
+
+/* Metadata Grid */
+.eb-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  background: var(--scrollbar-track-color, #f8f9fa);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #e1e5e9);
+}
+.dark .eb-meta-grid {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+.eb-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.eb-meta-label {
+  font-size: 0.7rem;
+  font-weight: var(--fw-semibold, 600);
+  color: var(--text-color-light, #6b7280);
+  text-transform: uppercase;
+}
+.eb-meta-value {
+  font-size: 0.8rem;
+  color: var(--text-color, #1a1a1a);
+  word-break: break-all;
+}
+.dark .eb-meta-value {
+  color: #e2e8f0;
+}
+
+/* Inline Variant */
+
+.eb-inline {
+  position: relative;
+
+  min-height: 320px;
+
+  padding: 32px;
+}
+
+/* Card Variant */
+
+.eb-card-variant {
+  position: relative;
+
+  padding: 32px;
+}
+
+/* Better Dark Mode */
+
+.dark .eb-overlay {
+  background-image:
+    linear-gradient(
+      to right,
+      rgba(
+        59,
+        130,
+        246,
+        0.08
+      )
+      1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(
+        250,
+        204,
+        21,
+        0.06
+      )
+      1px,
+      transparent 1px
+    );
+}
+
+/* Better Scrollbar */
+
+.eb-stack::-webkit-scrollbar {
+  width: 8px;
+}
+
+.eb-stack::-webkit-scrollbar-thumb {
+  background:
+    rgba(
+      102,
+      126,
+      234,
+      0.45
+    );
+
+  border-radius: 999px;
 }

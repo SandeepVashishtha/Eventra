@@ -140,31 +140,417 @@ Authenticates the user and returns a JWT token.
 
 # Event APIs
 
-## Get Public Event By ID
+## Create Event
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/events` |
+
+Creates a new event. Requires JWT authentication.
+
+### Request Headers
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: application/json
+```
+
+### Request Body
+
+```json
+{
+  "title": "Tech Conference 2026",
+  "description": "Annual developer meetup featuring talks and workshops",
+  "location": "Mumbai",
+  "eventDate": "2026-08-15T10:00:00",
+  "public": true
+}
+```
+
+### Successful Response (201)
+
+```json
+{
+  "id": 1,
+  "title": "Tech Conference 2026",
+  "description": "Annual developer meetup featuring talks and workshops",
+  "location": "Mumbai",
+  "eventDate": "2026-08-15T10:00:00",
+  "public": true
+}
+```
+
+### Error Response (401)
+
+```json
+{
+  "status": 401,
+  "error": "Unauthorized",
+  "message": "Full authentication is required to access this resource",
+  "path": "/api/events",
+  "timestamp": "2026-05-19T12:20:31"
+}
+```
+
+### Error Response (409) — Event Full
+
+```json
+{
+  "status": 409,
+  "error": "Conflict",
+  "message": "This event has reached capacity.",
+  "path": "/api/events/1/register",
+  "timestamp": "2026-05-23T09:30:00"
+}
+```
+
+### Error Response (409) — Concurrent Registration Conflict
+
+```json
+{
+  "status": 409,
+  "error": "Conflict",
+  "message": "Too many simultaneous registrations. Please try again.",
+  "path": "/api/events/1/register",
+  "timestamp": "2026-05-23T09:30:00"
+}
+```
+
+---
+
+## List Events
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/events` |
+
+Returns a list of all available events. No authentication required.
+
+### Example Request
+
+```bash
+GET /api/events
+```
+
+### Successful Response (200)
+
+```json
+[
+  {
+    "id": 1,
+    "title": "Tech Conference 2026",
+    "description": "Annual developer meetup featuring talks and workshops",
+    "location": "Mumbai",
+    "eventDate": "2026-08-15T10:00:00",
+    "public": true
+  },
+  {
+    "id": 2,
+    "title": "Open Source Hackathon",
+    "description": "48-hour hackathon for open source projects",
+    "location": "Bangalore",
+    "eventDate": "2026-09-20T09:00:00",
+    "public": true
+  }
+]
+```
+
+---
+
+### Get Event By ID
+
+---
+
 
 | Method | Endpoint |
 |--------|----------|
 | GET | `/api/events/{id}` |
 
-Returns a public event if available.
+Returns complete details for an event by its ID. Requires JWT authentication.
+
+This endpoint retrieves the event directly by ID and does not apply public-only filtering. If the event exists, both public and private/non-public events can be returned to an authenticated requester.
+
+### Request Headers
+
+    Authorization: Bearer YOUR_JWT_TOKEN
+
+### Example Request
+
+    GET /api/events/1
+
+### Successful Response (200)
+
+```json
+    {
+      "id": 1,
+      "title": "Tech Conference",
+      "description": "Annual developer meetup",
+      "location": "Mumbai",
+      "eventDate": "2026-05-19T18:30:00",
+      "public": false
+    }
+```
+
+### Error Response (404)
+
+```json
+    {
+      "status": 404,
+      "error": "Not Found",
+      "message": "Event not found with id: 888",
+      "path": "/api/events/888",
+      "timestamp": "2026-05-19T12:20:31"
+    }
+```
+
+---
+
+## Register for Event
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/events/{id}/register` |
+
+Registers the authenticated user for a specific event. Requires JWT authentication.
+
+### Request Headers
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: application/json
+```
 
 ### Example Request
 
 ```bash
-GET /api/events/1
+POST /api/events/1/register
 ```
 
-### Successful Response
+### Successful Response (200)
+
+```json
+{
+  "message": "Successfully registered for event",
+  "eventId": 1,
+  "userId": 1
+}
+```
+
+### Error Response (404)
+
+```json
+{
+  "status": 404,
+  "error": "Not Found",
+  "message": "Event not found with id: 999",
+  "path": "/api/events/999/register",
+  "timestamp": "2026-05-19T12:20:31"
+}
+```
+
+### Error Response (401)
+
+```json
+{
+  "status": 401,
+  "error": "Unauthorized",
+  "message": "Full authentication is required to access this resource",
+  "path": "/api/events/1/register",
+  "timestamp": "2026-05-19T12:20:31"
+}
+```
+
+---
+
+## Create Event
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/events/create` |
+
+Creates a new event. This endpoint is restricted to authenticated users with `ORGANIZER` or `ADMIN` authority.
+
+
+### Authentication
+
+---
+
+Requires a valid JWT token.
+
+```http
+Authorization: Bearer <token>
+```
+
+#### Request Body
+
+```json
+{
+  "title": "Manual Create Event Test",
+  "description": "Testing event creation manually",
+  "location": "Online",
+  "eventDate": "2026-07-15T10:00:00",
+  "capacity": 50,
+  "isPublic": true
+}
+```
+
+#### Field Notes
+
+- `title`, `description`, `location`, and `eventDate` are required.
+- `eventDate` must be a future date/time.
+- `capacity` is optional, but must be positive when provided.
+- `isPublic` is optional and defaults to `true`.
+- `registeredCount` is managed by the backend and defaults to `0`.
+
+#### Success Response
+
+```http
+201 Created
+```
 
 ```json
 {
   "id": 1,
-  "title": "Tech Conference",
-  "description": "Annual developer meetup",
-  "location": "Mumbai",
-  "eventDate": "2026-05-19T18:30:00",
+  "title": "Manual Create Event Test",
+  "description": "Testing event creation manually",
+  "location": "Online",
+  "eventDate": "2026-07-15T10:00:00",
+  "capacity": 50,
+  "registeredCount": 0,
   "public": true
 }
+```
+
+#### Error Responses
+
+| Status | Reason |
+|---|---|
+| `400 Bad Request` | Invalid event payload |
+| `401 Unauthorized` | Missing or invalid JWT |
+| `403 Forbidden` | Authenticated user is not an `ORGANIZER` or `ADMIN` |
+
+
+---
+
+# Project APIs
+
+## Submit Project
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/projects` |
+
+Submits a new project. Requires JWT authentication.
+
+### Request Headers
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: application/json
+```
+
+### Request Body
+
+```json
+{
+  "title": "Eventra Mobile App",
+  "description": "A cross-platform mobile application for event management",
+  "category": "Mobile Development",
+  "repositoryUrl": "https://github.com/example/eventra-mobile"
+}
+```
+
+### Successful Response (201)
+
+```json
+{
+  "id": 1,
+  "title": "Eventra Mobile App",
+  "description": "A cross-platform mobile application for event management",
+  "category": "Mobile Development",
+  "repositoryUrl": "https://github.com/example/eventra-mobile",
+  "submittedBy": "john@example.com"
+}
+```
+
+### Error Response (401)
+
+```json
+{
+  "status": 401,
+  "error": "Unauthorized",
+  "message": "Full authentication is required to access this resource",
+  "path": "/api/projects",
+  "timestamp": "2026-05-19T12:20:31"
+}
+```
+
+---
+
+## List Projects
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/projects` |
+
+Returns a list of all submitted projects. No authentication required.
+
+### Example Request
+
+```bash
+GET /api/projects
+```
+
+### Successful Response (200)
+
+```json
+[
+  {
+    "id": 1,
+    "title": "Eventra Mobile App",
+    "description": "A cross-platform mobile application for event management",
+    "category": "Mobile Development",
+    "repositoryUrl": "https://github.com/example/eventra-mobile",
+    "submittedBy": "john@example.com"
+  },
+  {
+    "id": 2,
+    "title": "Eventra CLI Tool",
+    "description": "Command-line tool for managing Eventra events",
+    "category": "Developer Tools",
+    "repositoryUrl": "https://github.com/example/eventra-cli",
+    "submittedBy": "jane@example.com"
+  }
+]
+```
+
+---
+
+## Get Project Categories
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/projects/categories` |
+
+Returns a list of available project categories. No authentication required.
+
+### Example Request
+
+```bash
+GET /api/projects/categories
+```
+
+### Successful Response (200)
+
+```json
+[
+  "Mobile Development",
+  "Web Development",
+  "Developer Tools",
+  "Machine Learning",
+  "DevOps",
+  "Design"
+]
 ```
 
 ---
@@ -179,7 +565,7 @@ The backend returns standardized JSON error responses for better frontend integr
 {
   "status": 404,
   "error": "Not Found",
-  "message": "Event not found or is not public with id: 888",
+  "message": "Event not found with id: 888",
   "path": "/api/events/888",
   "timestamp": "2026-05-19T12:20:31"
 }

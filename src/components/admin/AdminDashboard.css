@@ -7,6 +7,7 @@
   display: flex;
   min-height: 100vh;
   background: #f8fafc;
+  color: #111827;
   font-family: 'Inter', system-ui, sans-serif;
   --ad-space-xxs: 0.25rem;
   --ad-space-xs: 0.5rem;
@@ -16,7 +17,10 @@
   --ad-space-xl: 2rem;
 }
 
-.dark .ad-root { background: #0f1117; }
+.dark .ad-root {
+  background: #0f1117;
+  color: #f9fafb;
+}
 
 /* ── Sidebar ── */
 .ad-sidebar {
@@ -177,6 +181,10 @@
   margin: 0;
 }
 
+.dark .ad-admin-role {
+  color: #9ca3af;
+}
+
 /* ── Main ── */
 .ad-main {
   flex: 1;
@@ -210,6 +218,10 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.dark .ad-greeting {
+  color: #d1d5db;
 }
 
 .ad-page-heading {
@@ -571,7 +583,7 @@
 
 .ad-search:focus {
   border-color: #6366f1;
-  background: #fff;
+  background: transparent;
   box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1), 0 4px 12px rgba(0, 0, 0, 0.05);
   width: 300px;
 }
@@ -592,6 +604,10 @@
   font-size: 0.8rem;
   color: #9ca3af;
   margin-left: auto;
+}
+
+.dark .ad-count {
+  color: #d1d5db;
 }
 
 /* ── Table ── */
@@ -827,6 +843,10 @@
   font-weight: 500;
 }
 
+.dark .ad-role-count {
+  color: #d1d5db;
+}
+
 /* ── Confirm Modal ── */
 .ad-modal-overlay {
   position: fixed;
@@ -925,4 +945,107 @@
 
 @media (max-width: 480px) {
   .ad-stats-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Integrated Admin Dashboard Footer ── */
+.ad-footer {
+  margin-top: auto;
+  padding: 1.75rem var(--ad-space-xl) 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ad-space-sm);
+  background: transparent;
+}
+
+.ad-footer-divider {
+  width: 100%;
+  height: 1px;
+  background: #e5e7eb;
+  opacity: 0.8;
+}
+
+.dark .ad-footer-divider {
+  background: #1f2937;
+}
+
+.ad-footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ad-space-md);
+}
+
+.ad-footer-copyright {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin: 0;
+  font-weight: 400;
+}
+
+.dark .ad-footer-copyright {
+  color: #9ca3af;
+}
+
+.ad-footer-links {
+  display: flex;
+  align-items: center;
+  gap: var(--ad-space-lg);
+  flex-wrap: wrap;
+}
+
+.ad-footer-link {
+  font-size: 0.8rem;
+  color: #6b7280;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.dark .ad-footer-link {
+  color: #9ca3af;
+}
+
+.ad-footer-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1.5px;
+  background: #6366f1;
+  transition: width 0.25s ease;
+}
+
+.ad-footer-link:hover {
+  color: #6366f1;
+}
+
+.ad-footer-link:hover::after {
+  width: 100%;
+}
+
+.dark .ad-footer-link:hover {
+  color: #818cf8;
+}
+
+.dark .ad-footer-link:hover::after {
+  background: #818cf8;
+}
+
+@media (max-width: 768px) {
+  .ad-footer {
+    padding: 1.25rem var(--ad-space-lg);
+  }
+  .ad-footer-content {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--ad-space-xs);
+  }
+  .ad-footer-links {
+    justify-content: center;
+    gap: var(--ad-space-md);
+  }
 }

@@ -1,6 +1,9 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import {
   ArrowRightIcon,
   LightBulbIcon,
@@ -26,6 +29,17 @@ import {
 } from "@heroicons/react/24/solid";
 
 const SubmitProject = () => {
+  const navigate = useNavigate();
+  const { user, token, isAuthenticated } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      toast.error("You must be logged in to submit a project.");
+      navigate("/login", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
   const [formData, setFormData] = useState({
     projectName: "",
     teamName: "",
@@ -35,6 +49,7 @@ const SubmitProject = () => {
     description: "",
     projectType: "",
     techStack: "",
+    projectCategory: "",
     additionalNotes: "",
     projectImage: "",
     submissionCategory: "",
@@ -125,8 +140,15 @@ const SubmitProject = () => {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!isAuthenticated()) {
+      toast.error("You must be logged in to submit a project.");
+      navigate("/login");
+      return;
+    }
+
     const validationErrors = validateForm(formData);
 
     if (Object.keys(validationErrors).length > 0) {
@@ -134,8 +156,8 @@ const SubmitProject = () => {
       toast.error("Please fix the errors before submitting!");
 
       const fieldsInOrder = [
-        ...formFields.map(field => field.name), 
-        "description", 
+        ...formFields.map(field => field.name),
+        "description",
         "additionalNotes"
       ];
 
@@ -153,25 +175,46 @@ const SubmitProject = () => {
       return;
     }
 
-    console.log("Project Submitted:", formData);
-    toast.success("Project submitted successfully!");
-    setFormData({
-      projectName: "",
-      teamName: "",
-      email: "",
-      githubLink: "",
-      liveDemoLink: "",
-      description: "",
-      projectType: "",
-      techStack: "",
-      additionalNotes: "",
-      projectImage: "",
-      submissionCategory: "",
-      teamMembersCount: "",
-      projectDuration: "",
-      targetAudience: "",
-    });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setIsSubmitting(true);
+    try {
+      await apiUtils.post(
+        API_ENDPOINTS.PROJECTS.SUBMIT,
+        {
+          ...formData,
+          submittedBy: user?.id,
+        },
+        {
+          headers: {
+            Authorization: token
+          }
+        }
+      );
+
+      toast.success("Project submitted successfully!");
+      setFormData({
+        projectName: "",
+        teamName: "",
+        email: "",
+        githubLink: "",
+        liveDemoLink: "",
+        description: "",
+        projectType: "",
+        techStack: "",
+        projectCategory: "",
+        additionalNotes: "",
+        projectImage: "",
+        submissionCategory: "",
+        teamMembersCount: "",
+        projectDuration: "",
+        targetAudience: "",
+      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      const message = err?.data?.message || err?.message || "Submission failed. Please try again.";
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   // Define form fields with icons
@@ -270,7 +313,7 @@ const SubmitProject = () => {
     ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100 dark:from-gray-900 dark:to-black flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
+    <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
       <motion.div
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -434,11 +477,13 @@ const SubmitProject = () => {
           </motion.div>
           <motion.button
             type="submit"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="w-full flex items-center justify-center gap-2 text-white font-semibold p-3 rounded-xl shadow-lg transition-all duration-300 bg-black hover:bg-zinc-800"
+            disabled={isSubmitting}
+            whileHover={{ scale: isSubmitting ? 1 : 1.05 }}
+            whileTap={{ scale: isSubmitting ? 1 : 0.95 }}
+            className="w-full flex items-center justify-center gap-2 text-white font-semibold p-3 rounded-xl shadow-lg transition-all duration-300 bg-black hover:bg-zinc-800 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Submit Project <ArrowRightIcon className="w-5 h-5" />
+            {isSubmitting ? "Submitting..." : "Submit Project"}
+            {!isSubmitting && <ArrowRightIcon className="w-5 h-5" />}
           </motion.button>
         </form>
       </motion.div>
@@ -497,14 +542,15 @@ const SubmitProject = () => {
           progress easily.
         </p>
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-6">
-          <motion.a
-            href="#"
+          <motion.button
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="inline-flex items-center justify-center gap-2 bg-white text-black px-8 py-3 rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300"
           >
             <ArrowUpTrayIcon className="w-5 h-5" /> Submit Another Project
-          </motion.a>
+          </motion.button>
+          
           <motion.a
             href="/projects"
             whileHover={{ scale: 1.05 }}

@@ -1,32 +1,31 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import './styles/components.css';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import "./styles/components.css";
 
 const SearchFilter = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedLocation, setSelectedLocation] = useState('all');
-  const [dateFilter, setDateFilter] = useState('all');
-  const [priceFilter, setPriceFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedLocation, setSelectedLocation] = useState("all");
+  const [priceFilter, setPriceFilter] = useState("all");
 
   const categories = [
-    { value: 'all', label: 'All Categories' },
-    { value: 'technology', label: 'Technology' },
-    { value: 'business', label: 'Business' },
-    { value: 'design', label: 'Design' },
-    { value: 'marketing', label: 'Marketing' },
-    { value: 'education', label: 'Education' },
-    { value: 'healthcare', label: 'Healthcare' }
+    { value: "all", label: "All Categories" },
+    { value: "technology", label: "Technology" },
+    { value: "business", label: "Business" },
+    { value: "design", label: "Design" },
+    { value: "marketing", label: "Marketing" },
+    { value: "education", label: "Education" },
+    { value: "healthcare", label: "Healthcare" },
   ];
 
   const locations = [
-    { value: 'all', label: 'All Locations' },
-    { value: 'online', label: 'Online' },
-    { value: 'new-york', label: 'New York' },
-    { value: 'san-francisco', label: 'San Francisco' },
-    { value: 'london', label: 'London' },
-    { value: 'berlin', label: 'Berlin' },
-    { value: 'tokyo', label: 'Tokyo' }
+    { value: "all", label: "All Locations" },
+    { value: "online", label: "Online" },
+    { value: "new-york", label: "New York" },
+    { value: "san-francisco", label: "San Francisco" },
+    { value: "london", label: "London" },
+    { value: "berlin", label: "Berlin" },
+    { value: "tokyo", label: "Tokyo" },
   ];
 
   const mockEvents = [
@@ -40,7 +39,7 @@ const SearchFilter = () => {
       image: "🤖",
       attendees: 500,
       rating: 4.8,
-      description: "Join industry leaders for cutting-edge AI discussions"
+      description: "Join industry leaders for cutting-edge AI discussions",
     },
     {
       id: 2,
@@ -52,7 +51,7 @@ const SearchFilter = () => {
       image: "✨",
       attendees: 200,
       rating: 4.6,
-      description: "Pitch your startup idea to top investors"
+      description: "Pitch your startup idea to top investors",
     },
     {
       id: 3,
@@ -64,7 +63,7 @@ const SearchFilter = () => {
       image: "🎨",
       attendees: 75,
       rating: 4.9,
-      description: "Learn advanced UX design principles"
+      description: "Learn advanced UX design principles",
     },
     {
       id: 4,
@@ -76,7 +75,7 @@ const SearchFilter = () => {
       image: "📈",
       attendees: 150,
       rating: 4.7,
-      description: "Master the latest digital marketing strategies"
+      description: "Master the latest digital marketing strategies",
     },
     {
       id: 5,
@@ -88,7 +87,7 @@ const SearchFilter = () => {
       image: "💻",
       attendees: 300,
       rating: 4.8,
-      description: "48-hour coding challenge for open source projects"
+      description: "48-hour coding challenge for open source projects",
     },
     {
       id: 6,
@@ -100,16 +99,21 @@ const SearchFilter = () => {
       image: "🏥",
       attendees: 400,
       rating: 4.5,
-      description: "Exploring the future of healthcare technology"
-    }
+      description: "Exploring the future of healthcare technology",
+    },
   ];
 
   const filteredEvents = mockEvents.filter(event => {
     const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          event.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
-    const matchesLocation = selectedLocation === 'all' || 
-                           event.location.toLowerCase().replace(' ', '-') === selectedLocation;
+      const normalizedLocation = event.location
+        ?.toString()
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-');
+
+      const matchesLocation = selectedLocation === 'all' || (normalizedLocation === selectedLocation);
     const matchesPrice = priceFilter === 'all' || event.price === priceFilter;
     
     return matchesSearch && matchesCategory && matchesLocation && matchesPrice;
@@ -118,16 +122,18 @@ const SearchFilter = () => {
   return (
     <div className="search-filter-container bg-gray-50 dark:bg-black">
       <div className="search-header">
-       <motion.h1
-  initial={{ opacity: 0, y: -20 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.6 }}
-  className="text-5xl font-bold"
-  style={{ color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
->
-  {"Discover Amazing Events 🎯"}
-</motion.h1>
-        <p className="search-subtitle ">Find the perfect event for your interests</p>
+        <motion.h1
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-5xl font-bold"
+          style={{ color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
+        >
+          {"Discover Amazing Events 🎯"}
+        </motion.h1>
+        <p className="search-subtitle ">
+          Find the perfect event for your interests
+        </p>
       </div>
 
       {/* Search Bar */}
@@ -140,7 +146,9 @@ const SearchFilter = () => {
         <div className="search-input-wrapper">
           <span className="search-icon">🔍</span>
           <input
+            id="search-events"
             type="text"
+            aria-label="Search events"
             placeholder="Search events, topics, or keywords..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -157,13 +165,14 @@ const SearchFilter = () => {
         className="filters-container"
       >
         <div className="filter-group">
-          <label>Category</label>
+          <label htmlFor="filter-category">Category</label>
           <select
+            id="filter-category"
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="filter-select"
           >
-            {categories.map(category => (
+            {categories.map((category) => (
               <option key={category.value} value={category.value}>
                 {category.label}
               </option>
@@ -172,13 +181,14 @@ const SearchFilter = () => {
         </div>
 
         <div className="filter-group">
-          <label>Location</label>
+          <label htmlFor="filter-location">Location</label>
           <select
+            id="filter-location"
             value={selectedLocation}
             onChange={(e) => setSelectedLocation(e.target.value)}
             className="filter-select"
           >
-            {locations.map(location => (
+            {locations.map((location) => (
               <option key={location.value} value={location.value}>
                 {location.label}
               </option>
@@ -187,8 +197,9 @@ const SearchFilter = () => {
         </div>
 
         <div className="filter-group">
-          <label>Price</label>
+          <label htmlFor="filter-price">Price</label>
           <select
+            id="filter-price"
             value={priceFilter}
             onChange={(e) => setPriceFilter(e.target.value)}
             className="filter-select"
@@ -224,7 +235,7 @@ const SearchFilter = () => {
               <div className="event-emoji">{event.image}</div>
               <div className="event-badges">
                 <span className={`price-badge ${event.price}`}>
-                  {event.price === 'free' ? 'FREE' : 'PAID'}
+                  {event.price === "free" ? "FREE" : "PAID"}
                 </span>
               </div>
             </div>
@@ -232,7 +243,9 @@ const SearchFilter = () => {
               <h3 className="event-title">{event.title}</h3>
               <p className="event-description">{event.description}</p>
               <div className="event-meta">
-                <span className="event-date">📅 {new Date(event.date).toLocaleDateString()}</span>
+                <span className="event-date">
+                  📅 {new Date(event.date).toLocaleDateString()}
+                </span>
                 <span className="event-location">📍 {event.location}</span>
                 <span className="event-attendees">👥 {event.attendees}</span>
               </div>
