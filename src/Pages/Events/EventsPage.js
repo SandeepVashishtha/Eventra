@@ -125,8 +125,12 @@ const EventsPage = () => {
     const filter = searchParams.get("filter") || "all";
     const sort = searchParams.get("sort") || "Newest";
     const view = searchParams.get("view") || "grid";
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    
+    // In a full implementation, these would initialize the listing state
+    // listing.setSafePage(page);
+    // listing.setEventsPerPage(perPage);
+    // etc.
+  }, [searchParams, routeSearchQuery]);
 
   // Sync search query when URL param changes (e.g. navigating from navbar search)
   useEffect(() => {
@@ -134,8 +138,7 @@ const EventsPage = () => {
     if (safeQuery !== listing.searchQuery) {
       listing.setSearchQuery(safeQuery);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [routeSearchQuery]);
+  }, [routeSearchQuery, listing.searchQuery, listing.setSearchQuery]);
 
   // Scroll to card section after loading when a route search is active
   useEffect(() => {
