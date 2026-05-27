@@ -26,7 +26,7 @@ import { useSessionRecovery } from "../../context/SessionRecoveryContext";
 import { useFormValidation } from "../../hooks/useFormValidation";
 import { validate } from "../../validation";
 import { toast } from "react-toastify";
-import mockEvents from "./eventsMockData.json";
+
 import { pushToQueue } from "../../utils/offlineQueue";
 import EventConflictModal from "../../components/EventConflictModal";
 import ConfettiCanvas from "../../components/common/ConfettiCanvas";
@@ -194,14 +194,24 @@ const EventRegistration = () => {
     return false;
   };
 
-  const checkAndHandleConflicts = () => {
+  const checkAndHandleConflicts = async () => {
     const conflictCheck = checkRegistrationConflict(event, myEvents);
     if (conflictCheck.hasConflict) {
-      const suggestions = suggestAlternativeEvents(event, mockEvents, myEvents);
-      setConflictData({
-        conflicts: conflictCheck.conflicts,
-        suggestions,
-      });
+      try {
+        const res = await apiUtils.get(API_ENDPOINTS.EVENTS.LIST);
+        const realEvents = res.status === 200 ? res.data : [];
+        const suggestions = suggestAlternativeEvents(event, realEvents, myEvents);
+        setConflictData({
+          conflicts: conflictCheck.conflicts,
+          suggestions,
+        });
+      } catch (err) {
+        console.error("Failed to fetch alternative events", err);
+        setConflictData({
+          conflicts: conflictCheck.conflicts,
+          suggestions: [],
+        });
+      }
       setShowConflictModal(true);
       return true;
     }
@@ -237,7 +247,7 @@ const EventRegistration = () => {
     }
 
     // Check for scheduling conflicts
-    if (checkAndHandleConflicts()) return;
+    if (await checkAndHandleConflicts()) return;
 
     // Proceed with registration if no conflicts
     proceedWithRegistration();
