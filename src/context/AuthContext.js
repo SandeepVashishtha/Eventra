@@ -4,6 +4,7 @@ import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
 import { toast } from 'react-toastify';
 import { ROLES, ROLE_PERMISSIONS } from '../config/roles';
 import { decodeJwtPayload } from '../utils/auth';
+import { logger } from "../utils/logger";
 
 
 const AuthContext = createContext();
@@ -41,7 +42,7 @@ export const AuthProvider = ({ children }) => {
    */
   const clearExpiredSession = useCallback(() => {
     // eslint-disable-next-line no-console
-    console.warn("[AuthContext] Session expiration detected. Clearing session state immediately to prevent infinite layout re-render loops.");
+    logger.warn("[AuthContext] Session expiration detected. Clearing session state immediately to prevent infinite layout re-render loops.");
     
     // 1. Immediately purge session state to prevent infinite render loops.
     // By resetting token and user state to null synchronously, any concurrent
@@ -52,7 +53,7 @@ export const AuthProvider = ({ children }) => {
     // 2. Perform UI notification side effects once per expired session lifecycle.
     if (expiryToastShownRef.current) {
       // eslint-disable-next-line no-console
-      console.log("[AuthContext] Expiry warning already shown. Skipping duplicate toast notification.");
+      logger.log("[AuthContext] Expiry warning already shown. Skipping duplicate toast notification.");
       return;
     }
     expiryToastShownRef.current = true;
@@ -232,7 +233,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("user", JSON.stringify(sessionUser));
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('[AuthContext] Error persisting user profile:', error);
+      logger.error('[AuthContext] Error persisting user profile:', error);
     }
   };
 

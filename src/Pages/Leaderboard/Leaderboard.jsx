@@ -21,6 +21,7 @@ import SkeletonLeaderboard from "../../components/common/SkeletonLeaderboard";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useLeaderboardStream, SSE_STATUS } from "../../context/RealTimeContext";
 import { getAchievementBadge } from "../../utils/leaderboardUtils";
+import { logger } from "../utils/logger";
 import { storageManager } from "../../utils/storage/storageManager";
 import { STORAGE_KEYS } from "../../utils/storage/storageKeys";
 import { validators } from "../../utils/storage/storageValidators";
@@ -265,7 +266,7 @@ export default function LeaderBoard() {
         const res = await fetch(proxyUrl);
 
         if (!res.ok) {
-          console.warn(`GitHub API request failed with status: ${res.status}`);
+          logger.warn(`GitHub API request failed with status: ${res.status}`);
           hasMore = false;
           break;
         }
@@ -335,7 +336,7 @@ export default function LeaderBoard() {
         }
       );
     } catch (err) {
-      console.error("Error fetching contributors:", err);
+      logger.error("Error fetching contributors:", err);
     } finally {
       setLoading(false);
     }
