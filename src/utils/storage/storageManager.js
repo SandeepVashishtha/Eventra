@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from "./storageKeys";
 import { validators } from "./storageValidators";
 
 const DEFAULT_EXPIRY = 1000 * 60 * 60; // 1 hour
@@ -66,4 +67,4 @@ export const storageManager = {
   },
 };
 
-export { validators };
+export { STORAGE_KEYS, validators };
