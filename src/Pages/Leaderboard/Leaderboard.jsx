@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import FeatureErrorBoundary from "../../components/common/FeatureErrorBoundary";
+import { fetchWithTimeout } from "../../utils/fetchWithTimeout";
 import {
   FaCode,
   FaStar,
@@ -237,7 +238,8 @@ export default function LeaderBoard() {
       let hasMore = true;
 
       const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(`/repos/${GITHUB_REPO}/contributors`)}`;
-      const contributorsRes = await fetch(proxyUrl);
+      const { data: contributorsData } =
+        await fetchWithTimeout(proxyUrl);
 
       if (!contributorsRes.ok) throw new Error("Failed to fetch contributors");
       const contributorsData = await contributorsRes.json();

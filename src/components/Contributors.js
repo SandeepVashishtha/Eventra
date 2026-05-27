@@ -15,6 +15,7 @@ import FeatureErrorBoundary from "./common/FeatureErrorBoundary";
 import { storageManager } from "../utils/storage/storageManager";
 import { STORAGE_KEYS } from "../utils/storage/storageKeys";
 import { validators } from "../utils/storage/storageValidators";
+import { fetchWithTimeout } from "../utils/fetchWithTimeout";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
@@ -32,26 +33,19 @@ const throttleProfileFetch = async () => {
 };
 
 const fetchJsonWithTimeout = async (url) => {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
-
-  const proxyUrl = url.startsWith("https://api.github.com") 
-    ? `/api/github-proxy?path=${encodeURIComponent(url.replace("https://api.github.com", ""))}` 
+  const proxyUrl = url.startsWith("https://api.github.com")
+    ? `/api/github-proxy?path=${encodeURIComponent(
+        url.replace("https://api.github.com", "")
+      )}`
     : url;
 
-  try {
-    const res = await fetch(proxyUrl, {
-      signal: controller.signal,
-    });
+  const { data } = await fetchWithTimeout(
+    proxyUrl,
+    {},
+    REQUEST_TIMEOUT
+  );
 
-    if (!res.ok) {
-      throw new Error(`GitHub request failed with status ${res.status}`);
-    }
-
-    return await res.json();
-  } finally {
-    clearTimeout(timeout);
-  }
+  return data;
 };
 
 // Role assignment
