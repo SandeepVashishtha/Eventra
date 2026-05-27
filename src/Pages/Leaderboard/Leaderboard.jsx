@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FaCode,
@@ -19,6 +19,7 @@ import StyledDropdown from "../../components/StyledDropdown";
 import { LeaderboardTableSkeleton } from "../../components/common/SkeletonLoaders";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useLeaderboardStream, SSE_STATUS } from "../../context/RealTimeContext";
+import { ENV } from "../../config/env";
 
 // ─── Category filter definitions ───────────────────────────────────────────────
 const CATEGORY_FILTERS = [
@@ -74,8 +75,8 @@ function RankMovementIndicator({ username }) {
 }
 
 // Repository constant — update if the leaderboard should point to another repo
-const GITHUB_REPO = "SandeepVashishtha/Eventra";
-// Token read from env for higher rate limits (optional)
+const GITHUB_REPO = ENV.GITHUB_REPO;
+// Token is managed securely by the backend proxy
 const TOKEN = process.env.REACT_APP_GITHUB_TOKEN || "";
 const LEADERBOARD_CACHE_KEY = "leaderboardData:v2";
 
