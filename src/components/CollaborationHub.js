@@ -446,13 +446,9 @@ const CollaborationHub = () => {
                   No networking matches found.
                 </div>
               )}
-            </div>
-          </div>
-        )}
-
-        {activeSection === 'create-request' && (
-          <div className="create-request-section max-w-2xl mx-auto">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Create Collaboration Request</h2>
+            <        {activeSection === 'create-request' && (
+          <div className="create-request-section max-w-2xl mx-auto" role="region" aria-labelledby="form-heading">
+            <h2 id="form-heading" className="text-xl font-bold text-slate-900 dark:text-white mb-6">Create Collaboration Request</h2>
             <form onSubmit={handleRequestSubmit} className="request-form p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl space-y-5">
               <div className="form-group flex flex-col gap-2">
                 <label htmlFor="collab-title" className="text-xs font-bold text-slate-700 dark:text-slate-300">Project Title *</label>
@@ -463,9 +459,13 @@ const CollaborationHub = () => {
                   value={newRequest.title}
                   onChange={handleRequestChange}
                   placeholder="Enter your collaboration project title" 
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
                   required
+                  aria-required="true"
+                  aria-invalid={newRequest.title.trim() === '' ? "true" : "false"}
+                  aria-describedby="title-hint"
                 />
+                <span id="title-hint" className="sr-only">Please enter a descriptive title for your project</span>
               </div>
               
               <div className="form-group flex flex-col gap-2">
@@ -475,8 +475,11 @@ const CollaborationHub = () => {
                   name="type"
                   value={newRequest.type}
                   onChange={handleRequestChange}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
                   required
+                  aria-required="true"
+                  aria-invalid={newRequest.type === '' ? "true" : "false"}
+                  aria-describedby="type-hint"
                 >
                   <option value="">Select type</option>
                   <option value="Sponsorship">Sponsorship</option>
@@ -484,44 +487,34 @@ const CollaborationHub = () => {
                   <option value="Venue Partnership">Venue Partnership</option>
                   <option value="Technical Support">Technical Support</option>
                 </select>
+                <span id="type-hint" className="sr-only">Select the type of collaboration partnership</span>
               </div>
               
-              <div className="form-group">
-                <label htmlFor="collab-desc">Description *</label>
-              <div className="space-y-2">
-  <textarea
-    id="collab-desc"
-    name="description"
-    value={newRequest.description}
-    onChange={handleRequestChange}
-    rows="4"
-    maxLength={300}
-    placeholder="Describe partnership goals / Sponsorship details / Collaboration ideas..."
-    required
-    className="
-      w-full
-      rounded-xl
-      border border-gray-300
-      dark:border-gray-700
-      bg-white dark:bg-gray-900
-      px-4 py-3
-      text-gray-900 dark:text-white
-      focus:outline-none
-      focus:ring-2
-      focus:ring-indigo-500
-      transition
-    "
-  />
-
-  <div className="flex justify-end">
-    <CharacterCounter
-      current={
-        newRequest.description.length
-      }
-      max={300}
-    />
-  </div>
-</div>
+              <div className="form-group flex flex-col gap-2">
+                <label htmlFor="collab-desc" className="text-xs font-bold text-slate-700 dark:text-slate-300">Description *</label>
+                <div className="space-y-2">
+                  <textarea 
+                    id="collab-desc"
+                    name="description"
+                    value={newRequest.description}
+                    onChange={handleRequestChange}
+                    rows="4" 
+                    maxLength={300}
+                    placeholder="Describe partnership goals / Sponsorship details / Collaboration ideas..."
+                    required
+                    className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                    aria-required="true"
+                    aria-invalid={newRequest.description.trim() === '' ? "true" : "false"}
+                    aria-describedby="desc-hint"
+                  ></textarea>
+                  <div className="flex justify-end">
+                    <CharacterCounter
+                      current={newRequest.description.length}
+                      max={300}
+                    />
+                  </div>
+                </div>
+                <span id="desc-hint" className="sr-only">Provide context and objectives of the collaboration. Maximum 300 characters.</span>
               </div>
               
               <div className="form-row grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -532,7 +525,8 @@ const CollaborationHub = () => {
                     name="budget"
                     value={newRequest.budget}
                     onChange={handleRequestChange}
-                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
+                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
+                    aria-describedby="budget-hint"
                   >
                     <option value="">Select budget</option>
                     <option value="$1,000 - $5,000">$1,000 - $5,000</option>
@@ -541,6 +535,7 @@ const CollaborationHub = () => {
                     <option value="$25,000+">$25,000+</option>
                     <option value="Revenue Share">Revenue Share</option>
                   </select>
+                  <span id="budget-hint" className="sr-only">Select the financial budget range if applicable</span>
                 </div>
                 
                 <div className="form-group flex flex-col gap-2">
@@ -552,7 +547,9 @@ const CollaborationHub = () => {
                     value={newRequest.deadline}
                     onChange={handleRequestChange}
                     className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
+                    aria-describedby="deadline-hint"
                   />
+                  <span id="deadline-hint" className="sr-only">Select target completion date</span>
                 </div>
               </div>
               
@@ -565,8 +562,10 @@ const CollaborationHub = () => {
                   value={newRequest.skills}
                   onChange={handleRequestChange}
                   placeholder="e.g., Event Management, Marketing, Design" 
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
+                  aria-describedby="skills-hint"
                 />
+                <span id="skills-hint" className="sr-only">Comma separated list of required skills</span>
               </div>
               
               <button type="submit" className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all">
