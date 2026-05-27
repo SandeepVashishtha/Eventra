@@ -97,14 +97,25 @@ const Hero = () => {
   }, [controls]);
 
   useEffect(() => {
-    const onResize = () => setIsMobileView(window.innerWidth <= 420);
+    let timeoutId;
+
+    const onResize = () => {
+      if (typeof window === "undefined") return;
+      clearTimeout(timeoutId);
+
+      timeoutId = setTimeout(() => {
+        setIsMobileView(window.innerWidth <= 420);
+      }, 150);
+    };
+
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener("resize", onResize);
+    };
   }, []);
 
-  useEffect(() => {
-    setStatsReady(true);
-  }, []);
   // FIXED
 useEffect(() => {
   const timer = setTimeout(() => setStatsReady(true), 100);

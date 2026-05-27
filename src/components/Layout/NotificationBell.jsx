@@ -24,7 +24,7 @@ export default function NotificationBell() {
       </button>
 
       {/* Dropdown Menu */}
-      
+
       <div
   className={`
     absolute
@@ -70,7 +70,7 @@ export default function NotificationBell() {
             )}
           </div>
         </div>
-      
+
     </div>
   );
 }

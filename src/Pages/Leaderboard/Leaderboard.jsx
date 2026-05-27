@@ -26,6 +26,7 @@ import { logger } from "../../utils/logger";
 import { storageManager } from "../../utils/storage/storageManager";
 import { STORAGE_KEYS } from "../../utils/storage/storageKeys";
 import { validators } from "../../utils/storage/storageValidators";
+import { ENV } from "../../config/env";
 
 // ─── Category filter definitions ───────────────────────────────────────────────
 const CATEGORY_FILTERS = [
@@ -84,8 +85,6 @@ function RankMovementIndicator({ username }) {
 }
 
 // Repository constant — update if the leaderboard should point to another repo
-import { ENV } from "../../config/env";
-
 const GITHUB_REPO = ENV.GITHUB_REPO;
 // Token is managed securely by the backend proxy
 
@@ -238,11 +237,7 @@ export default function LeaderBoard() {
       let hasMore = true;
 
       const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(`/repos/${GITHUB_REPO}/contributors`)}`;
-      const { data: contributorsData } =
-        await fetchWithTimeout(proxyUrl);
-
-      if (!contributorsRes.ok) throw new Error("Failed to fetch contributors");
-      const contributorsData = await contributorsRes.json();
+      const { data: contributorsData } = await fetchWithTimeout(proxyUrl);
       const contributorsInfo = {};
 
       contributorsData.forEach((contributor) => {
