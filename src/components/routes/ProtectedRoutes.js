@@ -85,7 +85,6 @@ export const getProtectedRoutes = () => [
       </ProtectedRoute>
     }
   />,
-  /* Keep legacy /profile route redirecting to view page */
   <Route
     key="/profile"
     path="/profile"
@@ -109,19 +108,18 @@ export const getProtectedRoutes = () => [
     path="/feedback/survey-builder"
     element={
       <ProtectedRoute requiredPermissions={[
-  PERMISSIONS.HOST_HACKATHON,
-  PERMISSIONS.CREATE_EVENT
-]}>
+        PERMISSIONS.HOST_HACKATHON,
+        PERMISSIONS.CREATE_EVENT
+      ]}>
         <SurveyEngine />
       </ProtectedRoute>
     }
-  />,
+  />
 ];
 
 export const getAuthRoutes = () => [
   <Route key="/login" path="/login" element={<AuthPage />} />,
   <Route key="/signup" path="/signup" element={<AuthPage />} />,
   <Route key="/unauthorized" path="/unauthorized" element={<Unauthorized />} />,
-  <Route key="/password-reset" path="/password-reset" element={<PasswordReset />} />,
-  // <Route key="/*" path="/*" element={<NotFound />} />,
+  <Route key="/password-reset" path="/password-reset" element={<PasswordReset />} />
 ];

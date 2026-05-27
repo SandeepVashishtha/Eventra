@@ -30,12 +30,82 @@ const CollaborationHub = () => {
     setNewRequest(prev => ({ ...prev, [name]: value }));
   };
 
+  const [collaborationOpportunities, setCollaborationOpportunities] = useState(() => {
+    const saved = localStorage.getItem('eventra_collaboration_opportunities');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed to parse collaboration opportunities from localStorage", e);
+      }
+    }
+    return [
+      {
+        id: 1,
+        title: "Tech Summit 2025 Partnership",
+        organizer: "TechCorp Inc.",
+        type: "Sponsorship",
+        description: "Looking for event technology partners for our annual tech summit. Great exposure opportunity.",
+        skills: ["Event Management", "Technology", "Marketing"],
+        budget: "$10,000 - $25,000",
+        deadline: "2025-08-15",
+        applicants: 12,
+        status: "open"
+      },
+      {
+        id: 2,
+        title: "Design Workshop Collaboration",
+        organizer: "Creative Studios",
+        type: "Content Partnership",
+        description: "Seeking design experts to co-host a series of UX/UI workshops for designers.",
+        skills: ["UX Design", "Teaching", "Workshop Facilitation"],
+        budget: "Revenue Share",
+        deadline: "2025-08-20",
+        applicants: 8,
+        status: "open"
+      },
+      {
+        id: 3,
+        title: "Startup Pitch Event",
+        organizer: "Innovation Hub",
+        type: "Venue Partnership",
+        description: "Partner with us to provide venue and networking space for monthly startup pitch events.",
+        skills: ["Venue Management", "Networking", "Startup Ecosystem"],
+        budget: "$5,000 - $8,000",
+        deadline: "2025-08-10",
+        applicants: 15,
+        status: "urgent"
+      }
+    ];
+  });
+
   const handleRequestSubmit = (e) => {
     e.preventDefault();
     if (!newRequest.title.trim() || !newRequest.type || !newRequest.description.trim()) {
       toast.error('Please fill in all required fields (Title, Type, and Description)');
       return;
     }
+
+    const skillsArray = newRequest.skills
+      ? newRequest.skills.split(',').map(s => s.trim()).filter(s => s.length > 0)
+      : [];
+
+    const newOpp = {
+      id: Date.now(),
+      title: newRequest.title.trim(),
+      organizer: "You (Organizer)",
+      type: newRequest.type,
+      description: newRequest.description.trim(),
+      skills: skillsArray,
+      budget: newRequest.budget || "Not Specified",
+      deadline: newRequest.deadline || new Date().toISOString().split('T')[0],
+      applicants: 0,
+      status: "open"
+    };
+
+    const updatedOpportunities = [newOpp, ...collaborationOpportunities];
+    setCollaborationOpportunities(updatedOpportunities);
+    localStorage.setItem('eventra_collaboration_opportunities', JSON.stringify(updatedOpportunities));
     
     toast.success('Collaboration request created successfully!');
     setNewRequest({
@@ -48,57 +118,6 @@ const CollaborationHub = () => {
     });
     setActiveSection('opportunities');
   };
-
-  const handleApplySubmit = (e) => {
-    e.preventDefault();
-    if (!applicationText.trim()) {
-      toast.error('Please explain why you want to collaborate.');
-      return;
-    }
-    toast.success('Collaboration proposal submitted successfully!');
-    setApplicationText('');
-    setProposalFile(null);
-    setSelectedOpportunity(null);
-  };
-
-  const collaborationOpportunities = [
-    {
-      id: 1,
-      title: "Tech Summit 2025 Partnership",
-      organizer: "TechCorp Inc.",
-      type: "Sponsorship",
-      description: "Looking for event technology partners for our annual tech summit. Great exposure opportunity.",
-      skills: ["Event Management", "Technology", "Marketing"],
-      budget: "$10,000 - $25,000",
-      deadline: "2025-08-15",
-      applicants: 12,
-      status: "open"
-    },
-    {
-      id: 2,
-      title: "Design Workshop Collaboration",
-      organizer: "Creative Studios",
-      type: "Content Partnership",
-      description: "Seeking design experts to co-host a series of UX/UI workshops for designers.",
-      skills: ["UX Design", "Teaching", "Workshop Facilitation"],
-      budget: "Revenue Share",
-      deadline: "2025-08-20",
-      applicants: 8,
-      status: "open"
-    },
-    {
-      id: 3,
-      title: "Startup Pitch Event",
-      organizer: "Innovation Hub",
-      type: "Venue Partnership",
-      description: "Partner with us to provide venue and networking space for monthly startup pitch events.",
-      skills: ["Venue Management", "Networking", "Startup Ecosystem"],
-      budget: "$5,000 - $8,000",
-      deadline: "2025-08-10",
-      applicants: 15,
-      status: "urgent"
-    }
-  ];
 
   const myCollaborations = [
     {
@@ -252,7 +271,7 @@ const CollaborationHub = () => {
             </div>
             
             <div className="opportunities-grid">
-              {collaborationOpportunities.map((opportunity, index) => (
+              {filteredOpportunities.map((opportunity, index) => (
                 <motion.div
                   key={opportunity.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -414,7 +433,7 @@ const CollaborationHub = () => {
             </div>
             
             <div className="networking-requests">
-              {networkingRequests.map((request, index) => (
+              {filteredNetworking.map((request, index) => (
                 <motion.div
                   key={request.id}
                   initial={{ opacity: 0, y: 20 }}

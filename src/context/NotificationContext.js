@@ -144,12 +144,15 @@ export const NotificationProvider = ({ children }) => {
     }
 
     // 2. Handle Login: Trigger instant data load (parallelized)
-    Promise.allSettled([
-      fetchNotifications(),
-      fetchAchievements()
-    ]).catch(error => {
-      console.error('Error during parallel initialization:', error);
-    });
+    const initData = async () => {
+      setLoading(true);
+      await Promise.allSettled([
+        fetchNotifications({ isBackground: true }),
+        fetchAchievements()
+      ]);
+      setLoading(false);
+    };
+    initData();
 
     // 3. Set up background polling
     const intervalId = setInterval(() => {
