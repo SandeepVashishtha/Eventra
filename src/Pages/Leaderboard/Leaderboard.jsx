@@ -88,24 +88,7 @@ function RankMovementIndicator({ username }) {
 const GITHUB_REPO = ENV.GITHUB_REPO;
 // Token is managed securely by the backend proxy
 
-// Points mapping for PR labels (keeps scoring logic centralized)
-const POINTS = {
-  gssoclevel1: 3,
-  gssoclevel2: 7,
-  gssoclevel3: 10,
-};
-const DEFAULT_MERGED_PR_POINTS = 1;
 
-const normalizeLabel = (label = "") => label.toLowerCase().replace(/[^a-z0-9]/g, "");
-
-const calculatePrPoints = (labels) => {
-  const levelPoints = labels.reduce((total, label) => {
-    const normalized = normalizeLabel(label);
-    return total + (POINTS[normalized] || 0);
-  }, 0);
-
-  return levelPoints || DEFAULT_MERGED_PR_POINTS;
-};
 
 // Custom lightweight high-performance count-up component
 const AnimatedCounter = ({ value }) => {
@@ -232,89 +215,19 @@ export default function LeaderBoard() {
 
   const fetchContributors = async () => {
     try {
-      let contributorsMap = {};
-      let page = 1;
-      let hasMore = true;
+      // Fetch pre-computed leaderboard data from the new serverless backend
+      const { data } = await fetchWithTimeout("/api/leaderboard", {}, 15000);
 
-      const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(`/repos/${GITHUB_REPO}/contributors`)}`;
-      const { data: contributorsData } = await fetchWithTimeout(proxyUrl);
-      const contributorsInfo = {};
-
-      contributorsData.forEach((contributor) => {
-        contributorsInfo[contributor.login] = {
-          name: contributor.name || contributor.login,
-          avatar: contributor.avatar_url,
-          profile: contributor.html_url,
-        };
-      });
-
-      while (hasMore) {
-        const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(`/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`)}`;
-        const res = await fetch(proxyUrl);
-
-        if (!res.ok) {
-          logger.warn(`GitHub API request failed with status: ${res.status}`);
-          hasMore = false;
-          break;
-        }
-
-        const prs = await res.json();
-        if (!Array.isArray(prs) || prs.length === 0) {
-          hasMore = false;
-          break;
-        }
-
-        prs.forEach((pr) => {
-          if (!pr.merged_at) return;
-
-          const labels = pr.labels.map((l) => l.name.toLowerCase());
-          const hasGsocLabel = labels.some(
-            (label) => label.includes("gssoc") || label.includes("gsoc")
-          );
-          if (!hasGsocLabel) return;
-
-          const author = pr.user.login;
-          const points = calculatePrPoints(labels);
-
-          if (!contributorsMap[author]) {
-            const contributorInfo = contributorsInfo[author] || {
-              name: author,
-              avatar: pr.user.avatar_url,
-              profile: pr.user.html_url,
-            };
-            contributorsMap[author] = {
-              username: author,
-              name: contributorInfo.name,
-              avatar: contributorInfo.avatar,
-              profile: contributorInfo.profile,
-              points: 0,
-              prs: 0,
-            };
-          }
-
-          contributorsMap[author].points += points;
-          contributorsMap[author].prs += 1;
-        });
-
-        page++;
+      if (!Array.isArray(data)) {
+        throw new Error("Invalid payload format received from leaderboard API");
       }
 
-      // Add achievement-based bonus points to gamify contributors
-      Object.keys(contributorsMap).forEach((user) => {
-        const count = contributorsMap[user].prs;
-        if (count >= 10) {
-          contributorsMap[user].points += 10;
-        } else if (count >= 5) {
-          contributorsMap[user].points += 5;
-        }
-      });
-
-      const sortedContributors = Object.values(contributorsMap).sort((a, b) => b.points - a.points);
-
-      setContributors(sortedContributors);
+      setContributors(data);
       setLastUpdated(new Date().toLocaleString());
+      
+      // Update local storage cache
       storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
-        data: sortedContributors,
+        data: data,
         timestamp: Date.now(),
       });
     } catch (err) {
