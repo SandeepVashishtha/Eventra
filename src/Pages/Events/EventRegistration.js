@@ -98,6 +98,7 @@ const EventRegistration = () => {
   const { user, token, isAuthenticated } = useAuth();
   const { addRegistration, myEvents } = useMyEvents();
   const { clearSession } = useSessionRecovery();
+  const registrationPath = `/events/${eventId}/register`;
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -222,6 +223,14 @@ const EventRegistration = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!isAuthenticated() || !user?.id) {
+      toast.error("Please log in to register for events.");
+      navigate("/login", {
+        state: { from: registrationPath },
+      });
+      return;
+    }
+
     if (!validateAll()) {
       toast.error("Please fill in all required fields correctly");
       return;
@@ -255,6 +264,14 @@ const EventRegistration = () => {
 
   // Proceed with registration after conflict check or user confirmation
   const proceedWithRegistration = async () => {
+    if (!isAuthenticated() || !user?.id) {
+      toast.error("Please log in to register for events.");
+      navigate("/login", {
+        state: { from: registrationPath },
+      });
+      return;
+    }
+
     // Close modal if open
     setShowConflictModal(false);
 
@@ -274,7 +291,7 @@ const EventRegistration = () => {
         {
           ...formData,
           eventId: parseInt(eventId),
-          userId: user?.id || null,
+          userId: user.id,
         },
         // Registration is authenticated server-side; send the active token
         // explicitly instead of relying only on global storage lookup.
@@ -298,7 +315,7 @@ const EventRegistration = () => {
         // storing PII in localStorage.
         const payload = {
           eventId: parseInt(eventId),
-          userId: user?.id || null,
+          userId: user.id,
         };
 
         const success = await pushToQueue({ eventId: parseInt(eventId), payload });
