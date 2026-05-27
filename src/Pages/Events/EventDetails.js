@@ -122,6 +122,14 @@ const EventDetails = () => {
   {/* Copy Link Button */}
   <CopyLinkButton />
 
+  <button
+    onClick={() => window.print()}
+    className="print-hide inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+    aria-label="Print or save as PDF"
+  >
+    🖨️ Print / Save as PDF
+  </button>
+
   <Link
     to="/events"
     className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
