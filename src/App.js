@@ -1,6 +1,6 @@
 import EventRecommendation from "./Pages/EventRecommendation/EventRecommendation";
 import React, { useState, useEffect, lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom"; // Added this back for your routing!
+import { Routes, Route, useLocation } from "react-router-dom"; // Added this back for your routing!
 import "./App.css";
 import "./styles/reduced-motion.css";
 import { toast } from "react-toastify";
@@ -44,6 +44,8 @@ const OfflineSyncManager = () => {
 };
 
 function App() {
+  const location = useLocation();
+  const isDashboardOrAdmin = location.pathname === "/dashboard" || location.pathname === "/admin";
   const [cursorEnabled, setCursorEnabled] = useState(localStorage.getItem("cursor") !== "off");
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
 
@@ -169,7 +171,7 @@ function App() {
               <ScrollToTop />
               <Suspense fallback={null}>
                 <Chatbot />
-                <Footer />
+                {!isDashboardOrAdmin && <Footer />}
               </Suspense>
               <BackToTopButton />
               <FeedbackButton />
