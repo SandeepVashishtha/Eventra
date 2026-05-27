@@ -32,10 +32,10 @@ export function getRelativeTime(dateInput) {
 }
 
 export function getSmartDateLabel(dateInput, timeInput = "") {
-  if (!dateInput) return "TBD";
+  if (!dateInput) return "—";
 
   const parsed = new Date(dateInput);
-  if (isNaN(parsed.getTime())) return "TBD";
+  if (isNaN(parsed.getTime())) return "—";
 
   const relative = getRelativeTime(
     timeInput ? `${dateInput} ${timeInput}` : dateInput
