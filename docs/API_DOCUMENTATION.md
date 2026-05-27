@@ -12,6 +12,8 @@ The APIs support:
 - Structured error handling
 - Swagger/OpenAPI integration
 
+**For detailed information on authentication flows, role-based access control, and how permissions work, see the [Architecture & Roles Guide](ARCHITECTURE_AND_ROLES.md#-route-protection--authentication-flow).**
+
 ---
 
 # Swagger/OpenAPI Documentation

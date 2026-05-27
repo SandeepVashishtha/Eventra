@@ -82,6 +82,8 @@ All API routes are prefixed with `/api`.
 
 ## 4. Roles & Permissions Model
 
+> **📖 For comprehensive details on RBAC, role hierarchy, permission scopes, and access control patterns, see the [Architecture & Roles Guide](ARCHITECTURE_AND_ROLES.md#-role-based-access-control-rbac).**
+
 ### Roles (from `src/config/roles.js`)
 | Role | Description |
 |------|-------------|
