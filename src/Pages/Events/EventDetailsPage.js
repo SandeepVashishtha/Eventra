@@ -2,6 +2,7 @@ import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import DOMPurify from "dompurify";
 import CountdownTimer from "../../components/common/CountdownTimer";
 import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft } from "lucide-react";
 
@@ -191,9 +192,10 @@ const EventDetailsPage = () => {
                 About This Event
               </h2>
 
-              <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed">
-                {event.description}
-              </p>
+              <p 
+                className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description) }}
+              />
             </section>
           </section>
           {/* Sidebar */}
