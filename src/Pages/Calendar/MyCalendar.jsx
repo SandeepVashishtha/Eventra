@@ -635,10 +635,10 @@ const MyCalendar = () => {
               </div>
             </section>
           </motion.div>
-        )}    )}
-    </AnimatePresence>
-  </>
-)}
+        )}
+      </AnimatePresence>
+    </>
+  )}
 
       </div>
     </main>
