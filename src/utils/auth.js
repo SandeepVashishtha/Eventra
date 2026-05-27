@@ -22,9 +22,10 @@
  * Server must also validate authorization for every API request.
  */
 
+import { safeJsonParse } from "./safeJsonParse.js";
+
 /** Grace period (in seconds) to account for clock skew between browser and server. */
 const CLOCK_SKEW_BUFFER = 30;
-import { safeJsonParse } from "./safeJsonParse";
 
 /**
  * Decode a JWT payload without verification (client-side only).
@@ -35,30 +36,24 @@ import { safeJsonParse } from "./safeJsonParse";
  */
 export function decodeJwtPayload(token) {
   try {
-    if (!token || typeof token !== 'string') return null;
+    if (!token || typeof token !== "string") return null;
 
-    const parts = token.split('.');
+    const parts = token.split(".");
     if (parts.length !== 3) return null;
 
     // Convert base64url → standard base64, then add padding.
-    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    const padded = base64.padEnd(
-      base64.length + ((4 - (base64.length % 4)) % 4),
-      '='
-    );
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
 
     // Use decodeURIComponent + escape to safely handle non-ASCII characters.
     const jsonPayload = decodeURIComponent(
       atob(padded)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
     );
 
-    return safeJsonParse(
-      jsonPayload,
-      {},
-    );
+    return safeJsonParse(jsonPayload, {});
   } catch {
     // Malformed or corrupted token — treat as invalid.
     return null;
@@ -78,7 +73,7 @@ export function decodeJwtPayload(token) {
  */
 export function isTokenExpired(token) {
   const payload = decodeJwtPayload(token);
-  if (!payload || typeof payload.exp !== 'number') {
+  if (!payload || typeof payload.exp !== "number") {
     // Tokens without an `exp` claim are treated as expired to be safe.
     return true;
   }
@@ -97,7 +92,7 @@ export function isTokenExpired(token) {
  *                    its `exp` claim is in the future (minus grace period).
  */
 export function isTokenValid(token) {
-  if (!token || typeof token !== 'string') return false;
+  if (!token || typeof token !== "string") return false;
   return !isTokenExpired(token);
 }
 
@@ -110,6 +105,6 @@ export function isTokenValid(token) {
  */
 export function getTokenTTL(token) {
   const payload = decodeJwtPayload(token);
-  if (!payload || typeof payload.exp !== 'number') return -1;
+  if (!payload || typeof payload.exp !== "number") return -1;
   return payload.exp - Math.floor(Date.now() / 1000);
 }

@@ -5,6 +5,7 @@ import { API_ENDPOINTS } from '../config/api';
 import { logger } from "../utils/logger";
 import { getQueueIndexedDB, setQueue, clearQueue, filterQueueByOwnership } from '../utils/offlineQueue';
 import { isTokenValid } from '../utils/tokenUtils';
+import { fetchWithTimeout } from "../utils/fetchWithTimeout";
 
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 1_000;
@@ -105,15 +106,19 @@ const useOfflineSync = () => {
       if (authToken) headers.Authorization = `Bearer ${authToken}`;
       if (forceOverride) headers['X-Override-Conflict'] = 'true';
 
-      const response = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payload),
-      });
+      const { response, data } = await fetchWithTimeout(
+        url,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload),
+        },
+        10000
+      );
 
       // Handle 409 Conflict specifically
       if (response.status === 409) {
-        const serverState = await response.json().catch(() => ({}));
+        const serverState = data || {};
         return { status: "conflict", serverState };
       }
 

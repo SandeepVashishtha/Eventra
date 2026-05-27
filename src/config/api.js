@@ -1,4 +1,5 @@
 import axios from "axios";
+import { ENV } from "./env";
 
 // ---------------------------------------------------------------------------
 // Base API URL
@@ -22,7 +23,7 @@ const normalizeApiBaseUrl = (value = "") => {
 const isDev = process.env.NODE_ENV === "development";
 
 const resolveEnvApiBaseUrl = () => {
-  const envUrl = process.env.REACT_APP_API_URL;
+  const envUrl = ENV.API_URL;
   if (envUrl) {
     return normalizeApiBaseUrl(envUrl);
   }
