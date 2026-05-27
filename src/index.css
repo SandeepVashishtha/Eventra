@@ -659,3 +659,22 @@ select,
 .animate-spin {
   animation: spin 0.7s linear infinite;
 }
+
+/* WCAG AA Accessibility Contrast Overrides (Light Mode) */
+/* Overriding standard Tailwind light mode gray utilities that fail the 4.5:1 contrast check on white backgrounds */
+html:not(.dark) .text-gray-400 {
+  color: #5a6578 !important; /* Gray 500/600 hybrid, passes WCAG AA 4.5:1 */
+}
+
+html:not(.dark) .text-gray-500 {
+  color: #4b5563 !important; /* Gray 600, passes WCAG AA 4.5:1 */
+}
+
+html:not(.dark) .text-gray-600 {
+  color: #374151 !important; /* Gray 700, passes WCAG AAA 7:1 */
+}
+
+html:not(.dark) .placeholder-gray-400::placeholder,
+html:not(.dark) ::placeholder {
+  color: #5a6578 !important; /* Ensure accessible placeholder contrast */
+}
