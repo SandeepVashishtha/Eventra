@@ -96,19 +96,14 @@ export const NotificationProvider = ({ children }) => {
   const markAllAsRead = useCallback(async () => {
     if (!token) return;
 
-    // Capture current unread list synchronously before the optimistic update
-    let unread = [];
-
-    setNotifications((prev) => {
-      unread = prev.filter((n) => !n.isRead);
-      if (unread.length === 0) return prev;
-
-      // Return optimistically updated array
-      return prev.map((n) => ({ ...n, isRead: true }));
-    });
+    // Capture current unread list synchronously using closure state
+    const unread = notifications.filter((n) => !n.isRead);
 
     // Nothing to do if every notification was already read
     if (unread.length === 0) return;
+
+    // Optimistic UI update
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
 
     const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.READ_ALL;
     if (!endpoint || typeof endpoint !== "string" || endpoint.includes("undefined")) {
@@ -125,7 +120,7 @@ export const NotificationProvider = ({ children }) => {
       // Re-fetch to restore accurate server state on unexpected failure
       fetchNotifications();
     }
-  }, [token, fetchNotifications]);
+  }, [token, fetchNotifications, notifications]);
 
   
   // ── Initial fetch + polling ───────────────────────────────────────────────
@@ -143,9 +138,16 @@ export const NotificationProvider = ({ children }) => {
       return; // Exit early, no interval will be created
     }
 
-    // 2. Handle Login: Trigger instant data load
-    fetchNotifications();
-    fetchAchievements();
+    // 2. Handle Login: Trigger instant data load (parallelized)
+    const initData = async () => {
+      setLoading(true);
+      await Promise.allSettled([
+        fetchNotifications({ isBackground: true }),
+        fetchAchievements()
+      ]);
+      setLoading(false);
+    };
+    initData();
 
     // 3. Set up background polling
     const intervalId = setInterval(() => {

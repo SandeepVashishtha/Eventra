@@ -20,6 +20,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useAuth } from "./AuthContext";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 const MyEventsContext = createContext(null);
 
@@ -31,7 +32,7 @@ const loadFromStorage = (userId) => {
   if (!userId) return [];
   try {
     const raw = localStorage.getItem(storageKey(userId));
-    return raw ? JSON.parse(raw) : [];
+    return safeJsonParse(raw, []);
   } catch {
     return [];
   }

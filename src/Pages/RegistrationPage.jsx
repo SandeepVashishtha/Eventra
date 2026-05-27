@@ -5,11 +5,13 @@ import { FiUser, FiMail, FiPhone, FiBriefcase, FiAward, FiMessageSquare, FiCheck
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { toast } from "react-toastify";
 import { API_ENDPOINTS, apiUtils } from "../config/api";
+import { useAuth } from "../context/AuthContext";
 
 import {
   isAlreadyRegistered,
   saveRegistration,
 } from "../utils/registerUtils";
+import FieldError from "../components/common/FieldError";
 
 const getRegistrationErrorMessage = (error) => {
   const message =
@@ -32,6 +34,7 @@ const RegistrationPage = () => {
   useDocumentTitle("Eventra | Registration");
   const navigate = useNavigate();
   const { id: eventId = "general" } = useParams();
+  const { token } = useAuth();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -108,7 +111,10 @@ const RegistrationPage = () => {
 
       await apiUtils.post(
         API_ENDPOINTS.EVENTS.REGISTER(eventId),
-        formData
+        formData,
+        // Pass the in-memory token explicitly so this protected write does not
+        // depend on a stale or missing sessionStorage read.
+        token
       );
 
       saveRegistration(eventId, formData.email);
@@ -168,6 +174,13 @@ const RegistrationPage = () => {
               className="py-3 px-6 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-semibold rounded-2xl transition-colors duration-300"
             >
               Back to Home
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="print-hide flex items-center justify-center gap-2 py-3 px-6 border border-gray-300 dark:border-slate-700 rounded-2xl text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors duration-300"
+              aria-label="Print or save as PDF"
+            >
+              🖨️ Print / Save as PDF
             </button>
           </div>
         </motion.div>
@@ -234,20 +247,7 @@ const RegistrationPage = () => {
                   aria-describedby={errors.fullName ? "fullName-error" : undefined}
                 />
               </div>
-              <AnimatePresence>
-                {errors.fullName && (
-                  <motion.div
-                    id="fullName-error"
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    className="flex items-center gap-1.5 text-rose-500 text-xs mt-1.5 pl-1"
-                  >
-                    <FiAlertCircle className="flex-shrink-0" />
-                    <span>{errors.fullName}</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <FieldError id="fullName-error" message={errors.fullName} />
             </div>
 
             {/* Email */}
@@ -271,20 +271,7 @@ const RegistrationPage = () => {
                 aria-invalid={!!errors.email}
                 aria-describedby={errors.email ? "email-error" : undefined}
               />
-              <AnimatePresence>
-                {errors.email && (
-                  <motion.div
-                    id="email-error"
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    className="flex items-center gap-1.5 text-rose-500 text-xs mt-1.5 pl-1"
-                  >
-                    <FiAlertCircle className="flex-shrink-0" />
-                    <span>{errors.email}</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <FieldError id="email-error" message={errors.email} />
             </div>
 
             {/* Phone */}
@@ -308,20 +295,7 @@ const RegistrationPage = () => {
                 aria-invalid={!!errors.phone}
                 aria-describedby={errors.phone ? "phone-error" : undefined}
               />
-              <AnimatePresence>
-                {errors.phone && (
-                  <motion.div
-                    id="phone-error"
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    className="flex items-center gap-1.5 text-rose-500 text-xs mt-1.5 pl-1"
-                  >
-                    <FiAlertCircle className="flex-shrink-0" />
-                    <span>{errors.phone}</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <FieldError id="phone-error" message={errors.phone} />
             </div>
 
             {/* Organization */}

@@ -146,6 +146,19 @@ const useEventListing = () => {
     }
   }, [buildQueryParams]);
 
+  // RACE CONDITION FIX: Call fetchEvents immediately on mount, without scheduling
+  // mock data concurrently. This prevents race conditions where mock data could
+  // overwrite real API responses based on timing.
+  //
+  // Previous implementation:
+  // - useEffect 1: Scheduled mock data to load after 800ms
+  // - useEffect 2: Called fetchEvents() for API request
+  // - Result: If API took >800ms, mock data would overwrite real results
+  //
+  // New implementation:
+  // - Single fetchEvents() call that uses mock data only as a failure fallback
+  // - No concurrent timers that could race with network requests
+  // - Mock data is development-only fallback logic, not a production path
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);

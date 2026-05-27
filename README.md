@@ -14,11 +14,11 @@ Eventra is a comprehensive, open-source platform designed to empower organizers 
 - [Overview](#overview)
 - [Live Demo](#live-demo)
 - [API Reference](#api-reference)
+- [Architecture & Roles](#-architecture--roles)
 - [Project Insights](#project-insights)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
-
 - [Environment Variables](#environment-variables)
 - [Project Structure](#project-structure)
 - [Deployment](#deployment)
@@ -50,6 +50,21 @@ This repository contains the React frontend application for Eventra. The backend
 The frontend communicates with the Spring Boot backend through `/api` routes. For local full-stack testing, run the backend service separately and configure the frontend API URL accordingly.
 
 Backend repository: https://github.com/SandeepVashishtha/Eventra-Backend
+
+## 🏗️ Architecture & Roles
+
+**New to Eventra?** Understand the complete system architecture, user roles, event lifecycle, and how everything works together:
+
+📖 **[Architecture & Roles Guide](docs/ARCHITECTURE_AND_ROLES.md)** – Comprehensive guide covering:
+- 👥 Role-Based Access Control (RBAC) with 5 roles
+- 🎟️ Event lifecycle stages and state transitions
+- 🏆 Hackathon workflow integration
+- 🔐 Authentication & route protection
+- 💬 Permission scopes and access control
+- 🌐 Real-time & offline features
+- 🧠 Contributor code map and implementation guide
+
+Perfect for new contributors and maintainers onboarding! 🚀
 
 ## Project Insights
 
