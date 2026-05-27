@@ -101,29 +101,12 @@ export const setOnUnauthorizedHandler = (handler) => {
   onUnauthorized = handler;
 };
 
-const normalizeRequestConfig = (configOrToken = {}, maybeToken) => {
+const normalizeRequestConfig = (configOrToken = {}) => {
   const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
   const skipAuth = config.skipAuth === true;
   if ("skipAuth" in config) {
     delete config.skipAuth;
   }
-
-  const token =
-    skipAuth
-      ? ""
-      : typeof configOrToken === "string"
-      ? configOrToken
-      : typeof maybeToken === "string"
-        ? maybeToken
-        : sessionStorage.getItem("token") || "";
-
-  if (token) {
-    config.headers = {
-      ...(config.headers || {}),
-      Authorization: `Bearer ${token}`,
-    };
-  }
-
   return config;
 };
 

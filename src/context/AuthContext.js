@@ -31,6 +31,7 @@ export const AuthProvider = ({ children }) => {
   const clearSession = useCallback(() => {
     setUser(null);
     setToken(null);
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     sessionStorage.removeItem("token");
     localStorage.removeItem("user");
   }, []);
@@ -40,9 +41,23 @@ export const AuthProvider = ({ children }) => {
    * Guards against duplicate toasts with a ref flag.
    */
   const clearExpiredSession = useCallback(() => {
-    if (expiryToastShownRef.current) return;
-    expiryToastShownRef.current = true;
+    // eslint-disable-next-line no-console
+    console.warn("[AuthContext] Session expiration detected. Clearing session state immediately to prevent infinite layout re-render loops.");
+    
+    // 1. Immediately purge session state to prevent infinite render loops.
+    // By resetting token and user state to null synchronously, any concurrent
+    // render phases (e.g., layout components checking isAuthenticated) will
+    // abort early, avoiding resetting needsExpiryCleanupRef.
     clearSession();
+
+    // 2. Perform UI notification side effects once per expired session lifecycle.
+    if (expiryToastShownRef.current) {
+      // eslint-disable-next-line no-console
+      console.log("[AuthContext] Expiry warning already shown. Skipping duplicate toast notification.");
+      return;
+    }
+    expiryToastShownRef.current = true;
+
     toast.info("Session expired. Please log in again.", {
       toastId: "session-expired",
       autoClose: 5000,
@@ -50,47 +65,30 @@ export const AuthProvider = ({ children }) => {
   }, [clearSession]);
 
   useEffect(() => {
-    // Check for existing authentication on app start
-    const storedToken = sessionStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-
-    if (storedToken && storedUser) {
-      // --- SECURITY: Validate token before restoring session ---
-      if (isTokenValid(storedToken)) {
-        setToken(storedToken);
-        try {
-          const parsedUser = JSON.parse(storedUser);
-
-          // SECURITY: Extract the authoritative roles from the JWT token, not localStorage.
-          // This prevents privilege escalation attacks where a user modifies localStorage
-          // to add admin/organizer roles. The JWT is signed by the backend and cannot be forged.
-          const tokenRoleData = extractRolesFromToken(storedToken);
-
-          if (tokenRoleData) {
-            // Use roles and scopes from the JWT token (server-signed, authoritative)
-            parsedUser.roles = tokenRoleData.roles;
-            parsedUser.scopes = tokenRoleData.scopes;
-            // Ensure backward compatibility by setting role from roles array
-            parsedUser.role = tokenRoleData.roles[0] || "";
-          } else {
-            // Token is malformed — treat session as invalid
-            clearSession();
-            setLoading(false);
-            return;
-          }
-
-          setUser(parsedUser);
-        } catch {
-          // Corrupted user data in localStorage -- clear everything.
+    const validateSession = async () => {
+      try {
+        const res = await apiUtils.get(API_ENDPOINTS.USERS.PROFILE);
+        if (res.ok && res.data) {
+          const { sessionToken, sessionUser } = extractSession(res, res.data, null);
+          setToken(sessionToken || 'cookie-managed');
+          setUser(sessionUser);
+        } else {
           clearSession();
         }
-      } else {
-        // Token is expired or invalid -- clean up stale session data.
+      } catch (error) {
         clearSession();
       }
-    }
+      setLoading(false);
+    };
 
-    setLoading(false);
+    // If we have a user in localStorage, it's worth validating the session.
+    // In a pure HttpOnly cookie setup, the cookie exists but is unreadable by JS.
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      validateSession();
+    } else {
+      setLoading(false);
+    }
   }, [clearSession]);
 
   // --- Global 401 handler ---
@@ -132,6 +130,12 @@ export const AuthProvider = ({ children }) => {
     // Reset the toast guard when a new token is set (fresh login).
     expiryToastShownRef.current = false;
 
+    // If we're using secure cookies, the token string is not available to the frontend.
+    // We rely entirely on the global 401 interceptor for expiry.
+    if (token === 'cookie-managed') {
+      return;
+    }
+
     const payload = decodeTokenPayload(token);
     const expSeconds = payload?.exp;
 
@@ -168,35 +172,14 @@ export const AuthProvider = ({ children }) => {
     };
   }, [token, clearExpiredSession]);
 
-  /**
-   * persistSession
-   *
-   * Saves the authenticated session after a successful login.
-   *
-   * Token storage responsibility
-   * ────────────────────────────
-   * setToken() (from secureStorage.js) is the single source of truth for
-   * writing the JWT to sessionStorage. Calling sessionStorage.setItem("token")
-   * directly here would:
-   *   1. Duplicate the write — both setToken() and the inline call would
-   *      store the same value, bypassing the secureStorage abstraction layer.
-   *   2. Create a silent inconsistency if secureStorage.js is ever changed
-   *      to use a different storage key or storage type (e.g. cookies) —
-   *      the direct call here would keep writing to the old location.
-   *
-   * The user profile (non-sensitive) remains in localStorage so it survives
-   * tab close and is available for UI personalisation on next visit.
-   *
-   * @param {string} sessionToken - Eventra-issued JWT from the backend
-   * @param {object} sessionUser  - Normalised user profile object
-   */
   const persistSession = (sessionToken, sessionUser) => {
-    // Write the JWT via secureStorage — sessionStorage, tab-scoped
     setToken(sessionToken);
-    // Update React state
     setUser(sessionUser);
+    
+    // Set cookie with HttpOnly, Secure, SameSite flags
+    document.cookie = `token=${sessionToken}; path=/; Secure; HttpOnly; SameSite=Strict`;
+    
     try {
-      // Store the non-sensitive user profile for UI personalisation across sessions
       localStorage.setItem("user", JSON.stringify(sessionUser));
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -391,7 +374,7 @@ export const AuthProvider = ({ children }) => {
 
   const isAuthenticated = useCallback(() => {
     if (!user || !token) return false;
-    if (!isTokenValid(token)) {
+    if (token !== 'cookie-managed' && !isTokenValid(token)) {
       // Token expired mid-session — flag for deferred cleanup.
       // Cannot call clearSession() here because this runs during render.
       needsExpiryCleanupRef.current = true;

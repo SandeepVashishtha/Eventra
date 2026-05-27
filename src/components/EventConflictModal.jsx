@@ -101,6 +101,7 @@ const EventConflictModal = ({
         {/* Close Button */}
         <button
           onClick={onCancel}
+          aria-label="Close conflict dialog"
           className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
         >
           <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
@@ -205,6 +206,7 @@ const EventConflictModal = ({
                   <button
                     key={event.id}
                     onClick={() => onSelectAlternative?.(event)}
+                    aria-label={`Select alternative event: ${event.title}`}
                     className="w-full text-left bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors group"
                   >
                     <div className="flex items-center justify-between">

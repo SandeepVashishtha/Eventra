@@ -213,7 +213,8 @@ const Contributors = () => {
   // UPDATED: Loading skeleton grid
   if (loading) {
     return (
-      <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+      <FeatureErrorBoundary>
+        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12 mt-16">
             {[...Array(8)].map((_, i) => (
@@ -222,12 +223,14 @@ const Contributors = () => {
           </div>
         </div>
       </section>
+      </FeatureErrorBoundary>
     );
   }
 
   if (error)
     return (
-      <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+      <FeatureErrorBoundary>
+        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4">
             Contributors are unavailable
@@ -242,15 +245,17 @@ const Contributors = () => {
           </button>
         </div>
       </section>
+      </FeatureErrorBoundary>
     );
   return (
     // UPDATED: Section background
-    <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
-      <div className="max-w-7xl mx-auto px-6">
-        {/* Added The Search Bar */}
-        <div className="flex justify-center mb-8">
-          <input
-            type="text"
+    <FeatureErrorBoundary>
+      <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+        <div className="max-w-7xl mx-auto px-6">
+          {/* Added The Search Bar */}
+          <div className="flex justify-center mb-8">
+            <input
+              type="text"
             placeholder="Search contributors by name, username, role, location, or company..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -428,6 +433,7 @@ const Contributors = () => {
         )}
       </div>
     </section>
+    </FeatureErrorBoundary>
   );
 };
 export default Contributors;
