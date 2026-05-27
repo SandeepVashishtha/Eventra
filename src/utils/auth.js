@@ -24,6 +24,7 @@
 
 /** Grace period (in seconds) to account for clock skew between browser and server. */
 const CLOCK_SKEW_BUFFER = 30;
+import { safeJsonParse } from "./safeJsonParse";
 
 /**
  * Decode a JWT payload without verification (client-side only).
@@ -54,7 +55,10 @@ export function decodeJwtPayload(token) {
         .join('')
     );
 
-    return JSON.parse(jsonPayload);
+    return safeJsonParse(
+      jsonPayload,
+      {},
+    );
   } catch {
     // Malformed or corrupted token — treat as invalid.
     return null;

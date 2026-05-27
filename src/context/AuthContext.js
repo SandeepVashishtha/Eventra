@@ -59,7 +59,6 @@ export const AuthProvider = ({ children }) => {
     console.warn(
       '[AuthContext] Session expiration detected. Clearing session state immediately.'
     );
-
     clearSession();
 
     if (expiryToastShownRef.current) {

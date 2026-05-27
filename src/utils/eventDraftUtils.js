@@ -1,3 +1,5 @@
+import { safeJsonParse } from "./safeJsonParse";
+
 const STORAGE_KEY = "event_creation_draft";
 
 export const saveDraft = (
@@ -19,7 +21,7 @@ export const getDraft = () => {
       localStorage.getItem(STORAGE_KEY);
 
     return draft
-      ? JSON.parse(draft)
+      ? safeJsonParse(draft, {})
       : null;
   } catch (error) {
     console.error('Error loading draft:', error);

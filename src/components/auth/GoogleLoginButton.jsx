@@ -1,5 +1,5 @@
 import { GoogleLogin } from "@react-oauth/google";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 
@@ -27,6 +27,14 @@ import { toast } from "react-toastify";
  */
 const GoogleLoginButton = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from;
+  const redirectPath =
+    typeof from === "string"
+      ? from
+      : from?.pathname
+        ? `${from.pathname}${from.search || ""}${from.hash || ""}`
+        : "/dashboard";
 
   // signInWithGoogle handles the full backend exchange — no local decoding here
   const { signInWithGoogle } = useAuth();
@@ -44,7 +52,7 @@ const GoogleLoginButton = () => {
       await signInWithGoogle(credentialResponse.credential);
 
       // Navigate only after the session is fully established
-      navigate("/dashboard", { replace: true });
+      navigate(redirectPath, { replace: true });
     } catch (error) {
       // Show a user-friendly toast; the underlying error is already logged
       // by signInWithGoogle via the apiUtils interceptor.

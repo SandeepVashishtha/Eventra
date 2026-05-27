@@ -17,6 +17,9 @@ import { Link } from "react-router-dom";
 import { useMyEvents } from "../../context/MyEventsContext";
 import StatusBadge from "../common/StatusBadge";
 import { safeParseJson } from "../../utils/jsonUtils";
+import StyledDropdown from "../StyledDropdown";
+import SearchEmptyState from "../common/SearchEmptyState";
+import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
@@ -216,7 +219,13 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const staggerVariants = stagger(prefersReducedMotion);
   const { myEvents, removeRegistration } = useMyEvents();
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const {
+    searchTerm: searchQuery,
+    debouncedTerm,
+    setSearchTerm: setSearchQuery,
+    isDebouncing,
+  } = useDebouncedSearch("", 300);
+
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterType, setFilterType] = useState("All");
   const [sortBy, setSortBy] = useState("soonest");
@@ -248,7 +257,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
     const pool = [...registeredEvents, ...hostedEvents];
     const result = pool.filter((event) => {
       const searchTarget = `${event?.title || ""} ${event?.location || ""} ${event?.description || ""} ${(event?.tags || []).join(" ")}`.toLowerCase();
-      const matchSearch = !searchQuery || searchTarget.includes(searchQuery.toLowerCase());
+      const matchSearch = !debouncedTerm || searchTarget.includes(debouncedTerm.toLowerCase());
       const status = getEventStatus(event);
       const matchStatus = filterStatus === "All" || status === filterStatus;
       const typeLabel = event?.type ? event.type.charAt(0).toUpperCase() + event.type.slice(1) : "";
@@ -274,7 +283,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
     });
 
     return result;
-  }, [registeredEvents, hostedEvents, searchQuery, filterStatus, filterType, sortBy]);
+  }, [registeredEvents, hostedEvents, debouncedTerm, filterStatus, filterType, sortBy]);
 
   const filteredRegisteredEvents = filteredEvents.filter((event) => event.registeredAt);
   const filteredHostedEvents = filteredEvents.filter((event) => !event.registeredAt);
@@ -361,47 +370,61 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
                 <X size={13} />
               </button>
             )}
+            {isDebouncing && (
+              <span
+                className="ud-search-spinner"
+                aria-label="Searching…"
+                style={{
+                  position: "absolute",
+                  right: searchQuery ? 32 : 10,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  width: 14,
+                  height: 14,
+                  border: "2px solid #6366f1",
+                  borderTopColor: "transparent",
+                  borderRadius: "50%",
+                  animation: "spin 0.6s linear infinite",
+                }}
+              />
+            )}
           </div>
 
-          <div className="my-events-filter-wrap">
-            <Filter size={13} className="my-events-filter-icon" />
-            <select
-              className="ud-select"
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-            >
-              {["All", "Upcoming", "Today", "Completed"].map((status) => (
-                <option key={status}>{status}</option>
-              ))}
-            </select>
-          </div>
+          <StyledDropdown
+            label=""
+            value={filterStatus === "All" ? "" : filterStatus}
+            placeholder="All Statuses"
+            options={["Upcoming", "Today", "Completed"]}
+            onChange={(val) => setFilterStatus(val || "All")}
+          />
 
           {availableTypes.length > 1 && (
-            <div className="my-events-filter-wrap">
-              <select
-                className="ud-select"
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-              >
-                {["All", ...availableTypes].map((type) => (
-                  <option key={type}>{type}</option>
-                ))}
-              </select>
-            </div>
+            <StyledDropdown
+              label=""
+              value={filterType === "All" ? "" : filterType}
+              placeholder="All Types"
+              options={availableTypes}
+              onChange={(val) => setFilterType(val || "All")}
+            />
           )}
 
-          <div className="my-events-filter-wrap">
-            <ArrowUpDown size={13} className="my-events-filter-icon" />
-            <select
-              className="ud-select"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-            >
-              <option value="soonest">Soonest First</option>
-              <option value="registered">Registration Date</option>
-              <option value="name">Event Name</option>
-            </select>
-          </div>
+          <StyledDropdown
+            label=""
+            value={
+              sortBy === "soonest"
+                ? "Soonest First"
+                : sortBy === "registered"
+                ? "Registration Date"
+                : "Event Name"
+            }
+            placeholder="Sort by"
+            options={["Soonest First", "Registration Date", "Event Name"]}
+            onChange={(val) => {
+              if (val === "Soonest First" || !val) setSortBy("soonest");
+              else if (val === "Registration Date") setSortBy("registered");
+              else if (val === "Event Name") setSortBy("name");
+            }}
+          />
         </div>
       )}
 
@@ -409,22 +432,22 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
         <EmptyState />
       ) : filteredEvents.length === 0 ? (
         <motion.div
-          className="my-events-no-results"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
+          className="w-full mt-4"
         >
-          <p>No events match your search / filter.</p>
-          <button
-            className="my-events-clear-filters"
-            onClick={() => {
+          <SearchEmptyState
+            query={searchQuery}
+            itemLabel="events"
+            browseLabel="Browse Events"
+            browsePath="/events"
+            onClear={() => {
               setSearchQuery("");
               setFilterStatus("All");
               setFilterType("All");
               setSortBy("soonest");
             }}
-          >
-            Clear filters
-          </button>
+          />
         </motion.div>
       ) : (
         <>

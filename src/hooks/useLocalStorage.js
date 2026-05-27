@@ -1,21 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
-/**
- * useLocalStorage
- *
- * A drop-in replacement for `useState` that automatically persists the value
- * to `localStorage` and stays in sync across multiple hook instances using
- * the same key (via the `storage` event).
- *
- * @param {string} key        - The localStorage key to read/write.
- * @param {*}      initialValue - Default value if the key is not yet set.
- * @returns {[*, Function, Function]} [storedValue, setValue, removeValue]
- *
- * @example
- * const [theme, setTheme] = useLocalStorage('theme', 'light');
- * setTheme('dark');          // updates state AND localStorage
- * removeValue();             // removes the key and resets to initialValue
- */
 const useLocalStorage = (key, initialValue) => {
   const initialValueRef = useRef(initialValue);
   initialValueRef.current = initialValue;
@@ -24,7 +9,10 @@ const useLocalStorage = (key, initialValue) => {
     if (typeof window === "undefined") return initialValueRef.current;
     try {
       const item = window.localStorage.getItem(key);
-      return item !== null ? JSON.parse(item) : initialValueRef.current;
+      return safeJsonParse(
+        item,
+        initialValueRef.current,
+      );
     } catch (error) {
       console.warn(`useLocalStorage: error reading key "${key}":`, error);
       return initialValueRef.current;
@@ -33,7 +21,6 @@ const useLocalStorage = (key, initialValue) => {
 
   const [storedValue, setStoredValue] = useState(readValue);
 
-  // Keep a ref to the latest storedValue to prevent setValue from recreating on every state change
   const storedValueRef = useRef(storedValue);
   useEffect(() => {
     storedValueRef.current = storedValue;
@@ -64,7 +51,6 @@ const useLocalStorage = (key, initialValue) => {
     }
   }, [key]);
 
-  // Keep in sync with other tabs / windows
   useEffect(() => {
     const handleStorageChange = (event) => {
       if (event.key === key || event.type === "local-storage") {

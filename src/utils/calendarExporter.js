@@ -64,10 +64,16 @@ export const downloadICSFile = (event) => {
   const link = document.createElement("a");
   link.href = url;
   link.setAttribute("download", `${(title || "event").toLowerCase().replace(/[^a-z0-9]/g, "-")}.ics`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  
+  try {
+    document.body.appendChild(link);
+    link.click();
+  } finally {
+    if (document.body.contains(link)) {
+      document.body.removeChild(link);
+    }
+    URL.revokeObjectURL(url);
+  }
 };
 
 /**
@@ -170,9 +176,15 @@ export const downloadBulkICSFile = (events, filename = "registered-events") => {
   const link = document.createElement("a");
   link.href = url;
   link.setAttribute("download", `${filename.toLowerCase().replace(/[^a-z0-9]/g, "-")}.ics`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  
+  try {
+    document.body.appendChild(link);
+    link.click();
+  } finally {
+    if (document.body.contains(link)) {
+      document.body.removeChild(link);
+    }
+    URL.revokeObjectURL(url);
+  }
 };
 
