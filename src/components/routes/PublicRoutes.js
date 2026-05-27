@@ -65,7 +65,16 @@ export const getPublicRoutes = () => [
   <Route key="/" path="/" element={<HomePage />} />,
   <Route key="/events" path="/events" element={<EventsPage />} />,
   <Route key="/event-details" path="/events/:eventId" element={<EventDetails />} />,
-  <Route key="/register" path="/events/:eventId/register" element={<EventRegistration />} />,
+  // Registration writes to an authenticated backend endpoint; keep guarded.
+  <Route
+    key="/register"
+    path="/events/:eventId/register"
+    element={
+      <ProtectedRoute>
+        <EventRegistration />
+      </ProtectedRoute>
+    }
+  />,
   <Route key="/hackathons" path="/hackathons" element={<HackathonPage />} />,
   <Route key="/hackathon-details" path="/hackathons/:hackathonId" element={<HackathonDetailsPage />} />,
   <Route key="/hackathons-lifecycle" path="/hackathons/:id/lifecycle" element={<HackathonLifecycle />} />,
@@ -112,21 +121,53 @@ export const getPublicRoutes = () => [
   <Route key="/contributors" path="/contributors" element={<PageLayout><Contributors /></PageLayout>} />,
   <Route key="/communityEvent" path="/communityEvent" element={<PageLayout><CommunityEvent /></PageLayout>} />,
   <Route key="/community-event" path="/community-event" element={<PageLayout><CommunityEvent /></PageLayout>} />,
-  <Route key="/leaderBoard"    path="/leaderBoard"    element={<PageLayout><ProtectedRoute><SectionErrorBoundary label="Leaderboard"><LeaderBoard /></SectionErrorBoundary></ProtectedRoute></PageLayout>} />,
-  <Route key="/leaderboard"    path="/leaderboard"    element={<PageLayout><ProtectedRoute><SectionErrorBoundary label="Leaderboard"><LeaderBoard /></SectionErrorBoundary></ProtectedRoute></PageLayout>} />,
-  <Route key="/contributorguide"  path="/contributorguide"  element={<PageLayout><ProtectedRoute><ContributorGuide /></ProtectedRoute></PageLayout>} />,
-  <Route key="/contributor-guide" path="/contributor-guide" element={<PageLayout><ProtectedRoute><ContributorGuide /></ProtectedRoute></PageLayout>} />,
-  <Route key="/about"          path="/about"          element={<PageLayout><AboutPage /></PageLayout>} />,
-  <Route key="/about-fallback" path="/about/*"        element={<PageLayout><AboutPage /></PageLayout>} />,
-  <Route key="/faq"            path="/faq"            element={<PageLayout><FAQPage /></PageLayout>} />,
-  <Route key="/terms"          path="/terms"          element={<PageLayout><Terms /></PageLayout>} />,
-  <Route key="/privacy"        path="/privacy"        element={<PageLayout><Privacy /></PageLayout>} />,
-  <Route key="/apiDocs"        path="/apiDocs"        element={<PageLayout><ApiDocs /></PageLayout>} />,
-  <Route key="/api-docs"       path="/api-docs"       element={<PageLayout><ApiDocs /></PageLayout>} />,
-  <Route key="/helpcenter"     path="/helpcenter"     element={<PageLayout><HelpCenter /></PageLayout>} />,
-  <Route key="/contact"        path="/contact"        element={<PageLayout><ContactUs /></PageLayout>} />,
-  <Route key="/feedback"       path="/feedback"       element={<PageLayout><FeedbackPage /></PageLayout>} />,
-  <Route key="/documentation"  path="/documentation"  element={<PageLayout><DocumentationPage /></PageLayout>} />,
+  <Route
+    key="/leaderBoard"
+    path="/leaderBoard"
+    element={
+      <ProtectedRoute>
+        <PageLayout><SectionErrorBoundary label="Leaderboard"><LeaderBoard /></SectionErrorBoundary></PageLayout>
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/leaderboard"
+    path="/leaderboard"
+    element={
+      <ProtectedRoute>
+        <PageLayout><SectionErrorBoundary label="Leaderboard"><LeaderBoard /></SectionErrorBoundary></PageLayout>
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/contributorguide"
+    path="/contributorguide"
+    element={
+      <ProtectedRoute>
+        <PageLayout><ContributorGuide /></PageLayout>
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/contributor-guide"
+    path="/contributor-guide"
+    element={
+      <ProtectedRoute>
+        <PageLayout><ContributorGuide /></PageLayout>
+      </ProtectedRoute>
+    }
+  />,
+  <Route key="/about" path="/about" element={<PageLayout><AboutPage /></PageLayout>} />,
+  <Route key="/about-fallback" path="/about/*" element={<PageLayout><AboutPage /></PageLayout>} />,
+  <Route key="/faq" path="/faq" element={<PageLayout><FAQPage /></PageLayout>} />,
+  <Route key="/terms" path="/terms" element={<PageLayout><Terms /></PageLayout>} />,
+  <Route key="/privacy" path="/privacy" element={<PageLayout><Privacy /></PageLayout>} />,
+  <Route key="/apiDocs" path="/apiDocs" element={<PageLayout><ApiDocs /></PageLayout>} />,
+  <Route key="/api-docs" path="/api-docs" element={<PageLayout><ApiDocs /></PageLayout>} />,
+  <Route key="/helpcenter" path="/helpcenter" element={<PageLayout><HelpCenter /></PageLayout>} />,
+  <Route key="/contact" path="/contact" element={<PageLayout><ContactUs /></PageLayout>} />,
+  <Route key="/feedback" path="/feedback" element={<PageLayout><FeedbackPage /></PageLayout>} />,
+  <Route key="/documentation" path="/documentation" element={<PageLayout><DocumentationPage /></PageLayout>} />,
 
   // /analytics — exposes organisation-level event analytics data.
   // Requires authentication so that only registered users can view
