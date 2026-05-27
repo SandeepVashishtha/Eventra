@@ -4,9 +4,9 @@ import { toast } from "react-toastify";
 import { Download } from "lucide-react";
 import useReducedMotion from "../hooks/useReducedMotion";
 import {} from "../utils/eventDraftUtils";
-import CharacterCounter
-from "./common/CharacterCounter";
+import CharacterCounter from "./common/CharacterCounter";
 import { exportAttendeesToCSV } from "../utils/exportCsv";
+import { logger } from "../utils/logger";
 import {
   ArrowRightIcon,
   CalendarIcon,
@@ -39,31 +39,23 @@ import {
 } from "lucide-react";
 import { useFormSubmit } from "../hooks/useFormSubmit";
 import { LoadingButton } from "./ui/LoadingButton";
-
-const DRAFT_KEY = "eventra_create_event_draft";
+import {
+  DRAFT_KEY,
+  categories,
+  mockAttendees,
+  initialFormData,
+  todayString,
+} from "../constants/eventDefaults";
+import {
+  parseTimeToMinutes,
+  formatDate,
+  formatTime,
+ validateCoordinates,
+} from "../utils/eventCreationUtils";
 
 const EventCreation = () => {
   const prefersReducedMotion = useReducedMotion();
-  const mockAttendees = [
-    {
-      name: "John Doe",
-      email: "john@example.com",
-      registrationDate: "2026-08-15",
-      ticketType: "VIP",
-    },
-    {
-      name: "Sarah Smith",
-      email: "sarah@example.com",
-      registrationDate: "2026-08-16",
-      ticketType: "General",
-    },
-    {
-      name: "Alex Johnson",
-      email: "alex@example.com",
-      registrationDate: "2026-08-17",
-      ticketType: "Workshop",
-    },
-  ];
+
   const [currentStep, setCurrentStep] = useState("form");
 
   const { handleSubmit: submitEventForm, isSubmitting, error: submitError, success: submitSuccess } = useFormSubmit(async (eventData) => {
@@ -98,63 +90,17 @@ const EventCreation = () => {
     if (submitSuccess) {
       toast.success("Event created successfully!");
       resetForm();
-      setCurrentStep("form");
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, [submitSuccess]);
 
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    category: "",
-    isMultiDay: false,
-    date: "",
-    startTime: "",
-    endTime: "",
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    location: {
-      name: "",
-      address: "",
-      coordinates: { latitude: "", longitude: "" },
-    },
-    isVirtual: false,
-    virtualLink: "",
-    capacity: "",
-    isPublic: true,
-    requiresApproval: false,
-    registrationStart: "",
-    registrationEnd: "",
-    tags: [],
-    ticketTiers: [
-      {
-        name: "General Admission",
-        price: 0,
-        capacity: "",
-        description: "Standard event access",
-      },
-    ],
-    banner: null,
-    bannerPreview: null,
-  });
+  const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [newTag, setNewTag] = useState("");
   // Track whether draft has been loaded to avoid overwriting on initial mount
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
-  const categories = [
-    { label: "Conference", value: "CONFERENCE" },
-    { label: "Workshop", value: "WORKSHOP" },
-    { label: "Meetup", value: "MEETUP" },
-    { label: "Webinar", value: "WEBINAR" },
-    { label: "Social", value: "SOCIAL" },
-    { label: "Sports", value: "SPORTS" },
-    { label: "Cultural", value: "CULTURAL" },
-    { label: "Business", value: "BUSINESS" },
-    { label: "Charity", value: "CHARITY" },
-    { label: "Other", value: "OTHER" },
-  ];
 
-  const todayString = new Date().toISOString().split("T")[0];
 
   const validateForm = () => {
     const newErrors = {};
@@ -186,11 +132,6 @@ const EventCreation = () => {
 
     if (!newErrors.startTime && !newErrors.endTime && !formData.isMultiDay) {
       // Convert time strings (HH:MM format) to minutes for proper comparison
-      const parseTimeToMinutes = (timeStr) => {
-        if (!timeStr) return 0;
-        const [hours, minutes] = timeStr.split(":").map(Number);
-        return (hours || 0) * 60 + (minutes || 0);
-      };
       const startMinutes = parseTimeToMinutes(formData.startTime);
       const endMinutes = parseTimeToMinutes(formData.endTime);
       if (startMinutes >= endMinutes) {
@@ -227,12 +168,12 @@ const EventCreation = () => {
         if (tier.name && tier.name.trim()) {
           const price = Number(tier.price);
           if (price < 0) {
-            newErrors[`ticketPrice_${index}`] = "Ticket price cannot be negative";
+            newErrors[`ticketTier_${index}_price`] = "Ticket price cannot be negative";
           }
           if (tier.capacity) {
             const capacity = Number(tier.capacity);
             if (capacity <= 0) {
-              newErrors[`ticketCapacity_${index}`] = "Ticket capacity must be greater than 0";
+              newErrors[`ticketTier_${index}_capacity`] = "Ticket capacity must be greater than 0";
             }
           }
         }
@@ -285,6 +226,7 @@ const EventCreation = () => {
       ),
     }));
     const errorKey = `ticketTier_${index}_${field}`;
+
     if (errors[errorKey]) {
       setErrors((prev) => ({ ...prev, [errorKey]: "" }));
     }
@@ -363,21 +305,16 @@ const EventCreation = () => {
     }
   };
 
-  const [successMessage, setSuccessMessage] = useState("");
-  const [generalError, setGeneralError] = useState("");
-
   const createEvent = () => {
     setSuccessMessage("");
     setGeneralError("");
     try {
       let coordinates = null;
       if (formData.location.coordinates.latitude && formData.location.coordinates.longitude) {
-        const lat = parseFloat(formData.location.coordinates.latitude);
-        const lng = parseFloat(formData.location.coordinates.longitude);
-
-        if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-          coordinates = { latitude: lat, longitude: lng };
-        }
+        coordinates = validateCoordinates(
+          formData.location.coordinates.latitude,
+          formData.location.coordinates.longitude
+        );
       }
 
       const eventStartDate = new Date(
@@ -429,7 +366,7 @@ const EventCreation = () => {
 
       submitEventForm(eventData);
     } catch (error) {
-      console.error("Error creating event:", error);
+      logger.error("Error creating event:", error);
       const backendMessage = error.response?.data?.message || error.response?.data?.error;
       let errorMessage = "Failed to create event. ";
       if (backendMessage) {
@@ -470,7 +407,7 @@ const EventCreation = () => {
         toast.success("Draft restored successfully!");
       }
     } catch (error) {
-      console.error(error);
+      logger.error(error);
     }
 
     setShowRestoreModal(false);
@@ -548,62 +485,11 @@ const EventCreation = () => {
   }, [formData]);
 
   const resetForm = () => {
-    setFormData({
-      title: "",
-      description: "",
-      category: "",
-      isMultiDay: false,
-      date: "",
-      startDate: "",
-      endDate: "",
-      startTime: "",
-      endTime: "",
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      location: {
-        name: "",
-        address: "",
-        coordinates: { latitude: "", longitude: "" },
-      },
-      isVirtual: false,
-      virtualLink: "",
-      capacity: "",
-      isPublic: true,
-      requiresApproval: false,
-      registrationStart: "",
-      registrationEnd: "",
-      tags: [],
-      ticketTiers: [
-        {
-          name: "General Admission",
-          price: 0,
-          capacity: "",
-          description: "Standard event access",
-        },
-      ],
-      banner: null,
-      bannerPreview: null,
-    });
+    setFormData(initialFormData);
     setErrors({});
     localStorage.removeItem(DRAFT_KEY);
     setNewTag("");
     setCurrentStep("form");
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const formatTime = (timeString) => {
-    return new Date(`2000-01-01T${timeString}`).toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
   };
 
   return (

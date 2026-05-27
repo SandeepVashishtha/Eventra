@@ -3,19 +3,19 @@
  * Evaluates a string and returns a score between -5 (highly negative) and +5 (highly positive)
  */
 
-const POSITIVE_KEYWORDS = [
-  "love", "like", "perfect", "amazing", "great", "excellent", "awesome", 
-  "fantastic", "beautiful", "helpful", "easy", "fast", "smooth", "happy", 
+const POSITIVE_KEYWORDS = new Set([
+  "love", "like", "perfect", "amazing", "great", "excellent", "awesome",
+  "fantastic", "beautiful", "helpful", "easy", "fast", "smooth", "happy",
   "nice", "resolved", "satisfied", "solved", "best", "cool", "wonderful",
   "superb", "outstanding", "impressive", "brilliant", "glad", "enjoyed"
-];
+]);
 
-const NEGATIVE_KEYWORDS = [
-  "hate", "dislike", "terrible", "bad", "awful", "broke", "crash", "bug", 
-  "error", "slow", "lag", "poor", "hard", "difficult", "complex", "frustrated", 
+const NEGATIVE_KEYWORDS = new Set([
+  "hate", "dislike", "terrible", "bad", "awful", "broke", "crash", "bug",
+  "error", "slow", "lag", "poor", "hard", "difficult", "complex", "frustrated",
   "fail", "worst", "issues", "broken", "complain", "annoyed", "useless",
-  "crashed", "slowly", "laggy", "painful", "horrible", "defect", "fail", "failure"
-];
+  "crashed", "slowly", "laggy", "painful", "horrible", "defect", "failure"
+]);
 
 export const analyzeSentiment = (text) => {
   if (!text || typeof text !== "string") {
@@ -30,9 +30,9 @@ export const analyzeSentiment = (text) => {
   let score = 0;
   
   words.forEach(word => {
-    if (POSITIVE_KEYWORDS.includes(word)) {
+    if (POSITIVE_KEYWORDS.has(word)) {
       score += 1.5;
-    } else if (NEGATIVE_KEYWORDS.includes(word)) {
+    } else if (NEGATIVE_KEYWORDS.has(word)) {
       score -= 1.5;
     }
   });

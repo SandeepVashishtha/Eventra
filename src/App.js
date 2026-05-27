@@ -1,6 +1,7 @@
+import SavedEventsPage from './Pages/SavedEventsPage';
 import EventRecommendation from "./Pages/EventRecommendation/EventRecommendation";
 import React, { useState, useEffect, lazy, Suspense } from "react";
-import { Routes, Route, useLocation } from "react-router-dom"; 
+import { Routes, Route, useLocation } from "react-router-dom";
 import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
@@ -20,14 +21,12 @@ import SessionRecovery from "./components/SessionRecovery";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import OnboardingChecklist from "./components/user/OnboardingChecklist";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-
 import NotificationToastContainer from "./components/common/NotificationProvider";
 import { NotificationProvider } from "./context/NotificationContext";
 import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
 import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
 import SectionErrorBoundary from "./components/common/SectionErrorBoundary";
-
 import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
 import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
@@ -61,8 +60,7 @@ function App() {
     setCursorEnabled(newValue);
     try {
       localStorage.setItem("cursor", newValue ? "on" : "off");
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   useEffect(() => {
@@ -71,15 +69,12 @@ function App() {
         setCursorEnabled(event.detail.cursorEnabled);
       }
     };
-
     window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
-
     return () => {
       window.removeEventListener("cursorPreferenceChanged", handleCursorPreference);
     };
   }, []);
 
-  // Handle Online/Offline Status Notification
   useEffect(() => {
     const handleOnline = () => {
       toast.success("Back online! Your connections have been restored and sync is complete.", {
@@ -87,22 +82,17 @@ function App() {
         autoClose: 4000,
       });
     };
-
     const handleOffline = () => {
       toast.warning("You are currently offline. Running in secure local offline caching mode.", {
         position: "bottom-right",
         autoClose: 5000,
       });
     };
-
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
-
-    // Initial check on mount
     if (!navigator.onLine) {
       handleOffline();
     }
-
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
@@ -112,25 +102,33 @@ function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-      <NotificationProvider>
-        <MyEventsProvider>
-          <SessionRecoveryProvider>
-            <ReminderChecker />
-            <NotificationToastContainer />
-            <OfflineSyncManager />
+        <NotificationProvider>
+          <MyEventsProvider>
+            <SessionRecoveryProvider>
+              <ReminderChecker />
+              <NotificationToastContainer />
+              <OfflineSyncManager />
 
-            <div className="App">
-              <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
-              <OfflineBanner />
-              <OfflineConflictModal />
-              <KeyboardShortcutsModal
-                isOpen={showKeyboardModal}
-                onClose={() => setShowKeyboardModal(false)}
-              />
-              <OnboardingChecklist />
+              <div className="App">
+                <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+                <SectionErrorBoundary label="Navigation Bar">
+                  <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+                </SectionErrorBoundary>
+                <OfflineBanner />
+                <OfflineConflictModal />
+                <KeyboardShortcutsModal
+                  isOpen={showKeyboardModal}
+                  onClose={() => setShowKeyboardModal(false)}
+                />
+                <OnboardingChecklist />
 
-              <main
-                className="
+                <main
+                  className="
+                    relative z-10 min-h-[85vh]
+                    bg-white dark:bg-slate-950
+                    text-black dark:text-white
+                    transition-colors duration-300
+                  "
                   relative
                   z-10
                   min-h-[85vh]
@@ -140,62 +138,66 @@ function App() {
                   dark:text-white
                   transition-colors
                   duration-300
-                "
-              >
-                <PageTransition>
-                  <SectionErrorBoundary label="Page Content">
-                    <Suspense
-                      fallback={
-                        <div className="flex items-center justify-center min-h-screen">
-                          Loading...
-                        </div>
-                      }
-                    >
-                      <Routes>
-                        {/* Registration writes user-specific data and must stay behind auth. */}
-                        <Route
-                          path="/register/:id"
-                          element={
-                            <ProtectedRoute>
-                              <RegistrationPage />
-                            </ProtectedRoute>
-                          }
-                        />
+                ">
+              <PageTransition>
+  <Suspense
+    fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        Loading...
+      </div>
+    }
+  >
+    <Routes>
 
-                        <Route
-                          path="/event-recommendation"
-                          element={<EventRecommendation />}
-                        />
+      <Route
+        path="/register/:id"
+        element={<RegistrationPage />}
+      />
 
-                        <Route
-                          path="*"
-                          element={<AppRoutes />}
-                        />
-                      </Routes>
-                    </Suspense>
-                  </SectionErrorBoundary>
-                </PageTransition>
-              </main>
+      <Route
+        path="/event-recommendation"
+        element={<EventRecommendation />}
+      />
 
-              <ScrollToTop />
-              
-              {/* FIXED THE TAG BELOW: Added the missing '>' closure */}
-              <Suspense fallback={null}>
-                <Chatbot />
-                {!isDashboardOrAdmin && <Footer />}
-              </Suspense>
+                          <Route path="/event-recommendation" element={<EventRecommendation />} />
 
-              <BackToTopButton />
-              <FeedbackButton />
-              <ThemeCustomizerDrawer />
-              <SessionRecovery />
-              <FluidCursor enabled={cursorEnabled} />
-            </div>
-          </SessionRecoveryProvider>
-        </MyEventsProvider>
-      </NotificationProvider>
-    </AuthProvider>
-  </ErrorBoundary>
+                          <Route path="*" element={<AppRoutes />} />
+                        </Routes>
+                      </Suspense>
+                    </SectionErrorBoundary>
+                  </PageTransition>
+                </main>
+
+                <ScrollToTop />
+                <Suspense fallback={null}>
+                  <Chatbot />
+                  {!isDashboardOrAdmin && <Footer />}
+                </Suspense>
+
+                <SectionErrorBoundary label="Chatbot Assist" silent>
+                  <Suspense fallback={null}>
+                    <Chatbot />
+                  </Suspense>
+                </SectionErrorBoundary>
+
+                <SectionErrorBoundary label="Footer">
+                  <Suspense fallback={null}>{!isDashboardOrAdmin && <Footer />}</Suspense>
+                </SectionErrorBoundary>
+
+                <BackToTopButton />
+                <FeedbackButton />
+                <ThemeCustomizerDrawer />
+                <SessionRecovery />
+                <FluidCursor enabled={cursorEnabled} />
+                <SectionErrorBoundary label="Custom Cursor" silent>
+                  <FluidCursor enabled={cursorEnabled} />
+                </SectionErrorBoundary>
+              </div>
+            </SessionRecoveryProvider>
+          </MyEventsProvider>
+        </NotificationProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
