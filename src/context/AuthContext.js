@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from '../config/api';
 import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
-import { syncSecureStorage } from '../utils/secureStorage';
 import { toast } from 'react-toastify';
 import { ROLES } from '../config/roles';
+import { clearQueue } from '../utils/offlineQueue';
+
 
 const AuthContext = createContext();
 
@@ -29,7 +30,7 @@ export const AuthProvider = ({ children }) => {
   const clearSession = useCallback(() => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem("token");
+    sessionStorage.removeItem("token");
     localStorage.removeItem("user");
   }, []);
 
@@ -49,7 +50,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check for existing authentication on app start
-    const storedToken = localStorage.getItem("token");
+    const storedToken = sessionStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
 
     if (storedToken && storedUser) {
@@ -106,12 +107,20 @@ export const AuthProvider = ({ children }) => {
   // When isAuthenticated() detects an expired token during a render, it
   // sets needsExpiryCleanupRef. This effect runs AFTER render finishes
   // and performs the actual state cleanup + toast.
+  //
+  // FIX: Added [clearExpiredSession] dependency array.
+  // Without a dependency array this effect ran after EVERY render of the
+  // entire React tree (AuthProvider wraps everything). While the ref guard
+  // prevented duplicate cleanups, the unnecessary post-render calls added
+  // overhead and made the effect semantically misleading.
+  // With [clearExpiredSession] it only re-runs when that stable callback
+  // reference changes — which is effectively once on mount.
   useEffect(() => {
     if (needsExpiryCleanupRef.current) {
       needsExpiryCleanupRef.current = false;
       clearExpiredSession();
     }
-  });
+  }, [clearExpiredSession]);
 
   // --- Smart Token Expiry Timeout ---
   // Instead of polling every 15 s, compute the exact remaining TTL from the
@@ -163,9 +172,10 @@ export const AuthProvider = ({ children }) => {
     setToken(sessionToken);
     setUser(sessionUser);
     try {
-      localStorage.setItem("token", sessionToken);
+      sessionStorage.setItem("token", sessionToken);
       localStorage.setItem("user", JSON.stringify(sessionUser));
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error persisting session:', error);
     }
   };
@@ -228,12 +238,9 @@ export const AuthProvider = ({ children }) => {
       password,
     });
 
-    const data = await res.json().catch((error) => {
-      console.error("Failed to parse login response JSON:", error);
-      return null;
-    });
+    const data = res.data;
 
-    if (!res.ok) {
+    if (res.status !== 200) {
       throw new Error(data?.message || data?.error || "Invalid credentials");
     }
 
@@ -291,9 +298,9 @@ export const AuthProvider = ({ children }) => {
     }
 
     // ── Step 2: Parse the backend response ───────────────────────────────────
-    const data = await res.json().catch(() => null);
+    const data = res.data;
 
-    if (!res.ok) {
+    if (res.status !== 200) {
       // The backend rejected the credential (bad token, wrong audience, etc.)
       throw new Error(
         data?.message ||

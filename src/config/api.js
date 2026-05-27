@@ -19,10 +19,20 @@ const normalizeApiBaseUrl = (value = "") => {
   }
 };
 
-const isDevelopment = process.env.NODE_ENV === "development";
+const isDev = process.env.NODE_ENV === "development";
 
 const resolveEnvApiBaseUrl = () => {
-  return normalizeApiBaseUrl(process.env.REACT_APP_API_URL || "http://localhost:8080");
+  const envUrl = process.env.REACT_APP_API_URL;
+  if (envUrl) {
+    return normalizeApiBaseUrl(envUrl);
+  }
+  if (process.env.NODE_ENV === "production") {
+    if (isDev) {
+      console.warn("REACT_APP_API_URL environment variable is missing in production. Defaulting to relative API requests.");
+    }
+    return "";
+  }
+  return "http://localhost:8080";
 };
 
 export const API_BASE_URL = resolveEnvApiBaseUrl();
@@ -53,7 +63,6 @@ const REQUEST_TIMEOUT_MS = 15_000;
 const RETRYABLE_STATUS_CODES = [502, 503, 504];
 const MAX_RETRIES = 1;
 const RETRY_DELAY_MS = 1_000;
-const isDev = isDevelopment;
 
 // ---------------------------------------------------------------------------
 // Normalized API Error
@@ -99,7 +108,7 @@ const normalizeRequestConfig = (configOrToken = {}, maybeToken) => {
       ? configOrToken
       : typeof maybeToken === "string"
         ? maybeToken
-        : localStorage.getItem("token") || "";
+        : sessionStorage.getItem("token") || "";
 
   if (token) {
     config.headers = {
@@ -212,20 +221,22 @@ export const API_ENDPOINTS = {
   },
   EVENTS: {
     CREATE: buildApiUrl("/api/events/create"),
-    ALL: buildApiUrl("/api/events"),
     LIST: buildApiUrl("/api/events"),
     DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
   },
   PROJECTS: {
-    ALL: buildApiUrl("/api/projects"),
     LIST: buildApiUrl("/api/projects"),
     DETAIL: (id) => buildApiUrl(`/api/projects/${id}`),
     CATEGORIES: buildApiUrl("/api/projects/categories"),
     SUBMIT: buildApiUrl("/api/projects"),
   },
+  HACKATHONS: {
+    LIST: buildApiUrl("/api/hackathons"),
+    DETAIL: (id) => buildApiUrl(`/api/hackathons/${id}`),
+    HOST: buildApiUrl("/api/hackathons"),
+  },
   NOTIFICATIONS: {
-    ALL: buildApiUrl("/api/notifications"),
     BASE: buildApiUrl("/api/notifications"),
     READ: (id) => (id ? buildApiUrl(`/api/notifications/${id}/read`) : ""),
     READ_ALL: buildApiUrl("/api/notifications/read-all"),

@@ -96,56 +96,37 @@ export const NotificationProvider = ({ children }) => {
   const markAllAsRead = useCallback(async () => {
     if (!token) return;
 
-    // Use a functional wrapper block to get access to current state safely without a dependency array trigger
+    // Capture current unread list synchronously before the optimistic update
     let unread = [];
-    
+
     setNotifications((prev) => {
       unread = prev.filter((n) => !n.isRead);
       if (unread.length === 0) return prev;
-      
+
       // Return optimistically updated array
       return prev.map((n) => ({ ...n, isRead: true }));
     });
 
-    // If there were no unread items captured, stop execution early
-    setTimeout(async () => {
-      if (unread.length === 0) return;
+    // Nothing to do if every notification was already read
+    if (unread.length === 0) return;
 
-      const endpointGetter = API_ENDPOINTS?.NOTIFICATIONS?.READ;
-      if (typeof endpointGetter !== "function") {
-        console.warn("[NotificationContext] READ endpoint creator is not a function. Skipping bulk update.");
-        return;
-      }
+    const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.READ_ALL;
+    if (!endpoint || typeof endpoint !== "string" || endpoint.includes("undefined")) {
+      console.warn("[NotificationContext] READ_ALL endpoint is invalid or improperly configured. Skipping request.");
+      return;
+    }
 
-      try {
-        setUnreadCount(0);
+    setUnreadCount(0);
 
-        // Helper to slice the unread notifications into smaller batch sizes
-        const BATCH_SIZE = 5;
-        const chunks = [];
-        for (let i = 0; i < unread.length; i += BATCH_SIZE) {
-          chunks.push(unread.slice(i, i + BATCH_SIZE));
-        }
-
-        // Process each chunk sequentially to respect browser connection limits
-        for (const chunk of chunks) {
-          await Promise.allSettled(
-            chunk.map((n) => {
-              const endpoint = endpointGetter(n.id);
-              if (!endpoint || typeof endpoint !== "string" || endpoint.includes("undefined")) {
-                return Promise.reject("Invalid endpoint");
-              }
-              return apiUtils.put(endpoint, {});
-            })
-          );
-        }
-      } catch (error) {
-        console.error('Error marking all notifications as read:', error);
-        // Re-fetch to restore accurate state on server failure
-        fetchNotifications();
-      }
-    }, 0);
+    try {
+      await apiUtils.put(endpoint, {});
+    } catch (error) {
+      console.error('[NotificationContext] Error marking all notifications as read:', error);
+      // Re-fetch to restore accurate server state on unexpected failure
+      fetchNotifications();
+    }
   }, [token, fetchNotifications]);
+
   
   // ── Initial fetch + polling ───────────────────────────────────────────────
   // ── Initial fetch + polling ───────────────────────────────────────────────

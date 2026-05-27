@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useState, useEffect, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
+import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
   CalendarIcon,
   MapPinIcon,
@@ -16,6 +17,7 @@ import { addHackathonToGoogleCalendar } from "../../utils/calendarUtils";
 import { generateEventSharingData } from "../../utils/shareUtils";
 
 const useCountdown = (targetDate) => {
+  const prefersReducedMotion = useReducedMotion();
   const calculateTimeLeft = useCallback(() => {
     const difference = new Date(targetDate) - new Date();
 
@@ -146,6 +148,7 @@ const formatDateRange = (startDate, endDate) => {
 };
 
 const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
+  const prefersReducedMotion = useReducedMotion();
   const navigate = useNavigate();
   const normalizedHackathon = {
     ...hackathon,
@@ -179,7 +182,7 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
     <motion.div
       initial={{ opacity: 0, y: 50, scale: 0.95 }}
       whileInView={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.45, ease: "easeOut" }}
+      transition={{ duration: prefersReducedMotion ? 0 : 0.45, ease: "easeOut" }}
       viewport={{ once: true, amount: 0.2 }}
       whileHover={{ y: -5, scale: 1.01 }}
       className={`relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:border-indigo-300 hover:shadow-md dark:border-white/10 dark:bg-slate-900 dark:shadow-[0_4px_24px_rgba(0,0,0,0.35)] ${

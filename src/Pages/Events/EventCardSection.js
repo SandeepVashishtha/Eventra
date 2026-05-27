@@ -1,12 +1,12 @@
 import EventCard from "./EventCard";
-import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
+import SkeletonEventCard from "../../components/common/SkeletonEventCard";
 
 const EventCardSection = ({ isLoading, events, viewMode, filterType, onClearFilters }) => {
   if (isLoading) {
     return (
       <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
         {[1, 2, 3, 4, 5, 6].map((i) => (
-          <EventCardSkeleton key={`skeleton-${i}`} />
+          <SkeletonEventCard key={`skeleton-${i}`} />
         ))}
       </div>
     );

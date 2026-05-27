@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
-import { API_ENDPOINTS, apiUtils } from '../config/api';
-import { getQueue, setQueue, clearQueue } from '../utils/offlineQueue';
+import { API_ENDPOINTS } from '../config/api';
+import { getQueueIndexedDB, setQueue, clearQueue } from '../utils/offlineQueue';
 import { isTokenValid } from '../utils/tokenUtils';
 
 const MAX_RETRIES = 3;
@@ -13,7 +13,27 @@ const useOfflineSync = () => {
   const isSyncing = useRef(false);
 
   useEffect(() => {
-    const postWithBackoff = async (url, payload, authToken, attempt = 0) => {
+    // Helper to resolve conflict events sequentially
+    const resolveConflict = (item, serverState) => {
+      return new Promise((resolve) => {
+        const handleResolution = (e) => {
+          if (e.detail.itemId === item.id) {
+            window.removeEventListener("eventra-offline-conflict-resolved", handleResolution);
+            resolve(e.detail);
+          }
+        };
+        window.addEventListener("eventra-offline-conflict-resolved", handleResolution);
+        
+        // Dispatch event for conflict modal UI
+        window.dispatchEvent(
+          new CustomEvent("eventra-offline-conflict", {
+            detail: { item, serverState }
+          })
+        );
+      });
+    };
+
+    const postWithBackoff = async (url, payload, authToken, attempt = 0, forceOverride = false) => {
       if (attempt > 0) {
         const delayMs = BASE_BACKOFF_MS * Math.pow(2, attempt - 1);
         await new Promise((resolve) => setTimeout(resolve, delayMs));
@@ -21,6 +41,7 @@ const useOfflineSync = () => {
 
       const headers = { 'Content-Type': 'application/json' };
       if (authToken) headers.Authorization = `Bearer ${authToken}`;
+      if (forceOverride) headers['X-Override-Conflict'] = 'true';
 
       const response = await fetch(url, {
         method: 'POST',
@@ -28,14 +49,20 @@ const useOfflineSync = () => {
         body: JSON.stringify(payload),
       });
 
-      // 2xx → success; 4xx → bad request (don't retry); 5xx → may be transient
-      if (response.ok) return true;
+      // Handle 409 Conflict specifically
+      if (response.status === 409) {
+        const serverState = await response.json().catch(() => ({}));
+        return { status: "conflict", serverState };
+      }
+
+      if (response.ok) return { status: "success" };
+
       if (response.status >= 400 && response.status < 500) {
         console.warn(
           `Offline queue: server rejected item with ${response.status} — dropping.`,
           await response.text().catch(() => '')
         );
-        return true; // Treat as "handled" — bad data won't succeed on retry
+        return { status: "dropped" };
       }
 
       throw new Error(`Sync failed with status: ${response.status}`);
@@ -46,19 +73,26 @@ const useOfflineSync = () => {
         return;
       }
 
-      if (!token || !isTokenValid(token)) {
+      const queue = await getQueueIndexedDB();
+      if (queue.length === 0) {
         return;
       }
 
-      const queue = getQueue();
-      if (queue.length === 0) {
+      // Refuse to replay queued actions under an expired or missing token.
+      // The queue was saved under a previous session; firing it now could
+      // attach those actions to whichever user happens to be logged in.
+      if (!token || !isTokenValid(token)) {
+        toast.warning(
+          "Offline actions are pending but your session has expired. Please log in again to sync them.",
+          { autoClose: 6000 }
+        );
         return;
       }
 
       isSyncing.current = true;
 
       try {
-        toast.info(`Syncing ${queue.length} offline registration(s)...`, {
+        toast.info(`Syncing ${queue.length} cached offline action(s)...`, {
           autoClose: 2000,
         });
 
@@ -67,7 +101,7 @@ const useOfflineSync = () => {
         let droppedCount = 0;
 
         for (const item of queue) {
-          const retries = item.retries ?? 0;
+          const retries = item.retryCount ?? 0;
 
           if (retries >= MAX_RETRIES) {
             droppedCount++;
@@ -75,30 +109,50 @@ const useOfflineSync = () => {
           }
 
           try {
-            const ok = await postWithBackoff(
-              API_ENDPOINTS.EVENTS.REGISTER(item.eventId),
+            // Determine endpoints dynamically
+            const url = item.endpoint || API_ENDPOINTS.EVENTS.REGISTER(item.eventId);
+            let res = await postWithBackoff(
+              url,
               item.payload,
               token,
-              retries,
+              0
             );
 
-            if (ok) {
+            // Handle Conflict loop
+            if (res.status === "conflict") {
+              const resolution = await resolveConflict(item, res.serverState);
+              
+              if (resolution.resolution === "local") {
+                // Retry with force flag
+                res = await postWithBackoff(url, item.payload, token, 0, true);
+              } else if (resolution.resolution === "merge") {
+                // Post merged content
+                res = await postWithBackoff(url, resolution.mergedPayload, token, 0, true);
+              } else {
+                // Discard local (treated as handled success so we proceed)
+                res = { status: "success" };
+              }
+            }
+
+            if (res.status === "success" || res.status === "dropped") {
               successCount++;
+            } else {
+              failedQueue.push({ ...item, retryCount: retries + 1 });
             }
           } catch (error) {
-            failedQueue.push({ ...item, retries: retries + 1 });
+            failedQueue.push({ ...item, retryCount: retries + 1 });
           }
         }
 
         if (failedQueue.length > 0) {
-          setQueue(failedQueue);
+          await setQueue(failedQueue);
           toast.warning(
-            `Synced ${successCount} registration(s). ${failedQueue.length} still queued.`,
+            `Synced ${successCount} registration(s). ${failedQueue.length} remaining in local draft queue.`,
           );
         } else {
-          clearQueue();
+          await clearQueue();
           if (successCount > 0) {
-            toast.success("All offline registrations synced!");
+            toast.success("All offline actions successfully synchronized!");
           }
         }
 
@@ -114,12 +168,29 @@ const useOfflineSync = () => {
 
     window.addEventListener("online", handleOnline);
 
+    let idleId = null;
+    let timeoutId = null;
+
     if (navigator.onLine) {
-      handleOnline();
+      if (typeof window.requestIdleCallback === "function") {
+        idleId = window.requestIdleCallback(() => {
+          handleOnline();
+        });
+      } else {
+        timeoutId = setTimeout(() => {
+          handleOnline();
+        }, 200);
+      }
     }
 
     return () => {
       window.removeEventListener("online", handleOnline);
+      if (idleId !== null) {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+      }
     };
   }, [token]);
 };
