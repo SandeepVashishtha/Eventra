@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Trophy, Calendar, MapPin, Plus } from "lucide-react";
 import StatusBadge from "../common/StatusBadge";
 import { DashboardItemCardSkeleton } from "../common/SkeletonLoaders";
+import SearchEmptyState from "../common/SearchEmptyState";
 
 const HackathonsTab = ({ hackathons, loading, fadeUp }) => (
   <motion.div key="hackathons" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="ud-content">
@@ -10,10 +11,27 @@ const HackathonsTab = ({ hackathons, loading, fadeUp }) => (
       <h2 className="ud-page-title"><Trophy size={20} /> My Hackathons</h2>
       <Link to="/hackathons" className="ud-btn-primary"><Plus size={15} /> Explore Hackathons</Link>
     </div>
-    <div className="ud-items-grid">
-      {loading
-        ? [...Array(3)].map((_, i) => <DashboardItemCardSkeleton key={i} />)
-        : hackathons.map((h, i) => (
+    
+    {!loading && hackathons.length === 0 ? (
+      <div className="w-full mt-4">
+        <SearchEmptyState
+          query=""
+          itemLabel="hackathons"
+          browseLabel="Browse Hackathons"
+          browsePath="/hackathons"
+          onClear={() => {}}
+          suggestions={[
+            "Explore upcoming hackathons",
+            "Join a team to participate",
+            "Host your own hackathon",
+          ]}
+        />
+      </div>
+    ) : (
+      <div className="ud-items-grid">
+        {loading
+          ? [...Array(3)].map((_, i) => <DashboardItemCardSkeleton key={i} />)
+          : hackathons.map((h, i) => (
         <motion.div key={h.id} custom={i} variants={fadeUp} initial="hidden" animate="visible" className="ud-item-card">
           <div className="ud-item-top">
             <span className="ud-item-type" style={{ background: "#ec489918", color: "#ec4899" }}><Trophy size={13} /> Hackathon</span>
@@ -29,7 +47,8 @@ const HackathonsTab = ({ hackathons, loading, fadeUp }) => (
           </div>
         </motion.div>
       ))}
-    </div>
+      </div>
+    )}
   </motion.div>
 );
 
