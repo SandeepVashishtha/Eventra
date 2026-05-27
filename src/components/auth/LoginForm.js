@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from "react-toastify";
@@ -15,7 +15,15 @@ const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
+  const from = location.state?.from;
+  const redirectPath =
+    typeof from === "string"
+      ? from
+      : from?.pathname
+        ? `${from.pathname}${from.search || ""}${from.hash || ""}`
+        : "/dashboard";
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -53,8 +61,8 @@ const LoginForm = () => {
     try {
       const ok = await login(formData.usernameOrEmail, formData.password);
       if (ok) {
-        showAuthToast("Login successful! Redirecting to dashboard...", () =>
-          navigate("/dashboard", { replace: true })
+        showAuthToast("Login successful! Redirecting...", () =>
+          navigate(redirectPath, { replace: true })
         );
       }
     } catch (err) {
