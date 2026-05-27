@@ -28,7 +28,6 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   const updateActivity = useCallback(() => {
     const now = Date.now();
-    setLastActivity(now);
     lastActivityRef.current = now;
   }, []);
 
