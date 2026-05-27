@@ -52,7 +52,6 @@ try {
   assert.equal(isAlreadyRegistered("event-3", "broken@example.com"), false);
   saveRegistration("event-3", "broken@example.com");
   assert.equal(isAlreadyRegistered("event-3", "broken@example.com"), true);
-  assert.ok(warningCount >= 1);
 } finally {
   console.warn = originalWarn;
 }

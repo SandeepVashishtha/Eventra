@@ -19,6 +19,7 @@ import ThemeCustomizerDrawer from "./components/common/ThemeCustomizerDrawer";
 import SessionRecovery from "./components/SessionRecovery";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import OnboardingChecklist from "./components/user/OnboardingChecklist";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 import NotificationToastContainer from "./components/common/NotificationProvider";
 import { NotificationProvider } from "./context/NotificationContext";
@@ -149,7 +150,15 @@ function App() {
                     }
                   >
                     <Routes>
-                      <Route path="/register/:id" element={<RegistrationPage />} />
+                      {/* Registration writes user-specific data and must stay behind auth. */}
+                      <Route
+                        path="/register/:id"
+                        element={
+                          <ProtectedRoute>
+                            <RegistrationPage />
+                          </ProtectedRoute>
+                        }
+                      />
 
                       <Route
                         path="/event-recommendation"

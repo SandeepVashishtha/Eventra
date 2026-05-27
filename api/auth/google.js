@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import { users } from "./signup.js";
+import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
 
 // ---------------------------------------------------------------------------
 // Google OAuth Configuration
@@ -13,8 +14,7 @@ const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 // JWT Configuration
 // ---------------------------------------------------------------------------
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-jwt-key-change-in-production";
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+const JWT_SECRET = getJwtSecret();
 
 // ---------------------------------------------------------------------------
 // CORS Headers

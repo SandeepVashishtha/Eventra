@@ -107,7 +107,6 @@ const normalizeRequestConfig = (configOrToken = {}) => {
   if ("skipAuth" in config) {
     delete config.skipAuth;
   }
-
   // With HttpOnly cookies, the browser automatically sends the session cookie.
   // We no longer manually append the Authorization header here.
 

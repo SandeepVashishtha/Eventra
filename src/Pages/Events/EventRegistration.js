@@ -95,7 +95,7 @@ const registrationLocks = new Map();
 const EventRegistration = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, token, isAuthenticated } = useAuth();
   const { addRegistration, myEvents } = useMyEvents();
   const { clearSession } = useSessionRecovery();
 
@@ -263,7 +263,10 @@ const EventRegistration = () => {
           ...formData,
           eventId: parseInt(eventId),
           userId: user?.id || null,
-        }
+        },
+        // Registration is authenticated server-side; send the active token
+        // explicitly instead of relying only on global storage lookup.
+        token
       );
 
       // Axios resolves for 2xx — treat as success
