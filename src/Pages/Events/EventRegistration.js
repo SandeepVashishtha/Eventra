@@ -350,15 +350,19 @@ const EventRegistration = () => {
           userId: user?.id || null,
         };
 
-        pushToQueue({ eventId: parseInt(eventId), payload });
+        const success = await pushToQueue({ eventId: parseInt(eventId), payload });
 
-        setRegistered(true);
-        addRegistration(event, formData);
-        clearSession();
-        toast.warning(
-          "Network error. Registration queued and will sync when you are online.",
-          { autoClose: 4000 }
-        );
+        if (success) {
+          setRegistered(true);
+          addRegistration(event, formData);
+          clearSession();
+          toast.warning(
+            "Network error. Registration queued and will sync when you are online.",
+            { autoClose: 4000 }
+          );
+        } else {
+          toast.error("Offline registration queue is full. Please reconnect to the internet to register.");
+        }
         return;
       }
 

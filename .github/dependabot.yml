@@ -1,11 +1,68 @@
 version: 2
+
 updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 10
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Kolkata"
+
+    open-pull-requests-limit: 5
+
+    groups:
+      react-ecosystem:
+        patterns:
+          - "react*"
+          - "@types/react*"
+          - "react-dom"
+          - "react-router*"
+          - "react-error-boundary"
+
+      framer-motion:
+        patterns:
+          - "framer-motion"
+
+      tailwind:
+        patterns:
+          - "tailwindcss"
+          - "autoprefixer"
+          - "postcss"
+
+      testing:
+        patterns:
+          - "@testing-library/*"
+          - "jest*"
+
+    ignore:
+      - dependency-name: "react-scripts"
+        update-types:
+          - "version-update:semver-major"
+
+    labels:
+      - "dependencies"
+      - "automated"
+
+    reviewers:
+      - "SandeepVashishtha"
+
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
+
+    labels:
+      - "dependencies"
+      - "automated"
+
+    reviewers:
+      - "SandeepVashishtha"
+
+    commit-message:
+      prefix: "chore"
+      include: "scope"
