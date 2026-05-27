@@ -34,8 +34,8 @@ const DB_VERSION = 2;
 // ---------------------------------------------------------------------------
 const _rescueFromLocalStorage = () => {
   try {
-    const raw = localStorage.getItem(QUEUE_KEY);
-    return raw ? JSON.parse(raw) : [];
+          const raw = localStorage.getItem(QUEUE_KEY);
+          return safeJsonParse(raw, []);
   } catch {
     return [];
   }

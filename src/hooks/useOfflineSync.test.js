@@ -1,4 +1,3 @@
-
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { act } from "react";
@@ -69,7 +68,8 @@ describe("useOfflineSync", () => {
 
   it("attempts to sync immediately without backoff delay on first try in active sync run", async () => {
     const queue = [
-
+      { id: "1", userId: "mock-user-id", retryCount: 0, payload: { name: "test-1" } },
+      { id: "2", userId: "mock-user-id", retryCount: 0, payload: { name: "test-2" } }
     ];
     getQueueIndexedDB.mockResolvedValue(queue);
 
@@ -105,7 +105,9 @@ describe("useOfflineSync", () => {
   });
 
   it("preserves items with retryCount >= MAX_RETRIES in the offline queue instead of deleting them", async () => {
-
+    const queue = [
+      { id: "1", userId: "mock-user-id", retryCount: 3, payload: { name: "test-expired" } }
+    ];
     getQueueIndexedDB.mockResolvedValue(queue);
 
     const TestComponent = () => {
@@ -126,11 +128,7 @@ describe("useOfflineSync", () => {
     // Verify fetch was NOT called because retryCount >= 3
     expect(global.fetch).not.toHaveBeenCalled();
     // Verify setQueue was called to preserve the item
-    expect(setQueue).toHaveBeenCalledWith(
-
-    );
+    expect(setQueue).toHaveBeenCalledWith(queue);
     expect(clearQueue).not.toHaveBeenCalled();
   });
 });
-
-```

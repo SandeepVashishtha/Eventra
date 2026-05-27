@@ -177,8 +177,14 @@ const Contributors = () => {
       enhanced.sort((a, b) => b.contributions - a.contributions);
       setContributors(enhanced);
       cacheContributors(enhanced);
-    } catch {
+    } catch (error) {
+      console.error("Failed to fetch contributors:", error);
+
       setContributors([]);
+
+      if (error.name === "AbortError") {
+        console.error("Contributor request timed out");
+      }
     } finally {
       setLoading(false);
     }

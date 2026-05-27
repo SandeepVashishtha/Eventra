@@ -4,15 +4,22 @@ export function useFormSubmit(submitFn) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
-  const isInFlight = useRef(false);
-  const isMounted = useRef(true);
+  //const isInFlight = useRef(false); 
+  
+  // FIX: Track component mount status to prevent memory leaks
+  //const isMounted = useRef(true);
 
-  useEffect(() => {
-    isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
+  //useEffect(() => {
+  const isInFlight = useRef(false);
+const isMounted = useRef(true);
+
+useEffect(() => {
+  isMounted.current = true;
+
+  return () => {
+    isMounted.current = false;
+  };
+}, []);
 
   const handleSubmit = async (data) => {
     if (isInFlight.current) return;
@@ -24,6 +31,7 @@ export function useFormSubmit(submitFn) {
 
     try {
       await submitFn(data);
+      // FIX: Only update state if the component is still mounted
       if (isMounted.current) {
         setSuccess(true);
       }
@@ -32,6 +40,7 @@ export function useFormSubmit(submitFn) {
         setError(err?.response?.data?.message || err.message || "Something went wrong.");
       }
     } finally {
+      // FIX: Only update state if the component is still mounted
       if (isMounted.current) {
         setIsSubmitting(false);
         isInFlight.current = false;
