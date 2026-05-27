@@ -40,6 +40,6 @@ export const logError = (
       });
     }
   } catch (_) {
-    // silent fail
+    console.warn("[ErrorLogger] Failed to log error to Sentry:", _);
   }
 };
