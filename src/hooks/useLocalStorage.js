@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 /**
  * useLocalStorage
@@ -30,11 +30,16 @@ const useLocalStorage = (key, initialValue) => {
 
   const [storedValue, setStoredValue] = useState(readValue);
 
+  // Keep a ref to the latest storedValue to prevent setValue from recreating on every state change
+  const storedValueRef = useRef(storedValue);
+  useEffect(() => {
+    storedValueRef.current = storedValue;
+  }, [storedValue]);
+
   const setValue = useCallback(
     (value) => {
       try {
-        // Support functional updates just like useState
-        const newValue = value instanceof Function ? value(storedValue) : value;
+        const newValue = value instanceof Function ? value(storedValueRef.current) : value;
         window.localStorage.setItem(key, JSON.stringify(newValue));
         setStoredValue(newValue);
         // Notify other hook instances with the same key (cross-tab sync)
@@ -43,7 +48,7 @@ const useLocalStorage = (key, initialValue) => {
         console.warn(`useLocalStorage: error setting key "${key}":`, error);
       }
     },
-    [key, storedValue]
+    [key]
   );
 
   const removeValue = useCallback(() => {

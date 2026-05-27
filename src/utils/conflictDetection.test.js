@@ -14,7 +14,7 @@ import {
   formatTimeRange,
   parseTimeToMinutes,
   getEventTimeRange,
-} from '../src/utils/conflictDetection';
+} from './conflictDetection';
 
 // ---------------------------------------------------------------------------
 // Helper: build a minimal event object
@@ -112,11 +112,10 @@ describe('doEventsOverlap — timezone-aware cross-midnight scenarios', () => {
     // 11:00 PM UTC  = 2026-05-25 23:00 UTC  (duration 60 min → ends 2026-05-26 00:00 UTC)
     // 01:00 AM UTC+2 = 2026-05-25 23:00 UTC (duration 60 min → ends 2026-05-26 00:00 UTC)
     // They are the same moment in UTC — should conflict.
-    const eventUTC = mkEvent(1, '2026-05-25', '11:00 PM', 60);
-    const eventUTCPlus2 = mkEvent(2, '2026-05-26', '1:00 AM', 60);
+    const eventUTC = { ...mkEvent(1, '2026-05-25', '11:00 PM', 60), timezone: 'UTC' };
+    const eventUTCPlus2 = { ...mkEvent(2, '2026-05-26', '1:00 AM', 60), timezone: 'Africa/Johannesburg' }; // UTC+2 all year round
 
-    // With UTC+2 timezone
-    expect(doEventsOverlap(eventUTC, eventUTCPlus2, 60, 'UTC')).toBe(true);
+    expect(doEventsOverlap(eventUTC, eventUTCPlus2, 60)).toBe(true);
   });
 
   test('events 3 hours apart in the same timezone do not conflict', () => {
