@@ -80,7 +80,7 @@ function RankMovementIndicator({ username }) {
 }
 
 // Repository constant — update if the leaderboard should point to another repo
-const GITHUB_REPO = "SandeepVashishtha/Eventra";
+const GITHUB_REPO = process.env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra";
 // Token is managed securely by the backend proxy
 
 // Points mapping for PR labels (keeps scoring logic centralized)

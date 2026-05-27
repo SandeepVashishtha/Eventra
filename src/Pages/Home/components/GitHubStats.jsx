@@ -20,8 +20,8 @@ import {
   fetchPullRequests,
 } from "../../../utils/githubApiClient";
 
-const GITHUB_USER = "SandeepVashishtha";
-const GITHUB_REPO = "Eventra";
+const repoPath = process.env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra";
+const [GITHUB_USER, GITHUB_REPO] = repoPath.split("/");
 
 const LS_KEY = "eventra:repoStats";
 const CACHE_MS = 30 * 60 * 1000; // 30 min
