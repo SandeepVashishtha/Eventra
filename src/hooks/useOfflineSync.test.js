@@ -1,10 +1,10 @@
-global.IS_REACT_ACT_ENVIRONMENT = true;
-
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { act } from 'react';
 import useOfflineSync from './useOfflineSync';
 import { getQueueIndexedDB, setQueue, clearQueue } from '../utils/offlineQueue';
+
+global.IS_REACT_ACT_ENVIRONMENT = true;
 
 jest.mock('../context/AuthContext', () => ({
   useAuth: () => ({ token: 'mock-valid-token', user: { id: 'test-user-id' } }),
@@ -75,6 +75,7 @@ describe('useOfflineSync', () => {
       return null;
     };
 
+    // eslint-disable-next-line testing-library/no-unnecessary-act
     act(() => {
       root = createRoot(container);
       root.render(<TestComponent />);
@@ -112,6 +113,7 @@ describe('useOfflineSync', () => {
       return null;
     };
 
+    // eslint-disable-next-line testing-library/no-unnecessary-act
     act(() => {
       root = createRoot(container);
       root.render(<TestComponent />);
