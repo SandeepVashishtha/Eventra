@@ -18,6 +18,7 @@ import SearchEmptyState from "../../components/common/SearchEmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import ActiveFilters from "./ActiveFilters";
 import { getRouteSearchResults } from "../../utils/searchUtils";
+import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
 
 const EVENT_SEARCH_KEYS = [
   "title",
@@ -373,14 +374,16 @@ const EventsPage = () => {
           setViewMode={setViewMode}
         />
 
-        {renderCardSection(
-          isLoading,
-          filteredEvents,
-          viewMode,
-          filterType,
-          searchQuery,
-          clearSearchAndFilters,
-        )}
+        <SectionErrorBoundary label="Events">
+          {renderCardSection(
+            isLoading,
+            filteredEvents,
+            viewMode,
+            filterType,
+            searchQuery,
+            clearSearchAndFilters,
+          )}
+        </SectionErrorBoundary>
       </div>
 
       <EventCTA />

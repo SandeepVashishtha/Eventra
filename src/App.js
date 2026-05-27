@@ -26,7 +26,7 @@ import { NotificationProvider } from "./context/NotificationContext";
 import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
 import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
-import GlobalErrorBoundary from "./components/common/ErrorBoundary";
+import SectionErrorBoundary from "./components/common/SectionErrorBoundary";
 
 import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
@@ -142,27 +142,29 @@ function App() {
                 "
               >
                 <PageTransition>
-                  <Suspense
-                    fallback={
-                      <div className="flex items-center justify-center min-h-screen">
-                        Loading...
-                      </div>
-                    }
-                  >
-                    <Routes>
-                      <Route path="/register/:id" element={<RegistrationPage />} />
+                  <SectionErrorBoundary label="Page Content">
+                    <Suspense
+                      fallback={
+                        <div className="flex items-center justify-center min-h-screen">
+                          Loading...
+                        </div>
+                      }
+                    >
+                      <Routes>
+                        <Route path="/register/:id" element={<RegistrationPage />} />
 
-                      <Route
-                        path="/event-recommendation"
-                        element={<EventRecommendation />}
-                      />
+                        <Route
+                          path="/event-recommendation"
+                          element={<EventRecommendation />}
+                        />
 
-                      <Route
-                        path="*"
-                        element={<AppRoutes />}
-                      />
-                    </Routes>
-                  </Suspense>
+                        <Route
+                          path="*"
+                          element={<AppRoutes />}
+                        />
+                      </Routes>
+                    </Suspense>
+                  </SectionErrorBoundary>
                 </PageTransition>
               </main>
 
