@@ -1,6 +1,7 @@
 // ---------------------------------------------------------------------------
 // Self-Healing Offline Queue Utility (IndexedDB backed with LocalStorage Backup)
 // ---------------------------------------------------------------------------
+import { safeJsonParse } from "./safeJsonParse";
 
 const QUEUE_KEY = 'eventra_offline_queue';
 const DB_NAME = 'eventra_offline_db';
@@ -32,7 +33,7 @@ const openDB = () => {
 export const getQueue = () => {
   try {
     const raw = localStorage.getItem(QUEUE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    return safeJsonParse(raw, []);
   } catch (error) {
     console.error('[OfflineQueue] Failed to parse offline queue:', error);
     return [];

@@ -1,3 +1,5 @@
+import { safeJsonParse } from "./safeJsonParse";
+
 const STORAGE_KEY = "eventRegistrations";
 
 const normalizeEmail = (email) =>
@@ -6,7 +8,7 @@ const normalizeEmail = (email) =>
 const readRegistrations = () => {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : {};
+    return safeJsonParse(data, {});
   } catch (error) {
     // eslint-disable-next-line no-console
     console.warn("[RegisterUtils] Failed to read registrations:", error);
