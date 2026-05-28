@@ -119,3 +119,5 @@ export default function useRealTimeConnection(path, { onMessage, enabled = true 
 
   return { status, reconnect };
 }
+
+export const getWebSocketRetryBackoff = () => 5000;
