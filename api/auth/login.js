@@ -305,6 +305,8 @@ export default async function handler(req, res) {
 
     return corsResponse(res, 200, {
       message: "Login successful",
+      token,
+      tokenType: "Bearer",
       ...userResponse,
     }, req);
 

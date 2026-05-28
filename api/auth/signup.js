@@ -251,6 +251,8 @@ export default async function handler(req, res) {
 
     return corsResponse(res, 201, {
       message: "Account created successfully",
+      token,
+      tokenType: "Bearer",
       ...userResponse,
     }, req);
 
