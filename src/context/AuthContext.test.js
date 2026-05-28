@@ -2,6 +2,10 @@ import React from 'react';
 import { render, screen, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import { AuthProvider, useAuth } from './AuthContext';
+import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
+import { apiUtils } from '../config/api';
+
 jest.mock('../config/api', () => ({
   API_ENDPOINTS: {
     AUTH: { LOGIN: '/api/auth/login', GOOGLE: '/api/auth/google' },
@@ -22,10 +26,6 @@ jest.mock('../utils/offlineQueue', () => ({
 jest.mock('react-toastify', () => ({
   toast: { info: jest.fn(), success: jest.fn(), error: jest.fn() },
 }));
-
-import { AuthProvider, useAuth } from './AuthContext';
-import { isTokenValid, decodeTokenPayload } from '../utils/tokenUtils';
-import { apiUtils } from '../config/api';
 
 const FUTURE_EXP = Math.floor(Date.now() / 1000) + 3600;
 

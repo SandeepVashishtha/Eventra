@@ -2,6 +2,10 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 
+import EventCard from './EventCard';
+import userEvent from '@testing-library/user-event';
+import { getEventStatus } from '../../utils/eventUtils';
+
 jest.mock('../../utils/timezoneUtils', () => ({
   getUserTimezone: jest.fn().mockReturnValue('UTC'),
 }));
@@ -48,10 +52,6 @@ jest.mock('../../components/reminders/ReminderControls', () => () => null);
 jest.mock('react-toastify', () => ({
   toast: { success: jest.fn(), error: jest.fn(), info: jest.fn() },
 }));
-
-import EventCard from './EventCard';
-import userEvent from '@testing-library/user-event';
-import { getEventStatus } from '../../utils/eventUtils';
 
 const baseEvent = {
   id: 42,

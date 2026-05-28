@@ -209,12 +209,7 @@ const EventDetailsPage = () => {
               <h2 className="mb-3 text-xl font-bold text-gray-900 dark:text-white sm:mb-4 sm:text-2xl">
                 About This Event
               </h2>
-              <p
-                className="overflow-wrap-anywhere text-base leading-7 text-gray-600 dark:text-gray-300 sm:text-lg sm:leading-relaxed"
-                dangerouslySetInnerHTML={{
-                  __html: DOMPurify.sanitize(event.description),
-                }}
-
+              
               <p
                 className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed"
                 dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description) }} />
@@ -263,67 +258,77 @@ const EventDetailsPage = () => {
                 Share this Event
               </h3>
               <div className="grid grid-cols-2 gap-2 mb-3">
-
-                href={shareLinks.whatsapp}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/40 transition-all text-xs font-semibold"
-                aria-label="Share on WhatsApp"
+                <a
+                  href={shareLinks.whatsapp}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/40 transition-all text-xs font-semibold"
+                  aria-label="Share on WhatsApp"
                 >
-                <MessageCircle size={14} />
-                WhatsApp
-              </a>
+                  <MessageCircle size={14} />
+                  WhatsApp
+                </a>
 
-              href={shareLinks.twitter}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 hover:bg-sky-100 dark:hover:bg-sky-900/40 transition-all text-xs font-semibold"
-              aria-label="Share on Twitter"
+                <a
+                  href={shareLinks.twitter}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 hover:bg-sky-100 dark:hover:bg-sky-900/40 transition-all text-xs font-semibold"
+                  aria-label="Share on Twitter"
+                >
+                  <Twitter size={14} />
+                  Twitter
+                </a>
+
+                <a
+                  href={shareLinks.facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all text-xs font-semibold"
+                  aria-label="Share on Facebook"
+                >
+                  <Facebook size={14} />
+                  Facebook
+                </a>
+
+                <a
+                  href={shareLinks.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all text-xs font-semibold"
+                  aria-label="Share on LinkedIn"
+                >
+                  <Linkedin size={14} />
+                  LinkedIn
+                </a>
+              </div>
+
+              <button
+                onClick={handleCopyLink}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-all text-xs font-semibold"
+                aria-label="Copy event link"
               >
-              <Twitter size={14} />
-              Twitter
-            </a>
+                {copied ? (
+                  <>
+                    <Check size={14} className="text-green-500" /> Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy size={14} /> Copy Link
+                  </>
+                )}
+              </button>
 
-            href={shareLinks.facebook}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all text-xs font-semibold"
-            aria-label="Share on Facebook"
-            >
-            <Facebook size={14} />
-            Facebook
-          </a>
-
-          href={shareLinks.linkedin}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all text-xs font-semibold"
-          aria-label="Share on LinkedIn"
-          >
-          <Linkedin size={14} />
-          LinkedIn
-        </a>
-      </></div><button
-        onClick={handleCopyLink}
-        className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-all text-xs font-semibold"
-        aria-label="Copy event link"
-      >
-        {copied ? (
-          <><Check size={14} className="text-green-500" /> Copied!</>
-        ) : (
-          <><Copy size={14} /> Copy Link</>
-        )}
-      </button></>
-  {navigator.share && (
-    <button
-      onClick={handleNativeShare}
-      className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-all text-xs font-semibold"
-      aria-label="Share via device"
-    >
-      <Share2 size={14} />
-      Share via Device
-    </button>
-  )}
+              {navigator.share && (
+                <button
+                  onClick={handleNativeShare}
+                  className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-all text-xs font-semibold"
+                  aria-label="Share via device"
+                >
+                  <Share2 size={14} />
+                  Share via Device
+                </button>
+              )}
 </div>
 
             <button
@@ -336,7 +341,7 @@ const EventDetailsPage = () => {
           </aside>
         </motion.div>
       </main>
-    </div>
+    </div></>
   );
 };
 
