@@ -45,12 +45,19 @@ export const SessionRecoveryProvider = ({ children }) => {
   const [lastActivity, setLastActivity] = useState(Date.now());
 
   const lastActivityRef = useRef(Date.now());
+  const lastStateUpdateRef = useRef(Date.now());
   const saveTimeoutRef = useRef(null);
   const activityTimeoutRef = useRef(null);
 
   const updateActivity = useCallback(() => {
     const now = Date.now();
     lastActivityRef.current = now;
+
+    // Throttle state updates to at most once every 5 seconds (5000ms) to prevent UI thread freezes
+    if (now - lastStateUpdateRef.current > 5000) {
+      setLastActivity(now);
+      lastStateUpdateRef.current = now;
+    }
   }, []);
 
   useEffect(() => {
