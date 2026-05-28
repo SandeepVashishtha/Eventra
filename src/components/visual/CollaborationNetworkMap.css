@@ -1,0 +1,322 @@
+/* Theme Variables */
+:root {
+  --cnm-bg: #0f172a;
+  --cnm-card: #1e293b;
+  --cnm-text: #f1f5f9;
+  --cnm-text-muted: #94a3b8;
+  --cnm-border: #334155;
+  --cnm-primary: #6366f1;
+  --cnm-glow: rgba(99, 102, 241, 0.3);
+}
+
+.cnm-section.light-theme {
+  --cnm-bg: #f8fafc;
+  --cnm-card: #ffffff;
+  --cnm-text: #1e293b;
+  --cnm-text-muted: #64748b;
+  --cnm-border: #e2e8f0;
+  --cnm-primary: #4f46e5;
+  --cnm-glow: rgba(79, 70, 229, 0.2);
+}
+
+/* Header Controls */
+.cnm-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.cnm-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.cnm-control-btn {
+  background: var(--cnm-card);
+  border: 1px solid var(--cnm-border);
+  color: var(--cnm-text);
+  padding: 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cnm-control-btn:hover {
+  background: var(--cnm-primary);
+  border-color: var(--cnm-primary);
+  color: white;
+}
+
+/* Filters */
+.cnm-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  background: var(--cnm-card);
+  border-radius: 12px;
+  border: 1px solid var(--cnm-border);
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--cnm-bg);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--cnm-border);
+}
+
+.filter-icon { color: var(--cnm-text-muted); }
+
+.filter-input, .filter-select {
+  background: transparent;
+  border: none;
+  color: var(--cnm-text);
+  font-size: 0.875rem;
+  outline: none;
+  min-width: 150px;
+}
+
+.filter-select { cursor: pointer; }
+
+.filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--cnm-text-muted);
+  cursor: pointer;
+}
+
+.filter-toggle input { cursor: pointer; }
+
+/* Stats Bar */
+.cnm-stats-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--cnm-card);
+  border-radius: 12px;
+  border: 1px solid var(--cnm-border);
+  margin: 1rem 0;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--cnm-text);
+}
+
+.stat-item svg { color: var(--cnm-primary); }
+
+.stat-number {
+  display: block;
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--cnm-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Popup Card Enhancements */
+.cnm-popup-card {
+  position: absolute;
+  width: 260px;
+  background: var(--cnm-card);
+  border: 1px solid var(--cnm-border);
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  z-index: 50;
+  transform: translate(-50%, -100%);
+}
+
+.cnm-popup-card.pinned {
+  z-index: 60;
+  border-color: var(--cnm-primary);
+  box-shadow: 0 0 0 3px var(--cnm-glow), 0 20px 40px rgba(0,0,0,0.3);
+}
+
+.popup-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: var(--cnm-bg);
+  border: none;
+  color: var(--cnm-text-muted);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.popup-close:hover {
+  background: #ef4444;
+  color: white;
+}
+
+.popup-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--cnm-text-muted);
+}
+
+.popup-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.75rem 0;
+}
+
+.category-tag {
+  background: var(--cnm-primary);
+  color: white;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.popup-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--cnm-border);
+}
+
+.popup-region {
+  font-size: 0.8rem;
+  color: var(--cnm-text-muted);
+  font-weight: 500;
+}
+
+.popup-action {
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.6rem;
+  background: var(--cnm-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.popup-action:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+/* Legend */
+.cnm-legend {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  background: var(--cnm-card);
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--cnm-border);
+  font-size: 0.8rem;
+  color: var(--cnm-text);
+}
+
+.cnm-legend h5 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.85rem;
+  color: var(--cnm-text-muted);
+}
+
+.legend-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Zoom Indicator */
+.cnm-zoom-indicator {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  background: var(--cnm-card);
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  color: var(--cnm-text-muted);
+  border: 1px solid var(--cnm-border);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .cnm-filters {
+    flex-direction: column;
+  }
+  .filter-group {
+    width: 100%;
+  }
+  .cnm-stats-bar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .cnm-popup-card {
+    width: 240px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .connection-animated-path,
+  .node-pulse {
+    animation: none !important;
+  }
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Accessibility */
+.cnm-node-group:focus {
+  outline: 2px solid var(--cnm-primary);
+  outline-offset: 4px;
+}

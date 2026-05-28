@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from "react-toastify";
@@ -8,12 +8,19 @@ import { LogIn, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState({});
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const location = useLocation();
+  const { login, authRequest } = useAuth();
+  const from = location.state?.from;
+  const redirectPath =
+    typeof from === "string"
+      ? from
+      : from?.pathname
+        ? `${from.pathname}${from.search || ""}${from.hash || ""}`
+        : "/dashboard";
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -46,13 +53,12 @@ const LoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-    setLoading(true);
 
     try {
       const ok = await login(formData.usernameOrEmail, formData.password);
       if (ok) {
-        showAuthToast("Login successful! Redirecting to dashboard...", () =>
-          navigate("/dashboard", { replace: true })
+        showAuthToast("Login successful! Redirecting...", () =>
+          navigate(redirectPath, { replace: true })
         );
       }
     } catch (err) {
@@ -60,10 +66,7 @@ const LoginForm = () => {
         // eslint-disable-next-line no-console
         console.error("Login error:", err);
       }
-      setError({ general: err.message || "Invalid email or password" });
       toast.error(err.message || 'Login failed. Please check your credentials.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -116,13 +119,17 @@ const LoginForm = () => {
               value={formData.usernameOrEmail}
               onChange={handleChange}
               required
-              disabled={loading}
+              disabled={authRequest.loading}
               placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
-              className="w-full pl-10 pr-4 py-3 bg-[#0f172a]/60 border border-slate-700/50 rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner"
+              aria-invalid={!!error.usernameOrEmail}
+              aria-describedby={error.usernameOrEmail ? "usernameOrEmail-error" : undefined}
+              className={`w-full pl-10 pr-4 py-3 bg-[#0f172a]/60 border ${
+                error.usernameOrEmail ? "border-red-500" : "border-slate-700/50"
+              } rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner`}
             />
           </div>
           {error.usernameOrEmail && (
-            <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-1 flex items-center gap-1">
+            <motion.p id="usernameOrEmail-error" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-1 flex items-center gap-1" role="alert">
               <span>⚠</span> {error.usernameOrEmail}
             </motion.p>
           )}
@@ -142,9 +149,13 @@ const LoginForm = () => {
               value={formData.password}
               onChange={handleChange}
               required
-              disabled={loading}
+              disabled={authRequest.loading}
               placeholder="Create a secure password"
-              className="w-full pl-10 pr-10 py-3 bg-[#0f172a]/60 border border-slate-700/50 rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner"
+              aria-invalid={!!error.password}
+              aria-describedby={error.password ? "password-error" : undefined}
+              className={`w-full pl-10 pr-10 py-3 bg-[#0f172a]/60 border ${
+                error.password ? "border-red-500" : "border-slate-700/50"
+              } rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner`}
             />
             <button
               type="button"
@@ -155,7 +166,7 @@ const LoginForm = () => {
             </button>
           </div>
           {error.password && (
-            <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-1 flex items-center gap-1">
+            <motion.p id="password-error" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-1 flex items-center gap-1" role="alert">
               <span>⚠</span> {error.password}
             </motion.p>
           )}
@@ -169,9 +180,9 @@ const LoginForm = () => {
           </div>
         </div>
 
-        {error.general && (
+        {authRequest.error && (
           <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm">
-            {error.general}
+            {authRequest.error}
           </div>
         )}
 
@@ -179,12 +190,12 @@ const LoginForm = () => {
           whileHover={{ scale: 1.03, boxShadow: '0 0 30px rgba(59,130,246,0.6)' }}
           whileTap={{ scale: 0.97 }}
           type="submit"
-          disabled={loading}
+          disabled={authRequest.loading}
           className="relative w-full overflow-hidden flex justify-center py-3.5 px-4 rounded-xl text-sm font-bold text-[#0f172a] bg-gradient-to-r from-blue-400 to-indigo-400 hover:from-blue-300 hover:to-indigo-300 shadow-[0_0_20px_rgba(59,130,246,0.4)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0f172a] focus:ring-blue-500 transition-all duration-300 group"
         >
           {/* Shimmer overlay */}
           <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
-          {loading ? (
+          {authRequest.loading ? (
             <div className="flex items-center gap-2 relative z-10">
               <div className="w-4 h-4 border-2 border-[#0f172a] border-t-transparent rounded-full animate-spin"></div>
               <span>Signing In...</span>

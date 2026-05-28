@@ -191,7 +191,7 @@ jobs:
 
             const currentLabels = await getCurrentLabels();
 
-            // Remove stale quality labels
+            // Remove ONLY stale quality labels — never touch labels from other workflows
             const staleQualityLabels = currentLabels.filter(
               l => qualityLabels.includes(l) && l !== targetLabel
             );
@@ -204,7 +204,7 @@ jobs:
               console.log(`Removed stale quality label: ${label}`);
             }
 
-            // Apply target label if not already present
+            // Apply target label ONLY if not already present (idempotency guard)
             if (targetLabel && !currentLabels.includes(targetLabel)) {
               await github.rest.issues.addLabels({
                 ...repo,
@@ -215,5 +215,5 @@ jobs:
             } else if (!targetLabel) {
               console.log('PR quality score is below threshold — no quality label applied.');
             } else {
-              console.log(`Quality label already applied: ${targetLabel}`);
+              console.log(`Quality label already correct: ${targetLabel} — skipping.`);
             }
