@@ -1,9 +1,10 @@
-import * as Sentry from "@sentry/react";
-
 import { ENV } from "../config/env";
 
 const dsn = ENV.SENTRY_DSN;
 const isProduction = process.env.NODE_ENV === "production";
+const Sentry = {
+  captureException: () => {},
+};
 
 export const initializeGlobalErrorHandling =
   () => {

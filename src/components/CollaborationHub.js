@@ -6,11 +6,18 @@ import { toast } from 'react-toastify';
 import './components.css';
 import CharacterCounter from "../../components/common/CharacterCounter";
 import { sanitizeInputText } from "../utils/inputSanitization";
+import EventMaterials from "./common/EventMaterials";
 
 const CollaborationHub = () => {
   const prefersReducedMotion = useReducedMotion();
   const [activeSection, setActiveSection] = useState('opportunities');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const mockMaterials = [
+    { id: 'slides-1', title: 'Tech Summit 2025 Keynote Presentation', type: 'ppt', size: '14.2 MB', url: '#' },
+    { id: 'code-1', title: 'Collaboration Hub Prototype Core Source', type: 'doc', size: '42.5 MB', url: '#' },
+    { id: 'deps-1', title: 'Hackathon Node Modules Pre-packaged Bundle', type: 'pdf', size: '84.1 MB', url: '#' }
+  ];
   const [filterType, setFilterType] = useState('All');
   const [selectedOpportunity, setSelectedOpportunity] = useState(null);
   const [applicationText, setApplicationText] = useState('');
@@ -226,6 +233,7 @@ const CollaborationHub = () => {
           { id: 'opportunities', name: 'Opportunities', icon: '🎯' },
           { id: 'my-collaborations', name: 'My Collaborations', icon: '🤝' },
           { id: 'networking', name: 'Networking', icon: '🌐' },
+          { id: 'materials', name: 'Shared Materials', icon: '📚' },
           { id: 'create-request', name: 'Create Request', icon: '➕' }
         ].map((tab) => (
           <button
@@ -254,6 +262,12 @@ const CollaborationHub = () => {
         transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
         className="tab-content"
       >
+        {activeSection === 'materials' && (
+          <div className="materials-section max-w-4xl mx-auto px-4" style={{ width: "100%", maxWidth: "56rem", margin: "0 auto", paddingLeft: "1rem", paddingRight: "1rem" }}>
+            <EventMaterials materials={mockMaterials} />
+          </div>
+        )}
+
         {activeSection === 'opportunities' && (
           <div className="opportunities-section">
             <div className="section-header flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -321,42 +335,30 @@ const CollaborationHub = () => {
                     </div>
                   </div>
                   
-                  <div className="opportunity-details">
+                  <div className="opportunity-details grid grid-cols-2 gap-3 mb-5 border-t border-slate-100 dark:border-slate-800/60 pt-4">
                     <div className="detail-item">
-                      <span className="label">Budget:</span>
-                      <span className="value">{opportunity.budget}</span>
+                      <span className="label block text-[10px] text-slate-400 font-bold uppercase">Budget</span>
+                      <span className="value text-xs font-black text-slate-800 dark:text-slate-200">{opportunity.budget}</span>
                     </div>
-                    <div className="detail-item">
-                      <span className="label">Deadline:</span>
-                      <span className="value">{new Date(opportunity.deadline).toLocaleDateString()}</span>
+                    <div className="detail-item text-right">
+                      <span className="label block text-[10px] text-slate-400 font-bold uppercase">Deadline</span>
+                      <span className="value text-xs font-black text-slate-800 dark:text-slate-200">
+                        {new Date(opportunity.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      </span>
                     </div>
-                    
-                    <div>
-                      <div className="opportunity-details grid grid-cols-2 gap-3 mb-5 border-t border-slate-100 dark:border-slate-800/60 pt-4">
-                        <div className="detail-item">
-                          <span className="label block text-[10px] text-slate-400 font-bold uppercase">Budget</span>
-                          <span className="value text-xs font-black text-slate-800 dark:text-slate-200">{opportunity.budget}</span>
-                        </div>
-                        <div className="detail-item text-right">
-                          <span className="label block text-[10px] text-slate-400 font-bold uppercase">Deadline</span>
-                          <span className="value text-xs font-black text-slate-800 dark:text-slate-200">
-                            {new Date(opportunity.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="opportunity-actions flex gap-2 pt-2">
-                        <button 
-                          onClick={() => setSelectedOpportunity(opportunity)}
-                          className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all text-center"
-                        >
-                          Apply Now
-                        </button>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))
-              ) : (
+                  </div>
+                  
+                  <div className="opportunity-actions flex gap-2 pt-2">
+                    <button 
+                      onClick={() => setSelectedOpportunity(opportunity)}
+                      className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all text-center"
+                    >
+                      Apply Now
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+              {filteredOpportunities.length === 0 && (
                 <div className="col-span-full py-16 text-center text-slate-500 dark:text-slate-400">
                   No opportunities match your filter or search query.
                 </div>
@@ -420,10 +422,10 @@ const CollaborationHub = () => {
                   </div>
                   
                   <div className="collaboration-actions flex gap-2">
-                    <button className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-850 dark:text-slate-200 hover:bg-slate-200 rounded-xl text-xs font-bold transition-all">
+                    <button className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-850 dark:text-slate-200 hover:bg-slate-200 rounded-xl text-xs font-bold transition-all" aria-label="button">
                       View Details
                     </button>
-                    <button className="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all">
+                    <button className="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all" aria-label="button">
                       Schedule Meeting
                     </button>
                   </div>
@@ -470,21 +472,26 @@ const CollaborationHub = () => {
                     </div>
                     
                     <div className="networking-actions flex gap-2">
-                      <button className="flex-1 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1">
+                      <button className="flex-1 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1" aria-label="button">
                         <Check size={14} /> Accept Connection
                       </button>
-                      <button className="px-3 py-2 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all">
+                      <button className="px-3 py-2 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all" aria-label="button">
                         Message
                       </button>
                     </div>
-                  </motion.div>
-                ))
-              ) : (
+                  </div>
+                </motion.div>
+              ))}
+              {filteredNetworking.length === 0 && (
                 <div className="col-span-full py-16 text-center text-slate-500 dark:text-slate-400">
                   No networking matches found.
                 </div>
               )}
-            <        {activeSection === 'create-request' && (
+            </div>
+          </div>
+        )}
+
+        {activeSection === 'create-request' && (
           <div className="create-request-section max-w-2xl mx-auto" role="region" aria-labelledby="form-heading">
             <h2 id="form-heading" className="text-xl font-bold text-slate-900 dark:text-white mb-6">Create Collaboration Request</h2>
             <form onSubmit={handleRequestSubmit} className="request-form p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl space-y-5">
@@ -606,7 +613,7 @@ const CollaborationHub = () => {
                 <span id="skills-hint" className="sr-only">Comma separated list of required skills</span>
               </div>
               
-              <button type="submit" className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all">
+              <button type="submit" className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all" aria-label="button">
                 Create Collaboration Request
               </button>
             </form>
@@ -735,7 +742,7 @@ const CollaborationHub = () => {
                   <button 
                     type="submit"
                     className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold"
-                  >
+                   aria-label="button">
                     Submit Application
                   </button>
                 </div>

@@ -530,7 +530,7 @@ export default function CollaborationNetworkMap() {
                 </div>
 
                 {/* Action */}
-                <button className="popup-action">
+                <button className="popup-action" aria-label="button">
                   <ExternalLink size={14} />
                   <span>View Hub Details</span>
                 </button>

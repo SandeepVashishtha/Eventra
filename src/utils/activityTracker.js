@@ -1,29 +1,42 @@
-export const trackUserInterest = (
-  interest
-) => {
+// 🔥 FIX: In-memory queue and lock to prevent localStorage race conditions
+let isUpdating = false;
+let interestQueue = [];
 
-  const existing =
-    JSON.parse(
-      localStorage.getItem(
-        "eventra_user_profile"
-      )
-    ) || {};
+const processInterestQueue = () => {
+  if (isUpdating || interestQueue.length === 0) return;
+  isUpdating = true;
 
-  const interests =
-    existing.interests || [];
+  try {
+    const existing = JSON.parse(localStorage.getItem("eventra_user_profile")) || {};
+    let interests = existing.interests || [];
+    let modified = false;
 
-  if (!interests.includes(interest)) {
+    while (interestQueue.length > 0) {
+      const interest = interestQueue.shift();
+      if (!interests.includes(interest)) {
+        interests.push(interest);
+        modified = true;
+      }
+    }
 
-    interests.push(interest);
-
+    if (modified) {
+      localStorage.setItem(
+        "eventra_user_profile",
+        JSON.stringify({ ...existing, interests })
+      );
+    }
+  } catch (error) {
+    console.error("Failed to update user interests:", error);
+  } finally {
+    isUpdating = false;
+    if (interestQueue.length > 0) {
+      processInterestQueue();
+    }
   }
+};
 
-  localStorage.setItem(
-    "eventra_user_profile",
-    JSON.stringify({
-      ...existing,
-      interests,
-    })
-  );
-
+export const trackUserInterest = (interest) => {
+  if (!interest) return;
+  interestQueue.push(interest);
+  processInterestQueue();
 };

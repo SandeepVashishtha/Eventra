@@ -13,12 +13,15 @@ const formatToICSDate = (dateStr) => {
   return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
 };
 
-// Helper to safely escape special characters in ICS strings
+// Helper to safely escape special characters in ICS strings (RFC 5545 compliant).
+// Carriage returns (\r) are stripped before newlines are escaped so that
+// user-supplied text cannot inject extra ICS content lines via CRLF sequences.
 const escapeICSText = (text = "") => {
   return text
     .replace(/\\/g, "\\\\")
     .replace(/;/g, "\\;")
     .replace(/,/g, "\\,")
+    .replace(/\r/g, "")
     .replace(/\n/g, "\\n");
 };
 

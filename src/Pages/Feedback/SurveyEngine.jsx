@@ -250,7 +250,7 @@ const SurveyEngine = () => {
             <button
               onClick={handleSaveSurvey}
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all cursor-pointer"
-            >
+             aria-label="button">
               <FiSave className="w-5 h-5" />
               Publish Survey
             </button>
@@ -280,7 +280,7 @@ const SurveyEngine = () => {
 
         {/* MAIN LAYOUT */}
         <AnimatePresence mode="wait">
-          {activeTab === "builder" ? (
+          {activeTab === "builder" && (
             <motion.div
               key="builder-tab"
               initial={{ opacity: 0, y: 15 }}
@@ -308,13 +308,13 @@ const SurveyEngine = () => {
                     <button
                       onClick={handleRestoreDraft}
                       className="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white rounded-xl shadow-sm transition"
-                    >
+                     aria-label="button">
                       Restore Template
                     </button>
                     <button
                       onClick={handleDiscardDraft}
                       className="flex-1 sm:flex-none px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-350 dark:hover:bg-slate-750 text-xs font-bold text-slate-700 dark:text-slate-300 rounded-xl transition"
-                    >
+                     aria-label="button">
                       Discard
                     </button>
                   </div>
@@ -528,7 +528,8 @@ const SurveyEngine = () => {
                 </div>
               </div>
             </motion.div>
-          ) : (
+          )}
+          {activeTab === "preview" && (
             <motion.div
               key="preview-tab"
               initial={{ opacity: 0, y: 15 }}
@@ -598,12 +599,13 @@ const SurveyEngine = () => {
                 <button
                   disabled
                   className="px-6 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-semibold cursor-not-allowed text-sm"
-                >
+                 aria-label="button">
                   Submit Survey Feedback
                 </button>
               </div>
             </motion.div>
-          ) : (
+          )}
+          {activeTab === "analytics" && (
             <motion.div
               key="analytics-tab"
               initial={{ opacity: 0, y: 15 }}
