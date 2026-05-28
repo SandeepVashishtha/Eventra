@@ -119,6 +119,15 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
     return { total, occupied, available: total - occupied };
   }, [elements]);
 
+  // Pre-calculate seat positions to avoid massive CPU spikes during pan/zoom renders
+  const elementSeatPositions = useMemo(() => {
+    const map = new Map();
+    elements.forEach((el) => {
+      map.set(el.id, getSeatPositions(el));
+    });
+    return map;
+  }, [elements, getSeatPositions]);
+
   // Auto-center and zoom to highlighted seat in read-only dashboard view
   useEffect(() => {
     if (readOnly && selectedSeat && elements.length > 0) {
@@ -339,7 +348,7 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
                 </text>
 
                 {/* Render Interactive Chair elements */}
-                {getSeatPositions(el).map((seat) => {
+                {(elementSeatPositions.get(el.id) || []).map((seat) => {
                   const isOccupied = el.assignedAttendees[seat.index];
                   const isSelected = isSeatSelected(el.id, seat.index);
                   const seatLabel = (el.seatLabels && el.seatLabels[seat.index]) || `Seat ${seat.index + 1}`;
