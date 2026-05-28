@@ -4,24 +4,44 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import DOMPurify from "dompurify";
 import CountdownTimer from "../../components/common/CountdownTimer";
-import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft, CalendarPlus, WifiOff } from "lucide-react";
-import { Helmet } from "react-helmet-async";
+import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft } from "lucide-react";
+import { Share2, Twitter, Facebook, Linkedin, MessageCircle, Copy, Check } from "lucide-react";
 import eventsMockData from "./eventsMockData.json";
 import { getEventStatus } from "../../utils/eventUtils";
-import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
-import {
-  getCacheAgeLabel,
-  getCachedEventDetail,
-  saveCachedEventDetail,
-} from "../../utils/offlineEventCache";
-import { toast } from "react-hot-toast";
 
-const normalizeEvent = (event) => ({
-  ...event,
-  status: event.status || getEventStatus(event),
-});
+// Removed unused imports: addEventToGoogleCalendar, ShareMenu, CertificateDownload, generateEventSharingData
+const [copied, setCopied] = useState(false);
+const shareUrl = `${window.location.origin}/events/${event.id}`;
+const shareText = `Check out this event: ${event.title}`;
 
+const handleCopyLink = async () => {
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  } catch {
+    toast.error("Failed to copy link.");
+  }
+};
+
+const handleNativeShare = async () => {
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: event.title,
+        text: shareText,
+        url: shareUrl,
+      });
+    } catch {}
+  }
+};
+
+const shareLinks = {
+  twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
+  facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
+  linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
+  whatsapp: `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
+};
 const EventDetailsPage = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
@@ -117,29 +137,16 @@ const EventDetailsPage = () => {
     );
   }
 
-  const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
-  const pageUrl = `${window.location.origin}/events/${event.id}`;
-  const pageTitle = `${event.title} | Eventra`;
-  const pageDescription = event.description?.substring(0, 160) || "Join this event on Eventra.";
+  const isPastEvent =
+    getEventStatus(event) === "past" || getEventStatus(event) === "ended";
+
+  // Removed unused derived values and handlers to satisfy linting rules
 
   return (
-    <div className="mt-16 min-h-svh overflow-x-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
-      <Helmet>
-        <title>{pageTitle}</title>
-        <meta name="description" content={pageDescription} />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content={pageUrl} />
-        <meta property="og:title" content={pageTitle} />
-        <meta property="og:description" content={pageDescription} />
-        <meta property="og:image" content={event.image} />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={pageTitle} />
-        <meta name="twitter:description" content={pageDescription} />
-        <meta name="twitter:image" content={event.image} />
-      </Helmet>
-
-      <header className="sticky top-16 z-40 border-b border-gray-200 bg-white/90 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/90 md:top-20">
-        <div className="mx-auto max-w-6xl safe-area-x py-3 sm:px-6 sm:py-4 lg:px-8">
+    <><div className="min-h-screen mt-16 bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
+      {/* Back Button */}
+      <header className="sticky top-20 md:top-24 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <button
             type="button"
             onClick={() => navigate("/events")}
@@ -170,20 +177,25 @@ const EventDetailsPage = () => {
               <img
                 src={event.image}
                 alt={`${event.title} event banner`}
-                loading="eager"
-                decoding="async"
-                width={960}
-                height={540}
-                className="h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-3 text-white sm:p-6">
-                <div className="mb-3 flex flex-wrap items-center gap-2 sm:mb-4 sm:gap-3">
-                  <span className="rounded-full bg-indigo-600 px-3 py-1 text-xs font-semibold sm:text-sm">
-                    {(event.type || event.category || "event").charAt(0).toUpperCase() +
-                      (event.type || event.category || "event").slice(1)}
+                className="w-full h-96 object-cover" />
+
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+              <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-6 text-white">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="px-3 py-1 bg-indigo-600 rounded-full text-sm font-semibold">
+                    {event.type
+                      .charAt(0)
+                      .toUpperCase() +
+                      event.type.slice(
+                        1
+                      )}
                   </span>
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold sm:text-sm ${isPastEvent ? "bg-gray-600" : "bg-green-600"}`}>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-semibold ${isPastEvent
+                        ? "bg-gray-600"
+                        : "bg-green-600"}`}
+                  >
                     {isPastEvent ? "Past Event" : "Upcoming"}
                   </span>
                 </div>
@@ -199,8 +211,13 @@ const EventDetailsPage = () => {
               </h2>
               <p
                 className="overflow-wrap-anywhere text-base leading-7 text-gray-600 dark:text-gray-300 sm:text-lg sm:leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description || "") }}
-              />
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(event.description),
+                }}
+
+              <p
+                className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description) }} />
             </section>
           </section>
 
@@ -239,34 +256,75 @@ const EventDetailsPage = () => {
               </Link>
             )}
 
-            {!isPastEvent && (
-              <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">Add to Calendar</h3>
-                <div className="flex flex-col gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      downloadICSFile(event);
-                      toast.success("Calendar invite downloaded!");
-                    }}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-800 transition-all duration-200 hover:border-green-300 hover:bg-green-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:hover:border-green-700 dark:hover:bg-green-900/20"
-                  >
-                    <CalendarPlus size={16} className="text-green-500" />
-                    Download .ics Invite
-                  </button>
-                  {generateGoogleCalendarLink(event) && (
-                    <a href={generateGoogleCalendarLink(event)} target="_blank" rel="noopener noreferrer" className="inline-flex w-full items-center justify-center rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-800 transition-all duration-200 hover:bg-blue-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-blue-900/20">
-                      Add to Google Calendar
-                    </a>
-                  )}
-                  {generateOutlookLink(event) && (
-                    <a href={generateOutlookLink(event)} target="_blank" rel="noopener noreferrer" className="inline-flex w-full items-center justify-center rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-800 transition-all duration-200 hover:bg-blue-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-blue-900/20">
-                      Add to Outlook
-                    </a>
-                  )}
-                </div>
-              </div>
-            )}
+            {/* Share Section */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <Share2 size={16} className="text-indigo-500" />
+                Share this Event
+              </h3>
+              <div className="grid grid-cols-2 gap-2 mb-3">
+
+                href={shareLinks.whatsapp}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/40 transition-all text-xs font-semibold"
+                aria-label="Share on WhatsApp"
+                >
+                <MessageCircle size={14} />
+                WhatsApp
+              </a>
+
+              href={shareLinks.twitter}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 hover:bg-sky-100 dark:hover:bg-sky-900/40 transition-all text-xs font-semibold"
+              aria-label="Share on Twitter"
+              >
+              <Twitter size={14} />
+              Twitter
+            </a>
+
+            href={shareLinks.facebook}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all text-xs font-semibold"
+            aria-label="Share on Facebook"
+            >
+            <Facebook size={14} />
+            Facebook
+          </a>
+
+          href={shareLinks.linkedin}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all text-xs font-semibold"
+          aria-label="Share on LinkedIn"
+          >
+          <Linkedin size={14} />
+          LinkedIn
+        </a>
+      </></div><button
+        onClick={handleCopyLink}
+        className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-all text-xs font-semibold"
+        aria-label="Copy event link"
+      >
+        {copied ? (
+          <><Check size={14} className="text-green-500" /> Copied!</>
+        ) : (
+          <><Copy size={14} /> Copy Link</>
+        )}
+      </button></>
+  {navigator.share && (
+    <button
+      onClick={handleNativeShare}
+      className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-all text-xs font-semibold"
+      aria-label="Share via device"
+    >
+      <Share2 size={14} />
+      Share via Device
+    </button>
+  )}
+</div>
 
             <button
               type="button"
