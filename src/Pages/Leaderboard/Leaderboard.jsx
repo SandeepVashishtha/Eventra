@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FaCode,
@@ -19,6 +19,16 @@ import StyledDropdown from "../../components/StyledDropdown";
 import { LeaderboardTableSkeleton } from "../../components/common/SkeletonLoaders";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useLeaderboardStream, SSE_STATUS } from "../../context/RealTimeContext";
+import {
+  filterContributors,
+  sortContributors,
+  paginateContributors,
+  totalLeaderboardPages,
+  buildRanksMap,
+  computeLeaderboardStats,
+  calculatePrPoints,
+  applyAchievementBonus,
+} from "../../utils/leaderboardUtils";
 
 // ─── Category filter definitions ───────────────────────────────────────────────
 const CATEGORY_FILTERS = [
@@ -78,54 +88,35 @@ const GITHUB_REPO = "SandeepVashishtha/Eventra";
 // Token is managed securely by the backend proxy
 const LEADERBOARD_CACHE_KEY = "leaderboardData:v2";
 
-// Points mapping for PR labels (keeps scoring logic centralized)
-const POINTS = {
-  gssoclevel1: 3,
-  gssoclevel2: 7,
-  gssoclevel3: 10,
-};
-const DEFAULT_MERGED_PR_POINTS = 1;
-
-const normalizeLabel = (label = "") =>
-  label.toLowerCase().replace(/[^a-z0-9]/g, "");
-
-const calculatePrPoints = (labels) => {
-  const levelPoints = labels.reduce((total, label) => {
-    const normalized = normalizeLabel(label);
-    return total + (POINTS[normalized] || 0);
-  }, 0);
-
-  return levelPoints || DEFAULT_MERGED_PR_POINTS;
-};
-
-// Custom lightweight high-performance count-up component
+// AnimatedCounter uses requestAnimationFrame instead of setInterval to keep
+// count-up animations aligned with the browser's paint cycle, avoiding
+// invisible ticks that setInterval fires even when the tab is hidden.
 const AnimatedCounter = ({ value }) => {
   const [count, setCount] = useState(0);
+  const rafRef = useRef(null);
 
   useEffect(() => {
-    let start = 0;
     const end = parseInt(value, 10);
     if (isNaN(end)) return;
-    if (start === end) {
-      setCount(end);
-      return;
-    }
-    const duration = 1200; // 1.2s total count duration
-    const steps = Math.min(end, 50);
-    const increment = Math.ceil(end / steps);
-    const stepTime = Math.floor(duration / steps);
+    if (end === 0) { setCount(0); return; }
 
-    const timer = setInterval(() => {
-      start += increment;
-      if (start >= end) {
-        setCount(end);
-        clearInterval(timer);
-      } else {
-        setCount(start);
+    const duration = 1200; // ms
+    const startTime = performance.now();
+
+    const tick = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease-out cubic for a natural deceleration
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.round(eased * end));
+
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(tick);
       }
-    }, stepTime);
+    };
 
-    return () => clearInterval(timer);
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
   }, [value]);
 
   return <span>{count}</span>;
@@ -306,14 +297,7 @@ export default function LeaderBoard() {
       }
 
       // Add achievement-based bonus points to gamify contributors
-      Object.keys(contributorsMap).forEach((user) => {
-        const count = contributorsMap[user].prs;
-        if (count >= 10) {
-          contributorsMap[user].points += 10;
-        } else if (count >= 5) {
-          contributorsMap[user].points += 5;
-        }
-      });
+      Object.values(contributorsMap).forEach(applyAchievementBonus);
 
       const sortedContributors = Object.values(contributorsMap).sort(
         (a, b) => b.points - a.points
@@ -360,53 +344,37 @@ export default function LeaderBoard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchContributors is stable across renders
   }, []);
 
-  const filteredContributors = contributors.filter((c) => {
-    const q = search.trim().toLowerCase();
-    const matchSearch = !q || c.username.toLowerCase().includes(q) || (c.name && c.name.toLowerCase().includes(q));
-    if (!matchSearch) return false;
-
-    // Category filters (deterministic simulation based on username hash)
-    if (activeCategory === "monthly") {
-      // Show top ~40% as "monthly stars" based on points threshold
-      const threshold = contributors.length > 0
-        ? contributors[Math.floor(contributors.length * 0.4)]?.points || 0
-        : 0;
-      return c.points >= threshold;
-    }
-    if (activeCategory === "mentors") {
-      // Show contributors with 5+ PRs as "mentors"
-      return c.prs >= 5;
-    }
-    return true; // "overall" shows everyone
-  });
-
-  const sortedContributors = [...filteredContributors].sort((a, b) => {
-    if (sortBy === "points") return b.points - a.points;
-    if (sortBy === "prs") return b.prs - a.prs;
-    if (sortBy === "username") return a.username.localeCompare(b.username);
-    return 0;
-  });
-
-  const indexOfLast = currentPage * CONTRIBUTORS_PER_PAGE;
-  const indexOfFirst = indexOfLast - CONTRIBUTORS_PER_PAGE;
-  const currentContributors = sortedContributors.slice(
-    indexOfFirst,
-    indexOfLast
-  );
-  const totalPages = Math.ceil(
-    sortedContributors.length / CONTRIBUTORS_PER_PAGE
+  // Each derived value is memoized — only recomputes when its specific inputs
+  // change, preventing all six O(N) passes from running on every render.
+  const filteredContributors = useMemo(
+    () => filterContributors(contributors, search, activeCategory),
+    [contributors, search, activeCategory]
   );
 
-  const ranksMap = {};
-  contributors.forEach((c, i) => {
-    ranksMap[c.username] = i + 1;
-  });
+  const sortedContributors = useMemo(
+    () => sortContributors(filteredContributors, sortBy),
+    [filteredContributors, sortBy]
+  );
 
-  const stats = {
-    totalContributors: contributors.length,
-    flooredTotalPRs: contributors.reduce((sum, c) => sum + c.prs, 0),
-    flooredTotalPoints: contributors.reduce((sum, c) => sum + c.points, 0)
-  };
+  const currentContributors = useMemo(
+    () => paginateContributors(sortedContributors, currentPage, CONTRIBUTORS_PER_PAGE),
+    [sortedContributors, currentPage]
+  );
+
+  const totalPages = useMemo(
+    () => totalLeaderboardPages(sortedContributors.length, CONTRIBUTORS_PER_PAGE),
+    [sortedContributors.length]
+  );
+
+  const ranksMap = useMemo(
+    () => buildRanksMap(contributors),
+    [contributors]
+  );
+
+  const stats = useMemo(
+    () => computeLeaderboardStats(contributors),
+    [contributors]
+  );
 
   const sortOptions = [
     { label: "Points", value: "points" },
