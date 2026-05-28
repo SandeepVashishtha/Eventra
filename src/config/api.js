@@ -6,7 +6,7 @@ import axios from "axios";
 
 const BASE_URL =
   process.env.REACT_APP_API_URL ||
-  "http://localhost:5000/api";
+  "http://localhost:8080/api";
 
 // Axios Instance
 const API = axios.create({
@@ -68,6 +68,8 @@ export const API_ENDPOINTS = {
     LOGIN: "/auth/login",
 
     SIGNUP: "/auth/signup",
+
+    REGISTER: "/auth/signup",
 
     LOGOUT: "/auth/logout",
 

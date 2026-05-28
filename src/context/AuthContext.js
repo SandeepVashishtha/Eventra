@@ -77,7 +77,7 @@ export const AuthProvider = ({ children }) => {
     let sessionToken = data?.token ?? data?.accessToken ?? null;
 
     if (!sessionToken) {
-      const authHeader = res.headers.get('Authorization') || res.headers.get('authorization');
+      const authHeader = res.headers?.['authorization'] || res.headers?.['Authorization'];
       if (authHeader && authHeader.startsWith('Bearer ')) {
         sessionToken = authHeader.substring(7);
       }
@@ -104,25 +104,29 @@ export const AuthProvider = ({ children }) => {
   };
 
 const login = async (usernameOrEmail, password) => {
-  const res = await apiUtils.post(API_ENDPOINTS.AUTH.LOGIN, {
-    usernameOrEmail,
-    password,
-  });
+  try {
+    const res = await apiUtils.post(API_ENDPOINTS.AUTH.LOGIN, {
+      usernameOrEmail,
+      password,
+    });
 
-  const data = await res.json().catch(() => null);
+    const data = res.data ?? {};
+    const { sessionToken, sessionUser } = extractSession(res, data, usernameOrEmail);
 
-  if (!res.ok) {
-    throw new Error(data?.message || data?.error || 'Invalid credentials');
+    if (!sessionToken) {
+      throw new Error('Login failed: token missing from response');
+    }
+
+    persistSession(sessionToken, sessionUser);
+    return true;
+  } catch (err) {
+    const status = err?.response?.status;
+    const msg = err?.response?.data?.message || err?.response?.data?.error;
+    if (status === 401 || status === 403) {
+      throw new Error(msg || 'Invalid credentials');
+    }
+    throw new Error(msg || err.message || 'Login failed');
   }
-
-  const { sessionToken, sessionUser } = extractSession(res, data || {}, usernameOrEmail);
-
-  if (!sessionToken) {
-    throw new Error('Login failed: token missing from response');
-  }
-
-  persistSession(sessionToken, sessionUser);
-  return true;
 };
 
 

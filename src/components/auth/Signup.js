@@ -152,23 +152,7 @@ const Signup = () => {
         confirmPassword: formData.confirmPassword,
       });
 
-      const responseText = await response.text();
-      let data = null;
-      try {
-        data = responseText ? JSON.parse(responseText) : null;
-      } catch {
-        data = null;
-      }
-
-      if (!response.ok) {
-        const backendMessage = data?.message || data?.error || '';
-        if (backendMessage) {
-          setError(`${backendMessage} (${response.status})`);
-        } else {
-          setError(`Registration failed (${response.status})`);
-        }
-        return;
-      }
+      const data = response.data ?? null;
 
       const sessionToken = data?.token;
       const sessionUser = {
