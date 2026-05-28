@@ -10,7 +10,7 @@
  * @param {string} shareData.description - The description of the content
  * @param {string} shareData.url - The URL to the content
  * @param {string} shareData.hashtags - Comma-separated list of hashtags (no # symbol)
- * @param {string} platform - The platform to share on ('email', 'twitter', 'facebook', 'linkedin', 'whatsapp', 'telegram')
+ * @param {string} platform - The platform to share on ('email', 'twitter', 'facebook', 'messenger', 'linkedin', 'whatsapp', 'telegram')
  * @returns {string} The sharing URL for the specified platform
  */
 export const generateSharingUrl = (shareData, platform) => {
@@ -31,8 +31,15 @@ export const generateSharingUrl = (shareData, platform) => {
     case 'facebook':
       return `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
       
-    case 'messenger':
-      return `https://www.facebook.com/dialog/send?link=${encodedUrl}&app_id=${process.env.REACT_APP_FACEBOOK_APP_ID || '1061800788374065'}&redirect_uri=${encodedUrl}`;
+    case 'messenger': {
+      const appId = process.env.REACT_APP_FACEBOOK_APP_ID;
+
+      if (!appId) {
+        return '';
+      }
+
+      return `https://www.facebook.com/dialog/send?link=${encodedUrl}&app_id=${appId}&redirect_uri=${encodedUrl}`;
+    }
       
     case 'linkedin':
       return `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}&title=${encodedTitle}&summary=${encodedDescription}`;
@@ -59,17 +66,21 @@ export const generateSharingUrl = (shareData, platform) => {
  */
 export const generateEventSharingData = (event, baseUrl = null) => {
   // Determine the correct base URL for sharing
-  const currentUrl = window.location.href;
-  const deployedDomain = 'eventra.sandeepvashishtha.tech';
+  const deployedDomain = process.env.REACT_APP_PUBLIC_URL || 'eventra.sandeepvashishtha.tech';
   
   // If baseUrl is provided, use it, otherwise detect
   if (!baseUrl) {
-    // Check if we're on the deployed site
-    if (currentUrl.includes(deployedDomain)) {
-      baseUrl = `https://${deployedDomain}`;
+    if (typeof window !== 'undefined') {
+      const currentUrl = window.location.href;
+      // Check if we're on the deployed site
+      if (currentUrl.includes(deployedDomain)) {
+        baseUrl = `https://${deployedDomain}`;
+      } else {
+        // Use the current origin (localhost or other development environment)
+        baseUrl = window.location.origin;
+      }
     } else {
-      // Use the current origin (localhost or other development environment)
-      baseUrl = window.location.origin;
+      baseUrl = process.env.REACT_APP_PUBLIC_URL || `https://${deployedDomain}`; // Fallback for SSR/Node
     }
   }
   
@@ -119,6 +130,7 @@ export const copyToClipboard = async (text) => {
       return successful;
     }
   } catch (err) {
+    // eslint-disable-next-line no-console
     console.error('Failed to copy text: ', err);
     return false;
   }

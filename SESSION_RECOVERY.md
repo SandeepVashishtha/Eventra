@@ -4,6 +4,8 @@
 
 The Session Recovery & Reconnect System allows users to seamlessly resume their activity after network interruptions, accidental tab closures, or page refreshes. This feature ensures that user sessions are resilient and can recover gracefully without losing progress.
 
+**For comprehensive context, see:** [Architecture & Roles: Real-Time & Offline Features](docs/ARCHITECTURE_AND_ROLES.md#-real-time--offline-features)
+
 ## Features
 
 - **Automatic Session Persistence**: Session state is automatically saved to localStorage with debouncing
