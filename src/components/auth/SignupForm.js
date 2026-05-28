@@ -1,25 +1,58 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { AtSign, Eye, EyeOff, Lock, User, Zap } from "lucide-react";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
+import { FormFieldWrapper, ValidationMessage } from "../forms";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
-import { User, AtSign, Lock, Eye, EyeOff, Zap } from 'lucide-react';
+import {
+  validate,
+  validateEmailAvailability,
+  validatePasswordStrength,
+} from "../../validation";
 
-const assessStrength = (password) => {
-  if (!password) return { criteriaMet: 0 };
-  let criteriaMet = 0;
-  if (password.length >= 8) criteriaMet++;
-  if (/[A-Z]/.test(password)) criteriaMet++;
-  if (/[a-z]/.test(password)) criteriaMet++;
-  if (/\d/.test(password)) criteriaMet++;
-  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) criteriaMet++;
-  return { criteriaMet };
+const getResultMessage = (result, fallback = "") =>
+  result?.isValid ? "" : result?.message || fallback;
+
+const parseSignupResponse = async (response) => {
+  if (typeof response?.text === "function") {
+    const responseText = await response.text();
+    let data = null;
+    try {
+      data = responseText ? JSON.parse(responseText) : null;
+    } catch {
+      data = null;
+    }
+
+    return {
+      ok: response.ok,
+      status: response.status,
+      data,
+    };
+  }
+
+  return {
+    ok: response?.status >= 200 && response?.status < 300,
+    status: response?.status,
+    data: response?.data || null,
+  };
 };
 
+const getFieldState = (message, fallbackState = "idle") =>
+  message ? "error" : fallbackState;
+
 const SignupForm = () => {
-  const prefersReducedMotion = useReducedMotion();
+  const navigate = useNavigate();
+  const { setAuthSession } = useAuth();
+  const emailValidationRequestRef = useRef(0);
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -27,114 +60,215 @@ const SignupForm = () => {
     password: "",
     confirmPassword: "",
   });
-
-  const [loading, setLoading] = useState(false);
-  const [firstNameError, setFirstNameError] = useState("");
-  const [lastNameError, setLastNameError] = useState("");
-  const [emailError, setEmailError] = useState("");
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
+  const [fieldValidationState, setFieldValidationState] = useState({
+    firstName: "idle",
+    lastName: "idle",
+    email: "idle",
+    password: "idle",
+    confirmPassword: "idle",
+  });
+  const [submitError, setSubmitError] = useState("");
   const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordMatchMessage, setPasswordMatchMessage] = useState("");
-  const navigate = useNavigate();
-  const { setAuthSession } = useAuth();
 
-  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const setFieldState = useCallback((fieldName, state) => {
+    setFieldValidationState((prev) => ({ ...prev, [fieldName]: state }));
+  }, []);
 
-  const handleChange = (e) => {
-    const newData = { ...formData, [e.target.name]: e.target.value };
-    setFormData(newData);
+  const setFieldError = useCallback((fieldName, message) => {
+    setErrors((prev) => ({ ...prev, [fieldName]: message }));
+    setFieldState(fieldName, getFieldState(message, "success"));
+  }, [setFieldState]);
 
-    if (e.target.name === "confirmPassword" || e.target.name === "password") {
-      const password = e.target.name === "password" ? e.target.value : newData.password;
-      const confirmPassword = e.target.name === "confirmPassword" ? e.target.value : newData.confirmPassword;
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    const nextData = { ...formData, [name]: value };
+    setFormData(nextData);
+    setSubmitError("");
 
-      if (password && confirmPassword) {
-        if (password === confirmPassword) {
-          setError("");
-          setPasswordMatchMessage("Passwords match!");
-        } else {
-          setError("Passwords do not match");
-          setPasswordMatchMessage("");
-        }
+    if (name === "firstName") {
+      const result = validate.firstName(value);
+      setFieldError("firstName", result === true ? "" : result);
+    }
+
+    if (name === "lastName") {
+      const result = validate.lastName(value);
+      setFieldError("lastName", result === true ? "" : result);
+    }
+
+    if (name === "email") {
+      const result = value ? validate.email(value) : true;
+      setErrors((prev) => ({ ...prev, email: result === true ? "" : result }));
+      setFieldState("email", result === true && value ? "validating" : getFieldState(result === true ? "" : result));
+    }
+
+    if (name === "password" || name === "confirmPassword") {
+      const password = name === "password" ? value : nextData.password;
+      const confirmPassword = name === "confirmPassword" ? value : nextData.confirmPassword;
+
+      if (password && confirmPassword && password === confirmPassword) {
+        setPasswordMatchMessage("Passwords match!");
+        setErrors((prev) => ({ ...prev, confirmPassword: "" }));
+        setFieldState("confirmPassword", "success");
+      } else if (confirmPassword) {
+        setPasswordMatchMessage("");
+        setErrors((prev) => ({ ...prev, confirmPassword: "Passwords do not match" }));
+        setFieldState("confirmPassword", "error");
       } else {
         setPasswordMatchMessage("");
-        if (e.target.name === "confirmPassword" && e.target.value) {
-          setError("Passwords do not match");
-        } else {
-          setError("");
-        }
+        setFieldState("confirmPassword", "idle");
       }
-    }
-
-    if (e.target.name === "email") {
-      setEmailError(validateEmail(e.target.value) ? "" : "Invalid email");
-    }
-
-    if (e.target.name === "firstName") {
-      if (!e.target.value.trim()) setFirstNameError("First name is required");
-      else if (e.target.value.length < 2) setFirstNameError("At least 2 characters");
-      else if (e.target.value.length > 50) setFirstNameError("Less than 50 characters");
-      else setFirstNameError("");
-    }
-
-    if (e.target.name === "lastName") {
-      if (!e.target.value.trim()) setLastNameError("Last name is required");
-      else if (e.target.value.length < 2) setLastNameError("At least 2 characters");
-      else if (e.target.value.length > 50) setLastNameError("Less than 50 characters");
-      else setLastNameError("");
-    }
-
-    if (error && e.target.name !== "password" && e.target.name !== "confirmPassword") {
-      setError("");
     }
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const { password, confirmPassword } = formData;
-      if (!password || !confirmPassword) {
-        setError("");
-        setPasswordMatchMessage("");
+    const email = formData.email.trim();
+    const requestId = emailValidationRequestRef.current + 1;
+    emailValidationRequestRef.current = requestId;
+
+    if (!email) {
+      setErrors((prev) => ({ ...prev, email: "" }));
+      setFieldState("email", "idle");
+      return undefined;
+    }
+
+    const formatResult = validate.email(email);
+    if (formatResult !== true) {
+      setErrors((prev) => ({ ...prev, email: formatResult }));
+      setFieldState("email", "error");
+      return undefined;
+    }
+
+    setErrors((prev) => ({ ...prev, email: "" }));
+    setFieldState("email", "validating");
+
+    const timer = setTimeout(async () => {
+      const result = await validateEmailAvailability(email);
+      if (emailValidationRequestRef.current !== requestId) return;
+
+      const message = getResultMessage(result, "Email is already registered");
+      setErrors((prev) => ({ ...prev, email: message }));
+      setFieldState("email", result.isValid ? "success" : "error");
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [formData.email, setFieldState]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const validatePassword = async () => {
+      if (!formData.password) {
+        setErrors((prev) => ({ ...prev, password: "" }));
+        setFieldState("password", "idle");
         return;
       }
-      if (password === confirmPassword) {
-        setError("");
-        setPasswordMatchMessage("Passwords match!");
+
+      setFieldState("password", "validating");
+      const result = await validatePasswordStrength(formData.password);
+      if (!isActive) return;
+
+      const message = getResultMessage(result, "Password does not meet strength requirements");
+      setErrors((prev) => ({ ...prev, password: message }));
+      setFieldState("password", result.isValid ? "success" : "error");
+    };
+
+    validatePassword();
+
+    return () => {
+      isActive = false;
+    };
+  }, [formData.password, setFieldState]);
+
+  const runValidation = async () => {
+    const nextErrors = {};
+
+    const firstNameResult = validate.firstName(formData.firstName.trim());
+    if (firstNameResult !== true) nextErrors.firstName = firstNameResult;
+
+    const lastNameResult = validate.lastName(formData.lastName.trim());
+    if (lastNameResult !== true) nextErrors.lastName = lastNameResult;
+
+    if (!formData.email.trim()) {
+      nextErrors.email = "Email is required";
+    const emailValue = formData.email.trim();
+    const emailFormatResult = validate.email(emailValue);
+    if (emailFormatResult !== true) {
+      nextErrors.email = emailFormatResult;
+    } else {
+      const emailResult = validate.email(formData.email.trim());
+      if (emailResult !== true) {
+        nextErrors.email = emailResult;
       } else {
-        setError("Passwords do not match");
-        setPasswordMatchMessage("");
+        const availability = await validateEmailAvailability(formData.email.trim());
+        if (!availability.isValid) {
+          nextErrors.email = getResultMessage(availability, "Email is already registered");
+        }
       }
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [formData]);
+    }
+
+    if (!formData.password.trim()) {
+      nextErrors.password = "Password is required";
+    } else {
+      const passwordResult = await validatePasswordStrength(formData.password);
+      if (!passwordResult.isValid) {
+        nextErrors.password = getResultMessage(
+          passwordResult,
+          "Password does not meet strength requirements",
+        );
+        setSubmitError(
+          "Password doesn't meet the security criteria (must meet all 5 requirements).",
+        );
+      }
+    }
+
+    if (!formData.confirmPassword.trim()) {
+      nextErrors.confirmPassword = "Confirm password is required";
+    } else if (formData.password !== formData.confirmPassword) {
+      nextErrors.confirmPassword = "Passwords do not match";
+    }
+
+    setErrors(nextErrors);
+    setFieldValidationState((prev) => ({
+      ...prev,
+      firstName: getFieldState(nextErrors.firstName, "success"),
+      lastName: getFieldState(nextErrors.lastName, "success"),
+      email: getFieldState(nextErrors.email, "success"),
+      password: getFieldState(nextErrors.password, "success"),
+      confirmPassword: getFieldState(nextErrors.confirmPassword, "success"),
+    }));
+
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+  useEffect(() => {
+    const { password, confirmPassword } = formData;
+    if (password && confirmPassword && password === confirmPassword) {
+      setPasswordMatchMessage("Passwords match!");
+    } else {
+      setPasswordMatchMessage("");
+    }
+  }, [formData.password, formData.confirmPassword]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitError("");
+    setSuccess("");
 
-    if (!formData.firstName.trim()) { setError("First name is required"); return; }
-    if (formData.firstName.trim().length < 2) { setError("First name must be at least 2 characters"); return; }
-    if (!formData.lastName.trim()) { setError("Last name is required"); return; }
-    if (formData.lastName.trim().length < 2) { setError("Last name must be at least 2 characters"); return; }
-    if (!formData.email.trim()) { setError("Email is required"); return; }
-    if (!validateEmail(formData.email)) { setEmailError("Invalid email format"); return; }
-    if (!formData.password.trim()) { setError("Password is required"); return; }
-    if (formData.password.length < 8) { setError("Password must be at least 8 characters long"); return; }
-    if (!formData.confirmPassword.trim()) { setError("Confirm password is required"); return; }
-    if (formData.password !== formData.confirmPassword) { setError("Passwords do not match"); return; }
-
-    const { criteriaMet } = assessStrength(formData.password);
-    if (criteriaMet < 5) {
-      setError("Password doesn't meet the security criteria (must meet all 5 requirements).");
-      return;
-    }
+    const isValid = await runValidation();
+    if (!isValid) return;
 
     setLoading(true);
-    setError("");
 
     try {
-      const response = await apiUtils.post(API_ENDPOINTS.AUTH.REGISTER, {
+      const signupEndpoint = API_ENDPOINTS.AUTH.REGISTER || API_ENDPOINTS.AUTH.SIGNUP;
+      const response = await apiUtils.post(signupEndpoint, {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim(),
@@ -142,10 +276,20 @@ const SignupForm = () => {
         confirmPassword: formData.confirmPassword,
       });
 
-      const data = response.data || {};
+      const { ok, status, data } = await parseSignupResponse(response);
 
-      const sessionToken = data?.token;
-      const sessionUser = {
+      if (!ok) {
+        const backendMessage = data?.message || data?.error || "Registration failed";
+        setSubmitError(`${backendMessage} (${status})`);
+        return;
+      }
+
+      if (!data?.token) {
+        setSubmitError("Signup completed but no token was returned.");
+        return;
+      }
+
+      setAuthSession(data.token, {
         id: data?.id,
         firstName: data?.firstName ?? formData.firstName.trim(),
         lastName: data?.lastName ?? formData.lastName.trim(),
@@ -154,15 +298,11 @@ const SignupForm = () => {
         role: data?.role ?? "USER",
         roles: data?.role ? [data.role] : ["USER"],
         permissions: data?.permissions ?? [],
-      };
-
-      if (!sessionToken) throw new Error("Token missing from signup response");
-
-      setAuthSession(sessionToken, sessionUser);
-      setSuccess("Account created successfully! Redirecting to dashboard...");
-      setTimeout(() => navigate("/dashboard", { replace: true }), 1200);
-    } catch (err) {
-      setError(err.message || "Network error. Please try again.");
+      });
+      setSuccess("Account created successfully. Redirecting to dashboard...");
+      setTimeout(() => navigate("/dashboard", { replace: true }), 1000);
+    } catch (error) {
+      setSubmitError(error?.message || "Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -170,162 +310,193 @@ const SignupForm = () => {
 
   return (
     <div className="w-full">
-      <div className="text-center space-y-3 mb-6">
-        <motion.div
-          whileHover={{ scale: 1.05, rotate: 5 }}
-          whileTap={{ scale: 0.95 }}
-          className="mx-auto w-14 h-14 bg-gradient-to-br from-blue-100 to-yellow-100 rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(254,240,138,0.3)]"
-        >
-          <Zap className="w-7 h-7 text-blue-600" />
+      <div className="mb-6 space-y-3 text-center">
+        <motion.div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-100 to-yellow-100">
+          <Zap className="h-7 w-7 text-blue-600" aria-hidden="true" />
         </motion.div>
-        <h1 className="text-2xl font-bold text-white">
-          Create Your Account
-        </h1>
-        <p className="text-sm text-slate-400">
-          Join Eventra and start building amazing events
-        </p>
+        <h1 className="text-2xl font-bold text-white">Create Your Account</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <label htmlFor="firstName" className="block text-xs font-medium text-slate-300">
-              First name <span className="text-red-500">*</span>
-            </label>
-            <div className="relative group">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-400 pointer-events-none" />
-              <input
-                id="firstName" name="firstName" type="text"
-                value={formData.firstName} onChange={handleChange}
-                placeholder="First name"
-                className="w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-white"
-                required
-              />
-            </div>
-            {firstNameError && <p className="text-red-400 text-[10px] mt-1">{firstNameError}</p>}
-          </div>
-          <div className="space-y-1.5">
-            <label htmlFor="lastName" className="block text-xs font-medium text-slate-300">
-              Last name <span className="text-red-500">*</span>
-            </label>
-            <div className="relative group">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-400 pointer-events-none" />
-              <input
-                id="lastName" name="lastName" type="text"
-                value={formData.lastName} onChange={handleChange}
-                placeholder="Last name"
-                className="w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-white"
-                required
-              />
-            </div>
-            {lastNameError && <p className="text-red-400 text-[10px] mt-1">{lastNameError}</p>}
-          </div>
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4"
+        noValidate
+        aria-describedby="signup-form-error signup-form-success"
+      >
+        <div className="grid grid-cols-1 gap-4 xs:grid-cols-2">
+          <FormFieldWrapper
+            id="firstName"
+            label="First name"
+            required
+            validationState={fieldValidationState.firstName}
+            message={errors.firstName}
+            prefix={<User className="h-4 w-4 text-slate-500" aria-hidden="true" />}
+          >
+            <input
+              name="firstName"
+              type="text"
+              value={formData.firstName}
+              onChange={handleChange}
+              className="w-full rounded-lg border border-slate-700/50 bg-[#0f172a]/50 py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-slate-500"
+              required
+              disabled={loading}
+            />
+          </FormFieldWrapper>
+
+          <FormFieldWrapper
+            id="lastName"
+            label="Last name"
+            required
+            validationState={fieldValidationState.lastName}
+            message={errors.lastName}
+            prefix={<User className="h-4 w-4 text-slate-500" aria-hidden="true" />}
+          >
+            <input
+              name="lastName"
+              type="text"
+              value={formData.lastName}
+              onChange={handleChange}
+              className="w-full rounded-lg border border-slate-700/50 bg-[#0f172a]/50 py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-slate-500"
+              required
+              disabled={loading}
+            />
+          </FormFieldWrapper>
         </div>
 
-        <div className="space-y-1.5">
-          <label htmlFor="email" className="block text-xs font-medium text-slate-300">
-            Email address <span className="text-red-500">*</span>
-          </label>
-          <div className="relative group">
-            <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-400 pointer-events-none" />
-            <input
-              id="email" name="email" type="email"
-              value={formData.email} onChange={handleChange}
-              placeholder="Enter your email address"
-              className="w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-white"
-              required
-            />
-          </div>
-          {emailError && <p className="text-red-400 text-[10px] mt-1">{emailError}</p>}
-        </div>
+        <FormFieldWrapper
+          id="email"
+          label="Email"
+          required
+          validationState={fieldValidationState.email}
+          message={
+            fieldValidationState.email === "validating"
+              ? "Checking email availability..."
+              : errors.email
+          }
+          prefix={<AtSign className="h-4 w-4 text-slate-500" aria-hidden="true" />}
+        >
+          <input
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            className="w-full rounded-lg border border-slate-700/50 bg-[#0f172a]/50 py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-slate-500"
+            required
+            disabled={loading}
+          />
+        </FormFieldWrapper>
 
-        <div className="space-y-1.5">
-          <label htmlFor="password" className="block text-xs font-medium text-slate-300">
-            Password <span className="text-red-500">*</span>
-          </label>
-          <div className="relative group">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-400 pointer-events-none" />
-            <input
-              id="password" name="password" type={showPassword ? "text" : "password"}
-              value={formData.password} onChange={handleChange}
-              placeholder="Enter your password"
-              className={`w-full pl-9 pr-9 py-2.5 bg-[#0f172a]/50 border rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-white ${
-                formData.password && formData.confirmPassword
-                  ? passwordMatchMessage ? "border-green-500" : "border-red-400"
-                  : "border-slate-700/50 focus:border-blue-500"
-              }`}
-              required
-            />
+        <FormFieldWrapper
+          id="password"
+          label="Password"
+          required
+          validationState={fieldValidationState.password}
+          message={errors.password}
+          showStatusIcon={false}
+          prefix={<Lock className="h-4 w-4 text-slate-500" aria-hidden="true" />}
+          suffix={
             <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="text-slate-500 hover:text-blue-400"
+              onClick={() = aria-label="button"> setShowPassword(!showPassword)}
+              className="text-slate-500 hover:text-slate-300"
               type="button" onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-400"
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            <button type="button" onClick={() = aria-label="button"> setShowPassword((prev) => !prev)} className="text-slate-500 hover:text-blue-400" aria-label={showPassword ? "Hide password" : "Show password"}>
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
-          </div>
-          {formData.password && <PasswordStrengthIndicator password={formData.password} />}
-        </div>
+          }
+        >
+          <input
+            name="password"
+            type={showPassword ? "text" : "password"}
+            value={formData.password}
+            onChange={handleChange}
+            className="w-full rounded-lg border border-slate-700/50 bg-[#0f172a]/50 py-2.5 pl-9 pr-9 text-sm text-white placeholder:text-slate-500"
+            required
+            disabled={loading}
+          />
+        </FormFieldWrapper>
 
-        <div className="space-y-1.5">
-          <label htmlFor="confirmPassword" className="block text-xs font-medium text-slate-300">
-            Confirm Password <span className="text-red-500">*</span>
-          </label>
-          <div className="relative group">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-400 pointer-events-none" />
-            <input
-              id="confirmPassword" name="confirmPassword" type={showConfirmPassword ? "text" : "password"}
-              value={formData.confirmPassword} onChange={handleChange}
-              placeholder="Confirm your password"
-              className={`w-full pl-9 pr-9 py-2.5 bg-[#0f172a]/50 border rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-white ${
-                formData.confirmPassword
-                  ? passwordMatchMessage ? "border-green-500" : "border-red-400"
-                  : "border-slate-700/50 focus:border-blue-500"
-              }`}
-              required
-            />
+        {formData.password && <PasswordStrengthIndicator password={formData.password} />}
+
+        <FormFieldWrapper
+          id="confirmPassword"
+          label="Confirm password"
+          required
+          validationState={fieldValidationState.confirmPassword}
+          message={errors.confirmPassword}
+          showStatusIcon={false}
+          prefix={<Lock className="h-4 w-4 text-slate-500" aria-hidden="true" />}
+          suffix={
             <button
-              type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+              type="button"
+              onClick={() => setShowConfirmPassword((prev) => !prev)}
+              className="text-slate-500 hover:text-blue-400"
+              onClick={() = aria-label="button"> setShowConfirmPassword(!showConfirmPassword)}
+              className="text-slate-500 hover:text-slate-300"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-400"
+              aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
             >
+              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            <button type="button" onClick={() = aria-label="button"> setShowConfirmPassword((prev) => !prev)} className="text-slate-500 hover:text-blue-400" aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}>
               {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
-          </div>
-          {passwordMatchMessage && (
-            <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="text-[10px] mt-1 text-green-400">
-              {passwordMatchMessage}
-            </motion.p>
-          )}
-        </div>
+          }
+        >
+          <input
+            name="confirmPassword"
+            type={showConfirmPassword ? "text" : "password"}
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            className="w-full rounded-lg border border-slate-700/50 bg-[#0f172a]/50 py-2.5 pl-9 pr-9 text-sm text-white placeholder:text-slate-500"
+            required
+            disabled={loading}
+          />
+        </FormFieldWrapper>
 
-        {error && <div className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-2 rounded-lg">{error}</div>}
-        {success && <div className="text-xs text-green-400 bg-green-500/10 border border-green-500/20 p-2 rounded-lg">{success}</div>}
+        {passwordMatchMessage && !errors.confirmPassword && (
+          <motion.p
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            className="mt-1 text-[10px] text-green-400"
+            role="status"
+            aria-live="polite"
+          >
+            {passwordMatchMessage}
+          </motion.p>
+        )}
+
+        <ValidationMessage
+          id="signup-form-error"
+          message={submitError}
+          state="error"
+          className="rounded-lg border border-red-500/20 bg-red-500/10 p-2 text-xs text-red-400"
+        />
+        <ValidationMessage
+          id="signup-form-success"
+          message={success}
+          state="success"
+          className="rounded-lg border border-green-500/20 bg-green-500/10 p-2 text-xs text-green-400"
+        />
 
         <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
           type="submit"
           disabled={loading}
-          className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-[0_0_15px_rgba(147,197,253,0.3)] text-sm font-bold text-[#0f172a] bg-blue-300 hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0f172a] focus:ring-blue-500 transition-all duration-300 mt-2"
+          className="min-h-[48px] w-full rounded-xl bg-gradient-to-r from-blue-400 to-indigo-400 py-3 text-sm font-bold text-[#0f172a] disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {loading ? (
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 border-2 border-[#0f172a] border-t-transparent rounded-full animate-spin"></div>
-              Creating Account...
-            </div>
-          ) : "Create Account"}
+          {loading ? "Creating account..." : "Create Account"}
         </motion.button>
       </form>
 
-      <p className="text-[10px] text-center text-slate-500 mt-4 leading-relaxed">
-        By clicking on sign up, you agree to our{" "}
-        <Link to="/terms" className="hover:text-slate-300 underline transition-colors">Terms of Service</Link>{" "}
-        and{" "}
-        <Link to="/privacy" className="hover:text-slate-300 underline transition-colors">Privacy Policy</Link>
-      </p>
-
-      <p className="text-center text-xs text-slate-400 mt-3">
+      <p className="mt-4 text-center text-sm text-slate-400">
         Already have an account?{" "}
-        <Link to="/login" className="text-blue-400 hover:text-blue-300 hover:underline font-medium transition-colors">
+        <Link to="/login" className="text-blue-400 hover:text-blue-300">
           Sign in
         </Link>
       </p>

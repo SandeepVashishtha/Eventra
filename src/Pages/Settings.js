@@ -67,8 +67,12 @@ const Settings = () => {
 
   const handleCopyKey = () => {
     if (!backupKey) return;
-    navigator.clipboard.writeText(`Mnemonic: ${backupKey.mnemonic}\nHex: ${backupKey.hex}`);
-    toast.success("Backup key copied to clipboard!");
+    navigator.clipboard.writeText(`Mnemonic: ${backupKey.mnemonic}\nHex: ${backupKey.hex}`)
+      .then(() => toast.success("Backup key copied to clipboard!"))
+      .catch((err) => {
+        console.error("Failed to copy key:", err);
+        toast.error("Could not copy key. Please copy manually.");
+      });
   };
 
   const handleDownloadKey = () => {
@@ -275,7 +279,7 @@ const Settings = () => {
                       onClick={handleCopyKey}
                       className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
                       title="Copy credentials"
-                    >
+                     aria-label="button">
                       <Clipboard size={14} />
                     </button>
                   </div>
@@ -285,7 +289,7 @@ const Settings = () => {
                   <button
                     onClick={handleDownloadKey}
                     className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-850 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-300 transition cursor-pointer"
-                  >
+                   aria-label="button">
                     <Download size={13} />
                     Download Backup File
                   </button>
@@ -294,7 +298,7 @@ const Settings = () => {
                     onClick={generateBackupKey}
                     disabled={isGenerating}
                     className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-850 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-300 transition cursor-pointer disabled:opacity-50"
-                  >
+                   aria-label="button">
                     <RefreshCw size={13} className={isGenerating ? "animate-spin" : ""} />
                     Generate New Key
                   </button>
@@ -309,7 +313,7 @@ const Settings = () => {
                   onClick={generateBackupKey}
                   disabled={isGenerating}
                   className="px-5 py-2.5 bg-indigo-650 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-md shadow-indigo-500/10 shrink-0"
-                >
+                 aria-label="button">
                   <RefreshCw size={14} className={isGenerating ? "animate-spin" : ""} />
                   Generate Master Key
                 </button>

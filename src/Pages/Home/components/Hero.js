@@ -1,5 +1,5 @@
-import { motion, useAnimation, AnimatePresence, MotionConfig } from "framer-motion";
-import { useEffect, useState } from "react";
+import { motion, useAnimation, AnimatePresence, MotionConfig, useScroll, useTransform } from "framer-motion";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
 import { Search, Calendar, Trophy, Code, ExternalLink } from "lucide-react";
@@ -9,12 +9,53 @@ import useReducedMotion from "../../../hooks/useReducedMotion.js";
 import eventsData from "../../Events/eventsMockData.json";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
-import RespawningText from "../../../jhalak/RespawningText";
+import RespawningText from "../../../components/visual/RespawningText";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
 import CountUp from "react-countup";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
+import SectionErrorBoundary from "../../../components/common/SectionErrorBoundary";
+import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
 
 const MotionLink = motion(Link);
+
+// ─── STATIC SEARCH INDEX CONFIGURATION ───────────────────────────────────────
+// Moved outside component to prevent expensive re-instantiation on every render
+const createSearchItem = (item, type, searchType) => ({
+  id: item.id,
+  title: item.title,
+  description: item.description,
+  location: item.location,
+  tags: item.tags,
+  techStack: item.techStack,
+  category: item.category,
+  author: item.author,
+  organizer: item.organizer,
+  searchType,
+  type,
+});
+
+const allData = [
+  ...eventsData.map((item) => createSearchItem(item, "event", "Events")),
+  ...hackathonsData.map((item) => createSearchItem(item, "hackathon", "Hackathons")),
+  ...projectsData.map((item) => createSearchItem(item, "project", "Projects")),
+];
+
+const fuse = new Fuse(allData, {
+  keys: [
+    "title",
+    "description",
+    "location",
+    "tags",
+    "techStack",
+    "category",
+    "author",
+    "organizer",
+    "type",
+  ],
+  threshold: 0.3,
+  includeScore: true,
+});
+// ─────────────────────────────────────────────────────────────────────────────
 
 const Hero = () => {
   const prefersReducedMotion = useReducedMotion();
@@ -26,9 +67,38 @@ const Hero = () => {
     "Cutting-Edge Tech Meetups",
   ];
 
+  const containerRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end start"],
+  });
+
+  // Check if device has pointer: coarse (touch screen) to preserve native feel
+  const [isTouch, setIsTouch] = useState(false);
+  useEffect(() => {
+    setIsTouch(window.matchMedia("(pointer: coarse)").matches);
+  }, []);
+
+  // Parallax scroll-driven transforms (only active on non-touch devices to ensure hardware performance)
+  const yText = useTransform(scrollYProgress, [0, 1], [0, 180]);
+  const yStats = useTransform(scrollYProgress, [0, 1], [0, 60]);
+  const opacityHero = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
+
+  // Different parallax speeds for each shape
+  const yShape0 = useTransform(scrollYProgress, [0, 1], [0, 220]);
+  const yShape1 = useTransform(scrollYProgress, [0, 1], [0, -150]);
+  const yShape2 = useTransform(scrollYProgress, [0, 1], [0, 100]);
+  const yShape3 = useTransform(scrollYProgress, [0, 1], [0, -180]);
+  const yShape4 = useTransform(scrollYProgress, [0, 1], [0, 130]);
+  const yShape5 = useTransform(scrollYProgress, [0, 1], [0, -80]);
+  const yShape6 = useTransform(scrollYProgress, [0, 1], [0, 250]);
+  const yShape7 = useTransform(scrollYProgress, [0, 1], [0, -120]);
+  const yShape8 = useTransform(scrollYProgress, [0, 1], [0, 70]);
+
+  const shapeTransforms = [yShape0, yShape1, yShape2, yShape3, yShape4, yShape5, yShape6, yShape7, yShape8];
 
   const [index, setIndex] = useState(0);
-  const [searchQuery, setSearchQuery] = useState("");
+  const { searchTerm, debouncedTerm, setSearchTerm, clear: clearSearchTerm } = useDebouncedSearch("", 300);
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [statsReady, setStatsReady] = useState(false);
@@ -67,79 +137,54 @@ const Hero = () => {
   }, [controls]);
 
   useEffect(() => {
-    const onResize = () => setIsMobileView(window.innerWidth <= 420);
+    let timeoutId;
+
+    const onResize = () => {
+      if (typeof window === "undefined") return;
+      clearTimeout(timeoutId);
+
+      timeoutId = setTimeout(() => {
+        setIsMobileView(window.innerWidth <= 420);
+      }, 150);
+    };
+
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener("resize", onResize);
+    };
   }, []);
 
-  useEffect(() => {
-    setStatsReady(true);
-  }, []);
   // FIXED
 useEffect(() => {
   const timer = setTimeout(() => setStatsReady(true), 100);
   return () => clearTimeout(timer);
 }, []);
 
-  // Global search functionality
-  const createSearchItem = (item, type, searchType) => ({
-    id: item.id,
-    title: item.title,
-    description: item.description,
-    location: item.location,
-    tags: item.tags,
-    techStack: item.techStack,
-    category: item.category,
-    author: item.author,
-    organizer: item.organizer,
-    searchType,
-  });
-
-  const allData = [
-    ...eventsData.map((item) => createSearchItem(item, "event", "Events")),
-    ...hackathonsData.map((item) =>
-      createSearchItem(item, "hackathon", "Hackathons")
-    ),
-    ...projectsData.map((item) =>
-      createSearchItem(item, "project", "Projects")
-    ),
-  ];
-
-  const fuse = new Fuse(allData, {
-    keys: [
-      "title",
-      "description",
-      "location",
-      "tags",
-      "techStack",
-      "category",
-      "author",
-      "organizer",
-      "type",
-    ],
-    threshold: 0.3,
-    includeScore: true,
-  });
-
-  const handleSearch = (query) => {
-    setSearchQuery(query);
-    if (query.trim()) {
-      const results = fuse.search(query).slice(0, 8);
+  // Watch the debounced term and execute the search logic
+  useEffect(() => {
+    if (debouncedTerm.trim()) {
+      const results = fuse.search(debouncedTerm).slice(0, 8);
       setSearchResults(results);
       setShowResults(true);
     } else {
       setSearchResults([]);
       setShowResults(false);
     }
+  }, [debouncedTerm]);
+
+  const handleSearch = (query) => {
+    setSearchTerm(query);
   };
 
   const clearSearch = () => {
     setShowResults(false);
-    setSearchQuery("");
+    clearSearchTerm();
   };
 
   const getResultHref = (item) => {
-    const query = encodeURIComponent(item.title || searchQuery);
+    const query = encodeURIComponent(item.title || debouncedTerm);
     if (item.type === "event") return `/events?search=${query}`;
     if (item.type === "hackathon") return `/hackathons?search=${query}`;
     if (item.type === "project") return `/projects?search=${query}`;
@@ -197,6 +242,7 @@ useEffect(() => {
 
   return (
     <section
+      ref={containerRef}
       aria-label="Hero section"
       className="relative overflow-hidden 
 bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white
@@ -204,16 +250,45 @@ dark:from-slate-950 dark:via-slate-900 dark:to-black
 text-slate-900 dark:text-gray-100 
 pb-16 sm:pb-20 md:pb-24
 border-b border-gray-100 dark:border-slate-900">
+      {/* Decorative Parallax Shapes */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        {!isTouch && shapes.map((shape, i) => (
+          <motion.div
+            key={i}
+            style={{
+              position: "absolute",
+              top: shape.pos.top,
+              left: shape.pos.left,
+              width: shape.size,
+              height: shape.size,
+              borderRadius: "30% 70% 70% 30% / 30% 30% 70% 70%", // Organic blob shape
+              background: `linear-gradient(135deg, ${isDark ? shape.darkColor : shape.lightColor}22, ${isDark ? shape.darkColor : shape.lightColor}66)`,
+              filter: "blur(2px)",
+              boxShadow: `0 8px 32px 0 ${isDark ? shape.darkColor : shape.lightColor}0a`,
+              y: prefersReducedMotion ? 0 : shapeTransforms[i],
+              willChange: "transform",
+            }}
+            animate={prefersReducedMotion ? {} : floatShape(i)}
+          />
+        ))}
+      </div>
+
       {/* Hero Content */}
-      <div className=" mx-auto px-6 lg:px-8 relative z-10 pt-20"
-      style={{
-    backgroundImage: "url('/background.png')",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    backgroundRepeat: "no-repeat",
-    minHeight: "100vh",
-    width:"100vw"
-  }}
+      <motion.div 
+        className="mx-auto px-6 lg:px-8 relative z-10 pt-20"
+       style={{
+  backgroundImage: isDark
+    ? "url('/background-dark.png')"
+    : "url('/background.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          minHeight: "100vh",
+          width: "100vw",
+           y: (isTouch || prefersReducedMotion) ? 0 : yText,
+          opacity: isTouch ? 1 : opacityHero,
+          willChange: "transform, opacity",
+        }}
       >
         <motion.div
           className="text-center"
@@ -282,10 +357,10 @@ border-b border-gray-100 dark:border-slate-900">
           {/* Global Search Bar (Glassmorphism) */}
           <div className="w-full max-w-2xl mx-auto mb-10 p-2 sm:p-2.5 bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xl shadow-indigo-500/5">
             <ModernSearchInput
-              value={searchQuery}
+              value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder="Search events, hackathons, projects..."
-              onFocus={() => searchQuery && setShowResults(true)}
+              onFocus={() => searchTerm && setShowResults(true)}
               onBlur={() => setTimeout(() => setShowResults(false), 200)}
             >
               {/* Search Results Dropdown */}
@@ -359,7 +434,7 @@ text-gray-600 dark:text-gray-300"
                         >
                           No results match "
                           <span className="font-medium text-gray-700 dark:text-white">
-                            {searchQuery}
+                            {searchTerm}
                           </span>
                           "
                         </motion.div>
@@ -447,9 +522,14 @@ text-gray-600 dark:text-gray-300"
           </motion.div>
 
           {/* Animated Stats Cards */}
-          {!searchQuery.trim() && (
+          {!searchTerm.trim() && (
+            <SectionErrorBoundary label="Statistics">
             <motion.div
               variants={fadeUp}
+              style={{
+                y: (isTouch || prefersReducedMotion) ? 0 : yStats,
+                willChange: "transform",
+              }}
               className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
               role="region"
               aria-label="Platform statistics"
@@ -485,11 +565,13 @@ text-gray-600 dark:text-gray-300"
                 </motion.div>
               ))}
             </motion.div>
+            </SectionErrorBoundary>
           )}
         </motion.div>
-      </div>
+      </motion.div>
     </section>
   );
 };
 
 export default Hero;
+

@@ -1,4 +1,5 @@
 const SAFE_GITHUB_PATH_PATTERNS = [
+  /^\/repos\/[^/?#]+\/[^/?#]+$/,
   /^\/repos\/[^/?#]+\/[^/?#]+\/contributors$/,
   /^\/repos\/[^/?#]+\/[^/?#]+\/pulls$/,
   /^\/users\/[^/?#]+$/,
@@ -9,7 +10,7 @@ const SAFE_GITHUB_PATH_PATTERNS = [
 const ALLOWED_QUERY_PARAMS = new Set(["per_page", "page", "state", "sort", "direction"]);
 
 const normalizePath = (path) => {
-  const rawPath = Array.isArray(path) ? path[0] : path;
+  const rawPath = Array.isArray(path) ? path.join("/") : path;
   if (!rawPath || typeof rawPath !== "string") {
     return "";
   }
@@ -49,7 +50,7 @@ export default async function handler(req, res) {
     }
   });
 
-  const token = process.env.GITHUB_TOKEN || process.env.REACT_APP_GITHUB_TOKEN;
+  const token = process.env.GITHUB_TOKEN;
 
   try {
     const fetchRes = await fetch(url.toString(), {

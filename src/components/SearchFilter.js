@@ -1,12 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import "./styles/components.css";
 
 const SearchFilter = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [priceFilter, setPriceFilter] = useState("all");
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
 
   const categories = [
     { value: "all", label: "All Categories" },
@@ -104,8 +115,8 @@ const SearchFilter = () => {
   ];
 
   const filteredEvents = mockEvents.filter(event => {
-    const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         event.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = event.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+                         event.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
       const normalizedLocation = event.location
         ?.toString()
@@ -254,8 +265,8 @@ const SearchFilter = () => {
                 <span className="rating-value">{event.rating}</span>
               </div>
               <div className="event-actions">
-                <button className="btn-primary">Register Now</button>
-                <button className="btn-outline">Learn More</button>
+                <button className="btn-primary" aria-label="button">Register Now</button>
+                <button className="btn-outline" aria-label="button">Learn More</button>
               </div>
             </div>
           </motion.div>
