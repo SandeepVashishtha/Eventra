@@ -48,6 +48,39 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
     handleSimulateSubmission,
   } = useSurveySimulator(questions, FEEDBACK_COMMENTS_POOL);
 
+  const choiceChartData = useMemo(() => {
+    const chartData = {};
+    questions.forEach((q) => {
+      if (q.type === "choice" && simulatedData[q.id]) {
+        chartData[q.id] = Object.entries(simulatedData[q.id]).map(([name, votes]) => ({
+          name,
+          votes,
+        }));
+      }
+    });
+    return chartData;
+  }, [questions, simulatedData]);
+
+  const analyzedRatings = useMemo(() => {
+    const ratings = {};
+    questions.forEach((q) => {
+      if (q.type === "rating" && simulatedData[q.id]) {
+        const distribution = simulatedData[q.id];
+        let total = 0;
+        let sum = 0;
+        Object.entries(distribution).forEach(([score, count]) => {
+          sum += parseInt(score) * count;
+          total += count;
+        });
+        ratings[q.id] = {
+          average: total > 0 ? (sum / total).toFixed(1) : "0.0",
+          total,
+        };
+      }
+    });
+    return ratings;
+  }, [questions, simulatedData]);
+
   // Reconstruct individual rows corresponding to each submission per question distribution
   const handleExportCSV = () => {
     if (questions.length === 0) {

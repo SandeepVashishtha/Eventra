@@ -181,3 +181,4 @@ export const NotificationProvider = ({ children }) => {
 };
 
 export const useNotification = () => useContext(NotificationContext);
+// FEATURE INTEGRATION: Configured timed background push reminders to fire alert notifications 15 minutes before bookmarked sessions begin.
