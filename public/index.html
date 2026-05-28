@@ -47,6 +47,22 @@
       content="#0f172a"
     />
 
+    <!--
+      Security: upgrade-insecure-requests instructs the browser to treat all
+      HTTP sub-resource requests (images, scripts, XHR) as HTTPS even before
+      the Vercel HSTS header has been cached by the browser. This is a
+      defence-in-depth companion to the Strict-Transport-Security response
+      header set in vercel.json — the two together protect both the page load
+      and every sub-resource it fetches.
+
+      Note: HSTS itself cannot be set via <meta> — it must be a response
+      header, which is why vercel.json is the authoritative source.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="upgrade-insecure-requests"
+    />
+
     <!-- Primary SEO -->
     <meta
       name="description"
