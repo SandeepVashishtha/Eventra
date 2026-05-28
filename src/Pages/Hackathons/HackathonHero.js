@@ -16,7 +16,7 @@ const Tag = ({ tag, onRemove }) => (
   >
     <span>{tag}</span>
     <button
-      onClick={() => onRemove(tag)}
+      onClick={() = aria-label="button"> onRemove(tag)}
       className="rounded-full p-0.5 transition-colors hover:bg-indigo-200 dark:hover:bg-indigo-500/30"
     >
       <X className="w-3 h-3" />

@@ -14,6 +14,7 @@ const Unauthorized = lazy(() => import("../auth/Unauthorized"));
 const PasswordReset = lazy(() => import("../auth/PasswordReset"));
 const AdminDashboard = lazy(() => import("../admin/AdminDashboard"));
 const Dashboard = lazy(() => import("../Dashboard"));
+const UserProfile = lazy(() => import("../user/UserProfile"));
 const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
 
 export const getProtectedRoutes = () => [

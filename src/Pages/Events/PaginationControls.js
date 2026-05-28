@@ -138,7 +138,7 @@ const PaginationControls = ({
         <nav className="flex items-center gap-2" aria-label="Event pagination">
           <button
             type="button"
-            onClick={() => onPageChange(1)}
+            onClick={() = aria-label="button"> onPageChange(1)}
             disabled={currentPage === 1}
             className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
             aria-label="First page"
@@ -166,7 +166,7 @@ const PaginationControls = ({
 
           <button
             type="button"
-            onClick={() => onPageChange(totalPages)}
+            onClick={() = aria-label="button"> onPageChange(totalPages)}
             disabled={currentPage === totalPages}
             className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
             aria-label="Last page"

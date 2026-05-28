@@ -61,22 +61,8 @@ function persistToLocalStorage(entry) {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-/**
- * logError(error, errorInfo, extra?)
- *
- * Call from any ErrorBoundary's componentDidCatch.
- *
- * - Logs to console in all environments
- * - Persists a structured entry to localStorage (survives a page reload)
- * - Reports to Sentry in production when a DSN is configured
- *
- * @param {Error}      error     The caught error object
- * @param {object}     errorInfo React errorInfo (componentStack)
- * @param {object}     extra     Any additional context (e.g. { section: "Navbar" })
- */
 export const logError = (error, errorInfo, extra = {}) => {
   try {
-    // ── Console logging ──────────────────────────────────────────
     console.group?.("[Eventra ErrorLogger]");
     console.error("Error:", error);
     if (errorInfo?.componentStack) {
@@ -87,11 +73,9 @@ export const logError = (error, errorInfo, extra = {}) => {
     }
     console.groupEnd?.();
 
-    // ── LocalStorage persistence ─────────────────────────────────
     const entry = buildErrorEntry(error, errorInfo, extra);
     persistToLocalStorage(entry);
 
-    // ── Sentry reporting ─────────────────────────────────────────
     if (isProduction && dsn) {
       Sentry.withScope((scope) => {
         if (errorInfo?.componentStack) {
@@ -104,19 +88,10 @@ export const logError = (error, errorInfo, extra = {}) => {
       });
     }
   } catch (loggerError) {
-    // Never let the error logger itself crash the app
     console.warn("[Eventra ErrorLogger] Failed to log error:", loggerError);
   }
 };
 
-/**
- * getErrorLog()
- *
- * Retrieve all persisted error entries from localStorage.
- * Useful for including in diagnostic reports.
- *
- * @returns {Array} Array of error entry objects, newest first
- */
 export const getErrorLog = () => {
   try {
     return JSON.parse(localStorage.getItem("eventra_error_log") || "[]");
@@ -125,11 +100,6 @@ export const getErrorLog = () => {
   }
 };
 
-/**
- * clearErrorLog()
- *
- * Clear all persisted error entries from localStorage.
- */
 export const clearErrorLog = () => {
   try {
     localStorage.removeItem("eventra_error_log");

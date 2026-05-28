@@ -190,7 +190,7 @@ describe("FormFieldWrapper", () => {
         id="email"
         label="Email"
         prefix={<span data-testid="prefix">prefix</span>}
-        suffix={<button type="button">toggle</button>}
+        suffix={<button type="button" aria-label="button">toggle</button>}
       >
         <input />
       </FormFieldWrapper>,

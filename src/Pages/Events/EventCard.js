@@ -1,5 +1,11 @@
 import { memo, useCallback, useEffect, useId, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useEffect, useId, useState, memo } from "react";
+import { logger } from "../../utils/logger";
+import { getUserTimezone } from "../../utils/timezoneUtils";
+import { Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { getSmartDateLabel } from "../../utils/relativeTime";
 import {
   Bookmark,
   BookmarkCheck,
@@ -51,6 +57,8 @@ const getCapacityStyles = (ratio, isFull) => {
 };
 
 const EventCard = ({ event }) => {
+  const navigate = useNavigate();
+  const [savedEvents, setSavedEvents] = useState([]);
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const titleId = useId();
   const { isRegistered } = useMyEvents();
@@ -173,6 +181,10 @@ const EventCard = ({ event }) => {
       data-aos-duration="800"
       aria-labelledby={titleId}
       className="group relative z-10 flex flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white text-gray-900 shadow-lg backdrop-blur-sm transition-all duration-300 hover:z-50 hover:-translate-y-2 hover:border-indigo-300 hover:shadow-2xl dark:border-gray-800 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-indigo-700"
+      aria-label={`Event: ${event.title}`}
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/events/${event.id}`); } }}
+      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm transition-all duration-300 flex flex-col z-10 hover:z-50 hover:shadow-2xl hover:-translate-y-2 overflow-hidden border border-gray-100 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-700"
     >
       <div className="absolute right-3 top-[5.5rem] z-[200] flex space-x-1.5">
         <button
@@ -360,6 +372,10 @@ const EventCard = ({ event }) => {
           className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-2xl border border-indigo-200 bg-white/80 px-4 py-3 text-sm font-semibold text-indigo-700 shadow-md transition-all duration-300 hover:bg-indigo-50 hover:text-indigo-800 hover:shadow-lg dark:border-indigo-700 dark:bg-gray-800 dark:text-indigo-300 dark:hover:bg-indigo-900/30 dark:hover:text-white sm:hover:scale-[1.03]"
         >
           View Details
+        <Link to={`/events/${event.id}`} aria-label={`View details for ${event.title}`} className="flex-1 inline-flex items-center justify-center rounded-2xl bg-white/80 dark:bg-gray-800 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 px-4 py-3 text-sm font-semibold shadow-md hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-800 dark:hover:text-white hover:scale-[1.03] hover:shadow-lg transition-all duration-300">
+          <span>
+            View Details
+          </span>
         </Link>
       </div>
     </article>

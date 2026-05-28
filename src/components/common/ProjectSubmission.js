@@ -125,7 +125,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
         <button
           onClick={onClose}
           className="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-medium py-2.5 px-6 rounded-lg shadow-md transition-transform duration-200 hover:-translate-y-0.5"
-        >
+         aria-label="button">
           Close
         </button>
       </div>
@@ -143,7 +143,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
       >
         <div className="submission-header">
           <h2>Submit Your Project</h2>
-          <button onClick={onClose} className="close-btn">
+          <button onClick={onClose} className="close-btn" aria-label="button">
             <FiX />
           </button>
         </div>
@@ -226,7 +226,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
                 type="button"
                 onClick={handleTechStackAdd}
                 className="add-tech-btn"
-              >
+               aria-label="button">
                 <FiPlus />
               </button>
             </div>
@@ -236,7 +236,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
                   {tech}
                   <button
                     type="button"
-                    onClick={() => handleTechStackRemove(tech)}
+                    onClick={() = aria-label="button"> handleTechStackRemove(tech)}
                   >
                     <FiX />
                   </button>
@@ -358,14 +358,14 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
           </div>
 
           <div className="form-actions">
-            <button type="button" onClick={onClose} className="btn-secondary">
+            <button type="button" onClick={onClose} className="btn-secondary" aria-label="button">
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
               className="btn-primary"
-            >
+             aria-label="button">
               {isSubmitting ? "Submitting..." : "Submit Project"}
             </button>
           </div>

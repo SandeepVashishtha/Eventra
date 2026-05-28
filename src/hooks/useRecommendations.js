@@ -1,52 +1,38 @@
 import { useMemo } from "react";
+import { calculateRecommendationScore } from "../utils/recommendationEngine";
+import { getUserProfile } from "../utils/userProfileAnalyzer";
 
-import {
-  calculateRecommendationScore,
-} from "../utils/recommendationEngine";
+const useRecommendations = (events = []) => {
 
-import {
-  getUserProfile,
-} from "../utils/userProfileAnalyzer";
+  // 🔥 FIX 1: Call getUserProfile outside useMemo so it becomes
+  // a proper dependency — prevents stale recommendation results
+  // when the user profile changes
+  const userProfile = getUserProfile();
 
-const useRecommendations = (
-  events = []
-) => {
-
-  const recommendations =
-    useMemo(() => {
-
-      const userProfile =
-        getUserProfile();
-
-      return events
-        .map((event) => {
-
-          const result =
-            calculateRecommendationScore(
-              event,
-              userProfile
-            );
-
+  const recommendations = useMemo(() => {
+    return events
+      .map((event) => {
+        // 🔥 FIX 2: Wrap in try/catch so a single malformed event
+        // cannot crash the entire recommendations list
+        try {
+          const result = calculateRecommendationScore(event, userProfile);
           return {
             ...event,
-            recommendationScore:
-              result.score,
-            recommendationReasons:
-              result.reasons,
+            recommendationScore: result.score,
+            recommendationReasons: result.reasons,
           };
-
-        })
-
-        .sort(
-          (a, b) =>
-            b.recommendationScore -
-            a.recommendationScore
-        );
-
-    }, [events]);
+        } catch {
+          return {
+            ...event,
+            recommendationScore: 0,
+            recommendationReasons: [],
+          };
+        }
+      })
+      .sort((a, b) => b.recommendationScore - a.recommendationScore);
+  }, [events, userProfile]);
 
   return recommendations;
-
 };
 
 export default useRecommendations;

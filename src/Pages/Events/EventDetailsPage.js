@@ -4,10 +4,12 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import DOMPurify from "dompurify";
 import CountdownTimer from "../../components/common/CountdownTimer";
-import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft } from "lucide-react";
-
+import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft, CalendarPlus } from "lucide-react";
+import { Helmet } from "react-helmet-async";
 import eventsMockData from "./eventsMockData.json";
 import { getEventStatus } from "../../utils/eventUtils";
+import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
+import { toast } from "react-hot-toast";
 
 const EventDetailsPage = () => {
   const { eventId } = useParams();
@@ -80,6 +82,8 @@ const EventDetailsPage = () => {
             type="button"
             onClick={() => navigate("/events")}
             className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white transition-colors hover:bg-indigo-700"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-colors"
+            aria-label="Back to Events"
           >
             <ArrowLeft size={18} aria-hidden="true" />
             Back to Events
@@ -100,6 +104,39 @@ const EventDetailsPage = () => {
             type="button"
             onClick={() => navigate("/events")}
             className="inline-flex min-h-[44px] items-center gap-2 rounded-lg pr-2 text-sm font-semibold text-indigo-600 transition-colors hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 sm:text-base"
+  const pageUrl = `${window.location.origin}/events/${event.id}`;
+  const pageTitle = `${event.title} | Eventra`;
+  const pageDescription = event.description?.substring(0, 160) || "Join this event on Eventra.";
+
+  return (
+    <div className="min-h-screen mt-16 bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
+      <Helmet>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
+
+        {/* Open Graph */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={pageUrl} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDescription} />
+        <meta property="og:image" content={event.image} />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content={pageUrl} />
+        <meta name="twitter:title" content={pageTitle} />
+        <meta name="twitter:description" content={pageDescription} />
+        <meta name="twitter:image" content={event.image} />
+      </Helmet>
+
+      {/* Back Button */}
+      <header className="sticky top-20 md:top-24 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <button
+            type="button"
+            onClick={() => navigate("/events")}
+            className="inline-flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold transition-colors"
+            aria-label="Back to Events"
           >
             <ArrowLeft size={20} aria-hidden="true" />
             Back to Events
@@ -163,6 +200,10 @@ const EventDetailsPage = () => {
                 dangerouslySetInnerHTML={{
                   __html: DOMPurify.sanitize(event.description),
                 }}
+
+              <p
+                className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description) }}
               />
             </section>
           </section>
@@ -214,6 +255,60 @@ const EventDetailsPage = () => {
                   Register Now
                 </div>
               </Link>
+            )}
+
+            {/* Add to Calendar Section */}
+            {!isPastEvent && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                  Add to Calendar
+                </h3>
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => {
+                      downloadICSFile(event);
+                      toast.success("Calendar invite downloaded!");
+                    }}
+                    className="inline-flex items-center justify-center gap-2 w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-4 py-3 text-sm font-semibold hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 dark:hover:border-green-700 transition-all duration-200"
+                    aria-label="Download .ics calendar invite"
+                  >
+                    <CalendarPlus size={16} className="text-green-500" />
+                    Download .ics Invite
+                  </button>
+                  
+                  {generateGoogleCalendarLink(event) && (
+                    <a
+                      href={generateGoogleCalendarLink(event)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-4 py-3 text-sm font-semibold hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200"
+                      aria-label="Add to Google Calendar"
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                        <path fill="#4285F4" d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10z"/>
+                        <path fill="#fff" d="M13 7h-2v6l5.25 3.15.75-1.23-4-2.37z"/>
+                      </svg>
+                      Add to Google Calendar
+                    </a>
+                  )}
+                  
+                  {generateOutlookLink(event) && (
+                    <a
+                      href={generateOutlookLink(event)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-4 py-3 text-sm font-semibold hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200"
+                      aria-label="Add to Outlook Calendar"
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                        <path fill="#0078D4" d="M2 6l10-4 10 4v12l-10 4L2 18z"/>
+                        <path fill="#fff" d="M12 4L4 7v10l8 3 8-3V7z"/>
+                      </svg>
+                      Add to Outlook
+                    </a>
+                  )}
+                </div>
+              </div>
             )}
 
             <button

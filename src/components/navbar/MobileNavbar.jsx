@@ -10,6 +10,9 @@ const MobileNavbar = ({ isOpen, setIsOpen, isAuthenticated, user, logout }) => {
         onClick={() => setIsOpen((prev) => !prev)}
         className="mobile-menu-button lg:hidden inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-3 text-gray-700 transition-colors hover:bg-gray-100 hover:text-black dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-white"
         aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
+        onClick={() = aria-label="button"> setIsOpen(true)}
+        className="lg:hidden p-3 min-w-[44px] min-h-[44px] flex items-center justify-center"
+        aria-label="Open navigation menu"
         aria-expanded={isOpen}
         aria-haspopup="dialog"
         aria-controls="mobile-navigation-drawer"

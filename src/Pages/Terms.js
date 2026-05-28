@@ -242,7 +242,7 @@ const AccordionSection = ({ section, isOpen, onToggle, animateIn }) => {
         onClick={onToggle}
         className="w-full flex items-center justify-between gap-4 p-5 text-left"
         aria-expanded={isOpen}
-      >
+       aria-label="button">
         <div className="flex items-center gap-4">
           {/* Numbered badge */}
           <div className={`flex-shrink-0 w-8 h-8 rounded-xl ${c.badge} flex items-center justify-center font-bold text-sm transition-all duration-300`}>
@@ -444,7 +444,7 @@ export const Terms = () => {
                   return (
                     <button
                       key={s.id}
-                      onClick={() => {
+                      onClick={() = aria-label="button"> {
                         toggle(s.id);
                         document.getElementById(`section-${s.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
                       }}
@@ -466,7 +466,7 @@ export const Terms = () => {
               {/* Expand/Collapse all */}
               <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/10 flex gap-2">
                 <button
-                  onClick={() => setOpenSection(null)}
+                  onClick={() = aria-label="button"> setOpenSection(null)}
                   className="flex-1 px-3 py-2 rounded-xl text-xs font-medium text-slate-500 dark:text-slate-400
                     hover:bg-slate-50 dark:hover:bg-white/5 border border-slate-200 dark:border-white/10 transition-all"
                 >
