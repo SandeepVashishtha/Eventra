@@ -34,16 +34,6 @@ const HelpCenter = lazy(() => import("../../Pages/HelpCenter"));
 const ContactUs = lazy(() => import("../../Pages/Contact/ContactUs"));
 const FeedbackPage = lazy(() => import("../../Pages/Feedback/FeedbackPage"));
 const MyCalendar = lazy(() => import("../../Pages/Calendar/MyCalendar"));
-const FloorPlanDesignerPage = lazy(() => import("../../Pages/Events/FloorPlanDesignerPage"));
-const DocumentationPage = lazy(() => import("../../Pages/About/DocumentationPage"));
-const SubmitProject = lazy(() => import("../../Pages/Projects/SubmitProject"));
-const MockApiResponse = lazy(() => import("../MockApiResponse"));
-const EventAnalyticsDashboard = lazy(() => import("../../Pages/Events/EventAnalyticsDashboard"));
-const OAuthCallback = lazy(() => import('../auth/OAuthCallback'));
-const HackathonLifecycle = lazy(() => import('../../Pages/Hackathons/HackathonLifecycle'));
-const MyCalendar = lazy(() => import('../../Pages/Calendar/MyCalendar'));
-// Auth guard — redirects unauthenticated users to /login
-import ProtectedRoute from '../auth/ProtectedRoute';
 
 export const getPublicRoutes = () => [
   <Route key="/" path="/" element={<HomePage />} />,
@@ -120,84 +110,4 @@ export const getPublicRoutes = () => [
       </ProtectedRoute>
     }
   />,
-
-  <Route key="page-layout" element={<PageLayout />}>
-    <Route key="/contributors" path="/contributors" element={<Contributors />} />
-    <Route key="/communityEvent" path="/communityEvent" element={<CommunityEvent />} />
-    <Route key="/community-event" path="/community-event" element={<CommunityEvent />} />
-    <Route
-      key="/leaderBoard"
-      path="/leaderBoard"
-      element={
-        <ProtectedRoute>
-          <LeaderBoard />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      key="/leaderboard"
-      path="/leaderboard"
-      element={
-        <ProtectedRoute>
-          <LeaderBoard />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      key="/contributorguide"
-      path="/contributorguide"
-      element={
-        <ProtectedRoute>
-          <ContributorGuide />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      key="/contributor-guide"
-      path="/contributor-guide"
-      element={
-        <ProtectedRoute>
-          <ContributorGuide />
-        </ProtectedRoute>
-      }
-    />
-    <Route key="/about" path="/about" element={<AboutPage />} />
-    <Route key="/about-fallback" path="/about/*" element={<AboutPage />} />
-    <Route key="/faq" path="/faq" element={<FAQPage />} />
-    <Route key="/terms" path="/terms" element={<Terms />} />
-    <Route key="/privacy" path="/privacy" element={<Privacy />} />
-    <Route key="/apiDocs" path="/apiDocs" element={<ApiDocs />} />
-    <Route key="/api-docs" path="/api-docs" element={<ApiDocs />} />
-    <Route key="/helpcenter" path="/helpcenter" element={<HelpCenter />} />
-    <Route key="/contact" path="/contact" element={<ContactUs />} />
-    <Route key="/feedback" path="/feedback" element={<FeedbackPage />} />
-    <Route key="/documentation" path="/documentation" element={<DocumentationPage />} />
-    <Route
-      key="/analytics"
-      path="/analytics"
-      element={
-        <ProtectedRoute>
-          <EventAnalyticsDashboard />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      key="/events/:eventId/floor-plan"
-      path="/events/:eventId/floor-plan"
-      element={
-        <ProtectedRoute>
-          <FloorPlanDesignerPage />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      key="/submit-project"
-      path="/submit-project"
-      element={
-        <ProtectedRoute>
-          <SubmitProject />
-        </ProtectedRoute>
-      }
-    />
-  </Route>,
 ];
