@@ -34,7 +34,7 @@ import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 const Footer = lazy(() => import("./components/Layout/Footer"));
 const Chatbot = lazy(() => import("./components/Chatbot"));
 const AppRoutes = lazy(() => import("./components/AppRoutes"));
-const RegistrationPage = lazy(() => import("./Pages/RegistrationPage"));
+const EventRegistration = lazy(() => import("./Pages/Events/EventRegistration"));
 
 const OfflineSyncManager = () => {
   useOfflineSync();
@@ -141,7 +141,11 @@ function App() {
                         <Routes>
                           <Route
                             path="/register/:id"
-                            element={<RegistrationPage />}
+                            element={
+                              <ProtectedRoute>
+                                <EventRegistration />
+                              </ProtectedRoute>
+                            }
                           />
                           <Route
                             path="/event-recommendation"
