@@ -1,4 +1,3 @@
-import SavedEventsPage from './Pages/SavedEventsPage';
 import EventRecommendation from "./Pages/EventRecommendation/EventRecommendation";
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
@@ -12,7 +11,7 @@ import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
-import FluidCursor from "./jhalak/FluidCursor";
+import FluidCursor from "./components/visual/FluidCursor";
 import PageTransition from "./components/common/PageTransition";
 import ReminderChecker from "./components/reminders/ReminderChecker";
 import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
@@ -100,47 +99,6 @@ function App() {
   }, []);
 
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <MyEventsProvider>
-          <SessionRecoveryProvider>
-            <NotificationProvider />
-            <ReminderChecker />
-            <NotificationToastContainer />
-
-            <OfflineSyncManager />
-
-            <Router>
-            <div className="App">
-              <a href="#main-content" className="skip-to-content">
-                Skip to main content
-              </a>
-              <Navbar
-                cursorEnabled={cursorEnabled}
-                toggleCursor={toggleCursor}
-              />
-
-              <main
-                id="main-content"
-                tabIndex={-1}
-                className="
-                  relative
-                  z-10
-                min-h-[85vh]
-                  bg-white
-                  dark:bg-slate-950
-                  text-black
-                  dark:text-white
-                  transition-colors
-                  duration-300
-                "
-              >
-                <PageTransition>
-                  <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
-                    <Routes>
-                      <Route path="/register/:id" element={<RegistrationPage />} />
-                      <Route path="*" element={<AppRoutes />} />
-                    </Routes>
     <ErrorBoundary>
       <AuthProvider>
         <NotificationProvider>
