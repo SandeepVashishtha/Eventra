@@ -71,6 +71,12 @@
       "react-app/jest"
     ]
   },
+  "jest": {
+    "moduleNameMapper": {
+      "^react-router-dom$": "<rootDir>/node_modules/react-router-dom/dist/index.js",
+      "^react-router/dom$": "<rootDir>/node_modules/react-router/dist/development/dom-export.js"
+    }
+  },
   "browserslist": {
     "production": [
       ">0.2%",
@@ -91,6 +97,7 @@
     "@storybook/preset-create-react-app": "10.4.1",
     "@storybook/react-webpack5": "^10.4.1",
     "@tailwindcss/line-clamp": "^0.4.4",
+    "@testing-library/react": "16.3.2",
     "@vitejs/plugin-react": "6.0.2",
     "autoprefixer": "^10.4.21",
     "bcryptjs": "3.0.3",
