@@ -198,8 +198,8 @@ export default function LeaderBoard() {
       // Add achievement-based bonus points to gamify contributors
       data.forEach(applyAchievementBonus);
 
-      const sortedContributors = [...data].sort((a, b) => b.points - a.points);
-      setContributors(sortedContributors);
+      const filteredContributors = [...data].sort((a, b) => b.points - a.points);
+      setContributors(filteredContributors);
       setLastUpdated(new Date().toLocaleString());
       
       // Update local storage cache
@@ -248,8 +248,8 @@ export default function LeaderBoard() {
 
 
   const currentContributors = useMemo(
-    () => paginateContributors(sortedContributors, currentPage, CONTRIBUTORS_PER_PAGE),
-    [sortedContributors, currentPage]
+    () => paginateContributors(filteredContributors, currentPage, CONTRIBUTORS_PER_PAGE),
+    [filteredContributors, currentPage]
   );
   const saveRecentSearch = (query) => {
     if (!query.trim()) return;
@@ -262,8 +262,8 @@ export default function LeaderBoard() {
   };
 
   const totalPages = useMemo(
-    () => totalLeaderboardPages(sortedContributors.length, CONTRIBUTORS_PER_PAGE),
-    [sortedContributors.length]
+    () => totalLeaderboardPages(filteredContributors.length, CONTRIBUTORS_PER_PAGE),
+    [filteredContributors.length]
   );
 
   const ranksMap = useMemo(
@@ -284,7 +284,7 @@ export default function LeaderBoard() {
   ], []);
 
   // Extraction of Top 3 for visual Olympic Podium
-  const top3 = sortedContributors.slice(0, 3);
+  const top3 = filteredContributors.slice(0, 3);
 
   return (
     <FeatureErrorBoundary>
