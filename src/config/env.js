@@ -1,15 +1,15 @@
 const requiredEnvVars = [
-  "REACT_APP_API_URL",
+  "VITE_API_URL",
 ];
 
 const optionalEnvVars = {
-  REACT_APP_SENTRY_DSN: "",
-  REACT_APP_GITHUB_REPO: "SandeepVashishtha/Eventra",
-  REACT_APP_PUBLIC_URL: "https://eventra.sandeepvashishtha.tech",
+  VITE_SENTRY_DSN: "",
+  VITE_GITHUB_REPO: "SandeepVashishtha/Eventra",
+  VITE_PUBLIC_URL: "https://eventra.sandeepvashishtha.tech",
 };
 
 const getEnvVar = (key, fallback = "") => {
-  const value = process.env[key];
+  const value = import.meta.env[key];
 
   if (
     value === undefined ||
@@ -45,17 +45,17 @@ export const validateEnvironment = () => {
 validateEnvironment();
 
 export const ENV = {
-  API_URL: getEnvVar("REACT_APP_API_URL"),
+  API_URL: getEnvVar("VITE_API_URL"),
   SENTRY_DSN: getEnvVar(
-    "REACT_APP_SENTRY_DSN",
-    optionalEnvVars.REACT_APP_SENTRY_DSN
+    "VITE_SENTRY_DSN",
+    optionalEnvVars.VITE_SENTRY_DSN
   ),
   GITHUB_REPO: getEnvVar(
-    "REACT_APP_GITHUB_REPO",
-    optionalEnvVars.REACT_APP_GITHUB_REPO
+    "VITE_GITHUB_REPO",
+    optionalEnvVars.VITE_GITHUB_REPO
   ),
   PUBLIC_URL: getEnvVar(
-    "REACT_APP_PUBLIC_URL",
-    optionalEnvVars.REACT_APP_PUBLIC_URL
+    "VITE_PUBLIC_URL",
+    optionalEnvVars.VITE_PUBLIC_URL
   ),
 };

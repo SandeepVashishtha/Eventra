@@ -32,7 +32,7 @@ export const generateSharingUrl = (shareData, platform) => {
       return `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
       
     case 'messenger': {
-      const appId = process.env.REACT_APP_FACEBOOK_APP_ID;
+      const appId = import.meta.env.VITE_FACEBOOK_APP_ID;
 
       if (!appId) {
         return '';
@@ -66,7 +66,7 @@ export const generateSharingUrl = (shareData, platform) => {
  */
 export const generateEventSharingData = (event, baseUrl = null) => {
   // Determine the correct base URL for sharing
-  const deployedDomain = process.env.REACT_APP_PUBLIC_URL || 'eventra.sandeepvashishtha.tech';
+  const deployedDomain = import.meta.env.VITE_PUBLIC_URL || 'eventra.sandeepvashishtha.tech';
   
   // If baseUrl is provided, use it, otherwise detect
   if (!baseUrl) {
@@ -80,7 +80,7 @@ export const generateEventSharingData = (event, baseUrl = null) => {
         baseUrl = window.location.origin;
       }
     } else {
-      baseUrl = process.env.REACT_APP_PUBLIC_URL || `https://${deployedDomain}`; // Fallback for SSR/Node
+      baseUrl = import.meta.env.VITE_PUBLIC_URL || `https://${deployedDomain}`; // Fallback for SSR/Node
     }
   }
   

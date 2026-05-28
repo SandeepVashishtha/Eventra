@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/react";
 
-const dsn = process.env.REACT_APP_SENTRY_DSN;
+const dsn = import.meta.env.VITE_SENTRY_DSN;
 const isProduction = process.env.NODE_ENV === "production";
 
 // ── Sentry initialisation (production only) ───────────────────────────────────

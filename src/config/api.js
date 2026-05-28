@@ -29,7 +29,7 @@ const resolveEnvApiBaseUrl = () => {
   }
   if (process.env.NODE_ENV === "production") {
     if (isDev) {
-      console.warn("REACT_APP_API_URL environment variable is missing in production. Defaulting to relative API requests.");
+      console.warn("VITE_API_URL environment variable is missing in production. Defaulting to relative API requests.");
     }
     return "";
   }
