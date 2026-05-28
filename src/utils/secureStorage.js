@@ -201,43 +201,6 @@ const cryptoSupported = isCryptoAvailable();
 })();
 
 // ---------------------------------------------------------------------------
-// Token helpers (sessionStorage — tab-scoped, cleared on close)
-// ---------------------------------------------------------------------------
-
-/**
- * Persists the Eventra JWT to sessionStorage.
- *
- * The token is scoped to the current browser tab and cleared automatically
- * when the tab is closed.
- *
- * TODO: Remove once the backend sets the token via an HttpOnly cookie.
- *
- * @param {string} token - The Eventra-issued JWT returned by the backend
- */
-export const setToken = (token) => {
-  // Migrated to HttpOnly cookies. Backend should set the cookie in the response.
-  console.debug('[secureStorage] setToken is deprecated. Token is managed via HttpOnly cookie.');
-};
-
-/**
- * Retrieves the stored JWT.
- *
- * @returns {string|null} null since tokens are now in HttpOnly cookies
- */
-export const getToken = () => {
-  console.debug('[secureStorage] getToken is deprecated. Token is managed via HttpOnly cookie.');
-  return null;
-};
-
-/**
- * Removes the stored JWT.
- */
-export const removeToken = () => {
-  // Migrated to HttpOnly cookies. Backend should clear the cookie via a logout endpoint.
-  console.debug('[secureStorage] removeToken is deprecated. Token is cleared via backend HttpOnly cookie deletion.');
-};
-
-// ---------------------------------------------------------------------------
 // Encrypted key-value storage wrapper (localStorage — AES-GCM encrypted)
 // ---------------------------------------------------------------------------
 

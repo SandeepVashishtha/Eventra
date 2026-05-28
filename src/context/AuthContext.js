@@ -47,9 +47,6 @@ export const AuthProvider = ({ children }) => {
 
     setUser(null);
     setToken(null);
-    document.cookie =
-      "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; HttpOnly; SameSite=Strict";
-    sessionStorage.removeItem("token");
     localStorage.removeItem("user");
     return true;
   }, []);
@@ -231,8 +228,6 @@ export const AuthProvider = ({ children }) => {
     setToken(sessionToken);
     setUser(sessionUser);
     
-    document.cookie = `token=${sessionToken}; path=/; Secure; HttpOnly; SameSite=Strict`;
-    
     try {
       localStorage.setItem("user", JSON.stringify(sessionUser));
       return true;
@@ -378,9 +373,15 @@ export const AuthProvider = ({ children }) => {
     [extractSession, persistSession, setAuthRequestState]
   );
 
-  const logout = useCallback(() => {
-    clearSession();
-    setAuthRequestState({ loading: false, error: null });
+  const logout = useCallback(async () => {
+    try {
+      await apiUtils.post(API_ENDPOINTS.AUTH.LOGOUT);
+    } catch (error) {
+      console.error('[AuthContext] Error during backend logout:', error);
+    } finally {
+      clearSession();
+      setAuthRequestState({ loading: false, error: null });
+    }
   }, [clearSession, setAuthRequestState]);
 
   const isAuthenticated = useCallback(() => {
