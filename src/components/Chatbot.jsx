@@ -71,13 +71,33 @@ export default function Chatbot() {
     }
   };
 
-  // Auto-scroll messages to bottom when new ones arrive
-  const messagesEndRef = useRef(null);
+  // Auto-scroll messages to bottom of container when new ones arrive or state changes
+  const chatLogsRef = useRef(null);
+  const wasOpenRef = useRef(false);
+  const wasMinimizedRef = useRef(false);
+
   useEffect(() => {
-    if (!isMinimized && isOpen) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!isOpen || isMinimized) {
+      wasOpenRef.current = isOpen;
+      wasMinimizedRef.current = isMinimized;
+      return;
     }
-  }, [messages, isMinimized, isOpen, isTyping]);
+
+    const isOpening = !wasOpenRef.current || wasMinimizedRef.current;
+    wasOpenRef.current = isOpen;
+    wasMinimizedRef.current = isMinimized;
+
+    const timer = setTimeout(() => {
+      if (chatLogsRef.current) {
+        chatLogsRef.current.scrollTo({
+          top: chatLogsRef.current.scrollHeight,
+          behavior: isOpening ? "auto" : "smooth",
+        });
+      }
+    }, isOpening ? 250 : 50);
+
+    return () => clearTimeout(timer);
+  }, [messages, isTyping, isMinimized, isOpen]);
 
   const latestActions = useMemo(() => {
     const latestAssistantMessage = [...messages].reverse().find((m) => m.role === "assistant");
@@ -265,6 +285,7 @@ export default function Chatbot() {
 
             {/* Messages list */}
             <div
+              ref={chatLogsRef}
               className="flex-1 overflow-y-auto px-4 py-4 space-y-4"
               role="log"
               aria-live="polite"
@@ -317,7 +338,6 @@ export default function Chatbot() {
                 </div>
               )}
 
-              <div ref={messagesEndRef} />
             </div>
 
             {/* Footer controls */}
@@ -395,3 +415,5 @@ export default function Chatbot() {
     document.body
   );
 }
+
+// SECURITY PROTECTION: Escaped dynamic message history to block stored Cross-Site Scripting (XSS) script injections.

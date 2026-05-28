@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet-async";
 import DOMPurify from "dompurify";
 import { toast } from "react-toastify";
 import { Link, useParams } from "react-router-dom";
-import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus } from "lucide-react";
+import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus, Link2 } from "lucide-react";
 import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
 import { isEventBookmarked } from "../../utils/bookmarkUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
@@ -12,7 +12,6 @@ import mockEvents from "./eventsMockData.json";
 import CertificateDownload from "../../components/CertificateDownload";
 import EventMaterials from "../../components/common/EventMaterials";
 import EventRecommendations from "../../components/events/EventRecommendations";
-import CopyLinkButton from "../../components/common/CopyLinkButton";
 import LazyImage from "../../components/common/LazyImage";
 import { useAuth } from "../../context/AuthContext";
 import { exportToCSV, exportToJSON } from "../../utils/exportUtils";
@@ -91,7 +90,7 @@ const EventDetails = () => {
         }
       }
       setCopied(true);
-      toast.success("Event link copied!");
+      toast.success("Link copied!");
       setTimeout(() => {
         setCopied(false);
       }, 2000);
@@ -137,7 +136,17 @@ const EventDetails = () => {
               <p className="inline-flex rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-200 px-4 py-1 text-sm font-semibold uppercase tracking-[0.2em]">
                 {event.type}
               </p>
-              <h1 className="mt-4 text-4xl sm:text-5xl font-extrabold tracking-tight">{event.title}</h1>
+              <div className="mt-4 flex items-center gap-3">
+                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">{event.title}</h1>
+                <button
+                  onClick={handleCopy}
+                  className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-full transition-colors"
+                  aria-label="Copy event link"
+                  title="Copy link"
+                >
+                  <Link2 size={28} />
+                </button>
+              </div>
               <div
                 className="mt-4 max-w-2xl text-gray-600 dark:text-gray-300 prose prose-indigo dark:prose-invert"
                 dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(event.description)) }}
@@ -159,8 +168,6 @@ const EventDetails = () => {
                   Register Now
                 </Link>
               )}
-
-              <CopyLinkButton />
 
               <button
                 onClick={() => setShowShareModal(true)}
