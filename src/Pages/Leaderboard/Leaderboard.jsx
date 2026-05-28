@@ -8,9 +8,6 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaUsers,
-  FaAward,
-  FaTrophy,
-  FaMedal,
   FaArrowUp,
   FaArrowDown,
   FaMinus,
@@ -283,6 +280,7 @@ export default function LeaderBoard() {
     { label: "Points", value: "points" },
     { label: "PRs", value: "prs" },
     { label: "Username", value: "username" },
+  ];
   ], []);
 
   // Extraction of Top 3 for visual Olympic Podium

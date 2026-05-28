@@ -1,7 +1,10 @@
+import { useCallback, useRef } from "react";
 import { useRef, useEffect, useState } from "react";
 import { useSearchParams, useLocation } from "react-router-dom"; // ✅ useLocation added here
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
+import { Grid, List } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { getEventStatus } from "../../utils/eventUtils";
 import { Grid, List } from "lucide-react";
 import FeedbackButton from "../../components/FeedbackButton";
@@ -104,6 +107,23 @@ const EventsPage = () => {
   }
 
   const listing = useEventListing();
+  const {
+    setAdvancedFilters,
+    setFilterType,
+    setSafePage,
+    setSearchQuery,
+    setSortType,
+    setViewMode,
+  } = listing;
+
+  const handleSearch = useCallback((query = "") => {
+    setSearchQuery(query);
+  }, [setSearchQuery]);
+
+  const handlePageChange = useCallback((page) => {
+    setSafePage(page);
+    cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [setSafePage]);
   const cardSectionRef = useRef();
 
   // Local input value updates immediately on each keystroke so the input
@@ -182,8 +202,19 @@ const EventsPage = () => {
     }
   }, [listing.isLoading, routeSearchQuery]);
 
-  const scrollToCard = () => {
+  const scrollToCard = useCallback(() => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setSearchQuery("");
+    setFilterType("all");
+    setSortType("Newest");
+    setViewMode("grid");
+    setAdvancedFilters({});
+  }, [setAdvancedFilters, setFilterType, setSearchQuery, setSortType, setViewMode]);
+  const handleClearFilters = () => {
+    setLocalSearchInput("");
   };
 
   const clearSearchAndFilters = () => {
