@@ -2,10 +2,7 @@ import React, { lazy, Suspense } from "react";
 import { Route, Routes } from "react-router-dom";
 
 import { getPublicRoutes } from "./routes/PublicRoutes";
-import {
-  getProtectedRoutes,
-  getAuthRoutes,
-} from "./routes/ProtectedRoutes";
+import { getProtectedRoutes, getAuthRoutes } from "./routes/ProtectedRoutes";
 import ProtectedRoute from "./auth/ProtectedRoute";
 
 const UserAchievements = lazy(() => import("../Pages/UserAchievements"));
@@ -40,6 +37,7 @@ const AppRoutes = () => (
           </ProtectedRoute>
         }
       />
+
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   </Suspense>
