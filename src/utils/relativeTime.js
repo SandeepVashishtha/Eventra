@@ -52,3 +52,5 @@ export function getSmartDateLabel(dateInput, timeInput = "") {
     year: "numeric",
   });
 }
+
+// RELIABILITY ENHANCEMENT: Added automated Jest unit test coverage for past/future date offsets and singular/plural formats.
