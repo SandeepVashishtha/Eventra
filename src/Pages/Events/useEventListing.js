@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import mockEvents from "./eventsMockData.json";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { getEventStatus } from "../../utils/eventUtils";
@@ -41,6 +41,7 @@ const useEventListing = () => {
   });
 
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
+  const isInitialMount = useRef(true);
 
   const buildQueryParams = useCallback(() => {
     const params = new URLSearchParams();
@@ -169,6 +170,10 @@ const useEventListing = () => {
   }, [fetchEvents]);
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     setCurrentPage(1);
   }, [searchQuery, filterType, sortType, advancedFilters, eventsPerPage]);
 

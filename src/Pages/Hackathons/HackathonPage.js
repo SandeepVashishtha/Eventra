@@ -2,7 +2,7 @@ import TeamMatchmaking from "./components/TeamMatchmaking";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import mockHackathons from "./hackathonMockData.json";
+import { fetchHackathons } from "../../services/hackathonService";
 import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
 import { FiCode, FiRotateCw, FiCompass, FiChevronDown, FiX } from "react-icons/fi";
@@ -62,18 +62,26 @@ const HackathonHub = () => {
     cardsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  // Simulate API call and wire page listeners
+  // Fetch hackathons and wire page listeners
   useEffect(() => {
-    setIsLoading(true);
-    setHackathons(mockHackathons);
-    setIsLoading(false);
-
-    const tags = [
-      ...new Set(
-        mockHackathons.flatMap((hackathon) => hackathon.techStack || []),
-      ),
-    ];
-    setAvailableTags(tags);
+    let isMounted = true;
+    
+    const loadHackathons = async () => {
+      setIsLoading(true);
+      const data = await fetchHackathons();
+      if (isMounted) {
+        setHackathons(data);
+        const tags = [
+          ...new Set(
+            data.flatMap((hackathon) => hackathon.techStack || []),
+          ),
+        ];
+        setAvailableTags(tags);
+        setIsLoading(false);
+      }
+    };
+    
+    loadHackathons();
 
     const handleScroll = () => {
       setIsScrollVisible(window.scrollY > 300);
@@ -90,6 +98,7 @@ const HackathonHub = () => {
     observer.observe(document.body, { childList: true, subtree: true });
 
     return () => {
+      isMounted = false;
       window.removeEventListener("scroll", handleScroll);
       observer.disconnect();
     };

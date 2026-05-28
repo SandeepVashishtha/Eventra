@@ -280,7 +280,7 @@ const SurveyEngine = () => {
 
         {/* MAIN LAYOUT */}
         <AnimatePresence mode="wait">
-          {activeTab === "builder" ? (
+          {activeTab === "builder" && (
             <motion.div
               key="builder-tab"
               initial={{ opacity: 0, y: 15 }}
@@ -528,7 +528,8 @@ const SurveyEngine = () => {
                 </div>
               </div>
             </motion.div>
-          ) : activeTab === "preview" ? (
+          )}
+          {activeTab === "preview" && (
             <motion.div
               key="preview-tab"
               initial={{ opacity: 0, y: 15 }}
@@ -603,7 +604,8 @@ const SurveyEngine = () => {
                 </button>
               </div>
             </motion.div>
-          ) : (
+          )}
+          {activeTab === "analytics" && (
             <motion.div
               key="analytics-tab"
               initial={{ opacity: 0, y: 15 }}

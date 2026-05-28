@@ -9,7 +9,7 @@ import useReducedMotion from "../../../hooks/useReducedMotion.js";
 import eventsData from "../../Events/eventsMockData.json";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
-import RespawningText from "../../../jhalak/RespawningText";
+import RespawningText from "../../../components/visual/RespawningText";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
 import CountUp from "react-countup";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";

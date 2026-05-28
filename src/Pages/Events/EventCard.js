@@ -33,7 +33,9 @@ import {
   removeBookmarkedEvent,
   subscribeToBookmarkChanges,
 } from "../../utils/bookmarkUtils";
+import { getBookmarkedEvents } from "../../utils/bookmarkUtils";
 import { checkRegistrationConflict } from "../../utils/conflictDetection";
+// savedEvents state is component-scoped to avoid calling hooks at module level
 const getCapacityStyles = (ratio, isFull) => {
   if (isFull || ratio >= 0.85) {
     return {
@@ -54,6 +56,7 @@ const getCapacityStyles = (ratio, isFull) => {
 };
 
 const EventCard = ({ event }) => {
+  const [savedEvents, setSavedEvents] = useState([]);
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const titleId = useId();
   const { myEvents, isRegistered } = useMyEvents();
@@ -76,6 +79,12 @@ const EventCard = ({ event }) => {
   const isUserRegistered = isRegistered(event.id);
 
   const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
+useEffect(() => {
+  const saved =
+    getBookmarkedEvents();
+
+  setSavedEvents(saved);
+}, []);
   const eventSharingData = generateEventSharingData({
     ...event,
     title: event.title,
@@ -212,6 +221,49 @@ const EventCard = ({ event }) => {
           title="Copy Event Link"
           aria-label={`Copy link for ${event.title}`}
         >
+          {savedEvents.length > 0 && (
+  <section className="mb-10">
+
+    <div className="
+      flex
+      items-center
+      justify-between
+      mb-4
+    ">
+      <h2 className="
+        text-2xl
+        font-bold
+        text-slate-900
+        dark:text-white
+      ">
+        Saved Events
+      </h2>
+    </div>
+
+    <div className="
+      flex
+      gap-4
+      overflow-x-auto
+      pb-2
+    ">
+
+      {savedEvents.map((saved) => (
+        <div key={saved.id} className="min-w-[280px] flex-shrink-0">
+          <Link
+            to={`/events/${saved.id}`}
+            className="block p-3 bg-white/90 dark:bg-gray-900/80 rounded-lg shadow-sm hover:shadow-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">{saved.title}</div>
+            <div className="text-[11px] text-gray-500 truncate">{saved.location}</div>
+          </Link>
+        </div>
+      ))}
+
+    </div>
+
+  </section>
+)}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="14"

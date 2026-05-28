@@ -108,9 +108,6 @@ const normalizeRequestConfig = (configOrToken = {}) => {
   if ("skipAuth" in config) {
     delete config.skipAuth;
   }
-  // With HttpOnly cookies, the browser automatically sends the session cookie.
-  // We no longer manually append the Authorization header here.
-
   return config;
 };
 
@@ -173,17 +170,12 @@ const normalizeApiError = (error) => {
   );
 };
 
+// 🔥 HERE IS WHERE WE FIXED THE BUG 🔥
+// We completely removed the `if (!config.signal)` block that was generating the Ghost AbortController.
 API.interceptors.request.use((config) => {
-  if (!config.signal) {
-    const controller = new AbortController();
-    config.signal = controller.signal;
-    config._abortController = controller;
-  }
-
   if (isDev) {
     console.debug(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
   }
-
   return config;
 });
 
@@ -226,15 +218,18 @@ export const API_ENDPOINTS = {
     SIGNUP: buildApiUrl("/api/auth/signup"),
     LOGOUT: buildApiUrl("/api/auth/logout"),
     RESET_PASSWORD: buildApiUrl("/api/auth/reset-password"),
+    OAUTH: buildApiUrl("/api/auth/oauth"),
   },
   EVENTS: {
     CREATE: buildApiUrl("/api/events/create"),
+    ALL: buildApiUrl("/api/events"),
     LIST: buildApiUrl("/api/events"),
     DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
     REGISTRANTS: (id) => buildApiUrl(`/api/events/${id}/registrants`),
   },
   PROJECTS: {
+    ALL: buildApiUrl("/api/projects"),
     LIST: buildApiUrl("/api/projects"),
     DETAIL: (id) => buildApiUrl(`/api/projects/${id}`),
     CATEGORIES: buildApiUrl("/api/projects/categories"),
@@ -247,6 +242,7 @@ export const API_ENDPOINTS = {
   },
   NOTIFICATIONS: {
     BASE: buildApiUrl("/api/notifications"),
+    ALL: buildApiUrl("/api/notifications"),
     READ: (id) => (id ? buildApiUrl(`/api/notifications/${id}/read`) : ""),
     READ_ALL: buildApiUrl("/api/notifications/read-all"),
   },
@@ -254,7 +250,13 @@ export const API_ENDPOINTS = {
     PROFILE: buildApiUrl("/api/users/profile"),
     ACHIEVEMENTS: buildApiUrl("/api/users/achievements"),
   },
+  VALIDATION: {
+    EMAIL: (email) => buildApiUrl(`/api/validate/email/${encodeURIComponent(email)}`),
+    USERNAME: (username) => buildApiUrl(`/api/validate/username/${encodeURIComponent(username)}`),
+    PHONE: buildApiUrl("/api/validate/phone"),
+  },
 };
+
 
 export const apiUtils = {
   get: (url, config = {}) =>
@@ -272,11 +274,3 @@ export const apiUtils = {
 export default API;
 
 export { normalizeApiError };
-
-export const API_ENDPOINTS_UPDATED = {
-  ...API_ENDPOINTS,
-  NOTIFICATIONS: {
-    ...API_ENDPOINTS.NOTIFICATIONS,
-    READ_ALL: buildApiUrl("/api/notifications/read-all"),
-  }
-};

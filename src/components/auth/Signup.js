@@ -5,6 +5,7 @@ import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
+import GoogleLoginButton from "./GoogleLoginButton";
 import { 
   User, Mail, Lock, Eye, EyeOff, Check, X, AlertCircle, 
   Github, Chrome, ArrowRight, Sparkles 
@@ -236,15 +237,22 @@ const Signup = () => {
     }
   };
 
-  // Social login handler (placeholder)
+  // Social login handler
   const handleSocialLogin = useCallback(async (provider) => {
     try {
       setLoading(true);
-      // TODO: Implement OAuth flow
-      // const { url } = await apiUtils.get(`${API_ENDPOINTS.AUTH.OAUTH}/${provider}`);
-      // window.location.href = url;
+      const response = await apiUtils.get(`${API_ENDPOINTS.AUTH.OAUTH}/${provider}`);
+      
+      // Depending on wrapAxiosResponse, data could be response.data or response itself
+      const data = response.data || response;
+      if (data && data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("No redirect URL returned from server.");
+      }
     } catch (err) {
-      setErrors(prev => ({ ...prev, submit: `Failed to connect with ${provider}` }));
+      console.error(`OAuth error (${provider}):`, err);
+      setErrors(prev => ({ ...prev, submit: `Failed to connect with ${provider}. Please try again.` }));
     } finally {
       setLoading(false);
     }
@@ -368,22 +376,8 @@ const Signup = () => {
               </div>
 
               {/* Social Login Buttons */}
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                {['google', 'github'].map(provider => (
-                  <motion.button
-                    key={provider}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    type="button"
-                    onClick={() => handleSocialLogin(provider)}
-                    disabled={loading}
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
-                    aria-label={`Sign up with ${provider}`}
-                  >
-                    <SocialIcon provider={provider} />
-                    <span className="capitalize">{provider}</span>
-                  </motion.button>
-                ))}
+              <div className="mb-6 flex justify-center w-full">
+                <GoogleLoginButton />
               </div>
 
               <div className="relative mb-6">
@@ -617,7 +611,7 @@ const FormField = ({
             onClick={() => setShowPassword(v => !v)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             aria-label={showPassword ? "Hide password" : "Show password"}
-            tabIndex={-1}
+            aria-pressed={showPassword}
           >
             <ToggleEyeIcon visible={showPassword} className="w-5 h-5" />
           </button>
@@ -639,6 +633,7 @@ const FormField = ({
             exit={{ opacity: 0, height: 0 }}
             className="text-xs text-red-500 dark:text-red-400 flex items-center gap-1"
             role="alert"
+            aria-live="assertive"
           >
             <X className="w-3.5 h-3.5" />
             {error}
@@ -710,7 +705,7 @@ const PasswordField = ({ id, label, value, onChange, error, strength, requiremen
           onClick={() => setShowPassword(v => !v)}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           aria-label={showPassword ? "Hide password" : "Show password"}
-          tabIndex={-1}
+          aria-pressed={showPassword}
         >
           <ToggleEyeIcon visible={showPassword} className="w-5 h-5" />
         </button>
@@ -773,6 +768,7 @@ const PasswordField = ({ id, label, value, onChange, error, strength, requiremen
             exit={{ opacity: 0, height: 0 }}
             className="text-xs text-red-500 dark:text-red-400 flex items-center gap-1"
             role="alert"
+            aria-live="assertive"
           >
             <X className="w-3.5 h-3.5" />
             {error}
