@@ -85,7 +85,7 @@ Comprehensive documentation updates have been made across the Eventra project to
 
 ---
 
-### 6. **SESSION_RECOVERY.md**
+### 6. **docs/SESSION_RECOVERY.md**
 **Purpose:** Session recovery and reconnect system documentation
 
 **Updates:**
@@ -130,7 +130,7 @@ README.md (Main Entry Point)
   │     ├─→ Referenced from SECURITY.md
   │     ├─→ Referenced from docs/API_DOCUMENTATION.md
   │     ├─→ Referenced from docs/BACKEND_API_REQUIREMENTS.md
-  │     ├─→ Referenced from SESSION_RECOVERY.md
+  │     ├─→ Referenced from docs/SESSION_RECOVERY.md
   │     ├─→ Referenced from ADVANCED_FILTERING_IMPLEMENTATION.md
   │     └─→ Referenced from FILTERING_QUICK_REFERENCE.md
   │
