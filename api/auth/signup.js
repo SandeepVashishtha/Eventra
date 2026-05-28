@@ -234,9 +234,11 @@ export default async function handler(req, res) {
       createdAt: newUser.createdAt,
     };
 
+    const isProd = process.env.NODE_ENV === "production";
+    res.setHeader('Set-Cookie', `token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict${isProd ? '; Secure' : ''}`);
+
     return corsResponse(res, 201, {
       message: "Account created successfully",
-      token,
       ...userResponse,
     }, req);
 

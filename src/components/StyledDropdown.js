@@ -20,7 +20,6 @@ const Dropdown = ({
   const allOptions = [placeholder, ...options];
   const selectedIndex = allOptions.findIndex((opt) => opt === value);
   const currentActiveIndex = activeIndex >= 0 ? activeIndex : Math.max(selectedIndex, 0);
-  const listboxId = `dropdown-${label || placeholder}`.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -39,6 +38,11 @@ const Dropdown = ({
     buttonRef.current?.focus();
   };
 
+  const openWithSelectedOption = () => {
+    setActiveIndex(selectedIndex >= 0 ? selectedIndex : 0);
+    setOpen(true);
+  };
+
   const toggleDropdown = () => {
     setOpen((prev) => {
       if (!prev) {
@@ -48,46 +52,24 @@ const Dropdown = ({
     });
   };
 
-  const handleButtonKeyDown = (event) => {
+  const handleKeyDown = (event) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       if (open) {
         handleSelect(allOptions[currentActiveIndex]);
       } else {
-        setActiveIndex(selectedIndex >= 0 ? selectedIndex : 0);
-        setOpen(true);
+        openWithSelectedOption();
       }
       return;
     }
 
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
-      setOpen(true);
-      setActiveIndex((prev) => {
-        const startIndex = prev >= 0 ? prev : Math.max(selectedIndex, 0);
-        return event.key === "ArrowDown"
-          ? Math.min(startIndex + 1, allOptions.length - 1)
-          : Math.max(startIndex - 1, 0);
-      });
-      return;
-    }
+      if (!open) {
+        openWithSelectedOption();
+        return;
+      }
 
-    if (event.key === "Escape") {
-      event.preventDefault();
-      setOpen(false);
-    }
-  };
-
-  const handleListboxKeyDown = (event) => {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      setOpen(false);
-      buttonRef.current?.focus();
-      return;
-    }
-
-    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-      event.preventDefault();
       setActiveIndex((prev) =>
         event.key === "ArrowDown"
           ? Math.min(prev + 1, allOptions.length - 1)
@@ -96,6 +78,10 @@ const Dropdown = ({
       return;
     }
 
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setOpen(false);
+      buttonRef.current?.focus();
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       handleSelect(allOptions[currentActiveIndex]);
@@ -107,7 +93,7 @@ const Dropdown = ({
       {label && (
         <span
           id={labelId}
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
         >
           {label}
         </span>
@@ -116,9 +102,9 @@ const Dropdown = ({
       <button
         ref={buttonRef}
         type="button"
-        className="flex w-full items-center justify-between px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all text-left"
+        className="flex min-h-[44px] w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 py-2 text-left shadow-sm transition-all hover:ring-2 hover:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800"
         onClick={toggleDropdown}
-        onKeyDown={handleButtonKeyDown}
+        onKeyDown={handleKeyDown}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listboxId}
@@ -136,7 +122,7 @@ const Dropdown = ({
           {value || placeholder}
         </span>
         <FiChevronDown
-          className={`text-gray-400 dark:text-gray-500 transition-transform ${
+          className={`text-gray-400 transition-transform dark:text-gray-500 ${
             open ? "rotate-180" : ""
           }`}
           aria-hidden="true"
@@ -147,10 +133,16 @@ const Dropdown = ({
         {open && (
           <motion.ul
             id={listboxId}
+            className="absolute z-50 mt-2 max-h-72 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
             role="listbox"
             tabIndex={-1}
             aria-labelledby={label ? labelId : undefined}
             aria-activedescendant={`${listboxId}-option-${currentActiveIndex}`}
+            onKeyDown={handleKeyDown}
             onKeyDown={handleListboxKeyDown}
             className="absolute mt-2 w-full z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg"
             initial={{ opacity: 0, y: -5 }}
@@ -166,15 +158,27 @@ const Dropdown = ({
                 aria-selected={value === opt || (!value && opt === placeholder)}
                 onClick={() => handleSelect(opt)}
                 onMouseEnter={() => setActiveIndex(index)}
-                className={`px-4 py-2 text-sm cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100 ${
+                className={`cursor-pointer px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 dark:text-gray-100 dark:hover:bg-gray-700 ${
                   index === currentActiveIndex ? "bg-indigo-50 dark:bg-gray-700" : ""
                 } ${
                   value === opt || (!value && opt === placeholder)
-                    ? "font-semibold bg-indigo-100 dark:bg-indigo-900"
+                    ? "bg-indigo-100 font-semibold dark:bg-indigo-900"
                     : ""
                 }`}
               >
                 {opt}
+                <button
+                  type="button"
+                  onClick={() = aria-label="button"> handleSelect(opt)}
+                  onKeyDown={(event) => handleOptionKeyDown(event, opt)}
+                  className={`w-full px-4 py-2 text-left text-sm cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 focus:bg-indigo-50 dark:focus:bg-gray-700 focus:outline-none text-gray-700 dark:text-gray-100 ${
+                    value === opt
+                      ? "font-semibold bg-indigo-100 dark:bg-indigo-900"
+                      : ""
+                  }`}
+                >
+                  {opt}
+                </button>
               </li>
             ))}
           </motion.ul>
