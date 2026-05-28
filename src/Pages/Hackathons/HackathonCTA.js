@@ -127,7 +127,7 @@ const HackathonCTA = () => {
             >
               {/* Close button */}
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() = aria-label="button"> setShowModal(false)}
                 className="absolute top-4 right-4 p-1.5 rounded-full bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 transition-colors"
               >
                 <X className="w-4 h-4 text-slate-500 dark:text-slate-300" />
@@ -145,7 +145,7 @@ const HackathonCTA = () => {
 
               <button
                 className="mt-6 px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 text-white font-semibold text-sm shadow-md hover:shadow-lg dark:shadow-none dark:hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all"
-                onClick={() => setShowModal(false)}
+                onClick={() = aria-label="button"> setShowModal(false)}
               >
                 Got it
               </button>

@@ -24,7 +24,7 @@ const ModernSearchInput = ({ value, onChange, placeholder }) => (
     />
     {value && (
       <button
-        onClick={() => onChange({ target: { value: "" } })}
+        onClick={() = aria-label="button"> onChange({ target: { value: "" } })}
         className="absolute right-4 text-gray-400 dark:text-gray-500 hover:text-black dark:hover:text-white transition-colors"
       >
         <FiX className="w-4 h-4" />
@@ -291,7 +291,7 @@ const ProjectGallery = () => {
                   <button
                     type="button"
                     className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 hover:ring-2 hover:ring-black/20 transition-all min-w-[180px]"
-                    onClick={() =>
+                    onClick={() = aria-label="button">
                       setCategoryOpen((prev) => !prev)
                     }
                     onKeyDown={(event) => {
@@ -377,7 +377,7 @@ const ProjectGallery = () => {
                   <button
                     type="button"
                     className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-700 hover:ring-2 hover:ring-black/20 transition-all min-w-[200px]"
-                    onClick={() => setSortOpen((prev) => !prev)}
+                    onClick={() = aria-label="button"> setSortOpen((prev) => !prev)}
                     onKeyDown={(event) => {
                       if (event.key === "Escape") {
                         setSortOpen(false);
@@ -493,7 +493,7 @@ const ProjectGallery = () => {
                 onClick={fetchProjects}
                 disabled={isLoading}
                 className="mt-6 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white disabled:opacity-60 disabled:cursor-not-allowed"
-              >
+               aria-label="button">
                 Try Again
               </button>
             </motion.div>

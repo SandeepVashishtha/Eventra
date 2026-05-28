@@ -150,7 +150,7 @@ const EventTicket = ({ event, user, onClose }) => {
         <div className="ud-ticket-modal-actions">
           <div className="flex gap-2 flex-1">
             <button 
-              onClick={() => handleDownload("png")} 
+              onClick={() = aria-label="button"> handleDownload("png")} 
               disabled={downloading}
               className="ud-ticket-action-btn download-btn"
               title="Download PNG Ticket"
@@ -163,7 +163,7 @@ const EventTicket = ({ event, user, onClose }) => {
               <span>PNG</span>
             </button>
             <button 
-              onClick={() => handleDownload("pdf")} 
+              onClick={() = aria-label="button"> handleDownload("pdf")} 
               disabled={downloading}
               className="ud-ticket-action-btn pdf-btn"
               title="Download PDF Ticket"
@@ -174,7 +174,7 @@ const EventTicket = ({ event, user, onClose }) => {
           </div>
           
           <button 
-            onClick={() => setIsFlipped(!isFlipped)} 
+            onClick={() = aria-label="button"> setIsFlipped(!isFlipped)} 
             className="ud-ticket-action-btn flip-btn"
             title="Flip Ticket"
           >
@@ -186,7 +186,7 @@ const EventTicket = ({ event, user, onClose }) => {
             onClick={onClose} 
             className="ud-ticket-action-btn close-btn"
             title="Close Ticket"
-          >
+           aria-label="button">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -307,7 +307,7 @@ const EventTicket = ({ event, user, onClose }) => {
                 {selectedSeat && (
                   <button
                     type="button"
-                    onClick={(e) => {
+                    onClick={(e) = aria-label="button"> {
                       e.stopPropagation();
                       setShowSeatMap(true);
                     }}
@@ -444,7 +444,7 @@ const EventTicket = ({ event, user, onClose }) => {
                   <p className="text-xs text-zinc-400 mt-0.5" style={{ fontSize: "11px", color: "#a1a1aa", marginTop: "2px" }}>Your exact allocated seat is pulsing in a glowing golden radar overlay</p>
                 </div>
                 <button 
-                  onClick={() => setShowSeatMap(false)}
+                  onClick={() = aria-label="button"> setShowSeatMap(false)}
                   className="p-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white transition-colors cursor-pointer"
                   style={{ cursor: "pointer", background: "#18181b", border: "1px solid #27272a", borderRadius: "8px", padding: "6px", color: "#a1a1aa" }}
                 >

@@ -52,7 +52,7 @@ const EventCTA = () => {
 
           {/* UPDATED: The secondary button needs dark mode styles for when the main page is dark. */}
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() = aria-label="button"> setShowModal(true)}
             className="relative inline-flex items-center px-8 py-4 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-300 dark:hover:bg-slate-800 font-semibold shadow hover:shadow-lg hover:scale-105 transition-all duration-300"
           >
             <Users size={20} /> Participate
@@ -73,7 +73,7 @@ const EventCTA = () => {
             {/* The close button works well in both themes. */}
             <button
               className="mt-6 px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
-              onClick={() => setShowModal(false)}
+              onClick={() = aria-label="button"> setShowModal(false)}
             >
               Close
             </button>

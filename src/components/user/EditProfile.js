@@ -447,7 +447,7 @@ const EditProfile = () => {
                         <button
                           key={suggestion}
                           type="button"
-                          onClick={() => addSkill(suggestion)}
+                          onClick={() = aria-label="button"> addSkill(suggestion)}
                           className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 hover:bg-indigo-100 hover:text-indigo-800 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-indigo-900/40 dark:hover:text-indigo-300"
                         >
                           + {suggestion}
@@ -466,7 +466,7 @@ const EditProfile = () => {
                           {skill}
                           <button
                             type="button"
-                            onClick={() =>
+                            onClick={() = aria-label="button">
                               setForm((prev) => ({
                                 ...prev,
                                 skills: prev.skills.filter((_, i) => i !== idx),
@@ -565,7 +565,7 @@ const EditProfile = () => {
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => window.history.back()}
+                onClick={() = aria-label="button"> window.history.back()}
                 className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 Cancel
@@ -573,7 +573,7 @@ const EditProfile = () => {
               <button
                 type="button"
                 disabled={loading}
-                onClick={() => setConfirmOpen(true)}
+                onClick={() = aria-label="button"> setConfirmOpen(true)}
                 className="px-4 py-2 rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
               >
                 {loading ? "Saving..." : "Save Changes"}
@@ -607,7 +607,7 @@ const ConfirmModal = ({ open, onCancel, onConfirm, loading }) => {
             type="button"
             onClick={onCancel}
             className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-          >
+           aria-label="button">
             Cancel
           </button>
           <button
@@ -615,7 +615,7 @@ const ConfirmModal = ({ open, onCancel, onConfirm, loading }) => {
             onClick={onConfirm}
             disabled={loading}
             className="px-4 py-2 rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
-          >
+           aria-label="button">
             {loading ? "Saving..." : "Save"}
           </button>
         </div>

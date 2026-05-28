@@ -275,7 +275,7 @@ const AnalyticsDashboard = () => {
         <button
           onClick={triggerManualCheckin}
           className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md transition self-start sm:self-auto"
-        >
+         aria-label="button">
           <Play className="w-3.5 h-3.5 fill-white" />
           Trigger Check-in Scan
         </button>

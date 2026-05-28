@@ -250,7 +250,7 @@ const SurveyEngine = () => {
             <button
               onClick={handleSaveSurvey}
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all cursor-pointer"
-            >
+             aria-label="button">
               <FiSave className="w-5 h-5" />
               Publish Survey
             </button>
@@ -266,7 +266,7 @@ const SurveyEngine = () => {
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() = aria-label="button"> setActiveTab(tab.id)}
               className={`pb-4 px-1 text-sm font-bold border-b-2 transition-all shrink-0 cursor-pointer ${
                 activeTab === tab.id
                   ? "border-indigo-550 text-indigo-600 dark:text-indigo-400"
@@ -308,13 +308,13 @@ const SurveyEngine = () => {
                     <button
                       onClick={handleRestoreDraft}
                       className="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white rounded-xl shadow-sm transition"
-                    >
+                     aria-label="button">
                       Restore Template
                     </button>
                     <button
                       onClick={handleDiscardDraft}
                       className="flex-1 sm:flex-none px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-350 dark:hover:bg-slate-750 text-xs font-bold text-slate-700 dark:text-slate-300 rounded-xl transition"
-                    >
+                     aria-label="button">
                       Discard
                     </button>
                   </div>
@@ -393,7 +393,7 @@ const SurveyEngine = () => {
 
                         <div className="flex items-center gap-1 shrink-0">
                           <button
-                            onClick={() => moveQuestion(index, "up")}
+                            onClick={() = aria-label="button"> moveQuestion(index, "up")}
                             disabled={index === 0}
                             className={`p-2 rounded-xl border transition-all ${
                               index === 0
@@ -406,7 +406,7 @@ const SurveyEngine = () => {
                           </button>
                           
                           <button
-                            onClick={() => moveQuestion(index, "down")}
+                            onClick={() = aria-label="button"> moveQuestion(index, "down")}
                             disabled={index === questions.length - 1}
                             className={`p-2 rounded-xl border transition-all ${
                               index === questions.length - 1
@@ -420,7 +420,7 @@ const SurveyEngine = () => {
                           
                           <button
                             id="ymjlwm"
-                            onClick={() =>
+                            onClick={() = aria-label="button">
                               setConfirmModal({
                                 open: true,
                                 type: "question",
@@ -465,7 +465,7 @@ const SurveyEngine = () => {
                                   </div>
                                 </div>
                                 <button
-                                  onClick={() => setConfirmModal({ open: true, type: "option", questionId: question.id, optionIndex: optIdx }) }
+                                  onClick={() = aria-label="button"> setConfirmModal({ open: true, type: "option", questionId: question.id, optionIndex: optIdx }) }
                                   className="text-slate-400 hover:text-red-500 p-1 self-start"
                                 >
                                   <FiTrash2 className="w-4 h-4" />
@@ -474,7 +474,7 @@ const SurveyEngine = () => {
                             ))}
                           </AnimatePresence>
                           <button
-                            onClick={() => addOption(question.id)}
+                            onClick={() = aria-label="button"> addOption(question.id)}
                             className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 mt-2"
                           >
                             <FiPlusCircle className="w-4 h-4" />
@@ -518,7 +518,7 @@ const SurveyEngine = () => {
                   {questionTypes.map((type) => (
                     <button
                       key={type.value}
-                      onClick={() => addQuestion(type.value)}
+                      onClick={() = aria-label="button"> addQuestion(type.value)}
                       className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold hover:border-indigo-500 hover:text-indigo-600 dark:hover:border-indigo-400 dark:hover:text-indigo-400 hover:shadow-md transition-all active:scale-98"
                     >
                       <FiPlus className="w-5 h-5" />
@@ -599,7 +599,7 @@ const SurveyEngine = () => {
                 <button
                   disabled
                   className="px-6 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-semibold cursor-not-allowed text-sm"
-                >
+                 aria-label="button">
                   Submit Survey Feedback
                 </button>
               </div>
@@ -634,7 +634,7 @@ const SurveyEngine = () => {
 
       <div className="flex justify-end gap-3 mt-6">
         <button
-          onClick={() =>
+          onClick={() = aria-label="button">
             setConfirmModal({
               open: false,
               type: null,
@@ -648,7 +648,7 @@ const SurveyEngine = () => {
         </button>
 
         <button
-          onClick={() => {
+          onClick={() = aria-label="button"> {
             if (confirmModal.type === "question") {
               deleteQuestion(confirmModal.questionId);
             } else {

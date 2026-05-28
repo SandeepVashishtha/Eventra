@@ -648,14 +648,14 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
         <div className="fp-topbar-actions">
           <div className="hidden md:flex items-center gap-1.5 bg-gray-900/60 border border-gray-800/80 px-2.5 py-1.5 rounded-lg mr-2">
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Presets:</span>
-            <button onClick={() => loadPreset("empty")} className="text-xs font-semibold px-2 py-0.5 hover:text-indigo-400 text-gray-300 transition-colors">Clear</button>
+            <button onClick={() = aria-label="button"> loadPreset("empty")} className="text-xs font-semibold px-2 py-0.5 hover:text-indigo-400 text-gray-300 transition-colors">Clear</button>
             <span className="text-gray-700">|</span>
-            <button onClick={() => loadPreset("banquet")} className="text-xs font-semibold px-2 py-0.5 hover:text-indigo-400 text-gray-300 transition-colors">Banquet</button>
+            <button onClick={() = aria-label="button"> loadPreset("banquet")} className="text-xs font-semibold px-2 py-0.5 hover:text-indigo-400 text-gray-300 transition-colors">Banquet</button>
             <span className="text-gray-700">|</span>
-            <button onClick={() => loadPreset("conference")} className="text-xs font-semibold px-2 py-0.5 hover:text-indigo-400 text-gray-300 transition-colors">Keynote</button>
+            <button onClick={() = aria-label="button"> loadPreset("conference")} className="text-xs font-semibold px-2 py-0.5 hover:text-indigo-400 text-gray-300 transition-colors">Keynote</button>
           </div>
 
-          <button onClick={saveLayout} className="fp-btn fp-btn-primary">
+          <button onClick={saveLayout} className="fp-btn fp-btn-primary" aria-label="button">
             <Save size={16} />
             Save Layout
           </button>
@@ -674,27 +674,27 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
             <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Click items to add them directly onto the seating designer grid canvas.</p>
 
             <div className="fp-tool-grid">
-              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("stage")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() = aria-label="button"> handleAddElement("stage")}>
                 <Layout className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Stage</span>
               </button>
-              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("round-table")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() = aria-label="button"> handleAddElement("round-table")}>
                 <Users className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Round Table</span>
               </button>
-              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("rect-table")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() = aria-label="button"> handleAddElement("rect-table")}>
                 <Grid className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Rect Table</span>
               </button>
-              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("booth")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() = aria-label="button"> handleAddElement("booth")}>
                 <MapPin className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Stand/Booth</span>
               </button>
-              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("barrier")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() = aria-label="button"> handleAddElement("barrier")}>
                 <Minimize2 className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Barrier</span>
               </button>
-              <button className="fp-tool-item" onClick={() => handleAddElement("exit")}>
+              <button className="fp-tool-item" onClick={() = aria-label="button"> handleAddElement("exit")}>
                 <RotateCcw className="fp-tool-icon rotate-45" size={24} />
                 <span className="fp-tool-label">Exit Route</span>
               </button>
@@ -730,17 +730,17 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
             </p>
 
             <div className="fp-portability-grid mb-4">
-              <button className="fp-portability-btn font-semibold" onClick={handleExportPNG} title="Export as high-res PNG image">
+              <button className="fp-portability-btn font-semibold" onClick={handleExportPNG} title="Export as high-res PNG image" aria-label="button">
                 <Image className="fp-portability-icon" size={16} />
                 <span>Export PNG</span>
               </button>
-              <button className="fp-portability-btn font-semibold" onClick={handleExportSVG} title="Export as vector SVG image">
+              <button className="fp-portability-btn font-semibold" onClick={handleExportSVG} title="Export as vector SVG image" aria-label="button">
                 <Download className="fp-portability-icon" size={16} />
                 <span>Export SVG</span>
               </button>
             </div>
 
-            <button className="fp-btn fp-btn-secondary w-full justify-center mb-3 text-xs" onClick={handleDownloadJSON} title="Download backup config JSON file">
+            <button className="fp-btn fp-btn-secondary w-full justify-center mb-3 text-xs" onClick={handleDownloadJSON} title="Download backup config JSON file" aria-label="button">
               <FileJson size={14} className="text-indigo-400" />
               <span>Backup Layout JSON</span>
             </button>
@@ -797,20 +797,20 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
             <button
               className={`fp-control-btn ${isPanMode ? 'fp-control-btn-active' : ''}`}
               title="Pan Tool (Move screen)"
-              onClick={() => setIsPanMode(!isPanMode)}
+              onClick={() = aria-label="button"> setIsPanMode(!isPanMode)}
             >
               <Move size={16} />
             </button>
             <span className="text-gray-700">|</span>
-            <button className="fp-control-btn" title="Zoom In" onClick={() => setZoom(Math.min(2, zoom + 0.1))}>
+            <button className="fp-control-btn" title="Zoom In" onClick={() = aria-label="button"> setZoom(Math.min(2, zoom + 0.1))}>
               <Plus size={16} />
             </button>
             <div className="fp-zoom-display">{Math.round(zoom * 100)}%</div>
-            <button className="fp-control-btn" title="Zoom Out" onClick={() => setZoom(Math.max(0.4, zoom - 0.1))}>
+            <button className="fp-control-btn" title="Zoom Out" onClick={() = aria-label="button"> setZoom(Math.max(0.4, zoom - 0.1))}>
               <Minus size={16} />
             </button>
             <span className="text-gray-700">|</span>
-            <button className="fp-control-btn" title="Reset view" onClick={() => { setZoom(0.8); setPanOffset({ x: 50, y: 30 }); }}>
+            <button className="fp-control-btn" title="Reset view" onClick={() = aria-label="button"> { setZoom(0.8); setPanOffset({ x: 50, y: 30 }); }}>
               <RotateCcw size={16} />
             </button>
           </div>

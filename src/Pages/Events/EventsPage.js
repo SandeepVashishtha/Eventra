@@ -245,7 +245,7 @@ const EventsPage = () => {
             {FILTERS.map((filter) => (
               <button
                 key={filter.key}
-                onClick={() => listing.setFilterType(filter.key)}
+                onClick={() = aria-label="button"> listing.setFilterType(filter.key)}
                 className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-lg transition ${
                   listing.filterType === filter.key
                     ? "bg-blue-600 text-white dark:bg-blue-600 dark:text-white"
@@ -261,7 +261,7 @@ const EventsPage = () => {
               <button
                 onClick={clearSearchAndFilters}
                 className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-full transition bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 dark:bg-red-900/30 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/50 font-semibold"
-              >
+               aria-label="button">
                 Clear Filters
               </button>
             )}
@@ -299,7 +299,7 @@ const EventsPage = () => {
 
             <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
               <button
-                onClick={() => listing.setViewMode("grid")}
+                onClick={() = aria-label="button"> listing.setViewMode("grid")}
                 className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
                   listing.viewMode === "grid"
                     ? "bg-black text-white shadow-md dark:bg-white dark:text-black"
@@ -311,7 +311,7 @@ const EventsPage = () => {
                 <Grid size={16} />
               </button>
               <button
-                onClick={() => listing.setViewMode("list")}
+                onClick={() = aria-label="button"> listing.setViewMode("list")}
                 className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
                   listing.viewMode === "list"
                     ? "bg-black text-white shadow-md dark:bg-white dark:text-black"

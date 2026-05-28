@@ -306,7 +306,7 @@ export default function OnboardingChecklist() {
               </div>
               
               <button 
-                onClick={() => setIsOpen(false)}
+                onClick={() = aria-label="button"> setIsOpen(false)}
                 className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                 aria-label="Minimize panel"
               >
@@ -414,12 +414,12 @@ export default function OnboardingChecklist() {
               <button
                 onClick={handleDismiss}
                 className="text-[10px] font-bold text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors uppercase tracking-wider"
-              >
+               aria-label="button">
                 Dismiss Quest
               </button>
 
               <button
-                onClick={() => setIsOpen(false)}
+                onClick={() = aria-label="button"> setIsOpen(false)}
                 className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-850 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 rounded-lg text-xs font-bold transition-all shadow-md"
               >
                 Hide Panel

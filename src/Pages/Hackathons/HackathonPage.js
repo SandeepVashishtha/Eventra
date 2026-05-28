@@ -27,7 +27,7 @@ const Tag = ({ tag, onRemove }) => (
   >
     <span>{tag}</span>
     <button
-      onClick={() => onRemove(tag)}
+      onClick={() = aria-label="button"> onRemove(tag)}
       className="hover:bg-indigo-500/30 rounded-full p-0.5 transition-colors"
     >
       <FiX className="w-3 h-3" />
@@ -252,7 +252,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
           ref={buttonRef}
           className="flex w-full items-center justify-between gap-3 px-4 py-3 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-white/5 cursor-pointer hover:ring-2 hover:ring-indigo-500/30 dark:hover:ring-indigo-500/50 hover:border-indigo-300 dark:hover:border-indigo-500/30 transition-all text-slate-700 dark:text-slate-300"
           onClick={toggleOpen}
-        >
+         aria-label="button">
           <span
             className={`flex-1 text-left text-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis ${!value ? "text-slate-400 dark:text-slate-500" : "text-slate-900 dark:text-slate-200"}`}
           >
@@ -438,7 +438,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
             </div>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setShowFilters(!showFilters)}
+                onClick={() = aria-label="button"> setShowFilters(!showFilters)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${
                   showFilters
                     ? "bg-indigo-600 text-white border-indigo-500 shadow-md dark:shadow-[0_0_16px_rgba(99,102,241,0.4)]"
@@ -457,7 +457,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
                   <button
                     onClick={resetFilters}
                     className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold border border-indigo-200 dark:border-indigo-500/30 px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-all"
-                  >
+                   aria-label="button">
                     ✕ Clear filters
                   </button>
                 )}
@@ -540,7 +540,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
                       {availableTags.map((tag) => (
                         <button
                           key={tag}
-                          onClick={() => handleTagSelect(tag)}
+                          onClick={() = aria-label="button"> handleTagSelect(tag)}
                           className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 border ${
                             selectedTags.includes(tag)
                               ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm dark:shadow-[0_0_10px_rgba(99,102,241,0.4)]'
@@ -574,7 +574,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
             ].map((tab) => (
               <button
                 key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() = aria-label="button"> setActiveTab(tab.key)}
                 className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300 border ${
                   activeTab === tab.key
                     ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white border-indigo-500/50 shadow-md dark:shadow-[0_0_16px_rgba(99,102,241,0.4)] scale-105"

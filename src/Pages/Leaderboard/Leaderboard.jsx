@@ -773,14 +773,14 @@ export default function LeaderBoard() {
 
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                          onClick={() = aria-label="button"> setCurrentPage((p) => Math.max(p - 1, 1))}
                           disabled={currentPage === 1}
                           className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-50 hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 bg-transparent transition-all"
                         >
                           <FaChevronLeft className="w-3 h-3" />
                         </button>
                         <button
-                          onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                          onClick={() = aria-label="button"> setCurrentPage((p) => Math.min(p + 1, totalPages))}
                           disabled={currentPage === totalPages}
                           className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-50 hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 bg-transparent transition-all"
                         >
