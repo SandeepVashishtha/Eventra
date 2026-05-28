@@ -84,6 +84,18 @@ export default function EventHero({
     saveSearchQuery(query);
   };
 
+  useEffect(() => {
+  // Preload hero background image for better LCP
+  const preloadLink = document.createElement('link');
+  preloadLink.rel = 'preload';
+  preloadLink.as = 'image';
+  preloadLink.href = '/assets/eventbg.png';
+  document.head.appendChild(preloadLink);
+  
+  return () => {
+    document.head.removeChild(preloadLink);
+  };
+}, []);
   const clearSearchHistory = useCallback(() => {
     persistSearchHistory([]);
   }, [persistSearchHistory]);

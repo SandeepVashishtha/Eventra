@@ -1,16 +1,13 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useReducedMotion } from '../../hooks/useReducedMotion';
+import useReducedMotion from '../../hooks/useReducedMotion';
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { getPublicErrorMessage, AUTH_ERRORS } from "../../utils/errorMessages";
 import { useAuth } from "../../context/AuthContext";
-import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
-import { 
-  User, Mail, Lock, Eye, EyeOff, Check, X, AlertCircle, 
-  Github, Chrome, ArrowRight, Sparkles 
+import {
+  Sparkles, Check, ArrowRight, EyeOff, Eye, User, Mail, Lock, AlertCircle, X
 } from "lucide-react";
-
-// ============ CONSTANTS & CONFIG ============
 const PASSWORD_REQUIREMENTS = [
   { id: 'length', label: 'At least 8 characters', regex: /.{8,}/ },
   { id: 'uppercase', label: 'One uppercase letter', regex: /[A-Z]/ },
@@ -23,7 +20,7 @@ const NAME_VALIDATION = {
   min: 2,
   max: 50,
   pattern: /^[a-zA-Z\s'-]+$/,
-  patternError: "Only letters, spaces, hyphens & apostrophes allowed"
+  patternError: "Only letters, spaces, hyphens & apostrophes allowed",
 };
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -65,14 +62,6 @@ const getPasswordStrength = (password) => {
 // ============ REUSABLE ICON COMPONENTS ============
 const ToggleEyeIcon = ({ visible, className = "" }) => 
   visible ? <EyeOff className={className} /> : <Eye className={className} />;
-
-const SocialIcon = ({ provider }) => {
-  const icons = {
-    google: <Chrome className="w-5 h-5" />,
-    github: <Github className="w-5 h-5" />,
-  };
-  return icons[provider] || null;
-};
 
 // ============ CUSTOM HOOK: useSignupForm ============
 const useSignupForm = (onSuccess) => {
@@ -229,28 +218,12 @@ const Signup = () => {
       setSubmitStatus('error');
       setErrors(prev => ({ 
         ...prev, 
-        submit: err.message.includes('email') 
-          ? "This email is already registered. Try logging in instead." 
-          : err.message 
+        submit: getPublicErrorMessage(err, AUTH_ERRORS.registrationFailed) 
       }));
     } finally {
       setLoading(false);
     }
   };
-
-  // Social login handler (placeholder)
-  const handleSocialLogin = useCallback(async (provider) => {
-    try {
-      setLoading(true);
-      // TODO: Implement OAuth flow
-      // const { url } = await apiUtils.get(`${API_ENDPOINTS.AUTH.OAUTH}/${provider}`);
-      // window.location.href = url;
-    } catch (err) {
-      setErrors(prev => ({ ...prev, submit: `Failed to connect with ${provider}` }));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   // Animation variants
   const containerVariants = {
@@ -367,25 +340,6 @@ const Signup = () => {
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
                   Start your journey with Eventra today
                 </p>
-              </div>
-
-              {/* Social Login Buttons */}
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                {['google', 'github'].map(provider => (
-                  <motion.button
-                    key={provider}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    type="button"
-                    onClick={() => handleSocialLogin(provider)}
-                    disabled={loading}
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
-                    aria-label={`Sign up with ${provider}`}
-                  >
-                    <SocialIcon provider={provider} />
-                    <span className="capitalize">{provider}</span>
-                  </motion.button>
-                ))}
               </div>
 
               <div className="relative mb-6">
@@ -561,7 +515,7 @@ const Signup = () => {
 };
 
 // ============ REUSABLE FORM FIELD COMPONENT ============
-const FormField = ({
+export const FormField = ({
   id, label, type = "text", icon: Icon, value, onChange, onBlur,
   error, success, hint, required, autoComplete, toggleVisibility, initialDelay = 0
 }) => {
@@ -619,7 +573,7 @@ const FormField = ({
             onClick={() => setShowPassword(v => !v)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             aria-label={showPassword ? "Hide password" : "Show password"}
-            tabIndex={-1}
+            aria-pressed={showPassword}
           >
             <ToggleEyeIcon visible={showPassword} className="w-5 h-5" />
           </button>
@@ -641,6 +595,7 @@ const FormField = ({
             exit={{ opacity: 0, height: 0 }}
             className="text-xs text-red-500 dark:text-red-400 flex items-center gap-1"
             role="alert"
+            aria-live="assertive"
           >
             <X className="w-3.5 h-3.5" />
             {error}
@@ -667,7 +622,7 @@ const FormField = ({
 };
 
 // ============ PASSWORD FIELD WITH REQUIREMENTS ============
-const PasswordField = ({ id, label, value, onChange, error, strength, requirements }) => {
+export const PasswordField = ({ id, label, value, onChange, error, strength, requirements }) => {
   const [showPassword, setShowPassword] = useState(false);
   
   return (
@@ -712,7 +667,7 @@ const PasswordField = ({ id, label, value, onChange, error, strength, requiremen
           onClick={() => setShowPassword(v => !v)}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           aria-label={showPassword ? "Hide password" : "Show password"}
-          tabIndex={-1}
+          aria-pressed={showPassword}
         >
           <ToggleEyeIcon visible={showPassword} className="w-5 h-5" />
         </button>
@@ -775,6 +730,7 @@ const PasswordField = ({ id, label, value, onChange, error, strength, requiremen
             exit={{ opacity: 0, height: 0 }}
             className="text-xs text-red-500 dark:text-red-400 flex items-center gap-1"
             role="alert"
+            aria-live="assertive"
           >
             <X className="w-3.5 h-3.5" />
             {error}

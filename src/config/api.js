@@ -28,9 +28,7 @@ const resolveEnvApiBaseUrl = () => {
     return normalizeApiBaseUrl(envUrl);
   }
   if (process.env.NODE_ENV === "production") {
-    if (isDev) {
-      console.warn("REACT_APP_API_URL environment variable is missing in production. Defaulting to relative API requests.");
-    }
+    console.warn("REACT_APP_API_URL environment variable is missing in production. Defaulting to relative API requests.");
     return "";
   }
   return "http://localhost:8080";
@@ -108,9 +106,6 @@ const normalizeRequestConfig = (configOrToken = {}) => {
   if ("skipAuth" in config) {
     delete config.skipAuth;
   }
-  // With HttpOnly cookies, the browser automatically sends the session cookie.
-  // We no longer manually append the Authorization header here.
-
   return config;
 };
 
@@ -173,17 +168,12 @@ const normalizeApiError = (error) => {
   );
 };
 
+// 🔥 HERE IS WHERE WE FIXED THE BUG 🔥
+// We completely removed the `if (!config.signal)` block that was generating the Ghost AbortController.
 API.interceptors.request.use((config) => {
-  if (!config.signal) {
-    const controller = new AbortController();
-    config.signal = controller.signal;
-    config._abortController = controller;
-  }
-
   if (isDev) {
     console.debug(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
   }
-
   return config;
 });
 
@@ -221,7 +211,6 @@ API.interceptors.response.use(
 export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: buildApiUrl("/api/auth/login"),
-    GOOGLE: buildApiUrl("/api/auth/google"),
     REGISTER: buildApiUrl("/api/auth/signup"),
     SIGNUP: buildApiUrl("/api/auth/signup"),
     LOGOUT: buildApiUrl("/api/auth/logout"),
@@ -229,12 +218,18 @@ export const API_ENDPOINTS = {
   },
   EVENTS: {
     CREATE: buildApiUrl("/api/events/create"),
+    ALL: buildApiUrl("/api/events"),
     LIST: buildApiUrl("/api/events"),
     DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
+
     REGISTRANTS: (id) => buildApiUrl(`/api/events/${id}/registrants`),
+    // Convenience helper — appends ?page=&size= for callers that build the
+    // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
+    PAGINATED: (page, size) => buildApiUrl(`/api/events?page=${page}&size=${size}`),
   },
   PROJECTS: {
+    ALL: buildApiUrl("/api/projects"),
     LIST: buildApiUrl("/api/projects"),
     DETAIL: (id) => buildApiUrl(`/api/projects/${id}`),
     CATEGORIES: buildApiUrl("/api/projects/categories"),
@@ -247,6 +242,7 @@ export const API_ENDPOINTS = {
   },
   NOTIFICATIONS: {
     BASE: buildApiUrl("/api/notifications"),
+    ALL: buildApiUrl("/api/notifications"),
     READ: (id) => (id ? buildApiUrl(`/api/notifications/${id}/read`) : ""),
     READ_ALL: buildApiUrl("/api/notifications/read-all"),
   },
@@ -254,7 +250,13 @@ export const API_ENDPOINTS = {
     PROFILE: buildApiUrl("/api/users/profile"),
     ACHIEVEMENTS: buildApiUrl("/api/users/achievements"),
   },
+  VALIDATION: {
+    EMAIL: (email) => buildApiUrl(`/api/validate/email/${encodeURIComponent(email)}`),
+    USERNAME: (username) => buildApiUrl(`/api/validate/username/${encodeURIComponent(username)}`),
+    PHONE: buildApiUrl("/api/validate/phone"),
+  },
 };
+
 
 export const apiUtils = {
   get: (url, config = {}) =>
@@ -273,10 +275,9 @@ export default API;
 
 export { normalizeApiError };
 
-export const API_ENDPOINTS_UPDATED = {
-  ...API_ENDPOINTS,
-  NOTIFICATIONS: {
-    ...API_ENDPOINTS.NOTIFICATIONS,
-    READ_ALL: buildApiUrl("/api/notifications/read-all"),
-  }
+// Centralized configuration cache store for fallback endpoints
+export const apiConfigCache = {
+  store: new Map(),
+  get(key) { return this.store.get(key); },
+  set(key, val) { this.store.set(key, val); }
 };

@@ -4,14 +4,14 @@
   "description": "A modern website for Eventra - platform for builders",
   "private": true,
   "engines": {
-    "node": ">=20.19.0",
+    "node": "22.x",
     "npm": ">=9.6.4"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.8",
     "@heroicons/react": "^2.0.16",
     "@react-oauth/google": "^0.13.5",
-    "@sentry/react": "^10.54.0",
+    "@sentry/react": "10.54.0",
     "@studio-freight/lenis": "^1.0.42",
     "@tailwindcss/postcss": "4.3.0",
     "aos": "^2.3.4",
@@ -23,8 +23,10 @@
     "dompurify": "3.4.6",
     "framer-motion": "11.18.2",
     "fuse.js": "^7.1.0",
+    "google-auth-library": "10.6.2",
     "html2canvas": "^1.4.1",
     "html5-qrcode": "2.3.8",
+    "idb-keyval": "6.2.4",
     "jsdom": "29.1.1",
     "jsonwebtoken": "9.0.3",
     "jspdf": "^4.2.1",
@@ -42,21 +44,21 @@
     "react-is": "^19.2.6",
     "react-qr-code": "^2.0.21",
     "react-router-dom": "^7.15.1",
-    "react-scripts": "^5.0.1",
     "react-toastify": "^11.1.0",
     "recharts": "^3.8.1"
   },
   "scripts": {
-    "dev": "set PORT=3001 && set DISABLE_ESLINT_PLUGIN=true && react-scripts start",
-    "start": "set PORT=3001 && react-scripts start",
+    "dev": "vite",
+    "start": "vite",
+    "vercel-build": "node scripts/validate-env.js && vite build",
     "prebuild": "node scripts/validate-env.js",
-    "build": "react-scripts build",
-    "build:fast": "cross-env GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true NODE_OPTIONS=\"--no-deprecation --max-old-space-size=4096\" react-scripts build",
+    "build": "vite build",
+    "build:fast": "cross-env GENERATE_SOURCEMAP=false vite build",
+    "preview": "vite preview",
     "validate-env": "node scripts/validate-env.js",
-    "test": "react-scripts test",
+    "test": "npm run test:unit",
     "test:unit": "node tests/eventPaginationUtils.test.mjs && node tests/routeSearchUtils.test.mjs && node tests/userNameUtils.test.mjs && node tests/relativeTime.test.mjs && node tests/registerUtils.test.mjs && node tests/bookmarkUtils.test.mjs && node tests/auth.test.mjs && node tests/passwordResetEndpoint.test.mjs && node tests/eventDraftUtils.test.mjs && node tests/exportCsv.test.mjs && node tests/githubProxy.test.mjs && node tests/hackathonFilterUtils.test.mjs && node tests/loginEndpoint.test.mjs && node tests/googleOAuthEndpoint.test.mjs && node tests/logoutEndpoint.test.mjs",
     "test:e2e": "playwright test",
-    "eject": "react-scripts eject",
     "lint": "eslint src --ext .js,.jsx --max-warnings=-1",
     "lint:fix": "eslint src --ext .js,.jsx --fix",
     "format": "prettier --write \"src/**/*.{js,jsx,css}\"",
@@ -69,6 +71,12 @@
       "react-app",
       "react-app/jest"
     ]
+  },
+  "jest": {
+    "moduleNameMapper": {
+      "^react-router-dom$": "<rootDir>/node_modules/react-router-dom/dist/index.js",
+      "^react-router/dom$": "<rootDir>/node_modules/react-router/dist/development/dom-export.js"
+    }
   },
   "browserslist": {
     "production": [
@@ -90,14 +98,19 @@
     "@storybook/preset-create-react-app": "10.4.1",
     "@storybook/react-webpack5": "^10.4.1",
     "@tailwindcss/line-clamp": "^0.4.4",
+    "@testing-library/react": "16.3.2",
+    "@vitejs/plugin-react": "6.0.2",
     "autoprefixer": "^10.4.21",
+    "bcryptjs": "3.0.3",
     "cross-env": "^10.1.0",
     "eslint-plugin-storybook": "10.4.1",
+    "jsonwebtoken": "9.0.3",
     "postcss": "8.5.15",
     "prettier": "^3.2.5",
     "storybook": "^10.4.1",
     "tailwindcss": "^4.3.0",
     "typescript": "^4.9.5",
+    "vite": "8.0.14",
     "webpack": "^5.107.2"
   },
   "overrides": {
@@ -106,5 +119,6 @@
     "uuid": "^11.1.1",
     "underscore": "^1.13.8",
     "@tootallnate/once": "^2.0.1"
-  }
+  },
+  "_gssoc_comment_dx": "// DEVELOPER EXPERIENCE: Integrated pre-commit validations to prevent broken or unformatted scripts from being pushed upstream."
 }

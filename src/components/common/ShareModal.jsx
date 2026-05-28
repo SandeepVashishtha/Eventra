@@ -36,7 +36,7 @@ const ShareModal = ({ event, onClose }) => {
           <button
             onClick={onClose}
             className="text-xl"
-          >
+           aria-label="button">
             ✕
           </button>
         </div>
@@ -61,7 +61,7 @@ const ShareModal = ({ event, onClose }) => {
           <a
             href={shareLinks.twitter}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="rounded-xl bg-black px-4 py-3 text-center text-white"
           >
             Twitter/X
@@ -70,7 +70,7 @@ const ShareModal = ({ event, onClose }) => {
           <a
             href={shareLinks.linkedin}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="rounded-xl bg-blue-700 px-4 py-3 text-center text-white"
           >
             LinkedIn
@@ -79,7 +79,7 @@ const ShareModal = ({ event, onClose }) => {
           <a
             href={shareLinks.whatsapp}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="rounded-xl bg-green-600 px-4 py-3 text-center text-white"
           >
             WhatsApp
@@ -88,7 +88,7 @@ const ShareModal = ({ event, onClose }) => {
           <button
             onClick={copyLink}
             className="rounded-xl bg-indigo-600 px-4 py-3 text-white"
-          >
+           aria-label="button">
             Copy Link
           </button>
         </div>

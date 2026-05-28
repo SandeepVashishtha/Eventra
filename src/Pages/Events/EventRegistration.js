@@ -3,7 +3,8 @@ import React, { useState, useEffect, useRef } from "react";
 // using the old inline implementations (which were UTC-blind and hardcoded
 // a 1-hour event duration — fixed in issue #2015).
 import { getGoogleCalendarUrl, getOutlookCalendarUrl } from "../../utils/calendarUrlUtils";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
+import hackathonsData from "../Hackathons/hackathonMockData.json";
 import { motion } from "framer-motion";
 import {
   Calendar,
@@ -26,6 +27,11 @@ import { useSessionRecovery } from "../../context/SessionRecoveryContext";
 import { useFormValidation } from "../../hooks/useFormValidation";
 import { validate } from "../../validation";
 import { toast } from "react-toastify";
+import {
+  getCacheAgeLabel,
+  getCachedEventDetail,
+  saveCachedEventDetail,
+} from "../../utils/offlineEventCache";
 
 import { pushToQueue } from "../../utils/offlineQueue";
 import EventConflictModal from "../../components/EventConflictModal";
@@ -93,12 +99,15 @@ const registrationLocks = new Map();
 
 
 const EventRegistration = () => {
-  const { eventId } = useParams();
+  const { eventId: routeEventId, id: routeId } = useParams();
+  const eventId = routeEventId || routeId;
+  const location = useLocation();
   const navigate = useNavigate();
   const { user, token, isAuthenticated } = useAuth();
   const { addRegistration, myEvents } = useMyEvents();
   const { clearSession } = useSessionRecovery();
-  const registrationPath = `/events/${eventId}/register`;
+  const isHackathonPath = location.pathname.startsWith("/register");
+  const registrationPath = location.pathname;
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -146,6 +155,31 @@ const EventRegistration = () => {
     const loadEvent = async () => {
       setLoading(true);
 
+      const isHackathonPath = location.pathname.startsWith("/register");
+      if (isHackathonPath) {
+        const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
+        if (foundMock) {
+          setEvent({
+            ...foundMock,
+            date: foundMock.startDate,
+            time: "10:00 AM",
+            image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
+            attendees: foundMock.participants,
+            maxAttendees: 1500,
+            status: foundMock.status,
+          });
+          setLoading(false);
+          if (isAuthenticated() && user) {
+            setValues((prev) => ({
+              ...prev,
+              fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
+              email: user.email || "",
+            }));
+          }
+          return;
+        }
+      }
+
       try {
         // BACKEND FIX: Fetch authoritative event data from the backend API,
         // not from local mock JSON. This ensures:
@@ -160,6 +194,7 @@ const EventRegistration = () => {
             status: getEventStatus(response.data),
           };
           setEvent(fetchedEvent);
+          saveCachedEventDetail(fetchedEvent);
 
           // Pre-fill form if user is authenticated
           if (isAuthenticated() && user) {
@@ -172,14 +207,41 @@ const EventRegistration = () => {
         }
       } catch (error) {
         console.error("Failed to load event details:", error);
-        // Don't set event — will show "Event Not Found" UI
+        const cached = getCachedEventDetail(eventId);
+        if (cached?.event) {
+          setEvent({
+            ...cached.event,
+            status: getEventStatus(cached.event),
+            cacheInfo: {
+              cachedAt: cached.cachedAt,
+              label: getCacheAgeLabel(cached.cachedAt),
+            },
+          });
+
+          toast.warning(`Showing ${getCacheAgeLabel(cached.cachedAt)} event details.`);
+          return;
+        }
+
+        // Try fallback to hackathonsData as a last resort
+        const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
+        if (foundMock) {
+          setEvent({
+            ...foundMock,
+            date: foundMock.startDate,
+            time: "10:00 AM",
+            image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
+            attendees: foundMock.participants,
+            maxAttendees: 1500,
+            status: foundMock.status,
+          });
+        }
       } finally {
         setLoading(false);
       }
     };
 
     loadEvent();
-  }, [eventId, user, isAuthenticated, setValues]);
+  }, [eventId, user, isAuthenticated, setValues, location.pathname]);
 
   const checkEventCapacity = async (id, currentEvent) => {
     try {
@@ -310,14 +372,23 @@ const EventRegistration = () => {
       const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
 
       if (isOfflineFailure) {
-        // Offline sync fallback keeps registration intent intact without
-        // storing PII in localStorage.
+        // Offline sync fallback keeps the full registration intent intact so
+        // it can be replayed without asking the user to submit the form again.
         const payload = {
+          ...formData,
           eventId: parseInt(eventId),
           userId: user.id,
         };
 
-        const success = await pushToQueue({ eventId: parseInt(eventId), payload });
+        const success = await pushToQueue(
+          {
+            actionType: isEventFull ? "JOIN_WAITLIST" : "REGISTER_EVENT",
+            endpoint,
+            eventId: parseInt(eventId),
+            payload,
+          },
+          user.id
+        );
 
         if (success) {
           setRegistered(true);
@@ -408,11 +479,11 @@ const EventRegistration = () => {
             : "This event is currently full. You can still check back later in case a spot opens up."}
         </p>
         <Link
-          to={`/events/${eventId}`}
+          to={isHackathonPath ? `/hackathons/${eventId}` : `/events/${eventId}`}
           className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-colors font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Event Details
+          Back to Details
         </Link>
       </div>
     );
@@ -568,7 +639,7 @@ const EventRegistration = () => {
                 onClick={handleNativeShare}
                 className="w-10 h-10 inline-flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title="Share / Copy Link"
-              >
+               aria-label="button">
                 <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                   <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
                   <polyline points="16 6 12 2 8 6" />
@@ -578,12 +649,12 @@ const EventRegistration = () => {
             </div>
           </div>
 
-          <Link to={`/events/${eventId}`} className="block">
+          <Link to={isHackathonPath ? `/hackathons/${eventId}` : `/events/${eventId}`} className="block">
             <button
               type="button"
               className="w-full py-3.5 px-6 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold hover:bg-slate-800 dark:hover:bg-slate-100 hover:scale-[1.02] active:scale-[0.98] shadow-lg transition-all duration-300"
-            >
-              Back to Event Details
+             aria-label="button">
+              Back to Details
             </button>
           </Link>
         </motion.div>
@@ -596,11 +667,11 @@ const EventRegistration = () => {
       <div className="max-w-4xl mx-auto">
         {/* Back Button */}
         <Link
-          to="/events"
+          to={isHackathonPath ? "/hackathons" : "/events"}
           className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Events
+          {isHackathonPath ? "Back to Hackathons" : "Back to Events"}
         </Link>
 
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden">
@@ -812,7 +883,7 @@ const EventRegistration = () => {
                   type="submit"
                   disabled={submitting || !isFormValid}
                   className="flex-1 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
+                  aria-label="Submit registration">
                   {submitting ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
