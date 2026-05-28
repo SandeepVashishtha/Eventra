@@ -1,248 +1,324 @@
-import { Link } from "react-router-dom";
+import { memo, useCallback, useEffect, useId, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
+  Bookmark,
+  BookmarkCheck,
   Calendar,
-  MapPin,
   Clock,
-  Tag,
-  Star,
+  Gift,
   Heart,
+  MapPin,
+  Share2,
+  Star,
+  Tag,
+  WifiOff,
   Zap,
   BookOpen,
-  Gift,
-  Share2,
 } from "lucide-react";
+import { toast } from "react-toastify";
 import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
 import ShareMenu from "../../components/common/ShareMenu";
 import { generateEventSharingData } from "../../utils/shareUtils";
+import StatusBadge from "../../components/common/StatusBadge";
+import { getEventStatus } from "../../utils/eventUtils";
+import { useMyEvents } from "../../context/MyEventsContext";
+import ReminderControls from "../../components/reminders/ReminderControls";
+import {
+  addBookmarkedEvent,
+  isEventBookmarked,
+  removeBookmarkedEvent,
+  subscribeToBookmarkChanges,
+} from "../../utils/bookmarkUtils";
 
-const EventCard = ({ event }) => {
-  // Array of icons to choose from
-  const icons = [
-    <Star size={20} className="text-yellow-500" />,
-    <Heart size={20} className="text-red-500" />,
-    <Zap size={20} className="text-pink-500" />,
-    <BookOpen size={20} className="text-indigo-500" />,
-    <Gift size={20} className="text-pink-500" />,
-  ];
+const getCapacityStyles = (ratio, isFull) => {
+  if (isFull || ratio >= 0.85) {
+    return { barColor: "bg-red-500", textColor: "text-red-600 dark:text-red-400" };
+  }
 
-  // Pick a random icon each render
-  const randomIcon = icons[Math.floor(Math.random() * icons.length)];
+  if (ratio >= 0.6) {
+    return { barColor: "bg-amber-500", textColor: "text-amber-600 dark:text-amber-400" };
+  }
 
-  // Generate sharing data for this event
-  const eventSharingData = generateEventSharingData({
-    ...event,
-    title: event.title,
-    description: event.description,
-    date: event.date,
-    id: event.id,
-  });
-
-//Function to copy the link to clipboard
-const handleCopyLink = (e) => {
-  e.preventDefault();//Prevents the card click from triggering
-  const shareUrl = `${window.location.origin}/events/${event.id}`;
-
-  navigator.clipboard.writeText(shareUrl).then(() => {
-    alert("Event link copied to clipboard!");
-  }).catch(err => {
-    console.error("Failed to copy: ", err);
-  });
+  return { barColor: "bg-emerald-500", textColor: "text-emerald-600 dark:text-emerald-400" };
 };
 
+const EventCard = ({ event, cacheInfo = null }) => {
+  const navigate = useNavigate();
+  const titleId = useId();
+  const { isRegistered } = useMyEvents();
+  const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
+  const [randomIcon] = useState(() => {
+    const icons = [
+      <Star size={16} className="text-yellow-500" aria-hidden="true" />,
+      <Heart size={16} className="text-red-500" aria-hidden="true" />,
+      <Zap size={16} className="text-pink-500" aria-hidden="true" />,
+      <BookOpen size={16} className="text-indigo-500" aria-hidden="true" />,
+      <Gift size={16} className="text-pink-500" aria-hidden="true" />,
+    ];
+
+    return icons[Math.floor(Math.random() * icons.length)];
+  });
+
+  const computedStatus = useMemo(() => getEventStatus(event), [event]);
+  const isPastEvent = computedStatus === "past" || computedStatus === "ended";
+  const isUserRegistered = isRegistered(event.id);
+  const canSetReminder = isBookmarked || isUserRegistered;
+  const eventType = event.type || event.category || "event";
+  const formattedDate = useMemo(
+    () =>
+      new Date(event.date).toLocaleDateString("en-US", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+      }),
+    [event.date],
+  );
+
+  const eventSharingData = useMemo(
+    () =>
+      generateEventSharingData({
+        ...event,
+        title: event.title,
+        description: event.description,
+        date: event.date,
+        id: event.id,
+      }),
+    [event],
+  );
+
+  const capacityInfo = useMemo(() => {
+    if (typeof event.maxAttendees !== "number" || event.maxAttendees <= 0) {
+      return null;
+    }
+
+    const registered = Number(event.attendees) || 0;
+    const capacity = Number(event.maxAttendees);
+    const isFull = registered >= capacity;
+    const ratio = Math.min(registered / capacity, 1);
+    const percent = Math.round(ratio * 100);
+    const spotsLeft = Math.max(capacity - registered, 0);
+    const styles = getCapacityStyles(ratio, isFull);
+
+    return { capacity, isFull, percent, registered, spotsLeft, ...styles };
+  }, [event.attendees, event.maxAttendees]);
+
+  useEffect(() => {
+    setIsBookmarked(isEventBookmarked(event.id));
+
+    return subscribeToBookmarkChanges(() => {
+      setIsBookmarked(isEventBookmarked(event.id));
+    });
+  }, [event.id]);
+
+  const handleCopyLink = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    navigator.clipboard
+      .writeText(`${window.location.origin}/events/${event.id}`)
+      .then(() => {
+        toast.success("Event link copied to clipboard!", { autoClose: 2000 });
+      })
+      .catch(() => {
+        toast.error("Could not copy link. Please try again.", { autoClose: 2500 });
+      });
+  }, [event.id]);
+
+  const handleBookmarkToggle = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isBookmarked) {
+      removeBookmarkedEvent(event.id);
+      toast.info("Removed from bookmarked events.", {
+        toastId: `bookmark-${event.id}`,
+        autoClose: 1800,
+        className: "custom-toast",
+      });
+      return;
+    }
+
+    addBookmarkedEvent({ ...event, status: computedStatus });
+    toast.success("Event bookmarked.", {
+      toastId: `bookmark-${event.id}`,
+      autoClose: 1800,
+      className: "custom-toast",
+    });
+  }, [computedStatus, event, isBookmarked]);
+
   return (
-    <div
-      // AOS Implementation
+    <article
       data-aos="zoom-in"
-      data-aos-duration="1000"
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl   
-      backdrop-blur-sm transition-all duration-500 flex flex-col card-with-floating-elements z-10 hover:z-50"
+      data-aos-duration="800"
+      aria-labelledby={titleId}
+      aria-label={`Event: ${event.title}`}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          navigate(`/events/${event.id}`);
+        }
+      }}
+      className="group relative z-10 flex flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white text-gray-900 shadow-lg backdrop-blur-sm transition-all duration-300 hover:z-50 hover:-translate-y-2 hover:border-indigo-300 hover:shadow-2xl dark:border-gray-800 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-indigo-700"
     >
-      {/* Animated gradient border overlay */}
-      <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-90 transition-opacity duration-500 bg-black/10 -z-10"></div>
-
-      {/* Action buttons container positioned at the top-right of the entire card */}
-      <div className="absolute top-20 right-4 z-[200] flex space-x-2">
-        {/* Share Menu */}
-        <ShareMenu
-          shareData={eventSharingData}
-          position="above"
-          menuClassName="!z-[999] shadow-2xl"
-          buttonClassName=""
+      <div className="absolute right-3 top-[5.5rem] z-[200] flex space-x-1.5">
+        <button
+          type="button"
+          onClick={handleBookmarkToggle}
+          aria-label={isBookmarked ? "Remove event bookmark" : "Bookmark event"}
+          aria-pressed={isBookmarked}
+          title={isBookmarked ? "Remove bookmark" : "Bookmark event"}
+          className={`min-h-[36px] min-w-[36px] rounded-full border p-2 shadow transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+            isBookmarked
+              ? "border-indigo-200 bg-indigo-50/95 text-indigo-600"
+              : "border-gray-200 bg-white/90 text-gray-600 hover:border-indigo-200 hover:text-indigo-600"
+          }`}
         >
-          <div
-            className="bg-white rounded-full p-3 shadow-lg cursor-pointer hover:shadow-xl border border-gray-200 group/share share-button-pop share-button-float"
-          >
-            <Share2 size={18} className="text-gray-600" />
+          {isBookmarked ? <BookmarkCheck size={14} fill="currentColor" /> : <Bookmark size={14} />}
+        </button>
 
-            {/* Tooltip */}
-            <div className="absolute invisible group-hover/share:visible opacity-0 group-hover/share:opacity-100 transition-opacity duration-300 -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap">
-              Share Event
-            </div>
+        <ShareMenu shareData={eventSharingData} position="above" menuClassName="!z-[999] shadow-2xl">
+          <div className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm">
+            <Share2 size={14} className="text-gray-600" aria-hidden="true" />
           </div>
         </ShareMenu>
 
-        {/*Copy Link Button */}
-        <div
-        onClick={handleCopyLink}
-        className="bg-white rounded-full p-3 shadow-lg cursor-pointer hover:shadow-xl border border-gray-200 group/copy share-button-pop share-button-float relative"
-        title="Copy Event Link"
+        <button
+          type="button"
+          onClick={handleCopyLink}
+          className="relative min-h-[36px] min-w-[36px] rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm focus-visible:ring-2 focus-visible:ring-indigo-500"
+          title="Copy Event Link"
+          aria-label={`Copy link for ${event.title}`}
         >
-          <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLineCap="round"
-          strokeLinejoin="round"
-          className="text-gray-600"
-          >
-            <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-          </svg>
+          <Share2 size={14} className="text-gray-600" aria-hidden="true" />
+        </button>
 
-          {/*Tooltip */}
-          <div className="absolute invisible group-hover/copy:visible opacity-0 group-hover/copy:opacity-100 transition-opacity duration-300 -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap">
-           Copy Link
-          </div>
-        </div>
-
-        {/* Google Calendar button */}
         <a
           href={addEventToGoogleCalendar(event)}
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
           title="Add to Google Calendar"
-          className="group/cal"
+          aria-label={`Add ${event.title} to Google Calendar`}
+          className="rounded-full focus-visible:ring-2 focus-visible:ring-indigo-500"
         >
-          <div
-            className="bg-white rounded-full p-3 shadow-lg cursor-pointer hover:shadow-xl border border-gray-200 share-button-pop share-button-float"
-          >
-            <Calendar size={18} className="text-gray-600" />
-
-            {/* Tooltip */}
-            <div className="absolute invisible group-hover/cal:visible opacity-0 group-hover/cal:opacity-100 transition-opacity duration-300 -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap">
-              Add to Google Calendar
-            </div>
+          <div className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm">
+            <Calendar size={14} className="text-gray-600" aria-hidden="true" />
           </div>
         </a>
       </div>
 
-      {/* Floating particles effect */}
-      <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
-        <div className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-br from-gray-500 to-gray-700 rounded-full opacity-20 group-hover:animate-pulse"></div>
-        <div className="absolute top-1/2 -left-2 w-4 h-4 bg-gradient-to-br from-pink-400 to-red-500 rounded-full opacity-20 group-hover:animate-bounce"></div>
-        <div className="absolute bottom-4 right-1/4 w-6 h-6 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full opacity-20 group-hover:animate-ping"></div>
-      </div>
-
-      {/* --- Enhanced Header --- */}
-      <div className="flex items-center px-8 py-6 gap-4 bg-gradient-to-r from-white/80 to-indigo-50/60 dark:from-gray-900/80 dark:to-indigo-950/60 border-b border-gray-200/60 dark:border-gray-700/50 backdrop-blur-sm">
-        <div
-          className="p-3 bg-gradient-to-br from-gray-100 to-white dark:from-gray-800 dark:to-gray-700 rounded-2xl shadow-inner"
-        >
+      <div className="flex items-center gap-4 border-b border-gray-100 bg-gradient-to-r from-white/80 to-indigo-50/60 px-5 py-4 dark:border-gray-800 dark:from-gray-900/80 dark:to-indigo-950/60">
+        <div className="shrink-0 rounded-xl bg-gradient-to-br from-gray-100 to-white p-2 shadow-inner dark:from-gray-800 dark:to-gray-700">
           {randomIcon}
         </div>
-        <h3 className="text-gray-800 dark:text-gray-100 font-bold text-xl truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300">
+        <h3 id={titleId} className="flex-1 truncate text-lg font-bold tracking-tight text-gray-900 transition-colors duration-300 group-hover:text-indigo-600 dark:text-white dark:group-hover:text-indigo-400">
           {event.title}
         </h3>
-        <div className="ml-auto">
-          {event.status === "upcoming" && (
-            <span
-              className="text-xs px-4 py-2 bg-gradient-to-r from-gray-100 to-white dark:from-gray-700 dark:to-gray-800 text-gray-700 dark:text-gray-300 rounded-full font-medium shadow-sm border border-gray-200/50 dark:border-gray-700/50"
-            >
-              Upcoming
-            </span>
-          )}
-        </div>
+        <StatusBadge status={computedStatus} />
       </div>
 
-      {/* --- Enhanced Event Image --- */}
-      <div className="relative h-64 card-content-overflow">
+      <div className="relative aspect-video overflow-hidden bg-gray-100 dark:bg-gray-800">
         <img
+          loading="lazy"
+          decoding="async"
           src={event.image}
-          alt={event.title}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          alt={event.imageAlt || `${event.title} event thumbnail`}
+          width={640}
+          height={360}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent group-hover:from-black/50 transition-all duration-500"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+        {cacheInfo && (
+          <div className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-amber-50/95 px-3 py-1 text-xs font-semibold text-amber-800 shadow">
+            <WifiOff size={13} aria-hidden="true" />
+            {cacheInfo.label}
+          </div>
+        )}
       </div>
 
-      {/* --- Enhanced Description --- */}
-      <div className="px-8 py-6 border-b border-gray-200/60 dark:border-gray-700/50 bg-gradient-to-r from-transparent to-indigo-50/30 dark:to-indigo-950/30">
-        <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-3 leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors duration-300">
+      <div className="border-b border-gray-100 px-5 py-4 dark:border-gray-800">
+        <p className="line-clamp-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
           {event.description}
         </p>
       </div>
 
-      {/* --- Enhanced Info Section --- */}
-      <div className="px-8 py-6 grid grid-cols-2 gap-6 text-gray-700 dark:text-gray-300 text-sm bg-gradient-to-br from-gray-50/50 to-indigo-50/30 dark:from-gray-800/50 dark:to-indigo-950/30">
-        <div
-          className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all duration-300"
-        >
-          <div className="p-1.5 bg-pink-100 dark:bg-pink-900/30 rounded-lg">
-            <MapPin size={16} className="text-pink-500" />
-          </div>
-          <span className="truncate font-medium">{event.location}</span>
+      <div className="grid grid-cols-1 gap-x-4 gap-y-3 bg-gray-50/50 px-5 py-4 text-sm text-gray-600 dark:bg-gray-800/30 dark:text-gray-400 xs:grid-cols-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <MapPin size={14} className="shrink-0 text-pink-500" />
+          <span className="truncate">{event.location}</span>
         </div>
-
-        <div
-          className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all duration-300"
-        >
-          <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-            <Clock size={16} className="text-blue-500" />
-          </div>
-          <span className="font-medium">{event.time}</span>
+        <div className="flex min-w-0 items-center gap-2">
+          <Clock size={14} className="shrink-0 text-blue-500" />
+          <span className="truncate">{event.time}</span>
         </div>
-
-        <div
-          className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all duration-300"
-        >
-          <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
-            <Tag size={16} className="text-green-500" />
-          </div>
-          <span className="font-medium">{event.type}</span>
+        <div className="flex min-w-0 items-center gap-2">
+          <Tag size={14} className="shrink-0 text-green-500" />
+          <span className="truncate capitalize">{eventType}</span>
         </div>
-
-        <div
-          className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all duration-300"
-        >
-          <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-            <Calendar size={16} className="text-indigo-500" />
-          </div>
-          <span className="font-medium">
-            {new Date(event.date).toLocaleDateString("en-US", {
-              weekday: "short",
-              day: "numeric",
-              month: "short",
-            })}
-          </span>
+        <div className="flex min-w-0 items-center gap-2">
+          <Calendar size={14} className="shrink-0 text-indigo-500" />
+          <span className="truncate">{formattedDate}</span>
         </div>
       </div>
 
-      {/* --- Enhanced CTA Buttons --- */}
-      <div className="px-8 py-6 flex gap-4 bg-gradient-to-r from-gray-50/30 to-white/60 dark:from-gray-800/30 dark:to-gray-900/60">
-        <Link to={`/events/${event.id}/register`} className="group/btn flex-1">
-          <div
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-black text-white px-6 py-3 text-sm font-bold shadow-lg hover:bg-zinc-800 hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden"
-          >
-            {/* Shimmer effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700"></div>
-            <span className="relative">Register Now</span>
-          </div>
-        </Link>
+      <div className="border-t border-gray-100 bg-white px-5 py-4 dark:border-gray-800 dark:bg-gray-900">
+        <ReminderControls event={event} canSetReminder={canSetReminder} compact />
+      </div>
 
-        <Link to={`/events/${event.id}`} className="group/btn flex-1">
-          <div
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-6 py-3 text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-300 w-full backdrop-blur-sm"
-          >
-            <span className="relative">View Details</span>
+      {capacityInfo && (
+        <div className="border-t border-gray-100 bg-gray-50/50 px-5 py-3 dark:border-gray-800 dark:bg-gray-800/30">
+          <div className="mb-1.5 flex items-center justify-between">
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Seats</span>
+            {capacityInfo.isFull ? (
+              <span className="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/40 dark:text-red-300">
+                Full
+              </span>
+            ) : (
+              <span className={`text-xs font-semibold tabular-nums ${capacityInfo.textColor}`}>
+                {capacityInfo.spotsLeft} spot{capacityInfo.spotsLeft === 1 ? "" : "s"} left
+              </span>
+            )}
           </div>
+          <div
+            className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700"
+            role="progressbar"
+            aria-valuenow={capacityInfo.percent}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`${capacityInfo.registered} of ${capacityInfo.capacity} seats filled`}
+          >
+            <div className={`h-full ${capacityInfo.barColor} transition-all duration-500 ease-out`} style={{ width: `${capacityInfo.percent}%` }} />
+          </div>
+          <div className="mt-1 text-[11px] text-gray-500 tabular-nums dark:text-gray-500">
+            {capacityInfo.registered} / {capacityInfo.capacity} registered
+          </div>
+        </div>
+      )}
+
+      <div className="mt-auto flex gap-3 px-5 py-4">
+        {isPastEvent ? (
+          <div className="inline-flex min-h-[44px] flex-1 cursor-not-allowed items-center justify-center rounded-2xl bg-gray-300 px-4 py-3 text-sm font-semibold text-gray-600 shadow-md dark:bg-gray-700 dark:text-gray-300">
+            Event Ended
+          </div>
+        ) : (
+          <Link
+            to={`/events/${event.id}/register`}
+            className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 hover:shadow-xl sm:hover:scale-[1.03]"
+          >
+            {isUserRegistered ? "Registered" : "Register Now"}
+          </Link>
+        )}
+
+        <Link
+          to={`/events/${event.id}`}
+          className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-2xl border border-indigo-200 bg-white/80 px-4 py-3 text-sm font-semibold text-indigo-700 shadow-md transition-all duration-300 hover:bg-indigo-50 hover:text-indigo-800 hover:shadow-lg dark:border-indigo-700 dark:bg-gray-800 dark:text-indigo-300 dark:hover:bg-indigo-900/30 dark:hover:text-white sm:hover:scale-[1.03]"
+        >
+          View Details
         </Link>
       </div>
-    </div>
+    </article>
   );
 };
 
-export default EventCard;
+export default memo(EventCard);

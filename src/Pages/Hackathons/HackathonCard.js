@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
+import { useNavigate } from "react-router-dom";
+import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
   CalendarIcon,
   MapPinIcon,
@@ -7,355 +9,347 @@ import {
   UserGroupIcon,
   TrophyIcon,
   BuildingLibraryIcon,
-  DocumentTextIcon,
   ShareIcon,
 } from "@heroicons/react/24/outline";
-import { addHackathonToGoogleCalendar } from "../../utils/calendarUtils";
+
 import ShareMenu from "../../components/common/ShareMenu";
+import { addHackathonToGoogleCalendar } from "../../utils/calendarUtils";
 import { generateEventSharingData } from "../../utils/shareUtils";
 
-// ✅ Real-time countdown timer hook
 const useCountdown = (targetDate) => {
-  const calculateTimeLeft = () => {
+  const prefersReducedMotion = useReducedMotion();
+  const calculateTimeLeft = useCallback(() => {
     const difference = new Date(targetDate) - new Date();
-    if (difference <= 0) return null;
+
+    if (!targetDate || difference <= 0) {
+      return null;
+    }
+
     return {
       days: Math.floor(difference / (1000 * 60 * 60 * 24)),
       hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
       minutes: Math.floor((difference / 1000 / 60) % 60),
-      seconds: Math.floor((difference / 1000) % 60),
     };
-  };
+  }, [targetDate]);
 
   const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
 
   useEffect(() => {
+    setTimeLeft(calculateTimeLeft());
+
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
     }, 1000);
+
     return () => clearInterval(timer);
-  }, [targetDate]);
+  }, [calculateTimeLeft]);
 
   return timeLeft;
 };
 
-// ✅ Countdown display component
 const CountdownTimer = ({ targetDate, label }) => {
   const timeLeft = useCountdown(targetDate);
 
   if (!timeLeft) {
     return (
-      <span className="text-red-500 font-semibold text-xs">Deadline passed</span>
+      <span className="text-xs font-semibold text-red-500 dark:text-red-400">
+        Deadline passed
+      </span>
     );
   }
 
   const isUrgent = timeLeft.days < 3;
-  const isVerySoon = timeLeft.days === 0;
 
   return (
-    <div className={`flex items-center gap-2 ${isUrgent ? "text-red-500" : "text-blue-500"}`}>
-      <ClockIcon className={`w-4 h-4 ${isUrgent ? "animate-pulse" : ""}`} />
-      <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}:</span>
-      <div className="flex items-center gap-1 font-mono text-xs font-bold">
-        {timeLeft.days > 0 && (
-          <span className={`px-1.5 py-0.5 rounded ${isUrgent ? "bg-red-100 dark:bg-red-900/50 text-red-600" : "bg-blue-100 dark:bg-blue-900/50 text-blue-600"}`}>
-            {timeLeft.days}d
-          </span>
-        )}
-        <span className={`px-1.5 py-0.5 rounded ${isUrgent ? "bg-red-100 dark:bg-red-900/50 text-red-600" : "bg-blue-100 dark:bg-blue-900/50 text-blue-600"}`}>
-          {String(timeLeft.hours).padStart(2, "0")}h
-        </span>
-        <span className={`px-1.5 py-0.5 rounded ${isUrgent ? "bg-red-100 dark:bg-red-900/50 text-red-600" : "bg-blue-100 dark:bg-blue-900/50 text-blue-600"}`}>
-          {String(timeLeft.minutes).padStart(2, "0")}m
-        </span>
-        {isVerySoon && (
-          <span className="px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/50 text-red-600">
-            {String(timeLeft.seconds).padStart(2, "0")}s
-          </span>
-        )}
-      </div>
+    <div
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${
+        isUrgent
+          ? "border-red-200 bg-red-50 text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400"
+          : "border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300"
+      }`}
+    >
+      <ClockIcon className={`h-3.5 w-3.5 ${isUrgent ? "animate-pulse" : ""}`} />
+      <span>{label}</span>
+      <span className="font-mono">
+        {timeLeft.days > 0 ? `${timeLeft.days}d ` : ""}
+        {String(timeLeft.hours).padStart(2, "0")}h{" "}
+        {String(timeLeft.minutes).padStart(2, "0")}m
+      </span>
     </div>
   );
 };
 
-// ✅ Urgency badge component
 const UrgencyBadge = ({ startDate, endDate, status }) => {
   const timeLeft = useCountdown(status === "upcoming" ? startDate : endDate);
 
-  if (status === "completed") return null;
-  if (!timeLeft) return null;
+  if (status === "completed" || !timeLeft || timeLeft.days >= 3) {
+    return null;
+  }
 
-  if (timeLeft.days < 1) {
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500 text-white text-xs font-bold animate-pulse">
-        🔥 Closing Today!
-      </span>
-    );
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+        timeLeft.days < 1
+          ? "border-red-200 bg-red-50 text-red-600 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-400"
+          : "border-orange-200 bg-orange-50 text-orange-600 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-400"
+      }`}
+    >
+      {timeLeft.days < 1 ? "Closing today" : "Closing soon"}
+    </span>
+  );
+};
+
+const computeStatus = (startDate, endDate) => {
+  const now = new Date();
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  if (end < now) {
+    return "completed";
   }
-  if (timeLeft.days < 3) {
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-400 text-white text-xs font-bold">
-        ⚡ Closing Soon
-      </span>
-    );
+
+  if (start <= now && now <= end) {
+    return "live";
   }
-  return null;
+
+  return "upcoming";
+};
+
+const statusStyles = {
+  live: {
+    badge:
+      "border-red-200 bg-red-50 text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-400",
+    dot: "bg-red-500 animate-pulse",
+    topBar: "from-red-500 via-orange-500 to-red-500",
+  },
+  upcoming: {
+    badge:
+      "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/40 dark:bg-blue-500/10 dark:text-blue-400",
+    dot: "bg-blue-500",
+    topBar: "from-blue-500 via-indigo-500 to-violet-500",
+  },
+  completed: {
+    badge:
+      "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-400",
+    dot: "bg-emerald-500",
+    topBar: "from-emerald-500 via-teal-500 to-emerald-500",
+  },
+};
+
+const formatDateRange = (startDate, endDate) => {
+  const dateOptions = { month: "short", day: "numeric" };
+  const start = new Date(startDate).toLocaleDateString("en-US", dateOptions);
+  const end = new Date(endDate).toLocaleDateString("en-US", {
+    ...dateOptions,
+    year: "numeric",
+  });
+
+  return `${start} - ${end}`;
 };
 
 const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
-  const stats = {
-    participants: hackathon.status === "live" ? hackathon.participants : 0,
-    teams: hackathon.status === "live" ? hackathon.teams : 0,
-    submissions: hackathon.status === "live" ? hackathon.submissions : 0,
+  const prefersReducedMotion = useReducedMotion();
+  const navigate = useNavigate();
+  const normalizedHackathon = {
+    ...hackathon,
+    title: hackathon?.title || "Untitled Hackathon",
+    description: hackathon?.description || "More details will be announced soon.",
+    difficulty: hackathon?.difficulty || "Open",
+    organizer: hackathon?.organizer || "Eventra Community",
+    location: hackathon?.location || "Location TBA",
+    prize: hackathon?.prize || "Prize TBA",
+    techStack:
+      Array.isArray(hackathon?.techStack) && hackathon.techStack.length > 0
+        ? hackathon.techStack
+        : ["General"],
+    participants: hackathon?.participants ?? 0,
+    teams: hackathon?.teams ?? 0,
+    submissions: hackathon?.submissions ?? 0,
+    winner: hackathon?.winner || "",
   };
 
-  const hackathonSharingData = generateEventSharingData({
-    ...hackathon,
-    title: hackathon.title,
-    description: hackathon.description,
-    date: hackathon.startDate,
-    id: hackathon.id,
+  const status =
+    normalizedHackathon.startDate && normalizedHackathon.endDate
+      ? computeStatus(normalizedHackathon.startDate, normalizedHackathon.endDate)
+      : normalizedHackathon.status || "upcoming";
+  const style = statusStyles[status] || statusStyles.upcoming;
+  const sharingData = generateEventSharingData({
+    ...normalizedHackathon,
+    date: normalizedHackathon.startDate,
   });
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 50, rotateX: 15, scale: 0.95 }}
-      whileInView={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-      viewport={{ once: true, amount: 0.3 }}
-      whileHover={{ y: -4, scale: 1.02 }}
-      className={`bg-gradient-to-br from-white to-white dark:from-gray-800 dark:to-black rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-blue-200 dark:border-gray-700 relative card-with-floating-elements ${
-        isFeatured ? "ring-2 ring-blue-300 dark:ring-blue-400" : ""
+      initial={{ opacity: 0, y: 50, scale: 0.95 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: prefersReducedMotion ? 0 : 0.45, ease: "easeOut" }}
+      viewport={{ once: true, amount: 0.2 }}
+      whileHover={{ y: -5, scale: 1.01 }}
+      className={`relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:border-indigo-300 hover:shadow-md dark:border-white/10 dark:bg-slate-900 dark:shadow-[0_4px_24px_rgba(0,0,0,0.35)] ${
+        isFeatured ? "ring-2 ring-indigo-400/50 dark:ring-indigo-500/40" : ""
       }`}
       {...props}
     >
-      {/* Featured Ribbon */}
-      {isFeatured && (
-        <div className="absolute top-0 right-0 bg-black text-white text-xs font-semibold px-3 py-1 rounded-bl-lg">
-          Featured
-        </div>
-      )}
+      <div className={`h-[3px] w-full bg-gradient-to-r ${style.topBar}`} />
 
-      {/* Share button */}
-      <div className="absolute -top-4 -right-4 z-[200]">
-        <ShareMenu
-          shareData={hackathonSharingData}
-          position="bottom-right"
-          menuClassName="!z-[999] shadow-2xl"
-          buttonClassName=""
-        >
-          <motion.div
-            className="bg-white dark:bg-gray-800 rounded-full p-3 shadow-lg cursor-pointer hover:shadow-xl border border-gray-200 dark:border-gray-600 group/share"
-            whileHover={{ scale: 1.1 }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          >
-            <ShareIcon className="w-4 h-4 text-gray-400" />
-            <div className="absolute invisible group-hover/share:visible opacity-0 group-hover/share:opacity-100 transition-opacity duration-300 -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10">
-              Share Hackathon
-            </div>
-          </motion.div>
-        </ShareMenu>
-      </div>
-
-      <div className="p-6 flex flex-col gap-5 min-h-[500px]">
-        {/* Header: Status, Difficulty, Prize */}
-        <div className="flex justify-between items-center flex-wrap gap-2">
-          <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex flex-1 flex-col gap-4 p-5">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
             <span
-              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                hackathon.status === "live"
-                  ? "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
-                  : hackathon.status === "upcoming"
-                  ? "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300"
-                  : "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
-              }`}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${style.badge}`}
             >
-              {hackathon.status.charAt(0).toUpperCase() + hackathon.status.slice(1)}
+              <span className={`h-1.5 w-1.5 rounded-full ${style.dot}`} />
+              {status.charAt(0).toUpperCase() + status.slice(1)}
             </span>
-            <span className="px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 text-xs font-medium">
-              {hackathon.difficulty}
+            <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:border-white/10 dark:bg-slate-700/60 dark:text-slate-300">
+              {normalizedHackathon.difficulty}
             </span>
-            {/* ✅ Urgency badge */}
             <UrgencyBadge
-              startDate={hackathon.startDate}
-              endDate={hackathon.endDate}
-              status={hackathon.status}
+              startDate={normalizedHackathon.startDate}
+              endDate={normalizedHackathon.endDate}
+              status={status}
             />
           </div>
-          <span className="text-white text-sm font-semibold px-3 py-1 rounded-full bg-black animate-gradient">
-            {hackathon.prize}
-          </span>
+
+          <ShareMenu shareData={sharingData} position="bottom-right">
+            <button
+              type="button"
+              className="rounded-full border border-slate-200 bg-slate-50 p-2 transition-all hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+              aria-label={`Share ${normalizedHackathon.title}`}
+            >
+              <ShareIcon className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+            </button>
+          </ShareMenu>
         </div>
 
-        <div className="border-b border-gray-400 dark:border-gray-700" />
+        {isFeatured && (
+          <span className="w-fit rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:border-indigo-500/40 dark:bg-indigo-600/20 dark:text-indigo-300">
+            Featured
+          </span>
+        )}
 
-        {/* Title & Description */}
-        <div>
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-1">
-            {hackathon.title}
+        <span className="w-fit rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+          Prize: {normalizedHackathon.prize}
+        </span>
+
+        <div className="border-t border-slate-100 dark:border-white/5" />
+
+        <div className="min-h-[72px]">
+          <h3 className="mb-1.5 text-base font-bold leading-snug text-slate-900 dark:text-white">
+            {normalizedHackathon.title}
           </h3>
-          <p className="text-gray-600 text-sm line-clamp-2">{hackathon.description}</p>
+          <p className="line-clamp-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+            {normalizedHackathon.description}
+          </p>
         </div>
 
-        <div className="border-b border-gray-400 dark:border-gray-700" />
-
-        {/* Organizer */}
-        <div className="flex items-center text-gray-600 dark:text-gray-400 text-sm gap-1.5">
-          <BuildingLibraryIcon className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-          <span>{hackathon.organizer}</span>
-        </div>
-
-        <div className="border-b border-gray-400 dark:border-gray-700" />
-
-        {/* Date, Location & Countdown */}
-        <div className="flex flex-col gap-3 text-gray-600 dark:text-gray-400 text-sm">
+        <div className="space-y-2.5 text-sm text-slate-600 dark:text-slate-400">
           <div className="flex items-center gap-2">
-            <CalendarIcon className="w-4 h-4 text-sky-500" />
-            {new Date(hackathon.startDate).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            })}{" "}
-            -{" "}
-            {new Date(hackathon.endDate).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
+            <BuildingLibraryIcon className="h-4 w-4 flex-shrink-0 text-indigo-600 dark:text-indigo-400" />
+            <span className="truncate">{normalizedHackathon.organizer}</span>
           </div>
           <div className="flex items-center gap-2">
-            <MapPinIcon className="w-4 h-4 text-green-500" />
-            {hackathon.location}
+            <CalendarIcon className="h-4 w-4 flex-shrink-0 text-sky-500 dark:text-sky-400" />
+            <span>
+              {normalizedHackathon.startDate && normalizedHackathon.endDate
+                ? formatDateRange(
+                    normalizedHackathon.startDate,
+                    normalizedHackathon.endDate,
+                  )
+                : "Dates TBA"}
+            </span>
           </div>
+          <div className="flex items-center gap-2">
+            <MapPinIcon className="h-4 w-4 flex-shrink-0 text-emerald-500 dark:text-emerald-400" />
+            <span className="truncate">{normalizedHackathon.location}</span>
+          </div>
+        </div>
 
-          {/* ✅ Real-time countdown timer */}
-          {hackathon.status === "upcoming" && hackathon.startDate && (
-            <CountdownTimer targetDate={hackathon.startDate} label="Starts in" />
+        {status === "upcoming" && normalizedHackathon.startDate && (
+          <CountdownTimer targetDate={normalizedHackathon.startDate} label="Starts in" />
+        )}
+        {status === "live" && normalizedHackathon.endDate && (
+          <CountdownTimer targetDate={normalizedHackathon.endDate} label="Ends in" />
+        )}
+
+        <div className="flex flex-wrap gap-2">
+          {normalizedHackathon.techStack.slice(0, 4).map((tech) => (
+            <span
+              key={tech}
+              className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-300"
+            >
+              {tech}
+            </span>
+          ))}
+          {normalizedHackathon.techStack.length > 4 && (
+            <span className="px-1.5 py-0.5 text-xs font-medium text-slate-400">
+              +{normalizedHackathon.techStack.length - 4}
+            </span>
           )}
-          {hackathon.status === "live" && hackathon.endDate && (
-            <CountdownTimer targetDate={hackathon.endDate} label="Ends in" />
-          )}
-          {hackathon.status === "completed" && (
-            <div className="flex items-center gap-2 text-gray-400">
-              <ClockIcon className="w-4 h-4" />
-              <span className="text-xs">Ended</span>
-            </div>
-          )}
         </div>
 
-        <div className="border-b border-gray-400 dark:border-gray-700" />
-
-        {/* Tech Stack */}
-        <div>
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-            Tech Stack:
-          </h4>
-          <div className="flex flex-wrap gap-2">
-            {hackathon.techStack.map((tech, index) => (
-              <span
-                key={index}
-                className="px-3 py-1 border border-blue-200 dark:border-blue-700 bg-blue-100 dark:bg-blue-900/60 text-gray-800 dark:text-gray-200 text-xs font-medium rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              >
-                {tech}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="border-b border-gray-400 dark:border-gray-700" />
-
-        {/* Rules */}
-        <div className="text-gray-600 dark:text-gray-400 text-sm">
-          <h4 className="font-medium mb-1 flex items-center gap-1.5">
-            <DocumentTextIcon className="w-4 h-4 text-blue-500" />
-            Rules
-          </h4>
-          <ul className="list-disc list-inside text-xs line-clamp-3">
-            {hackathon.rules.map((rule, index) => (
-              <li key={index}>{rule}</li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="border-b border-gray-400 dark:border-gray-700" />
-
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg min-h-[60px]">
-          <div className="text-center">
-            <UserGroupIcon className="w-5 h-5 text-red-500 mx-auto mb-1" />
-            <div className="text-lg font-bold text-red-500">{stats.participants || "--"}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Participants</div>
-          </div>
-          <div className="text-center">
-            <UserGroupIcon className="w-5 h-5 text-green-500 mx-auto mb-1 rotate-90" />
-            <div className="text-lg font-bold text-green-500">{stats.teams || "--"}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Teams</div>
-          </div>
-          <div className="text-center">
-            <UserGroupIcon className="w-5 h-5 text-blue-500 mx-auto mb-1" />
-            <div className="text-lg font-bold text-blue-500">{stats.submissions || "--"}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Submissions</div>
-          </div>
-        </div>
-
-        <div className="border-b border-gray-400 dark:border-gray-700" />
-
-        {/* Winner */}
-        <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/40 p-3 rounded-lg border border-yellow-100 dark:border-yellow-800 min-h-[48px]">
-          <TrophyIcon className="w-5 h-5 text-yellow-500" />
-          <span className="text-sm font-medium">Winner:</span>
-          <span className="text-sm text-gray-700 dark:text-gray-300">
-            {hackathon.status === "completed" && hackathon.winner
-              ? hackathon.winner
-              : "Announced soon"}
-          </span>
-        </div>
-
-        <div className="border-b border-gray-400 dark:border-gray-700" />
-
-        {/* Action Buttons */}
-        <div className="pt-3">
-          {hackathon.status === "live" ? (
-            <div className="grid grid-cols-2 gap-3">
-              <button className="px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-zinc-800 transition-colors">
-                Join Now
-              </button>
-              <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-                Submit Project
-              </button>
-            </div>
-          ) : hackathon.status === "upcoming" ? (
-            <div className="grid grid-cols-1 gap-3">
-              <div className="flex gap-3">
-                <button className="flex-1 px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-zinc-800 transition-colors">
-                  Register
-                </button>
-                <a
-                  href={addHackathonToGoogleCalendar(hackathon)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block group/calendar relative"
-                  onClick={(e) => e.stopPropagation()}
-                  title="Add to Google Calendar"
-                >
-                  <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-2">
-                    <CalendarIcon className="w-4 h-4 text-sky-500" />
-                    <span className="hidden sm:inline">Set Reminder</span>
-                  </button>
-                  <div className="absolute invisible group-hover/calendar:visible opacity-0 group-hover/calendar:opacity-100 transition-opacity duration-300 -top-8 left-1/2 transform -translate-x-1/2 bg-indigo-600 text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10">
-                    Add to Google Calendar
-                  </div>
-                </a>
+        <div className="grid grid-cols-3 gap-2 rounded-xl border border-slate-100 bg-slate-50 p-3 text-center dark:border-white/10 dark:bg-white/5">
+          {[
+            { value: normalizedHackathon.participants, label: "Participants" },
+            { value: normalizedHackathon.teams, label: "Teams" },
+            { value: normalizedHackathon.submissions, label: "Submissions" },
+          ].map(({ value, label }) => (
+            <div key={label}>
+              <UserGroupIcon className="mx-auto mb-1 h-4 w-4 text-indigo-500" />
+              <div className="text-base font-bold text-slate-900 dark:text-slate-100">
+                {value || 0}
               </div>
+              <div className="text-[10px] font-medium text-slate-500">{label}</div>
             </div>
+          ))}
+        </div>
+
+        {status === "completed" && (
+          <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs dark:border-amber-500/20 dark:bg-amber-500/10">
+            <TrophyIcon className="h-4 w-4 flex-shrink-0 text-amber-500" />
+            <span className="font-semibold text-slate-600 dark:text-slate-400">
+              Winner:
+            </span>
+            <span className="truncate text-slate-700 dark:text-slate-300">
+              {normalizedHackathon.winner || "Announced soon"}
+            </span>
+          </div>
+        )}
+
+        <div className="mt-auto grid grid-cols-2 gap-3 pt-1">
+          {status === "upcoming" ? (
+            <>
+              <button
+                type="button"
+                onClick={() => navigate(`/register/${normalizedHackathon.id}`)}
+                className="rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
+              >
+                Register
+              </button>
+              <a
+                href={addHackathonToGoogleCalendar(normalizedHackathon)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-center text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-indigo-300 hover:bg-slate-50 hover:text-indigo-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+              >
+                Reminder
+              </a>
+            </>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
-              <button className="px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-zinc-800 transition-colors">
-                View Results
+            <>
+              <button
+                type="button"
+                className="rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
+               aria-label="button">
+                {status === "live" ? "Join Now" : "View Results"}
               </button>
-              <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-                Resources
+              <button
+                type="button"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-indigo-300 hover:bg-slate-50 hover:text-indigo-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+               aria-label="button">
+                {status === "live" ? "Submit" : "Resources"}
               </button>
-            </div>
+            </>
           )}
         </div>
       </div>
@@ -363,4 +357,4 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
   );
 };
 
-export default HackathonCard;
+export default memo(HackathonCard);

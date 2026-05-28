@@ -1,208 +1,216 @@
-import { useState, useEffect, useRef } from "react";
-import mockEvents from "./eventsMockData.json";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useLocation, useSearchParams } from "react-router-dom";
 import EventHero from "./EventHero";
-import EventCard from "./EventCard";
-import { Grid, List } from "lucide-react";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
-import Fuse from "fuse.js";
-import StyledDropdown from "../../components/StyledDropdown";
-import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
+import EventCardSection from "./EventCardSection";
+import EventFiltersToolbar from "./EventFiltersToolbar";
+import ActiveFilters from "./ActiveFilters";
+import PaginationControls from "./PaginationControls";
+import useEventListing from "./useEventListing";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
+import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
 
-const renderCardSection = (isLoading, filteredEvents, viewMode, filterType) => {
-  if (isLoading) {
-    return (
-      <div className="grid gap-8 grid-cols-1 sm:grid-cols-1 lg:grid-cols-3">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
-          <EventCardSkeleton key={`skeleton-${i}`} />
-        ))}
-      </div>
-    );
+const getRouteSearchQuery = (location) => {
+  const rawSearchParam = new URLSearchParams(location.search).get("search") || "";
+
+  try {
+    return prepareSafeSearchQuery(decodeURIComponent(rawSearchParam));
+  } catch {
+    return "";
   }
-
-  if (filteredEvents.length === 0) {
-    return (
-      <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
-      </div>
-    );
-  }
-
-  return (
-    <div
-      key={filterType + viewMode}
-      className={`grid gap-8 ${
-        viewMode === "grid"
-          ? "grid-cols-1 sm:grid-cols-1 lg:grid-cols-3"
-          : "grid-cols-1 max-w-4xl mx-auto"
-      }`}
-    >
-      {filteredEvents.map((event) => (
-        <EventCard key={event.id} event={event} />
-      ))}
-    </div>
-  );
 };
 
 const EventsPage = () => {
-  const [events, setEvents] = useState([]);
-  const [filterType, setFilterType] = useState("all");
-  const [viewMode, setViewMode] = useState("grid");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filteredEvents, setFilteredEvents] = useState([]);
-  const [sortType, setSortType] = useState("Newest");
-  const [isLoading, setIsLoading] = useState(true);
-  const cardSectionRef = useRef();
+  useDocumentTitle("Eventra | Events");
+
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const cardSectionRef = useRef(null);
+  const listing = useEventListing();
+  const routeSearchQuery = getRouteSearchQuery(location);
+  const [localSearchInput, setLocalSearchInput] = useState(routeSearchQuery);
+  const debouncedSearchQuery = useDebouncedValue(localSearchInput, 300);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setEvents(mockEvents);
-      setIsLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
+    const page = Number(searchParams.get("page")) || 1;
+    const perPage = Number(searchParams.get("perPage")) || listing.eventsPerPage;
+    const filter = searchParams.get("filter") || "all";
+    const sort = searchParams.get("sort") || "Newest";
+    const view = searchParams.get("view") || "grid";
+
+    setLocalSearchInput(routeSearchQuery);
+    listing.setSearchQuery(routeSearchQuery);
+    listing.setFilterType(filter);
+    listing.setSortType(sort);
+    listing.setViewMode(view);
+    listing.setEventsPerPage(perPage);
+    listing.setSafePage(page);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
+
+  useEffect(() => {
+    listing.setSearchQuery(prepareSafeSearchQuery(debouncedSearchQuery));
+  }, [debouncedSearchQuery, listing]);
+
+  useEffect(() => {
+    const params = {};
+
+    if (listing.currentPage > 1) params.page = String(listing.currentPage);
+    if (listing.eventsPerPage !== 6) params.perPage = String(listing.eventsPerPage);
+    if (listing.searchQuery) params.search = listing.searchQuery;
+    if (listing.filterType !== "all") params.filter = listing.filterType;
+    if (listing.sortType !== "Newest") params.sort = listing.sortType;
+    if (listing.viewMode !== "grid") params.view = listing.viewMode;
+
+    setSearchParams(params, { replace: true });
+  }, [
+    listing.currentPage,
+    listing.eventsPerPage,
+    listing.filterType,
+    listing.searchQuery,
+    listing.sortType,
+    listing.viewMode,
+    setSearchParams,
+  ]);
+
+  useEffect(() => {
+    if (!listing.isLoading && routeSearchQuery) {
+      window.setTimeout(() => {
+        cardSectionRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 100);
+    }
+  }, [listing.isLoading, routeSearchQuery]);
+
+  const handleSearch = useCallback(
+    (query = "") => {
+      const safeQuery = prepareSafeSearchQuery(query);
+      setLocalSearchInput(safeQuery);
+      listing.setSearchQuery(safeQuery);
+      return listing.filteredEvents;
+    },
+    [listing],
+  );
+
+  const scrollToCard = useCallback(() => {
+    cardSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
-  // Fuse.js setup
-  const fuse = new Fuse(events, {
-    keys: ["title", "description", "location", "tags", "type"],
-    threshold: 0.35,
-  });
+  const handlePageChange = useCallback(
+    (page) => {
+      listing.setSafePage(page);
+      cardSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    },
+    [listing],
+  );
 
-  const handleSearch = (query = "") => {
-    setSearchQuery(query);
+  const handleClearFilters = useCallback(() => {
+    setLocalSearchInput("");
+    listing.setSearchQuery("");
+    listing.setFilterType("all");
+    listing.setSortType("Newest");
+    listing.setViewMode("grid");
+    listing.setAdvancedFilters({});
+  }, [listing]);
 
-    let results = events;
-    if (query.trim()) {
-      results = fuse.search(query).map((res) => res.item);
-    }
-
-    const final = results.filter((event) => {
-      return (
-        filterType === "all" ||
-        (filterType === "upcoming" && event.status === "upcoming") ||
-        (filterType === "past" && event.status === "past") ||
-        event.type === filterType
-      );
-    });
-
-    setFilteredEvents(final);
-  };
-
-  useEffect(() => {
-    handleSearch(searchQuery);
-  }, [events, filterType]);
-
-  const handleSortChange = (type) => {
-    setSortType(type);
-    let sorted = [...filteredEvents];
-    if (type === "Newest") {
-      sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
-    } else if (type === "upcoming") {
-      sorted.sort((a, b) => new Date(a.date) - new Date(b.date));
-    }
-    setFilteredEvents(sorted);
-  };
-
-  useEffect(() => {
-    handleSortChange(sortType);
-    // eslint-disable-next-line
-  }, [filterType, searchQuery]);
-
-  const scrollToCard = () => {
-    cardSectionRef.current?.scrollIntoView({ behaviour: "smooth" });
-  };
+  const hasActiveFilters =
+    listing.filterType !== "all" ||
+    listing.sortType !== "Newest" ||
+    listing.searchQuery !== "" ||
+    Object.keys(listing.advancedFilters || {}).length > 0;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 overflow-x-hidden">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white text-slate-900 dark:bg-slate-950 dark:text-gray-100">
       <EventHero
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        filteredEvents={filteredEvents}
+        searchQuery={localSearchInput}
+        filteredEvents={listing.filteredEvents}
         handleSearch={handleSearch}
         scrollToCard={scrollToCard}
       />
 
-      <div
+      <main
         ref={cardSectionRef}
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12"
+        className="safe-area-x mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8"
       >
-        <div
-          className="mb-8 sm:mb-10 flex flex-col gap-4"
-        >
-          <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center sm:justify-start">
-            {[
-              { key: "all", label: "All" },
-              { key: "upcoming", label: "Upcoming" },
-              { key: "past", label: "Past" },
-              { key: "conference", label: "Conferences" },
-              { key: "workshop", label: "Workshops" },
-            ].map((filter, index) => (
-              <button
-                key={filter.key}
-                onClick={() => setFilterType(filter.key)}
-                className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-full transition ${
-                  filterType === filter.key
-                    ? "bg-black text-white"
-                    : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-700"
-                }`}
-                aria-pressed={filterType === filter.key}
-              >
-                {filter.label}
-              </button>
-            ))}
+        {listing.loadError && (
+          <div
+            className="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200"
+            role="status"
+          >
+            {listing.loadError}
           </div>
+        )}
 
-          {/* Sort Dropdown and View Toggle */}
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
-            {/* Sort Dropdown */}
-            <div className="w-full sm:w-auto">
-              <label htmlFor="sort-events" className="sr-only">
-                Sort events
-              </label>
-              <StyledDropdown
-                label=""
-                value={sortType === "" ? "" : sortType}
-                onChange={handleSortChange}
-                options={["Newest", "Upcoming"]}
-                placeholder="Sort by Date"
-              />
-            </div>
+        <EventFiltersToolbar
+          filterType={listing.filterType}
+          onFilterChange={listing.setFilterType}
+          sortType={listing.sortType}
+          onSortChange={listing.setSortType}
+          viewMode={listing.viewMode}
+          onViewModeChange={listing.setViewMode}
+          advancedFilters={listing.advancedFilters}
+          onAdvancedFiltersChange={listing.setAdvancedFilters}
+          isAdvancedFiltersOpen={listing.isAdvancedFiltersOpen}
+          onToggleAdvancedFilters={listing.setIsAdvancedFiltersOpen}
+          priceStats={listing.priceStats}
+          dateRangeStats={listing.dateRangeStats}
+          searchQuery={localSearchInput}
+          onSearchChange={setLocalSearchInput}
+        />
 
-            <div
-              className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm"
-            >
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
-                  viewMode === "grid"
-                    ? "bg-black text-white shadow-md"
-                    : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                }`}
-                aria-label="Grid view"
-                aria-pressed={viewMode === "grid"}
-              >
-                <Grid size={16} />
-              </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
-                  viewMode === "list"
-                    ? "bg-black text-white shadow-md"
-                    : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                }`}
-                aria-label="List view"
-                aria-pressed={viewMode === "list"}
-              >
-                <List size={16} />
-              </button>
-            </div>
-          </div>
-        </div>
+        <ActiveFilters
+          searchQuery={localSearchInput}
+          setSearchQuery={(value) => {
+            setLocalSearchInput(value);
+            listing.setSearchQuery(value);
+          }}
+          filterType={listing.filterType}
+          setFilterType={listing.setFilterType}
+          sortType={listing.sortType}
+          setSortType={listing.setSortType}
+          viewMode={listing.viewMode}
+          setViewMode={listing.setViewMode}
+          advancedFilters={listing.advancedFilters}
+          onAdvancedFiltersChange={listing.setAdvancedFilters}
+        />
 
-        {renderCardSection(isLoading, filteredEvents, viewMode, filterType)}
-      </div>
+        {hasActiveFilters && (
+          <button
+            type="button"
+            onClick={handleClearFilters}
+            className="mb-5 inline-flex min-h-[40px] items-center rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+          >
+            Clear Filters
+          </button>
+        )}
+
+        <SectionErrorBoundary label="Events">
+          <EventCardSection
+            isLoading={listing.isLoading}
+            events={listing.paginatedEvents}
+            viewMode={listing.viewMode}
+            filterType={listing.filterType}
+            onClearFilters={handleClearFilters}
+            cacheInfo={listing.cacheInfo}
+          />
+
+          <PaginationControls
+            currentPage={listing.currentPage}
+            eventsPerPage={listing.eventsPerPage}
+            totalEvents={listing.filteredEvents.length}
+            totalPages={listing.totalPages}
+            onPageChange={handlePageChange}
+            onPageSizeChange={listing.setEventsPerPage}
+          />
+        </SectionErrorBoundary>
+      </main>
 
       <EventCTA />
-
       <FeedbackButton />
     </div>
   );
