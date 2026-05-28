@@ -395,19 +395,19 @@ const EventCreation = () => {
   }, [formData, isDraftLoaded]);
 
   // ⚠️ Before Unload Warning (Memoized)
-  useEffect(() => {
-    const hasUnsavedChanges = useMemo(() => {
-      return Object.entries(formData).some(([key, value]) => {
-        if (["banner", "bannerPreview"].includes(key)) return false;
-        if (typeof value === "string") return value.trim() !== (initialFormData[key] || "");
-        if (Array.isArray(value)) return value.length > 0;
-        if (typeof value === "object" && value !== null) {
-          return JSON.stringify(value) !== JSON.stringify(initialFormData[key] || {});
-        }
-        return Boolean(value) !== Boolean(initialFormData[key]);
-      });
-    }, [formData]);
+  const hasUnsavedChanges = useMemo(() => {
+    return Object.entries(formData).some(([key, value]) => {
+      if (["banner", "bannerPreview"].includes(key)) return false;
+      if (typeof value === "string") return value.trim() !== (initialFormData[key] || "");
+      if (Array.isArray(value)) return value.length > 0;
+      if (typeof value === "object" && value !== null) {
+        return JSON.stringify(value) !== JSON.stringify(initialFormData[key] || {});
+      }
+      return Boolean(value) !== Boolean(initialFormData[key]);
+    });
+  }, [formData]);
 
+  useEffect(() => {
     if (!hasUnsavedChanges) return;
 
     const handleBeforeUnload = (e) => {
@@ -417,7 +417,7 @@ const EventCreation = () => {
 
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [formData]);
+  }, [hasUnsavedChanges]);
 
   // 🔍 Validation Logic (Extracted & Optimized)
   const validateForm = useCallback(() => {

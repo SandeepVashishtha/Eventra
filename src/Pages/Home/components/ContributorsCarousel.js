@@ -118,28 +118,26 @@ const Contributors = () => {
   const fetchGitHubProfile = useCallback(async (username) => {
     await throttleProfileFetch();
     try {
-      const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(
-        `/users/${username}`
-      )}`;
+      return await fetchProfileWithCache(username, async () => {
+        const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(
+          `/users/${username}`
+        )}`;
 
-      const { data: profile } = await fetchWithTimeout(
-        proxyUrl,
-        {},
-        REQUEST_TIMEOUT
-      );
+        const { data: profile } = await fetchWithTimeout(
+          proxyUrl,
+          {},
+          REQUEST_TIMEOUT
+        );
 
-      return {
-        followers: profile.followers || 0,
-        public_repos: profile.public_repos || 0,
-        name: profile.name || user,
-        bio: profile.bio || "Open source contributor",
-        company: profile.company,
-        location: profile.location,
-      };
-    };
-
-    try {
-      return await fetchProfileWithCache(username, doFetch);
+        return {
+          followers: profile.followers || 0,
+          public_repos: profile.public_repos || 0,
+          name: profile.name || username,
+          bio: profile.bio || "Open source contributor",
+          company: profile.company,
+          location: profile.location,
+        };
+      });
     } catch {
       return {
         followers: 0,
@@ -307,7 +305,8 @@ const Contributors = () => {
             onClick={nextSlide}
             // UPDATED: Arrow button styles
             className="absolute right-0 top-[35%] -translate-y-1/2 translate-x-4 z-10 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 hover:scale-110 transition-all duration-300 border border-gray-200"
-            disabled={currentIndex + itemsPerView  aria-label="button">= contributors.length}
+            disabled={currentIndex + itemsPerView >= contributors.length}
+            aria-label="Next slide"
           >
             {/* UPDATED: Arrow icon color */}
             <FaChevronRight className="text-black text-xl" />

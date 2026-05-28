@@ -35,17 +35,14 @@ const Footer = lazy(() => import("./components/Layout/Footer"));
 const Chatbot = lazy(() => import("./components/Chatbot"));
 const AppRoutes = lazy(() => import("./components/AppRoutes"));
 const EventRegistration = lazy(() => import("./Pages/Events/EventRegistration"));
+const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
 
 const OfflineSyncManager = () => {
   useOfflineSync();
   return null;
 };
 
-const PageFallback = () => (
-  <div className="flex min-h-svh items-center justify-center safe-area-x">
-    Loading...
-  </div>
-);
+
 
 function App() {
   const location = useLocation();

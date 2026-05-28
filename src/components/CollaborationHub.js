@@ -1,6 +1,6 @@
 import StatusBadge from "./common/StatusBadge";
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { toast } from 'react-toastify';
 import './components.css';

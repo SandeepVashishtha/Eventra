@@ -4,44 +4,11 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import DOMPurify from "dompurify";
 import CountdownTimer from "../../components/common/CountdownTimer";
-import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft } from "lucide-react";
+import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft, WifiOff } from "lucide-react";
 import { Share2, Twitter, Facebook, Linkedin, MessageCircle, Copy, Check } from "lucide-react";
 import eventsMockData from "./eventsMockData.json";
 import { getEventStatus } from "../../utils/eventUtils";
 
-// Removed unused imports: addEventToGoogleCalendar, ShareMenu, CertificateDownload, generateEventSharingData
-const [copied, setCopied] = useState(false);
-const shareUrl = `${window.location.origin}/events/${event.id}`;
-const shareText = `Check out this event: ${event.title}`;
-
-const handleCopyLink = async () => {
-  try {
-    await navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  } catch {
-    toast.error("Failed to copy link.");
-  }
-};
-
-const handleNativeShare = async () => {
-  if (navigator.share) {
-    try {
-      await navigator.share({
-        title: event.title,
-        text: shareText,
-        url: shareUrl,
-      });
-    } catch {}
-  }
-};
-
-const shareLinks = {
-  twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
-  facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
-  linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
-  whatsapp: `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
-};
 const EventDetailsPage = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
@@ -49,6 +16,41 @@ const EventDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [event, setEvent] = useState(null);
   const [cacheInfo, setCacheInfo] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  const shareUrl = event ? `${window.location.origin}/events/${event.id}` : "";
+  const shareText = event ? `Check out this event: ${event.title}` : "";
+
+  const shareLinks = event
+    ? {
+        twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
+        facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
+        linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
+        whatsapp: `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
+      }
+    : {};
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard write failed silently
+    }
+  };
+
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: event.title,
+          text: shareText,
+          url: shareUrl,
+        });
+      } catch {}
+    }
+  };
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -56,25 +58,15 @@ const EventDetailsPage = () => {
       setCacheInfo(null);
 
       try {
-        const response = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
-        const fetchedEvent = normalizeEvent(response.data);
-        setEvent(fetchedEvent);
-        saveCachedEventDetail(fetchedEvent);
-      } catch {
-        const cached = getCachedEventDetail(eventId);
-        if (cached?.event) {
-          setEvent(normalizeEvent(cached.event));
-          setCacheInfo({
-            cachedAt: cached.cachedAt,
-            label: getCacheAgeLabel(cached.cachedAt),
-          });
-        } else {
-          const foundEvent = eventsMockData.find((item) => String(item.id) === String(eventId));
-          setEvent(foundEvent ? normalizeEvent(foundEvent) : null);
-          if (foundEvent) {
-            setCacheInfo({ cachedAt: null, label: "bundled fallback" });
-          }
+        const foundEvent = eventsMockData.find(
+          (item) => String(item.id) === String(eventId)
+        );
+        setEvent(foundEvent || null);
+        if (foundEvent) {
+          setCacheInfo({ cachedAt: null, label: "bundled fallback" });
         }
+      } catch {
+        setEvent(null);
       } finally {
         setLoading(false);
       }
@@ -139,8 +131,6 @@ const EventDetailsPage = () => {
 
   const isPastEvent =
     getEventStatus(event) === "past" || getEventStatus(event) === "ended";
-
-  // Removed unused derived values and handlers to satisfy linting rules
 
   return (
     <><div className="min-h-screen mt-16 bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
