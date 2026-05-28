@@ -1,10 +1,9 @@
-import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { apiUtils, API_ENDPOINTS } from '../config/api';
 import { useAuth } from './AuthContext';
 
 const NotificationContext = createContext();
 
-/** Polling interval: refresh notifications every 60 seconds while user is logged in */
 const POLLING_INTERVAL_MS = 60_000;
 
 export const NotificationProvider = ({ children }) => {
@@ -18,22 +17,34 @@ export const NotificationProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
+  // 🔥 FIX: Track mounted state to prevent ghost updates
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   const fetchNotifications = useCallback(async (options = { isBackground: false }) => {
-  const { isBackground } = options;
+    const { isBackground } = options;
     if (!token) return;
 
-    // Defensive check: safeguard against undefined/missing notification endpoints
     const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.ALL || API_ENDPOINTS?.NOTIFICATIONS?.BASE;
     if (!endpoint || typeof endpoint !== "string" || endpoint.includes("undefined")) {
-      console.warn("[NotificationContext] Fetch endpoint is undefined or improperly configured. Skipping network call.");
+      console.warn("[NotificationContext] Fetch endpoint is undefined. Skipping.");
       return;
     }
 
     try {
-      if (!isBackground) {
-        setLoading(true);
-    }
+      if (!isBackground && isMounted.current) setLoading(true);
+
       const response = await apiUtils.get(endpoint);
+
+      // 🔥 FIX: Guard all state updates after await
+      if (!isMounted.current) return;
+
       const data = response.data;
       const normalizedData = Array.isArray(data) ? data : [];
       setNotifications(normalizedData);
@@ -41,10 +52,8 @@ export const NotificationProvider = ({ children }) => {
     } catch (error) {
       console.error('Error fetching notifications:', error);
     } finally {
-  if (!isBackground) {
-    setLoading(false);
-  }
-}
+      if (!isBackground && isMounted.current) setLoading(false);
+    }
   }, [token]);
 
   const fetchAchievements = useCallback(async () => {
@@ -52,37 +61,32 @@ export const NotificationProvider = ({ children }) => {
 
     const endpoint = API_ENDPOINTS?.USERS?.ACHIEVEMENTS;
     if (!endpoint || typeof endpoint !== "string" || endpoint.includes("undefined")) {
-      console.warn("[NotificationContext] Achievements endpoint is undefined. Skipping network call.");
+      console.warn("[NotificationContext] Achievements endpoint undefined. Skipping.");
       return;
     }
 
     try {
       const response = await apiUtils.get(endpoint);
+      // 🔥 FIX: Guard after await
+      if (!isMounted.current) return;
       setAchievements(response.data);
     } catch (error) {
       console.error('Error fetching achievements:', error);
     }
   }, [token]);
 
-  /** Mark a single notification as read */
   const markAsRead = useCallback(async (notificationId) => {
     if (!token || !notificationId) return;
 
-    // Defensive check: safeguard against missing READ endpoint functions
     const endpointGetter = API_ENDPOINTS?.NOTIFICATIONS?.READ;
-    if (typeof endpointGetter !== "function") {
-      console.warn("[NotificationContext] READ endpoint creator is not a function. Skipping request.");
-      return;
-    }
+    if (typeof endpointGetter !== "function") return;
 
     const endpoint = endpointGetter(notificationId);
-    if (!endpoint || typeof endpoint !== "string" || endpoint.includes("undefined")) {
-      console.warn("[NotificationContext] Resolved READ endpoint is invalid. Skipping request.");
-      return;
-    }
+    if (!endpoint || typeof endpoint !== "string" || endpoint.includes("undefined")) return;
 
     try {
       await apiUtils.put(endpoint, {});
+      if (!isMounted.current) return;
       setNotifications((prev) =>
         prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n))
       );
@@ -92,74 +96,54 @@ export const NotificationProvider = ({ children }) => {
     }
   }, [token]);
 
-  /** Mark ALL notifications as read in one shot */
   const markAllAsRead = useCallback(async () => {
     if (!token) return;
 
-    // Capture current unread list synchronously using closure state
     const unread = notifications.filter((n) => !n.isRead);
-
-    // Nothing to do if every notification was already read
     if (unread.length === 0) return;
 
-    // Optimistic UI update
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
 
     const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.READ_ALL;
-    if (!endpoint || typeof endpoint !== "string" || endpoint.includes("undefined")) {
-      console.warn("[NotificationContext] READ_ALL endpoint is invalid or improperly configured. Skipping request.");
-      return;
-    }
+    if (!endpoint || typeof endpoint !== "string" || endpoint.includes("undefined")) return;
 
     setUnreadCount(0);
 
     try {
       await apiUtils.put(endpoint, {});
     } catch (error) {
-      console.error('[NotificationContext] Error marking all notifications as read:', error);
-      // Re-fetch to restore accurate server state on unexpected failure
-      fetchNotifications();
+      console.error('[NotificationContext] Error marking all as read:', error);
+      if (isMounted.current) fetchNotifications();
     }
   }, [token, fetchNotifications, notifications]);
 
-  
-  // ── Initial fetch + polling ───────────────────────────────────────────────
-  // ── Initial fetch + polling ───────────────────────────────────────────────
   useEffect(() => {
-    // 1. Handle Logout: Wipe data clean instantly
     if (!token) {
       setNotifications([]);
       setUnreadCount(0);
-      setAchievements({
-        totalEvents: 0,
-        currentStreak: 0,
-        badges: [],
-      });
-      return; // Exit early, no interval will be created
+      setAchievements({ totalEvents: 0, currentStreak: 0, badges: [] });
+      return;
     }
 
-    // 2. Handle Login: Trigger instant data load (parallelized)
     const initData = async () => {
+      if (!isMounted.current) return;
       setLoading(true);
       await Promise.allSettled([
         fetchNotifications({ isBackground: true }),
         fetchAchievements()
       ]);
+      // 🔥 FIX: Check mounted before final state update
+      if (!isMounted.current) return;
       setLoading(false);
     };
+
     initData();
 
-    // 3. Set up background polling
     const intervalId = setInterval(() => {
       fetchNotifications({ isBackground: true });
     }, POLLING_INTERVAL_MS);
 
-    // 4. Clean Destruction: Guaranteed removal of the ghost worker
-    return () => {
-      clearInterval(intervalId);
-    };
-    
-    // CRITICAL FIX: Only run this effect when the actual authentication token changes
+    return () => clearInterval(intervalId);
   }, [token]);
 
   return (
