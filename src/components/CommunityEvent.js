@@ -290,7 +290,7 @@ const CommunityEvent = () => {
           >
             <button
               type="button"
-              onClick={() = aria-label="button"> setSelectedEvent(null)}
+              onClick={() => setSelectedEvent(null)}
               className="
                 absolute right-4 top-4
                 rounded-full p-2

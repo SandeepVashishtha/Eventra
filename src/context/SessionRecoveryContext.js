@@ -48,9 +48,17 @@ export const SessionRecoveryProvider = ({ children }) => {
   const saveTimeoutRef = useRef(null);
   const activityTimeoutRef = useRef(null);
 
+  // 🔥 FIX: Throttle React state updates to prevent main-thread thrashing
   const updateActivity = useCallback(() => {
     const now = Date.now();
-    lastActivityRef.current = now;
+    lastActivityRef.current = now; // Always update the ref immediately for accuracy
+
+    if (!activityTimeoutRef.current) {
+      activityTimeoutRef.current = setTimeout(() => {
+        setLastActivity(lastActivityRef.current);
+        activityTimeoutRef.current = null;
+      }, 1000); // Only re-render consumers at most once per second
+    }
   }, []);
 
   useEffect(() => {

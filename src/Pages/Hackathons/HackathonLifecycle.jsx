@@ -207,7 +207,7 @@ const HackathonLifecycle = () => {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() = aria-label="button"> setIsOrganizerMode(!isOrganizerMode)}
+              onClick={() => setIsOrganizerMode(!isOrganizerMode)}
               className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 flex items-center gap-2 border shadow-sm ${
                 isOrganizerMode
                   ? "bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700"
@@ -234,7 +234,7 @@ const HackathonLifecycle = () => {
               {phasesList.map((phase, idx) => (
                 <button
                   key={phase.id}
-                  onClick={() = aria-label="button"> setGlobalActivePhase(idx)}
+                  onClick={() => setGlobalActivePhase(idx)}
                   className={`p-3 rounded-xl border text-center transition-all ${
                     activePhaseIndex === idx
                       ? "bg-indigo-600 text-white border-indigo-600 shadow-md font-bold"
@@ -262,7 +262,7 @@ const HackathonLifecycle = () => {
             return (
               <button
                 key={phase.id}
-                onClick={() = aria-label="button"> setSelectedPhaseId(phase.id)}
+                onClick={() => setSelectedPhaseId(phase.id)}
                 className={`relative p-5 rounded-2xl border text-left transition-all duration-300 ${
                   isSelected
                     ? "bg-white dark:bg-slate-900 border-indigo-500 shadow-xl ring-2 ring-indigo-500/20"
@@ -440,7 +440,7 @@ const HackathonLifecycle = () => {
                   {selectedPhase.tasks.map((task) => (
                     <button
                       key={task.id}
-                      onClick={() = aria-label="button"> toggleTask(selectedPhase.id, task.id)}
+                      onClick={() => toggleTask(selectedPhase.id, task.id)}
                       className={`flex w-full text-left items-start gap-3 p-3.5 rounded-2xl border transition-all ${
                         task.done
                           ? "bg-emerald-50/40 border-emerald-100 dark:bg-emerald-950/10 dark:border-emerald-900/30 text-emerald-800 dark:text-emerald-300"

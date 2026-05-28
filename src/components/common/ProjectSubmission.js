@@ -236,7 +236,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
                   {tech}
                   <button
                     type="button"
-                    onClick={() = aria-label="button"> handleTechStackRemove(tech)}
+                    onClick={() => handleTechStackRemove(tech)}
                   >
                     <FiX />
                   </button>
