@@ -35,20 +35,19 @@ const MyCalendar = () => {
   const { myEvents, loading } = useMyEvents();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState("grid"); // "grid" or "timeline"
+  const [viewMode, setViewMode] = useState("grid");
   const [activeCategory, setActiveCategory] = useState("all");
   const [announcement, setAnnouncement] = useState("");
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
 
-  // Calendar Date Calculations
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
 
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+    "July", "August", "September", "October", "November", "December",
   ];
 
   const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -80,20 +79,14 @@ const MyCalendar = () => {
 
   const handleDayKeyDown = (e, day) => {
     let nextFocusDay = null;
-    if (e.key === "ArrowRight") {
-      nextFocusDay = day + 1;
-    } else if (e.key === "ArrowLeft") {
-      nextFocusDay = day - 1;
-    } else if (e.key === "ArrowDown") {
-      nextFocusDay = day + 7;
-    } else if (e.key === "ArrowUp") {
-      nextFocusDay = day - 7;
-    }
+    if (e.key === "ArrowRight") nextFocusDay = day + 1;
+    else if (e.key === "ArrowLeft") nextFocusDay = day - 1;
+    else if (e.key === "ArrowDown") nextFocusDay = day + 7;
+    else if (e.key === "ArrowUp") nextFocusDay = day - 7;
 
     if (nextFocusDay !== null && nextFocusDay >= 1 && nextFocusDay <= daysInMonth) {
       e.preventDefault();
       selectDay(nextFocusDay);
-      // Wait for re-render and focus
       setTimeout(() => {
         const btn = document.getElementById(`calendar-cell-${nextFocusDay}`);
         btn?.focus();
@@ -101,7 +94,6 @@ const MyCalendar = () => {
     }
   };
 
-  // Matches item's category to the active selector
   const matchesCategory = (itemCategory, selectedCat) => {
     if (selectedCat === "all") return true;
     if (!itemCategory) return false;
@@ -115,7 +107,6 @@ const MyCalendar = () => {
     return ic === sc;
   };
 
-  // Get active category colors
   const getCategoryTheme = (categoryName) => {
     if (!categoryName) return CATEGORIES[0];
     const name = categoryName.toLowerCase();
@@ -127,19 +118,17 @@ const MyCalendar = () => {
     return CATEGORIES[0];
   };
 
-  // Maps category theme to a concrete hex color for inline styles (e.g., timeline node borders)
   const getCategoryBorderColor = (theme) => {
     const colorMap = {
-      "gssoc": "#ec4899",       // pink-500
-      "ai/web3": "#a855f7",     // purple-500
-      "workshops": "#06b6d4",   // cyan-500
-      "hackathons": "#10b981",  // emerald-500
-      "community": "#f59e0b",   // amber-500
+      "gssoc": "#ec4899",
+      "ai/web3": "#a855f7",
+      "workshops": "#06b6d4",
+      "hackathons": "#10b981",
+      "community": "#f59e0b",
     };
-    return colorMap[theme.id] || "#6366f1"; // default indigo-500
+    return colorMap[theme.id] || "#6366f1";
   };
 
-  // Filter events registered in the current displayed month & selected category
   const getEventsForDate = (day) => {
     return myEvents.filter((item) => {
       if (!item.event?.date) return false;
@@ -152,7 +141,6 @@ const MyCalendar = () => {
     });
   };
 
-  // Check if a specific date is selected
   const isSelected = (day) => {
     return (
       selectedDate.getFullYear() === currentYear &&
@@ -161,7 +149,6 @@ const MyCalendar = () => {
     );
   };
 
-  // Get active selected date's events
   const getSelectedDateEvents = () => {
     return myEvents.filter((item) => {
       if (!item.event?.date) return false;
@@ -174,7 +161,6 @@ const MyCalendar = () => {
     });
   };
 
-  // Filter all events across time by active category
   const getFilteredAllEvents = () => {
     return myEvents
       .filter((item) => item.event && matchesCategory(item.event.category, activeCategory))
@@ -186,7 +172,7 @@ const MyCalendar = () => {
 
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-20 px-4 md:px-8 transition-colors duration-300">
-      {/* Visually hidden screen reader live region */}
+      {/* Screen reader live region */}
       <div
         aria-live="polite"
         aria-atomic="true"
@@ -207,30 +193,31 @@ const MyCalendar = () => {
 
       <div className="max-w-6xl mx-auto space-y-8">
 
-        {/* HEADER SECTION */}
+        {/* HEADER */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-b border-slate-200 dark:border-slate-800/80 pb-6">
           <div>
             <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-black text-xs tracking-wider uppercase">
-              <CalendarIcon className="w-4.5 h-4.5" />
+              <CalendarIcon className="w-4 h-4" />
               Scheduling Studio
             </div>
             <h1 className="text-3xl sm:text-4xl font-black tracking-tight mt-1.5 bg-clip-text text-transparent bg-gradient-to-r from-slate-950 to-indigo-700 dark:from-slate-100 dark:to-indigo-400">
               Registrations Calendar
             </h1>
-            <p className="text-slate-550 dark:text-slate-400 mt-2 text-xs sm:text-sm max-w-2xl leading-relaxed">
-              Organize, filter, and synchronize your GSSoC registrations. Switch between high-contrast calendar matrices and interactive chronological timelines.
+            <p className="text-slate-500 dark:text-slate-400 mt-2 text-xs sm:text-sm max-w-2xl leading-relaxed">
+              Organize, filter, and synchronize your GSSoC registrations. Switch between calendar matrices and interactive chronological timelines.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
             {/* VIEW SWITCHER */}
-            <div className="flex items-center gap-2 bg-slate-150/80 dark:bg-slate-900/60 p-1.5 rounded-2xl border border-slate-200/40 dark:border-slate-800/30 backdrop-blur-xs shadow-inner">
+            <div className="flex items-center gap-2 bg-slate-100/80 dark:bg-slate-900/60 p-1.5 rounded-2xl border border-slate-200/40 dark:border-slate-800/30 shadow-inner">
               <button
                 onClick={() => setViewMode("grid")}
-                className={`p-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${viewMode === "grid"
-                    ? "bg-white dark:bg-slate-800 shadow-md text-indigo-650 dark:text-indigo-400"
+                className={`p-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
+                  viewMode === "grid"
+                    ? "bg-white dark:bg-slate-800 shadow-md text-indigo-600 dark:text-indigo-400"
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-                  }`}
+                }`}
                 aria-label="Grid calendar view"
               >
                 <Grid className="w-3.5 h-3.5" />
@@ -238,10 +225,11 @@ const MyCalendar = () => {
               </button>
               <button
                 onClick={() => setViewMode("timeline")}
-                className={`p-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${viewMode === "timeline"
-                    ? "bg-white dark:bg-slate-800 shadow-md text-indigo-650 dark:text-indigo-400"
+                className={`p-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
+                  viewMode === "timeline"
+                    ? "bg-white dark:bg-slate-800 shadow-md text-indigo-600 dark:text-indigo-400"
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-                  }`}
+                }`}
                 aria-label="Chronological timeline view"
               >
                 <Activity className="w-3.5 h-3.5" />
@@ -249,11 +237,11 @@ const MyCalendar = () => {
               </button>
             </div>
 
-            {/* BULK EXPORT BUTTON */}
+            {/* BULK EXPORT */}
             {myEvents.length > 0 && (
               <button
                 onClick={() => downloadBulkICSFile(myEvents)}
-                className="p-2.5 px-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white shadow-md hover:shadow-lg hover:scale-102"
+                className="p-2.5 px-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white shadow-md hover:shadow-lg"
                 aria-label="Export all events as ICS"
               >
                 <Download className="w-3.5 h-3.5" />
@@ -270,7 +258,7 @@ const MyCalendar = () => {
           </div>
         ) : (
           <>
-            {/* PREMIUM FILTER ROW */}
+            {/* CATEGORY FILTERS */}
             <div className="space-y-3.5">
               <div className="flex items-center gap-2 text-xs font-black tracking-widest text-slate-400 dark:text-slate-500 uppercase">
                 <Filter className="w-3.5 h-3.5" />
@@ -285,10 +273,11 @@ const MyCalendar = () => {
                       whileHover={{ scale: 1.04 }}
                       whileTap={{ scale: 0.96 }}
                       onClick={() => setActiveCategory(cat.id)}
-                      className={`relative p-2.5 px-4 rounded-xl text-xs font-black tracking-wide border cursor-pointer transition-all ${isActive
-                          ? "bg-gradient-to-r from-indigo-500/10 to-indigo-600/15 border-indigo-500 text-indigo-600 dark:text-indigo-400 shadow-md shadow-indigo-500/5"
-                          : "bg-white/50 dark:bg-slate-900/30 border-slate-200/50 dark:border-slate-800/40 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:border-slate-350 dark:hover:border-slate-700"
-                        }`}
+                      className={`relative p-2.5 px-4 rounded-xl text-xs font-black tracking-wide border cursor-pointer transition-all ${
+                        isActive
+                          ? "bg-gradient-to-r from-indigo-500/10 to-indigo-600/15 border-indigo-500 text-indigo-600 dark:text-indigo-400 shadow-md"
+                          : "bg-white/50 dark:bg-slate-900/30 border-slate-200/50 dark:border-slate-800/40 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                      }`}
                     >
                       <span className="relative z-10 flex items-center gap-2">
                         <span className={`w-2 h-2 rounded-full bg-gradient-to-r ${cat.color}`} />
@@ -300,7 +289,7 @@ const MyCalendar = () => {
               </div>
             </div>
 
-            {/* VIEW SWITCH */}
+            {/* VIEW */}
             <AnimatePresence mode="wait">
               {viewMode === "grid" ? (
                 <motion.div
@@ -310,25 +299,27 @@ const MyCalendar = () => {
                   exit={{ opacity: 0, y: -15 }}
                   className="grid grid-cols-1 lg:grid-cols-3 gap-8"
                 >
-                  {/* GRID CALENDAR */}
-                  <div className="lg:col-span-2 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-250/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-md space-y-6">
+                  {/* CALENDAR GRID */}
+                  <div className="lg:col-span-2 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-md space-y-6">
                     {/* MONTH CONTROLS */}
-                    <div className="flex items-center justify-between border-b border-slate-100/80 dark:border-slate-850/50 pb-4">
-                      <h2 className="text-lg font-black text-slate-850 dark:text-slate-100 tracking-tight flex items-center gap-2">
+                    <div className="flex items-center justify-between border-b border-slate-100/80 dark:border-slate-800/50 pb-4">
+                      <h2 className="text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight">
                         {monthNames[currentMonth]} {currentYear}
                       </h2>
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={prevMonth}
-                          className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-100 dark:border-slate-800/40 transition cursor-pointer"
+                          className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-100 dark:border-slate-700 transition cursor-pointer"
+                          aria-label="Previous month"
                         >
-                          <ChevronLeft className="w-4 h-4 text-slate-600 dark:text-slate-350" />
+                          <ChevronLeft className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                         </button>
                         <button
                           onClick={nextMonth}
-                          className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-100 dark:border-slate-800/40 transition cursor-pointer"
+                          className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-100 dark:border-slate-700 transition cursor-pointer"
+                          aria-label="Next month"
                         >
-                          <ChevronRight className="w-4 h-4 text-slate-600 dark:text-slate-355" />
+                          <ChevronRight className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                         </button>
                       </div>
                     </div>
@@ -358,7 +349,6 @@ const MyCalendar = () => {
                         {/* DAY CELLS */}
                         {Array.from({ length: daysInMonth }).map((_, idx) => {
                           const day = idx + 1;
-                          const cellDate = new Date(currentYear, currentMonth, day);
                           const dayEvents = getEventsForDate(day);
                           const selected = isSelected(day);
                           const isToday =
@@ -374,12 +364,13 @@ const MyCalendar = () => {
                               onClick={() => selectDay(day)}
                               onKeyDown={(e) => handleDayKeyDown(e, day)}
                               aria-selected={selected}
-                              className={`aspect-square rounded-2xl border p-2 flex flex-col justify-between items-start cursor-pointer transition-all ${selected
-                                  ? "bg-indigo-650 border-indigo-600 text-white shadow-lg shadow-indigo-600/10 scale-102"
+                              className={`aspect-square rounded-2xl border p-2 flex flex-col justify-between items-start cursor-pointer transition-all ${
+                                selected
+                                  ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/10"
                                   : isToday
-                                    ? "bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900 text-indigo-750 dark:text-indigo-400 font-extrabold"
-                                    : "bg-white dark:bg-slate-900 border-slate-200/60 dark:border-slate-800/70 hover:border-slate-350 dark:hover:border-slate-700"
-                                }`}
+                                  ? "bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900 text-indigo-700 dark:text-indigo-400 font-extrabold"
+                                  : "bg-white dark:bg-slate-900 border-slate-200/60 dark:border-slate-800/70 hover:border-slate-300 dark:hover:border-slate-700"
+                              }`}
                             >
                               <span className={`text-[11px] font-black ${selected ? "text-white" : "text-slate-400 dark:text-slate-500"}`}>
                                 {day}
@@ -391,8 +382,9 @@ const MyCalendar = () => {
                                     return (
                                       <span
                                         key={i}
-                                        className={`w-1.5 h-1.5 rounded-full ${selected ? "bg-white" : `bg-gradient-to-r ${theme.color}`
-                                          }`}
+                                        className={`w-1.5 h-1.5 rounded-full ${
+                                          selected ? "bg-white" : `bg-gradient-to-r ${theme.color}`
+                                        }`}
                                       />
                                     );
                                   })}
@@ -407,8 +399,8 @@ const MyCalendar = () => {
 
                   {/* SIDEBAR */}
                   <div className="space-y-6">
-                    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-250/60 dark:border-slate-800/80 rounded-3xl p-6 shadow-md">
-                      <h3 className="text-sm font-black uppercase tracking-wider text-slate-950 dark:text-slate-100 border-b border-slate-100/80 dark:border-slate-800 pb-3">
+                    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/60 dark:border-slate-800/80 rounded-3xl p-6 shadow-md">
+                      <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-100/80 dark:border-slate-800 pb-3">
                         📅 Day Schedule
                       </h3>
                       <p className="text-xs font-black text-indigo-600 dark:text-indigo-400 mt-3 uppercase tracking-wider">
@@ -427,10 +419,10 @@ const MyCalendar = () => {
                               className="p-4 rounded-2xl border border-slate-150 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-800/15"
                             >
                               <div>
-                                <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-indigo-100 dark:bg-indigo-950 text-indigo-755 dark:text-indigo-300">
+                                <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
                                   {item.event.category || "General"}
                                 </span>
-                                <h4 className="font-extrabold text-sm text-slate-850 dark:text-slate-100 mt-1 truncate">
+                                <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100 mt-1 truncate">
                                   {item.event.title}
                                 </h4>
                                 <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 mt-2">
@@ -442,14 +434,12 @@ const MyCalendar = () => {
                                   <span className="truncate max-w-[200px]">{item.event.location || "Virtual / Online"}</span>
                                 </div>
                               </div>
-                              {/* EXPORT BUTTONS */}
-                              <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+                              <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 mt-3">
                                 <button
                                   type="button"
                                   onClick={() => downloadICSFile(item.event)}
-                                  aria-label={`Download ICS calendar file for ${item.event.title}`}
-                                  className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl border border-slate-250 bg-white hover:bg-slate-50 text-[11px] font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 transition"
-                                  title="Download standard .ics iCalendar file"
+                                  aria-label={`Download ICS for ${item.event.title}`}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-[11px] font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 transition"
                                 >
                                   <Download className="w-3 h-3 text-slate-500" aria-hidden="true" />
                                   Download ICS
@@ -458,7 +448,7 @@ const MyCalendar = () => {
                                   href={generateGoogleCalendarLink(item.event)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl border border-slate-250 bg-white hover:bg-slate-50 text-[11px] font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 transition"
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-[11px] font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 transition"
                                 >
                                   <ExternalLink className="w-3 h-3 text-indigo-500" aria-hidden="true" />
                                   Google Calendar
@@ -468,9 +458,9 @@ const MyCalendar = () => {
                           ))
                         ) : (
                           <div className="flex flex-col items-center justify-center py-10 text-center space-y-3">
-                            <AlertCircle className="w-8 h-8 text-slate-350 dark:text-slate-655" aria-hidden="true" />
+                            <AlertCircle className="w-8 h-8 text-slate-300 dark:text-slate-600" aria-hidden="true" />
                             <p className="text-slate-400 text-xs leading-relaxed max-w-[200px]">
-                              No registrations scheduled for this date. Check active events or registration forms.
+                              No registrations scheduled for this date.
                             </p>
                           </div>
                         )}
@@ -478,133 +468,135 @@ const MyCalendar = () => {
                     </div>
                   </div>
                 </motion.div>
-          ) : (
-            /* PREMIUM INTERACTIVE TIMELINE VIEW */
-            <motion.div
-              key="timeline-container"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              className="relative pl-6 sm:pl-10 space-y-8"
-            >
-              {/* Central Glowing Vertical Line */}
-              <div className="absolute left-3.5 sm:left-5 top-2 bottom-2 w-0.5 bg-slate-200 dark:bg-slate-800/80 rounded-full" />
-              <div className="absolute left-3.5 sm:left-5 top-2 h-1/2 w-0.5 bg-gradient-to-b from-indigo-500 to-pink-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
-              {timelineEvents.length > 0 ? (
-                <div className="space-y-8">
-                  {timelineEvents.map((item, index) => {
-                    const theme = getCategoryTheme(item.event?.category);
-                    const eventDate = new Date(item.event.date);
-
-                    return (
-                      <motion.div
-                        key={item.eventId}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.08, type: "spring", stiffness: 150 }}
-                        className="relative flex flex-col md:flex-row gap-5 items-start"
-                      >
-                        {/* Timeline Node Point */}
-                        <div className="absolute -left-[30px] sm:-left-[37px] top-1.5 w-5 h-5 rounded-full bg-white dark:bg-slate-950 border-4 flex items-center justify-center z-10 transition-transform duration-300 hover:scale-130"
-                             style={{ borderColor: getCategoryBorderColor(theme) }}
-                        >
-                          <span className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${theme.color} animate-ping`} />
-                        </div>
-
-                        {/* Chronological Floating Date Grid */}
-                        <div className="w-[110px] shrink-0 text-left md:text-right pt-0.5">
-                          <span className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                            {eventDate.toLocaleDateString("en-US", { weekday: "short" })}
-                          </span>
-                          <span className="block text-xl font-black text-slate-850 dark:text-slate-100 tracking-tight leading-none mt-1">
-                            {eventDate.getDate()} {eventDate.toLocaleDateString("en-US", { month: "short" })}
-                          </span>
-                          <span className="block text-[10px] font-black text-indigo-550 dark:text-indigo-400 uppercase tracking-wider mt-1.5">
-                            {eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-
-                        {/* Glassmorphic Event Details Card */}
-                        <motion.div
-                          whileHover={{ y: -4, scale: 1.01 }}
-                          className="flex-1 w-full bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 p-5 rounded-3xl shadow-sm hover:shadow-[0_12px_24px_rgba(99,102,241,0.06)] hover:border-indigo-400/40 dark:hover:border-indigo-500/30 transition-all duration-300"
-                        >
-                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                            <div className="space-y-1.5">
-                              <div className="flex items-center gap-2.5">
-                                <span className={`px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase bg-gradient-to-r ${theme.color} text-white shadow-xs`}>
-                                  {item.event.category || "General"}
-                                </span>
-                                <span className="text-[11px] font-semibold text-slate-400">
-                                  Registered: {new Date(item.registeredAt).toLocaleDateString()}
-                                </span>
-                              </div>
-                              <h4 className="font-extrabold text-base text-slate-850 dark:text-slate-100">
-                                {item.event.title}
-                              </h4>
-                              <p className="text-xs text-slate-550 max-w-xl truncate mt-1">
-                                {item.event.description}
-                              </p>
-                              <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 mt-2">
-                                <span className="flex items-center gap-1">
-                                  <CalendarIcon className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
-                                  {new Date(item.event.date).toLocaleDateString()}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Clock className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
-                                  {new Date(item.event.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <MapPin className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
-                                  {item.event.location || "Online"}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 mt-4 sm:mt-0">
-                              <button
-                                type="button"
-                                onClick={() => downloadICSFile(item.event)}
-                                aria-label={`Download ICS calendar file for ${item.event.title}`}
-                                className="p-2.5 rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-350 shadow-sm"
-                                title="Download standard .ics iCalendar file"
-                              >
-                                <Download className="w-4 h-4" aria-hidden="true" />
-                              </button>
-                              <a
-                                href={generateGoogleCalendarLink(item.event)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-sm flex items-center gap-1.5"
-                              >
-                                <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
-                                Sync Google
-                              </a>
-                            </div>
-                          </div>
-                        </motion.div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
               ) : (
-                <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                  <CalendarIcon className="w-12 h-12 text-slate-300 dark:text-slate-700 animate-pulse" aria-hidden="true" />
-                  <div>
-                    <h4 className="font-extrabold text-slate-800 dark:text-slate-205">No Active Registrations</h4>
-                    <p className="text-slate-400 text-sm leading-relaxed max-w-sm mt-1 mx-auto">
-                      Get involved by exploring the Eventra portal events, team projects, and registering yourself to compile your grid schedule!
-                    </p>
-                  </div>
-                </div>
+                /* TIMELINE VIEW */
+                <motion.div
+                  key="timeline-container"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  className="relative pl-6 sm:pl-10 space-y-8"
+                >
+                  {/* Vertical line */}
+                  <div className="absolute left-3.5 sm:left-5 top-2 bottom-2 w-0.5 bg-slate-200 dark:bg-slate-800/80 rounded-full" />
+                  <div className="absolute left-3.5 sm:left-5 top-2 h-1/2 w-0.5 bg-gradient-to-b from-indigo-500 to-pink-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+
+                  {timelineEvents.length > 0 ? (
+                    <div className="space-y-8">
+                      {timelineEvents.map((item, index) => {
+                        const theme = getCategoryTheme(item.event?.category);
+                        const eventDate = new Date(item.event.date);
+
+                        return (
+                          <motion.div
+                            key={item.eventId}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.08, type: "spring", stiffness: 150 }}
+                            className="relative flex flex-col md:flex-row gap-5 items-start"
+                          >
+                            {/* Timeline node */}
+                            <div
+                              className="absolute -left-[30px] sm:-left-[37px] top-1.5 w-5 h-5 rounded-full bg-white dark:bg-slate-950 border-4 flex items-center justify-center z-10"
+                              style={{ borderColor: getCategoryBorderColor(theme) }}
+                            >
+                              <span className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${theme.color} animate-ping`} />
+                            </div>
+
+                            {/* Date label */}
+                            <div className="w-[110px] shrink-0 text-left md:text-right pt-0.5">
+                              <span className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                                {eventDate.toLocaleDateString("en-US", { weekday: "short" })}
+                              </span>
+                              <span className="block text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-none mt-1">
+                                {eventDate.getDate()} {eventDate.toLocaleDateString("en-US", { month: "short" })}
+                              </span>
+                              <span className="block text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-wider mt-1.5">
+                                {eventDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                            </div>
+
+                            {/* Event card */}
+                            <motion.div
+                              whileHover={{ y: -4, scale: 1.01 }}
+                              className="flex-1 w-full bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 p-5 rounded-3xl shadow-sm hover:shadow-lg hover:border-indigo-400/40 dark:hover:border-indigo-500/30 transition-all duration-300"
+                            >
+                              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                                <div className="space-y-1.5">
+                                  <div className="flex items-center gap-2.5">
+                                    <span className={`px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase bg-gradient-to-r ${theme.color} text-white`}>
+                                      {item.event.category || "General"}
+                                    </span>
+                                    <span className="text-[11px] font-semibold text-slate-400">
+                                      Registered: {new Date(item.registeredAt).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                  <h4 className="font-extrabold text-base text-slate-900 dark:text-slate-100">
+                                    {item.event.title}
+                                  </h4>
+                                  <p className="text-xs text-slate-500 max-w-xl truncate mt-1">
+                                    {item.event.description}
+                                  </p>
+                                  <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 mt-2">
+                                    <span className="flex items-center gap-1">
+                                      <CalendarIcon className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
+                                      {new Date(item.event.date).toLocaleDateString()}
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <Clock className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
+                                      {new Date(item.event.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <MapPin className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
+                                      {item.event.location || "Online"}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 mt-4 sm:mt-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => downloadICSFile(item.event)}
+                                    aria-label={`Download ICS for ${item.event.title}`}
+                                    className="p-2.5 rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 shadow-sm"
+                                    title="Download .ics file"
+                                  >
+                                    <Download className="w-4 h-4" aria-hidden="true" />
+                                  </button>
+                                  <a
+                                    href={generateGoogleCalendarLink(item.event)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-sm flex items-center gap-1.5"
+                                  >
+                                    <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+                                    Sync Google
+                                  </a>
+                                </div>
+                              </div>
+                            </motion.div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+                      <CalendarIcon className="w-12 h-12 text-slate-300 dark:text-slate-700 animate-pulse" aria-hidden="true" />
+                      <div>
+                        <h4 className="font-extrabold text-slate-800 dark:text-slate-200">No Active Registrations</h4>
+                        <p className="text-slate-400 text-sm leading-relaxed max-w-sm mt-1 mx-auto">
+                          Explore Eventra events and register to build your schedule!
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
               )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </>
-    )}
-  </div>
-</main>
-);
+            </AnimatePresence>
+          </>
+        )}
+      </div>
+    </main>
+  );
 };
 
 export default MyCalendar;

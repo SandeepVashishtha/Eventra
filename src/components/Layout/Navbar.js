@@ -332,8 +332,8 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
             style={{
               position: 'fixed',
-              top: `${dropPos.top}px`,
-              left: `${dropPos.left}px`,
+              top: '80px',
+              left: '50%',
               transform: 'translateX(-50%)',
               zIndex: 9999,
             }}
@@ -365,8 +365,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
         )}
       </AnimatePresence>
     </div>
-  );
-};
+);
 const MobileDrawerFooter = ({
   isAuthenticated,
   user,
@@ -576,7 +575,6 @@ const MobileUserSection = ({
 
 const NAV_ITEMS = [
   { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
-  { name: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
   { name: "Calendar", href: "/calendar", icon: <CalendarDays className="w-5 h-5" /> },
   { name: "Bookmarks", href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
   { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
@@ -637,17 +635,16 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
         );
       })}
     </>
-  );
-};
+);
 
 const DesktopNavLinks = ({ openDropdown, setOpenDropdown, location }) => {
   return (
     <div className="hidden lg:flex items-center justify-center flex-1 min-w-0 pl-6">
-      <NavList 
-        location={location} 
-        openDropdown={openDropdown} 
-        onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)} 
-        isMobile={false} 
+      <NavList
+        location={location}
+        openDropdown={openDropdown}
+        onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)}
+        isMobile={false}
       />
     </div>
   );

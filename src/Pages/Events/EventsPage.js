@@ -100,36 +100,42 @@ const renderCardSection = (
 
 const EventsPage = () => {
   useDocumentTitle("Eventra | Events");
+
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  // SECURITY: Decode URL parameter safely then sanitize before use.
-  // Raw URL params can contain encoded HTML/JS. decodeURIComponent may throw
-  // on malformed sequences — we catch and fall back to empty string.
-  const rawSearchParam = new URLSearchParams(location.search).get("search") || "";
+
+  // SECURITY: Safely decode and sanitize search query from URL params
+  const rawSearchParam =
+    new URLSearchParams(location.search).get("search") || "";
+
   let routeSearchQuery = "";
+
   try {
-    routeSearchQuery = prepareSafeSearchQuery(decodeURIComponent(rawSearchParam));
+    routeSearchQuery = prepareSafeSearchQuery(
+      decodeURIComponent(rawSearchParam)
+    );
   } catch {
-    // Malformed URI component — treat as empty query
+    // Malformed URI component
     routeSearchQuery = "";
   }
 
   const listing = useEventListing();
   const cardSectionRef = useRef();
 
-  // Initialize state from URL params on mount only
+  // Initialize state from URL params
   useEffect(() => {
     const page = parseInt(searchParams.get("page")) || 1;
     const perPage = parseInt(searchParams.get("perPage")) || 6;
-    const search = prepareSafeSearchQuery(routeSearchQuery);
     const filter = searchParams.get("filter") || "all";
     const sort = searchParams.get("sort") || "Newest";
     const view = searchParams.get("view") || "grid";
-    
-    // In a full implementation, these would initialize the listing state
-    // listing.setSafePage(page);
-    // listing.setEventsPerPage(perPage);
-    // etc.
+
+    if (routeSearchQuery) listing.setSearchQuery(routeSearchQuery);
+    if (filter !== "all") listing.setFilterType(filter);
+    if (sort !== "Newest") listing.setSortType(sort);
+    if (view !== "grid") listing.setViewMode(view);
+    if (perPage !== 6) listing.setEventsPerPage(perPage);
+    if (page !== 1) listing.setSafePage(page);
   }, [searchParams, routeSearchQuery]);
 
   // Sync search query when URL param changes (e.g. navigating from navbar search)

@@ -210,8 +210,6 @@ const cryptoSupported = isCryptoAvailable();
  * The token is scoped to the current browser tab and cleared automatically
  * when the tab is closed.
  *
- * TODO: Remove once the backend sets the token via an HttpOnly cookie.
- *
  * @param {string} token - The Eventra-issued JWT returned by the backend
  */
 export const setToken = (token) => {
