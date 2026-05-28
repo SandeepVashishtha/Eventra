@@ -6,14 +6,20 @@
   justify-content: center;
   align-items: center;
   z-index: 9999;
-  padding: 16px;
+  padding: max(16px, env(safe-area-inset-top, 0px))
+    max(16px, env(safe-area-inset-right, 0px))
+    max(16px, env(safe-area-inset-bottom, 0px))
+    max(16px, env(safe-area-inset-left, 0px));
   animation: fadeIn 0.2s ease-in-out;
+  overflow-y: auto;
 }
 
 .confirmation-modal-content {
   background: #ffffff;
   width: 100%;
   max-width: 420px;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
   border-radius: 16px;
   padding: 24px;
   box-shadow: 0 10px 35px rgba(0, 0, 0, 0.2);
@@ -62,6 +68,7 @@
   font-size: 0.95rem;
   font-weight: 600;
   transition: all 0.2s ease;
+  min-height: 44px;
 }
 
 .confirmation-modal-btn:focus-visible {
@@ -106,5 +113,39 @@
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@media (max-width: 420px) {
+  .confirmation-modal-content {
+    border-radius: 14px;
+    padding: 18px;
+  }
+
+  .confirmation-modal-header h3 {
+    font-size: 1.15rem;
+  }
+
+  .confirmation-modal-actions {
+    flex-direction: column-reverse;
+    gap: 10px;
+  }
+
+  .confirmation-modal-btn {
+    width: 100%;
+  }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .confirmation-modal-overlay {
+    align-items: flex-start;
+  }
+
+  .confirmation-modal-content {
+    padding: 16px;
+  }
+
+  .confirmation-modal-actions {
+    margin-top: 16px;
   }
 }

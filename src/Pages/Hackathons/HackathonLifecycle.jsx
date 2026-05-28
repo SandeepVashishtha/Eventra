@@ -388,7 +388,7 @@ const HackathonLifecycle = () => {
                         <button
                           type="button"
                           className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-indigo-600 dark:text-indigo-400 shadow-sm"
-                        >
+                         aria-label="button">
                           Fetch File
                         </button>
                       </div>
@@ -430,7 +430,7 @@ const HackathonLifecycle = () => {
                     <button
                       type="submit"
                       className="px-4 py-2 rounded-xl bg-indigo-650 hover:bg-indigo-700 text-sm font-bold text-white shadow-sm transition shrink-0"
-                    >
+                     aria-label="button">
                       Add Task
                     </button>
                   </form>

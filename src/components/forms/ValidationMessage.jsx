@@ -19,11 +19,19 @@ const getRole = (state) =>
 /**
  * Displays accessible validation feedback below a form field.
  *
+ * Empty, `null`, or `undefined` messages render nothing. Error states use
+ * assertive live-region semantics so assistive technology announces failures;
+ * all other states use polite status semantics.
+ *
  * @param {Object} props
  * @param {React.ReactNode} props.message - Message to render. Empty values render nothing.
- * @param {"error"|"invalid"|"success"|"valid"|"warning"|"info"|"loading"|"validating"} [props.state="info"]
+ * @param {"error"|"invalid"|"success"|"valid"|"warning"|"info"|"loading"|"validating"} [props.state="info"] - Message tone and accessibility role.
  * @param {string} [props.id] - ID used by aria-describedby on the input.
  * @param {string} [props.className] - Extra classes for custom spacing or typography.
+ * @returns {JSX.Element|null} Validation message paragraph, or null when no message is provided.
+ *
+ * @example
+ * <ValidationMessage id="email-message" state="error" message="Email is required" />
  */
 const ValidationMessage = ({
   message,
