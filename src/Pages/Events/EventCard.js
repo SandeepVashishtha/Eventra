@@ -353,12 +353,14 @@ const EventCard = ({ event }) => {
       {/* Image */}
       <div className="relative h-40 overflow-hidden bg-gray-100 dark:bg-gray-800">
         <LazyImage
-          src={event.image}
-          alt={event.imageAlt || `${event.title} event thumbnail`}
-          width={800}
-          height={160}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
+  src={event.image}
+  alt={event.imageAlt || `${event.title} event thumbnail`}
+  width={800}
+  height={160}
+  loading={index < 2 ? 'eager' : 'lazy'}  // First 2 cards eager load
+  decoding="async"
+  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+/>
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
       </div>
 
