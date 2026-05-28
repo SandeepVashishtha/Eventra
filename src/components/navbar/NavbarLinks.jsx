@@ -1,3 +1,33 @@
+import React, {
+  memo,
+  lazy,
+  Suspense,
+  useRef,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { 
+  Moon, Sun, Search, Bell, User, ChevronDown, 
+  Plus, Settings, LogOut, HelpCircle, Globe, 
+  WifiOff, Download, X 
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
+import DesktopNavbar from "./DesktopNavbar";
+import MobileNavbar from "./MobileNavbar";
+import CursorToggle from "./CursorToggle";
+import useBodyScrollLock from "./hooks/useBodyScrollLock";
+import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
+import { useScrollProgress } from "../../hooks/useScrollProgress"; // custom hook (implemented in src/hooks)
+// Lazy-load the modal so it is only bundled when first rendered.
+// Using React.lazy here (instead of a static import) ensures the module
+// is code-split and does NOT conflict with the lazy import in App.jsx,
+// removing the "dynamically imported but also statically imported" Rollup warning.
+const KeyboardShortcutsModal = lazy(() => import("../common/KeyboardShortcutsModal"));
 import React, { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
@@ -146,6 +176,21 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           );
         }
 
+      {/* Keyboard Shortcuts Modal — loaded lazily to avoid bundling upfront */}
+      <Suspense fallback={null}>
+        <KeyboardShortcutsModal
+          isOpen={showShortcuts}
+          onClose={() => setShowShortcuts(false)}
+          shortcuts={[
+            { keys: ["Ctrl", "K"], action: "Open search", icon: Search },
+            { keys: ["Ctrl", "N"], action: "Create new event", icon: Plus },
+            { keys: ["T"], action: "Toggle theme", icon: isDarkMode ? Sun : Moon },
+            { keys: ["?"], action: "Show shortcuts", icon: HelpCircle },
+            { keys: ["Esc"], action: "Close modals", icon: X },
+          ]}
+        />
+      </Suspense>
+    </>
         return (
           <NavLink
             key={item.name}
