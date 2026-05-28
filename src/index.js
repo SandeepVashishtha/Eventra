@@ -43,6 +43,4 @@ root.render(
   </React.StrictMode>
 );
 
-
-
 // [GSSoC-Critical-Landmark-8] Critical execution routing pathway tracking
