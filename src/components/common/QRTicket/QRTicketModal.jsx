@@ -31,6 +31,7 @@
 import React, { useRef, useEffect } from "react";
 import QRTicket from "./QRTicket";
 import { useTicketDownload } from "./useTicketDownload";
+import { toast } from "react-toastify";
 
 export default function QRTicketModal({ isOpen, onClose, ticket }) {
   const ticketRef = useRef(null);
@@ -62,12 +63,45 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
           text: `Here's my ticket for ${ticket?.eventName} on ${ticket?.date}`,
           url: shareUrl,
         });
-      } catch (_) { /* user cancelled */ }
-    } else {
-      await navigator.clipboard.writeText(shareUrl);
-      // You can replace this with your existing toast system:
-      // toast.success("Link copied to clipboard!");
-      alert("Ticket link copied to clipboard!");
+        return;
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.error("Native share failed", err);
+        } else {
+          return; // User intentionally cancelled native share
+        }
+      }
+    }
+    
+    // Fallback to Clipboard API
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success("Ticket link copied to clipboard!");
+        return;
+      } catch (err) {
+        console.error("Clipboard API failed", err);
+      }
+    }
+
+    // Ultimate fallback for insecure contexts (HTTP) or unsupported browsers
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = shareUrl;
+      textArea.style.position = "fixed"; // Avoid scrolling to bottom
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.select();
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textArea);
+      if (successful) {
+        toast.success("Ticket link copied to clipboard!");
+      } else {
+        toast.error("Failed to copy link. Please copy manually.");
+      }
+    } catch (err) {
+      console.error("Fallback clipboard failed", err);
+      toast.error("Failed to copy link. Please copy manually.");
     }
   };
 
