@@ -9,6 +9,7 @@ export function useFormSubmit(submitFn) {
 
   useEffect(() => {
     isMounted.current = true;
+
     return () => {
       isMounted.current = false;
     };
@@ -32,9 +33,9 @@ export function useFormSubmit(submitFn) {
         setError(err?.response?.data?.message || err.message || "Something went wrong.");
       }
     } finally {
+      isInFlight.current = false;
       if (isMounted.current) {
         setIsSubmitting(false);
-        isInFlight.current = false;
       }
     }
   };

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import FeatureErrorBoundary from "../../components/common/FeatureErrorBoundary";
 import { fetchWithTimeout } from "../../utils/fetchWithTimeout";
@@ -8,9 +8,6 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaUsers,
-  FaAward,
-  FaTrophy,
-  FaMedal,
   FaArrowUp,
   FaArrowDown,
   FaMinus,
@@ -21,6 +18,16 @@ import StyledDropdown from "../../components/StyledDropdown";
 import SkeletonLeaderboard from "../../components/common/SkeletonLeaderboard";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useLeaderboardStream, SSE_STATUS } from "../../context/RealTimeContext";
+import {
+  filterContributors,
+  sortContributors,
+  paginateContributors,
+  totalLeaderboardPages,
+  buildRanksMap,
+  computeLeaderboardStats,
+  calculatePrPoints,
+  applyAchievementBonus,
+} from "../../utils/leaderboardUtils";
 import { getAchievementBadge } from "../../utils/leaderboardUtils";
 import { logger } from "../../utils/logger";
 import { storageManager } from "../../utils/storage/storageManager";
@@ -35,49 +42,11 @@ const CATEGORY_FILTERS = [
   { id: "mentors", label: "Project Mentors", icon: "🎓" },
 ];
 
-// ─── Deterministic rank movement generator (seeded by username hash) ──────────
-function getRankMovement(username) {
-  let hash = 0;
-  for (let i = 0; i < username.length; i++) {
-    hash = (hash << 5) - hash + username.charCodeAt(i);
-    hash |= 0;
-  }
-  const mod = Math.abs(hash) % 10;
-  if (mod < 4) return { direction: "up", delta: (mod % 3) + 1 };
-  if (mod < 7) return { direction: "stable", delta: 0 };
-  return { direction: "down", delta: (mod % 2) + 1 };
-}
-
-function RankMovementIndicator({ username }) {
-  const { direction, delta } = getRankMovement(username);
-  if (direction === "up") {
-    return (
-      <motion.span
-        initial={{ opacity: 0, y: 4 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="inline-flex items-center gap-0.5 text-[10px] font-black text-emerald-500"
-        title={`Up ${delta} position${delta > 1 ? "s" : ""}`}
-      >
-        <FaArrowUp className="w-2.5 h-2.5" /> {delta}
-      </motion.span>
-    );
-  }
-  if (direction === "down") {
-    return (
-      <motion.span
-        initial={{ opacity: 0, y: -4 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="inline-flex items-center gap-0.5 text-[10px] font-black text-rose-500"
-        title={`Down ${delta} position${delta > 1 ? "s" : ""}`}
-      >
-        <FaArrowDown className="w-2.5 h-2.5" /> {delta}
-      </motion.span>
-    );
-  }
+function RankMovementIndicator() {
   return (
     <span
       className="inline-flex items-center text-[10px] font-bold text-slate-400"
-      title="No change"
+      title="Stable"
     >
       <FaMinus className="w-2 h-2" />
     </span>
@@ -87,54 +56,41 @@ function RankMovementIndicator({ username }) {
 // Repository constant — update if the leaderboard should point to another repo
 const GITHUB_REPO = ENV.GITHUB_REPO;
 // Token is managed securely by the backend proxy
+const LEADERBOARD_CACHE_KEY = "leaderboardData:v2";
 
-// Points mapping for PR labels (keeps scoring logic centralized)
-const POINTS = {
-  gssoclevel1: 3,
-  gssoclevel2: 7,
-  gssoclevel3: 10,
-};
-const DEFAULT_MERGED_PR_POINTS = 1;
+// AnimatedCounter uses requestAnimationFrame instead of setInterval to keep
+// count-up animations aligned with the browser's paint cycle, avoiding
+// invisible ticks that setInterval fires even when the tab is hidden.
 
-const normalizeLabel = (label = "") => label.toLowerCase().replace(/[^a-z0-9]/g, "");
 
-const calculatePrPoints = (labels) => {
-  const levelPoints = labels.reduce((total, label) => {
-    const normalized = normalizeLabel(label);
-    return total + (POINTS[normalized] || 0);
-  }, 0);
-
-  return levelPoints || DEFAULT_MERGED_PR_POINTS;
-};
 
 // Custom lightweight high-performance count-up component
 const AnimatedCounter = ({ value }) => {
   const [count, setCount] = useState(0);
+  const rafRef = useRef(null);
 
   useEffect(() => {
-    let start = 0;
     const end = parseInt(value, 10);
     if (isNaN(end)) return;
-    if (start === end) {
-      setCount(end);
-      return;
-    }
-    const duration = 1200; // 1.2s total count duration
-    const steps = Math.min(end, 50);
-    const increment = Math.ceil(end / steps);
-    const stepTime = Math.floor(duration / steps);
+    if (end === 0) { setCount(0); return; }
 
-    const timer = setInterval(() => {
-      start += increment;
-      if (start >= end) {
-        setCount(end);
-        clearInterval(timer);
-      } else {
-        setCount(start);
+    const duration = 1200; // ms
+    const startTime = performance.now();
+
+    const tick = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease-out cubic for a natural deceleration
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.round(eased * end));
+
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(tick);
       }
-    }, stepTime);
+    };
 
-    return () => clearInterval(timer);
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
   }, [value]);
 
   return <span>{count}</span>;
@@ -232,89 +188,23 @@ export default function LeaderBoard() {
 
   const fetchContributors = async () => {
     try {
-      let contributorsMap = {};
-      let page = 1;
-      let hasMore = true;
+      // Fetch pre-computed leaderboard data from the new serverless backend
+      const { data } = await fetchWithTimeout("/api/leaderboard", {}, 15000);
 
-      const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(`/repos/${GITHUB_REPO}/contributors`)}`;
-      const { data: contributorsData } = await fetchWithTimeout(proxyUrl);
-      const contributorsInfo = {};
-
-      contributorsData.forEach((contributor) => {
-        contributorsInfo[contributor.login] = {
-          name: contributor.name || contributor.login,
-          avatar: contributor.avatar_url,
-          profile: contributor.html_url,
-        };
-      });
-
-      while (hasMore) {
-        const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(`/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`)}`;
-        const res = await fetch(proxyUrl);
-
-        if (!res.ok) {
-          logger.warn(`GitHub API request failed with status: ${res.status}`);
-          hasMore = false;
-          break;
-        }
-
-        const prs = await res.json();
-        if (!Array.isArray(prs) || prs.length === 0) {
-          hasMore = false;
-          break;
-        }
-
-        prs.forEach((pr) => {
-          if (!pr.merged_at) return;
-
-          const labels = pr.labels.map((l) => l.name.toLowerCase());
-          const hasGsocLabel = labels.some(
-            (label) => label.includes("gssoc") || label.includes("gsoc")
-          );
-          if (!hasGsocLabel) return;
-
-          const author = pr.user.login;
-          const points = calculatePrPoints(labels);
-
-          if (!contributorsMap[author]) {
-            const contributorInfo = contributorsInfo[author] || {
-              name: author,
-              avatar: pr.user.avatar_url,
-              profile: pr.user.html_url,
-            };
-            contributorsMap[author] = {
-              username: author,
-              name: contributorInfo.name,
-              avatar: contributorInfo.avatar,
-              profile: contributorInfo.profile,
-              points: 0,
-              prs: 0,
-            };
-          }
-
-          contributorsMap[author].points += points;
-          contributorsMap[author].prs += 1;
-        });
-
-        page++;
+      if (!Array.isArray(data)) {
+        throw new Error("Invalid payload format received from leaderboard API");
       }
 
       // Add achievement-based bonus points to gamify contributors
-      Object.keys(contributorsMap).forEach((user) => {
-        const count = contributorsMap[user].prs;
-        if (count >= 10) {
-          contributorsMap[user].points += 10;
-        } else if (count >= 5) {
-          contributorsMap[user].points += 5;
-        }
-      });
+      data.forEach(applyAchievementBonus);
 
-      const sortedContributors = Object.values(contributorsMap).sort((a, b) => b.points - a.points);
-
-      setContributors(sortedContributors);
+      const filteredContributors = [...data].sort((a, b) => b.points - a.points);
+      setContributors(filteredContributors);
       setLastUpdated(new Date().toLocaleString());
+      
+      // Update local storage cache
       storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
-        data: sortedContributors,
+        data: data,
         timestamp: Date.now(),
       });
     } catch (err) {
@@ -349,6 +239,23 @@ export default function LeaderBoard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchContributors is stable across renders
   }, []);
 
+  // Each derived value is memoized — only recomputes when its specific inputs
+  // change, preventing all six O(N) passes from running on every render.
+  const filteredContributors = useMemo(
+  () => filterContributors(contributors, search, activeCategory),
+  [contributors, search, activeCategory]
+);
+
+const sortedContributors = useMemo(
+  () => sortContributors(filteredContributors, sortBy),
+  [filteredContributors, sortBy]
+);
+
+
+  const currentContributors = useMemo(
+    () => paginateContributors(filteredContributors, currentPage, CONTRIBUTORS_PER_PAGE),
+    [filteredContributors, currentPage]
+  );
   const saveRecentSearch = (query) => {
     if (!query.trim()) return;
 
@@ -358,63 +265,30 @@ export default function LeaderBoard() {
 
     storageManager.set(STORAGE_KEYS.RECENT_SEARCHES, updatedSearches);
   };
-  const filteredContributors = useMemo(() => {
-    return contributors.filter((c) => {
-      const q = search.trim().toLowerCase();
-      const matchSearch =
-        !q || c.username.toLowerCase().includes(q) || (c.name && c.name.toLowerCase().includes(q));
-      if (!matchSearch) return false;
 
-      // Category filters (deterministic simulation based on username hash)
-      if (activeCategory === "monthly") {
-        // Show top ~40% as "monthly stars" based on points threshold
-        const threshold =
-          contributors.length > 0
-            ? contributors[Math.floor(contributors.length * 0.4)]?.points || 0
-            : 0;
-        return c.points >= threshold;
-      }
-      if (activeCategory === "mentors") {
-        // Show contributors with 5+ PRs as "mentors"
-        return c.prs >= 5;
-      }
-      return true; // "overall" shows everyone
-    });
-  }, [contributors, search, activeCategory]);
+  const totalPages = useMemo(
+    () => totalLeaderboardPages(filteredContributors.length, CONTRIBUTORS_PER_PAGE),
+    [filteredContributors.length]
+  );
 
-  const sortedContributors = useMemo(() => {
-    return [...filteredContributors].sort((a, b) => {
-      if (sortBy === "points") return b.points - a.points;
-      if (sortBy === "prs") return b.prs - a.prs;
-      if (sortBy === "username") return a.username.localeCompare(b.username);
-      return 0;
-    });
-  }, [filteredContributors, sortBy]);
+  const ranksMap = useMemo(
+    () => buildRanksMap(contributors),
+    [contributors]
+  );
 
-  const indexOfLast = currentPage * CONTRIBUTORS_PER_PAGE;
-  const indexOfFirst = indexOfLast - CONTRIBUTORS_PER_PAGE;
-  const currentContributors = sortedContributors.slice(indexOfFirst, indexOfLast);
-  const totalPages = Math.ceil(sortedContributors.length / CONTRIBUTORS_PER_PAGE);
+  const stats = useMemo(
+    () => computeLeaderboardStats(contributors),
+    [contributors]
+  );
 
-  const ranksMap = {};
-  contributors.forEach((c, i) => {
-    ranksMap[c.username] = i + 1;
-  });
-
-  const stats = {
-    totalContributors: contributors.length,
-    flooredTotalPRs: contributors.reduce((sum, c) => sum + c.prs, 0),
-    flooredTotalPoints: contributors.reduce((sum, c) => sum + c.points, 0),
-  };
-
-  const sortOptions = [
+  const sortOptions = useMemo(() => [
     { label: "Points", value: "points" },
     { label: "PRs", value: "prs" },
     { label: "Username", value: "username" },
-  ];
+  ], []);
 
   // Extraction of Top 3 for visual Olympic Podium
-  const top3 = sortedContributors.slice(0, 3);
+  const top3 = filteredContributors.slice(0, 3);
 
   return (
     <FeatureErrorBoundary>
@@ -903,6 +777,7 @@ export default function LeaderBoard() {
 
                       <div className="flex items-center gap-2">
                         <button
+                          aria-label="Previous page"
                           onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                           disabled={currentPage === 1}
                           className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-50 hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 bg-transparent transition-all"
@@ -910,6 +785,7 @@ export default function LeaderBoard() {
                           <FaChevronLeft className="w-3 h-3" />
                         </button>
                         <button
+                          aria-label="Next page"
                           onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                           disabled={currentPage === totalPages}
                           className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-50 hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 bg-transparent transition-all"

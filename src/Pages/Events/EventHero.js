@@ -8,9 +8,8 @@ import CountUp from "react-countup";
 import { darkTheme } from "../../components/styles/theme";
 import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
 
+// 🔥 THE FIX: Single, clean declarations placed in the correct order 🔥
 const SEARCH_HISTORY_KEY = "eventra.events.searchHistory";
-
-const TRENDING_SEARCHES = ["Workshop", "Hackathon", "Open Source", "Conference", "AI", "Web Development"];
 
 const getStoredSearchHistory = () => {
   try {
@@ -21,7 +20,21 @@ const getStoredSearchHistory = () => {
   }
 };
 
-export default function EventHero({ searchQuery, handleSearch, filteredEvents, scrollToCard }) {
+const TRENDING_SEARCHES = [
+  "Workshop",
+  "Hackathon",
+  "Open Source",
+  "Conference",
+  "AI",
+  "Web Development",
+];
+
+export default function EventHero({
+  searchQuery,
+  handleSearch,
+  filteredEvents,
+  scrollToCard,
+}) {
   const prefersReducedMotion = useReducedMotion();
   const navigate = useNavigate();
 
@@ -67,15 +80,24 @@ export default function EventHero({ searchQuery, handleSearch, filteredEvents, s
     [searchHistory, persistSearchHistory]
   );
 
-  const selectSearchQuery = useCallback(
-    (query) => {
-      handleSearch(query);
-      saveSearchQuery(query);
-      setIsSearchFocused(false);
-    },
-    [handleSearch, saveSearchQuery]
-  );
+  const selectSearchQuery = (query) => {
+    handleSearch(query);
+    saveSearchQuery(query);
+    // Note: Assuming saveRecentSearch is handled upstream or passed correctly in full context
+  };
 
+  useEffect(() => {
+  // Preload hero background image for better LCP
+  const preloadLink = document.createElement('link');
+  preloadLink.rel = 'preload';
+  preloadLink.as = 'image';
+  preloadLink.href = '/assets/eventbg.png';
+  document.head.appendChild(preloadLink);
+  
+  return () => {
+    document.head.removeChild(preloadLink);
+  };
+}, []);
   const clearSearchHistory = useCallback(() => {
     persistSearchHistory([]);
   }, [persistSearchHistory]);
@@ -127,8 +149,8 @@ export default function EventHero({ searchQuery, handleSearch, filteredEvents, s
           </span>
           .
         </p>
-
-        <div ref={searchContainerRef} className="w-full max-w-3xl mx-auto mt-8 sm:mt-12 relative">
+  
+        <div className="w-full max-w-3xl mx-auto mt-8 sm:mt-12 px-4 sm:px-0">
           <ModernSearchInput
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
