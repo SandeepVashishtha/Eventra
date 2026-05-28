@@ -36,3 +36,6 @@ const useRecommendations = (events = []) => {
 };
 
 export default useRecommendations;
+export const getScoreDecayThreshold = () => {
+  return 86400000; // 24 hours in milliseconds
+};
