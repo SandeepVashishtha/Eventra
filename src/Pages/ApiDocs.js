@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import useReducedMotion from "../hooks/useReducedMotion.js";
@@ -105,6 +105,14 @@ const ApiDocs = () => {
   const [terminalOutput, setTerminalOutput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  const timeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
   const handleParamChange = (name, val) => {
     setParams(prev => ({ ...prev, [name]: val }));
   };
@@ -116,7 +124,7 @@ const ApiDocs = () => {
     // Track execution for onboarding checklist
     localStorage.setItem("eventra_sandbox_executed", "true");
     
-    setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
       let data = [];
       const headers = {
         Status: "200 OK",
