@@ -1,20 +1,16 @@
-import SavedEventsPage from './Pages/SavedEventsPage';
-import EventRecommendation from "./Pages/EventRecommendation/EventRecommendation";
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
-
 import { toast } from "react-toastify";
-
-import BackToTopButton from "./components/common/BackToTopButton";
-import Navbar from "./components/Layout/Navbar";
+import ScrollToTopButton from "./components/ScrollToTopButton";
+import Navbar from "./components/navbar/Navbar";
 import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
-import FluidCursor from "./jhalak/FluidCursor";
+import FluidCursor from "./components/visual/FluidCursor";
 import PageTransition from "./components/common/PageTransition";
 import ReminderChecker from "./components/reminders/ReminderChecker";
 import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
@@ -32,37 +28,32 @@ import SectionErrorBoundary from "./components/common/SectionErrorBoundary";
 import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
 import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
+import EventRecommendation from "./Pages/EventRecommendation/EventRecommendation";
 
 const Footer = lazy(() => import("./components/Layout/Footer"));
 const Chatbot = lazy(() => import("./components/Chatbot"));
 const AppRoutes = lazy(() => import("./components/AppRoutes"));
-const RegistrationPage = lazy(() => import("./Pages/RegistrationPage"));
+const EventRegistration = lazy(() => import("./Pages/Events/EventRegistration"));
 
 const OfflineSyncManager = () => {
   useOfflineSync();
   return null;
 };
 
-// TEMPORARY COMPONENT TO TEST ERROR SCREEN
-const TestError = () => {
-  throw new Error("Testing redesigned ErrorBoundary");
-};
+const PageFallback = () => (
+  <div className="flex min-h-svh items-center justify-center safe-area-x">
+    Loading...
+  </div>
+);
 
 function App() {
   const location = useLocation();
-
   const isDashboardOrAdmin =
-    location.pathname === "/dashboard" ||
-    location.pathname === "/admin";
-
+    location.pathname === "/dashboard" || location.pathname === "/admin";
   const [cursorEnabled, setCursorEnabled] = useState(
-    localStorage.getItem("cursor") !== "off"
+    localStorage.getItem("cursor") !== "off",
   );
-
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
-
-  // TURN TRUE ONLY FOR TESTING
-  const SHOW_ERROR_SCREEN = false;
 
   useLenis();
 
@@ -73,18 +64,13 @@ function App() {
   });
 
   const toggleCursor = () => {
-    const value = !cursorEnabled;
-
-    setCursorEnabled(value);
-
+    const newValue = !cursorEnabled;
+    setCursorEnabled(newValue);
     try {
-<<<<<<< HEAD
       localStorage.setItem("cursor", newValue ? "on" : "off");
-    } catch (error) {}
-=======
-      localStorage.setItem("cursor", value ? "on" : "off");
-    } catch {}
->>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
+    } catch {
+      // Ignore storage failures in private browsing or restricted contexts.
+    }
   };
 
   useEffect(() => {
@@ -93,52 +79,33 @@ function App() {
         setCursorEnabled(event.detail.cursorEnabled);
       }
     };
-<<<<<<< HEAD
+
     window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
-=======
-
-    window.addEventListener(
-      "cursorPreferenceChanged",
-      handleCursorPreference
-    );
-
->>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
     return () => {
-      window.removeEventListener(
-        "cursorPreferenceChanged",
-        handleCursorPreference
-      );
+      window.removeEventListener("cursorPreferenceChanged", handleCursorPreference);
     };
   }, []);
 
   useEffect(() => {
     const handleOnline = () => {
-      toast.success(
-        "Back online! Your connections have been restored.",
-        {
-          position: "bottom-right",
-          autoClose: 4000,
-        }
-      );
+      toast.success("Back online! Your connections have been restored and sync is complete.", {
+        position: "bottom-right",
+        autoClose: 4000,
+      });
     };
     const handleOffline = () => {
-      toast.warning(
-        "You are currently offline.",
-        {
-          position: "bottom-right",
-          autoClose: 5000,
-        }
-      );
+      toast.warning("You are currently offline. Running in secure local offline caching mode.", {
+        position: "bottom-right",
+        autoClose: 5000,
+      });
     };
+
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
-<<<<<<< HEAD
-=======
-
->>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
     if (!navigator.onLine) {
       handleOffline();
     }
+
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
@@ -147,24 +114,23 @@ function App() {
 
   return (
     <ErrorBoundary>
-
-      {/* TEMPORARY TEST */}
-      {SHOW_ERROR_SCREEN && <TestError />}
-
       <AuthProvider>
         <NotificationProvider>
           <MyEventsProvider>
             <SessionRecoveryProvider>
-<<<<<<< HEAD
               <ReminderChecker />
               <NotificationToastContainer />
               <OfflineSyncManager />
 
               <div className="App">
-                <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+                <a href="#main-content" className="skip-to-content">
+                  Skip to main content
+                </a>
+
                 <SectionErrorBoundary label="Navigation Bar">
                   <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
                 </SectionErrorBoundary>
+
                 <OfflineBanner />
                 <OfflineConflictModal />
                 <KeyboardShortcutsModal
@@ -174,44 +140,31 @@ function App() {
                 <OnboardingChecklist />
 
                 <main
+                  id="main-content"
+                  tabIndex={-1}
                   className="
                     relative z-10 min-h-[85vh]
                     bg-white dark:bg-slate-950
                     text-black dark:text-white
                     transition-colors duration-300
                   "
-                  relative
-                  z-10
-                  min-h-[85vh]
-                  bg-white
-                  dark:bg-slate-950
-                  text-black
-                  dark:text-white
-                  transition-colors
-                  duration-300
-                ">
-              <PageTransition>
-  <Suspense
-    fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        Loading...
-      </div>
-    }
-  >
-    <Routes>
-
-      <Route
-        path="/register/:id"
-        element={<RegistrationPage />}
-      />
-
-      <Route
-        path="/event-recommendation"
-        element={<EventRecommendation />}
-      />
-
-                          <Route path="/event-recommendation" element={<EventRecommendation />} />
-
+                >
+                  <PageTransition>
+                    <SectionErrorBoundary label="Page Content">
+                      <Suspense fallback={<PageFallback />}>
+                        <Routes>
+                          <Route
+                            path="/register/:id"
+                            element={
+                              <ProtectedRoute>
+                                <EventRegistration />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/event-recommendation"
+                            element={<EventRecommendation />}
+                          />
                           <Route path="*" element={<AppRoutes />} />
                         </Routes>
                       </Suspense>
@@ -220,10 +173,6 @@ function App() {
                 </main>
 
                 <ScrollToTop />
-                <Suspense fallback={null}>
-                  <Chatbot />
-                  {!isDashboardOrAdmin && <Footer />}
-                </Suspense>
 
                 <SectionErrorBoundary label="Chatbot Assist" silent>
                   <Suspense fallback={null}>
@@ -232,103 +181,23 @@ function App() {
                 </SectionErrorBoundary>
 
                 <SectionErrorBoundary label="Footer">
-                  <Suspense fallback={null}>{!isDashboardOrAdmin && <Footer />}</Suspense>
+                  <Suspense fallback={null}>
+                    {!isDashboardOrAdmin && <Footer />}
+                  </Suspense>
                 </SectionErrorBoundary>
 
-=======
-
-              <ReminderChecker />
-              <NotificationToastContainer />
-              <OfflineSyncManager />
-
-              <div className="App">
-
-                <Navbar
-                  cursorEnabled={cursorEnabled}
-                  toggleCursor={toggleCursor}
-                />
-
-                <OfflineBanner />
-                <OfflineConflictModal />
-
-                <KeyboardShortcutsModal
-                  isOpen={showKeyboardModal}
-                  onClose={() => setShowKeyboardModal(false)}
-                />
-
-                <OnboardingChecklist />
-
-                <main
-                  className="relative z-10 min-h-[85vh]
-                  bg-white dark:bg-slate-950
-                  text-black dark:text-white
-                  transition-colors duration-300"
-                >
-                  <PageTransition>
-
-                    <Suspense
-                      fallback={
-                        <div className="min-h-screen flex items-center justify-center">
-                          Loading...
-                        </div>
-                      }
-                    >
-
-                      <Routes>
-
-                        <Route
-                          path="/register/:id"
-                          element={<RegistrationPage />}
-                        />
-
-                        <Route
-                          path="/event-recommendation"
-                          element={<EventRecommendation />}
-                        />
-
-                        <Route
-                          path="*"
-                          element={<AppRoutes />}
-                        />
-
-                      </Routes>
-
-                    </Suspense>
-
-                  </PageTransition>
-                </main>
-
-                <ScrollToTop />
-
-                <Suspense fallback={null}>
-                  <Chatbot />
-                  {!isDashboardOrAdmin && <Footer />}
-                </Suspense>
-
->>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
-                <BackToTopButton />
+                <ScrollToTopButton />
                 <FeedbackButton />
                 <ThemeCustomizerDrawer />
                 <SessionRecovery />
-                <FluidCursor enabled={cursorEnabled} />
-<<<<<<< HEAD
                 <SectionErrorBoundary label="Custom Cursor" silent>
                   <FluidCursor enabled={cursorEnabled} />
                 </SectionErrorBoundary>
               </div>
-=======
-
-              </div>
-
->>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
             </SessionRecoveryProvider>
           </MyEventsProvider>
         </NotificationProvider>
       </AuthProvider>
-<<<<<<< HEAD
-=======
-
->>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
     </ErrorBoundary>
   );
 }
