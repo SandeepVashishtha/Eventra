@@ -1,12 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import "./styles/components.css";
 
 const SearchFilter = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [priceFilter, setPriceFilter] = useState("all");
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
 
   const categories = [
     { value: "all", label: "All Categories" },
@@ -104,8 +115,8 @@ const SearchFilter = () => {
   ];
 
   const filteredEvents = mockEvents.filter(event => {
-    const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         event.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = event.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+                         event.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
       const normalizedLocation = event.location
         ?.toString()
@@ -146,7 +157,9 @@ const SearchFilter = () => {
         <div className="search-input-wrapper">
           <span className="search-icon">🔍</span>
           <input
+            id="search-events"
             type="text"
+            aria-label="Search events"
             placeholder="Search events, topics, or keywords..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -163,8 +176,9 @@ const SearchFilter = () => {
         className="filters-container"
       >
         <div className="filter-group">
-          <label>Category</label>
+          <label htmlFor="filter-category">Category</label>
           <select
+            id="filter-category"
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="filter-select"
@@ -178,8 +192,9 @@ const SearchFilter = () => {
         </div>
 
         <div className="filter-group">
-          <label>Location</label>
+          <label htmlFor="filter-location">Location</label>
           <select
+            id="filter-location"
             value={selectedLocation}
             onChange={(e) => setSelectedLocation(e.target.value)}
             className="filter-select"
@@ -193,8 +208,9 @@ const SearchFilter = () => {
         </div>
 
         <div className="filter-group">
-          <label>Price</label>
+          <label htmlFor="filter-price">Price</label>
           <select
+            id="filter-price"
             value={priceFilter}
             onChange={(e) => setPriceFilter(e.target.value)}
             className="filter-select"

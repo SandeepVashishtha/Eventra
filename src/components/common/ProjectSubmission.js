@@ -88,7 +88,11 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
       const response = await apiUtils.post(
         API_ENDPOINTS.PROJECTS.SUBMIT,
         formData,
-        token
+        {
+          headers: {
+            Authorization: token
+          }
+        }
       );
 
       const result = response.data;

@@ -1,5 +1,7 @@
+// Enforced dynamic copyright rendering under issue #2211
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+
 import {
   FaBook,
   FaBookOpen,
@@ -111,10 +113,10 @@ const socialLinks = [
       />
     ),
   },
-  // Discord and Telegram removed until official Eventra community channels are available
 ].filter(Boolean);
+
 /* ================================
-   Reusable Secure External Links
+   Secure External Link Handling
 ================================ */
 
 const externalLinkProps = {
@@ -143,7 +145,9 @@ const isValidEmail = (value) =>
 
 const Newsletter = () => {
   const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [isSubmitting, setIsSubmitting] =
+    useState(false);
 
   const [feedback, setFeedback] = useState({
     type: "",
@@ -202,7 +206,8 @@ const Newsletter = () => {
     }
   };
 
-  const feedbackId = "footer-newsletter-feedback";
+  const feedbackId =
+    "footer-newsletter-feedback";
 
   const feedbackColor =
     feedback.type === "success"
@@ -216,8 +221,7 @@ const Newsletter = () => {
       </h4>
 
       <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
-        Get the latest updates, event tips, and community
-        news.
+        Get the latest updates, event tips, and community news.
       </p>
 
       <form
@@ -244,9 +248,13 @@ const Newsletter = () => {
             className="pl-10 pr-4 py-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full"
             disabled={isSubmitting}
             aria-describedby={
-              feedback.message ? feedbackId : undefined
+              feedback.message
+                ? feedbackId
+                : undefined
             }
-            aria-invalid={feedback.type === "error"}
+            aria-invalid={
+              feedback.type === "error"
+            }
           />
         </div>
 
@@ -261,7 +269,10 @@ const Newsletter = () => {
         </button>
       </form>
 
-      <div className="mt-1 min-h-[1rem]" aria-live="polite">
+      <div
+        className="mt-1 min-h-[1rem]"
+        aria-live="polite"
+      >
         {feedback.message ? (
           <p
             id={feedbackId}
@@ -271,8 +282,7 @@ const Newsletter = () => {
           </p>
         ) : (
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            We respect your privacy. Unsubscribe at any
-            time.
+            We respect your privacy. Unsubscribe at any time.
           </p>
         )}
       </div>
@@ -295,7 +305,9 @@ const SocialLinksRender = () => (
           aria-label={link.name}
           title={link.name}
         >
-          <span className="sr-only">{link.name}</span>
+          <span className="sr-only">
+            {link.name}
+          </span>
 
           {link.icon}
         </ExternalLink>
@@ -306,70 +318,58 @@ const SocialLinksRender = () => (
 
 const FooterLinksRender = () => (
   <>
-    {Object.entries(footerLinks).map(([key, links]) => (
-      <div
-        key={key}
-        className="py-2"
-        data-aos="fade-up"
-        data-aos-delay={
-          key === "quick_links"
-            ? "100"
-            : key === "community"
-              ? "200"
-              : "300"
-        }
-      >
-        <h4 className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-widest mb-6">
-          {key.replace("_", " ")}
-        </h4>
+    {Object.entries(footerLinks).map(
+      ([key, links]) => (
+        <div
+          key={key}
+          className="py-2"
+        >
+          <h4 className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-widest mb-6">
+            {key.replace("_", " ")}
+          </h4>
 
-        <ul className="space-y-4">
-          {links.map((link) => (
-            <li key={link.name}>
-              <Link
-                to={link.href}
-                className="text-sm text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white flex items-center gap-4 transition-all duration-300 hover:translate-x-1 group"
-              >
-                {link.icon && (
-                  <span className="text-black dark:text-white group-hover:text-black dark:group-hover:text-white group-hover:scale-110 transition-all duration-300">
-                    {link.icon}
-                  </span>
-                )}
+          <ul className="space-y-4">
+            {links.map((link) => (
+              <li key={link.name}>
+                <Link
+                  to={link.href}
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white flex items-center gap-4 transition-all duration-300 hover:translate-x-1 group"
+                >
+                  {link.icon && (
+                    <span className="text-black dark:text-white group-hover:scale-110 transition-all duration-300">
+                      {link.icon}
+                    </span>
+                  )}
 
-                <span>{link.name}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-    ))}
+                  <span>{link.name}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    )}
   </>
 );
 
 const Footer = () => {
   return (
-    <footer
-      className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 transition-colors duration-500"
-      data-aos-duration="1000"
-      data-aos-offset="100"
-    >
+    <footer className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 transition-colors duration-500">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-          <div
-            className="space-y-4 lg:col-span-2"
-            data-aos="fade-up"
-            data-aos-delay="0"
-          >
+          <div className="space-y-4 lg:col-span-2">
             <h2
               className="text-2xl sm:text-3xl font-bold inline-block text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-black dark:from-white dark:to-gray-300 hover:from-indigo-600 hover:to-purple-600 dark:hover:from-indigo-400 dark:hover:to-purple-400 transition-all duration-300 hover:scale-105 hover:-translate-y-1 cursor-default"
-              style={{ fontFamily: "Anton, sans-serif" }}
+              style={{
+                fontFamily:
+                  "Anton, sans-serif",
+              }}
             >
               Eventra
             </h2>
 
             <p className="text-gray-600 dark:text-gray-400 text-sm">
-              Open-source event management for communities
-              worldwide.
+              Open-source event management for communities worldwide.
             </p>
 
             <Newsletter />
@@ -380,14 +380,27 @@ const Footer = () => {
           <FooterLinksRender />
         </div>
       </div>
+
       {/* Bottom Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 border-t border-gray-100 dark:border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
         <p className="text-gray-500 dark:text-gray-400 text-sm">
           © {new Date().getFullYear()} Eventra. All rights reserved.
         </p>
+
         <div className="flex gap-6 text-sm text-gray-500 dark:text-gray-400">
-          <Link to="/privacy" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Privacy Policy</Link>
-          <Link to="/terms" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Terms of Service</Link>
+          <Link
+            to="/privacy"
+            className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+          >
+            Privacy Policy
+          </Link>
+
+          <Link
+            to="/terms"
+            className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+          >
+            Terms of Service
+          </Link>
         </div>
       </div>
     </footer>
