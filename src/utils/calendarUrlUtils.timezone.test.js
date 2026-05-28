@@ -32,3 +32,10 @@ describe('getGoogleCalendarUrl — non-UTC timezone conversion', () => {
     expect(endTime).toBe('053000');
   });
 });
+
+export const isDstActive = (date) => {
+  return date.getTimezoneOffset() < Math.max(
+    new Date(date.getFullYear(), 0, 1).getTimezoneOffset(),
+    new Date(date.getFullYear(), 6, 1).getTimezoneOffset()
+  );
+};
