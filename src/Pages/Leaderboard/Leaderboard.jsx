@@ -1,25 +1,5 @@
- feat/user-engagement-system
-import confetti from "canvas-confetti";
-import { useEffect, useState } from "react";
-import {
-  FaChevronLeft,
-  FaChevronRight,
-  FaCode,
-  FaStar,
-  FaUsers
-} from "react-icons/fa";
-import {
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
-import StyledDropdown from "../../components/StyledDropdown";
-import GSSoCContribution from "./GSSoCContribution";
 
-
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import FeatureErrorBoundary from "../../components/common/FeatureErrorBoundary";
 import { fetchWithTimeout } from "../../utils/fetchWithTimeout";
@@ -99,7 +79,6 @@ function RankMovementIndicator({ liveDifference }) {
     </span>
   );
 }
- master
 
 // Repository constant — update if the leaderboard should point to another repo
 const GITHUB_REPO = ENV.GITHUB_REPO;
@@ -413,135 +392,6 @@ const COLORS = ["#6366F1", "#22C55E"];
       { item: top3[2], position: "3rd", orderClass: "order-3 md:order-3", wClass: "w-full md:w-72", borderClass: "border-amber-600 dark:border-orange-700", ringClass: "from-amber-600 to-orange-500", title: "Platinum Contributor", ptBadgeClass: "bg-orange-100 dark:bg-orange-950/30 text-orange-600 dark:text-orange-300 border border-orange-200/40", size: "h-18 w-18", pointsClass: "text-slate-800 dark:text-slate-100", medalColor: "bg-amber-600 text-white", borderColor: "border-amber-600 dark:border-orange-700" }
     ].filter(x => x.item);
   }, [top3]);
-
- feat/user-engagement-system
-        {/* stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {/* Contributors Card */}
-          <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
-            <div className="flex items-center">
-              <div className="p-3 rounded-xl mr-4 bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
-                <FaUsers className="text-2xl" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Contributors
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {loading ? "..." : stats.totalContributors}
-                </p>
-              </div>
-            </div>
-          </div>
-          {/* User Engagement Dashboard */}
-<div className="bg-gray-50 dark:bg-gray-900 rounded-2xl shadow-lg p-8 mb-10">
-  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">
-    User Engagement Dashboard
-  </h2>
-
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-
-    {/* Achievement Section */}
-    <div>
-      <div className="grid grid-cols-2 gap-4">
-
-        <div className="bg-indigo-100 dark:bg-indigo-900 p-5 rounded-xl">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
-            Events Participated
-          </h3>
-          <p className="text-3xl font-bold text-indigo-600 mt-2">
-            80
-          </p>
-        </div>
-
-        <div className="bg-green-100 dark:bg-green-900 p-5 rounded-xl">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
-            Events Won
-          </h3>
-          <p className="text-3xl font-bold text-green-600 mt-2">
-            20
-          </p>
-        </div>
-
-        <div className="bg-yellow-100 dark:bg-yellow-900 p-5 rounded-xl">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
-            Success Ratio
-          </h3>
-          <p className="text-3xl font-bold text-yellow-600 mt-2">
-            25%
-          </p>
-        </div>
-
-        <div className="bg-pink-100 dark:bg-pink-900 p-5 rounded-xl">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
-            Recent Activity
-          </h3>
-          <p className="text-md font-medium text-pink-600 mt-2">
-            5 Events This Month
-          </p>
-        </div>
-
-      </div>
-    </div>
-
-    {/* Pie Chart */}
-    <div className="h-80">
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <Pie
-            data={performanceData}
-            cx="50%"
-            cy="50%"
-            labelLine={false}
-            outerRadius={100}
-            dataKey="value"
-            label
-          >
-            {performanceData.map((entry, index) => (
-              <Cell
-                key={`cell-${index}`}
-                fill={COLORS[index % COLORS.length]}
-              />
-            ))}
-          </Pie>
-          <Tooltip />
-        </PieChart>
-      </ResponsiveContainer>
-    </div>
-
-  </div>
-</div>
-          {/* Pull Requests Card */}
-          <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
-            <div className="flex items-center">
-              <div className="p-3 rounded-xl mr-4 bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400">
-                <FaCode className="text-2xl" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Pull Requests
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {loading ? "..." : stats.flooredTotalPRs}
-                </p>
-              </div>
-            </div>
-          </div>
-          {/* Total Points Card */}
-          <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
-            <div className="flex items-center">
-              <div className="p-3 rounded-xl mr-4 bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-400">
-                <FaStar className="text-2xl" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Total Points
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {loading ? "..." : stats.flooredTotalPoints}
-                </p>
-              </div>
-            </div>
 
   return (
     <FeatureErrorBoundary>

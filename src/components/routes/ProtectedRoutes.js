@@ -10,6 +10,7 @@ const HostHackathon = lazyWithRetry(() => import("../../Pages/Hackathons/HostHac
 const UserProfile = lazyWithRetry(() => import("../user/UserProfile"));
 const EditProfile = lazyWithRetry(() => import("../user/EditProfile"));
 const Settings = lazyWithRetry(() => import("../../Pages/Settings"));
+const NotificationSettings = lazyWithRetry(() => import("../../Pages/NotificationSettings"));
 const AuthPage = lazyWithRetry(() => import("../auth/AuthPage"));
 const Unauthorized = lazyWithRetry(() => import("../auth/Unauthorized"));
 const PasswordReset = lazyWithRetry(() => import("../auth/PasswordReset"));
@@ -103,6 +104,15 @@ export const getProtectedRoutes = () => [
     element={
       <ProtectedRoute>
         <Settings />
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/settings/notifications"
+    path="/settings/notifications"
+    element={
+      <ProtectedRoute>
+        <NotificationSettings />
       </ProtectedRoute>
     }
   />,
