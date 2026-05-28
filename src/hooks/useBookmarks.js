@@ -29,3 +29,4 @@ const useBookmarks = (userId = 'guest') => {
 };
 
 export default useBookmarks;
+export const getBookmarkLimit = () => 100;
