@@ -245,9 +245,14 @@ export default function LeaderBoard() {
   // Each derived value is memoized — only recomputes when its specific inputs
   // change, preventing all six O(N) passes from running on every render.
   const filteredContributors = useMemo(
-    () => filterContributors(contributors, search, activeCategory),
-    [contributors, search, activeCategory]
-  );
+  () => filterContributors(contributors, search, activeCategory),
+  [contributors, search, activeCategory]
+);
+
+const sortedContributors = useMemo(
+  () => sortContributors(filteredContributors, sortBy),
+  [filteredContributors, sortBy]
+);
 
 
   const currentContributors = useMemo(

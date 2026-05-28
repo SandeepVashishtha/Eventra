@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useLocation  } from "react-router-dom";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
 import { getEventStatus } from "../../utils/eventUtils";
