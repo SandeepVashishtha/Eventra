@@ -28,9 +28,7 @@ const resolveEnvApiBaseUrl = () => {
     return normalizeApiBaseUrl(envUrl);
   }
   if (process.env.NODE_ENV === "production") {
-    if (isDev) {
-      console.warn("REACT_APP_API_URL environment variable is missing in production. Defaulting to relative API requests.");
-    }
+    console.warn("REACT_APP_API_URL environment variable is missing in production. Defaulting to relative API requests.");
     return "";
   }
   return "http://localhost:8080";

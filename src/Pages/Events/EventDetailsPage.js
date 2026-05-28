@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import DOMPurify from "dompurify";
 import CountdownTimer from "../../components/common/CountdownTimer";
 import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft } from "lucide-react";
-
+import { Helmet } from "react-helmet-async";
 import eventsMockData from "./eventsMockData.json";
 import { getEventStatus } from "../../utils/eventUtils";
 
@@ -111,8 +111,31 @@ const EventDetailsPage = () => {
 
   // Removed unused derived values and handlers to satisfy linting rules
 
-  return (
+  const pageUrl = `${window.location.origin}/events/${event.id}`;
+const pageTitle = `${event.title} | Eventra`;
+const pageDescription = event.description?.substring(0, 160) || "Join this event on Eventra.";
+
+return (
     <div className="min-h-screen mt-16 bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
+      <Helmet>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
+
+        {/* Open Graph */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={pageUrl} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDescription} />
+        <meta property="og:image" content={event.image} />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content={pageUrl} />
+        <meta name="twitter:title" content={pageTitle} />
+        <meta name="twitter:description" content={pageDescription} />
+        <meta name="twitter:image" content={event.image} />
+      </Helmet>
+
       {/* Back Button */}
       <header className="sticky top-20 md:top-24 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">

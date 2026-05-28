@@ -8,9 +8,6 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaUsers,
-  FaAward,
-  FaTrophy,
-  FaMedal,
   FaArrowUp,
   FaArrowDown,
   FaMinus,
@@ -249,10 +246,6 @@ export default function LeaderBoard() {
     [contributors, search, activeCategory]
   );
 
-  const sortedContributors = useMemo(
-    () => sortContributors(filteredContributors, sortBy),
-    [filteredContributors, sortBy]
-  );
 
   const currentContributors = useMemo(
     () => paginateContributors(sortedContributors, currentPage, CONTRIBUTORS_PER_PAGE),
@@ -287,6 +280,7 @@ export default function LeaderBoard() {
     { label: "Points", value: "points" },
     { label: "PRs", value: "prs" },
     { label: "Username", value: "username" },
+  ];
   ], []);
 
   // Extraction of Top 3 for visual Olympic Podium

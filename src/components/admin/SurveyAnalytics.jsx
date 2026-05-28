@@ -48,42 +48,37 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
     handleSimulateSubmission,
   } = useSurveySimulator(questions, FEEDBACK_COMMENTS_POOL);
 
-  const analyzedRatings = useMemo(() => {
-    const ratingMap = {};
-
-    questions.forEach((question) => {
-      if (question.type !== "rating") return;
-
-      const distribution = simulatedData[question.id] || {};
-      const total = Object.values(distribution).reduce((sum, count) => sum + count, 0);
-      const weighted = [1, 2, 3, 4, 5].reduce(
-        (sum, score) => sum + score * (distribution[score] || 0),
-        0
-      );
-
-      ratingMap[question.id] = {
-        total,
-        average: total > 0 ? (weighted / total).toFixed(1) : "0.0",
-      };
+  const choiceChartData = useMemo(() => {
+    const chartData = {};
+    questions.forEach((q) => {
+      if (q.type === "choice" && simulatedData[q.id]) {
+        chartData[q.id] = Object.entries(simulatedData[q.id]).map(([name, votes]) => ({
+          name,
+          votes,
+        }));
+      }
     });
-
-    return ratingMap;
+    return chartData;
   }, [questions, simulatedData]);
 
-  const choiceChartData = useMemo(() => {
-    const chartMap = {};
-
-    questions.forEach((question) => {
-      if (question.type !== "choice") return;
-
-      const distribution = simulatedData[question.id] || {};
-      chartMap[question.id] = Object.keys(distribution).map((option) => ({
-        name: option,
-        votes: distribution[option] || 0,
-      }));
+  const analyzedRatings = useMemo(() => {
+    const ratings = {};
+    questions.forEach((q) => {
+      if (q.type === "rating" && simulatedData[q.id]) {
+        const distribution = simulatedData[q.id];
+        let total = 0;
+        let sum = 0;
+        Object.entries(distribution).forEach(([score, count]) => {
+          sum += parseInt(score) * count;
+          total += count;
+        });
+        ratings[q.id] = {
+          average: total > 0 ? (sum / total).toFixed(1) : "0.0",
+          total,
+        };
+      }
     });
-
-    return chartMap;
+    return ratings;
   }, [questions, simulatedData]);
 
   // Reconstruct individual rows corresponding to each submission per question distribution
