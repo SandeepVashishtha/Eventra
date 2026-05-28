@@ -71,7 +71,7 @@ const RecentlyViewedEvents = ({ maxVisible = 6, onEventClick }) => {
           {recentlyViewed.length > maxVisible && (
             <button
               className="rv-btn rv-btn--ghost"
-              onClick={() = aria-label="button"> setShowAll((v) => !v)}
+              onClick={() => setShowAll((v) => !v)}
               aria-expanded={showAll}
             >
               {showAll ? 'Show Less' : `View All (${recentlyViewed.length})`}
@@ -103,7 +103,7 @@ const RecentlyViewedEvents = ({ maxVisible = 6, onEventClick }) => {
             <button
               className="rv-card__dismiss"
               title="Remove from history"
-              onClick={(e) = aria-label="button"> {
+              onClick={(e) => {
                 e.stopPropagation();
                 removeRecentlyViewed(event.id);
               }}

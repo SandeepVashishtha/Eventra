@@ -80,6 +80,8 @@ const EventCard = ({ event }) => {
     [event.date, event.time],
   );
   const isPastEvent = computedStatus === "past" || computedStatus === "ended" || eventDateTime < new Date();
+  const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
+
   const eventSharingData = useMemo(
     () =>
       generateEventSharingData({
@@ -91,6 +93,37 @@ const EventCard = ({ event }) => {
       }),
     [event],
   );
+  // Check if this event conflicts with registered events
+  const conflictCheck = checkRegistrationConflict(event, myEvents);
+  const hasConflict = conflictCheck.hasConflict;
+  const isUserRegistered = isRegistered(event.id);
+
+  useEffect(() => {
+    const saved = getBookmarkedEvents();
+    setSavedEvents(saved);
+  }, []);
+
+  const handleCopyLink = useCallback((e) => {
+    e.preventDefault();
+    const shareUrl = `${window.location.origin}/events/${event.id}`;
+
+    navigator.clipboard
+      .writeText(shareUrl)
+      .then(() => {
+        toast.success("Event link copied to clipboard!", {
+          autoClose: 2000,
+        });
+      })
+      .catch((err) => {
+        logger.error("Failed to copy: ", err);
+        toast.error("Could not copy link. Please try again.", {
+          autoClose: 2500,
+        });
+      });
+  }, [event.id]);
+
+  const computedStatus = useMemo(() => getEventStatus(event), [event]);
+  const canSetReminder = isBookmarked || isRegistered(event.id);
   const formattedDate = useMemo(
     () =>
       new Date(event.date).toLocaleDateString("en-US", {
@@ -282,6 +315,14 @@ const EventCard = ({ event }) => {
           width={640}
           height={360}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+      {/* Image */}
+      <div className="relative h-40 overflow-hidden bg-gray-100 dark:bg-gray-800">
+        <LazyImage
+          src={event.image}
+          alt={event.imageAlt || `${event.title} event thumbnail`}
+          width={800}
+          height={160}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
       </div>
@@ -311,6 +352,19 @@ const EventCard = ({ event }) => {
         <div className="flex min-w-0 items-center gap-2">
           <Calendar size={14} className="shrink-0 text-indigo-500" aria-hidden="true" />
           <span className="truncate">{formattedDate}</span>
+        {/* Event Date */}
+        <div className="flex items-start gap-2">
+          <Calendar size={14} className="text-indigo-500 flex-shrink-0 mt-0.5" />
+          <div className="flex flex-col">
+            <span className="truncate">
+              {getSmartDateLabel(event.date, event.time)}
+            </span>
+            <span className="text-[11px] text-gray-500 dark:text-gray-400">
+              {new Date(event.date).toLocaleDateString("en-US", {
+                weekday: "short", day: "numeric", month: "short", year: "numeric",
+              })}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -321,11 +375,15 @@ const EventCard = ({ event }) => {
       {capacityInfo && (
         <div className="border-t border-gray-100 bg-gray-50/50 px-5 py-3 dark:border-gray-800 dark:bg-gray-800/30">
           <div className="mb-1.5 flex items-center justify-between">
+      {capacityInfo && (
+        <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
+          <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
               Seats
             </span>
             {capacityInfo.isFull ? (
               <span className="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/40 dark:text-red-300">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
                 Full
               </span>
             ) : (
@@ -336,6 +394,7 @@ const EventCard = ({ event }) => {
           </div>
           <div
             className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700"
+            className="w-full h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden"
             role="progressbar"
             aria-valuenow={capacityInfo.percent}
             aria-valuemin={0}
@@ -348,6 +407,7 @@ const EventCard = ({ event }) => {
             />
           </div>
           <div className="mt-1 text-[11px] text-gray-500 tabular-nums dark:text-gray-500">
+          <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-500 tabular-nums">
             {capacityInfo.registered} / {capacityInfo.capacity} registered
           </div>
         </div>

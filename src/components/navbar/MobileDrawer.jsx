@@ -200,7 +200,7 @@ const MobileDrawer = ({
             </Link>
             <button
               type="button"
-              onClick={() = aria-label="button"> {
+              onClick={() => {
                 logout();
                 closeMenu();
               }}

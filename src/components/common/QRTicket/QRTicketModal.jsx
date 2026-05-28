@@ -8,7 +8,7 @@
  *
  *   const [showTicket, setShowTicket] = useState(false);
  *
- *   <button onClick={() = aria-label="button"> setShowTicket(true)}>View Ticket</button>
+ *   <button onClick={() => setShowTicket(true)}>View Ticket</button>
  *
  *   <QRTicketModal
  *     isOpen={showTicket}

@@ -4,12 +4,11 @@ import EventHero from "./EventHero";
 import { useCallback, useRef } from "react";
 import { useRef, useEffect, useState } from "react";
 import { useSearchParams, useLocation } from "react-router-dom"; // ✅ useLocation added here
+import { useSearchParams, useLocation } from "react-router-dom";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
 import { Grid, List } from "lucide-react";
-import { useLocation } from "react-router-dom";
 import { getEventStatus } from "../../utils/eventUtils";
-import { Grid, List } from "lucide-react";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
 import EventCardSection from "./EventCardSection";
@@ -42,6 +41,18 @@ const EventsPage = () => {
   const routeSearchQuery = getRouteSearchQuery(location);
 
   const [localSearchInput, setLocalSearchInput] = useState(routeSearchQuery);
+
+
+  const handlePageChange = useCallback((page) => {
+    setSafePage(page);
+    cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [setSafePage]);
+  const cardSectionRef = useRef();
+
+  // Local input value updates immediately on each keystroke so the input
+  // feels responsive. The debounced value is passed to the listing hook so
+  // the Fuse.js search pipeline only runs after the user pauses typing.
+  const [localSearchInput, setLocalSearchInput] = useState(listing.searchQuery);
   const debouncedSearchQuery = useDebouncedValue(localSearchInput, 300);
 
   useEffect(() => {
@@ -87,6 +98,23 @@ const EventsPage = () => {
     setSearchParams,
   ]);
 
+  // Keep local state in sync when route search changes.
+  useEffect(() => {
+    const safeQuery = prepareSafeSearchQuery(routeSearchQuery);
+    if (safeQuery !== listing.searchQuery) {
+      setLocalSearchInput(safeQuery);
+      listing.setSearchQuery(safeQuery);
+    }
+  }, [routeSearchQuery, listing.searchQuery, listing.setSearchQuery]);
+
+  const handleSearch = useCallback((query = "") => {
+    const safeQuery = prepareSafeSearchQuery(query);
+    setLocalSearchInput(safeQuery);
+    listing.setSearchQuery(safeQuery);
+    return listing.filteredEvents;
+  }, [listing]);
+
+  // Scroll to card section after loading when a route search is active
   useEffect(() => {
     if (!listing.isLoading && routeSearchQuery) {
       window.setTimeout(() => {
@@ -122,6 +150,7 @@ const EventsPage = () => {
 
   const handleClearFilters = useCallback(() => {
     setLocalSearchInput("");
+  const clearSearchAndFilters = () => {
     listing.setSearchQuery("");
     listing.setFilterType("all");
     listing.setSortType("Newest");
@@ -183,7 +212,7 @@ const EventsPage = () => {
             {FILTERS.map((filter) => (
               <button
                 key={filter.key}
-                onClick={() = aria-label="button"> listing.setFilterType(filter.key)}
+                onClick={() => listing.setFilterType(filter.key)}
                 className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-lg transition ${
                   listing.filterType === filter.key
                     ? "bg-blue-600 text-white dark:bg-blue-600 dark:text-white"
@@ -238,7 +267,7 @@ const EventsPage = () => {
 
             <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
               <button
-                onClick={() = aria-label="button"> listing.setViewMode("grid")}
+                onClick={() => listing.setViewMode("grid")}
                 className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
                   listing.viewMode === "grid"
                     ? "bg-black text-white shadow-md dark:bg-white dark:text-black"
@@ -250,7 +279,7 @@ const EventsPage = () => {
                 <Grid size={16} />
               </button>
               <button
-                onClick={() = aria-label="button"> listing.setViewMode("list")}
+                onClick={() => listing.setViewMode("list")}
                 className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
                   listing.viewMode === "list"
                     ? "bg-black text-white shadow-md dark:bg-white dark:text-black"

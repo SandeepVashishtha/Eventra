@@ -527,7 +527,7 @@ const EventCreation = () => {
           {/* Heading Section */}
           <div className="w-full max-w-4xl flex justify-end mb-6">
             <button
-              onClick={() = aria-label="button"> {
+              onClick={() => {
                 exportAttendeesToCSV(mockAttendees, "event-attendees.csv");
 
                 toast.success("CSV exported successfully!");
@@ -698,7 +698,7 @@ const EventCreation = () => {
                   {formData.banner && (
                     <button
                       type="button"
-                      onClick={() = aria-label="button">
+                      onClick={() =>
                         setFormData((prev) => ({
                           ...prev,
                           banner: null,
@@ -1368,7 +1368,7 @@ const EventCreation = () => {
                       #{tag}
                       <button
                         type="button"
-                        onClick={() = aria-label="button"> removeTag(tag)}
+                        onClick={() => removeTag(tag)}
                         className="ml-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 font-bold"
                       >
                         ×

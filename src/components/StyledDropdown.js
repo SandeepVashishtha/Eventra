@@ -15,8 +15,8 @@ const Dropdown = ({
   const [activeIndex, setActiveIndex] = useState(0);
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
-  const listboxId = useId();
   const labelId = useId();
+  
   const allOptions = [placeholder, ...options];
   const selectedIndex = allOptions.findIndex((opt) => opt === value);
   const currentActiveIndex = activeIndex >= 0 ? activeIndex : Math.max(selectedIndex, 0);
@@ -82,6 +82,9 @@ const Dropdown = ({
       event.preventDefault();
       setOpen(false);
       buttonRef.current?.focus();
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleSelect(allOptions[currentActiveIndex]);
     }
   };
 
@@ -107,14 +110,6 @@ const Dropdown = ({
         aria-controls={listboxId}
         aria-labelledby={label ? `${labelId} ${listboxId}-value` : undefined}
         aria-label={!label ? placeholder : undefined}
-      <button
-        type="button"
-        className="flex w-full items-center justify-between px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"
-        onClick={() = aria-label="button"> setOpen((prev) => !prev)}
-        onKeyDown={handleTriggerKeyDown}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-controls={listboxId}
       >
         <span
           id={`${listboxId}-value`}
@@ -148,6 +143,12 @@ const Dropdown = ({
             aria-labelledby={label ? labelId : undefined}
             aria-activedescendant={`${listboxId}-option-${currentActiveIndex}`}
             onKeyDown={handleKeyDown}
+            onKeyDown={handleListboxKeyDown}
+            className="absolute mt-2 w-full z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg"
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
           >
             {allOptions.map((opt, index) => (
               <li
