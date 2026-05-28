@@ -56,3 +56,4 @@ const useLenis = (options = {}) => {
 };
 
 export default useLenis;
+export const getScrollEasingMultiplier = () => 1.0;
