@@ -364,6 +364,7 @@ const FormField = ({
           animate={{ opacity: 1, y: 0 }}
           className="text-sm text-red-600 dark:text-red-400"
           role="alert"
+          aria-live="assertive"
         >
           {error}
         </motion.p>
