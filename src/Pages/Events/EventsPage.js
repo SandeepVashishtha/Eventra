@@ -8,14 +8,14 @@ import EventFiltersToolbar from "./EventFiltersToolbar";
 import ActiveFilters from "./ActiveFilters";
 import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
-import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { useDebounce } from "../../hooks/useDebounce";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+import EmptySearchState from "../../components/EmptySearchState";
 
 const getRouteSearchQuery = (location) => {
-  const rawSearchParam = new URLSearchParams(location.search).get("search") || "";
-
+  const rawSearchParam = new URLSearchParams(location.search).get("q") || "";
   try {
     return prepareSafeSearchQuery(decodeURIComponent(rawSearchParam));
   } catch {
@@ -32,8 +32,13 @@ const EventsPage = () => {
   const listing = useEventListing();
   const routeSearchQuery = getRouteSearchQuery(location);
   const [localSearchInput, setLocalSearchInput] = useState(routeSearchQuery);
-  const debouncedSearchQuery = useDebouncedValue(localSearchInput, 300);
+  const debouncedQuery = useDebounce(localSearchInput, 300);
 
+  useEffect(() => {
+    listing.setSearchQuery(prepareSafeSearchQuery(debouncedQuery));
+  }, [debouncedQuery, listing.setSearchQuery]);
+
+  // On browser navigation (back/forward), hydrate all state from URL
   useEffect(() => {
     const page = Number(searchParams.get("page")) || 1;
     const perPage = Number(searchParams.get("perPage")) || listing.eventsPerPage;
@@ -51,16 +56,13 @@ const EventsPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
 
-  useEffect(() => {
-    listing.setSearchQuery(prepareSafeSearchQuery(debouncedSearchQuery));
-  }, [debouncedSearchQuery, listing]);
-
+  // Write current state to URL, using `q` for the search param
   useEffect(() => {
     const params = {};
 
     if (listing.currentPage > 1) params.page = String(listing.currentPage);
     if (listing.eventsPerPage !== 6) params.perPage = String(listing.eventsPerPage);
-    if (listing.searchQuery) params.search = listing.searchQuery;
+    if (listing.searchQuery) params.q = listing.searchQuery;
     if (listing.filterType !== "all") params.filter = listing.filterType;
     if (listing.sortType !== "Newest") params.sort = listing.sortType;
     if (listing.viewMode !== "grid") params.view = listing.viewMode;
@@ -190,14 +192,24 @@ const EventsPage = () => {
         )}
 
         <SectionErrorBoundary label="Events">
-          <EventCardSection
-            isLoading={listing.isLoading}
-            events={listing.paginatedEvents}
-            viewMode={listing.viewMode}
-            filterType={listing.filterType}
-            onClearFilters={handleClearFilters}
-            cacheInfo={listing.cacheInfo}
-          />
+          {listing.paginatedEvents.length === 0 && debouncedQuery.trim() ? (
+            <EmptySearchState
+              query={debouncedQuery}
+              onClear={() => {
+                setLocalSearchInput("");
+                listing.setSearchQuery("");
+              }}
+            />
+          ) : (
+            <EventCardSection
+              isLoading={listing.isLoading}
+              events={listing.paginatedEvents}
+              viewMode={listing.viewMode}
+              filterType={listing.filterType}
+              onClearFilters={handleClearFilters}
+              cacheInfo={listing.cacheInfo}
+            />
+          )}
 
           <PaginationControls
             currentPage={listing.currentPage}
