@@ -95,8 +95,8 @@ const useOfflineSync = () => {
     });
   };
 
-
-    const postWithBackoff = async (url, payload, authToken, attempt = 0, forceOverride = false) => {
+    // 🔥 FIX: Added 'signal' parameter to pass the abort context down to fetchWithTimeout
+    const postWithBackoff = async (url, payload, authToken, attempt = 0, forceOverride = false, signal = null) => {
       if (attempt > 0) {
         const baseDelayMs = BASE_BACKOFF_MS * Math.pow(2, attempt - 1);
         const jitterMs = Math.random() * 500;
@@ -115,6 +115,7 @@ const useOfflineSync = () => {
           method: 'POST',
           headers,
           body: JSON.stringify(payload),
+          signal, // 🔥 FIX: Attach signal to terminate fetch on unmount
         },
         10000
       );
@@ -207,6 +208,12 @@ const useOfflineSync = () => {
         let droppedCount = 0;
 
         for (const item of validatedQueue) {
+          // 🔥 FIX: Prevent the zombie loop. If the user logs out mid-sync, halt execution immediately.
+          if (conflictController.signal.aborted) {
+            logger.log("[useOfflineSync] Sync aborted mid-execution.");
+            break; 
+          }
+
           const retries = item.retryCount ?? 0;
 
           if (retries >= MAX_RETRIES) {
@@ -222,7 +229,9 @@ const useOfflineSync = () => {
               url,
               item.payload,
               token,
-              0
+              0,
+              false,
+              conflictController.signal // 🔥 FIX: Pass signal
             );
 
             // Handle Conflict loop — pass the abort signal so the waiter
@@ -232,10 +241,10 @@ const useOfflineSync = () => {
 
               if (resolution.resolution === "local") {
                 // Retry with force flag
-                res = await postWithBackoff(url, item.payload, token, 0, true);
+                res = await postWithBackoff(url, item.payload, token, 0, true, conflictController.signal);
               } else if (resolution.resolution === "merge") {
                 // Post merged content
-                res = await postWithBackoff(url, resolution.mergedPayload, token, 0, true);
+                res = await postWithBackoff(url, resolution.mergedPayload, token, 0, true, conflictController.signal);
               } else {
                 // Discard local (treated as handled success so we proceed)
                 res = { status: "success" };
@@ -248,6 +257,11 @@ const useOfflineSync = () => {
               failedQueue.push({ ...item, retryCount: retries + 1 });
             }
           } catch (error) {
+            // Do not treat AbortError as a failure that bumps the retry count
+            if (error.name === 'AbortError' || conflictController.signal.aborted) {
+              failedQueue.push(item); // Keep item as is without incrementing retry
+              break; // Halt the loop
+            }
             logger.error("[useOfflineSync] Sync failed for queued item:", error);
             failedQueue.push({ ...item, retryCount: retries + 1 });
           }
@@ -255,17 +269,20 @@ const useOfflineSync = () => {
 
         if (failedQueue.length > 0) {
           await setQueue(failedQueue);
-          toast.warning(
-            `Synced ${successCount} registration(s). ${failedQueue.length} remaining in local draft queue.`,
-          );
+          // Only show toast if we didn't abort completely
+          if (!conflictController.signal.aborted) {
+            toast.warning(
+              `Synced ${successCount} registration(s). ${failedQueue.length} remaining in local draft queue.`,
+            );
+          }
         } else {
           await clearQueue();
-          if (successCount > 0) {
+          if (successCount > 0 && !conflictController.signal.aborted) {
             toast.success("All offline actions successfully synchronized!");
           }
         }
 
-        if (droppedCount > 0) {
+        if (droppedCount > 0 && !conflictController.signal.aborted) {
           toast.error(
             `${droppedCount} registration(s) paused after ${MAX_RETRIES} failed attempts. Retained in local drafts.`,
           );
