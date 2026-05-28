@@ -47,8 +47,7 @@ export const AuthProvider = ({ children }) => {
 
     setUser(null);
     setToken(null);
-    document.cookie =
-      "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; HttpOnly; SameSite=Strict";
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
     sessionStorage.removeItem("token");
     localStorage.removeItem("user");
     return true;
@@ -231,8 +230,10 @@ export const AuthProvider = ({ children }) => {
   const persistSession = useCallback((sessionToken, sessionUser) => {
     setToken(sessionToken);
     setUser(sessionUser);
-    
-    document.cookie = `token=${sessionToken}; path=/; Secure; HttpOnly; SameSite=Strict`;
+    // NOTE: HttpOnly cannot be set via JavaScript (silently ignored by browsers).
+    // HttpOnly must be set server-side via Set-Cookie response header.
+    // Token security against XSS must be handled on the backend.    
+    document.cookie = `token=${sessionToken}; path=/; Secure; SameSite=Strict`;
     
     try {
       localStorage.setItem("user", JSON.stringify(sessionUser));

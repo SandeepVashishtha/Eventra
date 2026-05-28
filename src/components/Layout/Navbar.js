@@ -449,7 +449,9 @@ const MobileDrawerFooter = ({
         )}
       </AnimatePresence>
     </div>
-);
+  );
+};
+
 const MobileDrawerFooter = ({
   isAuthenticated,
   user,
@@ -744,7 +746,8 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
         );
       })}
     </>
-);
+  );
+};
 
 const DesktopNavLinks = ({ openDropdown, setOpenDropdown, location }) => {
   return (
