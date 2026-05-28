@@ -325,8 +325,12 @@ const useOfflineSync = () => {
       }
     };
 
-    const handleOnline = async () => {
+    const handleSyncRequested = async () => {
       if (isSyncing.current) {
+        return;
+      }
+
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
         return;
       }
 
@@ -349,7 +353,20 @@ const useOfflineSync = () => {
       }
     };
 
+    const handleOnline = async () => {
+      await handleSyncRequested();
+    };
+
+    const handleServiceWorkerMessage = (event) => {
+      if (event?.data?.type === "EVENTRA_BACKGROUND_SYNC") {
+        void handleSyncRequested();
+      }
+    };
+
     window.addEventListener("online", handleOnline);
+    window.addEventListener("eventra-background-sync", handleSyncRequested);
+    window.addEventListener("eventra-offline-queue-updated", handleSyncRequested);
+    navigator.serviceWorker?.addEventListener?.("message", handleServiceWorkerMessage);
 
     let idleId = null;
     let timeoutId = null;
@@ -368,6 +385,9 @@ const useOfflineSync = () => {
 
     return () => {
       window.removeEventListener("online", handleOnline);
+      window.removeEventListener("eventra-background-sync", handleSyncRequested);
+      window.removeEventListener("eventra-offline-queue-updated", handleSyncRequested);
+      navigator.serviceWorker?.removeEventListener?.("message", handleServiceWorkerMessage);
       // Abort any in-progress conflict resolution waiter so its event
       // listener is removed and the sync loop exits cleanly on unmount.
       conflictController.abort();

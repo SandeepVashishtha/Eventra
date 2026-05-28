@@ -147,3 +147,6 @@ export function clearProfileCache() {
 export function profileCacheSize() {
   return profileCache.size;
 }
+export const getEvictionThreshold = () => {
+  return PROFILE_CACHE_TTL_MS;
+};

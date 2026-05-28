@@ -4,8 +4,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from '../../hooks/useReducedMotion';
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
-import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
 import GoogleLoginButton from "./GoogleLoginButton";
+import {
+  Sparkles, Check, ArrowRight, EyeOff, Eye, User, Mail, Lock, AlertCircle, X
+} from "lucide-react";
 const PASSWORD_REQUIREMENTS = [
   { id: 'length', label: 'At least 8 characters', regex: /.{8,}/ },
   { id: 'uppercase', label: 'One uppercase letter', regex: /[A-Z]/ },
@@ -60,14 +62,6 @@ const getPasswordStrength = (password) => {
 // ============ REUSABLE ICON COMPONENTS ============
 const ToggleEyeIcon = ({ visible, className = "" }) => 
   visible ? <EyeOff className={className} /> : <Eye className={className} />;
-
-const SocialIcon = ({ provider }) => {
-  const icons = {
-    google: <Chrome className="w-5 h-5" />,
-    github: <Github className="w-5 h-5" />,
-  };
-  return icons[provider] || null;
-};
 
 // ============ CUSTOM HOOK: useSignupForm ============
 const useSignupForm = (onSuccess) => {
@@ -137,7 +131,8 @@ const useSignupForm = (onSuccess) => {
 
   return {
     formData, errors, touched, loading, submitStatus,
-    updateField, handleBlur, validateForm, setLoading, setSubmitStatus, resetForm
+    updateField, handleBlur, validateForm, setLoading, setSubmitStatus, resetForm,
+    setTouched, setErrors
   };
 };
 
@@ -149,7 +144,8 @@ const Signup = () => {
   
   const {
     formData, errors, touched, loading, submitStatus,
-    updateField, handleBlur, validateForm, setLoading, setSubmitStatus
+    updateField, handleBlur, validateForm, setLoading, setSubmitStatus,
+    setTouched, setErrors
   } = useSignupForm();
 
   const passwordStrength = useMemo(() => 

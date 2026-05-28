@@ -59,7 +59,15 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   const [lastSavedElementsStr, setLastSavedElementsStr] = useState("");
   const [selectedId, setSelectedId] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  
+
+  const [announcement, setAnnouncement] = useState("");
+  const announce = (message) => {
+    setAnnouncement("");
+    setTimeout(() => {
+      setAnnouncement(message);
+    }, 50);
+  };
+
   // Canvas Zoom / Pan
   const [zoom, setZoom] = useState(0.8);
   const [panOffset, setPanOffset] = useState({ x: 50, y: 30 });
@@ -85,6 +93,100 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
   useEffect(() => { snapToGridRef.current = snapToGrid; }, [snapToGrid]);
   useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
+
+  // Global keyboard shortcuts listener for shape manipulation (Issue #3265)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Don't intercept keyboard shortcuts if the user is typing inside input or select elements
+      if (
+        document.activeElement &&
+        (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT")
+      ) {
+        return;
+      }
+
+      if (!selectedIdRef.current) return;
+
+      const activeEl = elements.find((el) => el.id === selectedIdRef.current);
+      if (!activeEl) return;
+
+      const step = snapToGridRef.current ? 20 : 5;
+
+      switch (e.key) {
+        case "ArrowUp":
+          e.preventDefault();
+          updateSelectedElement("y", Math.max(0, activeEl.y - step));
+          announce(`${activeEl.label} moved up to Y ${Math.max(0, activeEl.y - step)}.`);
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          updateSelectedElement("y", Math.min(800 - activeEl.height, activeEl.y + step));
+          announce(`${activeEl.label} moved down to Y ${Math.min(800 - activeEl.height, activeEl.y + step)}.`);
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          updateSelectedElement("x", Math.max(0, activeEl.x - step));
+          announce(`${activeEl.label} moved left to X ${Math.max(0, activeEl.x - step)}.`);
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          updateSelectedElement("x", Math.min(1000 - activeEl.width, activeEl.x + step));
+          announce(`${activeEl.label} moved right to X ${Math.min(1000 - activeEl.width, activeEl.x + step)}.`);
+          break;
+        case "r":
+        case "R":
+          e.preventDefault();
+          const nextRotation = (activeEl.rotation + 15) % 360;
+          updateSelectedElement("rotation", nextRotation);
+          announce(`${activeEl.label} rotated to ${nextRotation} degrees.`);
+          break;
+        case "Delete":
+        case "Backspace":
+          e.preventDefault();
+          handleDeleteSelected();
+          break;
+        case "+":
+        case "=":
+          e.preventDefault();
+          const newWPlus = Math.min(activeEl.type === "stage" ? 600 : 300, activeEl.width + 10);
+          const newHPlus = activeEl.type.includes("round")
+            ? newWPlus
+            : Math.min(activeEl.type === "stage" ? 400 : 200, activeEl.height + 10);
+          updateSelectedElement({
+            width: newWPlus,
+            height: newHPlus
+          });
+          announce(`${activeEl.label} resized to width ${newWPlus}px, height ${newHPlus}px.`);
+          break;
+        case "-":
+        case "_":
+          e.preventDefault();
+          const minSize = activeEl.type.includes("table") ? 60 : 20;
+          const newWMinus = Math.max(minSize, activeEl.width - 10);
+          const newHMinus = activeEl.type.includes("round")
+            ? newWMinus
+            : Math.max(minSize, activeEl.height - 10);
+          updateSelectedElement({
+            width: newWMinus,
+            height: newHMinus
+          });
+          announce(`${activeEl.label} resized to width ${newWMinus}px, height ${newHMinus}px.`);
+          break;
+        case "Escape":
+          e.preventDefault();
+          setSelectedId(null);
+          announce("Deselected floor plan element.");
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [elements, updateSelectedElement]);
 
   const isDirty = !!(lastSavedElementsStr && JSON.stringify(elements) !== lastSavedElementsStr);
 
@@ -138,6 +240,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
     localStorage.setItem(`eventra_floorplan_${eventId}`, serialized);
     setLastSavedElementsStr(serialized);
     toast.success("Venue floor plan successfully saved!");
+    announce("Venue floor plan successfully saved!");
   };
 
   const loadPreset = (presetName) => {
@@ -152,6 +255,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
                 setElements(PRESETS[presetName]);
                 setSelectedId(null);
                 toast.success(`${presetName} layout loaded!`);
+                announce(`${presetName} layout loaded!`);
                 closeToast();
               }}
               className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold rounded-lg transition-colors"
@@ -354,6 +458,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
 
     setElements([...elements, newElement]);
     setSelectedId(id);
+    announce(`New ${type.replace("-", " ")} added at position X 350, Y 350. Selected.`);
   };
 
   const handleDeleteSelected = () => {
@@ -365,6 +470,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
       setElements(elements.filter(el => el.id !== selectedId));
       setSelectedId(null);
       toast.success("Element deleted successfully!");
+      announce("Element deleted successfully.");
     }
 
     setIsDeleteModalOpen(false);
@@ -665,6 +771,23 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
 
   return (
     <div className="fp-container">
+      <div 
+        style={{
+          position: "absolute",
+          width: "1px",
+          height: "1px",
+          padding: "0",
+          margin: "-1px",
+          overflow: "hidden",
+          clip: "rect(0, 0, 0, 0)",
+          whiteSpace: "nowrap",
+          border: "0"
+        }}
+        aria-live="polite" 
+        role="status"
+      >
+        {announcement}
+      </div>
       {/* Top action controls */}
       <div className="fp-topbar">
         <div className="flex items-center gap-3">
@@ -920,6 +1043,22 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
                     handleMouseDown(e, el.id);
                   }}
                   className="fp-element-group"
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`Floor plan element: ${el.label}, type: ${el.type.replace("-", " ")}, ${el.seatsCount > 0 ? `${Object.keys(el.assignedAttendees).length} of ${el.seatsCount} seats occupied` : "no seating"}, position: X ${Math.round(el.x)}, Y ${Math.round(el.y)}`}
+                  aria-selected={isSelected}
+                  onFocus={() => {
+                    setSelectedId(el.id);
+                    selectedIdRef.current = el.id;
+                    announce(`${el.label} selected. Keyboard controls active: arrow keys to move, R to rotate, + or - to resize, Delete to delete.`);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelectedId(el.id);
+                      selectedIdRef.current = el.id;
+                    }
+                  }}
                 >
                   {/* Chairs rendered around tables */}
                   {getSeatPositions(el).map((seat) => {
