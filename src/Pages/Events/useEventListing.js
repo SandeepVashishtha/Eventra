@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import mockEvents from "./eventsMockData.json";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { getEventStatus } from "../../utils/eventUtils";
 import useDebounce from "../../hooks/useDebounce";
-
-const DEFAULT_EVENTS_PER_PAGE = 12;
+import { getPriceStats, getDateRange } from "../../utils/advancedFilterUtils";
+import { DEFAULT_EVENTS_PER_PAGE, clampPage } from "./eventPaginationUtils";
 
 const SORT_MAPPING = {
   Newest: "date,desc",
@@ -17,14 +16,6 @@ const SORT_MAPPING = {
 };
 
 const useEventListing = () => {
-  const normalizedMockEvents = useMemo(
-    () =>
-      mockEvents.map((event) => ({
-        ...event,
-        status: getEventStatus(event),
-      })),
-    [],
-  );
   const [events, setEvents] = useState([]);
   const [filterType, setFilterType] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
@@ -52,20 +43,6 @@ const useEventListing = () => {
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
   const isInitialMount = useRef(true);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const timer = setTimeout(() => {
-      if (!isMounted) return;
-      setEvents(normalizedMockEvents);
-      setIsLoading(false);
-    }, 800);
-
-    return () => {
-      isMounted = false;
-      clearTimeout(timer);
-    };
-  }, [normalizedMockEvents]);
   const buildQueryParams = useCallback(() => {
     const params = new URLSearchParams();
 
@@ -89,7 +66,6 @@ const useEventListing = () => {
     }
 
     const sortValue = SORT_MAPPING[sortType];
-
     if (sortValue) {
       params.append("sort", sortValue);
     }
@@ -110,13 +86,11 @@ const useEventListing = () => {
 
     try {
       const query = buildQueryParams();
-
       const response = await apiUtils.get(
         `${API_ENDPOINTS.EVENTS.LIST}?${query}`,
       );
 
       const responseData = response?.data || {};
-
       const apiEvents = Array.isArray(responseData.content)
         ? responseData.content
         : [];
@@ -144,14 +118,6 @@ const useEventListing = () => {
         }));
 
         setEvents(normalizedMockEvents);
-
-  const totalPages = useMemo(
-    () => getTotalPages(filteredEvents.length, eventsPerPage),
-    [eventsPerPage, filteredEvents.length],
-  );
-  const paginatedEvents = useMemo(() => {
-    return getPaginatedEvents(filteredEvents, currentPage, eventsPerPage);
-  }, [currentPage, eventsPerPage, filteredEvents]);
         setPagination({
           totalPages: 1,
           totalElements: normalizedMockEvents.length,
@@ -168,33 +134,20 @@ const useEventListing = () => {
         });
 
         if (error?.response?.status === 403) {
-  setLoadError(
-    "Access to events is currently restricted. Please try again later.",
-  );
-} else {
-  setLoadError(
-    "Failed to load events. Please try again later.",
-  );
-}
+          setLoadError(
+            "Access to events is currently restricted. Please try again later.",
+          );
+        } else {
+          setLoadError(
+            "Failed to load events. Please try again later.",
+          );
+        }
       }
     } finally {
       setIsLoading(false);
     }
   }, [buildQueryParams]);
 
-  // RACE CONDITION FIX: Call fetchEvents immediately on mount, without scheduling
-  // mock data concurrently. This prevents race conditions where mock data could
-  // overwrite real API responses based on timing.
-  //
-  // Previous implementation:
-  // - useEffect 1: Scheduled mock data to load after 800ms
-  // - useEffect 2: Called fetchEvents() for API request
-  // - Result: If API took >800ms, mock data would overwrite real results
-  //
-  // New implementation:
-  // - Single fetchEvents() call that uses mock data only as a failure fallback
-  // - No concurrent timers that could race with network requests
-  // - Mock data is development-only fallback logic, not a production path
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
@@ -208,69 +161,23 @@ const useEventListing = () => {
   }, [searchQuery, filterType, sortType, advancedFilters, eventsPerPage]);
 
   const setSafePage = useCallback((page) => {
-    setCurrentPage(clampPage(page, totalPages));
-  }, [totalPages]);
-  const setSafePage = (page) => {
     if (page < 1) {
       setCurrentPage(1);
       return;
     }
-
     if (page > pagination.totalPages) {
       setCurrentPage(pagination.totalPages);
       return;
     }
-
     setCurrentPage(page);
-  };
+  }, [pagination.totalPages]);
 
   const filteredEvents = useMemo(() => events, [events]);
-
   const paginatedEvents = useMemo(() => events, [events]);
 
-  return useMemo(
-    () => ({
-      currentPage,
-      eventsPerPage,
-      filteredEvents,
-      filterType,
-      isLoading,
-      paginatedEvents,
-      searchQuery,
-      sortType,
-      totalPages,
-      viewMode,
-      advancedFilters,
-      isAdvancedFiltersOpen,
-      priceStats,
-      dateRangeStats,
-      setEventsPerPage,
-      setFilterType,
-      setSafePage,
-      setSearchQuery,
-      setSortType,
-      setViewMode,
-      setAdvancedFilters,
-      setIsAdvancedFiltersOpen,
-    }),
-    [
-      advancedFilters,
-      currentPage,
-      dateRangeStats,
-      eventsPerPage,
-      filteredEvents,
-      filterType,
-      isAdvancedFiltersOpen,
-      isLoading,
-      paginatedEvents,
-      priceStats,
-      searchQuery,
-      setSafePage,
-      sortType,
-      totalPages,
-      viewMode,
-    ],
-  );
+  const priceStats = useMemo(() => getPriceStats(events), [events]);
+  const dateRangeStats = useMemo(() => getDateRange(events), [events]);
+
   return {
     currentPage,
     eventsPerPage,
@@ -287,6 +194,8 @@ const useEventListing = () => {
     viewMode,
     advancedFilters,
     isAdvancedFiltersOpen,
+    priceStats,
+    dateRangeStats,
     setEventsPerPage,
     setFilterType,
     setSafePage,

@@ -95,6 +95,15 @@ const SignupForm = () => {
     return Object.keys(nextErrors).length === 0;
   };
 
+  useEffect(() => {
+    const { password, confirmPassword } = formData;
+    if (password && confirmPassword && password === confirmPassword) {
+      setPasswordMatchMessage("Passwords match!");
+    } else {
+      setPasswordMatchMessage("");
+    }
+  }, [formData.password, formData.confirmPassword]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitError("");

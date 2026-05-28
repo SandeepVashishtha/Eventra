@@ -252,7 +252,7 @@ const EventAnalyticsDashboard = () => {
             key={tab}
             role="tab"
             aria-selected={activeTab === tab}
-            onClick={() = aria-label="button"> setActiveTab(tab)}
+            onClick={() => setActiveTab(tab)}
             className={`ead-tab ${activeTab === tab ? 'ead-tab--active' : ''}`}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
