@@ -44,11 +44,12 @@ const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
 const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
 
 function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
+  const finalName = userName || "Participant";
   if (EMAILJS_PUBLIC_KEY && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && window.emailjs) {
     window.emailjs.init(EMAILJS_PUBLIC_KEY);
     window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
       to_email: userEmail,
-      to_name: userName,
+      to_name: finalName,
       event_name: eventName,
       event_date: eventDate,
     }).catch(() => { });

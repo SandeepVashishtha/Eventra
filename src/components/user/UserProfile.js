@@ -115,8 +115,7 @@ export default function UserProfile() {
                 <img
                   src={profile.avatarBase64 || profile.profilePicture}
                   alt={displayName}
-                  className="upv-avatar-img"
-                />
+                  className="upv-avatar-img" loading="lazy"/>
               ) : (
                 <div className="upv-avatar-placeholder">
                   <span className="upv-avatar-initials">{initials}</span>

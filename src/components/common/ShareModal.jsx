@@ -45,8 +45,7 @@ const ShareModal = ({ event, onClose }) => {
           <img
             src={event.image}
             alt={event.title}
-            className="h-40 w-full rounded-xl object-cover"
-          />
+            className="h-40 w-full rounded-xl object-cover" loading="lazy"/>
 
           <h3 className="mt-4 text-lg font-bold">
             {event.title}
