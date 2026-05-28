@@ -183,4 +183,21 @@ describe("FormFieldWrapper", () => {
       true,
     );
   });
+
+  it("renders optional prefix and suffix content", () => {
+    render(
+      <FormFieldWrapper
+        id="email"
+        label="Email"
+        prefix={<span data-testid="prefix">prefix</span>}
+        suffix={<button type="button">toggle</button>}
+      >
+        <input />
+      </FormFieldWrapper>,
+    );
+
+    expect(container.querySelector('[data-testid="prefix"]')).not.toBeNull();
+    expect(container.querySelector("button").textContent).toBe("toggle");
+    expect(container.querySelector("input").className).toContain("pr-");
+  });
 });

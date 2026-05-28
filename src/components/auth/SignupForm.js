@@ -1,22 +1,47 @@
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
+import { FormFieldWrapper, ValidationMessage } from "../forms";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
 import { User, AtSign, Lock, Eye, EyeOff, Zap } from 'lucide-react';
+import {
+  validate,
+  validateEmailAvailability,
+  validatePasswordStrength,
+} from "../../validation";
 
-const assessStrength = (password) => {
-  if (!password) return { criteriaMet: 0 };
-  let criteriaMet = 0;
-  if (password.length >= 8) criteriaMet++;
-  if (/[A-Z]/.test(password)) criteriaMet++;
-  if (/[a-z]/.test(password)) criteriaMet++;
-  if (/\d/.test(password)) criteriaMet++;
-  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) criteriaMet++;
-  return { criteriaMet };
+const getResultMessage = (result) => (result?.isValid ? "" : result?.message || "");
+
+const parseSignupResponse = async (response) => {
+  if (typeof response?.text === "function") {
+    const responseText = await response.text();
+    let data = null;
+    try {
+      data = responseText ? JSON.parse(responseText) : null;
+    } catch {
+      data = null;
+    }
+
+    return {
+      ok: response.ok,
+      status: response.status,
+      data,
+    };
+  }
+
+  return {
+    ok: response?.status >= 200 && response?.status < 300,
+    status: response?.status,
+    data: response?.data || null,
+  };
 };
+
+const getFieldState = (message, fallbackState = "idle") =>
+  message ? "error" : fallbackState;
 
 const SignupForm = () => {
   const prefersReducedMotion = useReducedMotion();
@@ -29,6 +54,19 @@ const SignupForm = () => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [firstNameError, setFirstNameError] = useState("");
+  const [lastNameError, setLastNameError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
+  const [fieldValidationState, setFieldValidationState] = useState({
+    firstName: "idle",
+    lastName: "idle",
+    email: "idle",
+    password: "idle",
+    confirmPassword: "idle",
+  });
+  const [error, setError] = useState("");
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -36,8 +74,11 @@ const SignupForm = () => {
   const [passwordMatchMessage, setPasswordMatchMessage] = useState("");
   const navigate = useNavigate();
   const { setAuthSession } = useAuth();
+  const emailValidationRequestRef = useRef(0);
 
-  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const setFieldState = useCallback((fieldName, state) => {
+    setFieldValidationState((prev) => ({ ...prev, [fieldName]: state }));
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,6 +89,29 @@ const SignupForm = () => {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
 
+      setConfirmPasswordError("");
+      if (password && confirmPassword) {
+        if (password === confirmPassword) {
+          setError("");
+          setConfirmPasswordError("");
+          setFieldState("confirmPassword", "success");
+          setPasswordMatchMessage("Passwords match!");
+        } else {
+          setError("Passwords do not match");
+          setConfirmPasswordError("Passwords do not match");
+          setFieldState("confirmPassword", "error");
+          setPasswordMatchMessage("");
+        }
+      } else {
+        setPasswordMatchMessage("");
+        if (e.target.name === "confirmPassword" && e.target.value) {
+          setError("Passwords do not match");
+          setConfirmPasswordError("Passwords do not match");
+          setFieldState("confirmPassword", "error");
+        } else {
+          setError("");
+          setFieldState("confirmPassword", "idle");
+        }
     // Show password match indicator (positive-only feedback while typing)
     if (name === "confirmPassword" || name === "password") {
       const password = name === "password" ? value : formData.password;
@@ -60,6 +124,24 @@ const SignupForm = () => {
     }
   };
 
+    if (e.target.name === "email") {
+      const emailResult = validate.email(e.target.value);
+      setEmailError(emailResult === true ? "" : emailResult);
+      setFieldState("email", emailResult === true ? "validating" : "error");
+    }
+
+    if (e.target.name === "firstName") {
+      const firstNameResult = validate.firstName(e.target.value);
+      const message = firstNameResult === true ? "" : firstNameResult;
+      setFirstNameError(message);
+      setFieldState("firstName", getFieldState(message, "success"));
+    }
+
+    if (e.target.name === "lastName") {
+      const lastNameResult = validate.lastName(e.target.value);
+      const message = lastNameResult === true ? "" : lastNameResult;
+      setLastNameError(message);
+      setFieldState("lastName", getFieldState(message, "success"));
   const validate = () => {
     const newErrors = {};
 
@@ -85,6 +167,90 @@ const SignupForm = () => {
       newErrors.email = "Invalid email format";
     }
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const { password, confirmPassword } = formData;
+      if (!password || !confirmPassword) {
+        setError("");
+        setPasswordMatchMessage("");
+        setConfirmPasswordError("");
+        setFieldState("confirmPassword", "idle");
+        return;
+      }
+      if (password === confirmPassword) {
+        setError("");
+        setConfirmPasswordError("");
+        setFieldState("confirmPassword", "success");
+        setPasswordMatchMessage("Passwords match!");
+      } else {
+        setError("Passwords do not match");
+        setConfirmPasswordError("Passwords do not match");
+        setFieldState("confirmPassword", "error");
+        setPasswordMatchMessage("");
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [formData.password, formData.confirmPassword, setFieldState]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const validatePassword = async () => {
+      if (!formData.password) {
+        setPasswordError("");
+        setFieldState("password", "idle");
+        return;
+      }
+
+      setFieldState("password", "validating");
+      const result = await validatePasswordStrength(formData.password);
+
+      if (!isActive) return;
+      const message = getResultMessage(result);
+      setPasswordError(message);
+      setFieldState("password", result.isValid ? "success" : "error");
+    };
+
+    validatePassword();
+
+    return () => {
+      isActive = false;
+    };
+  }, [formData.password, setFieldState]);
+
+  useEffect(() => {
+    const email = formData.email.trim();
+    const requestId = emailValidationRequestRef.current + 1;
+    emailValidationRequestRef.current = requestId;
+
+    if (!email) {
+      setEmailError("");
+      setFieldState("email", "idle");
+      return undefined;
+    }
+
+    const emailResult = validate.email(email);
+    if (emailResult !== true) {
+      setEmailError(emailResult);
+      setFieldState("email", "error");
+      return undefined;
+    }
+
+    setEmailError("");
+    setFieldState("email", "validating");
+
+    const timer = setTimeout(async () => {
+      const result = await validateEmailAvailability(email);
+
+      if (emailValidationRequestRef.current !== requestId) return;
+
+      const message = getResultMessage(result);
+      setEmailError(message);
+      setFieldState("email", result.isValid ? "success" : "error");
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [formData.email, setFieldState]);
     if (!formData.password.trim()) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 8) {
@@ -109,13 +275,90 @@ const SignupForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const firstNameResult = validate.firstName(formData.firstName);
+    if (firstNameResult !== true) {
+      setFirstNameError(firstNameResult);
+      setFieldState("firstName", "error");
+      setError(firstNameResult);
+      return;
+    }
+
+    const lastNameResult = validate.lastName(formData.lastName);
+    if (lastNameResult !== true) {
+      setLastNameError(lastNameResult);
+      setFieldState("lastName", "error");
+      setError(lastNameResult);
+      return;
+    }
+
+    if (!formData.email.trim()) {
+      setEmailError("Email is required");
+      setFieldState("email", "error");
+      setError("Email is required");
+      return;
+    }
+
+    const emailFormatResult = validate.email(formData.email);
+    if (emailFormatResult !== true) {
+      setEmailError(emailFormatResult);
+      setFieldState("email", "error");
+      setError(emailFormatResult);
+      return;
+    }
+
+    setFieldState("email", "validating");
+    const emailAvailabilityResult = await validateEmailAvailability(formData.email.trim());
+    if (!emailAvailabilityResult.isValid) {
+      const message = getResultMessage(emailAvailabilityResult);
+      setEmailError(message);
+      setFieldState("email", "error");
+      setError(message);
+      return;
+    }
+    setEmailError("");
+    setFieldState("email", "success");
+
+    if (!formData.password.trim()) {
+      setPasswordError("Password is required");
+      setFieldState("password", "error");
+      setError("Password is required");
+      return;
+    }
+
+    const passwordStrengthResult = await validatePasswordStrength(formData.password);
+    if (!passwordStrengthResult.isValid) {
+      const message = getResultMessage(passwordStrengthResult);
+      setPasswordError(message);
+      setFieldState("password", "error");
+      setError("Password doesn't meet the security criteria (must meet all 5 requirements).");
+      return;
+    }
+    setPasswordError("");
+    setFieldState("password", "success");
     if (!validate()) return;
 
+    if (!formData.confirmPassword.trim()) {
+      setConfirmPasswordError("Confirm password is required");
+      setFieldState("confirmPassword", "error");
+      setError("Confirm password is required");
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setConfirmPasswordError("Passwords do not match");
+      setFieldState("confirmPassword", "error");
+      setError("Passwords do not match");
+      return;
+    }
+
+    setConfirmPasswordError("");
+    setFieldState("confirmPassword", "success");
     setLoading(true);
     setErrors({});
 
     try {
-      const response = await apiUtils.post(API_ENDPOINTS.AUTH.REGISTER, {
+      const signupEndpoint = API_ENDPOINTS.AUTH.REGISTER || API_ENDPOINTS.AUTH.SIGNUP;
+      const response = await apiUtils.post(signupEndpoint, {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim(),
@@ -123,6 +366,13 @@ const SignupForm = () => {
         confirmPassword: formData.confirmPassword,
       });
 
+      const { ok, status, data } = await parseSignupResponse(response);
+
+      if (!ok) {
+        const backendMessage = data?.message || data?.error || "";
+        setError(backendMessage ? `${backendMessage} (${status})` : `Registration failed (${status})`);
+        return;
+      }
       const data = response.data || {};
 
       const sessionToken = data?.token;
@@ -169,6 +419,45 @@ const SignupForm = () => {
 
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <div className="grid grid-cols-2 gap-4">
+          <FormFieldWrapper
+            id="firstName"
+            label="First name"
+            required
+            validationState={fieldValidationState.firstName}
+            message={firstNameError}
+            className="space-y-1.5"
+            labelClassName="block text-xs font-medium text-slate-300"
+            messageClassName="text-red-400 text-[10px] mt-1"
+            prefix={<User className="w-4 h-4 text-slate-500" />}
+          >
+            <input
+              name="firstName"
+              type="text"
+              value={formData.firstName}
+              onChange={handleChange}
+              placeholder="First name"
+              className="w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-white"
+              required
+            />
+          </FormFieldWrapper>
+          <FormFieldWrapper
+            id="lastName"
+            label="Last name"
+            required
+            validationState={fieldValidationState.lastName}
+            message={lastNameError}
+            className="space-y-1.5"
+            labelClassName="block text-xs font-medium text-slate-300"
+            messageClassName="text-red-400 text-[10px] mt-1"
+            prefix={<User className="w-4 h-4 text-slate-500" />}
+          >
+            <input
+              name="lastName"
+              type="text"
+              value={formData.lastName}
+              onChange={handleChange}
+              placeholder="Last name"
+              className="w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-white"
           <div className="space-y-1.5">
             <label htmlFor="firstName" className="block text-xs font-medium text-slate-300">
               First name <span className="text-red-500">*</span>
@@ -259,13 +548,127 @@ const SignupForm = () => {
               }`}
               required
             />
+          </FormFieldWrapper>
+        </div>
+
+        <FormFieldWrapper
+          id="email"
+          label="Email address"
+          required
+          validationState={fieldValidationState.email}
+          message={
+            fieldValidationState.email === "validating"
+              ? "Checking email availability..."
+              : emailError
+          }
+          className="space-y-1.5"
+          labelClassName="block text-xs font-medium text-slate-300"
+          messageClassName="text-[10px] mt-1"
+          prefix={<AtSign className="w-4 h-4 text-slate-500" />}
+        >
+          <input
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="Enter your email address"
+            className="w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-white"
+            required
+          />
+        </FormFieldWrapper>
+
+        <FormFieldWrapper
+          id="password"
+          label="Password"
+          required
+          validationState={fieldValidationState.password}
+          message={passwordError}
+          className="space-y-1.5"
+          labelClassName="block text-xs font-medium text-slate-300"
+          messageClassName="text-red-400 text-[10px] mt-1"
+          showStatusIcon={false}
+          prefix={<Lock className="w-4 h-4 text-slate-500" />}
+          suffix={
             <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="text-slate-500 hover:text-slate-300"
               type="button" onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
+          }
+        >
+          <input
+            name="password"
+            type={showPassword ? "text" : "password"}
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Enter your password"
+            className={`w-full pl-9 pr-9 py-2.5 bg-[#0f172a]/50 border rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-white ${
+              formData.password && formData.confirmPassword
+                ? passwordMatchMessage ? "border-green-500" : "border-red-400"
+                : "border-slate-700/50 focus:border-blue-500"
+            }`}
+            required
+          />
+        </FormFieldWrapper>
+        {formData.password && <PasswordStrengthIndicator password={formData.password} />}
+
+        <FormFieldWrapper
+          id="confirmPassword"
+          label="Confirm Password"
+          required
+          validationState={fieldValidationState.confirmPassword}
+          message={confirmPasswordError}
+          className="space-y-1.5"
+          labelClassName="block text-xs font-medium text-slate-300"
+          messageClassName="text-red-400 text-[10px] mt-1"
+          showStatusIcon={false}
+          prefix={<Lock className="w-4 h-4 text-slate-500" />}
+          suffix={
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="text-slate-500 hover:text-slate-300"
+              aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+            >
+              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          }
+        >
+          <input
+            name="confirmPassword"
+            type={showConfirmPassword ? "text" : "password"}
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            placeholder="Confirm your password"
+            className={`w-full pl-9 pr-9 py-2.5 bg-[#0f172a]/50 border rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-white ${
+              formData.confirmPassword
+                ? passwordMatchMessage ? "border-green-500" : "border-red-400"
+                : "border-slate-700/50 focus:border-blue-500"
+            }`}
+            required
+          />
+        </FormFieldWrapper>
+        {passwordMatchMessage && (
+          <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="text-[10px] mt-1 text-green-400" role="status" aria-live="polite">
+            {passwordMatchMessage}
+          </motion.p>
+        )}
+
+        <ValidationMessage
+          message={error}
+          state="error"
+          className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-2 rounded-lg"
+        />
+        <ValidationMessage
+          message={success}
+          state="success"
+          className="text-xs text-green-400 bg-green-500/10 border border-green-500/20 p-2 rounded-lg"
+        />
           </div>
           {errors.password && (
             <p id="password-error" className="text-red-400 text-[10px] mt-1" role="alert">{errors.password}</p>
