@@ -880,8 +880,16 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
                   {/* Chairs rendered around tables */}
                   {getSeatPositions(el).map((seat) => {
                     const isOccupied = el.assignedAttendees[seat.index];
+                    const seatLabel = (el.seatLabels && el.seatLabels[seat.index]) || `Seat ${seat.index + 1}`;
+                    const seatTier = el.tier || "General Admission";
                     return (
-                      <g key={`seat-${el.id}-${seat.index}`} className="fp-seat-25d">
+                      <g 
+                        key={`seat-${el.id}-${seat.index}`} 
+                        className="fp-seat-25d"
+                        data-seat-id={`${el.id}-${seat.index}`}
+                        data-seat-label={seatLabel}
+                        data-seat-tier={seatTier}
+                      >
                         {/* 2.5D Chair shadow/extrusion base */}
                         <circle
                           cx={seat.x}
@@ -1131,37 +1139,68 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
                     </div>
                   </div>
 
+                  <div className="fp-field mb-4">
+                    <label className="fp-field-label">Seat Tier Tag</label>
+                    <input
+                      type="text"
+                      className="fp-input"
+                      value={activeElement.tier || ""}
+                      onChange={(e) => updateSelectedElement("tier", e.target.value)}
+                      placeholder="e.g. VIP Front Row, Balcony Box"
+                    />
+                  </div>
+
                   <div className="text-xs font-semibold text-gray-400 mb-2">Assign registered attendees to table slots:</div>
                   <div className="fp-seating-grid">
                     {Array.from({ length: activeElement.seatsCount }).map((_, seatIdx) => {
                       const currentAssignee = activeElement.assignedAttendees[seatIdx];
+                      const seatLabel = (activeElement.seatLabels && activeElement.seatLabels[seatIdx]) || `Seat ${seatIdx + 1}`;
                       return (
-                        <div key={seatIdx} className="fp-seat-row">
-                          <span className="fp-seat-number">Seat {seatIdx + 1}</span>
-
-                          <select
-                            className="fp-attendee-select"
-                            value={currentAssignee || ""}
-                            onChange={(e) => handleSeatAssign(seatIdx, e.target.value)}
-                          >
-                            <option value="">-- Choose Attendee --</option>
-                            {MOCK_ATTENDEES.map((attName) => {
-                              // Enable choosing the attendee if they aren't assigned to another table or if they are assigned to THIS seat
-                              const isAssignedElsewhere = elements.some(
-                                el => Object.values(el.assignedAttendees).includes(attName) &&
-                                  !(el.id === activeElement.id && el.assignedAttendees[seatIdx] === attName)
-                              );
-                              return (
-                                <option
-                                  key={attName}
-                                  value={attName}
-                                  disabled={isAssignedElsewhere}
-                                >
-                                  {attName} {isAssignedElsewhere ? "(Booked)" : ""}
-                                </option>
-                              );
-                            })}
-                          </select>
+                        <div key={seatIdx} className="fp-seat-row flex-col items-stretch gap-2.5" style={{ display: "flex", flexDirection: "column", height: "auto" }}>
+                          <div className="flex items-center justify-between gap-2" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span className="fp-seat-number">{seatLabel}</span>
+                            <input
+                              type="text"
+                              className="fp-input py-0.5 px-2 text-xs w-28 h-6 text-right bg-white/5 border border-white/10 hover:border-white/20 focus:border-indigo-500 rounded"
+                              value={activeElement.seatLabels?.[seatIdx] || ""}
+                              onChange={(e) => {
+                                const nextLabels = { ...(activeElement.seatLabels || {}) };
+                                if (e.target.value) {
+                                  nextLabels[seatIdx] = e.target.value;
+                                } else {
+                                  delete nextLabels[seatIdx];
+                                }
+                                updateSelectedElement("seatLabels", nextLabels);
+                              }}
+                              placeholder="Rename Seat"
+                            />
+                          </div>
+                          <div className="flex items-center justify-between gap-2 mt-1" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span className="text-[10px] text-gray-500">Attendee:</span>
+                            <select
+                              className="fp-attendee-select text-xs py-0.5"
+                              value={currentAssignee || ""}
+                              onChange={(e) => handleSeatAssign(seatIdx, e.target.value)}
+                            >
+                              <option value="">-- Choose Attendee --</option>
+                              {MOCK_ATTENDEES.map((attName) => {
+                                // Enable choosing the attendee if they aren't assigned to another table or if they are assigned to THIS seat
+                                const isAssignedElsewhere = elements.some(
+                                  el => Object.values(el.assignedAttendees).includes(attName) &&
+                                    !(el.id === activeElement.id && el.assignedAttendees[seatIdx] === attName)
+                                );
+                                return (
+                                  <option
+                                    key={attName}
+                                    value={attName}
+                                    disabled={isAssignedElsewhere}
+                                  >
+                                    {attName} {isAssignedElsewhere ? "(Booked)" : ""}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          </div>
                         </div>
                       );
                     })}
