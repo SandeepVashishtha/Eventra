@@ -1,11 +1,33 @@
 "use client";
 import React, { useEffect, useRef } from "react";
+import { useState } from "react";
+import { useReducedMotion } from "../hooks/useReducedMotion";
 
 const FluidCursor = ({ enabled = true }) => {
   const canvasRef = useRef(null);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
-    if (!enabled) {
+    const mediaQuery = window.matchMedia("(max-width: 768px), (pointer: coarse)");
+
+    const updateViewportState = () => {
+      setIsMobileViewport(mediaQuery.matches);
+    };
+
+    updateViewportState();
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener("change", updateViewportState);
+      return () => mediaQuery.removeEventListener("change", updateViewportState);
+    }
+
+    mediaQuery.addListener(updateViewportState);
+    return () => mediaQuery.removeListener(updateViewportState);
+  }, []);
+
+  useEffect(() => {
+    if (!enabled || isMobileViewport) {
       return undefined;
     }
 
@@ -1219,15 +1241,15 @@ const FluidCursor = ({ enabled = true }) => {
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [enabled]);
+  }, [enabled, isMobileViewport]);
 
-  if (!enabled) {
+  if (!enabled || isMobileViewport || prefersReducedMotion) {
     return null;
   }
 
   return (
-    <div className="fixed top-0 left-0 z-[40] pointer-events-none">
-      <canvas ref={canvasRef} id="fluid" className="w-screen h-screen" />
+    <div className="fixed inset-0 z-[40] pointer-events-none overflow-hidden">
+      <canvas ref={canvasRef} id="fluid" className="w-full h-full" />
     </div>
   );
 };

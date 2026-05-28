@@ -63,8 +63,18 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
 
     // Simulate premium recommendation processing / network latency (800ms)
     const timer = setTimeout(() => {
-      // Personalized Interest preferences (mocked or loaded from user settings)
-      const userInterests = JSON.parse(localStorage.getItem("user_interests")) || ["Coding", "Tech", "AI", "Development"];
+      let userInterests = ["Coding", "Tech", "AI", "Development"];
+
+      // --- Security & Crash Fix: Handle potentially corrupt localStorage JSON ---
+      try {
+        const storedInterests = localStorage.getItem("user_interests");
+        if (storedInterests) {
+          userInterests = JSON.parse(storedInterests);
+        }
+      } catch (error) {
+        console.error("Failed to parse user_interests from localStorage:", error);
+        // Fallback array remains default configured values above
+      }
 
       // 1. Gather all events except the one currently active
       let pool = mockEvents.filter((e) => e.id !== currentEventId);
@@ -81,7 +91,7 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
         // Match user's stored interest preferences (+5 points per match)
         const categoryTerms = (event.category || "").split(/[\s/&-]+/);
         categoryTerms.forEach((term) => {
-          if (userInterests.some((interest) => interest.toLowerCase().includes(term.toLowerCase()))) {
+          if (Array.isArray(userInterests) && userInterests.some((interest) => typeof interest === "string" && interest.toLowerCase().includes(term.toLowerCase()))) {
             score += 5;
           }
         });
@@ -259,4 +269,3 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
 };
 
 export default EventRecommendations;
-

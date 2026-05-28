@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
@@ -18,6 +19,7 @@ const assessStrength = (password) => {
 };
 
 const SignupForm = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -27,10 +29,7 @@ const SignupForm = () => {
   });
 
   const [loading, setLoading] = useState(false);
-  const [firstNameError, setFirstNameError] = useState("");
-  const [lastNameError, setLastNameError] = useState("");
-  const [emailError, setEmailError] = useState("");
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -41,95 +40,79 @@ const SignupForm = () => {
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleChange = (e) => {
-    const newData = { ...formData, [e.target.name]: e.target.value };
-    setFormData(newData);
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
 
-    if (e.target.name === "confirmPassword" || e.target.name === "password") {
-      const password = e.target.name === "password" ? e.target.value : newData.password;
-      const confirmPassword = e.target.name === "confirmPassword" ? e.target.value : newData.confirmPassword;
+    // Clear the error for this field as the user corrects it
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
 
+    // Show password match indicator (positive-only feedback while typing)
+    if (name === "confirmPassword" || name === "password") {
+      const password = name === "password" ? value : formData.password;
+      const confirmPassword = name === "confirmPassword" ? value : formData.confirmPassword;
       if (password && confirmPassword) {
-        if (password === confirmPassword) {
-          setError("");
-          setPasswordMatchMessage("Passwords match!");
-        } else {
-          setError("Passwords do not match");
-          setPasswordMatchMessage("");
-        }
+        setPasswordMatchMessage(password === confirmPassword ? "Passwords match!" : "");
       } else {
         setPasswordMatchMessage("");
-        if (e.target.name === "confirmPassword" && e.target.value) {
-          setError("Passwords do not match");
-        } else {
-          setError("");
-        }
       }
-    }
-
-    if (e.target.name === "email") {
-      setEmailError(validateEmail(e.target.value) ? "" : "Invalid email");
-    }
-
-    if (e.target.name === "firstName") {
-      if (!e.target.value.trim()) setFirstNameError("First name is required");
-      else if (e.target.value.length < 2) setFirstNameError("At least 2 characters");
-      else if (e.target.value.length > 50) setFirstNameError("Less than 50 characters");
-      else setFirstNameError("");
-    }
-
-    if (e.target.name === "lastName") {
-      if (!e.target.value.trim()) setLastNameError("Last name is required");
-      else if (e.target.value.length < 2) setLastNameError("At least 2 characters");
-      else if (e.target.value.length > 50) setLastNameError("Less than 50 characters");
-      else setLastNameError("");
-    }
-
-    if (error && e.target.name !== "password" && e.target.name !== "confirmPassword") {
-      setError("");
     }
   };
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const { password, confirmPassword } = formData;
-      if (!password || !confirmPassword) {
-        setError("");
-        setPasswordMatchMessage("");
-        return;
+  const validate = () => {
+    const newErrors = {};
+
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = "First name is required";
+    } else if (formData.firstName.trim().length < 2) {
+      newErrors.firstName = "At least 2 characters";
+    } else if (formData.firstName.trim().length > 50) {
+      newErrors.firstName = "Less than 50 characters";
+    }
+
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = "Last name is required";
+    } else if (formData.lastName.trim().length < 2) {
+      newErrors.lastName = "At least 2 characters";
+    } else if (formData.lastName.trim().length > 50) {
+      newErrors.lastName = "Less than 50 characters";
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!validateEmail(formData.email)) {
+      newErrors.email = "Invalid email format";
+    }
+
+    if (!formData.password.trim()) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters long";
+    } else {
+      const { criteriaMet } = assessStrength(formData.password);
+      if (criteriaMet < 5) {
+        newErrors.password = "Password doesn't meet the security criteria (must meet all 5 requirements)";
       }
-      if (password === confirmPassword) {
-        setError("");
-        setPasswordMatchMessage("Passwords match!");
-      } else {
-        setError("Passwords do not match");
-        setPasswordMatchMessage("");
-      }
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [formData.password, formData.confirmPassword]);
+    }
+
+    if (!formData.confirmPassword.trim()) {
+      newErrors.confirmPassword = "Please confirm your password";
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.firstName.trim()) { setError("First name is required"); return; }
-    if (formData.firstName.trim().length < 2) { setError("First name must be at least 2 characters"); return; }
-    if (!formData.lastName.trim()) { setError("Last name is required"); return; }
-    if (formData.lastName.trim().length < 2) { setError("Last name must be at least 2 characters"); return; }
-    if (!formData.email.trim()) { setError("Email is required"); return; }
-    if (!validateEmail(formData.email)) { setEmailError("Invalid email format"); return; }
-    if (!formData.password.trim()) { setError("Password is required"); return; }
-    if (formData.password.length < 8) { setError("Password must be at least 8 characters long"); return; }
-    if (!formData.confirmPassword.trim()) { setError("Confirm password is required"); return; }
-    if (formData.password !== formData.confirmPassword) { setError("Passwords do not match"); return; }
-
-    const { criteriaMet } = assessStrength(formData.password);
-    if (criteriaMet < 5) {
-      setError("Password doesn't meet the security criteria (must meet all 5 requirements).");
-      return;
-    }
+    if (!validate()) return;
 
     setLoading(true);
-    setError("");
+    setErrors({});
 
     try {
       const response = await apiUtils.post(API_ENDPOINTS.AUTH.REGISTER, {
@@ -140,15 +123,7 @@ const SignupForm = () => {
         confirmPassword: formData.confirmPassword,
       });
 
-      const responseText = await response.text();
-      let data = null;
-      try { data = responseText ? JSON.parse(responseText) : null; } catch { data = null; }
-
-      if (!response.ok) {
-        const backendMessage = data?.message || data?.error || "";
-        setError(backendMessage ? `${backendMessage} (${response.status})` : `Registration failed (${response.status})`);
-        return;
-      }
+      const data = response.data || {};
 
       const sessionToken = data?.token;
       const sessionUser = {
@@ -168,7 +143,7 @@ const SignupForm = () => {
       setSuccess("Account created successfully! Redirecting to dashboard...");
       setTimeout(() => navigate("/dashboard", { replace: true }), 1200);
     } catch (err) {
-      setError(err.message || "Network error. Please try again.");
+      setErrors({ submit: err.message || "Network error. Please try again." });
     } finally {
       setLoading(false);
     }
@@ -192,7 +167,7 @@ const SignupForm = () => {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label htmlFor="firstName" className="block text-xs font-medium text-slate-300">
@@ -204,11 +179,17 @@ const SignupForm = () => {
                 id="firstName" name="firstName" type="text"
                 value={formData.firstName} onChange={handleChange}
                 placeholder="First name"
-                className="w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-white"
+                aria-invalid={!!errors.firstName}
+                aria-describedby={errors.firstName ? "firstName-error" : undefined}
+                className={`w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border ${
+                  errors.firstName ? "border-red-500" : "border-slate-700/50 focus:border-blue-500"
+                } rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-white`}
                 required
               />
             </div>
-            {firstNameError && <p className="text-red-400 text-[10px] mt-1">{firstNameError}</p>}
+            {errors.firstName && (
+              <p id="firstName-error" className="text-red-400 text-[10px] mt-1" role="alert">{errors.firstName}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <label htmlFor="lastName" className="block text-xs font-medium text-slate-300">
@@ -220,11 +201,17 @@ const SignupForm = () => {
                 id="lastName" name="lastName" type="text"
                 value={formData.lastName} onChange={handleChange}
                 placeholder="Last name"
-                className="w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-white"
+                aria-invalid={!!errors.lastName}
+                aria-describedby={errors.lastName ? "lastName-error" : undefined}
+                className={`w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border ${
+                  errors.lastName ? "border-red-500" : "border-slate-700/50 focus:border-blue-500"
+                } rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-white`}
                 required
               />
             </div>
-            {lastNameError && <p className="text-red-400 text-[10px] mt-1">{lastNameError}</p>}
+            {errors.lastName && (
+              <p id="lastName-error" className="text-red-400 text-[10px] mt-1" role="alert">{errors.lastName}</p>
+            )}
           </div>
         </div>
 
@@ -238,11 +225,17 @@ const SignupForm = () => {
               id="email" name="email" type="email"
               value={formData.email} onChange={handleChange}
               placeholder="Enter your email address"
-              className="w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-white"
+              aria-invalid={!!errors.email}
+              aria-describedby={errors.email ? "email-error" : undefined}
+              className={`w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border ${
+                errors.email ? "border-red-500" : "border-slate-700/50 focus:border-blue-500"
+              } rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-white`}
               required
             />
           </div>
-          {emailError && <p className="text-red-400 text-[10px] mt-1">{emailError}</p>}
+          {errors.email && (
+            <p id="email-error" className="text-red-400 text-[10px] mt-1" role="alert">{errors.email}</p>
+          )}
         </div>
 
         <div className="space-y-1.5">
@@ -255,20 +248,28 @@ const SignupForm = () => {
               id="password" name="password" type={showPassword ? "text" : "password"}
               value={formData.password} onChange={handleChange}
               placeholder="Enter your password"
+              aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? "password-error" : undefined}
               className={`w-full pl-9 pr-9 py-2.5 bg-[#0f172a]/50 border rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-white ${
-                formData.password && formData.confirmPassword
-                  ? passwordMatchMessage ? "border-green-500" : "border-red-400"
-                  : "border-slate-700/50 focus:border-blue-500"
+                errors.password
+                  ? "border-red-500"
+                  : formData.password && formData.confirmPassword
+                    ? passwordMatchMessage ? "border-green-500" : "border-red-400"
+                    : "border-slate-700/50 focus:border-blue-500"
               }`}
               required
             />
             <button
               type="button" onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
+          {errors.password && (
+            <p id="password-error" className="text-red-400 text-[10px] mt-1" role="alert">{errors.password}</p>
+          )}
           {formData.password && <PasswordStrengthIndicator password={formData.password} />}
         </div>
 
@@ -282,29 +283,45 @@ const SignupForm = () => {
               id="confirmPassword" name="confirmPassword" type={showConfirmPassword ? "text" : "password"}
               value={formData.confirmPassword} onChange={handleChange}
               placeholder="Confirm your password"
+              aria-invalid={!!errors.confirmPassword}
+              aria-describedby={errors.confirmPassword ? "confirmPassword-error" : undefined}
               className={`w-full pl-9 pr-9 py-2.5 bg-[#0f172a]/50 border rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-white ${
-                formData.confirmPassword
-                  ? passwordMatchMessage ? "border-green-500" : "border-red-400"
-                  : "border-slate-700/50 focus:border-blue-500"
+                errors.confirmPassword
+                  ? "border-red-500"
+                  : formData.confirmPassword
+                    ? passwordMatchMessage ? "border-green-500" : "border-red-400"
+                    : "border-slate-700/50 focus:border-blue-500"
               }`}
               required
             />
             <button
               type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+              aria-label={showConfirmPassword ? "Hide password" : "Show password"}
             >
               {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
-          {passwordMatchMessage && (
+          {errors.confirmPassword && (
+            <p id="confirmPassword-error" className="text-red-400 text-[10px] mt-1" role="alert">{errors.confirmPassword}</p>
+          )}
+          {passwordMatchMessage && !errors.confirmPassword && (
             <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="text-[10px] mt-1 text-green-400">
               {passwordMatchMessage}
             </motion.p>
           )}
         </div>
 
-        {error && <div className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-2 rounded-lg">{error}</div>}
-        {success && <div className="text-xs text-green-400 bg-green-500/10 border border-green-500/20 p-2 rounded-lg">{success}</div>}
+        {errors.submit && (
+          <div className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-2 rounded-lg" role="alert">
+            {errors.submit}
+          </div>
+        )}
+        {success && (
+          <div className="text-xs text-green-400 bg-green-500/10 border border-green-500/20 p-2 rounded-lg" role="status">
+            {success}
+          </div>
+        )}
 
         <motion.button
           whileHover={{ scale: 1.02 }}
