@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,13 +13,22 @@ import {
   Grid,
   Filter,
   Activity,
+  X,
+  ShieldAlert,
+  Sparkles,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import {
   downloadICSFile,
   downloadBulkICSFile,
   generateGoogleCalendarLink,
+  analyzeScheduleConflicts,
+  getReschedulingSuggestions,
+  getEventDateRange,
 } from "../../utils/calendarExporter";
 import SkeletonCalendar from "../../components/common/SkeletonCalendar";
+import mockEvents from "../Events/eventsMockData.json";
 
 // Category Configuration Map
 const CATEGORIES = [
@@ -32,12 +41,23 @@ const CATEGORIES = [
 ];
 
 const MyCalendar = () => {
-  const { myEvents, loading } = useMyEvents();
+  const { myEvents, loading, addRegistration, removeRegistration } = useMyEvents();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState("grid");
   const [activeCategory, setActiveCategory] = useState("all");
   const [announcement, setAnnouncement] = useState("");
+  const [showConflictDrawer, setShowConflictDrawer] = useState(false);
+
+  const conflicts = useMemo(() => {
+    return analyzeScheduleConflicts(myEvents);
+  }, [myEvents]);
+
+  const handleReschedule = (oldEventId, newEvent) => {
+    removeRegistration(oldEventId);
+    addRegistration(newEvent);
+    setAnnouncement(`Rescheduled successfully. Replaced conflicting session with "${newEvent.title}".`);
+  };
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
@@ -170,6 +190,86 @@ const MyCalendar = () => {
   const selectedEvents = getSelectedDateEvents();
   const timelineEvents = getFilteredAllEvents();
 
+  const getTimelinePos = (date) => {
+    const d = new Date(date);
+    const mins = d.getHours() * 60 + d.getMinutes();
+    const startMins = 8 * 60; // 8:00 AM
+    const spanMins = 14 * 60; // 14 hours (till 10:00 PM)
+    
+    let pct = ((mins - startMins) / spanMins) * 100;
+    if (pct < 0) pct = 0;
+    if (pct > 100) pct = 100;
+    return pct;
+  };
+
+  const getTimelineWidth = (start, end) => {
+    const s = new Date(start);
+    const e = new Date(end);
+    const durationMins = (e.getTime() - s.getTime()) / 60000;
+    const spanMins = 14 * 60; // 14 hours
+    
+    let pct = (durationMins / spanMins) * 100;
+    if (pct < 5) pct = 5; // minimum width
+    if (pct > 100) pct = 100;
+    return pct;
+  };
+
+  const allocateTracks = (dayEvents) => {
+    const sorted = [...dayEvents].sort((a, b) => a.range.start.getTime() - b.range.start.getTime());
+    const tracks = [];
+    
+    sorted.forEach(evt => {
+      let placed = false;
+      for (let i = 0; i < tracks.length; i++) {
+        const lastInTrack = tracks[i][tracks[i].length - 1];
+        if (evt.range.start.getTime() >= lastInTrack.range.end.getTime()) {
+          tracks[i].push(evt);
+          evt.trackIndex = i;
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        tracks.push([evt]);
+        evt.trackIndex = tracks.length - 1;
+      }
+    });
+    
+    return { tracks, events: sorted };
+  };
+
+  const eventsByDayForTimeline = useMemo(() => {
+    const daysMap = {};
+    
+    timelineEvents.forEach(item => {
+      const range = getEventDateRange(item.event);
+      if (!range || range.allDay) return;
+      
+      const dayKey = range.start.toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      });
+      
+      if (!daysMap[dayKey]) {
+        daysMap[dayKey] = [];
+      }
+      daysMap[dayKey].push({
+        item,
+        event: item.event,
+        range
+      });
+    });
+    
+    const allocatedDaysMap = {};
+    Object.keys(daysMap).forEach(dayKey => {
+      allocatedDaysMap[dayKey] = allocateTracks(daysMap[dayKey]);
+    });
+    
+    return allocatedDaysMap;
+  }, [timelineEvents]);
+
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-20 px-4 md:px-8 transition-colors duration-300">
       {/* Screen reader live region */}
@@ -250,6 +350,198 @@ const MyCalendar = () => {
             )}
           </div>
         </div>
+
+        {/* Conflict Warning Banner */}
+        {conflicts.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-450 p-4 rounded-3xl backdrop-blur-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg shadow-rose-500/5 mb-6"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-rose-500/20 text-rose-600 dark:text-rose-450 shrink-0 animate-pulse">
+                <ShieldAlert className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">Timeline Conflicts Detected</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  You have {conflicts.length} overlapping or tight transition workshop sessions that need adjustment.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowConflictDrawer(true)}
+              className="p-2.5 px-4 rounded-2xl text-[11px] font-black uppercase tracking-wider bg-rose-600 hover:bg-rose-500 text-white shadow-md hover:shadow-lg transition-all shrink-0 cursor-pointer self-start sm:self-auto"
+            >
+              Resolve Conflicts
+            </button>
+          </motion.div>
+        )}
+
+        {/* Conflict Warning Drawer */}
+        <AnimatePresence>
+          {showConflictDrawer && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.4 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowConflictDrawer(false)}
+                className="fixed inset-0 bg-black z-50 backdrop-blur-sm"
+              />
+
+              {/* Drawer */}
+              <motion.div
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="fixed right-0 top-0 bottom-0 w-full max-w-lg bg-white dark:bg-slate-950 shadow-2xl z-50 border-l border-slate-200 dark:border-slate-800/80 p-6 overflow-y-auto"
+              >
+                <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800/50 pb-4 mb-6">
+                  <div className="flex items-center gap-2">
+                    <ShieldAlert className="w-5 h-5 text-rose-500" />
+                    <h2 className="text-sm font-black text-slate-950 dark:text-white uppercase tracking-wider">
+                      Resolve Timeline Conflicts
+                    </h2>
+                  </div>
+                  <button
+                    onClick={() => setShowConflictDrawer(false)}
+                    className="p-1.5 rounded-xl bg-slate-150 dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 text-slate-500 hover:text-white transition cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-6">
+                  {conflicts.map((conflict, idx) => {
+                    const suggestionsA = getReschedulingSuggestions(conflict.eventA, myEvents, mockEvents);
+                    const suggestionsB = getReschedulingSuggestions(conflict.eventB, myEvents, mockEvents);
+
+                    return (
+                      <div
+                        key={idx}
+                        className="p-5 rounded-3xl border border-rose-200 dark:border-rose-500/25 bg-rose-500/[0.02] dark:bg-rose-500/[0.04] space-y-4 shadow-sm"
+                      >
+                        <div className="flex justify-between items-start">
+                          <span className={`px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase ${
+                            conflict.type === "overlap" ? "bg-rose-500/20 text-rose-600 dark:text-rose-400" : "bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                          }`}>
+                            {conflict.type === "overlap" ? "⚠️ Direct Overlap" : "⏳ Tight Transition"}
+                          </span>
+                          <span className="text-[10px] font-bold text-slate-400">
+                            Conflict #{idx + 1}
+                          </span>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 shadow-inner">
+                            <div className="text-xs font-black text-slate-900 dark:text-white truncate">
+                              {conflict.eventA.title}
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[10px] text-slate-400 dark:text-slate-500 mt-1.5">
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>
+                                {new Date(conflict.eventA.date).toLocaleDateString()} — {new Date(conflict.eventA.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-rose-500 dark:text-rose-400 px-1 py-1">
+                            <AlertTriangle className="w-4 h-4 animate-bounce text-rose-600 dark:text-rose-400" />
+                            <span className="text-xs font-black leading-none">{conflict.label}</span>
+                          </div>
+
+                          <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 shadow-inner">
+                            <div className="text-xs font-black text-slate-900 dark:text-white truncate">
+                              {conflict.eventB.title}
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[10px] text-slate-400 dark:text-slate-500 mt-1.5">
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>
+                                {new Date(conflict.eventB.date).toLocaleDateString()} — {new Date(conflict.eventB.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Suggestions panel */}
+                        <div className="pt-3.5 border-t border-rose-250/20 dark:border-rose-500/10 space-y-3">
+                          <h4 className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5" />
+                            Smart Rescheduling
+                          </h4>
+
+                          {suggestionsA.length === 0 && suggestionsB.length === 0 ? (
+                            <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed">
+                              No alternative slots without conflicts are currently available in this category.
+                            </p>
+                          ) : (
+                            <div className="space-y-2">
+                              {/* Suggestions for Event A */}
+                              {suggestionsA.slice(0, 2).map((sugg, sIdx) => (
+                                <div
+                                  key={`a-${sIdx}`}
+                                  className="p-3 rounded-2xl border border-slate-200/60 dark:border-slate-850 bg-white dark:bg-slate-900 flex items-center justify-between gap-3 hover:border-indigo-500/40 dark:hover:border-indigo-500/25 transition-all shadow-sm"
+                                >
+                                  <div className="min-w-0 flex-1">
+                                    <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 truncate">
+                                      Reschedule "{conflict.eventA.title.slice(0, 20)}..." to:
+                                    </div>
+                                    <div className="text-xs font-black text-indigo-600 dark:text-indigo-400 mt-0.5 truncate">
+                                      {sugg.event.title}
+                                    </div>
+                                    <div className="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5">
+                                      {new Date(sugg.event.date).toLocaleDateString()} at {new Date(sugg.event.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={() => handleReschedule(conflict.eventA.id, sugg.event)}
+                                    className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-[10px] font-black uppercase tracking-wider text-white shadow-sm transition cursor-pointer"
+                                  >
+                                    Swap
+                                  </button>
+                                </div>
+                              ))}
+
+                              {/* Suggestions for Event B */}
+                              {suggestionsB.slice(0, 2).map((sugg, sIdx) => (
+                                <div
+                                  key={`b-${sIdx}`}
+                                  className="p-3 rounded-2xl border border-slate-200/60 dark:border-slate-850 bg-white dark:bg-slate-900 flex items-center justify-between gap-3 hover:border-indigo-500/40 dark:hover:border-indigo-500/25 transition-all shadow-sm"
+                                >
+                                  <div className="min-w-0 flex-1">
+                                    <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 truncate">
+                                      Reschedule "{conflict.eventB.title.slice(0, 20)}..." to:
+                                    </div>
+                                    <div className="text-xs font-black text-indigo-600 dark:text-indigo-400 mt-0.5 truncate">
+                                      {sugg.event.title}
+                                    </div>
+                                    <div className="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5">
+                                      {new Date(sugg.event.date).toLocaleDateString()} at {new Date(sugg.event.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={() => handleReschedule(conflict.eventB.id, sugg.event)}
+                                    className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-[10px] font-black uppercase tracking-wider text-white shadow-sm transition cursor-pointer"
+                                  >
+                                    Swap
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
 
         {loading ? (
           <div role="status" aria-live="polite" aria-label="Loading calendar">
@@ -469,122 +761,160 @@ const MyCalendar = () => {
                   </div>
                 </motion.div>
               ) : (
-                /* TIMELINE VIEW */
+                /* TIMELINE MATRIX BOARD */
                 <motion.div
                   key="timeline-container"
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -15 }}
-                  className="relative pl-6 sm:pl-10 space-y-8"
+                  className="space-y-10"
                 >
-                  {/* Vertical line */}
-                  <div className="absolute left-3.5 sm:left-5 top-2 bottom-2 w-0.5 bg-slate-200 dark:bg-slate-800/80 rounded-full" />
-                  <div className="absolute left-3.5 sm:left-5 top-2 h-1/2 w-0.5 bg-gradient-to-b from-indigo-500 to-pink-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+                  {Object.keys(eventsByDayForTimeline).length > 0 ? (
+                    Object.keys(eventsByDayForTimeline).map((dayKey) => {
+                      const { tracks, events: dayEvents } = eventsByDayForTimeline[dayKey];
+                      const totalTracks = tracks.length;
+                      const trackHeight = 100; // Height of each track in pixels
+                      const containerHeight = totalTracks * trackHeight + 60;
 
-                  {timelineEvents.length > 0 ? (
-                    <div className="space-y-8">
-                      {timelineEvents.map((item, index) => {
-                        const theme = getCategoryTheme(item.event?.category);
-                        const eventDate = new Date(item.event.date);
+                      return (
+                        <div
+                          key={dayKey}
+                          className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm space-y-6"
+                        >
+                          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/50 pb-4">
+                            <h3 className="text-base font-black text-indigo-600 dark:text-indigo-400 tracking-tight">
+                              {dayKey}
+                            </h3>
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-slate-100 dark:bg-slate-800 text-slate-500">
+                              {dayEvents.length} Sessions Booked
+                            </span>
+                          </div>
 
-                        return (
-                          <motion.div
-                            key={item.eventId}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.08, type: "spring", stiffness: 150 }}
-                            className="relative flex flex-col md:flex-row gap-5 items-start"
-                          >
-                            {/* Timeline node */}
+                          {/* Side-scrolling Matrix viewport */}
+                          <div className="w-full overflow-x-auto select-none pb-4 scrollbar-thin">
                             <div
-                              className="absolute -left-[30px] sm:-left-[37px] top-1.5 w-5 h-5 rounded-full bg-white dark:bg-slate-950 border-4 flex items-center justify-center z-10"
-                              style={{ borderColor: getCategoryBorderColor(theme) }}
+                              className="relative min-w-[960px] bg-slate-50/50 dark:bg-slate-950/20 border border-slate-200/30 dark:border-slate-800/30 rounded-2xl overflow-hidden"
+                              style={{ height: `${containerHeight}px` }}
                             >
-                              <span className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${theme.color} animate-ping`} />
-                            </div>
+                              {/* Horizontal Hour Headers & Vertical Grid Lines */}
+                              <div className="absolute top-0 left-0 right-0 h-10 border-b border-slate-200/30 dark:border-slate-800/40 flex items-center bg-slate-50/80 dark:bg-slate-900/80 z-20">
+                                {Array.from({ length: 15 }).map((_, hourIdx) => {
+                                  const hour = 8 + hourIdx;
+                                  const displayHour = hour === 12 ? "12 PM" : hour > 12 ? `${hour - 12} PM` : `${hour} AM`;
+                                  const leftPct = (hourIdx / 14) * 100;
 
-                            {/* Date label */}
-                            <div className="w-[110px] shrink-0 text-left md:text-right pt-0.5">
-                              <span className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                                {eventDate.toLocaleDateString("en-US", { weekday: "short" })}
-                              </span>
-                              <span className="block text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-none mt-1">
-                                {eventDate.getDate()} {eventDate.toLocaleDateString("en-US", { month: "short" })}
-                              </span>
-                              <span className="block text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-wider mt-1.5">
-                                {eventDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                              </span>
-                            </div>
-
-                            {/* Event card */}
-                            <motion.div
-                              whileHover={{ y: -4, scale: 1.01 }}
-                              className="flex-1 w-full bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 p-5 rounded-3xl shadow-sm hover:shadow-lg hover:border-indigo-400/40 dark:hover:border-indigo-500/30 transition-all duration-300"
-                            >
-                              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                                <div className="space-y-1.5">
-                                  <div className="flex items-center gap-2.5">
-                                    <span className={`px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase bg-gradient-to-r ${theme.color} text-white`}>
-                                      {item.event.category || "General"}
-                                    </span>
-                                    <span className="text-[11px] font-semibold text-slate-400">
-                                      Registered: {new Date(item.registeredAt).toLocaleDateString()}
-                                    </span>
-                                  </div>
-                                  <h4 className="font-extrabold text-base text-slate-900 dark:text-slate-100">
-                                    {item.event.title}
-                                  </h4>
-                                  <p className="text-xs text-slate-500 max-w-xl truncate mt-1">
-                                    {item.event.description}
-                                  </p>
-                                  <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 mt-2">
-                                    <span className="flex items-center gap-1">
-                                      <CalendarIcon className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
-                                      {new Date(item.event.date).toLocaleDateString()}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                      <Clock className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
-                                      {new Date(item.event.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                      <MapPin className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
-                                      {item.event.location || "Online"}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2 mt-4 sm:mt-0">
-                                  <button
-                                    type="button"
-                                    onClick={() => downloadICSFile(item.event)}
-                                    aria-label={`Download ICS for ${item.event.title}`}
-                                    className="p-2.5 rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 shadow-sm"
-                                    title="Download .ics file"
-                                  >
-                                    <Download className="w-4 h-4" aria-hidden="true" />
-                                  </button>
-                                  <a
-                                    href={generateGoogleCalendarLink(item.event)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-sm flex items-center gap-1.5"
-                                  >
-                                    <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
-                                    Sync Google
-                                  </a>
-                                </div>
+                                  return (
+                                    <React.Fragment key={hourIdx}>
+                                      {/* Vertical Line */}
+                                      {hourIdx > 0 && hourIdx < 14 && (
+                                        <div
+                                          className="absolute top-0 bottom-0 w-[1px] border-l border-dashed border-slate-200/40 dark:border-slate-800/40 pointer-events-none"
+                                          style={{ left: `${leftPct}%` }}
+                                        />
+                                      )}
+                                      {/* Header label */}
+                                      <div
+                                        className="absolute text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center -translate-x-1/2"
+                                        style={{ left: `${leftPct}%` }}
+                                      >
+                                        {displayHour}
+                                      </div>
+                                    </React.Fragment>
+                                  );
+                                })}
                               </div>
-                            </motion.div>
-                          </motion.div>
-                        );
-                      })}
-                    </div>
+
+                              {/* Matrix Tracks grid lines backgrounds */}
+                              <div className="absolute top-10 bottom-0 left-0 right-0 pointer-events-none z-0">
+                                {Array.from({ length: totalTracks }).map((_, trackIdx) => (
+                                  <div
+                                    key={trackIdx}
+                                    className="absolute left-0 right-0 border-b border-slate-100 dark:border-slate-900/30"
+                                    style={{
+                                      top: `${trackIdx * trackHeight + trackHeight}px`,
+                                      height: `${trackHeight}px`,
+                                    }}
+                                  />
+                                ))}
+                              </div>
+
+                              {/* Booked Events Cards absolute positioned */}
+                              <div className="absolute top-10 bottom-0 left-0 right-0 z-10">
+                                {dayEvents.map((evt, evtIdx) => {
+                                  const theme = getCategoryTheme(evt.event.category);
+                                  const startPct = getTimelinePos(evt.range.start);
+                                  const widthPct = getTimelineWidth(evt.range.start, evt.range.end);
+                                  
+                                  const hasConflict = conflicts.some(c => c.eventA.id === evt.event.id || c.eventB.id === evt.event.id);
+                                  const isOverlap = conflicts.some(c => c.type === "overlap" && (c.eventA.id === evt.event.id || c.eventB.id === evt.event.id));
+                                  const isBuffer = conflicts.some(c => c.type === "buffer" && (c.eventA.id === evt.event.id || c.eventB.id === evt.event.id));
+
+                                  return (
+                                    <motion.div
+                                      key={`timeline-card-${evtIdx}`}
+                                      whileHover={{ scale: 1.01, zIndex: 30 }}
+                                      onClick={() => {
+                                        if (hasConflict) {
+                                          setShowConflictDrawer(true);
+                                        }
+                                      }}
+                                      className={`absolute p-3 rounded-2xl border transition-all flex flex-col justify-between shadow-sm cursor-pointer ${
+                                        isOverlap
+                                          ? "bg-rose-500/10 border-rose-500 text-rose-700 dark:text-rose-350 shadow-rose-500/5 animate-pulse"
+                                          : isBuffer
+                                          ? "bg-amber-500/10 border-amber-500 text-amber-700 dark:text-amber-350 shadow-amber-500/5"
+                                          : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 hover:border-indigo-500/50 dark:hover:border-indigo-500/40"
+                                      }`}
+                                      style={{
+                                        left: `${startPct}%`,
+                                        width: `${widthPct}%`,
+                                        top: `${evt.trackIndex * trackHeight + 10}px`,
+                                        height: `${trackHeight - 20}px`,
+                                      }}
+                                    >
+                                      <div>
+                                        <div className="flex items-center justify-between gap-1">
+                                          <span className={`px-2 py-0.25 rounded text-[8px] font-black uppercase truncate bg-gradient-to-r ${theme.color} text-white`}>
+                                            {evt.event.category || "General"}
+                                          </span>
+                                          {hasConflict && (
+                                            <span className="flex items-center text-rose-500 shrink-0">
+                                              <AlertTriangle className="w-3.5 h-3.5" />
+                                            </span>
+                                          )}
+                                        </div>
+                                        <h4 className="font-extrabold text-xs mt-1.5 truncate leading-tight">
+                                          {evt.event.title}
+                                        </h4>
+                                      </div>
+
+                                      <div className="flex items-center justify-between gap-2 mt-auto">
+                                        <span className="inline-flex items-center gap-1 text-[9px] text-slate-400 dark:text-slate-500 font-bold shrink-0">
+                                          <Clock className="w-3 h-3" />
+                                          {new Date(evt.range.start).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                        </span>
+                                        {hasConflict && (
+                                          <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest shrink-0">
+                                            {isOverlap ? "Overlap" : "Tight"}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </motion.div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
                   ) : (
-                    <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+                    <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm">
                       <CalendarIcon className="w-12 h-12 text-slate-300 dark:text-slate-700 animate-pulse" aria-hidden="true" />
                       <div>
-                        <h4 className="font-extrabold text-slate-800 dark:text-slate-200">No Active Registrations</h4>
+                        <h4 className="font-extrabold text-slate-800 dark:text-slate-200">No Upcoming Workshops</h4>
                         <p className="text-slate-400 text-sm leading-relaxed max-w-sm mt-1 mx-auto">
-                          Explore Eventra events and register to build your schedule!
+                          Register for some technical sessions to build your chronological schedule timeline!
                         </p>
                       </div>
                     </div>
