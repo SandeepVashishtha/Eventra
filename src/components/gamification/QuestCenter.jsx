@@ -3,7 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Zap, Clock, CheckCircle, Lock, Gift, Target,
   Flame, Star, ChevronDown, Trophy, Sparkles, Timer,
+  Volume2, VolumeX,
 } from 'lucide-react';
+import LevelProgressRing from '../ui/LevelProgressRing';
 
 // ─── localStorage helpers ──────────────────────────────────────────────────────
 const QUEST_STORAGE_KEY = 'eventra_quest_state';
@@ -43,6 +45,75 @@ function formatCountdown(ms) {
   const h = Math.floor(ms / 3600000);
   const m = Math.floor((ms % 3600000) / 60000);
   return `${h}h ${m}m`;
+}
+
+// ─── Procedural Audio Synthesizer (Web Audio API) ─────────────────────────────
+let audioCtx = null;
+
+function getAudioContext() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  return audioCtx;
+}
+
+function playChimeSound() {
+  try {
+    const ctx = getAudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    const now = ctx.currentTime;
+    
+    // Ascent chime: E5 (659.25Hz) to G5 (783.99Hz)
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(659.25, now);
+    osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.12);
+    
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.15, now + 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+    
+    osc.start(now);
+    osc.stop(now + 0.3);
+  } catch (e) {
+    console.error("Failed to play procedural chime sound:", e);
+  }
+}
+
+function playLevelUpSound() {
+  try {
+    const ctx = getAudioContext();
+    const now = ctx.currentTime;
+    
+    // Brassy triumphant horn chord progression: C4 (261.63Hz), E4 (329.63Hz), G4 (392.00Hz), C5 (523.25Hz)
+    const chord = [261.63, 329.63, 392.00, 523.25];
+    chord.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.type = idx % 2 === 0 ? 'sine' : 'triangle';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+      
+      gain.gain.setValueAtTime(0, now + idx * 0.06);
+      gain.gain.linearRampToValueAtTime(0.2, now + idx * 0.06 + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.06 + 0.6);
+      
+      osc.start(now + idx * 0.06);
+      osc.stop(now + idx * 0.06 + 0.6);
+    });
+  } catch (e) {
+    console.error("Failed to play procedural level up sound:", e);
+  }
 }
 
 // ─── Default quest definitions ─────────────────────────────────────────────────
@@ -127,6 +198,15 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
   const [dailyCountdown, setDailyCountdown] = useState('');
   const [weeklyCountdown, setWeeklyCountdown] = useState('');
 
+  // Audio configuration state
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    return localStorage.getItem('eventra_sound_enabled') !== 'false';
+  });
+
+  // Gamification overlay and shake triggers
+  const [isShaking, setIsShaking] = useState(false);
+  const [isLevelingUp, setIsLevelingUp] = useState(null);
+
   // Persist to localStorage on every state change
   useEffect(() => { saveQuestState(state); }, [state]);
 
@@ -163,10 +243,23 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
     return () => clearInterval(id);
   }, [state.dailyResetAt, state.weeklyResetAt, initState]);
 
+  // Sound settings toggler
+  const toggleSound = () => {
+    setSoundEnabled(prev => {
+      const next = !prev;
+      localStorage.setItem('eventra_sound_enabled', String(next));
+      return next;
+    });
+  };
+
   // ─── Claim handler ───────────────────────────────────────────────────────────
   const claimXP = (questId, xp, isWeekly) => {
     const claimedKey = isWeekly ? 'weeklyClaimed' : 'dailyClaimed';
     if (state[claimedKey][questId]) return; // already claimed
+
+    const XP_PER_LEVEL = 100;
+    const currentLevelBefore = Math.floor(state.lifetimeXP / XP_PER_LEVEL) + 1;
+    const currentLevelAfter = Math.floor((state.lifetimeXP + xp) / XP_PER_LEVEL) + 1;
 
     setState(prev => ({
       ...prev,
@@ -176,8 +269,35 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
 
     setClaimFlash(questId);
     fireConfetti(confettiRef);
+
+    // Screen-shake micro-animation
+    setIsShaking(true);
+    setTimeout(() => setIsShaking(false), 500);
+
+    // Check level-up boundary crossing
+    if (currentLevelAfter > currentLevelBefore) {
+      setIsLevelingUp(currentLevelAfter);
+      if (soundEnabled) {
+        playLevelUpSound();
+      }
+      // Burst celebratory confetti waves
+      setTimeout(() => fireConfetti(confettiRef), 150);
+      setTimeout(() => fireConfetti(confettiRef), 350);
+      setTimeout(() => fireConfetti(confettiRef), 550);
+    } else {
+      if (soundEnabled) {
+        playChimeSound();
+      }
+    }
+
     setTimeout(() => setClaimFlash(null), 1200);
   };
+
+  // Calculate current level and XP ratios
+  const XP_PER_LEVEL = 100;
+  const currentLevel = Math.floor(state.lifetimeXP / XP_PER_LEVEL) + 1;
+  const currentXP = state.lifetimeXP % XP_PER_LEVEL;
+  const percentage = (currentXP / XP_PER_LEVEL) * 100;
 
   // ─── Quest card renderer ─────────────────────────────────────────────────────
   const renderQuest = (quest, isWeekly) => {
@@ -262,7 +382,7 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
             onClick={() => claimXP(quest.id, quest.rewardXP, isWeekly)}
-            className="mt-4 w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-black uppercase tracking-wider shadow-md hover:shadow-lg transition-shadow flex items-center justify-center gap-2"
+            className="mt-4 w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-black uppercase tracking-wider shadow-md hover:shadow-lg transition-shadow flex items-center justify-center gap-2 cursor-pointer"
           >
             <Gift className="w-3.5 h-3.5" />
             Claim {quest.rewardXP} XP
@@ -291,11 +411,26 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
   const claimedMap = activeTab === 'daily' ? state.dailyClaimed : state.weeklyClaimed;
   const claimedXP = quests.filter(q => claimedMap[q.id]).reduce((s, q) => s + q.rewardXP, 0);
 
+  // Framer Motion keyframe screen-shake animation
+  const shakeVariants = {
+    shake: {
+      x: [0, -6, 6, -6, 6, -3, 3, -1, 1, 0],
+      transition: { duration: 0.5, ease: "easeInOut" }
+    },
+    idle: { x: 0 }
+  };
+
   return (
-    <section className="space-y-6" ref={confettiRef} style={{ position: 'relative' }}>
-      {/* Section header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
+    <motion.section
+      className="space-y-6"
+      ref={confettiRef}
+      style={{ position: 'relative' }}
+      animate={isShaking ? "shake" : "idle"}
+      variants={shakeVariants}
+    >
+      {/* Section HUD Header */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+        <div className="md:col-span-2">
           <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-widest">
             <Target className="w-3.5 h-3.5" /> Quest Center
           </div>
@@ -305,19 +440,38 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed max-w-lg">
             Complete missions to earn XP, climb levels, and unlock exclusive developer tokens. Quests refresh automatically.
           </p>
+
+          <div className="flex flex-wrap items-center gap-3 mt-5">
+            {/* Lifetime XP badge */}
+            <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-2xl px-5 py-3 flex items-center gap-3 shadow-sm select-none">
+              <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/30">
+                <Star className="w-5 h-5 text-amber-500" />
+              </div>
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Quest XP Earned</p>
+                <p className="text-xl font-black text-slate-800 dark:text-slate-100 tracking-tight">{state.lifetimeXP}</p>
+              </div>
+            </div>
+
+            {/* Audio Toggle switch */}
+            <button
+              type="button"
+              onClick={toggleSound}
+              className="p-3 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-2xl shadow-sm hover:scale-105 transition-all text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white cursor-pointer"
+              title={soundEnabled ? "Mute quest sounds" : "Unmute quest sounds"}
+            >
+              {soundEnabled ? <Volume2 className="w-5 h-5 text-indigo-500" /> : <VolumeX className="w-5 h-5 text-slate-500" />}
+            </button>
+          </div>
         </div>
 
-        {/* Lifetime XP badge */}
-        <div className="flex items-center gap-3">
-          <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-2xl px-5 py-3 flex items-center gap-3 shadow-sm">
-            <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/30">
-              <Star className="w-5 h-5 text-amber-500" />
-            </div>
-            <div>
-              <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Quest XP Earned</p>
-              <p className="text-xl font-black text-slate-800 dark:text-slate-100 tracking-tight">{state.lifetimeXP}</p>
-            </div>
-          </div>
+        {/* Circular Progress Ring */}
+        <div className="md:col-span-1">
+          <LevelProgressRing
+            level={currentLevel}
+            currentXP={currentXP}
+            percentage={percentage}
+          />
         </div>
       </div>
 
@@ -332,7 +486,7 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`
-                flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all
+                flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer
                 ${activeTab === tab.id
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none'
                   : 'bg-white/60 dark:bg-slate-900/50 text-slate-600 dark:text-slate-400 border border-slate-200/50 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/60'
@@ -379,6 +533,70 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
           {quests.map(q => renderQuest(q, activeTab === 'weekly'))}
         </AnimatePresence>
       </div>
-    </section>
+
+      {/* Level Up Celebration Modal Overlay */}
+      <AnimatePresence>
+        {isLevelingUp && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Dark glass backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsLevelingUp(null)}
+              className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
+            />
+            
+            {/* Modal Box */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.85, y: 50 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.85, y: 50 }}
+              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+              className="relative bg-gradient-to-br from-slate-900 to-indigo-950/90 border-2 border-indigo-500/50 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl overflow-hidden z-10 select-none"
+            >
+              {/* Outer glowing ring decorative backdrop */}
+              <div className="absolute -top-16 -left-16 w-36 h-36 bg-fuchsia-500/10 rounded-full blur-3xl" />
+              <div className="absolute -bottom-16 -right-16 w-36 h-36 bg-indigo-500/10 rounded-full blur-3xl" />
+              
+              {/* Spinning star sparkles overlay */}
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                className="w-24 h-24 mx-auto bg-gradient-to-r from-amber-400 via-pink-500 to-purple-500 rounded-full flex items-center justify-center p-0.5 shadow-lg shadow-indigo-500/30"
+              >
+                <div className="w-full h-full bg-slate-950 rounded-full flex items-center justify-center">
+                  <Trophy className="w-10 h-10 text-amber-400 filter drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
+                </div>
+              </motion.div>
+              
+              <h3 className="text-[11px] font-black uppercase text-indigo-400 tracking-widest mt-6">
+                Achievement unlocked
+              </h3>
+              
+              <h2 className="text-4xl font-extrabold text-white tracking-tighter mt-1 filter drop-shadow-[0_0_12px_rgba(99,102,241,0.4)]">
+                LEVEL UP!
+              </h2>
+              
+              <p className="text-sm font-semibold text-slate-300 mt-3">
+                You have advanced to <span className="font-extrabold text-indigo-400">Level {isLevelingUp}</span>
+              </p>
+              <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
+                Congratulations. Keep completing missions to earn exclusive community tokens and progress badges.
+              </p>
+              
+              <button
+                type="button"
+                onClick={() => setIsLevelingUp(null)}
+                className="mt-8 px-8 py-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:scale-103 active:scale-97 text-white text-xs font-black uppercase tracking-wider rounded-2xl shadow-md transition-all cursor-pointer w-full flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                Claim Rewards
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </motion.section>
   );
 }
