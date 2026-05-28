@@ -163,6 +163,7 @@ function App() {
                 <OnboardingChecklist />
 
                 <main
+                  id="main-content"
                   className="
                     relative z-10 min-h-[85vh]
                     bg-white dark:bg-slate-950
