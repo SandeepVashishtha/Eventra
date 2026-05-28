@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
+import { getPublicErrorMessage, AUTH_ERRORS } from "../../utils/errorMessages";
 import useReducedMotion from "../../hooks/useReducedMotion";
 import FieldError from '../common/FieldError';
 import useLoginRateLimit from '../../hooks/useLoginRateLimit';
@@ -88,6 +89,8 @@ const Login = () => {
         );
       }
     } catch (err) {
+      recordAttempt();
+      toast.error(getPublicErrorMessage(err, AUTH_ERRORS.loginFailed));
       // If the server returned 429, respect the Retry-After header rather than
       // computing our own backoff — the server-side window may be longer.
       const retryAfterHeader =

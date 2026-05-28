@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { pushToQueue } from "../utils/offlineQueue";
+import { getPublicErrorMessage, FORM_ERRORS } from "../utils/errorMessages";
 
 const isOfflineSubmissionError = (error) =>
   error?.isNetworkError ||
@@ -55,7 +56,7 @@ export function useFormSubmit(submitFn, offlineOptions = {}) {
       }
 
       if (isMounted.current) {
-        setError(err?.response?.data?.message || err.message || "Something went wrong.");
+        setError(getPublicErrorMessage(err, FORM_ERRORS.submitFailed));
       }
     } finally {
       isInFlight.current = false;
