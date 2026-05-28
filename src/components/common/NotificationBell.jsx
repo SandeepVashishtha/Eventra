@@ -16,7 +16,7 @@ const NotificationBell = () => {
     <div className="notification-wrapper">
       <button
         className="notification-bell"
-        onClick={() = aria-label="button"> setOpen(!open)}
+        onClick={() => setOpen(!open)}
       >
         <Bell size={22} />
 

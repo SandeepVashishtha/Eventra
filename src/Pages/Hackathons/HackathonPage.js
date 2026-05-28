@@ -27,7 +27,7 @@ const Tag = ({ tag, onRemove }) => (
   >
     <span>{tag}</span>
     <button
-      onClick={() = aria-label="button"> onRemove(tag)}
+      onClick={() => onRemove(tag)}
       className="hover:bg-indigo-500/30 rounded-full p-0.5 transition-colors"
     >
       <FiX className="w-3 h-3" />
@@ -438,7 +438,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
             </div>
             <div className="flex items-center gap-3">
               <button
-                onClick={() = aria-label="button"> setShowFilters(!showFilters)}
+                onClick={() => setShowFilters(!showFilters)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${
                   showFilters
                     ? "bg-indigo-600 text-white border-indigo-500 shadow-md dark:shadow-[0_0_16px_rgba(99,102,241,0.4)]"
@@ -540,7 +540,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
                       {availableTags.map((tag) => (
                         <button
                           key={tag}
-                          onClick={() = aria-label="button"> handleTagSelect(tag)}
+                          onClick={() => handleTagSelect(tag)}
                           className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 border ${
                             selectedTags.includes(tag)
                               ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm dark:shadow-[0_0_10px_rgba(99,102,241,0.4)]'
@@ -574,7 +574,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
             ].map((tab) => (
               <button
                 key={tab.key}
-                onClick={() = aria-label="button"> setActiveTab(tab.key)}
+                onClick={() => setActiveTab(tab.key)}
                 className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300 border ${
                   activeTab === tab.key
                     ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white border-indigo-500/50 shadow-md dark:shadow-[0_0_16px_rgba(99,102,241,0.4)] scale-105"
