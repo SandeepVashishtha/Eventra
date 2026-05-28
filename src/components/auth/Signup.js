@@ -6,106 +6,19 @@ import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
 import GoogleLoginButton from "./GoogleLoginButton";
-    try {
-      setLoading(true);
-      setErrors(prev => ({ ...prev, submit: "" }));
+const PASSWORD_REQUIREMENTS = [
+  { id: 'length', label: 'At least 8 characters', regex: /.{8,}/ },
+  { id: 'uppercase', label: 'One uppercase letter', regex: /[A-Z]/ },
+  { id: 'lowercase', label: 'One lowercase letter', regex: /[a-z]/ },
+  { id: 'number', label: 'One number', regex: /\d/ },
+  { id: 'special', label: 'One special character', regex: /[!@#$%^&*(),.?":{}|<>]/ },
+];
 
-      // Initiate OAuth handshake with backend which should return a redirect URL
-      // The backend may return { url } or issue a 302; support both behaviours.
-      let initiation;
-      try {
-        initiation = await apiUtils.get(`/api/auth/${provider}`, { skipAuth: true });
-      } catch (networkErr) {
-        throw new Error(`Could not start ${provider} OAuth: ${networkErr.message || networkErr}`);
-      }
-
-      const redirectUrl = initiation.data?.url || initiation.headers.get('location') || initiation.data?.redirect;
-      if (!redirectUrl) {
-        throw new Error('OAuth initiation endpoint did not return a redirect URL');
-      }
-
-      const popup = openPopup(redirectUrl);
-      if (!popup) throw new Error('Unable to open authentication popup. Please allow popups and try again.');
-
-      // Poll the popup until it redirects back to our origin (where we can safely read query params)
-      const start = Date.now();
-
-      await new Promise((resolve, reject) => {
-        const interval = setInterval(async () => {
-          if (!popup || popup.closed) {
-            clearInterval(interval);
-            return reject(new Error('Authentication popup closed before completing sign in'));
-          }
-
-          try {
-            const href = popup.location.href;
-            // Only attempt to parse if the popup is same-origin (redirected back to our app)
-            if (href && href.indexOf(window.location.origin) === 0) {
-              const url = new URL(href);
-              const error = url.searchParams.get('error');
-              const code = url.searchParams.get('code');
-              const token = url.searchParams.get('token');
-
-              if (error) {
-                popup.close();
-                clearInterval(interval);
-                return reject(new Error(error));
-              }
-
-              // If the backend returned a token directly in the redirect, use it.
-              if (token) {
-                popup.close();
-                clearInterval(interval);
-                return resolve({ token });
-              }
-
-              // If we received an auth code, attempt server-side exchange by calling the profile endpoint
-              if (code) {
-                // Close popup and resolve; the server should have set an HttpOnly cookie during the redirect
-                popup.close();
-                clearInterval(interval);
-                return resolve({ code });
-              }
-            }
-          } catch (err) {
-            // Cross-origin access will throw until the popup redirects back to our origin.
-            // Ignore those errors and continue polling.
-          }
-
-          if (Date.now() - start > POPUP_TIMEOUT_MS) {
-            clearInterval(interval);
-            try { popup.close(); } catch {}
-            return reject(new Error('Authentication timed out'));
-          }
-        }, POPUP_POLL_INTERVAL);
-      });
-
-      // After popup completes, ask backend for the current profile which should reflect the logged-in user
-      try {
-        const profileRes = await apiUtils.get(API_ENDPOINTS.USERS.PROFILE);
-        if (!profileRes.ok) throw new Error('Failed to fetch authenticated profile after OAuth');
-
-        const sessionToken = profileRes.data?.token ?? profileRes.headers.get('authorization') ?? 'cookie-managed';
-        const sessionUser = profileRes.data?.user ?? profileRes.data ?? null;
-
-        if (!sessionUser) throw new Error('Profile response did not contain user information');
-
-        // Persist session via AuthContext
-        setAuthSession(sessionToken, sessionUser);
-        setSubmitStatus('success');
-        navigate('/dashboard', { replace: true });
-      } catch (err) {
-        throw new Error(err.message || 'OAuth completed but fetching profile failed');
-      }
-    } catch (err) {
-      console.error('[Signup] Social login error:', err);
-      setErrors(prev => ({ ...prev, submit: `Failed to connect with ${provider}: ${err.message}` }));
-      setSubmitStatus('error');
-    } finally {
-      setLoading(false);
-    }
+const NAME_VALIDATION = {
+  min: 2,
+  max: 50,
   pattern: /^[a-zA-Z\s'-]+$/,
-  patternError: "Only letters, spaces, hyphens & apostrophes allowed"
+  patternError: "Only letters, spaces, hyphens & apostrophes allowed",
 };
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -318,133 +231,7 @@ const Signup = () => {
     }
   };
 
-  // Social login handler
-  const handleSocialLogin = useCallback(async (provider) => {
-    const POPUP_POLL_INTERVAL = 500;
-    const POPUP_TIMEOUT_MS = 60_000;
-
-    const openPopup = (url) => {
-      const width = 600;
-      const height = 700;
-      const left = Math.max(0, Math.floor(window.screenX + (window.innerWidth - width) / 2));
-      const top = Math.max(0, Math.floor(window.screenY + (window.innerHeight - height) / 2));
-      return window.open(url, `_oauth_${provider}`, `width=${width},height=${height},left=${left},top=${top}`);
-    };
-
-    try {
-      setLoading(true);
-<<<<<<< HEAD
-      const response = await apiUtils.get(`${API_ENDPOINTS.AUTH.OAUTH}/${provider}`);
-      
-      // Depending on wrapAxiosResponse, data could be response.data or response itself
-      const data = response.data || response;
-      if (data && data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error("No redirect URL returned from server.");
-      }
-    } catch (err) {
-      console.error(`OAuth error (${provider}):`, err);
-      setErrors(prev => ({ ...prev, submit: `Failed to connect with ${provider}. Please try again.` }));
-=======
-      setErrors(prev => ({ ...prev, submit: "" }));
-
-      // Initiate OAuth handshake with backend which should return a redirect URL
-      // The backend may return { url } or issue a 302; support both behaviours.
-      let initiation;
-      try {
-        initiation = await apiUtils.get(`/api/auth/${provider}`, { skipAuth: true });
-      } catch (networkErr) {
-        throw new Error(`Could not start ${provider} OAuth: ${networkErr.message || networkErr}`);
-      }
-
-      const redirectUrl = initiation.data?.url || initiation.headers.get('location') || initiation.data?.redirect;
-      if (!redirectUrl) {
-        throw new Error('OAuth initiation endpoint did not return a redirect URL');
-      }
-
-      const popup = openPopup(redirectUrl);
-      if (!popup) throw new Error('Unable to open authentication popup. Please allow popups and try again.');
-
-      // Poll the popup until it redirects back to our origin (where we can safely read query params)
-      const start = Date.now();
-
-      await new Promise((resolve, reject) => {
-        const interval = setInterval(async () => {
-          if (!popup || popup.closed) {
-            clearInterval(interval);
-            return reject(new Error('Authentication popup closed before completing sign in'));
-          }
-
-          try {
-            const href = popup.location.href;
-            // Only attempt to parse if the popup is same-origin (redirected back to our app)
-            if (href && href.indexOf(window.location.origin) === 0) {
-              const url = new URL(href);
-              const error = url.searchParams.get('error');
-              const code = url.searchParams.get('code');
-              const token = url.searchParams.get('token');
-
-              if (error) {
-                popup.close();
-                clearInterval(interval);
-                return reject(new Error(error));
-              }
-
-              // If the backend returned a token directly in the redirect, use it.
-              if (token) {
-                popup.close();
-                clearInterval(interval);
-                return resolve({ token });
-              }
-
-              // If we received an auth code, attempt server-side exchange by calling the profile endpoint
-              if (code) {
-                // Close popup and resolve; the server should have set an HttpOnly cookie during the redirect
-                popup.close();
-                clearInterval(interval);
-                return resolve({ code });
-              }
-            }
-          } catch (err) {
-            // Cross-origin access will throw until the popup redirects back to our origin.
-            // Ignore those errors and continue polling.
-          }
-
-          if (Date.now() - start > POPUP_TIMEOUT_MS) {
-            clearInterval(interval);
-            try { popup.close(); } catch {}
-            return reject(new Error('Authentication timed out'));
-          }
-        }, POPUP_POLL_INTERVAL);
-      });
-
-      // After popup completes, ask backend for the current profile which should reflect the logged-in user
-      try {
-        const profileRes = await apiUtils.get(API_ENDPOINTS.USERS.PROFILE);
-        if (!profileRes.ok) throw new Error('Failed to fetch authenticated profile after OAuth');
-
-        const sessionToken = profileRes.data?.token ?? profileRes.headers.get('authorization') ?? 'cookie-managed';
-        const sessionUser = profileRes.data?.user ?? profileRes.data ?? null;
-
-        if (!sessionUser) throw new Error('Profile response did not contain user information');
-
-        // Persist session via AuthContext
-        setAuthSession(sessionToken, sessionUser);
-        setSubmitStatus('success');
-        navigate('/dashboard', { replace: true });
-      } catch (err) {
-        throw new Error(err.message || 'OAuth completed but fetching profile failed');
-      }
-    } catch (err) {
-      console.error('[Signup] Social login error:', err);
-      setErrors(prev => ({ ...prev, submit: `Failed to connect with ${provider}: ${err.message}` }));
-      setSubmitStatus('error');
->>>>>>> f939fcd9 (feat(auth): implement OAuth popup flow in Signup)
-    } finally {
-      setLoading(false);
-    }
-  }, [navigate, setAuthSession]);
+  // Social login is handled by `GoogleLoginButton`.
 
   // Animation variants
   const containerVariants = {

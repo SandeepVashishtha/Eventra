@@ -47,11 +47,7 @@ export const AuthProvider = ({ children }) => {
 
     setUser(null);
     setToken(null);
-<<<<<<< HEAD
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
-=======
-      document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
->>>>>>> 83541a19 (chore(todos): complete several repo TODOs (auth cookie, e2e test, service-worker, docs, assets readme))
     sessionStorage.removeItem("token");
     localStorage.removeItem("user");
     return true;
