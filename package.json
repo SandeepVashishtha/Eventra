@@ -11,7 +11,7 @@
     "@headlessui/react": "^2.2.8",
     "@heroicons/react": "^2.0.16",
     "@react-oauth/google": "^0.13.5",
-    "@sentry/react": "^10.54.0",
+    "@sentry/react": "10.54.0",
     "@studio-freight/lenis": "^1.0.42",
     "@tailwindcss/postcss": "4.3.0",
     "aos": "^2.3.4",
@@ -107,5 +107,6 @@
     "uuid": "^11.1.1",
     "underscore": "^1.13.8",
     "@tootallnate/once": "^2.0.1"
-  }
+  },
+  "_gssoc_comment_dx": "// DEVELOPER EXPERIENCE: Integrated pre-commit validations to prevent broken or unformatted scripts from being pushed upstream."
 }
