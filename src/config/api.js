@@ -220,6 +220,7 @@ export const API_ENDPOINTS = {
     EMAIL: (email) => `/api/validate/email/${encodeURIComponent(email)}`,
     USERNAME: (username) => `/api/validate/username/${encodeURIComponent(username)}`,
     PHONE: "/api/validate/phone",
+  },
   AUTH: {
     LOGIN: buildApiUrl("/api/auth/login"),
     GOOGLE: buildApiUrl("/api/auth/google"),
