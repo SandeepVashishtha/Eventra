@@ -64,21 +64,29 @@ const EventCreation = () => {
   const [currentStep, setCurrentStep] = useState("form");
 
   const { handleSubmit: submitEventForm, isSubmitting, error: submitError, success: submitSuccess } = useFormSubmit(async (eventData) => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error("Authentication required. Please log in and try again.");
-    }
+    // Authentication is handled automatically by the HttpOnly cookie that the
+    // backend sets on login. The apiUtils Axios instance sends withCredentials:true
+    // on every request so the cookie is included without any manual token read.
+    // The ProtectedRoute wrapping /create-event already enforces that only
+    // authenticated users with CREATE_EVENT permission reach this component.
 
     if (!API_ENDPOINTS.EVENTS.CREATE || process.env.NODE_ENV === "development") {
-      console.warn("⚠️ Mocking event creation success (API inactive)");
       await new Promise((resolve) => setTimeout(resolve, 1000));
       return;
     }
 
-    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData, token);
-    const result = await response.json();
+    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData);
+    const result = response.data ?? {};
 
-    if (!(response.ok && result.success)) {
+    if (response.status === 401) {
+      throw new Error("Your session has expired. Please log in again.");
+    }
+
+    if (response.status === 403) {
+      throw new Error("You do not have permission to create events.");
+    }
+
+    if (!response.ok && response.status >= 400) {
       const errorMessage = result.message || result.error || `Server error: ${response.status}`;
       throw new Error(errorMessage);
     }
