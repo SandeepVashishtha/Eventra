@@ -24,6 +24,8 @@ const EventDetailsPage = () => {
   const shareUrl = event ? `${window.location.origin}/events/${event.id}` : "";
   const shareText = event ? `Check out this event: ${event.title}` : "";
 
+  const [loading, setLoading] = useState(true);
+  const [event, setEvent] = useState(null);
   const shareLinks = event
     ? {
         twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
@@ -56,10 +58,38 @@ const EventDetailsPage = () => {
   };
 
   useEffect(() => {
+    let isCancelled = false;
+
     const fetchEvent = async () => {
       setLoading(true);
       setCacheInfo(null);
 
+        await new Promise((resolve) =>
+          setTimeout(resolve, 1000)
+        );
+        if (isCancelled) return;
+
+        const foundEvent = eventsMockData.find(
+          (e) => e.id === parseInt(eventId)
+        );
+
+        if (isCancelled) return;
+        setEvent(foundEvent);
+
+        if (foundEvent) {
+          addRecentlyViewed({
+            id: foundEvent.id,
+            title: foundEvent.title,
+            date: foundEvent.date,
+            location: foundEvent.location,
+            image: foundEvent.image,
+            category: foundEvent.type,
+          });
+        }
+      } catch (error) {
+        if (!isCancelled) {
+          console.error("Failed to fetch event details:", error);
+        }
       try {
         // Try the live API first
         const apiUrl = `/api/events/${encodeURIComponent(eventId)}`;
@@ -95,7 +125,7 @@ const EventDetailsPage = () => {
           setEvent(null);
         }
       } finally {
-        setLoading(false);
+        if (!isCancelled) setLoading(false);
       }
     };
 
