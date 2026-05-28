@@ -773,7 +773,16 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
         </aside>
 
         {/* Dynamic Canvas Workspace */}
-        <div className="fp-canvas-wrapper" onMouseDown={(e) => handleMouseDown(e, null)}>
+        <div
+          className="fp-canvas-wrapper"
+          onMouseDown={(e) => handleMouseDown(e, null)}
+          onTouchStart={(e) => {
+            if (isPanMode && e.cancelable) {
+              e.preventDefault();
+            }
+            handleMouseDown(e, null);
+          }}
+        >
 
           {/* Real-time active collision notification */}
           {anyCollision && (
@@ -875,6 +884,11 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
                   data-element-type={el.type}
                   transform={`rotate(${el.rotation}, ${el.x + el.width / 2}, ${el.y + el.height / 2})`}
                   onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, el.id); }}
+                  onTouchStart={(e) => {
+                    if (e.cancelable) e.preventDefault();
+                    e.stopPropagation();
+                    handleMouseDown(e, el.id);
+                  }}
                   className="fp-element-group"
                 >
                   {/* Chairs rendered around tables */}
