@@ -199,14 +199,10 @@ export default function LeaderBoard() {
       }
 
       // Add achievement-based bonus points to gamify contributors
-      Object.values(contributorsMap).forEach(applyAchievementBonus);
+      data.forEach(applyAchievementBonus);
 
-      const sortedContributors = Object.values(contributorsMap).sort(
-        (a, b) => b.points - a.points
-      );
-
+      const sortedContributors = [...data].sort((a, b) => b.points - a.points);
       setContributors(sortedContributors);
-      setContributors(data);
       setLastUpdated(new Date().toLocaleString());
       
       // Update local storage cache
@@ -267,43 +263,6 @@ export default function LeaderBoard() {
 
     storageManager.set(STORAGE_KEYS.RECENT_SEARCHES, updatedSearches);
   };
-  const filteredContributors = useMemo(() => {
-    return contributors.filter((c) => {
-      const q = search.trim().toLowerCase();
-      const matchSearch =
-        !q || c.username.toLowerCase().includes(q) || (c.name && c.name.toLowerCase().includes(q));
-      if (!matchSearch) return false;
-
-      // Category filters (deterministic simulation based on username hash)
-      if (activeCategory === "monthly") {
-        // Show top ~40% as "monthly stars" based on points threshold
-        const threshold =
-          contributors.length > 0
-            ? contributors[Math.floor(contributors.length * 0.4)]?.points || 0
-            : 0;
-        return c.points >= threshold;
-      }
-      if (activeCategory === "mentors") {
-        // Show contributors with 5+ PRs as "mentors"
-        return c.prs >= 5;
-      }
-      return true; // "overall" shows everyone
-    });
-  }, [contributors, search, activeCategory]);
-
-  const sortedContributors = useMemo(() => {
-    return [...filteredContributors].sort((a, b) => {
-      if (sortBy === "points") return b.points - a.points;
-      if (sortBy === "prs") return b.prs - a.prs;
-      if (sortBy === "username") return a.username.localeCompare(b.username);
-      return 0;
-    });
-  }, [filteredContributors, sortBy]);
-
-  const indexOfLast = currentPage * CONTRIBUTORS_PER_PAGE;
-  const indexOfFirst = indexOfLast - CONTRIBUTORS_PER_PAGE;
-  const currentContributors = sortedContributors.slice(indexOfFirst, indexOfLast);
-  const totalPages = Math.ceil(sortedContributors.length / CONTRIBUTORS_PER_PAGE);
 
   const totalPages = useMemo(
     () => totalLeaderboardPages(sortedContributors.length, CONTRIBUTORS_PER_PAGE),
@@ -319,11 +278,6 @@ export default function LeaderBoard() {
     () => computeLeaderboardStats(contributors),
     [contributors]
   );
-  const stats = {
-    totalContributors: contributors.length,
-    flooredTotalPRs: contributors.reduce((sum, c) => sum + c.prs, 0),
-    flooredTotalPoints: contributors.reduce((sum, c) => sum + c.points, 0),
-  };
 
   const sortOptions = useMemo(() => [
     { label: "Points", value: "points" },
