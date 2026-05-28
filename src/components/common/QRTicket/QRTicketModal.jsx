@@ -39,13 +39,14 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
     ticket?.ticketId || "ticket"
   );
 
-  // Close on Escape key
+  const modalRef = useRef(null);
+
+  // Focus modal on open to capture localized keyboard events
   useEffect(() => {
-    if (!isOpen) return;
-    const handler = (e) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [isOpen, onClose]);
+    if (isOpen && modalRef.current) {
+      modalRef.current.focus();
+    }
+  }, [isOpen]);
 
   // Lock body scroll while open
   useEffect(() => {
@@ -76,7 +77,10 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
   return (
     // Backdrop
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      ref={modalRef}
+      tabIndex={-1}
+      onKeyDown={(e) => e.key === "Escape" && onClose()}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 outline-none"
       style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
       role="dialog"
