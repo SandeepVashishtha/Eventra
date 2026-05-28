@@ -118,7 +118,7 @@ const ConfirmationModal = ({
             type="button"
             className="confirmation-modal-btn confirmation-modal-btn-cancel"
             onClick={onClose}
-          >
+           aria-label="button">
             {cancelText}
           </button>
 
@@ -126,7 +126,7 @@ const ConfirmationModal = ({
             type="button"
             className="confirmation-modal-btn confirmation-modal-btn-confirm"
             onClick={onConfirm}
-          >
+           aria-label="button">
             {confirmText}
           </button>
         </div>

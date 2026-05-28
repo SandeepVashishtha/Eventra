@@ -23,51 +23,13 @@ import {
   User as UserIcon,
   LogOut,
   LogIn,
-  MessageSquare,
   Book,
   Bookmark,
   Bell,
   HelpCircle,
   ChevronDown,
   MousePointer,
-  Moon,
-  Sun,
-  MoreHorizontal,
-  Search,
-  Palette,
 } from "lucide-react";
-
-
-// --- Helpers to reduce complexity ---
-const getUserDisplayNames = (user) => {
-  if (!user) return { primary: "User", secondary: null };
-  const primary =
-    user.fullName?.trim() ||
-    [user.firstName, user.lastName].filter(Boolean).join(" ").trim() ||
-    user.username?.trim() ||
-    user.email?.trim() ||
-    "User";
-  const secondaryCand = user.email?.trim() || user.username?.trim() || "";
-  const secondary = secondaryCand && secondaryCand !== primary ? secondaryCand : null;
-  return { primary, secondary };
-};
-
-const clearBodyScrollStyles = () => {
-  try {
-    const stored = document.body.style.top;
-    Object.assign(document.body.style, { position: "", top: "", left: "", right: "", width: "" });
-    if (stored) window.scrollTo(0, parseInt(stored, 10) * -1 || 0);
-  } catch (e) {
-    /* ignore */
-  }
-};
-
-const setBodyScrollStyles = (top) => {
-  Object.assign(document.body.style, {
-    position: "fixed",
-    top: `-${top}px`,
-    left: "0",
-    right: "0",
     width: "100%",
   });
 };
@@ -223,7 +185,7 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
           ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
           : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 border-transparent"
       }`}
-    >
+     aria-label="button">
       <span className="flex items-center gap-3">
         {item.icon} {item.name}
       </span>
@@ -296,27 +258,31 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
   };
 
   return (
-  <div className="relative">
-    <button
-      type="button"
-      onClick={onToggle}
-      onKeyDown={handleKeyDown}
-      aria-expanded={isOpen}
-      aria-haspopup="menu"
-      aria-controls={menuId}
-      className={`relative group flex items-center gap-1.5 text-[13px] xl:text-[14px] font-medium transition-all duration-200 whitespace-nowrap px-3.5 py-1.5 rounded-lg ${
-      className={`relative group flex items-center gap-1 text-[12px] xl:text-[13px] font-medium transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-lg ${
-        isActive || isOpen
-          ? "text-indigo-600 dark:text-indigo-400 font-semibold"
-          : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
-      }`}
-    >
-      <span className="relative z-10 flex items-center gap-1">
-        {item.name}
-        <ChevronDown
-          className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-        />
-      </span>
+    <div className="relative">
+      <button
+        type="button"
+        onClick={onToggle}
+        onKeyDown={handleKeyDown}
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
+        aria-controls={menuId}
+        className={`relative group flex items-center gap-1.5 text-[13px] xl:text-[14px] font-medium transition-all duration-200 whitespace-nowrap px-3.5 py-1.5 rounded-lg ${
+          isActive || isOpen
+            ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+            : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
+        }`}
+        aria-label={isActive || isOpen ? "Collapse submenu" : "Expand submenu"}
+      >
+        <span className="relative z-10 flex items-center gap-1">
+          {item.name}
+          <ChevronDown
+            className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+          />
+        </span>
+      </button>
+    </div>
+  );
+
   const btnRef = useRef(null);
   const [dropPos, setDropPos] = useState({ top: 0, left: 0 });
 
@@ -340,13 +306,29 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
             ? "text-indigo-600 dark:text-indigo-400 font-semibold"
             : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
         }`}
-      >
+       aria-label="button">
         <span className="relative z-10 flex items-center gap-1">
           {item.name}
           <ChevronDown
             className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
           />
         </span>
+
+        {(isActive || isOpen) && (
+          <>
+            <motion.span
+              layoutId="activeBox"
+              className="absolute inset-0 bg-indigo-100/60 dark:bg-indigo-500/20 border border-indigo-200/80 dark:border-indigo-500/50 rounded-lg -z-0"
+              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            />
+            <motion.span
+              layoutId="activeBoxGlow"
+              className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
+              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            />
+          </>
+        )}
+      </button>
 
         {(isActive || isOpen) && (
           <>
@@ -505,14 +487,14 @@ const UserProfileDropdown = ({
 }) => (
   <div className="relative profile-container">
     <button 
-      onClick={() => setShowProfileDropdown(!showProfileDropdown)} 
+      onClick={() = aria-label="button"> setShowProfileDropdown(!showProfileDropdown)} 
       type="button"
       aria-label="Open user menu"
       aria-expanded={showProfileDropdown}
       aria-haspopup="menu"
       aria-controls="user-profile-menu"
     <button
-      onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+      onClick={() = aria-label="button"> setShowProfileDropdown(!showProfileDropdown)}
       className="flex items-center gap-2 text-sm font-medium text-black/90 dark:text-white/90 hover:text-black dark:hover:text-white transition-colors"
     >
       {user?.profilePicture ? (
@@ -541,16 +523,14 @@ const UserProfileDropdown = ({
           exit={{ opacity: 0, y: 10, scale: 0.95 }}
           transition={{ duration: 0.15 }}
           className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-900 rounded-lg shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-800"
-        >
-          <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+            <button
+              type="button"
+              onClick={() => setShowProfileDropdown(!showProfileDropdown)}
             <div className="flex items-center gap-3">
               {user?.profilePicture ? (
                 <img
                   src={user.profilePicture}
-                  alt="Profile"
-                  className="w-12 h-12 rounded-full object-cover ring-2 ring-purple-500/20"
-                  onError={(e) => (e.currentTarget.style.display = "none")}
-                />
+            >
               ) : (
                 <div className="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-800 to-indigo-950 flex items-center justify-center">
                   <UserIcon className="w-6 h-6 text-white" />
@@ -580,7 +560,7 @@ const UserProfileDropdown = ({
             </Link>
           </div>
           <div className="p-2 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
-            <button type="button" role="menuitem" onClick={handleLogoutClick} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <button type="button" role="menuitem" onClick={handleLogoutClick} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" aria-label="button">
               <LogOut className="w-4 h-4" />Logout
             <Link
               to="/dashboard"
@@ -611,7 +591,7 @@ const UserProfileDropdown = ({
             <button
               onClick={handleLogoutClick}
               className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
+             aria-label="button">
               <LogOut className="w-4 h-4" />
               Logout
             </button>
@@ -677,7 +657,7 @@ const MobileUserSection = ({
     <button
       onClick={handleLogoutClick}
       className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors font-medium"
-    >
+     aria-label="button">
       <LogOut className="w-5 h-5" />
       Logout
     </button>
@@ -1061,14 +1041,14 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             <button 
               ref={toggleBtnRef} 
               type="button"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+              onClick={() = aria-label="button"> setIsMobileMenuOpen(!isMobileMenuOpen)} 
               aria-expanded={isMobileMenuOpen} 
               aria-haspopup="dialog"
           {/* Mobile Menu Button */}
           <div className="xl:hidden flex-shrink-0">
             <button
               ref={toggleBtnRef}
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              onClick={() = aria-label="button"> setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-drawer"
               aria-label={isMobileMenuOpen ? "Close navigation" : "Open navigation"}

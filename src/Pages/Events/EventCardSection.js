@@ -59,7 +59,7 @@ const EventCardSection = ({ isLoading, events, viewMode, filterType, onClearFilt
             type="button"
             onClick={onClearFilters}
             className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-          >
+           aria-label="button">
             Clear Filters
           </button>
         )}

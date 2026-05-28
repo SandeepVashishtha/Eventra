@@ -393,7 +393,7 @@ const EventRecommendation = () => {
               <button
                 onClick={generateRecommendations}
                 className="w-full mt-4 bg-blue-600 hover:bg-blue-700 transition-all text-white rounded-xl py-3 text-sm font-semibold"
-              >
+                aria-label="Generate recommendations">
                 Generate Recommendations
               </button>
 
@@ -743,10 +743,11 @@ const EventRecommendation = () => {
               >
                 Close
               </button>
-              <button
+                onClick={() => {
                 onClick={() => {
                   toast.success(`Successfully registered for ${selectedEvent.title}! Check your email for confirmation.`);
                   setSelectedEvent(null);
+                }}
                 }}
                 className="flex-1 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
               >

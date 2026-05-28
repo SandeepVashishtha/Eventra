@@ -170,7 +170,7 @@ const EventDetails = () => {
               )}
 
               <button
-                onClick={() => setShowShareModal(true)}
+                onClick={() = aria-label="button"> setShowShareModal(true)}
                 className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-indigo-700 transition"
               >
                 Share Event
@@ -180,14 +180,14 @@ const EventDetails = () => {
                 onClick={handlePrint}
                 disabled={isPrinting}
                 className="print-hide inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
-              >
+               aria-label="button">
                 {isPrinting ? "Preparing..." : "🖨️ Print / Save as PDF"}
               </button>
 
               {isOrganizer && (
                 <div className="relative print-hide">
                   <button
-                    onClick={() => setShowExportDropdown(!showExportDropdown)}
+                    onClick={() = aria-label="button"> setShowExportDropdown(!showExportDropdown)}
                     className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800 cursor-pointer"
                     aria-label="Export registrant data"
                   >
@@ -198,7 +198,7 @@ const EventDetails = () => {
                       <div className="fixed inset-0 z-10" onClick={() => setShowExportDropdown(false)} />
                       <div className="absolute right-0 mt-2 w-40 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg py-1.5 z-20 animate-fadeIn text-left">
                         <button
-                          onClick={async () => {
+                          onClick={async () = aria-label="button"> {
                             try {
                               setExportingRegistrants(true);
                               const response = await apiUtils.get(API_ENDPOINTS.EVENTS.REGISTRANTS(eventId));
@@ -217,7 +217,7 @@ const EventDetails = () => {
                           Export as CSV
                         </button>
                         <button
-                          onClick={async () => {
+                          onClick={async () = aria-label="button"> {
                             try {
                               setExportingRegistrants(true);
                               const response = await apiUtils.get(API_ENDPOINTS.EVENTS.REGISTRANTS(eventId));
@@ -320,7 +320,7 @@ const EventDetails = () => {
                 </ShareMenu>
 
                 <div className="flex flex-col gap-2">
-                  <button onClick={() => { downloadICSFile(event); toast.success("Calendar invite downloaded!"); }} className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 dark:hover:border-green-700 transition-all duration-200" aria-label="Download .ics calendar invite">
+                  <button onClick={() = aria-label="button"> { downloadICSFile(event); toast.success("Calendar invite downloaded!"); }} className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 dark:hover:border-green-700 transition-all duration-200" aria-label="Download .ics calendar invite">
                     <CalendarPlus size={15} className="text-green-500" /> Download .ics Invite
                   </button>
                   {generateGoogleCalendarLink(event) && (

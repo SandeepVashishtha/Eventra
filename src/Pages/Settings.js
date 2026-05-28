@@ -135,7 +135,7 @@ const Settings = () => {
 
               <button
                 type="button"
-                onClick={() => setIsCustomizerOpen(true)}
+                onClick={() = aria-label="button"> setIsCustomizerOpen(true)}
                 aria-label="Open theme customizer skins panel"
                 className="w-full inline-flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-left text-sm font-medium text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition cursor-pointer"
               >
@@ -176,7 +176,7 @@ const Settings = () => {
             <div className="space-y-3">
               <button
                 type="button"
-                onClick={() => setNotificationsEnabled((prev) => !prev)}
+                onClick={() = aria-label="button"> setNotificationsEnabled((prev) => !prev)}
                 aria-label={
                   notificationsEnabled ? "Pause notifications" : "Enable notifications"
                 }
@@ -209,7 +209,7 @@ const Settings = () => {
             <div className="space-y-3">
               <button
                 type="button"
-                onClick={() => setPrivacyMode((prev) => !prev)}
+                onClick={() = aria-label="button"> setPrivacyMode((prev) => !prev)}
                 aria-label={privacyMode ? "Disable privacy mode" : "Enable privacy mode"}
                 aria-pressed={!!privacyMode}
                 className="w-full inline-flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-left text-sm font-medium text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition"
@@ -269,7 +269,7 @@ const Settings = () => {
 
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
                     <button
-                      onClick={() => setShowKey(!showKey)}
+                      onClick={() = aria-label="button"> setShowKey(!showKey)}
                       className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
                       title={showKey ? "Hide credentials" : "Show credentials"}
                     >
@@ -279,7 +279,7 @@ const Settings = () => {
                       onClick={handleCopyKey}
                       className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
                       title="Copy credentials"
-                    >
+                     aria-label="button">
                       <Clipboard size={14} />
                     </button>
                   </div>
@@ -289,7 +289,7 @@ const Settings = () => {
                   <button
                     onClick={handleDownloadKey}
                     className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-850 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-300 transition cursor-pointer"
-                  >
+                   aria-label="button">
                     <Download size={13} />
                     Download Backup File
                   </button>
@@ -298,7 +298,7 @@ const Settings = () => {
                     onClick={generateBackupKey}
                     disabled={isGenerating}
                     className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-850 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-300 transition cursor-pointer disabled:opacity-50"
-                  >
+                   aria-label="button">
                     <RefreshCw size={13} className={isGenerating ? "animate-spin" : ""} />
                     Generate New Key
                   </button>
@@ -313,7 +313,7 @@ const Settings = () => {
                   onClick={generateBackupKey}
                   disabled={isGenerating}
                   className="px-5 py-2.5 bg-indigo-650 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-md shadow-indigo-500/10 shrink-0"
-                >
+                 aria-label="button">
                   <RefreshCw size={14} className={isGenerating ? "animate-spin" : ""} />
                   Generate Master Key
                 </button>
@@ -340,7 +340,7 @@ const Settings = () => {
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={() => {
+                onClick={() = aria-label="button"> {
                   localStorage.removeItem("eventra_onboarding_dismissed");
                   localStorage.removeItem("eventra_onboarding_completed_fired");
                   localStorage.removeItem("eventra_sandbox_executed");

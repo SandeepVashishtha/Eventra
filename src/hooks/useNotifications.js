@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { get as idbGet, set as idbSet } from "idb-keyval";
 import { logger } from "../utils/logger";
 
 const STORAGE_KEY = "eventra_notifications";
@@ -7,23 +8,27 @@ export const useNotifications = () => {
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-
-    if (stored) {
-      try {
-        setNotifications(JSON.parse(stored));
-      } catch (error) {
-        logger.error("Failed to parse notifications from local storage", error);
+    idbGet(STORAGE_KEY)
+      .then((stored) => {
+        if (stored) {
+          try {
+            setNotifications(JSON.parse(stored));
+          } catch (error) {
+            logger.error("Failed to parse notifications from local storage", error);
+            setNotifications([]);
+          }
+        }
+      })
+      .catch((error) => {
+        logger.error("Failed to fetch notifications from indexedDB", error);
         setNotifications([]);
-      }
-    }
+      });
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(notifications)
-    );
+    if (notifications.length > 0) {
+      idbSet(STORAGE_KEY, JSON.stringify(notifications)).catch(console.error);
+    }
   }, [notifications]);
 
   const requestPermission = async () => {

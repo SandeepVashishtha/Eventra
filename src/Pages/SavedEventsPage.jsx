@@ -65,7 +65,7 @@ const SavedEventsPage = () => {
             <h3 style={{ marginBottom: '0.5rem' }}>{event.title || event.name}</h3>
             <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>{event.date}</p>
             <button
-              onClick={() => toggleBookmark(event)}
+              onClick={() = aria-label="button"> toggleBookmark(event)}
               style={{
                 marginTop: '0.8rem',
                 background: '#fee2e2',

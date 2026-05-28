@@ -1,4 +1,4 @@
-import useRecentlyViewed from "../../hooks/useRecentlyViewed";  
+import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
@@ -124,10 +124,9 @@ const EventDetailsPage = () => {
 
           <button
             type="button"
-            onClick={() =>
-              navigate("/events")
-            }
+            onClick={() => navigate("/events")}
             className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-colors"
+            aria-label="Back to Events"
           >
             <ArrowLeft size={18} aria-hidden="true" />
             Back to Events
@@ -151,6 +150,7 @@ const EventDetailsPage = () => {
             type="button"
             onClick={() => navigate("/events")}
             className="inline-flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold transition-colors"
+            aria-label="Back to Events"
           >
             <ArrowLeft size={20} aria-hidden="true" />
             Back to Events

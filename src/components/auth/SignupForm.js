@@ -247,7 +247,7 @@ const SignupForm = () => {
           suffix={
             <button
               type="button"
-              onClick={() => setShowPassword(!showPassword)}
+              onClick={() = aria-label="button"> setShowPassword(!showPassword)}
               className="text-slate-500 hover:text-slate-300"
               type="button" onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
@@ -255,7 +255,7 @@ const SignupForm = () => {
               aria-controls="password"
               aria-pressed={showPassword}
             >
-            <button type="button" onClick={() => setShowPassword((prev) => !prev)} className="text-slate-500 hover:text-blue-400" aria-label={showPassword ? "Hide password" : "Show password"}>
+            <button type="button" onClick={() = aria-label="button"> setShowPassword((prev) => !prev)} className="text-slate-500 hover:text-blue-400" aria-label={showPassword ? "Hide password" : "Show password"}>
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           }
@@ -273,13 +273,13 @@ const SignupForm = () => {
           suffix={
             <button
               type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              onClick={() = aria-label="button"> setShowConfirmPassword(!showConfirmPassword)}
               className="text-slate-500 hover:text-slate-300"
               aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
               aria-controls="confirmPassword"
               aria-pressed={showConfirmPassword}
             >
-            <button type="button" onClick={() => setShowConfirmPassword((prev) => !prev)} className="text-slate-500 hover:text-blue-400" aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}>
+            <button type="button" onClick={() = aria-label="button"> setShowConfirmPassword((prev) => !prev)} className="text-slate-500 hover:text-blue-400" aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}>
               {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           }
@@ -333,7 +333,7 @@ const SignupForm = () => {
               required
             />
             <button
-              type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              type="button" onClick={() = aria-label="button"> setShowConfirmPassword(!showConfirmPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
               aria-label={showConfirmPassword ? "Hide password" : "Show password"}
             >
