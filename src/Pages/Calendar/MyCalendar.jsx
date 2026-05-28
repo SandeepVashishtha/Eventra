@@ -212,7 +212,7 @@ const MyCalendar = () => {
             {/* VIEW SWITCHER */}
             <div className="flex items-center gap-2 bg-slate-100/80 dark:bg-slate-900/60 p-1.5 rounded-2xl border border-slate-200/40 dark:border-slate-800/30 shadow-inner">
               <button
-                onClick={() => setViewMode("grid")}
+                onClick={() = aria-label="button"> setViewMode("grid")}
                 className={`p-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
                   viewMode === "grid"
                     ? "bg-white dark:bg-slate-800 shadow-md text-indigo-600 dark:text-indigo-400"
@@ -224,7 +224,7 @@ const MyCalendar = () => {
                 Calendar Grid
               </button>
               <button
-                onClick={() => setViewMode("timeline")}
+                onClick={() = aria-label="button"> setViewMode("timeline")}
                 className={`p-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
                   viewMode === "timeline"
                     ? "bg-white dark:bg-slate-800 shadow-md text-indigo-600 dark:text-indigo-400"
@@ -240,7 +240,7 @@ const MyCalendar = () => {
             {/* BULK EXPORT */}
             {myEvents.length > 0 && (
               <button
-                onClick={() => downloadBulkICSFile(myEvents)}
+                onClick={() = aria-label="button"> downloadBulkICSFile(myEvents)}
                 className="p-2.5 px-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white shadow-md hover:shadow-lg"
                 aria-label="Export all events as ICS"
               >
@@ -361,7 +361,7 @@ const MyCalendar = () => {
                               key={`day-${day}`}
                               id={`calendar-cell-${day}`}
                               role="gridcell"
-                              onClick={() => selectDay(day)}
+                              onClick={() = aria-label="button"> selectDay(day)}
                               onKeyDown={(e) => handleDayKeyDown(e, day)}
                               aria-selected={selected}
                               className={`aspect-square rounded-2xl border p-2 flex flex-col justify-between items-start cursor-pointer transition-all ${
@@ -437,7 +437,7 @@ const MyCalendar = () => {
                               <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 mt-3">
                                 <button
                                   type="button"
-                                  onClick={() => downloadICSFile(item.event)}
+                                  onClick={() = aria-label="button"> downloadICSFile(item.event)}
                                   aria-label={`Download ICS for ${item.event.title}`}
                                   className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-[11px] font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 transition"
                                 >
@@ -555,7 +555,7 @@ const MyCalendar = () => {
                                 <div className="flex items-center gap-2 mt-4 sm:mt-0">
                                   <button
                                     type="button"
-                                    onClick={() => downloadICSFile(item.event)}
+                                    onClick={() = aria-label="button"> downloadICSFile(item.event)}
                                     aria-label={`Download ICS for ${item.event.title}`}
                                     className="p-2.5 rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 shadow-sm"
                                     title="Download .ics file"

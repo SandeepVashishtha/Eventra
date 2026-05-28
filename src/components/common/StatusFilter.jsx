@@ -23,7 +23,7 @@ const StatusFilter = ({ statuses, selectedStatuses, onStatusChange }) => {
         {statuses.map((status) => (
           <button
             key={status.id}
-            onClick={() => toggleStatus(status.id)}
+            onClick={() = aria-label="button"> toggleStatus(status.id)}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all text-left ${
               selectedStatuses.includes(status.id)
                 ? "bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-600"

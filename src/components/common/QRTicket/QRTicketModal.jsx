@@ -8,7 +8,7 @@
  *
  *   const [showTicket, setShowTicket] = useState(false);
  *
- *   <button onClick={() => setShowTicket(true)}>View Ticket</button>
+ *   <button onClick={() = aria-label="button"> setShowTicket(true)}>View Ticket</button>
  *
  *   <QRTicketModal
  *     isOpen={showTicket}
@@ -148,7 +148,7 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
             disabled={downloading}
             className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold text-white transition-opacity disabled:opacity-50"
             style={{ background: "#7c3aed" }}
-          >
+           aria-label="button">
             <DownloadIcon />
             {downloading ? "Saving…" : "Save PNG"}
           </button>
@@ -163,7 +163,7 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
               color: "white",
               border: "1px solid rgba(255,255,255,0.12)",
             }}
-          >
+           aria-label="button">
             <FileIcon />
             {downloading ? "…" : "PDF"}
           </button>
@@ -177,7 +177,7 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
               color: "white",
               border: "1px solid rgba(255,255,255,0.12)",
             }}
-          >
+           aria-label="button">
             <ShareIcon />
             Share
           </button>

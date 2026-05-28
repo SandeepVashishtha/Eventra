@@ -41,7 +41,7 @@ const FloorPlanDesignerPage = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/40 dark:bg-gray-900/40 backdrop-blur-md border border-gray-200/50 dark:border-gray-800/50 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => handleNavigate(`/events/${event.id}`)}
+              onClick={() = aria-label="button"> handleNavigate(`/events/${event.id}`)}
               className="p-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-xl transition-all cursor-pointer border border-indigo-500/15"
               title="Back to event details"
             >
@@ -50,14 +50,14 @@ const FloorPlanDesignerPage = () => {
             <div>
               <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">
                 <button
-                  onClick={() => handleNavigate("/events")}
+                  onClick={() = aria-label="button"> handleNavigate("/events")}
                   className="hover:text-indigo-500 cursor-pointer bg-transparent border-none p-0 text-inherit font-semibold text-xs uppercase tracking-wider"
                 >
                   Events
                 </button>
                 <span>/</span>
                 <button
-                  onClick={() => handleNavigate(`/events/${event.id}`)}
+                  onClick={() = aria-label="button"> handleNavigate(`/events/${event.id}`)}
                   className="hover:text-indigo-500 cursor-pointer bg-transparent border-none p-0 text-inherit font-semibold text-xs uppercase tracking-wider line-clamp-1 max-w-[200px] text-left"
                 >
                   {event.title}

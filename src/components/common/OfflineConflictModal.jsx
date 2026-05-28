@@ -66,7 +66,7 @@ export default function OfflineConflictModal() {
               </p>
             </div>
           </div>
-          <button onClick={() => handleResolve("server")} aria-label="Dismiss conflict — keep server version" className="text-slate-400 hover:text-white transition-colors">
+          <button onClick={() = aria-label="button"> handleResolve("server")} aria-label="Dismiss conflict — keep server version" className="text-slate-400 hover:text-white transition-colors">
             <X size={18} aria-hidden="true" />
           </button>
         </div>
@@ -111,21 +111,21 @@ export default function OfflineConflictModal() {
         <div className="ocm-footer">
           <button 
             className="ocm-btn ocm-btn-secondary" 
-            onClick={() => handleResolve("server")}
+            onClick={() = aria-label="button"> handleResolve("server")}
           >
             Discard Local & Keep Server
           </button>
           
           <button 
             className="ocm-btn ocm-btn-primary" 
-            onClick={() => handleResolve("local")}
+            onClick={() = aria-label="button"> handleResolve("local")}
           >
             Overwrite Server with Local
           </button>
           
           <button 
             className="ocm-btn ocm-btn-accent" 
-            onClick={() => handleResolve("merge")}
+            onClick={() = aria-label="button"> handleResolve("merge")}
           >
             Merge Both Changes
           </button>

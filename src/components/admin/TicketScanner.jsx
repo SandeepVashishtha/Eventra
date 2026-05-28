@@ -250,7 +250,7 @@ export default function TicketScanner() {
         {/* SCAN MODE TOGGLES */}
         <div className="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-xl self-start sm:self-auto">
           <button
-            onClick={() => {
+            onClick={() = aria-label="button"> {
               setManualMode(false);
               setScanResult(null);
               startScanner(selectedCameraId);
@@ -264,7 +264,7 @@ export default function TicketScanner() {
             Camera Scanner
           </button>
           <button
-            onClick={() => {
+            onClick={() = aria-label="button"> {
               setManualMode(true);
               stopScanner();
               setScanResult(null);
@@ -343,7 +343,7 @@ export default function TicketScanner() {
                       Make sure Eventra has browser camera access permissions.
                     </p>
                     <button
-                      onClick={() => startScanner(selectedCameraId)}
+                      onClick={() = aria-label="button"> startScanner(selectedCameraId)}
                       className="mt-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white transition-all shadow-md"
                     >
                       Start Camera Stream
@@ -367,7 +367,7 @@ export default function TicketScanner() {
                       Camera paused / feed stopped
                     </span>
                     <button
-                      onClick={() => startScanner(selectedCameraId)}
+                      onClick={() = aria-label="button"> startScanner(selectedCameraId)}
                       className="px-4 py-2 rounded-xl bg-indigo-600 text-xs font-bold"
                     >
                       Resume Scan
@@ -381,7 +381,7 @@ export default function TicketScanner() {
                 <button
                   onClick={stopScanner}
                   className="px-5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900 text-xs font-bold text-slate-650 dark:text-slate-400 transition"
-                >
+                 aria-label="button">
                   Pause Scanner
                 </button>
               )}
@@ -450,7 +450,7 @@ export default function TicketScanner() {
               <button
                 type="submit"
                 className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md hover:shadow-lg transition-all rounded-xl mt-2 flex items-center justify-center gap-1.5"
-              >
+               aria-label="button">
                 <Search className="w-3.5 h-3.5" />
                 Find & Verify Check-In
               </button>
@@ -534,7 +534,7 @@ export default function TicketScanner() {
               <button
                 onClick={handleResetScan}
                 className="mt-2 inline-flex items-center gap-1.5 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white rounded-xl shadow-lg hover:shadow-indigo-500/25 transition-all"
-              >
+               aria-label="button">
                 <RefreshCw className="w-3.5 h-3.5" />
                 Scan Next Ticket
               </button>

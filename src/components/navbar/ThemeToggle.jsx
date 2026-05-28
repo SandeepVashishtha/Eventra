@@ -83,7 +83,7 @@ const ThemeToggle = () => {
 
       {/* System Mode Button */}
       <button
-        onClick={() =>
+        onClick={() = aria-label="button">
           setTheme(
             "system"
           )

@@ -223,7 +223,7 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
           ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
           : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 border-transparent"
       }`}
-    >
+     aria-label="button">
       <span className="flex items-center gap-3">
         {item.icon} {item.name}
       </span>
@@ -310,7 +310,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
           ? "text-indigo-600 dark:text-indigo-400 font-semibold"
           : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
       }`}
-    >
+     aria-label="button">
       <span className="relative z-10 flex items-center gap-1">
         {item.name}
         <ChevronDown
@@ -340,7 +340,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
             ? "text-indigo-600 dark:text-indigo-400 font-semibold"
             : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
         }`}
-      >
+       aria-label="button">
         <span className="relative z-10 flex items-center gap-1">
           {item.name}
           <ChevronDown
@@ -521,14 +521,14 @@ const UserProfileDropdown = ({
 }) => (
   <div className="relative profile-container">
     <button 
-      onClick={() => setShowProfileDropdown(!showProfileDropdown)} 
+      onClick={() = aria-label="button"> setShowProfileDropdown(!showProfileDropdown)} 
       type="button"
       aria-label="Open user menu"
       aria-expanded={showProfileDropdown}
       aria-haspopup="menu"
       aria-controls="user-profile-menu"
     <button
-      onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+      onClick={() = aria-label="button"> setShowProfileDropdown(!showProfileDropdown)}
       className="flex items-center gap-2 text-sm font-medium text-black/90 dark:text-white/90 hover:text-black dark:hover:text-white transition-colors"
     >
       {user?.profilePicture ? (
@@ -596,7 +596,7 @@ const UserProfileDropdown = ({
             </Link>
           </div>
           <div className="p-2 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
-            <button type="button" role="menuitem" onClick={handleLogoutClick} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <button type="button" role="menuitem" onClick={handleLogoutClick} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" aria-label="button">
               <LogOut className="w-4 h-4" />Logout
             <Link
               to="/dashboard"
@@ -627,7 +627,7 @@ const UserProfileDropdown = ({
             <button
               onClick={handleLogoutClick}
               className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
+             aria-label="button">
               <LogOut className="w-4 h-4" />
               Logout
             </button>
@@ -693,7 +693,7 @@ const MobileUserSection = ({
     <button
       onClick={handleLogoutClick}
       className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors font-medium"
-    >
+     aria-label="button">
       <LogOut className="w-5 h-5" />
       Logout
     </button>
@@ -1077,14 +1077,14 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             <button 
               ref={toggleBtnRef} 
               type="button"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+              onClick={() = aria-label="button"> setIsMobileMenuOpen(!isMobileMenuOpen)} 
               aria-expanded={isMobileMenuOpen} 
               aria-haspopup="dialog"
           {/* Mobile Menu Button */}
           <div className="xl:hidden flex-shrink-0">
             <button
               ref={toggleBtnRef}
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              onClick={() = aria-label="button"> setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-drawer"
               aria-label={isMobileMenuOpen ? "Close navigation" : "Open navigation"}

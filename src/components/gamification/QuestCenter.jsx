@@ -330,7 +330,7 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
           ].map(tab => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() = aria-label="button"> setActiveTab(tab.id)}
               className={`
                 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all
                 ${activeTab === tab.id
