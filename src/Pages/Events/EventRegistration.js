@@ -3,7 +3,8 @@ import React, { useState, useEffect, useRef } from "react";
 // using the old inline implementations (which were UTC-blind and hardcoded
 // a 1-hour event duration — fixed in issue #2015).
 import { getGoogleCalendarUrl, getOutlookCalendarUrl } from "../../utils/calendarUrlUtils";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
+import hackathonsData from "../Hackathons/hackathonMockData.json";
 import { motion } from "framer-motion";
 import {
   Calendar,
@@ -23,12 +24,19 @@ import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useSessionRecovery } from "../../context/SessionRecoveryContext";
-import { useFormValidation } from "../../hooks/useFormValidation";
+import CalendarView from "../../components/CalendarView";
+
 import { validate } from "../../validation";
 import { toast } from "react-toastify";
-import mockEvents from "./eventsMockData.json";
+import {
+  getCacheAgeLabel,
+  getCachedEventDetail,
+  saveCachedEventDetail,
+} from "../../utils/offlineEventCache";
+
 import { pushToQueue } from "../../utils/offlineQueue";
 import EventConflictModal from "../../components/EventConflictModal";
+import ConfettiCanvas from "../../components/common/ConfettiCanvas";
 
 const MAX_NOTES_CHARS = 500;
 
@@ -37,14 +45,15 @@ const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
 const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
 
 function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
+  const finalName = userName || "Participant";
   if (EMAILJS_PUBLIC_KEY && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && window.emailjs) {
     window.emailjs.init(EMAILJS_PUBLIC_KEY);
     window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
       to_email: userEmail,
-      to_name: userName,
+      to_name: finalName,
       event_name: eventName,
       event_date: eventDate,
-    }).catch(() => {});
+    }).catch(() => { });
   }
 }
 
@@ -86,104 +95,21 @@ const getRegistrationFailureMessage = (error) => {
 //   2. Always generated a 1-hour end time, ignoring event.durationMinutes.
 // See issue #2015 for details.
 
-const ConfettiCanvas = () => {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    let animationFrameId;
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const handleResize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    window.addEventListener("resize", handleResize);
-
-    const colors = ["#6366f1", "#a855f7", "#ec4899", "#10b981", "#3b82f6", "#f59e0b"];
-    const particles = [];
-
-    for (let i = 0; i < 150; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * -canvas.height - 20,
-        size: Math.random() * 8 + 4,
-        speedX: Math.random() * 4 - 2,
-        speedY: Math.random() * 3 + 4,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        rotation: Math.random() * Math.PI,
-        rotationSpeed: Math.random() * 0.05 - 0.025,
-      });
-    }
-
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      let finished = true;
-
-      particles.forEach((p) => {
-        if (p.y < canvas.height) {
-          finished = false;
-        }
-        
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rotation);
-        ctx.fillStyle = p.color;
-        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
-        ctx.restore();
-
-        p.x += p.speedX;
-        p.y += p.speedY;
-        p.rotation += p.rotationSpeed;
-
-        if (p.x < 0) p.x = canvas.width;
-        if (p.x > canvas.width) p.x = 0;
-      });
-
-      if (!finished) {
-        animationFrameId = requestAnimationFrame(draw);
-      }
-    };
-
-    draw();
-
-    const timer = setTimeout(() => {
-      if (canvas) {
-        canvas.style.opacity = "0";
-        canvas.style.transition = "opacity 1.5s ease-out";
-      }
-    }, 4000);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      cancelAnimationFrame(animationFrameId);
-      clearTimeout(timer);
-    };
-  }, []);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-[9999]"
-      style={{ mixBlendMode: "screen" }}
-    />
-  );
-};
 
 // Registration lock map to prevent concurrent registrations for the same event
 const registrationLocks = new Map();
 
 
 const EventRegistration = () => {
-  const { eventId } = useParams();
+  const { eventId: routeEventId, id: routeId } = useParams();
+  const eventId = routeEventId || routeId;
+  const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, token, isAuthenticated } = useAuth();
   const { addRegistration, myEvents } = useMyEvents();
   const { clearSession } = useSessionRecovery();
+  const isHackathonPath = location.pathname.startsWith("/register");
+  const registrationPath = location.pathname;
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -221,39 +147,155 @@ const EventRegistration = () => {
       organization: "",
       designation: "",
       additionalInfo: "",
+      priority: "Medium",
+
     },
     validationRules,
     { debounceMs: 300 }
   );
 
-  // Load event data
+  // Load event data from backend API
   useEffect(() => {
-    const loadEvent = () => {
+    const loadEvent = async () => {
       setLoading(true);
-      // Find event from mock data
-      const foundEvent = mockEvents.find((e) => e.id === parseInt(eventId));
-      
-      if (foundEvent) {
-        setEvent({ ...foundEvent, status: getEventStatus(foundEvent) });
-        
-        // Pre-fill form if user is authenticated
-        if (isAuthenticated() && user) {
-          setValues((prev) => ({
-            ...prev,
-            fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
-            email: user.email || "",
-          }));
+
+      const isHackathonPath = location.pathname.startsWith("/register");
+      if (isHackathonPath) {
+        const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
+        if (foundMock) {
+          setEvent({
+            ...foundMock,
+            date: foundMock.startDate,
+            time: "10:00 AM",
+            image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
+            attendees: foundMock.participants,
+            maxAttendees: 1500,
+            status: foundMock.status,
+          });
+          setLoading(false);
+          if (isAuthenticated() && user) {
+            setValues((prev) => ({
+              ...prev,
+              fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
+              email: user.email || "",
+            }));
+          }
+          return;
         }
       }
-      setLoading(false);
+
+      try {
+        // BACKEND FIX: Fetch authoritative event data from the backend API,
+        // not from local mock JSON. This ensures:
+        // - Users see real event details, pricing, and availability
+        // - Registration state matches backend state
+        // - No mismatch between mock data and production backend
+        const response = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
+
+        if (response.status === 200 && response.data) {
+          const fetchedEvent = {
+            ...response.data,
+            status: getEventStatus(response.data),
+          };
+          setEvent(fetchedEvent);
+          saveCachedEventDetail(fetchedEvent);
+
+          // Pre-fill form if user is authenticated
+          if (isAuthenticated() && user) {
+            setValues((prev) => ({
+              ...prev,
+              fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
+              email: user.email || "",
+            }));
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load event details:", error);
+        const cached = getCachedEventDetail(eventId);
+        if (cached?.event) {
+          setEvent({
+            ...cached.event,
+            status: getEventStatus(cached.event),
+            cacheInfo: {
+              cachedAt: cached.cachedAt,
+              label: getCacheAgeLabel(cached.cachedAt),
+            },
+          });
+
+          toast.warning(`Showing ${getCacheAgeLabel(cached.cachedAt)} event details.`);
+          return;
+        }
+
+        // Try fallback to hackathonsData as a last resort
+        const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
+        if (foundMock) {
+          setEvent({
+            ...foundMock,
+            date: foundMock.startDate,
+            time: "10:00 AM",
+            image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
+            attendees: foundMock.participants,
+            maxAttendees: 1500,
+            status: foundMock.status,
+          });
+        }
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadEvent();
-  }, [eventId, user, isAuthenticated, setValues]);
+  }, [eventId, user, isAuthenticated, setValues, location.pathname]);
+
+  const checkEventCapacity = async (id, currentEvent) => {
+    try {
+      const freshRes = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(id));
+      if (freshRes.status === 200) {
+        const freshEvent = freshRes.data;
+        return freshEvent.attendees >= freshEvent.maxAttendees;
+      }
+    } catch {
+      // If the re-fetch fails, fall back to the cached snapshot
+      return currentEvent.attendees >= currentEvent.maxAttendees;
+    }
+    return false;
+  };
+
+  const checkAndHandleConflicts = async () => {
+    const conflictCheck = checkRegistrationConflict(event, myEvents);
+    if (conflictCheck.hasConflict) {
+      try {
+        const res = await apiUtils.get(API_ENDPOINTS.EVENTS.LIST);
+        const realEvents = res.status === 200 ? res.data : [];
+        const suggestions = suggestAlternativeEvents(event, realEvents, myEvents);
+        setConflictData({
+          conflicts: conflictCheck.conflicts,
+          suggestions,
+        });
+      } catch (err) {
+        console.error("Failed to fetch alternative events", err);
+        setConflictData({
+          conflicts: conflictCheck.conflicts,
+          suggestions: [],
+        });
+      }
+      setShowConflictModal(true);
+      return true;
+    }
+    return false;
+  };
 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!isAuthenticated() || !user?.id) {
+      toast.error("Please log in to register for events.");
+      navigate("/login", {
+        state: { from: registrationPath },
+      });
+      return;
+    }
 
     if (!validateAll()) {
       toast.error("Please fill in all required fields correctly");
@@ -273,38 +315,13 @@ const EventRegistration = () => {
     }
 
     // Quick UX hint based on the latest visible event snapshot.
-    // The backend still enforces capacity at submit time.
-    try {
-      const freshRes = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
-      if (freshRes.ok) {
-        const freshEvent = await freshRes.json();
-        if (freshEvent.attendees >= freshEvent.maxAttendees) {
-          toast.error("This event is currently full. Registration may no longer be available.");
-          return;
-        }
-      }
-    } catch {
-      // If the re-fetch fails, fall back to the cached snapshot so the user
-      // can still attempt registration rather than being silently blocked.
-      if (event.attendees >= event.maxAttendees) {
-        toast.error("This event is currently full. Registration may no longer be available.");
-        return;
-      }
+    const isFull = await checkEventCapacity(eventId, event);
+    if (isFull) {
+      toast.info("This event is full. You will be added to the waitlist.");
     }
 
     // Check for scheduling conflicts
-    const conflictCheck = checkRegistrationConflict(event, myEvents);
-    
-    if (conflictCheck.hasConflict) {
-      // Get alternative suggestions
-      const suggestions = suggestAlternativeEvents(event, mockEvents, myEvents);
-      setConflictData({
-        conflicts: conflictCheck.conflicts,
-        suggestions,
-      });
-      setShowConflictModal(true);
-      return;
-    }
+    if (await checkAndHandleConflicts()) return;
 
     // Proceed with registration if no conflicts
     proceedWithRegistration();
@@ -312,22 +329,39 @@ const EventRegistration = () => {
 
   // Proceed with registration after conflict check or user confirmation
   const proceedWithRegistration = async () => {
+    if (!isAuthenticated() || !user?.id) {
+      toast.error("Please log in to register for events.");
+      navigate("/login", {
+        state: { from: registrationPath },
+      });
+      return;
+    }
+
     // Close modal if open
     setShowConflictModal(false);
-    
+
     // Set lock and submission state
     registrationLocks.set(eventId, true);
     isSubmittingRef.current = true;
     setSubmitting(true);
 
+    const isEventFull = event ? event.attendees >= event.maxAttendees : false;
+    const endpoint = isEventFull
+      ? `/api/events/${eventId}/waitlist`
+      : (API_ENDPOINTS.EVENTS?.REGISTER ? API_ENDPOINTS.EVENTS.REGISTER(eventId) : `/api/events/${eventId}/register`);
+
     try {
       await apiUtils.post(
-        API_ENDPOINTS.EVENTS.REGISTER(eventId),
-        {
-          ...formData,
-          eventId: parseInt(eventId),
-          userId: user?.id || null,
-        }
+        endpoint,
+          {
+            ...formData,
+            priority: formData.priority,
+            eventId: parseInt(eventId),
+            userId: user.id,
+          },
+        // Registration is authenticated server-side; send the active token
+        // explicitly instead of relying only on global storage lookup.
+        token
       );
 
       // Axios resolves for 2xx — treat as success
@@ -336,34 +370,49 @@ const EventRegistration = () => {
       sendConfirmationEmail(formData.email, formData.fullName, event?.title, event?.date);
       addRegistration(event, formData);
       clearSession();
-    
+
     } catch (error) {
       const failureMessage = getRegistrationFailureMessage(error);
       const isOfflineFailure = error?.isNetworkError || error?.isTimeout;
       const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
 
       if (isOfflineFailure) {
-        // Offline sync fallback keeps registration intent intact without
-        // storing PII in localStorage.
+        // Offline sync fallback keeps the full registration intent intact so
+        // it can be replayed without asking the user to submit the form again.
         const payload = {
+          ...formData,
           eventId: parseInt(eventId),
-          userId: user?.id || null,
+          userId: user.id,
         };
 
-        pushToQueue({ eventId: parseInt(eventId), payload });
-
-        setRegistered(true);
-        addRegistration(event, formData);
-        clearSession();
-        toast.warning(
-          "Network error. Registration queued and will sync when you are online.",
-          { autoClose: 4000 }
+        const success = await pushToQueue(
+          {
+            actionType: isEventFull ? "JOIN_WAITLIST" : "REGISTER_EVENT",
+            endpoint,
+            eventId: parseInt(eventId),
+            payload,
+          },
+          user.id
         );
+
+        if (success) {
+          setRegistered(true);
+          addRegistration(event, formData);
+          clearSession();
+          toast.warning(
+            "Network error. Registration queued and will sync when you are online.",
+            { autoClose: 4000 }
+          );
+        } else {
+          toast.error("Offline registration queue is full. Please reconnect to the internet to register.");
+        }
         return;
       }
 
       if (isAlreadyRegistered) {
         setRegistered(true);
+        toast.success(isEventFull ? "Successfully joined waitlist!" : "Registration successful!");
+        // ── Save to My Events ──
         addRegistration(event, formData);
         clearSession();
         toast.info(failureMessage);
@@ -420,26 +469,26 @@ const EventRegistration = () => {
     );
   }
 
+  const isEventFull = event ? event.attendees >= event.maxAttendees : false;
   const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
-  const isEventFull = event.attendees >= event.maxAttendees;
 
-  if (isPastEvent || isEventFull) {
+  if (isPastEvent) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
           Registration Unavailable
         </h2>
         <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
-          {isPastEvent 
-            ? "This event has already ended." 
+          {isPastEvent
+            ? "This event has already ended."
             : "This event is currently full. You can still check back later in case a spot opens up."}
         </p>
         <Link
-          to={`/events/${eventId}`}
+          to={isHackathonPath ? `/hackathons/${eventId}` : `/events/${eventId}`}
           className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-colors font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Event Details
+          Back to Details
         </Link>
       </div>
     );
@@ -450,7 +499,7 @@ const EventRegistration = () => {
     const outlookCalendarUrl = getOutlookCalendarUrl(event);
     const shareText = `I'm attending ${event.title} on Eventra! Join me there!`;
     const shareUrl = `${window.location.origin}/events/${event.id}`;
-    
+
     const handleNativeShare = () => {
       if (navigator.share) {
         navigator.share({
@@ -465,6 +514,9 @@ const EventRegistration = () => {
       } else {
         navigator.clipboard.writeText(shareUrl).then(() => {
           toast.success("Event link copied to clipboard!");
+        }).catch((err) => {
+          console.error("Failed to copy link:", err);
+          toast.error("Could not copy link. Please copy manually.");
         });
       }
     };
@@ -504,7 +556,7 @@ const EventRegistration = () => {
             <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 truncate">
               {event.title}
             </h3>
-            
+
             <div className="space-y-2.5 text-xs text-gray-600 dark:text-gray-400">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-indigo-500" />
@@ -517,7 +569,7 @@ const EventRegistration = () => {
                   })}
                 </span>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-pink-500" />
                 <span>{event.time}</span>
@@ -542,7 +594,7 @@ const EventRegistration = () => {
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                  <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
                 </svg>
                 Google
               </a>
@@ -553,7 +605,7 @@ const EventRegistration = () => {
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                  <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
                 </svg>
                 Outlook
               </a>
@@ -573,7 +625,7 @@ const EventRegistration = () => {
                 title="Share on Twitter / X"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                 </svg>
               </a>
               <a
@@ -584,7 +636,7 @@ const EventRegistration = () => {
                 title="Share on LinkedIn"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                  <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
                 </svg>
               </a>
               <button
@@ -592,7 +644,7 @@ const EventRegistration = () => {
                 onClick={handleNativeShare}
                 className="w-10 h-10 inline-flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title="Share / Copy Link"
-              >
+               aria-label="button">
                 <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                   <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
                   <polyline points="16 6 12 2 8 6" />
@@ -602,12 +654,12 @@ const EventRegistration = () => {
             </div>
           </div>
 
-          <Link to={`/events/${eventId}`} className="block">
+          <Link to={isHackathonPath ? `/hackathons/${eventId}` : `/events/${eventId}`} className="block">
             <button
               type="button"
               className="w-full py-3.5 px-6 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold hover:bg-slate-800 dark:hover:bg-slate-100 hover:scale-[1.02] active:scale-[0.98] shadow-lg transition-all duration-300"
-            >
-              Back to Event Details
+             aria-label="button">
+              Back to Details
             </button>
           </Link>
         </motion.div>
@@ -620,11 +672,11 @@ const EventRegistration = () => {
       <div className="max-w-4xl mx-auto">
         {/* Back Button */}
         <Link
-          to="/events"
+          to={isHackathonPath ? "/hackathons" : "/events"}
           className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Events
+          {isHackathonPath ? "Back to Hackathons" : "Back to Events"}
         </Link>
 
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden">
@@ -660,8 +712,9 @@ const EventRegistration = () => {
             </div>
           </div>
 
-          {/* Registration Form */}
           <div className="p-8">
+            <CalendarView events={myEvents} />
+          
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
               Register for this Event
             </h2>
@@ -684,11 +737,10 @@ const EventRegistration = () => {
                     value={formData.fullName}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${
-                      errors.fullName && touched.fullName
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${errors.fullName && touched.fullName
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
-                    }`}
+                      }`}
                     placeholder="Enter your full name"
                   />
                 </div>
@@ -714,11 +766,10 @@ const EventRegistration = () => {
                     value={formData.email}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${
-                      errors.email && touched.email
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${errors.email && touched.email
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
-                    }`}
+                      }`}
                     placeholder="your.email@example.com"
                   />
                 </div>
@@ -744,11 +795,10 @@ const EventRegistration = () => {
                     value={formData.phone}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${
-                      errors.phone && touched.phone
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${errors.phone && touched.phone
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
-                    }`}
+                      }`}
                     placeholder="+1 (555) 123-4567"
                   />
                 </div>
@@ -787,15 +837,27 @@ const EventRegistration = () => {
                 >
                   Designation (Optional)
                 </label>
-                <input
-                  type="text"
-                  id="designation"
-                  name="designation"
-                  value={formData.designation}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                  placeholder="Your job title or role"
-                />
+                {/* Priority */}
+                <div>
+                  <label
+                    htmlFor="priority"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                  >
+                    Priority (Optional)
+                  </label>
+                  <select
+                    id="priority"
+                    name="priority"
+                    value={formData.priority}
+                    onChange={handleChange}
+                    className="w-full pl-3 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  >
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                  </select>
+                </div>
+
               </div>
 
               {/* Additional Info */}
@@ -807,56 +869,24 @@ const EventRegistration = () => {
                   Additional Information (Optional)
                 </label>
                 <textarea
-                    id="additionalInfo"
-                    name="additionalInfo"
-                    value={formData.additionalInfo}
-                    onChange={handleChange}
-                    maxLength={MAX_NOTES_CHARS} // 👈 Limits characters strictly
-                    rows="4"
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
-                    placeholder="Any special requirements or questions?"
-                  ></textarea>
+                  id="additionalInfo"
+                  name="additionalInfo"
+                  value={formData.additionalInfo}
+                  onChange={handleChange}
+                  maxLength={MAX_NOTES_CHARS} // 👈 Limits characters strictly
+                  rows="4"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
+                  placeholder="Any special requirements or questions?"
+                ></textarea>
 
-                  {/* 👈 Dynamic counter box directly below */}
-                  <div className="flex justify-end text-xs mt-1 text-gray-400 dark:text-gray-500">
-                    <span className={(formData.additionalInfo?.length || 0) >= MAX_NOTES_CHARS - 20 ? "text-red-500 font-medium animate-pulse" : ""}>
-                      {formData.additionalInfo?.length || 0} / {MAX_NOTES_CHARS} characters
-                    </span>
-                  </div>
+                {/* 👈 Dynamic counter box directly below */}
+                <div className="flex justify-end text-xs mt-1 text-gray-400 dark:text-gray-500">
+                  <span className={(formData.additionalInfo?.length || 0) >= MAX_NOTES_CHARS - 20 ? "text-red-500 font-medium animate-pulse" : ""}>
+                    {formData.additionalInfo?.length || 0} / {MAX_NOTES_CHARS} characters
+                  </span>
+                </div>
               </div>
-             {/* Additional Info */}
-<div>
-  <label
-    htmlFor="additionalInfo"
-    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-  >
-    Additional Information (Optional)
-  </label>
 
-  <textarea
-    id="additionalInfo"
-    name="additionalInfo"
-    value={formData.additionalInfo}
-    onChange={handleChange}
-    rows="4"
-    maxLength={500}
-    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
-    placeholder="Any special requirements or questions?"
-  />
-
-  {/* Character Counter */}
-  <div className="mt-2 flex justify-end">
-    <span
-      className={`text-sm font-medium transition-colors ${
-        formData.additionalInfo.length >= 400
-          ? "text-red-500"
-          : "text-gray-500 dark:text-gray-400"
-      }`}
-    >
-      {formData.additionalInfo.length} / 500 characters
-    </span>
-  </div>
-</div>
 
               {/* Submit Button */}
               <div className="flex gap-4">
@@ -871,14 +901,14 @@ const EventRegistration = () => {
                   type="submit"
                   disabled={submitting || !isFormValid}
                   className="flex-1 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
+                  aria-label="Submit registration">
                   {submitting ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Registering...
+                      {isEventFull ? "Joining Waitlist..." : "Registering..."}
                     </>
                   ) : (
-                    "Complete Registration"
+                    isEventFull ? "Join Waitlist" : "Complete Registration"
                   )}
                 </button>
               </div>

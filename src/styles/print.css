@@ -1,0 +1,97 @@
+/* ============================================
+   EVENTRA PRINT STYLESHEET
+   Imported in App.js for global application
+   ============================================ */
+
+@media print {
+  /* Hide non-essential interactive elements */
+  nav,
+  header nav,
+  .navbar,
+  aside,
+  .sidebar,
+  .fab,
+  .floating-action-button,
+  .connection-status-bar,
+  .notification-bell,
+  [aria-label="notifications"],
+  [aria-label="chat"],
+  .chat-widget,
+  footer .social-links,
+  .print-hide,
+  button:not(.print-include),
+  .animate-spin,
+  [class*="animate-"],
+  [class*="motion-"] {
+    display: none !important;
+  }
+
+  /* Force print-friendly colors */
+  body,
+  main,
+  .card,
+  .event-detail,
+  .event-card,
+  .registration-card,
+  [class*="bg-gray"],
+  [class*="bg-zinc"],
+  [class*="bg-slate"],
+  [class*="dark:"] {
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Make links show their URLs */
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #555;
+    word-break: break-all;
+  }
+
+  /* Skip internal anchor links */
+  a[href^="#"]::after,
+  a[href^="javascript"]::after {
+    content: "";
+  }
+
+  /* Prevent broken page splits */
+  .event-section,
+  .registration-card,
+  .event-detail-section,
+  .event-info-block,
+  h1, h2, h3 {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Page margins */
+  @page {
+    margin: 1.5cm;
+  }
+
+  /* Ensure images print */
+  img {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+
+  /* Remove Tailwind dark mode backgrounds */
+  .dark,
+  [data-theme="dark"] {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Show print-only elements */
+  .print-only {
+    display: block !important;
+  }
+}
+
+/* Hide print-only elements on screen */
+.print-only {
+  display: none;
+}

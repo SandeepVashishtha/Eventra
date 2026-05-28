@@ -1,9 +1,32 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import CryptoJS from "crypto-js";
+import { safeJsonParse } from "../utils/safeJsonParse";
+import { logger } from "../utils/logger";
+import { sanitizeSessionState } from "../utils/sessionSanitization";
+import { getDeviceFingerprint } from "../utils/deviceFingerprint";
 
 const SessionRecoveryContext = createContext();
 
 const SESSION_KEY = "eventra_session_state";
 const SESSION_TIMEOUT = 30 * 60 * 1000;
+const RECOVERY_KEY_NAME = "eventra_session_recovery_key";
+
+const getOrCreateSessionKey = () => {
+  if (typeof window === "undefined" || !window.sessionStorage) {
+    return null;
+  }
+  try {
+    let key = sessionStorage.getItem(RECOVERY_KEY_NAME);
+    if (!key) {
+      key = CryptoJS.lib.WordArray.random(32).toString();
+      sessionStorage.setItem(RECOVERY_KEY_NAME, key);
+    }
+    return key;
+  } catch (e) {
+    logger.error("Failed to manage session-bound recovery key:", e);
+    return null;
+  }
+};
 
 export const useSessionRecovery = () => {
   const context = useContext(SessionRecoveryContext);
@@ -25,10 +48,17 @@ export const SessionRecoveryProvider = ({ children }) => {
   const saveTimeoutRef = useRef(null);
   const activityTimeoutRef = useRef(null);
 
+  // 🔥 FIX: Throttle React state updates to prevent main-thread thrashing
   const updateActivity = useCallback(() => {
     const now = Date.now();
-    setLastActivity(now);
-    lastActivityRef.current = now;
+    lastActivityRef.current = now; // Always update the ref immediately for accuracy
+
+    if (!activityTimeoutRef.current) {
+      activityTimeoutRef.current = setTimeout(() => {
+        setLastActivity(lastActivityRef.current);
+        activityTimeoutRef.current = null;
+      }, 1000); // Only re-render consumers at most once per second
+    }
   }, []);
 
   useEffect(() => {
@@ -63,28 +93,59 @@ export const SessionRecoveryProvider = ({ children }) => {
 
   useEffect(() => {
     try {
+      const key = getOrCreateSessionKey();
       const saved = localStorage.getItem(SESSION_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        const now = Date.now();
+      if (saved && key) {
+        let decryptedStr = null;
+        try {
+          const bytes = CryptoJS.AES.decrypt(saved, key);
+          decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
+        } catch (decryptError) {
+          logger.error("Decryption of session recovery state failed (invalid key or tampered state):", decryptError);
+          localStorage.removeItem(SESSION_KEY);
+          return;
+        }
 
-        const isValidTimestamp =
-          parsed &&
-          parsed.timestamp &&
-          parsed.timestamp &&
-          typeof parsed.timestamp === "number" &&
-          !isNaN(parsed.timestamp);
+        if (decryptedStr) {
+          const parsed = safeJsonParse(decryptedStr, {});
+          const now = Date.now();
 
-        if (isValidTimestamp && now - parsed.timestamp < SESSION_TIMEOUT) {
-          setSessionData(parsed);
-          setHasSession(true);
-          setShowRecoveryPrompt(true);
+          const isValidTimestamp =
+            parsed &&
+            parsed.timestamp &&
+            typeof parsed.timestamp === "number" &&
+            !isNaN(parsed.timestamp) &&
+            parsed.timestamp > 0;
+
+          if (isValidTimestamp && now - parsed.timestamp < SESSION_TIMEOUT) {
+            // Verify that the restored session matches the exact same device fingerprint
+            const currentFingerprint = getDeviceFingerprint();
+            if (!parsed.deviceFingerprint || parsed.deviceFingerprint !== currentFingerprint) {
+              logger.error("Security Alert: Session recovery attempted from a mismatched device/browser fingerprint. Rejecting session restoration.");
+              localStorage.removeItem(SESSION_KEY);
+              
+              // Safely redirect in browser environments
+              if (typeof window !== "undefined" && window.location) {
+                window.location.href = "/login";
+              }
+              return;
+            }
+
+            setSessionData(parsed);
+            setHasSession(true);
+            setShowRecoveryPrompt(true);
+          } else {
+            localStorage.removeItem(SESSION_KEY);
+          }
         } else {
           localStorage.removeItem(SESSION_KEY);
         }
+      } else if (saved) {
+        // Ciphertext exists but key is absent (e.g. new tab/session), clean up persistently stored data
+        localStorage.removeItem(SESSION_KEY);
       }
     } catch (e) {
-      console.error("Failed to load session:", e);
+      logger.error("Failed to load session:", e);
     }
   }, []);
 
@@ -95,16 +156,30 @@ export const SessionRecoveryProvider = ({ children }) => {
 
     saveTimeoutRef.current = setTimeout(() => {
       try {
+        const key = getOrCreateSessionKey();
+        if (!key) {
+          logger.warn("No session key available — skipping session recovery cache");
+          return;
+        }
+
+        // Recursively sanitize state to redact/strip any tokens, passwords, or JWT structures
+        const sanitizedState = sanitizeSessionState(state);
+
         const currentSession = {
-          ...state,
+          ...sanitizedState,
           timestamp: Date.now(),
           lastActivity: lastActivityRef.current,
+          deviceFingerprint: getDeviceFingerprint(),
         };
-        localStorage.setItem(SESSION_KEY, JSON.stringify(currentSession));
+
+        // Encrypt the state before persistently writing it to localStorage
+        const ciphertext = CryptoJS.AES.encrypt(JSON.stringify(currentSession), key).toString();
+
+        localStorage.setItem(SESSION_KEY, ciphertext);
         setSessionData(currentSession);
         setHasSession(true);
       } catch (e) {
-        console.error("Failed to save session:", e);
+        logger.error("Failed to save session:", e);
       }
     }, 1000);
   }, []);
@@ -116,7 +191,7 @@ export const SessionRecoveryProvider = ({ children }) => {
       setHasSession(false);
       setShowRecoveryPrompt(false);
     } catch (e) {
-      console.error("Failed to clear session:", e);
+      logger.error("Failed to clear session:", e);
     }
   }, []);
 

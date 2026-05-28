@@ -43,10 +43,10 @@ const BookmarkedEvents = () => {
               <Bookmark size={16} fill="currentColor" />
               {normalizedEvents.length} saved
             </div>
-            <h1 className="mt-4 text-3xl sm:text-4xl font-bold tracking-tight text-gray-950 dark:text-gray-800">
+            <h1 className="mt-4 text-3xl sm:text-4xl font-bold tracking-tight text-gray-950 dark:text-slate-100">
               Bookmarked Events
             </h1>
-            <p className="mt-3 max-w-2xl text-sm sm:text-base leading-7 text-gray-600 dark:text-gray-600">
+            <p className="mt-3 max-w-2xl text-sm sm:text-base leading-7 text-gray-600 dark:text-slate-400">
               Revisit the events you saved while exploring Eventra.
             </p>
           </div>
@@ -65,10 +65,10 @@ const BookmarkedEvents = () => {
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300">
               <Bookmark size={30} />
             </div>
-            <h2 className="text-2xl font-bold text-gray-950 dark:text-gray-400">
+            <h2 className="text-2xl font-bold text-gray-950 dark:text-slate-200">
               No bookmarked events yet
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm sm:text-base leading-7 text-gray-600 dark:text-gray-600">
+            <p className="mx-auto mt-3 max-w-xl text-sm sm:text-base leading-7 text-gray-600 dark:text-slate-400">
               Tap the bookmark icon on any event card to save it here for quick access later.
             </p>
             <Link

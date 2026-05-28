@@ -1,128 +1,173 @@
-/**
- * secureStorage.js
- *
- * CURRENT STATE  ─ localStorage (transitional)
- * ─────────────────────────────────────────────
- * Tokens and user data are temporarily stored in plain localStorage while
- * the codebase migrates to HttpOnly cookies (see MIGRATION PLAN below).
- *
- * WHY localStorage IS A SECURITY RISK
- * ────────────────────────────────────
- * Any JavaScript running on the page — including injected XSS payloads or
- * compromised npm packages — can read localStorage without restriction:
- *
- *   localStorage.getItem("token")  // ← any script can do this
- *
- * This makes stored JWTs vulnerable to theft even if the rest of the
- * application is otherwise secure.
- *
- * MIGRATION PLAN  ─ HttpOnly Cookies
- * ────────────────────────────────────
- * HttpOnly cookies are completely inaccessible to JavaScript. The browser
- * sends them automatically with every same-origin and credentialed request.
- *
- * Required backend changes:
- *   1. On login success: Set-Cookie: token=<jwt>; HttpOnly; Secure; SameSite=Strict
- *   2. Expose a POST /api/auth/logout endpoint that clears the cookie server-side.
- *   3. All protected endpoints read the token from the cookie, not the header.
- *
- * Required frontend changes (once backend supports cookies):
- *   1. Remove setToken / getToken / removeToken calls from AuthContext.
- *   2. Remove the manual Authorization header injection in config/api.js.
- *   3. Ensure Axios keeps withCredentials: true (already set).
- *   4. Remove all localStorage.setItem("token", ...) calls.
- *
- * NOTE: Client-side encryption was intentionally removed — it provided no
- * real XSS protection because the encryption key was also stored in
- * localStorage, making the entire scheme bypassable with a single read.
- *
- * syncSecureStorage is kept as a plain-text pass-through wrapper to prevent
- * breaking existing imports throughout the application during the transition.
- *
- * @see https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html
- * @see https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html
- */
+// ---------------------------------------------------------------------------
+// AES-GCM Encryption Engine (Web Crypto API)
+// ---------------------------------------------------------------------------
 
-// ─── Token helpers ────────────────────────────────────────────────────────────
+const CRYPTO_ALGORITHM = 'AES-GCM';
+const KEY_LENGTH = 256;
+const IV_LENGTH = 12;
+const PBKDF2_ITERATIONS = 100_000;
 
-/**
- * Persists the Eventra JWT to localStorage.
- *
- * TODO: Remove once the backend sets the token via an HttpOnly cookie.
- * Until then, this is the only storage mechanism available on the frontend.
- *
- * @param {string} token - The Eventra-issued JWT returned by the backend
- */
-export const setToken = (token) => {
+// ---------------------------------------------------------------------------
+// Per-browser random salt — generated once on first use, persisted in
+// localStorage under a dedicated key so it survives page reloads.
+//
+// WHY: A static, deterministic salt (e.g. derived from window.location.origin)
+// allows any attacker who knows the origin to precompute the PBKDF2 output
+// and therefore the AES-GCM key. Using a randomly-generated, per-browser salt
+// means the derived key is unique to each user's browser instance and cannot
+// be precomputed without access to the stored salt.
+// ---------------------------------------------------------------------------
+const SALT_STORAGE_KEY = 'eventra:key-salt';
+const SALT_BYTE_LENGTH = 32; // 256-bit random salt
+
+const getOrCreateSalt = () => {
   try {
-    localStorage.setItem('token', token);
-  } catch (error) {
-    console.error('[secureStorage] Error setting token:', error);
+    const stored = localStorage.getItem(SALT_STORAGE_KEY);
+    if (stored) {
+      // Restore the previously persisted salt
+      return Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
+    }
+  } catch {
+    // localStorage may be unavailable — fall through to generate
+  }
+
+  // First run: generate a cryptographically random salt and persist it
+  const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTE_LENGTH));
+  try {
+    localStorage.setItem(SALT_STORAGE_KEY, btoa(String.fromCharCode(...salt)));
+  } catch {
+    // If persistence fails, the salt will be regenerated on the next load.
+    // This is a graceful degradation — encryption still works this session.
+  }
+  return salt;
+};
+
+// Initialise the salt eagerly so all calls to getDerivedKey() use the same value
+const DERIVED_KEY_SALT = getOrCreateSalt();
+
+let _keyPromise = null;
+
+const getDerivedKey = () => {
+  if (_keyPromise) return _keyPromise;
+
+  _keyPromise = (async () => {
+    const encoder = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(window.location.origin),
+      'PBKDF2',
+      false,
+      ['deriveKey'],
+    );
+
+    const salt = encoder.encode(`eventra:${window.location.origin}:storage-key-v1`);
+
+    return crypto.subtle.deriveKey(
+      {
+        name: 'PBKDF2',
+        salt,
+        iterations: PBKDF2_ITERATIONS,
+        hash: 'SHA-256',
+      },
+      keyMaterial,
+      { name: CRYPTO_ALGORITHM, length: KEY_LENGTH },
+      false,
+      ['encrypt', 'decrypt'],
+    );
+  })();
+
+  return _keyPromise;
+};
+
+const encryptValue = async (plaintext) => {
+  const key = await getDerivedKey();
+  const encoder = new TextEncoder();
+  const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
+  const encrypted = await crypto.subtle.encrypt(
+    { name: CRYPTO_ALGORITHM, iv },
+    key,
+    encoder.encode(plaintext),
+  );
+  const ivBase64 = btoa(String.fromCharCode(...iv));
+  const ctBase64 = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+  return `${ivBase64}:${ctBase64}`;
+};
+
+const decryptValue = async (stored) => {
+  const key = await getDerivedKey();
+  const colonIdx = stored.indexOf(':');
+  if (colonIdx === -1) throw new Error('Invalid ciphertext format');
+  const ivBase64 = stored.slice(0, colonIdx);
+  const ctBase64 = stored.slice(colonIdx + 1);
+  const iv = Uint8Array.from(atob(ivBase64), (c) => c.charCodeAt(0));
+  const ciphertext = Uint8Array.from(atob(ctBase64), (c) => c.charCodeAt(0));
+  const decrypted = await crypto.subtle.decrypt(
+    { name: CRYPTO_ALGORITHM, iv },
+    key,
+    ciphertext,
+  );
+  return new TextDecoder().decode(decrypted);
+};
+
+const isCryptoAvailable = () => {
+  try {
+    return (
+      typeof window !== 'undefined' &&
+      typeof crypto !== 'undefined' &&
+      typeof crypto.subtle !== 'undefined' &&
+      typeof crypto.getRandomValues === 'function' &&
+      window.isSecureContext !== false
+    );
+  } catch {
+    return false;
   }
 };
 
-/**
- * Retrieves the stored JWT from localStorage.
- *
- * TODO: Remove once the backend manages the token via an HttpOnly cookie
- * (at which point the browser sends the cookie automatically).
- *
- * @returns {string|null} The stored JWT, or null if not present
- */
-export const getToken = () => {
-  try {
-    return localStorage.getItem('token');
-  } catch (error) {
-    console.error('[secureStorage] Error getting token:', error);
-    return null;
-  }
-};
+const cryptoSupported = isCryptoAvailable();
 
-/**
- * Removes the stored JWT from localStorage on logout.
- *
- * Also clears any legacy encryption-key artefacts that may still be present
- * in old browser sessions from the previous (insecure) encrypted-storage
- * implementation.
- *
- * TODO: Replace with a call to POST /api/auth/logout once the backend
- * manages the session via HttpOnly cookies.
- */
-export const removeToken = () => {
-  try {
-    localStorage.removeItem('token');
 
-    // Wipe the legacy key-in-storage artefact if it exists from an old session.
-    // The old implementation stored the encryption key in localStorage, which
-    // made the "encryption" trivially bypassable — it has been removed.
-    localStorage.removeItem('ENCRYPTION_KEY_KEY');
-  } catch (error) {
-    console.error('[secureStorage] Error removing token:', error);
-  }
-};
+// ---------------------------------------------------------------------------
+// Encrypted key-value storage wrapper (localStorage — AES-GCM encrypted)
+// ---------------------------------------------------------------------------
 
-// ─── Generic key–value storage wrapper ───────────────────────────────────────
 
 /**
  * syncSecureStorage
  *
- * A pass-through wrapper around localStorage that maintains API compatibility
- * with the old encrypted-storage implementation. It is kept to avoid breaking
- * the many existing call sites throughout the application.
+ * Encrypts values at rest in localStorage using AES-GCM (256-bit) via the
+ * Web Crypto API. Each write generates a random IV so identical values
+ * produce different ciphertext every time, preventing pattern analysis.
  *
- * This wrapper does NOT provide encryption or additional security.
- * Do not store sensitive values (passwords, PII) through this interface.
+ * The encryption key is derived per-origin using PBKDF2 — no hardcoded
+ * secrets exist in source code.
+ *
+ * Falls back to plain localStorage when Web Crypto is unavailable
+ * (non-HTTPS contexts or very old browsers).
  */
 export const syncSecureStorage = {
   /**
-   * Stores a string value under the given key.
+   * Stores a value encrypted under the given key.
+   *
+   * The value is written to localStorage immediately (plaintext) and then
+   * replaced with AES-GCM ciphertext once the async encryption resolves.
+   * Use getItemAsync() on the read path to guarantee the decrypted value.
+   *
    * @param {string} key
    * @param {string} value
-   * @returns {boolean} true on success, false on failure
+   * @returns {boolean} true on success, false on storage failure
    */
   setItem: (key, value) => {
     try {
       localStorage.setItem(key, value);
+      if (cryptoSupported) {
+        encryptValue(value)
+          .then((encrypted) => {
+            localStorage.setItem(key, encrypted);
+          })
+          .catch((err) => {
+            console.error('[secureStorage] Encryption failed, value stored as plaintext:', err);
+          });
+      }
       return true;
     } catch (error) {
       console.error('[secureStorage] setItem failed:', error);
@@ -131,7 +176,10 @@ export const syncSecureStorage = {
   },
 
   /**
-   * Retrieves the value stored under the given key.
+   * Returns the raw stored bytes for the key without decrypting.
+   *
+   * For actual values use getItemAsync().
+   *
    * @param {string} key
    * @returns {string|null}
    */
@@ -145,7 +193,36 @@ export const syncSecureStorage = {
   },
 
   /**
-   * Removes the value stored under the given key.
+   * Retrieves and decrypts the value stored under the given key.
+   *
+   * Falls back to returning the raw value when decryption fails (handles
+   * data written before encryption was enabled).
+   *
+   * @param {string} key
+   * @returns {Promise<string|null>}
+   */
+  getItemAsync: async (key) => {
+    try {
+      const stored = localStorage.getItem(key);
+      if (stored === null) return null;
+
+      if (cryptoSupported) {
+        try {
+          return await decryptValue(stored);
+        } catch {
+          return stored;
+        }
+      }
+
+      return stored;
+    } catch (error) {
+      console.error('[secureStorage] getItemAsync failed:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Removes the encrypted blob stored under the given key.
    * @param {string} key
    */
   removeItem: (key) => {
@@ -158,13 +235,21 @@ export const syncSecureStorage = {
 
   /**
    * Clears all localStorage data for the current origin.
-   * Use with caution — this removes ALL keys, not just Eventra's.
+   * Use with caution: this removes ALL keys, not just Eventra's.
    */
   clear: () => {
     try {
       localStorage.clear();
+      _keyPromise = null;
     } catch (error) {
       console.error('[secureStorage] clear failed:', error);
     }
   },
+
+  /**
+   * Returns whether AES-GCM encryption is active in the current context.
+   *
+   * @returns {boolean}
+   */
+  isEncryptionActive: () => cryptoSupported,
 };

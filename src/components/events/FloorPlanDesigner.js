@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef } from "react";
-import { 
-  Plus, Minus, Trash2, Save, RotateCcw, 
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import ConfirmationModal from "../common/ConfirmationModal";
+import {
+  Plus, Minus, Trash2, Save, RotateCcw,
   Move, Grid, Users, Layout, MapPin, Minimize2,
   Download, Upload, Image, FileJson, AlertTriangle
 } from "lucide-react";
 import { toast } from "react-toastify";
 import "./FloorPlanDesigner.css";
-
 // Preset layouts
 const PRESETS = {
   empty: [],
@@ -36,7 +36,7 @@ const PRESETS = {
 
 // Available registered mock attendees
 const MOCK_ATTENDEES = [
-  "Amit Sharma", "Priya Singh", "Rohit Verma", "Neha Kapoor", 
+  "Amit Sharma", "Priya Singh", "Rohit Verma", "Neha Kapoor",
   "Vikram Rathore", "Siddharth Malhotra", "Kriti Sanon", "Varun Dhawan",
   "Aditi Rao", "Ranbir Kapoor", "Deepika Padukone", "Ranveer Singh",
   "Alia Bhatt", "Ayushmann Khurrana", "Rajkummar Rao", "Shraddha Kapoor"
@@ -54,10 +54,20 @@ const checkCollision = (el1, el2) => {
   );
 };
 
-const FloorPlanDesigner = ({ eventId = "default" }) => {
+const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   const [elements, setElements] = useState([]);
+  const [lastSavedElementsStr, setLastSavedElementsStr] = useState("");
   const [selectedId, setSelectedId] = useState(null);
-  
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  const [announcement, setAnnouncement] = useState("");
+  const announce = (message) => {
+    setAnnouncement("");
+    setTimeout(() => {
+      setAnnouncement(message);
+    }, 50);
+  };
+
   // Canvas Zoom / Pan
   const [zoom, setZoom] = useState(0.8);
   const [panOffset, setPanOffset] = useState({ x: 50, y: 30 });
@@ -66,36 +76,209 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
 
   // References
   const canvasRef = useRef(null);
+  const animationFrameRef = useRef(null);
   const isDraggingRef = useRef(false);
   const isPanningRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
   const elementStartRef = useRef({ x: 0, y: 0 });
   const panStartRef = useRef({ x: 0, y: 0 });
+  // Track pending animation frame to cancel on cleanup (prevents memory leak)
+  const rafRef = useRef(null);
+  // Keep a stable ref to zoom so RAF callbacks don't capture stale closure values
+  const zoomRef = useRef(zoom);
+  const snapToGridRef = useRef(snapToGrid);
+  const selectedIdRef = useRef(selectedId);
+
+  // Sync mutable refs whenever state changes — avoids stale closures in RAF callbacks
+  useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+  useEffect(() => { snapToGridRef.current = snapToGrid; }, [snapToGrid]);
+  useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
+
+  // Global keyboard shortcuts listener for shape manipulation (Issue #3265)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Don't intercept keyboard shortcuts if the user is typing inside input or select elements
+      if (
+        document.activeElement &&
+        (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT")
+      ) {
+        return;
+      }
+
+      if (!selectedIdRef.current) return;
+
+      const activeEl = elements.find((el) => el.id === selectedIdRef.current);
+      if (!activeEl) return;
+
+      const step = snapToGridRef.current ? 20 : 5;
+
+      switch (e.key) {
+        case "ArrowUp":
+          e.preventDefault();
+          updateSelectedElement("y", Math.max(0, activeEl.y - step));
+          announce(`${activeEl.label} moved up to Y ${Math.max(0, activeEl.y - step)}.`);
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          updateSelectedElement("y", Math.min(800 - activeEl.height, activeEl.y + step));
+          announce(`${activeEl.label} moved down to Y ${Math.min(800 - activeEl.height, activeEl.y + step)}.`);
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          updateSelectedElement("x", Math.max(0, activeEl.x - step));
+          announce(`${activeEl.label} moved left to X ${Math.max(0, activeEl.x - step)}.`);
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          updateSelectedElement("x", Math.min(1000 - activeEl.width, activeEl.x + step));
+          announce(`${activeEl.label} moved right to X ${Math.min(1000 - activeEl.width, activeEl.x + step)}.`);
+          break;
+        case "r":
+        case "R":
+          e.preventDefault();
+          const nextRotation = (activeEl.rotation + 15) % 360;
+          updateSelectedElement("rotation", nextRotation);
+          announce(`${activeEl.label} rotated to ${nextRotation} degrees.`);
+          break;
+        case "Delete":
+        case "Backspace":
+          e.preventDefault();
+          handleDeleteSelected();
+          break;
+        case "+":
+        case "=":
+          e.preventDefault();
+          const newWPlus = Math.min(activeEl.type === "stage" ? 600 : 300, activeEl.width + 10);
+          const newHPlus = activeEl.type.includes("round")
+            ? newWPlus
+            : Math.min(activeEl.type === "stage" ? 400 : 200, activeEl.height + 10);
+          updateSelectedElement({
+            width: newWPlus,
+            height: newHPlus
+          });
+          announce(`${activeEl.label} resized to width ${newWPlus}px, height ${newHPlus}px.`);
+          break;
+        case "-":
+        case "_":
+          e.preventDefault();
+          const minSize = activeEl.type.includes("table") ? 60 : 20;
+          const newWMinus = Math.max(minSize, activeEl.width - 10);
+          const newHMinus = activeEl.type.includes("round")
+            ? newWMinus
+            : Math.max(minSize, activeEl.height - 10);
+          updateSelectedElement({
+            width: newWMinus,
+            height: newHMinus
+          });
+          announce(`${activeEl.label} resized to width ${newWMinus}px, height ${newHMinus}px.`);
+          break;
+        case "Escape":
+          e.preventDefault();
+          setSelectedId(null);
+          announce("Deselected floor plan element.");
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [elements, updateSelectedElement]);
+
+  const isDirty = !!(lastSavedElementsStr && JSON.stringify(elements) !== lastSavedElementsStr);
+
+  useEffect(() => {
+    if (onDirtyChange) {
+      onDirtyChange(isDirty);
+    }
+  }, [isDirty, onDirtyChange]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = "You have unsaved changes on your floor plan layout. Are you sure you want to leave?";
+        return e.returnValue;
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isDirty]);
 
   // Load layout from local storage or set preset
   useEffect(() => {
     const savedLayout = localStorage.getItem(`eventra_floorplan_${eventId}`);
+    let initialElements = [];
     if (savedLayout) {
       try {
-        setElements(JSON.parse(savedLayout));
+        initialElements = JSON.parse(savedLayout);
       } catch (e) {
-        setElements(PRESETS.banquet);
+        toast.error("Invalid floor plan format");
+        initialElements = PRESETS.banquet;
       }
     } else {
-      setElements(PRESETS.banquet);
+      initialElements = PRESETS.banquet;
     }
+    setElements(initialElements);
+    setLastSavedElementsStr(JSON.stringify(initialElements));
   }, [eventId]);
-
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
+  
   const saveLayout = () => {
-    localStorage.setItem(`eventra_floorplan_${eventId}`, JSON.stringify(elements));
+    const serialized = JSON.stringify(elements);
+    localStorage.setItem(`eventra_floorplan_${eventId}`, serialized);
+    setLastSavedElementsStr(serialized);
     toast.success("Venue floor plan successfully saved!");
+    announce("Venue floor plan successfully saved!");
   };
 
   const loadPreset = (presetName) => {
-    if (window.confirm(`Are you sure you want to load the ${presetName} layout? Current changes will be overwritten.`)) {
-      setElements(PRESETS[presetName]);
-      setSelectedId(null);
-    }
+    toast(
+      ({ closeToast }) => (
+        <div>
+          <p className="text-sm font-semibold mb-2">Load {presetName} layout?</p>
+          <p className="text-xs text-gray-500 mb-3">Current changes will be overwritten.</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setElements(PRESETS[presetName]);
+                setSelectedId(null);
+                toast.success(`${presetName} layout loaded!`);
+                announce(`${presetName} layout loaded!`);
+                closeToast();
+              }}
+              className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold rounded-lg transition-colors"
+            >
+              Yes, Load
+            </button>
+            <button
+              onClick={closeToast}
+              className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-semibold rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        closeButton: false,
+        position: "top-center",
+      }
+    );
   };
 
   // Helper to prepare the SVG for export by cloning and stripping specific attributes/styles
@@ -104,16 +287,15 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
     if (!svgElement) return "";
 
     const clonedSvg = svgElement.cloneNode(true);
-    
+
     // Reset transform style so export is the full canvas without panning and zooming
     clonedSvg.style.transform = "none";
     clonedSvg.style.transformOrigin = "initial";
     clonedSvg.style.transition = "none";
-    
+
     // Set width and height explicitly to matching the viewBox dimensions for high resolution
     clonedSvg.setAttribute("width", "1000");
     clonedSvg.setAttribute("height", "800");
-
     // Restore selected shape's default stroke so it looks clean in the exported snapshot
     const selectedShape = clonedSvg.querySelector(".fp-svg-element-selected");
     if (selectedShape) {
@@ -129,10 +311,10 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
     try {
       const svgString = getCleanExportSvgString();
       if (!svgString) return;
-      
+
       const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
       const url = URL.createObjectURL(blob);
-      
+
       const link = document.createElement("a");
       link.href = url;
       link.download = `eventra-floorplan-${eventId}.svg`;
@@ -161,7 +343,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
 
       const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
       const url = URL.createObjectURL(blob);
-      
+
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement("canvas");
@@ -193,12 +375,12 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
           URL.revokeObjectURL(url);
         }, "image/png");
       };
-      
+
       img.onerror = () => {
         toast.error("Failed to render floor plan workspace onto image canvas.");
         URL.revokeObjectURL(url);
       };
-      
+
       img.src = url;
     } catch (error) {
       console.error("PNG Export failed:", error);
@@ -211,7 +393,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
     try {
       const jsonBlob = new Blob([JSON.stringify(elements, null, 2)], { type: "application/json" });
       const jsonUrl = URL.createObjectURL(jsonBlob);
-      
+
       const link = document.createElement("a");
       link.href = jsonUrl;
       link.download = `eventra-floorplan-${eventId}.json`;
@@ -234,13 +416,13 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
     reader.onload = (event) => {
       try {
         const importedData = JSON.parse(event.target.result);
-        
+
         if (!Array.isArray(importedData)) {
           throw new Error("Floor plan config layout must be a valid JSON array.");
         }
 
         // Schema validation
-        const isValid = importedData.every(el => 
+        const isValid = importedData.every(el =>
           el && typeof el === "object" && "id" in el && "type" in el && "x" in el && "y" in el
         );
 
@@ -252,7 +434,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
         setSelectedId(null);
         toast.success("Floor plan layout imported successfully!");
       } catch (err) {
-        toast.error(`Failed to import floor plan: ${err.message}`);
+        toast.error("Invalid floor plan format");
       }
     };
     reader.readAsText(file);
@@ -276,40 +458,53 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
 
     setElements([...elements, newElement]);
     setSelectedId(id);
+    announce(`New ${type.replace("-", " ")} added at position X 350, Y 350. Selected.`);
   };
 
   const handleDeleteSelected = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteSelected = () => {
     if (selectedId) {
       setElements(elements.filter(el => el.id !== selectedId));
       setSelectedId(null);
+      toast.success("Element deleted successfully!");
+      announce("Element deleted successfully.");
     }
+
+    setIsDeleteModalOpen(false);
   };
 
   const updateSelectedElement = (key, value) => {
-    setElements(elements.map(el => {
-      if (el.id === selectedId) {
-        let updated = { ...el, [key]: value };
-        // Reset assigned attendees if seats decrease
-        if (key === "seatsCount") {
-          const freshAssigned = {};
-          Object.keys(el.assignedAttendees).forEach(k => {
-            if (parseInt(k) < value) {
-              freshAssigned[k] = el.assignedAttendees[k];
-            }
-          });
-          updated.assignedAttendees = freshAssigned;
+    const updates = typeof key === "object" ? key : { [key]: value };
+    setElements((prevElements) =>
+      prevElements.map((el) => {
+        if (el.id === selectedId) {
+          let updated = { ...el, ...updates };
+          // Reset assigned attendees if seats decrease
+          if ("seatsCount" in updates) {
+            const seatsCountVal = updates.seatsCount;
+            const freshAssigned = {};
+            Object.keys(el.assignedAttendees).forEach((k) => {
+              if (parseInt(k) < seatsCountVal) {
+                freshAssigned[k] = el.assignedAttendees[k];
+              }
+            });
+            updated.assignedAttendees = freshAssigned;
+          }
+          return updated;
         }
-        return updated;
-      }
-      return el;
-    }));
+        return el;
+      })
+    );
   };
 
   const handleSeatAssign = (seatIndex, attendeeName) => {
     setElements(elements.map(el => {
       // 1. Create a clean copy of the assignedAttendees object for this element
       const nextAssignments = { ...el.assignedAttendees };
-      
+
       // 2. Unassign this attendee if they are currently assigned to any seat on this table
       Object.keys(nextAssignments).forEach(k => {
         if (nextAssignments[k] === attendeeName) {
@@ -332,8 +527,9 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
     }));
   };
 
-  // Event coordination
-  const handleMouseDown = (e, elementId = null) => {
+  // ─── Pointer / drag coordination ────────────────────────────────────────────
+
+  const handleMouseDown = useCallback((e, elementId = null) => {
     const clientX = e.clientX || (e.touches && e.touches[0].clientX);
     const clientY = e.clientY || (e.touches && e.touches[0].clientY);
 
@@ -342,60 +538,131 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
       panStartRef.current = { x: clientX - panOffset.x, y: clientY - panOffset.y };
     } else if (elementId) {
       setSelectedId(elementId);
+      selectedIdRef.current = elementId;
       isDraggingRef.current = true;
-      
-      const el = elements.find(item => item.id === elementId);
-      if (el) {
-        // Convert screen delta to actual SVG coordinates
-        dragStartRef.current = { x: clientX, y: clientY };
-        elementStartRef.current = { x: el.x, y: el.y };
-      }
-    }
-  };
 
-  const handleMouseMove = (e) => {
+      // Snapshot starting position directly from functional state to avoid
+      // capturing a stale `elements` closure value.
+      setElements(prev => {
+        const el = prev.find(item => item.id === elementId);
+        if (el) {
+          dragStartRef.current = { x: clientX, y: clientY };
+          elementStartRef.current = { x: el.x, y: el.y };
+        }
+        return prev; // no state change — side-effect only
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPanMode, panOffset.x, panOffset.y]);
+
+  /**
+   * handleMouseMove — throttled via requestAnimationFrame.
+   *
+   * FIX #2745-A: Previously called setElements(elements.map(...)) which captured
+   * a stale `elements` closure from the render that attached the handler. This
+   * caused the grid-snapping matrix to compute positions against outdated
+   * coordinates, producing visual jitter and occasional position corruption.
+   *
+   * FIX #2745-B: Without RAF throttling, every pointer-move event triggered a
+   * full React re-render, effectively saturating the main thread ("thread crash"
+   * under the issue title). Queuing via RAF coalesces rapid events to one
+   * repaint per frame (~16 ms) and cancels any queued frame on unmount to
+   * prevent the associated memory leak.
+   */
+  const handleMouseMove = useCallback((e) => {
     const clientX = e.clientX || (e.touches && e.touches[0].clientX);
     const clientY = e.clientY || (e.touches && e.touches[0].clientY);
 
-    if (isPanningRef.current) {
-      setPanOffset({
-        x: clientX - panStartRef.current.x,
-        y: clientY - panStartRef.current.y
-      });
-    } else if (isDraggingRef.current && selectedId) {
-      const dx = (clientX - dragStartRef.current.x) / zoom;
-      const dy = (clientY - dragStartRef.current.y) / zoom;
+    // Cancel the previous pending frame before queuing a new one.
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+    }
 
-      let newX = elementStartRef.current.x + dx;
-      let newY = elementStartRef.current.y + dy;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
 
-      if (snapToGrid) {
-        newX = Math.round(newX / 20) * 20;
-        newY = Math.round(newY / 20) * 20;
+      if (isPanningRef.current) {
+        setPanOffset({
+          x: clientX - panStartRef.current.x,
+          y: clientY - panStartRef.current.y
+        });
+        return;
       }
 
-      // Bound boundaries
-      newX = Math.max(10, Math.min(990, newX));
-      newY = Math.max(10, Math.min(990, newY));
+      const currentSelectedId = selectedIdRef.current;
+      if (isDraggingRef.current && currentSelectedId) {
+        // Read zoom / snapToGrid from refs so the RAF callback always sees
+        // the latest value without needing to be recreated on every render.
+        const currentZoom = zoomRef.current;
+        const currentSnap = snapToGridRef.current;
 
-      setElements(elements.map(el => {
-        if (el.id === selectedId) {
-          return { ...el, x: newX, y: newY };
+        const dx = (clientX - dragStartRef.current.x) / currentZoom;
+        const dy = (clientY - dragStartRef.current.y) / currentZoom;
+
+        let newX = elementStartRef.current.x + dx;
+        let newY = elementStartRef.current.y + dy;
+
+        if (currentSnap) {
+          // Grid-snapping matrix: round to nearest 20px cell
+          newX = Math.round(newX / 20) * 20;
+          newY = Math.round(newY / 20) * 20;
         }
-        return el;
-      }));
-    }
-  };
 
-  const handleMouseUp = () => {
+        // Clamp within canvas bounds
+        newX = Math.max(10, Math.min(990, newX));
+        newY = Math.max(10, Math.min(990, newY));
+
+        // Use functional updater — reads the LATEST elements state, not the
+        // stale closure value captured when the handler was last created.
+        setElements(prev => prev.map(el => {
+          if (el.id === currentSelectedId) {
+            return { ...el, x: newX, y: newY };
+          }
+          return el;
+        }));
+      }
+    });
+  }, []); // no dependencies — reads all mutable values via refs
+
+  const handleMouseUp = useCallback(() => {
     isDraggingRef.current = false;
     isPanningRef.current = false;
-  };
+    // Cancel any in-flight animation frame so it doesn't fire after release
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+  }, []);
 
-  const activeElement = elements.find(el => el.id === selectedId);
+  // Attach global window listeners so drag/pan is never left in a stuck state
+  // if the pointer leaves the component boundary (e.g. leaves the browser window).
+  // Cleanup cancels the RAF and removes listeners — preventing the memory leak
+  // described in issue #2745.
+  useEffect(() => {
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("touchmove", handleMouseMove, { passive: true });
+    window.addEventListener("touchend", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("touchmove", handleMouseMove);
+      window.removeEventListener("touchend", handleMouseUp);
+      // Cancel any pending animation frame on unmount to avoid memory leak
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
+  }, [handleMouseMove, handleMouseUp]);
+
+  const activeElement = useMemo(() => {
+    return elements.find(el => el.id === selectedId);
+  }, [elements, selectedId]);
 
   // Math calculation of seat position around tables
-  const getSeatPositions = (el) => {
+  const getSeatPositions = useCallback((el) => {
     const positions = [];
     const count = el.seatsCount;
     if (count <= 0) return positions;
@@ -423,7 +690,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
       const height = el.height;
       const halfW = width / 2;
       const halfH = height / 2;
-      
+
       // Calculate top face projection center
       const cX = el.x + halfW - projOffset;
       const cY = el.y + halfH - projOffset;
@@ -447,36 +714,80 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
         const side = i < seatsPerSide ? "top" : "bottom";
         const sideIndex = i % seatsPerSide;
         const relativeX = spacingX * (sideIndex + 1) - halfW;
-        
+
         let p;
         if (side === "top") {
           p = rotatePt(el.x - projOffset + halfW + relativeX, el.y - projOffset - 18);
         } else {
           p = rotatePt(el.x - projOffset + halfW + relativeX, el.y - projOffset + height + 18);
         }
-        
+
         positions.push({ x: p.x, y: p.y, index: i });
       }
     }
     return positions;
-  };
+  }, []);
 
   // Get seats calculation count statistics
-  const totalOccupiedSeats = elements.reduce((acc, el) => {
-    return acc + Object.keys(el.assignedAttendees || {}).length;
-  }, 0);
+  const totalOccupiedSeats = useMemo(() => {
+    return elements.reduce((acc, el) => {
+      return acc + Object.keys(el.assignedAttendees || {}).length;
+    }, 0);
+  }, [elements]);
 
-  const totalMaxSeats = elements.reduce((acc, el) => {
-    return acc + (el.seatsCount || 0);
-  }, 0);
+  const totalMaxSeats = useMemo(() => {
+    return elements.reduce((acc, el) => {
+      return acc + (el.seatsCount || 0);
+    }, 0);
+  }, [elements]);
 
   // Computes whether there is ANY overlap / collision currently detected on the canvas
-  const anyCollision = elements.some(el => 
-    elements.some(other => other.id !== el.id && checkCollision(el, other))
-  );
+  // FIX: Debounced O(N^2) collision calculation to prevent main-thread lag during drag
+  const [collisionMap, setCollisionMap] = useState(new Map());
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const collisions = new Map();
+
+      for (let i = 0; i < elements.length; i++) {
+        for (let j = i + 1; j < elements.length; j++) {
+          const el1 = elements[i];
+          const el2 = elements[j];
+
+          if (checkCollision(el1, el2)) {
+            collisions.set(el1.id, true);
+            collisions.set(el2.id, true);
+          }
+        }
+      }
+
+      setCollisionMap(collisions);
+    }, 150);
+
+    return () => clearTimeout(timeoutId);
+  }, [elements]);
+
+  const anyCollision = collisionMap.size > 0;
 
   return (
     <div className="fp-container">
+      <div 
+        style={{
+          position: "absolute",
+          width: "1px",
+          height: "1px",
+          padding: "0",
+          margin: "-1px",
+          overflow: "hidden",
+          clip: "rect(0, 0, 0, 0)",
+          whiteSpace: "nowrap",
+          border: "0"
+        }}
+        aria-live="polite" 
+        role="status"
+      >
+        {announcement}
+      </div>
       {/* Top action controls */}
       <div className="fp-topbar">
         <div className="flex items-center gap-3">
@@ -497,38 +808,42 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
             <button onClick={() => loadPreset("conference")} className="text-xs font-semibold px-2 py-0.5 hover:text-indigo-400 text-gray-300 transition-colors">Keynote</button>
           </div>
 
-          <button onClick={saveLayout} className="fp-btn fp-btn-primary">
+          <button onClick={saveLayout} className="fp-btn fp-btn-primary" aria-label="button">
             <Save size={16} />
             Save Layout
           </button>
         </div>
       </div>
 
-      <div className="fp-workspace" onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
+      {/* Mouse/touch events are handled via global window listeners (see useEffect above) */}
+      <div className="fp-workspace">
         {/* Left Toolbox */}
-        <div className="fp-sidebar fp-sidebar-left">
+        <aside
+          className="fp-sidebar fp-sidebar-left"
+          aria-label="Floor plan designer tools sidebar"
+        >
           <div className="fp-sidebar-section">
             <div className="fp-section-title">Object Toolbox</div>
             <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Click items to add them directly onto the seating designer grid canvas.</p>
-            
+
             <div className="fp-tool-grid">
-              <button className="fp-tool-item" onClick={() => handleAddElement("stage")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("stage")}>
                 <Layout className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Stage</span>
               </button>
-              <button className="fp-tool-item" onClick={() => handleAddElement("round-table")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("round-table")}>
                 <Users className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Round Table</span>
               </button>
-              <button className="fp-tool-item" onClick={() => handleAddElement("rect-table")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("rect-table")}>
                 <Grid className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Rect Table</span>
               </button>
-              <button className="fp-tool-item" onClick={() => handleAddElement("booth")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("booth")}>
                 <MapPin className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Stand/Booth</span>
               </button>
-              <button className="fp-tool-item" onClick={() => handleAddElement("barrier")}>
+              <button className="fp-tool-item" aria-pressed="false" onClick={() => handleAddElement("barrier")}>
                 <Minimize2 className="fp-tool-icon" size={24} />
                 <span className="fp-tool-label">Barrier</span>
               </button>
@@ -541,7 +856,6 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
 
           <div className="fp-sidebar-section">
             <div className="fp-section-title">Designer Settings</div>
-            
             <div className="fp-toggle-container mb-4">
               <span className="text-xs font-semibold text-gray-300 dark:text-gray-400">Snap to 20px Grid</span>
               <label className="fp-switch">
@@ -569,17 +883,17 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
             </p>
 
             <div className="fp-portability-grid mb-4">
-              <button className="fp-portability-btn font-semibold" onClick={handleExportPNG} title="Export as high-res PNG image">
+              <button className="fp-portability-btn font-semibold" onClick={handleExportPNG} title="Export as high-res PNG image" aria-label="button">
                 <Image className="fp-portability-icon" size={16} />
                 <span>Export PNG</span>
               </button>
-              <button className="fp-portability-btn font-semibold" onClick={handleExportSVG} title="Export as vector SVG image">
+              <button className="fp-portability-btn font-semibold" onClick={handleExportSVG} title="Export as vector SVG image" aria-label="button">
                 <Download className="fp-portability-icon" size={16} />
                 <span>Export SVG</span>
               </button>
             </div>
 
-            <button className="fp-btn fp-btn-secondary w-full justify-center mb-3 text-xs" onClick={handleDownloadJSON} title="Download backup config JSON file">
+            <button className="fp-btn fp-btn-secondary w-full justify-center mb-3 text-xs" onClick={handleDownloadJSON} title="Download backup config JSON file" aria-label="button">
               <FileJson size={14} className="text-indigo-400" />
               <span>Backup Layout JSON</span>
             </button>
@@ -589,11 +903,11 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
                 <Upload size={18} className="text-indigo-400 mb-1.5" />
                 <span className="text-[11px] font-bold text-gray-300 dark:text-gray-400">Restore Layout JSON</span>
                 <span className="text-[9px] text-gray-500 dark:text-gray-500 mt-0.5 text-center">Click to browse and upload</span>
-                <input 
-                  type="file" 
-                  accept=".json" 
-                  className="hidden" 
-                  onChange={handleImportJSON} 
+                <input
+                  type="file"
+                  accept=".json"
+                  className="hidden"
+                  onChange={handleImportJSON}
                 />
               </label>
             </div>
@@ -609,11 +923,20 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
               </p>
             </div>
           </div>
-        </div>
+        </aside>
 
         {/* Dynamic Canvas Workspace */}
-        <div className="fp-canvas-wrapper" onMouseDown={(e) => handleMouseDown(e, null)}>
-          
+        <div
+          className="fp-canvas-wrapper"
+          onMouseDown={(e) => handleMouseDown(e, null)}
+          onTouchStart={(e) => {
+            if (isPanMode && e.cancelable) {
+              e.preventDefault();
+            }
+            handleMouseDown(e, null);
+          }}
+        >
+
           {/* Real-time active collision notification */}
           {anyCollision && (
             <div className="fp-collision-warning-badge">
@@ -624,9 +947,9 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
 
           {/* Zoom & Pan floating controls */}
           <div className="fp-controls-floating">
-            <button 
+            <button
               className={`fp-control-btn ${isPanMode ? 'fp-control-btn-active' : ''}`}
-              title="Pan Tool (Move screen)" 
+              title="Pan Tool (Move screen)"
               onClick={() => setIsPanMode(!isPanMode)}
             >
               <Move size={16} />
@@ -696,31 +1019,60 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
                 <stop offset="100%" stopColor="#7f1d1d" />
               </linearGradient>
             </defs>
-            
+
             <rect width="100%" height="100%" fill="url(#canvas-grid)" />
 
             {/* Elements render */}
             {elements.map((el) => {
               const isSelected = el.id === selectedId;
-              const isColliding = elements.some(other => other.id !== el.id && checkCollision(el, other));
-              
+              const isColliding = collisionMap.has(el.id);
+
               // 2.5D visual projection offsets
               const projOffset = 10;
 
               return (
-                <g 
-                   key={el.id} 
-                   data-element-id={el.id}
-                   data-element-type={el.type}
-                   transform={`rotate(${el.rotation}, ${el.x + el.width / 2}, ${el.y + el.height / 2})`}
-                   onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, el.id); }}
-                   className="fp-element-group"
+                <g
+                  key={el.id}
+                  data-element-id={el.id}
+                  data-element-type={el.type}
+                  transform={`rotate(${el.rotation}, ${el.x + el.width / 2}, ${el.y + el.height / 2})`}
+                  onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, el.id); }}
+                  onTouchStart={(e) => {
+                    if (e.cancelable) e.preventDefault();
+                    e.stopPropagation();
+                    handleMouseDown(e, el.id);
+                  }}
+                  className="fp-element-group"
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`Floor plan element: ${el.label}, type: ${el.type.replace("-", " ")}, ${el.seatsCount > 0 ? `${Object.keys(el.assignedAttendees).length} of ${el.seatsCount} seats occupied` : "no seating"}, position: X ${Math.round(el.x)}, Y ${Math.round(el.y)}`}
+                  aria-selected={isSelected}
+                  onFocus={() => {
+                    setSelectedId(el.id);
+                    selectedIdRef.current = el.id;
+                    announce(`${el.label} selected. Keyboard controls active: arrow keys to move, R to rotate, + or - to resize, Delete to delete.`);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelectedId(el.id);
+                      selectedIdRef.current = el.id;
+                    }
+                  }}
                 >
                   {/* Chairs rendered around tables */}
                   {getSeatPositions(el).map((seat) => {
                     const isOccupied = el.assignedAttendees[seat.index];
+                    const seatLabel = (el.seatLabels && el.seatLabels[seat.index]) || `Seat ${seat.index + 1}`;
+                    const seatTier = el.tier || "General Admission";
                     return (
-                      <g key={`seat-${el.id}-${seat.index}`} className="fp-seat-25d">
+                      <g 
+                        key={`seat-${el.id}-${seat.index}`} 
+                        className="fp-seat-25d"
+                        data-seat-id={`${el.id}-${seat.index}`}
+                        data-seat-label={seatLabel}
+                        data-seat-tier={seatTier}
+                      >
                         {/* 2.5D Chair shadow/extrusion base */}
                         <circle
                           cx={seat.x}
@@ -787,7 +1139,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
                         fill="rgba(8, 6, 18, 0.95)"
                         stroke="rgba(255, 255, 255, 0.05)"
                       />
-                      
+
                       {/* Top Face element rendering */}
                       <rect
                         x={el.x - projOffset}
@@ -797,9 +1149,9 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
                         rx={el.type === "stage" ? 8 : (el.type === "barrier" ? 2 : 6)}
                         fill={
                           el.type === "stage" ? "url(#stage-grad)" :
-                          el.type === "booth" ? "url(#booth-grad)" :
-                          el.type === "barrier" ? "url(#barrier-grad)" :
-                          el.type === "exit" ? "url(#exit-grad)" : "url(#table-grad)"
+                            el.type === "booth" ? "url(#booth-grad)" :
+                              el.type === "barrier" ? "url(#barrier-grad)" :
+                                el.type === "exit" ? "url(#exit-grad)" : "url(#table-grad)"
                         }
                         stroke={isColliding ? "#ef4444" : (isSelected ? "#818cf8" : "#4f46e5")}
                         strokeWidth={el.type === "stage" ? 2.5 : 2}
@@ -821,7 +1173,7 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
                   >
                     {el.label}
                   </text>
-                  
+
                   {/* Visual indication of occupied seating capacity */}
                   {el.seatsCount > 0 && (
                     <text
@@ -852,15 +1204,19 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
         </div>
 
         {/* Right Details Panel / Seating inspector */}
-        <div className="fp-sidebar fp-sidebar-right">
+        <aside
+          className="fp-sidebar fp-sidebar-right"
+          aria-label="Element properties and seating configuration sidebar"
+        >
           {activeElement ? (
             <>
               {/* Properties Section */}
               <div className="fp-sidebar-section">
                 <div className="flex items-center justify-between mb-4">
                   <div className="fp-section-title">Element Details</div>
-                  <button 
+                  <button
                     onClick={handleDeleteSelected}
+                    aria-label="Delete selected floor plan element"
                     className="p-1.5 text-red-400 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 rounded-lg transition-colors cursor-pointer"
                     title="Delete item"
                   >
@@ -885,6 +1241,71 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
                     maxLength={24}
                   />
                 </div>
+
+                <div className="fp-field border-t border-white/5 pt-3 mt-3">
+                  <div className="fp-toggle-container">
+                    <span className="text-xs font-semibold text-gray-300">Mark as Sponsor Booth</span>
+                    <label className="fp-switch">
+                      <input
+                        type="checkbox"
+                        checked={!!activeElement.isSponsorBooth}
+                        onChange={(e) => updateSelectedElement("isSponsorBooth", e.target.checked)}
+                      />
+                      <span className="fp-slider-round"></span>
+                    </label>
+                  </div>
+                </div>
+
+                {activeElement.isSponsorBooth && (
+                  <div className="bg-indigo-500/5 border border-indigo-500/10 rounded-xl p-3 mb-4 space-y-3">
+                    <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-1">
+                      Sponsor Settings
+                    </div>
+                    
+                    <div className="fp-field mb-2">
+                      <label className="fp-field-label text-[10px]">Sponsor Logo URL</label>
+                      <input
+                        type="text"
+                        className="fp-input text-xs py-1"
+                        value={activeElement.sponsorLogo || ""}
+                        onChange={(e) => updateSelectedElement("sponsorLogo", e.target.value)}
+                        placeholder="https://example.com/logo.png"
+                      />
+                    </div>
+
+                    <div className="fp-field mb-2">
+                      <label className="fp-field-label text-[10px]">Representative Contact</label>
+                      <input
+                        type="text"
+                        className="fp-input text-xs py-1"
+                        value={activeElement.sponsorContact || ""}
+                        onChange={(e) => updateSelectedElement("sponsorContact", e.target.value)}
+                        placeholder="rep@sponsor.com or Name"
+                      />
+                    </div>
+
+                    <div className="fp-field mb-2">
+                      <label className="fp-field-label text-[10px]">Sponsor Description</label>
+                      <textarea
+                        className="fp-input text-xs py-1 h-16 resize-none"
+                        value={activeElement.sponsorDescription || ""}
+                        onChange={(e) => updateSelectedElement("sponsorDescription", e.target.value)}
+                        placeholder="Brief summary about the sponsor..."
+                      />
+                    </div>
+
+                    <div className="fp-field mb-0">
+                      <label className="fp-field-label text-[10px]">Job Openings (comma sep.)</label>
+                      <input
+                        type="text"
+                        className="fp-input text-xs py-1"
+                        value={activeElement.sponsorJobs || ""}
+                        onChange={(e) => updateSelectedElement("sponsorJobs", e.target.value)}
+                        placeholder="React Dev, Product Designer"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* Dimension adjusters */}
                 <div className="fp-field">
@@ -966,37 +1387,68 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
                     </div>
                   </div>
 
+                  <div className="fp-field mb-4">
+                    <label className="fp-field-label">Seat Tier Tag</label>
+                    <input
+                      type="text"
+                      className="fp-input"
+                      value={activeElement.tier || ""}
+                      onChange={(e) => updateSelectedElement("tier", e.target.value)}
+                      placeholder="e.g. VIP Front Row, Balcony Box"
+                    />
+                  </div>
+
                   <div className="text-xs font-semibold text-gray-400 mb-2">Assign registered attendees to table slots:</div>
                   <div className="fp-seating-grid">
                     {Array.from({ length: activeElement.seatsCount }).map((_, seatIdx) => {
                       const currentAssignee = activeElement.assignedAttendees[seatIdx];
+                      const seatLabel = (activeElement.seatLabels && activeElement.seatLabels[seatIdx]) || `Seat ${seatIdx + 1}`;
                       return (
-                        <div key={seatIdx} className="fp-seat-row">
-                          <span className="fp-seat-number">Seat {seatIdx + 1}</span>
-                          
-                          <select
-                            className="fp-attendee-select"
-                            value={currentAssignee || ""}
-                            onChange={(e) => handleSeatAssign(seatIdx, e.target.value)}
-                          >
-                            <option value="">-- Choose Attendee --</option>
-                            {MOCK_ATTENDEES.map((attName) => {
-                              // Enable choosing the attendee if they aren't assigned to another table or if they are assigned to THIS seat
-                              const isAssignedElsewhere = elements.some(
-                                el => Object.values(el.assignedAttendees).includes(attName) && 
-                                !(el.id === activeElement.id && el.assignedAttendees[seatIdx] === attName)
-                              );
-                              return (
-                                <option 
-                                  key={attName} 
-                                  value={attName}
-                                  disabled={isAssignedElsewhere}
-                                >
-                                  {attName} {isAssignedElsewhere ? "(Booked)" : ""}
-                                </option>
-                              );
-                            })}
-                          </select>
+                        <div key={seatIdx} className="fp-seat-row flex-col items-stretch gap-2.5" style={{ display: "flex", flexDirection: "column", height: "auto" }}>
+                          <div className="flex items-center justify-between gap-2" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span className="fp-seat-number">{seatLabel}</span>
+                            <input
+                              type="text"
+                              className="fp-input py-0.5 px-2 text-xs w-28 h-6 text-right bg-white/5 border border-white/10 hover:border-white/20 focus:border-indigo-500 rounded"
+                              value={activeElement.seatLabels?.[seatIdx] || ""}
+                              onChange={(e) => {
+                                const nextLabels = { ...(activeElement.seatLabels || {}) };
+                                if (e.target.value) {
+                                  nextLabels[seatIdx] = e.target.value;
+                                } else {
+                                  delete nextLabels[seatIdx];
+                                }
+                                updateSelectedElement("seatLabels", nextLabels);
+                              }}
+                              placeholder="Rename Seat"
+                            />
+                          </div>
+                          <div className="flex items-center justify-between gap-2 mt-1" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span className="text-[10px] text-gray-500">Attendee:</span>
+                            <select
+                              className="fp-attendee-select text-xs py-0.5"
+                              value={currentAssignee || ""}
+                              onChange={(e) => handleSeatAssign(seatIdx, e.target.value)}
+                            >
+                              <option value="">-- Choose Attendee --</option>
+                              {MOCK_ATTENDEES.map((attName) => {
+                                // Enable choosing the attendee if they aren't assigned to another table or if they are assigned to THIS seat
+                                const isAssignedElsewhere = elements.some(
+                                  el => Object.values(el.assignedAttendees).includes(attName) &&
+                                    !(el.id === activeElement.id && el.assignedAttendees[seatIdx] === attName)
+                                );
+                                return (
+                                  <option
+                                    key={attName}
+                                    value={attName}
+                                    disabled={isAssignedElsewhere}
+                                  >
+                                    {attName} {isAssignedElsewhere ? "(Booked)" : ""}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          </div>
                         </div>
                       );
                     })}
@@ -1018,8 +1470,17 @@ const FloorPlanDesigner = ({ eventId = "default" }) => {
               <p className="text-xs">Click on any stage, booth, table, or exit shape inside the canvas grid to edit its details and manage seat registrations.</p>
             </div>
           )}
-        </div>
+        </aside>
       </div>
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDeleteSelected}
+        title="Delete Element"
+        message="Are you sure you want to delete this floor plan element? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </div>
   );
 };

@@ -1,11 +1,15 @@
-import { useTheme } from "../../context/ThemeContext";
-import React, { useState, useRef, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { motion, AnimatePresence } from "framer-motion";
-import ConfirmationModal from "../common/ConfirmationModal";
+import React, { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { UserCog } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
+
+import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
+import ConfirmationModal from "../common/ConfirmationModal";
+import NotificationBell from "../common/NotificationBell.jsx";
+import CommandPalette from "../common/CommandPalette";
+
 import {
   Home,
   Calendar,
@@ -17,6 +21,7 @@ import {
   Info,
   LayoutDashboard,
   User as UserIcon,
+  UserCog,
   LogOut,
   LogIn,
   MessageSquare,
@@ -30,9 +35,10 @@ import {
   Sun,
   MoreHorizontal,
   Search,
-  Palette,
+  Palette
 } from "lucide-react";
-import CommandPalette from "../common/CommandPalette";
+import { FaBell } from "react-icons/fa";
+
 
 // --- Helpers to reduce complexity ---
 const getUserDisplayNames = (user) => {
@@ -68,9 +74,7 @@ const setBodyScrollStyles = (top) => {
   });
 };
 
-const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
-  const { setIsCustomizerOpen } = useTheme();
-
+const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile, setIsCustomizerOpen }) => {
   if (isMobile) {
     return (
       <div className="flex flex-col gap-2.5 w-full">
@@ -88,23 +92,23 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
         </motion.button>
         <motion.button
           whileTap={{ scale: 0.95 }}
-          onClick={() => setIsCustomizerOpen(true)}
+          onClick={() => setIsCustomizerOpen && setIsCustomizerOpen(true)}
           className="flex items-center justify-center gap-3 px-4 py-3 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-pink-500 text-white font-semibold border-none shadow-md hover:shadow-lg transition-all cursor-pointer"
         >
           <Palette className="w-5 h-5" />
-          <span>Theme Skins Panel</span>
+          <span>THEME Customizer</span>
         </motion.button>
       </div>
     );
   }
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-2">
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={toggleTheme}
         title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-        className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group cursor-pointer"
+        aria-label={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
       >
         <motion.span
           key={isDarkMode ? "sun" : "moon"}
@@ -121,7 +125,7 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile }) => {
       <motion.button
         whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.92 }}
-        onClick={() => setIsCustomizerOpen(true)}
+        onClick={() => setIsCustomizerOpen && setIsCustomizerOpen(true)}
         title="Open Theme Customizer"
         className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 focus:outline-none bg-gradient-to-r from-indigo-500/10 to-pink-500/10 hover:from-indigo-500/20 hover:to-pink-500/20 border border-indigo-200/50 dark:border-indigo-800/40 hover:shadow-[0_0_12px_rgba(236,72,153,0.3)] text-indigo-550 dark:text-indigo-400 cursor-pointer"
       >
@@ -144,7 +148,7 @@ const CursorToggleButton = ({ cursorEnabled, toggleCursor, isMobile }) => {
         ) : (
           <MousePointer className="w-5 h-5 text-zinc-400" />
         )}
-        <span>{cursorEnabled ? "Cursor: FLUID" : "Cursor: STATIC"}</span>
+        <span>{cursorEnabled ? "Fluid Cursor" : "Static Cursor"}</span>
       </motion.button>
     );
   }
@@ -212,7 +216,10 @@ const MobileNavLink = ({ item, isActive, onClick }) => (
 const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, location }) => (
   <div key={item.name}>
     <button
+      type="button"
       onClick={onToggle}
+      aria-expanded={isOpen}
+      aria-controls={`mobile-nav-group-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
       className={`flex items-center justify-between w-full px-4 py-2.5 rounded-lg transition-colors text-left text-base font-medium border ${
         isActive
           ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
@@ -225,7 +232,10 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
       <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
     </button>
     {isOpen && (
-      <div className="mt-2 ml-3 pl-3 border-l-2 border-gray-200 dark:border-white/20 space-y-1">
+      <div
+        id={`mobile-nav-group-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
+        className="mt-2 ml-3 pl-3 border-l-2 border-gray-200 dark:border-white/20 space-y-1"
+      >
         {item.subItems.map((sub) => {
           const isSubActive = location.pathname.startsWith(sub.href);
           return (
@@ -252,97 +262,142 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
 const DesktopNavLink = ({ item, isActive }) => (
   <Link
     to={item.href}
-    className={`relative group text-[13px] font-semibold transition-all duration-200 whitespace-nowrap px-3.5 py-2 rounded-full ${
+    className={`relative group text-[12px] font-semibold transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-full ${
       isActive
-        ? "text-indigo-600 dark:text-indigo-400 font-semibold"
-        : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
+        ? "text-indigo-700 dark:text-indigo-300"
+        : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
     }`}
+    style={
+      isActive
+        ? {
+            backgroundColor: 'rgba(99, 102, 241, 0.12)',
+            border: '1.5px solid rgba(99, 102, 241, 0.45)',
+            boxShadow: '0 0 0 3px rgba(99, 102, 241, 0.08)',
+          }
+        : { border: '1.5px solid transparent' }
+    }
   >
-    <span className="relative z-10">{item.name}</span>
-
-    {isActive && (
-      <>
-        <motion.span
-          layoutId="activeBox"
-          className="absolute inset-0 bg-indigo-100/60 dark:bg-indigo-500/20 border border-indigo-200/80 dark:border-indigo-500/50 rounded-lg -z-0"
-          transition={{ type: "spring", stiffness: 380, damping: 30 }}
-        />
-        <motion.span
-          layoutId="activeBoxGlow"
-          className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
-          transition={{ type: "spring", stiffness: 380, damping: 30 }}
-        />
-      </>
-    )}
+    {item.name}
   </Link>
 );
 
-const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location }) => (
-  <div className="relative">
-    <button
-      onClick={onToggle}
-      className={`relative group flex items-center gap-1 text-[12px] xl:text-[13px] font-medium transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-lg ${
-        isActive || isOpen
-          ? "text-indigo-600 dark:text-indigo-400 font-semibold"
-          : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
-      }`}
-    >
-      <span className="relative z-10 flex items-center gap-1">
-        {item.name}
-        <ChevronDown
-          className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-        />
-      </span>
+const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location }) => {
+  const menuId = `desktop-nav-menu-${item.name.toLowerCase().replace(/\s+/g, "-")}`;
+  const btnRef = useRef(null);
+  const [dropPos, setDropPos] = useState({ top: 0, left: 0 });
 
-      {(isActive || isOpen) && (
-        <>
-          <motion.span
-            layoutId="activeBox"
-            className="absolute inset-0 bg-indigo-100/60 dark:bg-indigo-500/20 border border-indigo-200/80 dark:border-indigo-500/50 rounded-lg -z-0"
-            transition={{ type: "spring", stiffness: 380, damping: 30 }}
-          />
-          <motion.span
-            layoutId="activeBoxGlow"
-            className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
-            transition={{ type: "spring", stiffness: 380, damping: 30 }}
-          />
-        </>
-      )}
-    </button>
+  useEffect(() => {
+    if (isOpen && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setDropPos({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + rect.width / 2 + window.scrollX,
+      });
+    }
+  }, [isOpen]);
 
-    {isOpen && (
-      <motion.div
-        initial={{ opacity: 0, y: 15, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-        transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        className="absolute left-1/2 -translate-x-1/2 mt-4 w-60 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-3xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(99,102,241,0.1)] rounded-2xl z-50 border border-white/40 dark:border-zinc-700/40 p-2 overflow-hidden"
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onToggle(event);
+      return;
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setOpenDropdown(null);
+    }
+  };
+
+  return (
+    <div className="relative">
+      <button
+        ref={btnRef}
+        type="button"
+        onClick={onToggle}
+        onKeyDown={handleKeyDown}
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
+        aria-controls={menuId}
+        className={`relative group flex items-center gap-1 text-[12px] xl:text-[13px] font-medium transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-lg ${
+          isActive || isOpen
+            ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+            : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
+        }`}
       >
-        {item.subItems.map((sub) => (
-          <Link
-            key={sub.name}
-            to={sub.href}
-            onClick={() => setOpenDropdown(null)}
-            className={`group flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium rounded-lg transition-all duration-200 border ${
-              location.pathname.startsWith(sub.href)
-                ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
-                : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-transparent"
-            }`}
+        <span className="relative z-10 flex items-center gap-1">
+          {item.name}
+          <ChevronDown
+            className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+          />
+        </span>
+
+        {(isActive || isOpen) && (
+          <>
+            <motion.span
+              layoutId="activeBox"
+              className="absolute inset-0 bg-indigo-100/60 dark:bg-indigo-500/20 border border-indigo-200/80 dark:border-indigo-500/50 rounded-lg -z-0"
+              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            />
+            <motion.span
+              layoutId="activeBoxGlow"
+              className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
+              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            />
+          </>
+        )}
+      </button>
+
+      {/* Render dropdown via portal so it's never clipped by overflow-x-auto */}
+      <AnimatePresence>
+        {isOpen && createPortal(
+          <motion.div
+            id={menuId}
+            role="menu"
+            aria-label={`${item.name} navigation`}
+            key={`dd-${item.name}`}
+            initial={{ opacity: 0, y: 15, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            style={{
+              position: 'fixed',
+              top: `${dropPos.top}px`,
+              left: `${dropPos.left}px`,
+              transform: 'translateX(-50%)',
+              zIndex: 9999,
+            }}
+            className="w-60 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-3xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(99,102,241,0.1)] rounded-2xl border border-white/40 dark:border-zinc-700/40 p-2 overflow-hidden"
           >
-            {React.cloneElement(sub.icon, {
-              className: `w-5 h-5 transition-colors ${
-                location.pathname.startsWith(sub.href)
-                  ? "text-indigo-600 dark:text-indigo-400"
-                  : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
-              }`,
-            })}
-            {sub.name}
-          </Link>
-        ))}
-      </motion.div>
-    )}
-  </div>
-);
+            {item.subItems.map((sub) => (
+              <Link
+                key={sub.name}
+                to={sub.href}
+                onClick={() => setOpenDropdown(null)}
+                role="menuitem"
+                className={`group flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium rounded-lg transition-all duration-200 border ${
+                  location.pathname.startsWith(sub.href)
+                    ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
+                    : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-transparent"
+                }`}
+              >
+                {React.cloneElement(sub.icon, {
+                  className: `w-5 h-5 transition-colors ${
+                    location.pathname.startsWith(sub.href)
+                      ? "text-indigo-600 dark:text-indigo-400"
+                      : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
+                  }`,
+                })}
+                {sub.name}
+              </Link>
+            ))}
+          </motion.div>,
+          document.body
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 const MobileDrawerFooter = ({
   isAuthenticated,
   user,
@@ -394,6 +449,11 @@ const UserProfileDropdown = ({
   <div className="relative profile-container">
     <button
       onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+      type="button"
+      aria-label="Open user menu"
+      aria-expanded={showProfileDropdown}
+      aria-haspopup="menu"
+      aria-controls="user-profile-menu"
       className="flex items-center gap-2 text-sm font-medium text-black/90 dark:text-white/90 hover:text-black dark:hover:text-white transition-colors"
     >
       {user?.profilePicture ? (
@@ -401,6 +461,7 @@ const UserProfileDropdown = ({
           src={user.profilePicture}
           alt="Profile"
           className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20"
+          loading="lazy"
           onError={(e) => (e.currentTarget.style.display = "none")}
         />
       ) : (
@@ -412,6 +473,9 @@ const UserProfileDropdown = ({
     <AnimatePresence>
       {showProfileDropdown && (
         <motion.div
+          id="user-profile-menu"
+          role="menu"
+          aria-label="User menu"
           initial={{ opacity: 0, y: 10, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -446,32 +510,49 @@ const UserProfileDropdown = ({
           </div>
           <div className="p-2 bg-white dark:bg-gray-900">
             <Link
+              role="menuitem"
               to="/dashboard"
               onClick={() => setShowProfileDropdown(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/dashboard" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                location.pathname === "/dashboard"
+                  ? "bg-black/5 dark:bg-white/10 text-black dark:text-white"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              }`}
             >
               <LayoutDashboard className="w-4 h-4" />
               Dashboard
             </Link>
             <Link
+              role="menuitem"
               to="/dashboard/achievements"
               onClick={() => setShowProfileDropdown(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/dashboard/achievements" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                location.pathname === "/dashboard/achievements"
+                  ? "bg-black/5 dark:bg-white/10 text-black dark:text-white"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              }`}
             >
               <Trophy className="w-4 h-4" />
               Achievements
             </Link>
             <Link
-              to="/dashboard/profile"
+              role="menuitem"
+              to="/profile"
               onClick={() => setShowProfileDropdown(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/dashboard/profile" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                location.pathname === "/profile"
+                  ? "bg-black/5 dark:bg-white/10 text-black dark:text-white"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              }`}
             >
               <UserCog className="w-4 h-4" />
-              View Profile
+              Edit Profile
             </Link>
           </div>
           <div className="p-2 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
             <button
+              type="button"
+              role="menuitem"
               onClick={handleLogoutClick}
               className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
@@ -499,8 +580,7 @@ const MobileUserSection = ({
         <img
           src={user.profilePicture}
           alt="Profile"
-          className="w-10 h-10 rounded-full object-cover"
-        />
+          className="w-10 h-10 rounded-full object-cover" loading="lazy"/>
       ) : (
         <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white">
           <UserIcon className="w-6 h-6" />
@@ -549,10 +629,6 @@ const MobileUserSection = ({
 
 const NAV_ITEMS = [
   { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
-  { name: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
-  { name: "Calendar", href: "/calendar", icon: <CalendarDays className="w-5 h-5" /> },
-  { name: "Bookmarks", href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
-  { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
   {
     name: "Event Tools",
     icon: <Calendar className="w-5 h-5" />,
@@ -589,17 +665,17 @@ const NAV_ITEMS = [
 const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile }) => (
   <>
     {NAV_ITEMS.map((item) => {
-        const isActive = item.href
-          ? (item.href === "/" ? location.pathname === "/" : location.pathname.startsWith(item.href))
-          : item.subItems?.some(s => location.pathname.startsWith(s.href));
+      const isActive = item.href
+        ? (item.href === "/" ? location.pathname === "/" : location.pathname.startsWith(item.href))
+        : item.subItems?.some(s => location.pathname.startsWith(s.href));
 
-        if (item.subItems) {
-          return isMobile ? (
-            <MobileNavGroup key={item.name} item={item} isActive={isActive} isOpen={openDropdown === item.name} onToggle={() => onToggleGroup(item.name)} closeAllMenus={onLinkClick} location={location} />
-          ) : (
-            <DesktopNavGroup key={item.name} item={item} isActive={isActive} isOpen={openDropdown === item.name} onToggle={(e) => { e.stopPropagation(); onToggleGroup(item.name); }} setOpenDropdown={onToggleGroup} location={location} />
-          );
-        }
+      if (item.subItems) {
+        return isMobile ? (
+          <MobileNavGroup key={item.name} item={item} isActive={isActive} isOpen={openDropdown === item.name} onToggle={() => onToggleGroup(item.name)} closeAllMenus={onLinkClick} location={location} />
+        ) : (
+          <DesktopNavGroup key={item.name} item={item} isActive={isActive} isOpen={openDropdown === item.name} onToggle={(e) => { e.stopPropagation(); onToggleGroup(item.name); }} setOpenDropdown={onToggleGroup} location={location} />
+        );
+      }
       return isMobile ? (
         <MobileNavLink key={item.name} item={item} isActive={isActive} onClick={onLinkClick} />
       ) : (
@@ -613,11 +689,11 @@ const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   const location = useLocation();
   return (
     <div className="hidden lg:flex items-center justify-center flex-1 min-w-0 pl-6">
-      <NavList 
-        location={location} 
-        openDropdown={openDropdown} 
-        onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)} 
-        isMobile={false} 
+      <NavList
+        location={location}
+        openDropdown={openDropdown}
+        onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)}
+        isMobile={false}
       />
     </div>
   );
@@ -693,6 +769,7 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
     </AnimatePresence>
   );
 };
+
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -825,6 +902,13 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
   return (
     <>
+      {/* Skip navigation — visible only on keyboard focus, WCAG 2.4.1 */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:bg-indigo-600 focus:text-white focus:px-4 focus:py-2 focus:rounded focus:outline-none"
+      >
+        Skip to main content
+      </a>
       <div
         className={`fixed inset-0 z-30 transition-opacity duration-300 ${
           isMobileMenuOpen || showLogoutModal
@@ -834,9 +918,11 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               : "opacity-0 pointer-events-none"
         }`}
         onClick={closeAllMenus}
+        aria-hidden="true"
       />
       <nav
         ref={navRef}
+        aria-label="Main navigation"
         data-aos="fade-down"
         data-aos-once="true"
         data-aos-duration="1000"
@@ -854,11 +940,10 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             <img
               src="/Eventra.png"
               alt="Eventra Logo"
-              className="h-9 w-auto object-contain"
-            />
+              className="h-9 w-auto object-contain" loading="lazy"/>
           </Link>
 
-          {/* Desktop Nav Links */}
+          {/* Centered Desktop Nav Links */}
           <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
 
           {/* Right Controls */}
@@ -966,6 +1051,8 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         onClose={() => setShowCommandPalette(false)}
         isDarkMode={isDarkMode}
         toggleTheme={toggleTheme}
+        cursorEnabled={cursorEnabled}
+        toggleCursor={toggleCursor}
         isAuthenticated={isAuthenticated}
         handleLogoutClick={handleLogoutClick}
       />

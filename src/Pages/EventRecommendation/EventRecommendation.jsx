@@ -1,4 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import {
+  X,
+  Sliders,
+  CheckCircle2,
+  AlertCircle,
+  Award,
+  Sparkles,
+  ChevronRight,
+} from "lucide-react";
+import toast, { Toaster } from "react-hot-toast";
+import {
+  generateAIInsights
+} from "../../services/aiRecommendationService";
+
+import {
+  getUserProfile
+} from "../../utils/userProfileAnalyzer";
+
 
 const EventRecommendation = () => {
 
@@ -55,59 +73,129 @@ const EventRecommendation = () => {
     },
   ];
 
-  const [interest, setInterest] =
-    useState("");
+  const [interest, setInterest] = useState("");
+  const [level, setLevel] = useState("");
+  const [eventType, setEventType] = useState("");
+  const [recommendedEvents, setRecommendedEvents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [showOtherEvents, setShowOtherEvents] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
-  const [level, setLevel] =
-    useState("");
+  // Match Priority Weights
+  const [interestWeight, setInterestWeight] = useState(40);
+  const [levelWeight, setLevelWeight] = useState(30);
+  const [typeWeight, setTypeWeight] = useState(30);
+  
+  // Selected Event Modal State
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
-  const [eventType, setEventType] =
-    useState("");
+  const [aiInsights, setAiInsights] = useState("");
 
-  const [recommendedEvents, setRecommendedEvents] =
-    useState([]);
+  const [insightLoading, setInsightLoading] = useState(false);
 
-  const [loading, setLoading] =
-    useState(false);
+  useEffect(() => {
 
-  const [showOtherEvents, setShowOtherEvents] =
-    useState(false);
+  const loadInsights = async () => {
 
-  const [hasSearched, setHasSearched] =
-    useState(false);
+    if (!selectedEvent) return;
 
+    setInsightLoading(true);
+
+    const profile =
+      getUserProfile();
+
+    const insights =
+      await generateAIInsights(
+        selectedEvent,
+        profile
+      );
+
+    setAiInsights(insights);
+
+    setInsightLoading(false);
+
+  };
+
+  loadInsights();
+
+}, [selectedEvent]);
   const generateRecommendations = () => {
-
     setHasSearched(true);
 
-    if (!interest || !level || !eventType) {
+    if (!interest && !level && !eventType) {
       setRecommendedEvents([]);
       return;
     }
 
     setLoading(true);
-
     setShowOtherEvents(false);
+    
+    // Track execution for onboarding checklist
+    localStorage.setItem("eventra_ai_recommendation_generated", "true");
 
     setTimeout(() => {
+      const totalWeight = (interest ? interestWeight : 0) + (level ? levelWeight : 0) + (eventType ? typeWeight : 0);
+      
+      if (totalWeight === 0) {
+        setRecommendedEvents([]);
+        setLoading(false);
+        return;
+      }
 
-      const filtered = events.filter(
-        (event) =>
-          event.category === interest &&
-          event.level === level &&
-          event.type === eventType
-      );
+      const scored = events.map(event => {
+        let score = 0;
+        let breakdown = [];
+        
+        if (interest) {
+          const isMatch = event.category === interest;
+          if (isMatch) {
+            score += interestWeight;
+            breakdown.push({ label: "Domain Matches Interest", weight: interestWeight, score: interestWeight, matched: true });
+          } else {
+            breakdown.push({ label: "Domain Mismatch", weight: interestWeight, score: 0, matched: false });
+          }
+        }
+        
+        if (level) {
+          const isMatch = event.level === level;
+          if (isMatch) {
+            score += levelWeight;
+            breakdown.push({ label: "Skill Level Matches", weight: levelWeight, score: levelWeight, matched: true });
+          } else {
+            breakdown.push({ label: "Skill Level Mismatch", weight: levelWeight, score: 0, matched: false });
+          }
+        }
+        
+        if (eventType) {
+          const isMatch = event.type === eventType;
+          if (isMatch) {
+            score += typeWeight;
+            breakdown.push({ label: "Event Type Matches", weight: typeWeight, score: typeWeight, matched: true });
+          } else {
+            breakdown.push({ label: "Event Type Mismatch", weight: typeWeight, score: 0, matched: false });
+          }
+        }
+        
+        const percentage = Math.round((score / totalWeight) * 100);
+        return {
+          ...event,
+          calculatedMatch: percentage,
+          breakdown,
+        };
+      });
+
+      const filtered = scored
+        .filter(event => event.calculatedMatch > 0)
+        .sort((a, b) => b.calculatedMatch - a.calculatedMatch);
 
       setRecommendedEvents(filtered);
-
       setLoading(false);
-
-    }, 1500);
+    }, 1200);
   };
 
   const otherEvents = events.filter(
     (event) =>
-      !recommendedEvents.includes(event)
+      !recommendedEvents.some(r => r.title === event.title)
   );
 
   return (
@@ -246,11 +334,66 @@ const EventRecommendation = () => {
 
               </div>
 
+              {/* Dynamic Weights Sliders */}
+              <div className="border-t border-slate-100 dark:border-slate-800/80 pt-4 mt-4 space-y-4">
+                <div className="flex items-center gap-2 text-slate-900 dark:text-white font-semibold text-sm">
+                  <Sliders size={16} className="text-blue-500" />
+                  <span>Recommendation Weights</span>
+                </div>
+                
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex justify-between text-xs font-medium mb-1 text-slate-500 dark:text-slate-400">
+                      <span>Domain Match Priority</span>
+                      <span className="text-blue-600 dark:text-blue-400 font-bold">{interestWeight}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={interestWeight}
+                      onChange={(e) => setInterestWeight(Number(e.target.value))}
+                      className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-xs font-medium mb-1 text-slate-500 dark:text-slate-400">
+                      <span>Skill Level Match Priority</span>
+                      <span className="text-blue-600 dark:text-blue-400 font-bold">{levelWeight}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={levelWeight}
+                      onChange={(e) => setLevelWeight(Number(e.target.value))}
+                      className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-xs font-medium mb-1 text-slate-500 dark:text-slate-400">
+                      <span>Event Type Match Priority</span>
+                      <span className="text-blue-600 dark:text-blue-400 font-bold">{typeWeight}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={typeWeight}
+                      onChange={(e) => setTypeWeight(Number(e.target.value))}
+                      className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Button */}
               <button
                 onClick={generateRecommendations}
                 className="w-full mt-4 bg-blue-600 hover:bg-blue-700 transition-all text-white rounded-xl py-3 text-sm font-semibold"
-              >
+                aria-label="Generate recommendations">
                 Generate Recommendations
               </button>
 
@@ -302,7 +445,7 @@ const EventRecommendation = () => {
                       <div className="flex items-center justify-between mb-4">
 
                         <span className="text-xs font-semibold px-3 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
-                          {event.match} Match
+                          {event.calculatedMatch}% Match
                         </span>
 
                         <span className="text-xs text-slate-500 dark:text-slate-400">
@@ -319,8 +462,11 @@ const EventRecommendation = () => {
                         {event.description}
                       </p>
 
-                      <button className="mt-5 text-sm font-medium text-blue-600 hover:text-blue-700">
-                        View Event →
+                      <button
+                        onClick={() => setSelectedEvent(event)}
+                        className="mt-5 text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
+                      >
+                        View Insights & Match Info <ChevronRight size={14} />
                       </button>
 
                     </div>
@@ -455,6 +601,163 @@ const EventRecommendation = () => {
 
       </div>
 
+      {/* Detailed Recommendation Insights Modal */}
+      {selectedEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity">
+          <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl overflow-hidden">
+            {/* Background Glow */}
+            <div className="absolute top-0 right-0 w-36 h-36 bg-blue-500/10 dark:bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Header */}
+            <div className="flex items-start justify-between mb-5">
+              <div>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-100 dark:border-blue-900/30 mb-2">
+                  <Sparkles size={12} className="animate-pulse text-blue-500" />
+                  AI Recommendation Score
+                </span>
+                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white leading-tight">
+                  {selectedEvent.title}
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedEvent(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Content Details */}
+            <div className="space-y-4">
+              {/* Overall Score */}
+              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-950/45 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Match Percentage</span>
+                <div className="text-right">
+                  <span className="text-3xl font-black text-blue-600 dark:text-blue-400">{selectedEvent.calculatedMatch}%</span>
+                </div>
+              </div>
+
+              {/* Breakdown Matrix */}
+              <div className="space-y-3">
+                <span className="text-xs font-extrabold text-slate-400 uppercase tracking-widest block">Match Priority Matrix</span>
+                
+                {selectedEvent.breakdown && selectedEvent.breakdown.map((item, idx) => (
+                  <div key={idx} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
+                        {item.matched ? (
+                          <CheckCircle2 size={14} className="text-green-500 shrink-0" />
+                        ) : (
+                          <AlertCircle size={14} className="text-slate-400 shrink-0" />
+                        )}
+                        {item.label}
+                      </span>
+                      <span className="text-slate-400 font-medium">
+                        {item.matched ? `+${item.score}%` : `0% / ${item.weight}%`}
+                      </span>
+                    </div>
+                    {/* Visual Progress Bar */}
+                    <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-850 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          item.matched ? "bg-green-500" : "bg-slate-300 dark:bg-slate-700"
+                        }`}
+                        style={{ width: `${item.matched ? 100 : 0}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Description summary */}
+              {/* Description summary */}
+
+<div className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-100 dark:border-slate-800/60 pt-4">
+
+  <span className="font-bold text-slate-400 block mb-1">
+    Target Audience Insights
+  </span>
+
+  Fits best for developers with
+  <strong className="text-slate-755 dark:text-slate-200 font-bold">
+    {selectedEvent.level}
+  </strong>
+
+  level experience, interested in
+
+  <strong className="text-slate-755 dark:text-slate-200 font-bold">
+    {selectedEvent.category}
+  </strong>.
+
+</div>
+
+
+{/* AI Insights Section */}
+
+<div className="mt-6">
+
+  <h3 className="text-lg font-semibold mb-3 text-slate-900 dark:text-white">
+
+    AI Recommendation Insights
+
+  </h3>
+
+  {insightLoading ? (
+
+    <p className="text-slate-400">
+
+      Generating AI insights...
+
+    </p>
+
+  ) : (
+
+    <div
+      className="
+        rounded-xl
+        bg-slate-100
+        dark:bg-slate-800/70
+        p-4
+        text-sm
+        text-slate-700
+        dark:text-slate-300
+        leading-7
+        whitespace-pre-line
+      "
+    >
+
+      {aiInsights}
+
+    </div>
+
+  )}
+
+</div>
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="flex gap-3 mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4">
+              <button
+                onClick={() => setSelectedEvent(null)}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-bold transition-all cursor-pointer"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  toast.success(`Successfully registered for ${selectedEvent.title}! Check your email for confirmation.`);
+                  setSelectedEvent(null);
+                }}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
+              >
+                Register Event
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      <Toaster position="bottom-right" />
     </div>
   );
 };

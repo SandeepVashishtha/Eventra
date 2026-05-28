@@ -74,10 +74,10 @@ const RemindersPage = () => {
               <Bell size={16} />
               {reminders.length} active
             </div>
-            <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-950 dark:text-gray-800 sm:text-4xl">
+            <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-950 dark:text-slate-100 sm:text-4xl">
               Event Reminders
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-gray-600 dark:text-gray-600 sm:text-base">
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-gray-600 dark:text-slate-400 sm:text-base">
               Manage upcoming reminder alerts for events you have bookmarked or registered for.
             </p>
           </div>
@@ -123,8 +123,7 @@ const RemindersPage = () => {
                     <img
                       src={event.image}
                       alt={event.title}
-                      className="h-44 w-full object-cover sm:h-full"
-                    />
+                      className="h-44 w-full object-cover sm:h-full" loading="lazy"/>
 
                     <div className="p-5">
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

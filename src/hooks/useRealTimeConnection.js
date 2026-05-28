@@ -1,9 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const SSE_BASE_URL =
-  process.env.REACT_APP_SSE_URL ||
-  process.env.REACT_APP_API_URL ||
-  "http://localhost:8080/api/v1";
+const getSseBaseUrl = () => {
+  const envUrl = process.env.REACT_APP_SSE_URL || process.env.REACT_APP_API_URL;
+  if (envUrl) {
+    return envUrl;
+  }
+  if (process.env.NODE_ENV === "production") {
+    console.warn("REACT_APP_SSE_URL or REACT_APP_API_URL environment variable is missing in production. Defaulting to relative SSE connection.");
+    return "/api/v1";
+  }
+  return "http://localhost:8080/api/v1";
+};
+
+const SSE_BASE_URL = getSseBaseUrl();
 
 const BACKOFF_CAP_MS = 30_000;
 
@@ -70,13 +79,18 @@ export default function useRealTimeConnection(path, { onMessage, enabled = true 
     };
 
     source.onmessage = (evt) => {
+      let payload = evt.data;
+      
       try {
-        const data = JSON.parse(evt.data);
-        onMessageRef.current?.(data, evt.type);
+        payload = JSON.parse(evt.data);
       } catch {
-        // Forward raw string if JSON parsing fails
-        onMessageRef.current?.(evt.data, evt.type);
+        // Forward raw string if JSON parsing fails (payload remains evt.data)
       }
+      
+      // 🔥 FIX: Execute the callback completely outside the try/catch block.
+      // This ensures if the React UI throws an error, it doesn't get swallowed
+      // by the catch block above, preventing a double-execution bug.
+      onMessageRef.current?.(payload, evt.type);
     };
 
     source.onerror = () => {

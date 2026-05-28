@@ -55,8 +55,6 @@ jobs:
             };
 
             // ── Keyword rules (title + branch) ─────────────────────────────
-            // Each entry: { label, keywords[] }
-            // Multiple labels can match (type is stackable).
             const keywordRules = [
               {
                 label: 'type:bug',
@@ -200,7 +198,7 @@ jobs:
 
             const currentLabels = await getCurrentLabels();
 
-            // Remove old type:* labels that are no longer applicable
+            // Remove ONLY stale type:* labels — never touch difficulty/quality/gssoc labels
             const staleTypeLabels = currentLabels.filter(
               l => typeLabels.includes(l) && !detectedLabels.has(l)
             );
@@ -213,7 +211,7 @@ jobs:
               console.log(`Removed stale type label: ${label}`);
             }
 
-            // Add newly detected labels (skip already-present ones)
+            // Add only the newly detected labels that aren't already present (idempotency guard)
             const labelsToAdd = [...detectedLabels].filter(l => !currentLabels.includes(l));
             if (labelsToAdd.length > 0) {
               await github.rest.issues.addLabels({
@@ -223,5 +221,5 @@ jobs:
               });
               console.log(`Added type labels: ${labelsToAdd.join(', ')}`);
             } else {
-              console.log('No new type labels to add.');
+              console.log('No new type labels to add — all detected labels already present.');
             }

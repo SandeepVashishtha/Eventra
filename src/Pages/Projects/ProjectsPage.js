@@ -8,6 +8,7 @@ import ProjectCTA from "./ProjectCTA";
 
 import mockProjects from "./mockProjectsData.json";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 
 // Modern custom styled search input
@@ -76,6 +77,25 @@ const ProjectGallery = () => {
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
 
+  const [bookmarks, setBookmarks] = useState([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("eventra_bookmarked_projects");
+    if (saved) {
+      setBookmarks(safeJsonParse(saved, []));
+    }
+  }, []);
+
+  const handleBookmarkToggle = (projectId) => {
+    setBookmarks((prev) => {
+      const updated = prev.includes(projectId)
+        ? prev.filter((id) => id !== projectId)
+        : [...prev, projectId];
+      localStorage.setItem("eventra_bookmarked_projects", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const cardSectionRef = useRef(null);
 
   const sortByLabels = {
@@ -100,8 +120,16 @@ const ProjectGallery = () => {
         setIsLoading(true);
         setError("");
 
+        const publicRequestConfig = {
+          skipAuth: true,
+          withCredentials: false,
+        };
+
         // --- PRODUCTION LOGIC: attempt real API call to Spring Boot backend ---
-        const response = await apiUtils.get(API_ENDPOINTS.PROJECTS.LIST);
+        const response = await apiUtils.get(
+          API_ENDPOINTS.PROJECTS.LIST,
+          publicRequestConfig
+        );
         const projectsData = response.data;
 
         // only use API data if it is non-empty; otherwise fall back to mock
@@ -111,7 +139,8 @@ const ProjectGallery = () => {
           // Attempt to fetch categories from API
           try {
             const categoriesResponse = await apiUtils.get(
-              API_ENDPOINTS.PROJECTS.CATEGORIES
+              API_ENDPOINTS.PROJECTS.CATEGORIES,
+              publicRequestConfig
             );
             const categoriesData = categoriesResponse.data;
             setCategories(["all", ...categoriesData]);
@@ -132,6 +161,18 @@ const ProjectGallery = () => {
         setCategories(["all", ...mockUniqueCategories]);
       } catch (err) {
         console.error("Error fetching projects:", err);
+
+        if (err?.status === 401) {
+          console.warn(
+            "Projects API returned 401 for unauthenticated access — loading public mock data fallback."
+          );
+          setProjects(mockProjects);
+          const fallbackCategories = [
+            ...new Set(mockProjects.map((p) => p.category)),
+          ];
+          setCategories(["all", ...fallbackCategories]);
+          return;
+        }
 
         // Fall back to mock data in development so local work is unaffected
         if (process.env.NODE_ENV === "development") {
@@ -155,7 +196,11 @@ const ProjectGallery = () => {
 
   const filteredAndSortedProjects = projects
     .filter((project) => {
-      if (
+      if (filterCategory === "bookmarked") {
+        if (!bookmarks.includes(project.id)) {
+          return false;
+        }
+      } else if (
         filterCategory !== "all" &&
         project.category !== filterCategory
       ) {
@@ -170,7 +215,7 @@ const ProjectGallery = () => {
           project.description.toLowerCase().includes(query) ||
           project.category.toLowerCase().includes(query) ||
           project.author.toLowerCase().includes(query) ||
-          (project.techStack &&
+          (Array.isArray(project.techStack) &&
             project.techStack.some((tech) =>
               tech.toLowerCase().includes(query)
             ))
@@ -265,6 +310,8 @@ const ProjectGallery = () => {
                     <span className="text-gray-700 dark:text-gray-200">
                       {filterCategory === "all"
                         ? "All Categories"
+                        : filterCategory === "bookmarked"
+                        ? "Saved Projects"
                         : filterCategory}
                     </span>
 
@@ -287,7 +334,7 @@ const ProjectGallery = () => {
                         exit={{ opacity: 0, y: -10 }}
                         className="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
                       >
-                        {categories.map((cat) => {
+                        {["all", "bookmarked", ...categories.filter(c => c !== "all")].map((cat) => {
                           const selectCategory = () => {
                             setFilterCategory(cat);
                             setCategoryOpen(false);
@@ -310,6 +357,8 @@ const ProjectGallery = () => {
                             >
                               {cat === "all"
                                 ? "All Categories"
+                                : cat === "bookmarked"
+                                ? "★ Saved Projects"
                                 : cat}
                             </li>
                           );
@@ -448,7 +497,7 @@ const ProjectGallery = () => {
                 onClick={fetchProjects}
                 disabled={isLoading}
                 className="mt-6 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white disabled:opacity-60 disabled:cursor-not-allowed"
-              >
+               aria-label="button">
                 Try Again
               </button>
             </motion.div>
@@ -475,6 +524,8 @@ const ProjectGallery = () => {
                     key={project.id}
                     project={project}
                     index={index}
+                    isBookmarked={bookmarks.includes(project.id)}
+                    onBookmarkToggle={handleBookmarkToggle}
                   />
                 )
               )}

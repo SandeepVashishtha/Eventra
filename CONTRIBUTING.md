@@ -52,7 +52,41 @@ You can help improve Eventra in several ways:
 
 ---
 
+## 🏗️ Understanding Eventra Architecture
+
+**Before you start coding**, take a few minutes to understand how Eventra works:
+
+📖 **[Architecture & Roles Guide](docs/ARCHITECTURE_AND_ROLES.md)** provides:
+- 🧬 Complete system architecture overview
+- 👥 Role-Based Access Control (RBAC) with 5 roles
+- 🎟️ Event lifecycle stages
+- 🔐 Authentication & route protection
+- 📍 Contributor code map showing where to implement features
+- 💡 Common tasks and where to find relevant code
+
+**Key Topics for Contributors:**
+- **Adding a new permission?** → See [RBAC Section](docs/ARCHITECTURE_AND_ROLES.md#-role-based-access-control-rbac)
+- **Changing event workflow?** → See [Event Lifecycle](docs/ARCHITECTURE_AND_ROLES.md#-event-lifecycle-system)
+- **Implementing hackathon features?** → See [Hackathon Hub](docs/ARCHITECTURE_AND_ROLES.md#-hackathon-hub-workflow)
+- **Confused about auth?** → See [Authentication Flow](docs/ARCHITECTURE_AND_ROLES.md#-route-protection--authentication-flow)
+- **Want to contribute to a specific area?** → See [Contributor Code Map](docs/ARCHITECTURE_AND_ROLES.md#-contributor-notes--code-map)
+
+---
+
 ## 🛠️ Development Workflow
+
+### Prerequisites
+
+Before you start, make sure to set up your development environment:
+
+📖 **[⚙️ Environment Setup Guide](docs/ENV_SETUP_GUIDE.md)** – Complete setup instructions including:
+- Local frontend + backend architecture
+- Environment variable configuration
+- Running the project locally
+- Troubleshooting common issues
+- Security best practices
+
+### Contributing Steps
 
 1. **Fork the Repository**
    ```bash
@@ -81,6 +115,32 @@ git push origin feature/amazing-feature
 
 6. Open a Pull Request
    Submit a PR with a clear description of your changes.
+
+## ⚙️ Local Setup (Quick Start)
+
+Follow these commands to get the project running locally:
+
+1. Install dependencies
+
+```bash
+npm install
+```
+
+2. Start the development server
+
+```bash
+npm run dev
+```
+
+3. Run tests
+
+```bash
+npm test
+# or run Playwright e2e tests
+npm run test:e2e
+```
+
+If you are on Windows and encounter environment-related issues, run the `dev` script directly with `npm run dev` which sets the environment flag automatically.
 
 ## 🧩 Code Standards
 
