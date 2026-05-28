@@ -1,5 +1,4 @@
 import { memo, useCallback, useEffect, useId, useMemo, useState } from "react";
-import { useEffect, useId, useState, memo } from "react";
 import { logger } from "../../utils/logger";
 import { getUserTimezone } from "../../utils/timezoneUtils";
 import { Link, useNavigate } from "react-router-dom";
@@ -405,19 +404,10 @@ useEffect(() => {
       </div>
 
       {/* Image */}
-      <div className="relative h-40 overflow-hidden bg-gray-100 dark:bg-gray-800">
-        <img
-          loading="lazy"
-          decoding="async"
-          src={event.image}
-          alt={event.imageAlt || `${event.title} event thumbnail`}
-          width={640}
-          height={360}
-          className="aspect-video w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
       <div className="relative h-40 overflow-hidden">
         <LazyImage
           src={event.image}
-          alt={`${event.title} event thumbnail`}
+          alt={event.imageAlt || `${event.title} event thumbnail`}
           width={800}
           height={160}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"

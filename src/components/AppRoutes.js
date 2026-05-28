@@ -1,5 +1,4 @@
 import React, { lazy, Suspense } from "react";
-import React, { Suspense } from "react";
 import { Route, Routes } from "react-router-dom";
 
 import { getPublicRoutes } from "./routes/PublicRoutes";
@@ -31,12 +30,6 @@ const RouteFallback = () => (
 const AppRoutes = () => {
   return (
     <Suspense fallback={<RouteFallback />}>
-const UserAchievements = React.lazy(() => import("../Pages/UserAchievements"));
-const NotFoundPage = React.lazy(() => import("../Pages/NotFoundPage"));
-
-const AppRoutes = () => {
-  return (
-    <Suspense fallback={<PageLoader />}>
       <Routes>
         {/* Public Routes */}
         {getPublicRoutes()}
