@@ -8,6 +8,7 @@ import ProtectedRoute from '../auth/ProtectedRoute';
 
 // ─── Lazy-loaded page components ─────────────────────────────────────────────
 // All components are loaded on-demand to keep the initial bundle small.
+const OAuthCallback = lazy(() => import('../auth/OAuthCallback'));
 const MockApiResponse = lazy(() => import('../MockApiResponse'));
 const HomePage = lazy(() => import('../../Pages/Home/HomePage'));
 const EventDetails = lazy(() => import('../../Pages/Events/EventDetails'));
@@ -65,6 +66,7 @@ export const getPublicRoutes = () => [
   <Route key="/" path="/" element={<HomePage />} />,
   <Route key="/events" path="/events" element={<EventsPage />} />,
   <Route key="/event-details" path="/events/:eventId" element={<EventDetails />} />,
+  <Route key="/oauth/callback" path="/oauth/callback" element={<OAuthCallback />} />,
   // Registration writes to an authenticated backend endpoint; keep guarded.
   <Route
     key="/register"
@@ -81,10 +83,10 @@ export const getPublicRoutes = () => [
   <Route key="/projects" path="/projects" element={<ProjectsPage />} />,
 
   // Mock API endpoints (demo/documentation purposes)
-  <Route key="/api/hackathons"  path="/api/hackathons"  element={<MockApiResponse />} />,
-  <Route key="/api/projects"    path="/api/projects"    element={<MockApiResponse />} />,
-  <Route key="/api/contributors" path="/api/contributors" element={<MockApiResponse />} />,
-  <Route key="/api/leaderboard" path="/api/leaderboard" element={<MockApiResponse />} />,
+  <Route key="/mock-api/hackathons" path="/mock-api/hackathons" element={<MockApiResponse />} />,
+  <Route key="/mock-api/projects" path="/mock-api/projects" element={<MockApiResponse />} />,
+  <Route key="/mock-api/contributors" path="/mock-api/contributors" element={<MockApiResponse />} />,
+  <Route key="/mock-api/leaderboard" path="/mock-api/leaderboard" element={<MockApiResponse />} />,
 
   // ── Auth-protected routes (login required) ─────────────────────────────────
   <Route
@@ -169,9 +171,11 @@ export const getPublicRoutes = () => [
   <Route key="/feedback" path="/feedback" element={<PageLayout><FeedbackPage /></PageLayout>} />,
   <Route key="/documentation" path="/documentation" element={<PageLayout><DocumentationPage /></PageLayout>} />,
 
-  // /analytics — exposes organisation-level event analytics data.
-  // Requires authentication so that only registered users can view
-  // aggregate participant and event metrics.
+  /*
+    /analytics — exposes organisation-level event analytics data.
+    Requires authentication so that only registered users can view
+    aggregate participant and event metrics.
+  */
   <Route
     key="/analytics"
     path="/analytics"
@@ -184,9 +188,11 @@ export const getPublicRoutes = () => [
     }
    />,
 
-  // /events/:eventId/floor-plan — venue floor plan designer.
-  // Requires authentication; only event organisers should be able
-  // to view or edit a floor plan layout.
+  /*
+    /events/:eventId/floor-plan — venue floor plan designer.
+    Requires authentication; only event organisers should be able
+    to view or edit a floor plan layout.
+  */
   <Route
     key="/events/:eventId/floor-plan"
     path="/events/:eventId/floor-plan"
@@ -199,9 +205,11 @@ export const getPublicRoutes = () => [
     }
    />,
 
-  // /submit-project — allows users to submit projects to hackathons.
-  // Requires authentication so submissions are linked to a verified
-  // user account and cannot be made anonymously.
+  /*
+    /submit-project — allows users to submit projects to hackathons.
+    Requires authentication so submissions are linked to a verified
+    user account and cannot be made anonymously.
+  */
   <Route
     key="/submit-project"
     path="/submit-project"

@@ -1,5 +1,5 @@
 import { GoogleLogin } from "@react-oauth/google";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 
@@ -27,9 +27,17 @@ import { toast } from "react-toastify";
  */
 const GoogleLoginButton = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from;
+  const redirectPath =
+    typeof from === "string"
+      ? from
+      : from?.pathname
+        ? `${from.pathname}${from.search || ""}${from.hash || ""}`
+        : "/dashboard";
 
   // signInWithGoogle handles the full backend exchange — no local decoding here
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, authRequest } = useAuth();
 
   /**
    * Called by @react-oauth/google when the user successfully authenticates.
@@ -44,11 +52,10 @@ const GoogleLoginButton = () => {
       await signInWithGoogle(credentialResponse.credential);
 
       // Navigate only after the session is fully established
-      navigate("/dashboard", { replace: true });
+      navigate(redirectPath, { replace: true });
     } catch (error) {
       // Show a user-friendly toast; the underlying error is already logged
       // by signInWithGoogle via the apiUtils interceptor.
-      console.error("Google Sign-In error:", error);
       toast.error(
         error?.message ||
           "Google Sign-In failed. Please try again or use email/password."
@@ -64,6 +71,15 @@ const GoogleLoginButton = () => {
   const handleError = () => {
     toast.error("Google Sign-In was cancelled or failed. Please try again.");
   };
+
+  if (authRequest.loading) {
+    return (
+      <div className="flex items-center justify-center gap-2 rounded-xl border border-slate-700/50 bg-slate-900/60 px-4 py-3 text-sm text-slate-300">
+        <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-transparent" />
+        Signing In...
+      </div>
+    );
+  }
 
   return <GoogleLogin onSuccess={handleSuccess} onError={handleError} />;
 };

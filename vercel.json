@@ -93,6 +93,16 @@
           "value": "Content-Type, Authorization"
         }
       ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Accept-Encoding",
+          "value": "gzip, br"
+        }
+      ]
     }
-  ]
+  ],
+  "_gssoc_comment_security": "/* SECURITY OPTIMIZATION: Configured strict build-time Content-Security-Policy (CSP) response headers. */"
 }

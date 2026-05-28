@@ -3,7 +3,8 @@ import React, { useState, useEffect, useRef } from "react";
 // using the old inline implementations (which were UTC-blind and hardcoded
 // a 1-hour event duration — fixed in issue #2015).
 import { getGoogleCalendarUrl, getOutlookCalendarUrl } from "../../utils/calendarUrlUtils";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
+import hackathonsData from "../Hackathons/hackathonMockData.json";
 import { motion } from "framer-motion";
 import {
   Calendar,
@@ -26,7 +27,7 @@ import { useSessionRecovery } from "../../context/SessionRecoveryContext";
 import { useFormValidation } from "../../hooks/useFormValidation";
 import { validate } from "../../validation";
 import { toast } from "react-toastify";
-import mockEvents from "./eventsMockData.json";
+
 import { pushToQueue } from "../../utils/offlineQueue";
 import EventConflictModal from "../../components/EventConflictModal";
 import ConfettiCanvas from "../../components/common/ConfettiCanvas";
@@ -93,11 +94,15 @@ const registrationLocks = new Map();
 
 
 const EventRegistration = () => {
-  const { eventId } = useParams();
+  const { eventId: routeEventId, id: routeId } = useParams();
+  const eventId = routeEventId || routeId;
+  const location = useLocation();
   const navigate = useNavigate();
   const { user, token, isAuthenticated } = useAuth();
   const { addRegistration, myEvents } = useMyEvents();
   const { clearSession } = useSessionRecovery();
+  const isHackathonPath = location.pathname.startsWith("/register");
+  const registrationPath = location.pathname;
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -145,6 +150,31 @@ const EventRegistration = () => {
     const loadEvent = async () => {
       setLoading(true);
 
+      const isHackathonPath = location.pathname.startsWith("/register");
+      if (isHackathonPath) {
+        const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
+        if (foundMock) {
+          setEvent({
+            ...foundMock,
+            date: foundMock.startDate,
+            time: "10:00 AM",
+            image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
+            attendees: foundMock.participants,
+            maxAttendees: 1500,
+            status: foundMock.status,
+          });
+          setLoading(false);
+          if (isAuthenticated() && user) {
+            setValues((prev) => ({
+              ...prev,
+              fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
+              email: user.email || "",
+            }));
+          }
+          return;
+        }
+      }
+
       try {
         // BACKEND FIX: Fetch authoritative event data from the backend API,
         // not from local mock JSON. This ensures:
@@ -171,18 +201,76 @@ const EventRegistration = () => {
         }
       } catch (error) {
         console.error("Failed to load event details:", error);
-        // Don't set event — will show "Event Not Found" UI
+        // Try fallback to hackathonsData as a last resort
+        const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
+        if (foundMock) {
+          setEvent({
+            ...foundMock,
+            date: foundMock.startDate,
+            time: "10:00 AM",
+            image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
+            attendees: foundMock.participants,
+            maxAttendees: 1500,
+            status: foundMock.status,
+          });
+        }
       } finally {
         setLoading(false);
       }
     };
 
     loadEvent();
-  }, [eventId, user, isAuthenticated, setValues]);
+  }, [eventId, user, isAuthenticated, setValues, location.pathname]);
+
+  const checkEventCapacity = async (id, currentEvent) => {
+    try {
+      const freshRes = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(id));
+      if (freshRes.status === 200) {
+        const freshEvent = freshRes.data;
+        return freshEvent.attendees >= freshEvent.maxAttendees;
+      }
+    } catch {
+      // If the re-fetch fails, fall back to the cached snapshot
+      return currentEvent.attendees >= currentEvent.maxAttendees;
+    }
+    return false;
+  };
+
+  const checkAndHandleConflicts = async () => {
+    const conflictCheck = checkRegistrationConflict(event, myEvents);
+    if (conflictCheck.hasConflict) {
+      try {
+        const res = await apiUtils.get(API_ENDPOINTS.EVENTS.LIST);
+        const realEvents = res.status === 200 ? res.data : [];
+        const suggestions = suggestAlternativeEvents(event, realEvents, myEvents);
+        setConflictData({
+          conflicts: conflictCheck.conflicts,
+          suggestions,
+        });
+      } catch (err) {
+        console.error("Failed to fetch alternative events", err);
+        setConflictData({
+          conflicts: conflictCheck.conflicts,
+          suggestions: [],
+        });
+      }
+      setShowConflictModal(true);
+      return true;
+    }
+    return false;
+  };
 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!isAuthenticated() || !user?.id) {
+      toast.error("Please log in to register for events.");
+      navigate("/login", {
+        state: { from: registrationPath },
+      });
+      return;
+    }
 
     if (!validateAll()) {
       toast.error("Please fill in all required fields correctly");
@@ -202,40 +290,13 @@ const EventRegistration = () => {
     }
 
     // Quick UX hint based on the latest visible event snapshot.
-    // The backend still enforces capacity at submit time.
-    try {
-      const freshRes = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
-      if (freshRes.status === 200) {
-        const freshEvent = freshRes.data;
-        if (freshEvent.attendees >= freshEvent.maxAttendees) {
-          toast.error("This event is currently full. Registration may no longer be available.");
-          return;
-        }
-      }
-    } catch {
-      // If the re-fetch fails, fall back to the cached snapshot so the user
-      // can still attempt registration rather than being silently blocked.
-      if (event.attendees >= event.maxAttendees) {
-        toast.error("This event is currently full. Registration may no longer be available.");
-        return;
-      }
+    const isFull = await checkEventCapacity(eventId, event);
+    if (isFull) {
+      toast.info("This event is full. You will be added to the waitlist.");
     }
 
     // Check for scheduling conflicts
-    const conflictCheck = checkRegistrationConflict(event, myEvents);
-
-    if (conflictCheck.hasConflict) {
-      // Get alternative suggestions
-      // TODO: In production, alternative events should be fetched from backend API
-      // for accurate availability and pricing. Mock data is used as a fallback.
-      const suggestions = suggestAlternativeEvents(event, mockEvents, myEvents);
-      setConflictData({
-        conflicts: conflictCheck.conflicts,
-        suggestions,
-      });
-      setShowConflictModal(true);
-      return;
-    }
+    if (await checkAndHandleConflicts()) return;
 
     // Proceed with registration if no conflicts
     proceedWithRegistration();
@@ -243,6 +304,14 @@ const EventRegistration = () => {
 
   // Proceed with registration after conflict check or user confirmation
   const proceedWithRegistration = async () => {
+    if (!isAuthenticated() || !user?.id) {
+      toast.error("Please log in to register for events.");
+      navigate("/login", {
+        state: { from: registrationPath },
+      });
+      return;
+    }
+
     // Close modal if open
     setShowConflictModal(false);
 
@@ -262,7 +331,7 @@ const EventRegistration = () => {
         {
           ...formData,
           eventId: parseInt(eventId),
-          userId: user?.id || null,
+          userId: user.id,
         },
         // Registration is authenticated server-side; send the active token
         // explicitly instead of relying only on global storage lookup.
@@ -286,7 +355,7 @@ const EventRegistration = () => {
         // storing PII in localStorage.
         const payload = {
           eventId: parseInt(eventId),
-          userId: user?.id || null,
+          userId: user.id,
         };
 
         const success = await pushToQueue({ eventId: parseInt(eventId), payload });
@@ -380,11 +449,11 @@ const EventRegistration = () => {
             : "This event is currently full. You can still check back later in case a spot opens up."}
         </p>
         <Link
-          to={`/events/${eventId}`}
+          to={isHackathonPath ? `/hackathons/${eventId}` : `/events/${eventId}`}
           className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-colors font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Event Details
+          Back to Details
         </Link>
       </div>
     );
@@ -410,6 +479,9 @@ const EventRegistration = () => {
       } else {
         navigator.clipboard.writeText(shareUrl).then(() => {
           toast.success("Event link copied to clipboard!");
+        }).catch((err) => {
+          console.error("Failed to copy link:", err);
+          toast.error("Could not copy link. Please copy manually.");
         });
       }
     };
@@ -547,12 +619,12 @@ const EventRegistration = () => {
             </div>
           </div>
 
-          <Link to={`/events/${eventId}`} className="block">
+          <Link to={isHackathonPath ? `/hackathons/${eventId}` : `/events/${eventId}`} className="block">
             <button
               type="button"
               className="w-full py-3.5 px-6 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold hover:bg-slate-800 dark:hover:bg-slate-100 hover:scale-[1.02] active:scale-[0.98] shadow-lg transition-all duration-300"
             >
-              Back to Event Details
+              Back to Details
             </button>
           </Link>
         </motion.div>
@@ -565,11 +637,11 @@ const EventRegistration = () => {
       <div className="max-w-4xl mx-auto">
         {/* Back Button */}
         <Link
-          to="/events"
+          to={isHackathonPath ? "/hackathons" : "/events"}
           className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Events
+          {isHackathonPath ? "Back to Hackathons" : "Back to Events"}
         </Link>
 
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden">

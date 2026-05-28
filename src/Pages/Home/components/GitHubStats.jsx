@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { GitHubStatCardSkeleton } from "../../../components/common/SkeletonLoaders";
 import {
@@ -20,8 +20,8 @@ import {
   fetchPullRequests,
 } from "../../../utils/githubApiClient";
 
-const GITHUB_USER = "SandeepVashishtha";
-const GITHUB_REPO = "Eventra";
+const repoPath = process.env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra";
+const [GITHUB_USER, GITHUB_REPO] = repoPath.split("/");
 
 const LS_KEY = "eventra:repoStats";
 const CACHE_MS = 30 * 60 * 1000; // 30 min
@@ -132,7 +132,7 @@ export default function GitHubStats() {
     };
   }, []);
 
-  const statCards = [
+  const statCards = useMemo(() => [
     {
       label: "Stars",
       value: stats.stars,
@@ -196,7 +196,7 @@ export default function GitHubStats() {
       icon: <Languages className="text-amber-600" size={40} />,
       link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}`,
     },
-  ];
+  ], [stats]);
 
   return (
     // UPDATED: Section background

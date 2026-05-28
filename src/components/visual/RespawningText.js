@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useReducedMotion } from '../hooks/useReducedMotion';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 const RespawningText = ({ texts = ["Discover & Join"], typingSpeed = 150, deletingSpeed = 100, pauseTime = 2000 }) => {
   const [currentText, setCurrentText] = useState("");

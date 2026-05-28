@@ -17,6 +17,19 @@ This guide explains **who can do what**, **how events flow through the system**,
 
 ---
 
+## ⚙️ Environment Configuration
+
+Before diving into the architecture, ensure your development environment is properly set up:
+
+**📖 [Environment Setup & Configuration Guide](ENV_SETUP_GUIDE.md)** – Covers:
+- Backend API endpoint configuration
+- Local development setup (frontend + backend)
+- Environment variable reference table
+- Troubleshooting connection issues
+- Development workflow best practices
+
+---
+
 ## 🧩 High-Level System Architecture
 
 Eventra follows a **client-server, context-driven architecture** with JWT-based authentication and offline-first capabilities.

@@ -1049,3 +1049,14 @@
     gap: var(--ad-space-md);
   }
 }
+.ad-table-row-hover {
+  transition: background-color 0.2s ease;
+}
+
+.ad-table-row-hover:hover {
+  background-color: #f8fafc;
+}
+
+.dark .ad-table-row-hover:hover {
+  background-color: rgba(30, 41, 59, 0.5);
+}
