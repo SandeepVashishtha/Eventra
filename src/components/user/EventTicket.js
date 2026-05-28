@@ -186,7 +186,7 @@ const EventTicket = ({ event, user, onClose }) => {
             onClick={onClose} 
             className="ud-ticket-action-btn close-btn"
             title="Close Ticket"
-          >
+           aria-label="button">
             <X className="w-4 h-4" />
           </button>
         </div>

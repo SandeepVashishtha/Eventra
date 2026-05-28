@@ -1,15 +1,11 @@
-import SavedEventsPage from './Pages/SavedEventsPage';
-import EventRecommendation from "./Pages/EventRecommendation/EventRecommendation";
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
-
 import { toast } from "react-toastify";
-
-import BackToTopButton from "./components/common/BackToTopButton";
-import Navbar from "./components/Layout/Navbar";
+import ScrollToTopButton from "./components/ScrollToTopButton";
+import Navbar from "./components/navbar/Navbar";
 import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
 import ScrollToTop from "./components/ScrollToTop";
@@ -32,28 +28,31 @@ import SectionErrorBoundary from "./components/common/SectionErrorBoundary";
 import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
 import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
+import EventRecommendation from "./Pages/EventRecommendation/EventRecommendation";
 
 const Footer = lazy(() => import("./components/Layout/Footer"));
 const Chatbot = lazy(() => import("./components/Chatbot"));
 const AppRoutes = lazy(() => import("./components/AppRoutes"));
-const RegistrationPage = lazy(() => import("./Pages/RegistrationPage"));
+const EventRegistration = lazy(() => import("./Pages/Events/EventRegistration"));
 
 const OfflineSyncManager = () => {
   useOfflineSync();
   return null;
 };
 
+const PageFallback = () => (
+  <div className="flex min-h-svh items-center justify-center safe-area-x">
+    Loading...
+  </div>
+);
+
 function App() {
   const location = useLocation();
-
   const isDashboardOrAdmin =
-    location.pathname === "/dashboard" ||
-    location.pathname === "/admin";
-
+    location.pathname === "/dashboard" || location.pathname === "/admin";
   const [cursorEnabled, setCursorEnabled] = useState(
-    localStorage.getItem("cursor") !== "off"
+    localStorage.getItem("cursor") !== "off",
   );
-
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
 
   useLenis();
@@ -65,11 +64,13 @@ function App() {
   });
 
   const toggleCursor = () => {
-    const value = !cursorEnabled;
-    setCursorEnabled(value);
+    const newValue = !cursorEnabled;
+    setCursorEnabled(newValue);
     try {
-      localStorage.setItem("cursor", value ? "on" : "off");
-    } catch {}
+      localStorage.setItem("cursor", newValue ? "on" : "off");
+    } catch {
+      // Ignore storage failures in private browsing or restricted contexts.
+    }
   };
 
   useEffect(() => {
@@ -80,31 +81,27 @@ function App() {
     };
 
     window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
-
     return () => {
-      window.removeEventListener(
-        "cursorPreferenceChanged",
-        handleCursorPreference
-      );
+      window.removeEventListener("cursorPreferenceChanged", handleCursorPreference);
     };
   }, []);
 
   useEffect(() => {
     const handleOnline = () => {
-      toast.success("Back online! Your connections have been restored.", {
+      toast.success("Back online! Your connections have been restored and sync is complete.", {
         position: "bottom-right",
         autoClose: 4000,
       });
     };
     const handleOffline = () => {
-      toast.warning("You are currently offline.", {
+      toast.warning("You are currently offline. Running in secure local offline caching mode.", {
         position: "bottom-right",
         autoClose: 5000,
       });
     };
+
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
-
     if (!navigator.onLine) {
       handleOffline();
     }
@@ -121,62 +118,54 @@ function App() {
         <NotificationProvider>
           <MyEventsProvider>
             <SessionRecoveryProvider>
-
               <ReminderChecker />
               <NotificationToastContainer />
               <OfflineSyncManager />
 
               <div className="App">
+                <a href="#main-content" className="skip-to-content">
+                  Skip to main content
+                </a>
 
                 <SectionErrorBoundary label="Navigation Bar">
-                  <Navbar
-                    cursorEnabled={cursorEnabled}
-                    toggleCursor={toggleCursor}
-                  />
+                  <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
                 </SectionErrorBoundary>
 
                 <OfflineBanner />
                 <OfflineConflictModal />
-
                 <KeyboardShortcutsModal
                   isOpen={showKeyboardModal}
                   onClose={() => setShowKeyboardModal(false)}
                 />
-
                 <OnboardingChecklist />
 
                 <main
-                  className="relative z-10 min-h-[85vh]
-                  bg-white dark:bg-slate-950
-                  text-black dark:text-white
-                  transition-colors duration-300"
+                  id="main-content"
+                  tabIndex={-1}
+                  className="
+                    relative z-10 min-h-[85vh]
+                    bg-white dark:bg-slate-950
+                    text-black dark:text-white
+                    transition-colors duration-300
+                  "
                 >
                   <PageTransition>
                     <SectionErrorBoundary label="Page Content">
-                      <Suspense
-                        fallback={
-                          <div className="min-h-screen flex items-center justify-center">
-                            Loading...
-                          </div>
-                        }
-                      >
+                      <Suspense fallback={<PageFallback />}>
                         <Routes>
-
                           <Route
                             path="/register/:id"
-                            element={<RegistrationPage />}
+                            element={
+                              <ProtectedRoute>
+                                <EventRegistration />
+                              </ProtectedRoute>
+                            }
                           />
-
                           <Route
                             path="/event-recommendation"
                             element={<EventRecommendation />}
                           />
-
-                          <Route
-                            path="*"
-                            element={<AppRoutes />}
-                          />
-
+                          <Route path="*" element={<AppRoutes />} />
                         </Routes>
                       </Suspense>
                     </SectionErrorBoundary>
@@ -197,17 +186,14 @@ function App() {
                   </Suspense>
                 </SectionErrorBoundary>
 
-                <BackToTopButton />
+                <ScrollToTopButton />
                 <FeedbackButton />
                 <ThemeCustomizerDrawer />
                 <SessionRecovery />
-
                 <SectionErrorBoundary label="Custom Cursor" silent>
                   <FluidCursor enabled={cursorEnabled} />
                 </SectionErrorBoundary>
-
               </div>
-
             </SessionRecoveryProvider>
           </MyEventsProvider>
         </NotificationProvider>

@@ -141,10 +141,40 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   };
 
   const loadPreset = (presetName) => {
-    if (window.confirm(`Are you sure you want to load the ${presetName} layout? Current changes will be overwritten.`)) {
-      setElements(PRESETS[presetName]);
-      setSelectedId(null);
-    }
+    toast(
+      ({ closeToast }) => (
+        <div>
+          <p className="text-sm font-semibold mb-2">Load {presetName} layout?</p>
+          <p className="text-xs text-gray-500 mb-3">Current changes will be overwritten.</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setElements(PRESETS[presetName]);
+                setSelectedId(null);
+                toast.success(`${presetName} layout loaded!`);
+                closeToast();
+              }}
+              className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold rounded-lg transition-colors"
+            >
+              Yes, Load
+            </button>
+            <button
+              onClick={closeToast}
+              className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-semibold rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        closeButton: false,
+        position: "top-center",
+      }
+    );
   };
 
   // Helper to prepare the SVG for export by cloning and stripping specific attributes/styles
@@ -655,7 +685,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
             <button onClick={() => loadPreset("conference")} className="text-xs font-semibold px-2 py-0.5 hover:text-indigo-400 text-gray-300 transition-colors">Keynote</button>
           </div>
 
-          <button onClick={saveLayout} className="fp-btn fp-btn-primary">
+          <button onClick={saveLayout} className="fp-btn fp-btn-primary" aria-label="button">
             <Save size={16} />
             Save Layout
           </button>
@@ -730,17 +760,17 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
             </p>
 
             <div className="fp-portability-grid mb-4">
-              <button className="fp-portability-btn font-semibold" onClick={handleExportPNG} title="Export as high-res PNG image">
+              <button className="fp-portability-btn font-semibold" onClick={handleExportPNG} title="Export as high-res PNG image" aria-label="button">
                 <Image className="fp-portability-icon" size={16} />
                 <span>Export PNG</span>
               </button>
-              <button className="fp-portability-btn font-semibold" onClick={handleExportSVG} title="Export as vector SVG image">
+              <button className="fp-portability-btn font-semibold" onClick={handleExportSVG} title="Export as vector SVG image" aria-label="button">
                 <Download className="fp-portability-icon" size={16} />
                 <span>Export SVG</span>
               </button>
             </div>
 
-            <button className="fp-btn fp-btn-secondary w-full justify-center mb-3 text-xs" onClick={handleDownloadJSON} title="Download backup config JSON file">
+            <button className="fp-btn fp-btn-secondary w-full justify-center mb-3 text-xs" onClick={handleDownloadJSON} title="Download backup config JSON file" aria-label="button">
               <FileJson size={14} className="text-indigo-400" />
               <span>Backup Layout JSON</span>
             </button>

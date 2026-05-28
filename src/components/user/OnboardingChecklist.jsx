@@ -414,7 +414,7 @@ export default function OnboardingChecklist() {
               <button
                 onClick={handleDismiss}
                 className="text-[10px] font-bold text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors uppercase tracking-wider"
-              >
+               aria-label="button">
                 Dismiss Quest
               </button>
 

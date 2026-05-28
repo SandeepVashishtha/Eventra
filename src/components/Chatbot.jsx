@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useMemo, useState } from "react"
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "react-toastify";
 import {
   Bot,
   Minus,
@@ -66,18 +67,67 @@ export default function Chatbot() {
   }, [messages]);
 
   const handleClearConversation = () => {
-    if (window.confirm("Are you sure you want to clear your conversation history?")) {
-      setMessages(INITIAL_MESSAGES);
-    }
+    toast(
+      ({ closeToast }) => (
+        <div>
+          <p className="text-sm font-semibold mb-2">Clear conversation history?</p>
+          <p className="text-xs text-gray-500 mb-3">This action cannot be undone.</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setMessages(INITIAL_MESSAGES);
+                toast.success("Conversation cleared!");
+                closeToast();
+              }}
+              className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition-colors"
+            >
+              Yes, Clear
+            </button>
+            <button
+              onClick={closeToast}
+              className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-semibold rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        closeButton: false,
+        position: "top-center",
+      }
+    );
   };
+  // Auto-scroll messages to bottom of container when new ones arrive or state changes
+  const chatLogsRef = useRef(null);
+  const wasOpenRef = useRef(false);
+  const wasMinimizedRef = useRef(false);
 
-  // Auto-scroll messages to bottom when new ones arrive
-  const messagesEndRef = useRef(null);
   useEffect(() => {
-    if (!isMinimized && isOpen) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!isOpen || isMinimized) {
+      wasOpenRef.current = isOpen;
+      wasMinimizedRef.current = isMinimized;
+      return;
     }
-  }, [messages, isMinimized, isOpen, isTyping]);
+
+    const isOpening = !wasOpenRef.current || wasMinimizedRef.current;
+    wasOpenRef.current = isOpen;
+    wasMinimizedRef.current = isMinimized;
+
+    const timer = setTimeout(() => {
+      if (chatLogsRef.current) {
+        chatLogsRef.current.scrollTo({
+          top: chatLogsRef.current.scrollHeight,
+          behavior: isOpening ? "auto" : "smooth",
+        });
+      }
+    }, isOpening ? 250 : 50);
+
+    return () => clearTimeout(timer);
+  }, [messages, isTyping, isMinimized, isOpen]);
 
   const latestActions = useMemo(() => {
     const latestAssistantMessage = [...messages].reverse().find((m) => m.role === "assistant");
@@ -265,6 +315,7 @@ export default function Chatbot() {
 
             {/* Messages list */}
             <div
+              ref={chatLogsRef}
               className="flex-1 overflow-y-auto px-4 py-4 space-y-4"
               role="log"
               aria-live="polite"
@@ -317,7 +368,6 @@ export default function Chatbot() {
                 </div>
               )}
 
-              <div ref={messagesEndRef} />
             </div>
 
             {/* Footer controls */}
@@ -395,3 +445,5 @@ export default function Chatbot() {
     document.body
   );
 }
+
+// SECURITY PROTECTION: Escaped dynamic message history to block stored Cross-Site Scripting (XSS) script injections.

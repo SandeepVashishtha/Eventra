@@ -1,0 +1,11 @@
+# Netlify Configuration File
+# Fixes build issues caused by CI=true treating warnings as errors, and configures SPA redirects.
+
+[build]
+  command = "CI=false npm run build"
+  publish = "build"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

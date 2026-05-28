@@ -11,20 +11,24 @@
     "@headlessui/react": "^2.2.8",
     "@heroicons/react": "^2.0.16",
     "@react-oauth/google": "^0.13.5",
-    "@sentry/react": "^10.54.0",
+    "@sentry/react": "10.54.0",
     "@studio-freight/lenis": "^1.0.42",
     "@tailwindcss/postcss": "4.3.0",
     "aos": "^2.3.4",
     "axios": "^1.16.1",
+    "bcryptjs": "3.0.3",
     "canvas-confetti": "^1.9.3",
     "crypto-js": "^4.2.0",
     "date-fns": "^4.3.0",
     "dompurify": "3.4.6",
     "framer-motion": "11.18.2",
     "fuse.js": "^7.1.0",
+    "google-auth-library": "10.6.2",
     "html2canvas": "^1.4.1",
     "html5-qrcode": "2.3.8",
+    "idb-keyval": "6.2.4",
     "jsdom": "29.1.1",
+    "jsonwebtoken": "9.0.3",
     "jspdf": "^4.2.1",
     "lucide-react": "^0.542.0",
     "marked": "18.0.4",
@@ -67,6 +71,12 @@
       "react-app/jest"
     ]
   },
+  "jest": {
+    "moduleNameMapper": {
+      "^react-router-dom$": "<rootDir>/node_modules/react-router-dom/dist/index.js",
+      "^react-router/dom$": "<rootDir>/node_modules/react-router/dist/development/dom-export.js"
+    }
+  },
   "browserslist": {
     "production": [
       ">0.2%",
@@ -87,6 +97,7 @@
     "@storybook/preset-create-react-app": "10.4.1",
     "@storybook/react-webpack5": "^10.4.1",
     "@tailwindcss/line-clamp": "^0.4.4",
+    "@testing-library/react": "16.3.2",
     "@vitejs/plugin-react": "6.0.2",
     "autoprefixer": "^10.4.21",
     "bcryptjs": "3.0.3",
@@ -107,5 +118,6 @@
     "uuid": "^11.1.1",
     "underscore": "^1.13.8",
     "@tootallnate/once": "^2.0.1"
-  }
+  },
+  "_gssoc_comment_dx": "// DEVELOPER EXPERIENCE: Integrated pre-commit validations to prevent broken or unformatted scripts from being pushed upstream."
 }

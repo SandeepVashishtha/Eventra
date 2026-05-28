@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Keyboard, Sparkles, X } from "lucide-react";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 
 const shortcutData = [
   {
@@ -173,6 +174,7 @@ const ShortcutRow = ({ action, shortcut, keys, isPressed }) => (
 );
 
 const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
+  const trapRef = useFocusTrap(isOpen);
   const [pressedKeys, setPressedKeys] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -254,11 +256,18 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
+            aria-hidden="true"
             className="absolute inset-0 bg-slate-950/60 backdrop-blur-md"
           />
 
           {/* Interactive Modal Sheet */}
           <motion.div
+            ref={trapRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="keyboard-shortcuts-title"
+            tabIndex={-1}
+            onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
             initial={{ opacity: 0, scale: 0.9, y: 30 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 30 }}
@@ -275,7 +284,7 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
                   </div>
                 </div>
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-800 dark:text-white">
+                  <h2 id="keyboard-shortcuts-title" className="text-xl sm:text-2xl font-black tracking-tight text-slate-800 dark:text-white">
                     Keyboard Shortcuts
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -286,9 +295,10 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
 
               <button
                 onClick={onClose}
+                aria-label="Close keyboard shortcuts"
                 className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 transition-colors shadow-sm"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
 

@@ -35,17 +35,19 @@ const corsHeaders = (req) => {
   const allowedOrigin = process.env.ALLOWED_ORIGIN;
   const requestOrigin = req.headers?.origin;
 
-  let corsOrigin = allowedOrigin || "*";
+  const corsOrigin = allowedOrigin || "*";
   if (allowedOrigin && requestOrigin !== allowedOrigin) {
     console.warn(`[CORS] Origin mismatch - Request: ${requestOrigin}, Allowed: ${allowedOrigin}`);
   }
-  if (allowedOrigin && allowedOrigin !== "*") {
-    corsOrigin = allowedOrigin;
-  }
+
+  // Access-Control-Allow-Credentials must not be sent with a wildcard origin.
+  // Per the CORS spec, browsers reject credentialed responses when the reflected
+  // origin is "*". Only set the header when a specific origin is configured.
+  const isSpecificOrigin = corsOrigin !== "*";
 
   return {
     "Access-Control-Allow-Origin": corsOrigin,
-    "Access-Control-Allow-Credentials": "true",
+    ...(isSpecificOrigin && { "Access-Control-Allow-Credentials": "true" }),
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
   };
@@ -286,10 +288,11 @@ export default async function handler(req, res) {
       permissions: permissions,
     };
 
+    const isProd = process.env.NODE_ENV === "production";
+    res.setHeader('Set-Cookie', `token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict${isProd ? '; Secure' : ''}`);
+
     return corsResponse(res, 200, {
       message: "Login successful",
-      token,
-      tokenType: "Bearer",
       ...userResponse,
     }, req);
 
