@@ -15,6 +15,7 @@ const PasswordReset = lazy(() => import("../auth/PasswordReset"));
 const AdminDashboard = lazy(() => import("../admin/AdminDashboard"));
 const Dashboard = lazy(() => import("../Dashboard"));
 const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
+const TicketValidator = lazy(() => import("../../Pages/Organizer/TicketValidator"));
 
 export const getProtectedRoutes = () => [
   <Route
@@ -119,6 +120,18 @@ export const getProtectedRoutes = () => [
       </ProtectedRoute>
     }
   />,
+  <Route
+    key="/organizer/validator"
+    path="/organizer/validator"
+    element={
+      <ProtectedRoute
+        requiredPermissions={[PERMISSIONS.CREATE_EVENT]}
+        validateContext={({ user }) => user?.roles?.includes(ROLES.ADMIN) || user?.roles?.includes(ROLES.ORGANIZER)}
+      >
+        <TicketValidator />
+      </ProtectedRoute>
+    }
+  />
 ];
 
 export const getAuthRoutes = () => [

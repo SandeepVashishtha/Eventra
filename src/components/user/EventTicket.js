@@ -4,6 +4,7 @@ import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import QRCode from "react-qr-code";
 import { toast } from "react-toastify";
+import CryptoJS from "crypto-js";
 import "./EventTicket.css";
 import { useMyEvents } from "../../context/MyEventsContext";
 import SpatialSeatSelector from "../events/SpatialSeatSelector";
@@ -20,6 +21,46 @@ const EventTicket = ({ event, user, onClose }) => {
   const { myEvents } = useMyEvents();
   const registration = myEvents.find((r) => r.eventId === event.id);
   const selectedSeat = registration?.formData?.selectedSeat;
+
+  const [qrTimestamp, setQrTimestamp] = useState(Date.now());
+  const [timeLeft, setTimeLeft] = useState(30);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          setQrTimestamp(Date.now());
+          return 30;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Dynamic secure signature calculation
+  const generateQrValue = () => {
+    try {
+      const eventSecret = CryptoJS.SHA256((event?.id || "evt") + "-eventra-secure-salt").toString();
+      const signature = CryptoJS.HmacSHA256(
+        `${serialNumber.current}-${event?.id || "evt"}-${qrTimestamp}`,
+        eventSecret
+      ).toString();
+
+      return JSON.stringify({
+        ticketId: serialNumber.current,
+        eventId: event?.id,
+        timestamp: qrTimestamp,
+        signature,
+      });
+    } catch (e) {
+      return JSON.stringify({
+        ticketId: serialNumber.current,
+        eventId: event?.id,
+      });
+    }
+  };
 
   // Generate a mock ticket serial code based on event and user details
   const generateSerial = () => {
@@ -332,13 +373,7 @@ const EventTicket = ({ event, user, onClose }) => {
                 <div className="ud-ticket-qr-wrap">
                   <div className="ud-ticket-qr-border">
                     <QRCode 
-                      value={JSON.stringify({
-                        ticketId: serialNumber.current,
-                        eventId: event.id,
-                        eventName: event.title,
-                        userId: user?.id || "anonymous",
-                        userName: user?.fullName || "Guest"
-                      })} 
+                      value={generateQrValue()} 
                       size={90} 
                       bgColor="transparent" 
                       fgColor="#ffffff"
@@ -347,11 +382,25 @@ const EventTicket = ({ event, user, onClose }) => {
                   </div>
                 </div>
                 
-                <div className="ud-ticket-stub-details">
+                <div className="ud-ticket-stub-details flex-1">
                   <div className="ud-ticket-serial">{serialNumber.current}</div>
-                  <div className="ud-ticket-status">
+                  <div className="ud-ticket-status mb-2">
                     <ShieldCheck size={14} className="text-emerald-400 animate-pulse" />
-                    <span>SECURE VALID PASS</span>
+                    <span>DYNAMIC SECURE PASS</span>
+                  </div>
+
+                  {/* Visual countdown timer */}
+                  <div className="ud-ticket-qr-timer w-full max-w-[140px]">
+                    <div className="flex justify-between items-center text-[10px] text-zinc-400 mb-1">
+                      <span>Refreshes in {timeLeft}s</span>
+                      <RefreshCw size={9} className="animate-spin opacity-70" style={{ animationDuration: '3s' }} />
+                    </div>
+                    <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-emerald-400 transition-all duration-1000 ease-linear"
+                        style={{ width: `${(timeLeft / 30) * 100}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

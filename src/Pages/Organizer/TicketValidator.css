@@ -1,0 +1,81 @@
+/* ---------------------------------------------------------------------------
+ * Eventra Organizer Ticket Validator Styles (futuristic glassmorphic aesthetic)
+ * --------------------------------------------------------------------------- */
+
+.validator-wrapper {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: #020617; /* Deepest dark slate */
+}
+
+/* Glassmorphism Cards */
+.validator-card {
+  background: rgba(15, 23, 42, 0.45); /* semi-transparent slate */
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 1.25rem;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.validator-card:hover {
+  border-color: rgba(99, 102, 241, 0.15); /* Soft Indigo highlight */
+  box-shadow: 0 15px 40px -5px rgba(0, 0, 0, 0.6), 0 0 20px rgba(99, 102, 241, 0.03);
+}
+
+/* Scanning Red Laser Keyframe Animation */
+@keyframes scan-laser {
+  0% {
+    top: 20%;
+    opacity: 0.3;
+  }
+  25% {
+    opacity: 0.9;
+  }
+  50% {
+    top: 80%;
+    opacity: 0.9;
+  }
+  75% {
+    opacity: 0.3;
+  }
+  100% {
+    top: 20%;
+    opacity: 0.3;
+  }
+}
+
+.scan-laser-animation {
+  position: absolute;
+  left: 2.5rem;
+  right: 2.5rem;
+  height: 2px;
+  background: #f43f5e; /* Rose red */
+  box-shadow: 0 0 12px 2px #f43f5e, 0 0 24px 4px rgba(244, 63, 94, 0.5);
+  animation: scan-laser 3s ease-in-out infinite;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Custom Webkit scrollbar for logs list */
+.flex-1.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.flex-1.overflow-y-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.flex-1.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 99px;
+}
+
+.flex-1.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.4);
+}
+
+/* Form selection customize */
+select option {
+  background-color: #0f172a !important;
+  color: #f8fafc;
+}
