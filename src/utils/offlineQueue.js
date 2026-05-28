@@ -312,6 +312,11 @@ const generateQueueId = () => {
  * cross-user action replay. If a user logs out and another user logs in,
  * the queued actions are validated for ownership before replay.
  */
+// Maximum serialised byte length for a single queue item's payload field.
+// With the 15-item slot cap, the total localStorage footprint is at most
+// 15 x 50 KB = 750 KB, safely within the 5 MB browser quota.
+const MAX_PAYLOAD_BYTES = 50 * 1024;
+
 export const pushToQueue = async (item, userId = null) => {
   // Add metadata tracking with security context
   const actionItem = {
@@ -329,6 +334,25 @@ export const pushToQueue = async (item, userId = null) => {
         ? sessionStorage.getItem("session_id") || null
         : null,
   };
+
+  // Guard against oversized payloads before they reach localStorage.
+  // An uncapped payload can fill the 5 MB quota in a single write, causing
+  // every subsequent localStorage.setItem call (including auth-state writes
+  // in AuthContext) to throw QuotaExceededError, silently corrupting the app.
+  const serialisedPayload = JSON.stringify(actionItem.payload);
+  if (serialisedPayload.length > MAX_PAYLOAD_BYTES) {
+    logger.warn(
+      `[OfflineQueue] Payload too large (${serialisedPayload.length} bytes). Dropping item to protect localStorage quota.`
+    );
+    if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+      window.dispatchEvent(
+        new CustomEvent("eventra-offline-queue-full", {
+          detail: { reason: "payload-too-large", eventId: item.eventId },
+        })
+      );
+    }
+    return false;
+  }
 
   // 1. Sync mirror updates immediately (Synchronous fallback)
   const queue = getQueue();

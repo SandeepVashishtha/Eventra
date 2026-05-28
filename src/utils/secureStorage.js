@@ -20,9 +20,44 @@ const CRYPTO_ALGORITHM = 'AES-GCM';
 const KEY_LENGTH = 256;
 const IV_LENGTH = 12; // 96-bit IV recommended for AES-GCM
 const PBKDF2_ITERATIONS = 100_000;
-const DERIVED_KEY_SALT = new TextEncoder().encode(
-  `eventra:${window.location.origin}:storage-key-v1`
-);
+
+// ---------------------------------------------------------------------------
+// Per-browser random salt — generated once on first use, persisted in
+// localStorage under a dedicated key so it survives page reloads.
+//
+// WHY: A static, deterministic salt (e.g. derived from window.location.origin)
+// allows any attacker who knows the origin to precompute the PBKDF2 output
+// and therefore the AES-GCM key. Using a randomly-generated, per-browser salt
+// means the derived key is unique to each user's browser instance and cannot
+// be precomputed without access to the stored salt.
+// ---------------------------------------------------------------------------
+const SALT_STORAGE_KEY = 'eventra:key-salt';
+const SALT_BYTE_LENGTH = 32; // 256-bit random salt
+
+const getOrCreateSalt = () => {
+  try {
+    const stored = localStorage.getItem(SALT_STORAGE_KEY);
+    if (stored) {
+      // Restore the previously persisted salt
+      return Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
+    }
+  } catch {
+    // localStorage may be unavailable — fall through to generate
+  }
+
+  // First run: generate a cryptographically random salt and persist it
+  const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTE_LENGTH));
+  try {
+    localStorage.setItem(SALT_STORAGE_KEY, btoa(String.fromCharCode(...salt)));
+  } catch {
+    // If persistence fails, the salt will be regenerated on the next load.
+    // This is a graceful degradation — encryption still works this session.
+  }
+  return salt;
+};
+
+// Initialise the salt eagerly so all calls to getDerivedKey() use the same value
+const DERIVED_KEY_SALT = getOrCreateSalt();
 
 let _keyPromise = null;
 

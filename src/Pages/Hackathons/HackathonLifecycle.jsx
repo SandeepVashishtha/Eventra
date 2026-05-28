@@ -17,6 +17,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import confetti from "canvas-confetti";
+import TeamWorkspace from "../../components/hackathons/TeamWorkspace";
 
 const PHASES = [
   {
@@ -359,6 +360,12 @@ const HackathonLifecycle = () => {
                   </div>
                 </div>
               </div>
+
+              {selectedPhase.id === 3 && (
+                <div className="mt-8">
+                  <TeamWorkspace />
+                </div>
+              )}
 
               {/* RESOURCES & STARTER DOWNLOADS */}
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">

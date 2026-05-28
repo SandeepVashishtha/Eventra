@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { safeJsonParse } from "../../utils/safeJsonParse";
+import { syncSecureStorage } from "../../utils/secureStorage";
 
 import {
   User as UserIcon,
@@ -83,7 +84,7 @@ const EditProfile = () => {
 
   // Initialize with fallback progression to prevent undefined fields
   const [form, setForm] = useState(() => {
-    const saved = localStorage.getItem("user");
+    const saved = syncSecureStorage.getItem("user");
     const parsed = safeJsonParse(saved, null);
     if (parsed) {
       return parsed;
@@ -100,7 +101,7 @@ const EditProfile = () => {
 
   // Keep state synchronized if the auth context updates lazily
   useEffect(() => {
-    const saved = localStorage.getItem("user");
+    const saved = syncSecureStorage.getItem("user");
     if (!saved && user) {
       setForm((prev) => ({ ...prev, ...user }));
     }
@@ -207,7 +208,7 @@ const EditProfile = () => {
       setSuccessMessage("Profile updated successfully");
       setConfirmOpen(false);
       setUser(resolvedForm);
-      localStorage.setItem("user", JSON.stringify(resolvedForm));
+      syncSecureStorage.setItem("user", JSON.stringify(resolvedForm));
 
       setTimeout(() => {
         navigate("/dashboard/profile");

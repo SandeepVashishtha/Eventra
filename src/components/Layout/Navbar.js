@@ -1,3 +1,9 @@
+ feat/user-engagement-system
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  Book, Calendar, ChevronDown, FolderKanban, HelpCircle, Home, Info,
+  LayoutDashboard, LogIn, LogOut, MessageSquare, Moon, MousePointer, Sparkles, Sun, Trophy, UserCog, User as UserIcon, Users
+
 import NotificationBell from "../common/NotificationBell.jsx";
 import { useTheme } from "../../context/ThemeContext";
 import React, { useState, useRef, useEffect } from "react";
@@ -35,7 +41,15 @@ import {
   MoreHorizontal,
   Search,
   Palette,
+ master
 } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { FaBell } from "react-icons/fa";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { useAuth } from "../../context/AuthContext";
+import { useTheme } from '../../context/ThemeContext';
+import ConfirmationModal from "../common/ConfirmationModal";
 
 
 // --- Helpers to reduce complexity ---
@@ -945,6 +959,32 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           {/* Centered Desktop Nav Links */}
           <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
 
+ feat/user-engagement-system
+          <div className="hidden lg:flex items-center ml-auto z-20">
+            <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={false} />
+            <CursorToggleButton cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} isMobile={false} />
+            <button className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+  <FaBell className="text-lg text-black dark:text-white" />
+  
+  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+</button>
+
+            <div className="flex items-center space-x-2 ml-2">
+              {isAuthenticated() ? (
+                <UserProfileDropdown 
+                  user={user} 
+                  primaryLine={primaryLine} 
+                  secondaryLine={secondaryLine} 
+                  showProfileDropdown={showProfileDropdown} 
+                  setShowProfileDropdown={setShowProfileDropdown} 
+                  location={location} 
+                  handleLogoutClick={handleLogoutClick} 
+                />
+              ) : (
+                <AuthButtons isMobile={false} />
+              )}
+            </div>
+
           {/* Right Controls */}
           <div className="hidden lg:flex items-center gap-2 shrink-0 pl-2">
             <motion.button
@@ -988,6 +1028,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             ) : (
               <AuthButtons isMobile={false} />
             )}
+master
           </div>
 
           {/* Mobile Menu Button */}
