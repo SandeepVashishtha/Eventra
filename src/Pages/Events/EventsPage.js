@@ -1,15 +1,8 @@
 import { useRef, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useEffect, useRef } from "react";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
-import { getEventStatus } from "../../utils/eventUtils";
-import { useSearchParams } from "react-router-dom";
-import {
-  Grid,
-  List,
-  Loader2,
-} from "lucide-react";
+import { Grid, List } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
@@ -24,7 +17,6 @@ import { darkTheme } from "../../components/styles/theme";
 import BackToTopButton from "../../components/common/BackToTopButton";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
-import { getRouteSearchResults } from "../../utils/searchUtils";
 import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
 
 
