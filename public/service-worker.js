@@ -10,7 +10,6 @@
  * are cached to prevent privacy leaks and stale data exposure.
  */
 const CACHE_NAME = 'eventra-cache-v3';
-const BACKGROUND_SYNC_TAG = 'eventra-offline-queue-sync';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',

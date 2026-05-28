@@ -6,7 +6,7 @@ import "./OfflineBanner.css";
 export default function OfflineBanner() {
   const [status, setStatus] = useState(navigator.onLine ? "online" : "offline");
   const [visible, setVisible] = useState(!navigator.onLine);
-  const [queueCount, setQueueCount] = useState(() => getQueue().length);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     let timer;
@@ -14,7 +14,8 @@ export default function OfflineBanner() {
     const handleOnline = () => {
       setStatus("online");
       setVisible(true);
-      timer = setTimeout(() => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
         setVisible(false);
       }, 4000);
     };
@@ -37,7 +38,7 @@ export default function OfflineBanner() {
       clearTimeout(timer);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
-      window.removeEventListener("eventra-offline-queue-updated", handleQueueUpdated);
+      if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
 
