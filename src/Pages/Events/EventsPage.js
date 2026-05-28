@@ -4,11 +4,9 @@ import { useSearchParams } from "react-router-dom";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
 
-import { useSearchParams } from "react-router-dom";
 import {
   Grid,
   List,
-  Loader2,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import FeedbackButton from "../../components/FeedbackButton";
@@ -24,7 +22,6 @@ import { darkTheme } from "../../components/styles/theme";
 import BackToTopButton from "../../components/common/BackToTopButton";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
-import { getRouteSearchResults } from "../../utils/searchUtils";
 import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
 
 
