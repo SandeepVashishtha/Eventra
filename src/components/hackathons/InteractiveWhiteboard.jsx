@@ -41,6 +41,98 @@ const InteractiveWhiteboard = () => {
   const [draggingSticky, setDraggingSticky] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
+  const getCanvasCoords = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    
+    // Support both mouse and touch events
+    const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0]?.clientX) || 0;
+    const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0]?.clientY) || 0;
+    
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
+  };
+
+  const handleMouseDown = (e) => {
+    if (tool === "sticky") {
+      const coords = getCanvasCoords(e);
+      const newSticky = {
+        id: Date.now(),
+        x: coords.x,
+        y: coords.y,
+        text: "",
+        color: color
+      };
+      setStickies([...stickies, newSticky]);
+      setTool("pen");
+      return;
+    }
+
+    const coords = getCanvasCoords(e);
+    setIsDrawing(true);
+
+    if (tool === "pen") {
+      setCurrentElement({
+        type: "path",
+        points: [coords],
+        color,
+        size
+      });
+    } else if (tool === "rect" || tool === "circle") {
+      setCurrentElement({
+        type: "shape",
+        shapeType: tool,
+        x: coords.x,
+        y: coords.y,
+        startX: coords.x,
+        startY: coords.y,
+        width: 0,
+        height: 0,
+        isSolid,
+        color,
+        size
+      });
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDrawing || !currentElement) return;
+
+    const coords = getCanvasCoords(e);
+
+    if (currentElement.type === "path") {
+      setCurrentElement({
+        ...currentElement,
+        points: [...currentElement.points, coords]
+      });
+    } else if (currentElement.type === "shape") {
+      const startX = currentElement.startX;
+      const startY = currentElement.startY;
+      const x = Math.min(coords.x, startX);
+      const y = Math.min(coords.y, startY);
+      const width = Math.abs(coords.x - startX);
+      const height = Math.abs(coords.y - startY);
+
+      setCurrentElement({
+        ...currentElement,
+        x,
+        y,
+        width,
+        height
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (!isDrawing || !currentElement) return;
+    setIsDrawing(false);
+    setElements([...elements, currentElement]);
+    setCurrentElement(null);
+  };
+
   // Main Canvas Rendering Engine
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;

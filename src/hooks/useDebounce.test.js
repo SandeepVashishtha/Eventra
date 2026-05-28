@@ -50,15 +50,19 @@ describe("useDebounce", () => {
     const { result, rerender } = renderHook(() => useDebounce(value, 300));
 
     // Rapid successive changes
+    value = "b";
+    rerender();
     act(() => {
-      value = "b";
-      rerender();
       jest.advanceTimersByTime(100);
-      value = "c";
-      rerender();
+    });
+    value = "c";
+    rerender();
+    act(() => {
       jest.advanceTimersByTime(100);
-      value = "d";
-      rerender();
+    });
+    value = "d";
+    rerender();
+    act(() => {
       jest.advanceTimersByTime(100);
     });
 

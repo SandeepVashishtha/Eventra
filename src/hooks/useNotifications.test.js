@@ -1,4 +1,6 @@
 import { renderHook, act, waitFor } from "@testing-library/react";
+import { useNotifications } from "./useNotifications";
+import { get as idbGet, set as idbSet } from "idb-keyval";
 
 // ─── Mock idb-keyval ───────────────────────────────────────────────────────────
 // useNotifications reads/writes through IndexedDB (idb-keyval).
@@ -11,9 +13,6 @@ jest.mock("idb-keyval", () => ({
     return Promise.resolve();
   }),
 }));
-
-import { useNotifications } from "./useNotifications";
-import { get as idbGet, set as idbSet } from "idb-keyval";
 
 const STORAGE_KEY = "eventra_notifications";
 

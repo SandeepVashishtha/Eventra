@@ -33,6 +33,15 @@ const BATCH_DELAY_MS = 200;
 // keeping per-batch concurrency well within rate-limit budgets.
 const PROFILE_BATCH_SIZE = 10;
 
+const PROFILE_FETCH_DELAY_MS = 100;
+let profileFetchCounter = 0;
+const throttleProfileFetch = async () => {
+  profileFetchCounter++;
+  if (profileFetchCounter % 5 === 0) {
+    await new Promise((resolve) => setTimeout(resolve, PROFILE_FETCH_DELAY_MS));
+  }
+};
+
 /**
  * Fetches items in parallel batches, inserting a short delay between batches
  * to stay within GitHub's unauthenticated rate limit.

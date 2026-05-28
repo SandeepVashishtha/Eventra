@@ -606,8 +606,8 @@ const AdminDashboard = () => {
                               </div>
                             </td>
                           </tr>
-                        );
-                      })}
+                        ))
+                      )}
                       </tbody>
                     </table>
                   )}
@@ -680,8 +680,8 @@ const AdminDashboard = () => {
                               </div>
                             </td>
                           </tr>
-                        );
-                      })}
+                        ))
+                      )}
                       </tbody>
                     </table>
                   )}
