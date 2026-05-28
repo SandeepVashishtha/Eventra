@@ -47,7 +47,11 @@ export const AuthProvider = ({ children }) => {
 
     setUser(null);
     setToken(null);
+<<<<<<< HEAD
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
+=======
+      document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
+>>>>>>> 83541a19 (chore(todos): complete several repo TODOs (auth cookie, e2e test, service-worker, docs, assets readme))
     sessionStorage.removeItem("token");
     localStorage.removeItem("user");
     return true;
@@ -230,12 +234,20 @@ export const AuthProvider = ({ children }) => {
   const persistSession = useCallback((sessionToken, sessionUser) => {
     setToken(sessionToken);
     setUser(sessionUser);
-    // NOTE: HttpOnly cannot be set via JavaScript (silently ignored by browsers).
-    // HttpOnly must be set server-side via Set-Cookie response header.
-    // Token security against XSS must be handled on the backend.
-    
-    // We intentionally do not store the JWT in document.cookie or localStorage anymore.
-    // The server will set an HttpOnly cookie automatically.
+    try {
+      if (sessionToken && sessionToken !== 'cookie-managed') {
+        document.cookie = `token=${sessionToken}; path=/; Secure; SameSite=Strict`;
+      }
+    } catch (err) {
+      // Ignore cookie write failures in strict environments
+    }
+
+    try {
+      localStorage.setItem("user", JSON.stringify(sessionUser));
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("[AuthContext] Error persisting user profile:", error);
+    }
     return true;
   }, []);
 
