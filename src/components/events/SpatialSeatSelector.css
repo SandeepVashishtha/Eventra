@@ -1,0 +1,283 @@
+/* Premium Interactive Spatial Seat Selector Stylesheet */
+
+.ssp-container {
+  display: flex;
+  flex-direction: column;
+  background: rgba(13, 13, 23, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(12px);
+  width: 100%;
+}
+
+/* Statistics Header */
+.ssp-stats-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  background: rgba(13, 13, 23, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ssp-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Seating Viewport Area */
+.ssp-viewport {
+  position: relative;
+  height: 380px;
+  min-height: 320px;
+  width: 100%;
+  background: #05050a;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+}
+
+.ssp-viewport:active {
+  cursor: grabbing;
+}
+
+.ssp-blueprint-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-color: #05050a;
+}
+
+/* Interactive SVG Seat Node */
+.ssp-interactive-seat {
+  cursor: pointer;
+  outline: none;
+}
+
+.ssp-interactive-seat circle {
+  transition: r 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), 
+              filter 0.2s ease, 
+              stroke-width 0.2s ease;
+}
+
+.ssp-interactive-seat:hover circle {
+  r: 13.5px;
+  filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.65));
+}
+
+.ssp-seat-glowing circle {
+  r: 13.5px !important;
+  filter: drop-shadow(0 0 12px rgba(34, 211, 238, 0.85)) !important;
+  stroke-width: 2px !important;
+}
+
+/* Radar Pulse Loop Animation */
+.ssp-radar-pulse {
+  animation: sspRadarRipple 2s infinite cubic-bezier(0.1, 0.8, 0.3, 1);
+  transform-origin: center;
+  opacity: 0;
+}
+
+@keyframes sspRadarRipple {
+  0% {
+    r: 11px;
+    stroke-width: 2.5px;
+    opacity: 0.9;
+  }
+  100% {
+    r: 32px;
+    stroke-width: 0.5px;
+    opacity: 0;
+  }
+}
+
+/* Floating Controls */
+.ssp-viewport-controls {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  background: rgba(15, 15, 27, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+  z-index: 5;
+}
+
+.ssp-ctrl-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #a1a1aa;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ssp-ctrl-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.ssp-zoom-pct {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #71717a;
+  min-width: 32px;
+  text-align: center;
+}
+
+.ssp-ctrl-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0 2px;
+}
+
+/* Seating Hover Popover */
+.ssp-hover-popup {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  background: rgba(18, 18, 28, 0.95);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(99, 102, 241, 0.1);
+  border-radius: 10px;
+  padding: 10px 14px;
+  width: 150px;
+  pointer-events: none;
+  z-index: 10;
+  backdrop-filter: blur(6px);
+}
+
+.ssp-hover-popup::after {
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px 6px 0;
+  border-style: solid;
+  border-color: rgba(18, 18, 28, 0.95) transparent;
+  display: block;
+  width: 0;
+}
+
+.ssp-pop-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ssp-pop-seat {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-top: 1px;
+}
+
+.ssp-pop-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 6px 0;
+}
+
+.ssp-pop-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 3px;
+}
+
+.ssp-pop-label {
+  font-size: 0.65rem;
+  color: #a1a1aa;
+}
+
+.ssp-pop-val {
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+/* Guide Legends Row */
+.ssp-legend-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 18px;
+  background: rgba(13, 13, 23, 0.35);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ssp-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.725rem;
+  color: #a1a1aa;
+  font-weight: 500;
+}
+
+.ssp-leg-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.ssp-leg-vip {
+  background: linear-gradient(135deg, #fbbf24, #d97706);
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.35);
+}
+
+.ssp-leg-gen {
+  background: linear-gradient(135deg, #818cf8, #4f46e5);
+  box-shadow: 0 0 6px rgba(99, 102, 241, 0.35);
+}
+
+.ssp-leg-occ {
+  background: #27272a;
+}
+
+.ssp-leg-sel {
+  background: linear-gradient(135deg, #22d3ee, #0891b2);
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.55);
+}
+
+.ssp-legend-tip {
+  color: #52525b;
+}
+
+/* Responsive Overrides */
+@media (max-width: 640px) {
+  .ssp-legend-row {
+    gap: 10px;
+    padding: 10px 14px;
+  }
+  .ssp-viewport {
+    height: 300px;
+  }
+  .ssp-legend-tip {
+    display: none !important;
+  }
+}

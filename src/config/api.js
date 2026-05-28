@@ -1,4 +1,5 @@
 import axios from "axios";
+import { ENV } from "./env";
 
 // ---------------------------------------------------------------------------
 // Base API URL
@@ -22,7 +23,7 @@ const normalizeApiBaseUrl = (value = "") => {
 const isDev = process.env.NODE_ENV === "development";
 
 const resolveEnvApiBaseUrl = () => {
-  const envUrl = process.env.REACT_APP_API_URL;
+  const envUrl = ENV.API_URL;
   if (envUrl) {
     return normalizeApiBaseUrl(envUrl);
   }
@@ -107,9 +108,6 @@ const normalizeRequestConfig = (configOrToken = {}) => {
   if ("skipAuth" in config) {
     delete config.skipAuth;
   }
-  // With HttpOnly cookies, the browser automatically sends the session cookie.
-  // We no longer manually append the Authorization header here.
-
   return config;
 };
 
@@ -132,18 +130,52 @@ const wrapAxiosResponse = (response) => {
       typeof response.data === "string" ? response.data : JSON.stringify(response.data),
   };
 };
+const normalizeApiError = (error) => {
+  const config = error.config || {};
+  const status = error?.response?.status;
 
-API.interceptors.request.use((config) => {
-  if (!config.signal) {
-    const controller = new AbortController();
-    config.signal = controller.signal;
-    config._abortController = controller;
+  if (
+    error.code === "ECONNABORTED" ||
+    error.name === "AbortError" ||
+    error.message?.includes("timeout")
+  ) {
+    return new ApiError(
+      `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
+      {
+        status,
+        isTimeout: true,
+      }
+    );
   }
 
+  if (!error.response) {
+    return new ApiError(
+      error.message ||
+        `Network error: ${config.method?.toUpperCase()} ${config.url}`,
+      {
+        status,
+        isNetworkError: true,
+      }
+    );
+  }
+
+  return new ApiError(
+    error.response?.data?.message ||
+      error.message ||
+      `Request failed with status ${status}`,
+    {
+      status,
+      data: error.response?.data || null,
+    }
+  );
+};
+
+// 🔥 HERE IS WHERE WE FIXED THE BUG 🔥
+// We completely removed the `if (!config.signal)` block that was generating the Ghost AbortController.
+API.interceptors.request.use((config) => {
   if (isDev) {
     console.debug(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
   }
-
   return config;
 });
 
@@ -170,32 +202,7 @@ API.interceptors.response.use(
       await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
       return API(config);
     }
-
-    if (
-      error.code === "ECONNABORTED" ||
-      error.name === "AbortError" ||
-      error.message?.includes("timeout")
-    ) {
-      throw new ApiError(
-        `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
-        { isTimeout: true }
-      );
-    }
-
-    if (!error.response) {
-      throw new ApiError(
-        error.message || `Network error: ${config.method?.toUpperCase()} ${config.url}`,
-        { isNetworkError: true }
-      );
-    }
-
-    throw new ApiError(
-      error.response?.data?.message || error.message || `Request failed with status ${status}`,
-      {
-        status: error.response.status,
-        data: error.response.data,
-      }
-    );
+    throw normalizeApiError(error);
   }
 );
 
@@ -211,14 +218,18 @@ export const API_ENDPOINTS = {
     SIGNUP: buildApiUrl("/api/auth/signup"),
     LOGOUT: buildApiUrl("/api/auth/logout"),
     RESET_PASSWORD: buildApiUrl("/api/auth/reset-password"),
+    OAUTH: buildApiUrl("/api/auth/oauth"),
   },
   EVENTS: {
     CREATE: buildApiUrl("/api/events/create"),
+    ALL: buildApiUrl("/api/events"),
     LIST: buildApiUrl("/api/events"),
     DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
+    REGISTRANTS: (id) => buildApiUrl(`/api/events/${id}/registrants`),
   },
   PROJECTS: {
+    ALL: buildApiUrl("/api/projects"),
     LIST: buildApiUrl("/api/projects"),
     DETAIL: (id) => buildApiUrl(`/api/projects/${id}`),
     CATEGORIES: buildApiUrl("/api/projects/categories"),
@@ -231,6 +242,7 @@ export const API_ENDPOINTS = {
   },
   NOTIFICATIONS: {
     BASE: buildApiUrl("/api/notifications"),
+    ALL: buildApiUrl("/api/notifications"),
     READ: (id) => (id ? buildApiUrl(`/api/notifications/${id}/read`) : ""),
     READ_ALL: buildApiUrl("/api/notifications/read-all"),
   },
@@ -238,7 +250,13 @@ export const API_ENDPOINTS = {
     PROFILE: buildApiUrl("/api/users/profile"),
     ACHIEVEMENTS: buildApiUrl("/api/users/achievements"),
   },
+  VALIDATION: {
+    EMAIL: (email) => buildApiUrl(`/api/validate/email/${encodeURIComponent(email)}`),
+    USERNAME: (username) => buildApiUrl(`/api/validate/username/${encodeURIComponent(username)}`),
+    PHONE: buildApiUrl("/api/validate/phone"),
+  },
 };
+
 
 export const apiUtils = {
   get: (url, config = {}) =>
@@ -255,10 +273,4 @@ export const apiUtils = {
 
 export default API;
 
-export const API_ENDPOINTS_UPDATED = {
-  ...API_ENDPOINTS,
-  NOTIFICATIONS: {
-    ...API_ENDPOINTS.NOTIFICATIONS,
-    READ_ALL: buildApiUrl("/api/notifications/read-all"),
-  }
-};
+export { normalizeApiError };

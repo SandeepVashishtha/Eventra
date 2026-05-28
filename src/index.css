@@ -2,6 +2,7 @@
 /* Issue #828: Standardize and Professionalize Font Text and Size */
 @import url("https://fonts.googleapis.com/css2?family=Oxanium:wght@800&family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+@config "../tailwind.config.cjs";
 
 @tailwind base;
 @tailwind components;
@@ -12,7 +13,17 @@
   padding: 0;
   box-sizing: border-box;
 }
-
+.responsive-btn {
+  @apply
+    max-w-full
+    min-w-0
+    whitespace-nowrap
+    overflow-hidden
+    text-ellipsis
+    px-4
+    sm:px-5
+    md:px-6;
+}
 .sr-only {
   position: absolute;
   width: 1px;
@@ -47,7 +58,10 @@ html {
 
   --border-color: #e1e5e9;
   --card-bg-color: #ffffff;
-
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
   --scrollbar-track-color: #f1f1f1;
   --scrollbar-thumb-color: #000000;
   --scrollbar-thumb-hover-color: #262626;
