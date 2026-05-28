@@ -1,91 +1,43 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Home, Calendar, Search, HelpCircle, Code2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 
-const NotFoundPage = () => {
+export default function NotFoundPage() {
+  const navigate = useNavigate();
+
   return (
-    <div style={{
-      minHeight: "100vh",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
-      textAlign: "center",
-      padding: "24px"
-    }}>
-      <motion.h1
-        initial={{ opacity: 0, scale: 0.5 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6 }}
-        style={{ fontSize: "8rem", fontWeight: "bold", color: "white", margin: "0", lineHeight: "1" }}
-      >
-        404
-      </motion.h1>
+    <div className="flex min-h-[60vh] flex-col items-center justify-center px-6 py-16 text-center bg-white dark:bg-slate-950">
+      <div className="w-full max-w-2xl rounded-3xl border border-slate-200 bg-slate-50/90 p-10 shadow-xl shadow-slate-200/50 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
+        <p className="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-600 mb-4">404</p>
+        <h1 className="text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-6xl">
+          Oops! This page doesn&apos;t exist.
+        </h1>
+        <p className="mt-4 text-lg leading-8 text-slate-600 dark:text-slate-300">
+          The page you&apos;re looking for can&apos;t be found. It may have been moved, renamed, or never existed.
+        </p>
 
-      <motion.h2
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.6 }}
-        style={{ fontSize: "2rem", color: "white", marginTop: "10px", fontWeight: "600" }}
-      >
-        Lost in the Cloud?
-      </motion.h2>
+        <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="rounded-xl border-2 border-indigo-600 px-6 py-3 text-indigo-600 font-semibold transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900"
+          >
+            ← Go Back
+          </button>
 
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4, duration: 0.6 }}
-        style={{ color: "rgba(255,255,255,0.85)", marginTop: "16px", maxWidth: "450px", fontSize: "1.1rem" }}
-      >
-        We can't seem to find the page you're looking for. It might have been removed, renamed, or temporarily unavailable.
-      </motion.p>
+          <Link
+            to="/"
+            className="rounded-xl bg-indigo-600 px-6 py-3 text-white font-semibold transition-colors hover:bg-indigo-500"
+          >
+            Go to Home
+          </Link>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6, duration: 0.6 }}
-        style={{ 
-          marginTop: "40px", 
-          display: "grid", 
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", 
-          gap: "16px",
-          width: "100%",
-          maxWidth: "600px" 
-        }}
-      >
-        <Link to="/" className="hover:scale-105 transition-transform" style={btnStyle}>
-          <Home size={20} /> Home Page
-        </Link>
-        <Link to="/events" className="hover:scale-105 transition-transform" style={btnStyle}>
-          <Calendar size={20} /> Browse Events
-        </Link>
-        <Link to="/hackathons" className="hover:scale-105 transition-transform" style={btnStyle}>
-          <Code2 size={20} /> Hackathons
-        </Link>
-        <Link to="/help" className="hover:scale-105 transition-transform" style={btnStyle}>
-          <HelpCircle size={20} /> Help Center
-        </Link>
-      </motion.div>
+          <Link
+            to="/events"
+            className="rounded-xl bg-slate-900 px-6 py-3 text-white font-semibold transition-colors hover:bg-slate-800"
+          >
+            Browse Events
+          </Link>
+        </div>
+      </div>
     </div>
   );
-};
-
-const btnStyle = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "10px",
-  padding: "12px 20px",
-  borderRadius: "12px",
-  backgroundColor: "rgba(255, 255, 255, 0.15)",
-  color: "white",
-  fontWeight: "600",
-  textDecoration: "none",
-  fontSize: "1rem",
-  backdropFilter: "blur(10px)",
-  border: "1px solid rgba(255, 255, 255, 0.2)"
-};
-
-export default NotFoundPage;
+}
