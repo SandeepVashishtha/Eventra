@@ -1,14 +1,43 @@
 import jwt from "jsonwebtoken";
+import { getJwtSecret } from "./jwt-config.js";
 
 // ---------------------------------------------------------------------------
 // JWT Configuration
 // ---------------------------------------------------------------------------
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-jwt-key-change-in-production";
+// Use the same centralised helper as login.js and signup.js so that all three
+// handlers share a consistent signing secret. The previous inline fallback
+// ("your-super-secret-jwt-key-change-in-production") differed from the
+// development fallback in jwt-config.js ("eventra-local-development-jwt-secret"),
+// causing jwt.verify() here to reject every token issued by login.js in local
+// development (the keys never matched).
+const JWT_SECRET = getJwtSecret();
 
 // ---------------------------------------------------------------------------
-// Token Blacklist (In-memory store - replace with Redis/database in production)
+// Token Blacklist
 // ---------------------------------------------------------------------------
+//
+// ARCHITECTURAL LIMITATION: the Set below is process-local. In a serverless
+// deployment (Vercel, AWS Lambda, etc.) each cold-start creates a fresh process
+// with an empty Set, so a blacklisted token becomes valid again the moment a
+// new function instance spins up.
+//
+// To make logout durable at scale, replace the Set with a shared persistent
+// store. The interface is intentionally kept minimal so it can be swapped:
+//
+//   import { createClient } from "redis";
+//   const redis = createClient({ url: process.env.REDIS_URL });
+//   await redis.connect();
+//
+//   const blacklistToken  = (token, ttlSec) => redis.set(`bl:${token}`, 1, { EX: ttlSec });
+//   const isTokenBlacklisted = (token) => redis.exists(`bl:${token}`).then(Boolean);
+//
+// Until a persistent store is wired up, defence-in-depth is provided by:
+//  1. Short JWT_EXPIRES_IN (default 7d — set to a smaller value in production).
+//  2. The Set-Cookie header sent by the logout response (see handler below),
+//     which clears the cookie in the browser regardless of blacklist state.
+//  3. The in-process blacklist, which is effective within a single long-running
+//     server process (e.g. local development or a non-serverless deployment).
 
 const tokenBlacklist = new Set();
 
@@ -180,6 +209,16 @@ export default async function handler(req, res) {
     // -----------------------------------------------------------------------
 
     blacklistToken(token);
+
+    // -----------------------------------------------------------------------
+    // Clear the session cookie (defence-in-depth for serverless environments
+    // where the in-memory blacklist may not survive across cold starts)
+    // -----------------------------------------------------------------------
+
+    res.setHeader(
+      "Set-Cookie",
+      "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Strict"
+    );
 
     // -----------------------------------------------------------------------
     // Return success response
