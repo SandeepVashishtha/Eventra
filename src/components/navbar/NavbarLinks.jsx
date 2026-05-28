@@ -1,5 +1,7 @@
 import React, {
   memo,
+  lazy,
+  Suspense,
   useRef,
   useState,
   useEffect,
@@ -21,7 +23,11 @@ import CursorToggle from "./CursorToggle";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 import { useScrollProgress } from "../../hooks/useScrollProgress"; // custom hook (implemented in src/hooks)
-import KeyboardShortcutsModal from "../common/KeyboardShortcutsModal"; // existing component
+// Lazy-load the modal so it is only bundled when first rendered.
+// Using React.lazy here (instead of a static import) ensures the module
+// is code-split and does NOT conflict with the lazy import in App.jsx,
+// removing the "dynamically imported but also statically imported" Rollup warning.
+const KeyboardShortcutsModal = lazy(() => import("../common/KeyboardShortcutsModal"));
 
 // 🎨 Animation variants for dropdowns & menus
 const dropdownVariants = {
@@ -550,18 +556,20 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         </div>
       </nav>
 
-      {/* ⌨️ Keyboard Shortcuts Modal */}
-      <KeyboardShortcutsModal
-        isOpen={showShortcuts}
-        onClose={() => setShowShortcuts(false)}
-        shortcuts={[
-          { keys: ["Ctrl", "K"], action: "Open search", icon: Search },
-          { keys: ["Ctrl", "N"], action: "Create new event", icon: Plus },
-          { keys: ["T"], action: "Toggle theme", icon: isDarkMode ? Sun : Moon },
-          { keys: ["?"], action: "Show shortcuts", icon: HelpCircle },
-          { keys: ["Esc"], action: "Close modals", icon: X },
-        ]}
-      />
+      {/* ⌨️ Keyboard Shortcuts Modal — loaded lazily to avoid bundling upfront */}
+      <Suspense fallback={null}>
+        <KeyboardShortcutsModal
+          isOpen={showShortcuts}
+          onClose={() => setShowShortcuts(false)}
+          shortcuts={[
+            { keys: ["Ctrl", "K"], action: "Open search", icon: Search },
+            { keys: ["Ctrl", "N"], action: "Create new event", icon: Plus },
+            { keys: ["T"], action: "Toggle theme", icon: isDarkMode ? Sun : Moon },
+            { keys: ["?"], action: "Show shortcuts", icon: HelpCircle },
+            { keys: ["Esc"], action: "Close modals", icon: X },
+          ]}
+        />
+      </Suspense>
     </>
   );
 };
