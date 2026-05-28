@@ -220,4 +220,55 @@ const EventAnalyticsDashboard = () => {
     const locationData = Object.entries(locMap).map(([name, value]) => ({ name, value }));
     const fillRate = capacity ? Math.round((registrations / capacity) * 100) : 0;
 
-    // 2. Isolated Sort
+    // 2. Isolated Sort — top 6 events by attendees
+    const topEvents = [...eventsData]
+      .sort((a, b) => b.attendees - a.attendees)
+      .slice(0, 6)
+      .map(e => ({ name: e.title?.slice(0, 20) || e.name, attendees: e.attendees, capacity: e.maxAttendees }));
+
+    const avgRating = (
+      feedbackData.reduce((sum, f) => sum + f.rating, 0) / feedbackData.length
+    ).toFixed(1);
+
+    return { registrations, capacity, fillRate, typeData, locationData, topEvents, avgRating };
+  }, []);
+
+  const { registrations, fillRate, typeData, locationData, topEvents, avgRating } = memoizedEventData;
+  const totalEvents = eventsData.length;
+
+  return (
+    <div className="ead-root">
+      <KPIHeader
+        totalEvents={totalEvents}
+        registrations={registrations}
+        fillRate={fillRate}
+        avgRating={avgRating}
+      />
+
+      {/* TABS */}
+      <div className="ead-tabs" role="tablist" aria-label="Analytics sections">
+        {TABS.map(tab => (
+          <button
+            key={tab}
+            role="tab"
+            aria-selected={activeTab === tab}
+            onClick={() => setActiveTab(tab)}
+            className={`ead-tab ${activeTab === tab ? 'ead-tab--active' : ''}`}
+          >
+            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {/* TAB CONTENT */}
+      <div role="tabpanel">
+        {activeTab === 'overview' && <OverviewTab topEvents={topEvents} />}
+        {activeTab === 'registrations' && <RegistrationsTab topEvents={topEvents} />}
+        {activeTab === 'demographics' && <DemographicsTab typeData={typeData} locationData={locationData} />}
+        {activeTab === 'feedback' && <FeedbackTab />}
+      </div>
+    </div>
+  );
+};
+
+export default EventAnalyticsDashboard;

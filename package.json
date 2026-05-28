@@ -40,11 +40,7 @@
     "react-is": "^19.2.6",
     "react-qr-code": "^2.0.21",
     "react-router-dom": "^7.15.1",
-<<<<<<< HEAD
-    "react-scripts": "^5.0.1",
-=======
     "react-scripts": "5.0.1",
->>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
     "react-toastify": "^11.1.0",
     "recharts": "^3.8.1"
   },

@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useRef } from "react";
 import { useState } from "react";
-import { useReducedMotion } from "../hooks/useReducedMotion";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 
 const FluidCursor = ({ enabled = true }) => {
   const canvasRef = useRef(null);

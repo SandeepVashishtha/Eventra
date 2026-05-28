@@ -14,7 +14,7 @@ function generateErrorId() {
   return id;
 }
 
-/** 
+/**
  * Attempt to recover component state from sessionStorage
  * This preserves state across soft retries and reloads
  */
@@ -172,7 +172,7 @@ class ErrorBoundary extends React.Component {
       isRecovering: false,
       recoveryMessage: "",
     };
-    
+
     // Attempt to recover state on mount
     this.hasRecoveredState = attemptStateRecovery();
   }
@@ -181,75 +181,90 @@ class ErrorBoundary extends React.Component {
     return {
       hasError: true,
       error,
-<<<<<<< HEAD
       errorId: generateErrorId(),
-=======
->>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
     };
   }
 
   componentDidCatch(error, errorInfo) {
+    const { errorId } = this.state;
     this.setState({ errorInfo });
+    persistErrorLog(errorId, error, errorInfo);
+
+    try {
+      logError(error, errorInfo);
+    } catch (_) {}
+
     console.error("Captured by ErrorBoundary:", error, errorInfo);
   }
 
+  handleReload = () => {
+    this.setState({ isRecovering: true, recoveryMessage: "Reloading page..." });
+    saveAppStateSnapshot();
+    setTimeout(() => window.location.reload(), 300);
+  };
+
+  handleTryAgain = () => {
+    const { retryCount } = this.state;
+    if (retryCount >= 3) {
+      this.handleReload();
+      return;
+    }
+    this.setState({
+      isRecovering: true,
+      recoveryMessage: "Attempting recovery...",
+    });
+    setTimeout(() => {
+      this.setState({
+        hasError: false,
+        error: null,
+        errorInfo: null,
+        errorId: null,
+        isRecovering: false,
+        recoveryMessage: "",
+        retryCount: retryCount + 1,
+      });
+    }, 500);
+  };
+
   handleResetCache = () => {
-    localStorage.clear();
-    window.location.reload();
+    this.setState({ isRecovering: true, recoveryMessage: "Clearing cache..." });
+    saveAppStateSnapshot();
+    try {
+      const preserved = {};
+      ["theme", "cursor", "eventra_user_prefs"].forEach((key) => {
+        const val = localStorage.getItem(key);
+        if (val) preserved[key] = val;
+      });
+      localStorage.clear();
+      Object.entries(preserved).forEach(([k, v]) => localStorage.setItem(k, v));
+    } catch (_) {
+      localStorage.clear();
+    }
+    setTimeout(() => window.location.reload(), 300);
   };
 
   handleCopyReport = () => {
-    const { error, errorInfo } = this.state;
+    const { error, errorInfo, errorId } = this.state;
+    const report = buildDiagnosticReport(errorId, error, errorInfo);
 
-    const safeError =
-      error?.toString()?.trim() || "Unknown error";
-
-    const safeStack =
-      error?.stack?.trim() || "No stack";
-
-    const safeComponentStack =
-      errorInfo?.componentStack?.trim() || "Unavailable";
-
-    let safeLocalStorage = "{}";
-
-    try {
-      safeLocalStorage = JSON.stringify(localStorage, null, 2) || "{}";
-    } catch (err) {
-      safeLocalStorage = "Unable to read localStorage";
-    }
-
-    const report = `
-EVENTRA DIAGNOSTICS
-
-Timestamp:
-${new Date().toISOString()}
-
-URL:
-${typeof window !== "undefined" ? window.location.href : "Unavailable"}
-
-Error:
-${safeError}
-
-Stack:
-${safeStack}
-
-Component Stack:
-${safeComponentStack}
-
-Local Storage:
-${safeLocalStorage}
-`;
-
-    try {
-      await navigator.clipboard.writeText(report);
-
-      this.setState({ copied: true });
-
-        setTimeout(() => {
-          this.setState({ copied: false });
-        }, 2000);
+    navigator.clipboard
+      .writeText(report)
+      .then(() => {
+        this.setState({ copied: true });
+        setTimeout(() => this.setState({ copied: false }), 2000);
       })
-      .catch(console.error);
+      .catch(() => {
+        // Clipboard API failed — fallback: open in new tab
+        try {
+          const blob = new Blob([report], { type: "text/plain" });
+          const url = URL.createObjectURL(blob);
+          window.open(url, "_blank");
+        } catch (_) {}
+      });
+  };
+
+  toggleDiagnostics = () => {
+    this.setState((prev) => ({ showDiagnostics: !prev.showDiagnostics }));
   };
 
   render() {
@@ -257,8 +272,16 @@ ${safeLocalStorage}
       return this.props.children;
     }
 
-<<<<<<< HEAD
-    const { error, errorInfo, errorId, copied, showDiagnostics, retryCount, isRecovering, recoveryMessage } = this.state;
+    const {
+      error,
+      errorInfo,
+      errorId,
+      copied,
+      showDiagnostics,
+      retryCount,
+      isRecovering,
+      recoveryMessage,
+    } = this.state;
     const tooManyRetries = retryCount >= 3;
 
     const lsSnapshot = (() => {
@@ -363,7 +386,13 @@ ${safeLocalStorage}
                   ? "Maximum retries reached — please reload"
                   : `Try again without reloading (attempt ${retryCount + 1} of 3)`
               }
-              title={tooManyRetries ? "Too many retries — reloading instead" : isRecovering ? "Recovering..." : "Try again"}
+              title={
+                tooManyRetries
+                  ? "Too many retries — reloading instead"
+                  : isRecovering
+                  ? "Recovering..."
+                  : "Try again"
+              }
             >
               {isRecovering ? (
                 <>
@@ -439,7 +468,13 @@ ${safeLocalStorage}
             disabled={isRecovering}
             aria-expanded={showDiagnostics}
             aria-controls="eb-diagnostics-panel"
-            title={isRecovering ? "Operation in progress..." : (showDiagnostics ? "Hide diagnostic information" : "Show diagnostic information")}
+            title={
+              isRecovering
+                ? "Operation in progress..."
+                : showDiagnostics
+                ? "Hide diagnostic information"
+                : "Show diagnostic information"
+            }
           >
             <svg
               width="14"
@@ -496,162 +531,6 @@ ${safeLocalStorage}
             </div>
           </div>
         </div>
-=======
-    const timestamp = new Date().toLocaleString();
-    const url =
-      typeof window !== "undefined" ? window.location.href : "";
-
-    const userAgent =
-      typeof navigator !== "undefined"
-        ? navigator.userAgent
-        : "";
-
-    const errorText =
-      this.state.error?.toString() ||
-      "Unknown runtime error";
-
-    const stackTrace =
-      this.state.error?.stack?.trim() ||
-      "No JavaScript stack trace available.";
-
-    const componentStack =
-      this.state.errorInfo?.componentStack?.trim() ||
-      "No component stack available.";
-
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 p-4 text-white">
-
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl -z-10 pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-rose-500/10 rounded-full blur-3xl -z-10 pointer-events-none" />
-
-        <div className="max-w-2xl w-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl rounded-3xl p-6 sm:p-8 space-y-6">
-
-          <div className="flex flex-col items-center text-center space-y-3">
-
-            <div className="p-4 bg-rose-500/20 text-rose-400 rounded-2xl border border-rose-500/30">
-
-              <svg
-                className="w-8 h-8 text-rose-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 9v2m0 4h.01m-7 4h14L12 4 5 19z"
-                />
-              </svg>
-            </div>
-
-            <h1 className="text-2xl font-semibold text-white">
-              System Crash Prevented
-            </h1>
-
-            <p className="text-sm text-slate-400 mt-3 max-w-md">
-              We detected an unexpected issue and stopped it before it affected
-              your session. You can safely reload or retry.
-            </p>
-          </div>
-
-          <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-4">
-
-            <div className="text-xs uppercase font-bold text-rose-400 mb-2">
-              Error Message
-            </div>
-
-            <div className="text-sm font-mono break-all text-slate-200">
-              {errorText}
-            </div>
-          </div>
-
-          <div className="grid gap-3">
-
-            <div className="bg-white/5 rounded-xl p-3">
-              <div className="text-xs text-slate-400">
-                Current URL
-              </div>
-
-              <div className="text-xs break-all">
-                {url}
-              </div>
-            </div>
-
-            <div className="rounded-xl bg-white/5 p-3">
-              <div className="text-xs text-slate-400 mb-1">
-                Timestamp
-              </div>
-
-              <div className="text-xs">
-                {timestamp}
-              </div>
-            </div>
-
-            <div className="rounded-xl bg-white/5 p-3">
-              <div className="text-xs text-slate-400 mb-1">
-                User Agent
-              </div>
-
-              <div className="text-xs break-all">
-                {userAgent}
-              </div>
-            </div>
-          </div>
-
-          <details className="rounded-xl border border-white/10 overflow-hidden">
-
-            <summary className="cursor-pointer px-4 py-3">
-              Diagnostics
-            </summary>
-
-            <div className="p-4 border-t border-white/10">
-              <pre className="text-xs bg-black/30 rounded-lg p-3 overflow-auto max-h-56 whitespace-pre-wrap">
-                {stackTrace}
-
-                {"\n\n"}
-
-                {componentStack}
-              </pre>
-
-            </div>
-
-          </details>
-
-          <div className="flex flex-col sm:flex-row gap-3">
-
-            <button
-              onClick={() => window.location.reload()}
-              className="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 transition"
-            >
-              Reload App
-            </button>
-
-            <button
-              onClick={this.handleResetCache}
-              className="flex-1 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 transition"
-            >
-              Reset Cache
-            </button>
-
-            <button
-              onClick={this.handleCopyReport}
-              className={`flex-1 py-3 rounded-xl transition ${
-                this.state.copied
-                  ? "bg-emerald-600"
-                  : "bg-slate-800 hover:bg-slate-700"
-              }`}
-            >
-              {this.state.copied
-                ? "Copied!"
-                : "Copy Diagnostic Report"}
-            </button>
-
-          </div>
-
-        </div>
-
->>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
       </div>
     );
   }

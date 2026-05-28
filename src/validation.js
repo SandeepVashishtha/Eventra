@@ -21,49 +21,13 @@ export const VALIDATION_MESSAGES = {
 export const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const phonePattern = /^\+?[\d\s-()]{10,}$/;
 
-export const validate = {
-  email: (val) => emailPattern.test(val) || VALIDATION_MESSAGES.invalidEmail,
-  password: (val) => val.length >= 8 || "Password must be at least 8 characters",
-  required: (val) => (val && val.trim() !== "") || VALIDATION_MESSAGES.required,
-/**
- * src/validation.js
- *
- * Centralised validation helpers for all form fields.
- *
- * SECURITY: All regex patterns have been audited for ReDoS (Regular Expression
- * Denial of Service) vulnerability. Patterns use linear-time matching
- * without nested quantifiers or backtracking-prone constructs.
- *
- * References:
- *  - OWASP ReDoS: https://owasp.org/www-community/attacks/ReDoS
- *  - Safe email regex: anchored, no nested groups, bounded wildcards
- */
-
-/**
- * Email validation using a simple, linear-time pattern.
- * Avoids catastrophic backtracking by using character-class negation
- * instead of nested quantifiers.
- *
- * Max input length is capped at 254 chars (RFC 5321 limit) before
- * regex evaluation to prevent long-string DoS attacks.
- */
 const EMAIL_REGEX = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{1,63}$/;
 const MAX_EMAIL_LENGTH = 254;
-
-/**
- * Phone validation: optional leading '+', then digits/spaces/dashes/parens.
- * No nested quantifiers — runs in O(n) time.
- * Min 10 chars enforced via `.length` check rather than `{10,}` inside the regex.
- */
 const PHONE_REGEX = /^\+?[\d\s\-()]+$/;
-
-/**
- * URL validation: scheme + host only, no catastrophic backtracking.
- * Uses a simple prefix check rather than a complex nested pattern.
- */
 const URL_REGEX = /^https?:\/\/[^\s]{1,2048}$/;
 
 export const validate = {
+
   /**
    * Email: uses anchored, non-backtracking character classes.
    * Input is length-capped before regex to guard against long-string attacks.
@@ -124,7 +88,31 @@ export const validate = {
 
   minLength: (min) => (val) => (val && val.length >= min) || `Minimum ${min} characters`,
   maxLength: (max) => (val) => (!val || val.length <= max) || `Maximum ${max} characters`,
+
+  /**
+   * Survey sanitizers & XSS guards.
+   * Capped to 150 chars for prompts, 80 for options.
+   */
+  sanitizeSurveyPrompt: (val) => {
+    if (typeof val !== "string") return "";
+    let cleaned = val.replace(/<\/?[^>]+(>|$)/g, "");
+    if (cleaned.length > 150) cleaned = cleaned.substring(0, 150);
+    return cleaned;
+  },
+
+  sanitizeSurveyOption: (val) => {
+    if (typeof val !== "string") return "";
+    let cleaned = val.replace(/<\/?[^>]+(>|$)/g, "");
+    if (cleaned.length > 80) cleaned = cleaned.substring(0, 80);
+    return cleaned;
+  },
+
+  detectHTML: (val) => {
+    if (typeof val !== "string") return false;
+    return /<\/?[^>]+(>|$)/g.test(val);
+  },
 };
+
 
 export const toHookValidationResult = (result) =>
   result?.isValid ? true : result?.message || VALIDATION_MESSAGES.validationUnavailable;
@@ -334,31 +322,3 @@ export {
 
 export default validate;
 
-  /**
-   * Survey sanitizers & XSS guards
-   * Capped to 150 characters for prompts, 80 for options.
-   * Linear-time regex scrubs all HTML tags completely.
-   */
-  sanitizeSurveyPrompt: (val) => {
-    if (typeof val !== "string") return "";
-    let cleaned = val.replace(/<\/?[^>]+(>|$)/g, "");
-    if (cleaned.length > 150) {
-      cleaned = cleaned.substring(0, 150);
-    }
-    return cleaned;
-  },
-
-  sanitizeSurveyOption: (val) => {
-    if (typeof val !== "string") return "";
-    let cleaned = val.replace(/<\/?[^>]+(>|$)/g, "");
-    if (cleaned.length > 80) {
-      cleaned = cleaned.substring(0, 80);
-    }
-    return cleaned;
-  },
-
-  detectHTML: (val) => {
-    if (typeof val !== "string") return false;
-    return /<\/?[^>]+(>|$)/g.test(val);
-  },
-};
