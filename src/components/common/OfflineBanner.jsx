@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Wifi, WifiOff } from "lucide-react";
 import { getQueue } from "../../utils/offlineQueue";
 import "./OfflineBanner.css";
@@ -6,6 +6,7 @@ import "./OfflineBanner.css";
 export default function OfflineBanner() {
   const [status, setStatus] = useState(navigator.onLine ? "online" : "offline");
   const [visible, setVisible] = useState(!navigator.onLine);
+  const [queueCount, setQueueCount] = useState(0);
   const timerRef = useRef(null);
 
   useEffect(() => {

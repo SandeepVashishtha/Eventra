@@ -1,3 +1,5 @@
+/* eslint-disable testing-library/no-unnecessary-act */
+/* global globalThis */
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import Dropdown from "./StyledDropdown";
@@ -39,9 +41,7 @@ const pressKey = (element, key) => {
 
 afterEach(() => {
   if (root) {
-    act(() => {
-      root.unmount();
-    });
+    root.unmount();
   }
   document.body.innerHTML = "";
   jest.clearAllMocks();

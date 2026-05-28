@@ -1,3 +1,5 @@
+/* eslint-disable testing-library/no-unnecessary-act */
+/* global globalThis */
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
@@ -72,9 +74,7 @@ beforeEach(() => {
 
 afterEach(() => {
   if (root) {
-    act(() => {
-      root.unmount();
-    });
+    root.unmount();
   }
   document.body.innerHTML = "";
   jest.clearAllMocks();

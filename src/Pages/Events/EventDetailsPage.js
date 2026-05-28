@@ -4,44 +4,13 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import DOMPurify from "dompurify";
 import CountdownTimer from "../../components/common/CountdownTimer";
-import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft } from "lucide-react";
+import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft, WifiOff } from "lucide-react";
 import { Share2, Twitter, Facebook, Linkedin, MessageCircle, Copy, Check } from "lucide-react";
 import eventsMockData from "./eventsMockData.json";
 import { getEventStatus } from "../../utils/eventUtils";
-
-// Removed unused imports: addEventToGoogleCalendar, ShareMenu, CertificateDownload, generateEventSharingData
-const [copied, setCopied] = useState(false);
-const shareUrl = `${window.location.origin}/events/${event.id}`;
-const shareText = `Check out this event: ${event.title}`;
-
-const handleCopyLink = async () => {
-  try {
-    await navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  } catch {
-    toast.error("Failed to copy link.");
-  }
-};
-
-const handleNativeShare = async () => {
-  if (navigator.share) {
-    try {
-      await navigator.share({
-        title: event.title,
-        text: shareText,
-        url: shareUrl,
-      });
-    } catch {}
-  }
-};
-
-const shareLinks = {
-  twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
-  facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
-  linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
-  whatsapp: `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
-};
+import { normalizeEvent } from "../../utils/eventFetchUtils";
+import { saveCachedEventDetail, getCachedEventDetail, getCacheAgeLabel } from "../../utils/offlineEventCache";
+import { apiUtils, API_ENDPOINTS } from "../../config/api";
 const EventDetailsPage = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
@@ -49,6 +18,7 @@ const EventDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [event, setEvent] = useState(null);
   const [cacheInfo, setCacheInfo] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -139,8 +109,33 @@ const EventDetailsPage = () => {
 
   const isPastEvent =
     getEventStatus(event) === "past" || getEventStatus(event) === "ended";
+  const shareUrl = `${window.location.origin}/events/${event.id}`;
+  const shareText = `Check out this event: ${event.title}`;
 
-  // Removed unused derived values and handlers to satisfy linting rules
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard write failed silently
+    }
+  };
+
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: event.title, text: shareText, url: shareUrl });
+      } catch {}
+    }
+  };
+
+  const shareLinks = {
+    twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
+    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
+    whatsapp: `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
+  };
 
   return (
     <><div className="min-h-screen mt-16 bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
@@ -214,10 +209,7 @@ const EventDetailsPage = () => {
                 dangerouslySetInnerHTML={{
                   __html: DOMPurify.sanitize(event.description),
                 }}
-
-              <p
-                className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description) }} />
+              />
             </section>
           </section>
 
@@ -263,68 +255,69 @@ const EventDetailsPage = () => {
                 Share this Event
               </h3>
               <div className="grid grid-cols-2 gap-2 mb-3">
-
-                href={shareLinks.whatsapp}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/40 transition-all text-xs font-semibold"
-                aria-label="Share on WhatsApp"
+                <a
+                  href={shareLinks.whatsapp}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/40 transition-all text-xs font-semibold"
+                  aria-label="Share on WhatsApp"
                 >
-                <MessageCircle size={14} />
-                WhatsApp
-              </a>
-
-              href={shareLinks.twitter}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 hover:bg-sky-100 dark:hover:bg-sky-900/40 transition-all text-xs font-semibold"
-              aria-label="Share on Twitter"
+                  <MessageCircle size={14} />
+                  WhatsApp
+                </a>
+                <a
+                  href={shareLinks.twitter}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 hover:bg-sky-100 dark:hover:bg-sky-900/40 transition-all text-xs font-semibold"
+                  aria-label="Share on Twitter"
+                >
+                  <Twitter size={14} />
+                  Twitter
+                </a>
+                <a
+                  href={shareLinks.facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all text-xs font-semibold"
+                  aria-label="Share on Facebook"
+                >
+                  <Facebook size={14} />
+                  Facebook
+                </a>
+                <a
+                  href={shareLinks.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all text-xs font-semibold"
+                  aria-label="Share on LinkedIn"
+                >
+                  <Linkedin size={14} />
+                  LinkedIn
+                </a>
+              </div>
+              <button
+                onClick={handleCopyLink}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-all text-xs font-semibold"
+                aria-label="Copy event link"
               >
-              <Twitter size={14} />
-              Twitter
-            </a>
-
-            href={shareLinks.facebook}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all text-xs font-semibold"
-            aria-label="Share on Facebook"
-            >
-            <Facebook size={14} />
-            Facebook
-          </a>
-
-          href={shareLinks.linkedin}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all text-xs font-semibold"
-          aria-label="Share on LinkedIn"
-          >
-          <Linkedin size={14} />
-          LinkedIn
-        </a>
-      </></div><button
-        onClick={handleCopyLink}
-        className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-all text-xs font-semibold"
-        aria-label="Copy event link"
-      >
-        {copied ? (
-          <><Check size={14} className="text-green-500" /> Copied!</>
-        ) : (
-          <><Copy size={14} /> Copy Link</>
-        )}
-      </button></>
-  {navigator.share && (
-    <button
-      onClick={handleNativeShare}
-      className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-all text-xs font-semibold"
-      aria-label="Share via device"
-    >
-      <Share2 size={14} />
-      Share via Device
-    </button>
-  )}
-</div>
+                {copied ? (
+                  <><Check size={14} className="text-green-500" /> Copied!</>
+                ) : (
+                  <><Copy size={14} /> Copy Link</>
+                )}
+              </button>
+              {navigator.share && (
+                <button
+                  onClick={handleNativeShare}
+                  className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-all text-xs font-semibold"
+                  aria-label="Share via device"
+                >
+                  <Share2 size={14} />
+                  Share via Device
+                </button>
+              )}
+            </div>
 
             <button
               type="button"
@@ -336,7 +329,7 @@ const EventDetailsPage = () => {
           </aside>
         </motion.div>
       </main>
-    </div>
+    </div></>
   );
 };
 

@@ -99,9 +99,15 @@ describe("useFormValidation - Enhanced with Async Support", () => {
     );
 
     // Should show error after async validation completes
-    await waitFor(
+        await waitFor(
       () => {
         expect(result.current.errors.username).toBe("Username already taken");
+      },
+      { timeout: 500 },
+    );
+
+    await waitFor(
+      () => {
         expect(result.current.validationState.username).toBe("error");
       },
       { timeout: 500 },
@@ -114,9 +120,15 @@ describe("useFormValidation - Enhanced with Async Support", () => {
       });
     });
 
-    await waitFor(
+        await waitFor(
       () => {
         expect(result.current.errors.username).toBeNull();
+      },
+      { timeout: 500 },
+    );
+
+    await waitFor(
+      () => {
         expect(result.current.validationState.username).toBe("success");
       },
       { timeout: 500 },
@@ -218,9 +230,15 @@ describe("useFormValidation - Enhanced with Async Support", () => {
       });
     });
 
-    await waitFor(
+        await waitFor(
       () => {
         expect(result.current.errors.email).toBe("Invalid email format");
+      },
+      { timeout: 300 },
+    );
+
+    await waitFor(
+      () => {
         expect(asyncValidators.emailAvailable).not.toHaveBeenCalled();
       },
       { timeout: 300 },
@@ -233,9 +251,15 @@ describe("useFormValidation - Enhanced with Async Support", () => {
       });
     });
 
-    await waitFor(
+        await waitFor(
       () => {
         expect(result.current.errors.email).toBe("Email already registered");
+      },
+      { timeout: 300 },
+    );
+
+    await waitFor(
+      () => {
         expect(asyncValidators.emailAvailable).toHaveBeenCalled();
       },
       { timeout: 300 },
@@ -275,9 +299,15 @@ describe("useFormValidation - Enhanced with Async Support", () => {
       isValid = await result.current.validateAll();
     });
 
-    await waitFor(
+        await waitFor(
       () => {
         expect(isValid).toBe(true);
+      },
+      { timeout: 500 },
+    );
+
+    await waitFor(
+      () => {
         expect(result.current.isFormValid).toBe(true);
       },
       { timeout: 500 },
@@ -306,9 +336,7 @@ describe("useFormValidation - Enhanced with Async Support", () => {
     });
 
     // Reset
-    act(() => {
-      result.current.resetForm();
-    });
+    result.current.resetForm();
 
     expect(result.current.values).toEqual(initialState);
     expect(result.current.errors).toEqual({});
@@ -380,9 +408,7 @@ describe("useFormValidation - Enhanced with Async Support", () => {
     );
 
     // Reset and validate same value again
-    act(() => {
-      result.current.resetForm();
-    });
+    result.current.resetForm();
 
     act(() => {
       result.current.handleChange({

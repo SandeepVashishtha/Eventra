@@ -30,6 +30,7 @@ import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
 import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 import EventRecommendation from "./Pages/EventRecommendation/EventRecommendation";
+import SavedEventsPage from "./Pages/SavedEventsPage";
 
 const Footer = lazy(() => import("./components/Layout/Footer"));
 const Chatbot = lazy(() => import("./components/Chatbot"));

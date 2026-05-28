@@ -1,3 +1,5 @@
+/* eslint-disable testing-library/no-unnecessary-act */
+/* global globalThis */
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import ConfirmationModal from "./ConfirmationModal";
@@ -47,9 +49,7 @@ const pressKey = (key, shiftKey = false) => {
 
 afterEach(() => {
   if (root) {
-    act(() => {
-      root.unmount();
-    });
+    root.unmount();
   }
   document.body.innerHTML = "";
   jest.clearAllMocks();

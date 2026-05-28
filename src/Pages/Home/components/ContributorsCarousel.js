@@ -23,9 +23,18 @@ import { fetchWithTimeout } from "../../../utils/fetchWithTimeout";
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
 
 const STORAGE_KEY = "github_contributors";
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
+// 4-hour cache — the carousel is decorative and does not need live updates.
+// Extending from 1hr reduces cold-load frequency and GitHub API rate limit
+// consumption by 4x on repeat visits.
+const CACHE_DURATION = 4 * 60 * 60 * 1000;
+// Stale-while-revalidate window: serve expired cache immediately for instant
+// render, then refresh in the background if data is within this extra window.
+const STALE_REVALIDATE_WINDOW = 2 * 60 * 60 * 1000;
 const REQUEST_TIMEOUT = 10000;
-const MAX_CONTRIBUTOR_PAGES = 2; // Limit carousel to top contributors
+// One page of 100 contributors is sufficient for a homepage carousel.
+// The previous value of 2 forced 200 profile API calls on every cold load,
+// exhausting the GitHub API rate limit within a single session.
+const MAX_CONTRIBUTOR_PAGES = 1;
 const PROFILE_FETCH_DELAY_MS = 100;
 
 let profileFetchCounter = 0;
@@ -48,14 +57,24 @@ const getRoleByGitHubActivity = (contributor) => {
 };
 
 // Local storage helpers
+/**
+ * Returns { data, isStale } for the cached contributors list.
+ * - data: the cached array (or null if no cache exists at all)
+ * - isStale: true when the cache is past CACHE_DURATION but within the
+ *   stale-revalidate window — caller should serve data immediately and
+ *   trigger a background refresh.
+ */
 const getCachedContributors = () => {
   try {
-    const cachedData = localStorage.getItem(STORAGE_KEY);
-    if (!cachedData) return null;
-    const { data, timestamp } = JSON.parse(cachedData);
-    return Date.now() - timestamp > CACHE_DURATION ? null : data;
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { data: null, isStale: false };
+    const { data, timestamp } = JSON.parse(raw);
+    const age = Date.now() - timestamp;
+    if (age <= CACHE_DURATION) return { data, isStale: false };
+    if (age <= CACHE_DURATION + STALE_REVALIDATE_WINDOW) return { data, isStale: true };
+    return { data: null, isStale: false };
   } catch {
-    return null;
+    return { data: null, isStale: false };
   }
 };
 const cacheContributors = (data) => {
@@ -113,41 +132,41 @@ const Contributors = () => {
   }, []);
 
   // Fetches a single GitHub user profile via the backend proxy.
+  // Throttled to one request every 100ms per 5 requests to avoid hitting
+  // GitHub API secondary rate limits. Falls back to default values on error.
   // Wrapped by fetchProfileWithCache so repeated calls for the same username
   // within the session return the cached value without a network round-trip.
   const fetchGitHubProfile = useCallback(async (username) => {
-    const doFetch = async (user) => {
-      const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(`/users/${user}`)}`;
-      const res = await fetch(proxyUrl);
-      if (!res.ok) throw new Error("Profile fetch failed");
-      const profile = await res.json();
-  // Fetch GitHub profile details
-
-  const fetchGitHubProfile = useCallback(async (username) => {
     await throttleProfileFetch();
     try {
-      const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(
-        `/users/${username}`
-      )}`;
-
-      const { data: profile } = await fetchWithTimeout(
-        proxyUrl,
-        {},
-        REQUEST_TIMEOUT
-      );
+      return await fetchProfileWithCache(username, async () => {
+        const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(
+          `/users/${username}`
+        )}`;
 
       return {
         followers: profile.followers || 0,
         public_repos: profile.public_repos || 0,
-        name: profile.name || user,
+        name: profile.name || username,
         bio: profile.bio || "Open source contributor",
         company: profile.company,
         location: profile.location,
       };
-    };
+        const { data: profile } = await fetchWithTimeout(
+          proxyUrl,
+          {},
+          REQUEST_TIMEOUT
+        );
 
-    try {
-      return await fetchProfileWithCache(username, doFetch);
+        return {
+          followers: profile.followers || 0,
+          public_repos: profile.public_repos || 0,
+          name: profile.name || username,
+          bio: profile.bio || "Open source contributor",
+          company: profile.company,
+          location: profile.location,
+        };
+      });
     } catch {
       return {
         followers: 0,
@@ -160,13 +179,20 @@ const Contributors = () => {
     }
   }, []);
 
-  // Fetch contributors
-  const fetchContributors = useCallback(async () => {
-    setLoading(true);
-    const cached = getCachedContributors();
+  // Fetch contributors with stale-while-revalidate: serve cache immediately
+  // for instant render, then refresh in background if stale.
+  const fetchContributors = useCallback(async ({ backgroundRefresh = false } = {}) => {
+    if (!backgroundRefresh) setLoading(true);
+
+    const { data: cached, isStale } = getCachedContributors();
+
     if (cached) {
       setContributors(cached);
       setLoading(false);
+      // If stale but within the revalidate window, refresh in background
+      if (isStale) {
+        fetchContributors({ backgroundRefresh: true });
+      }
       return;
     }
 
@@ -215,7 +241,7 @@ const Contributors = () => {
 
       enhanced.sort((a, b) => b.contributions - a.contributions);
       setContributors(enhanced);
-      cacheContributors(enhanced);
+      cacheContributors(enhanced); // update cache timestamp on every successful fetch
     } catch (error) {
       console.error("Failed to fetch contributors:", error);
 
@@ -315,7 +341,8 @@ const Contributors = () => {
             onClick={nextSlide}
             // UPDATED: Arrow button styles
             className="absolute right-0 top-[35%] -translate-y-1/2 translate-x-4 z-10 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 hover:scale-110 transition-all duration-300 border border-gray-200"
-            disabled={currentIndex + itemsPerView  aria-label="button">= contributors.length}
+            disabled={currentIndex + itemsPerView >= contributors.length}
+            aria-label="Next slide"
           >
             {/* UPDATED: Arrow icon color */}
             <FaChevronRight className="text-black text-xl" />

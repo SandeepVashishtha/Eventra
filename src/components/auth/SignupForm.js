@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { AtSign, Eye, EyeOff, Lock, User, Zap } from "lucide-react";
@@ -6,8 +6,9 @@ import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import { FormFieldWrapper, ValidationMessage } from "../forms";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
-import { User, AtSign, Lock, Eye, EyeOff, Zap } from "lucide-react";
 import { validate, validateEmailAvailability, validatePasswordStrength } from "../../validation";
+
+const getFieldState = (message, fallback = "idle") => (message ? "error" : fallback);
 
 const getResultMessage = (result, fallback = "") =>
   result?.isValid ? "" : result?.message || fallback;
@@ -38,7 +39,6 @@ const SignupForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordMatchMessage, setPasswordMatchMessage] = useState("");
-  const emailValidationRequestRef = useRef(0);
 
   const setFieldState = useCallback((fieldName, state) => {
     setFieldValidationState((prev) => ({ ...prev, [fieldName]: state }));
@@ -153,17 +153,6 @@ const SignupForm = () => {
 
     return Object.keys(nextErrors).length === 0;
   };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-  useEffect(() => {
-    const { password, confirmPassword } = formData;
-    if (password && confirmPassword && password === confirmPassword) {
-      setPasswordMatchMessage("Passwords match!");
-    } else {
-      setPasswordMatchMessage("");
-    }
-  }, [formData.password, formData.confirmPassword]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

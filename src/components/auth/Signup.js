@@ -1,4 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
+import { FaGoogle as Chrome, FaGithub as Github } from "react-icons/fa";
+import { Sparkles, Check, ArrowRight, EyeOff, Eye, User, Mail, Lock, AlertCircle, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from '../../hooks/useReducedMotion';
@@ -137,7 +139,7 @@ const useSignupForm = (onSuccess) => {
 
   return {
     formData, errors, touched, loading, submitStatus,
-    updateField, handleBlur, validateForm, setLoading, setSubmitStatus, resetForm
+    updateField, handleBlur, validateForm, setLoading, setSubmitStatus, resetForm, setTouched, setErrors
   };
 };
 
@@ -149,7 +151,7 @@ const Signup = () => {
   
   const {
     formData, errors, touched, loading, submitStatus,
-    updateField, handleBlur, validateForm, setLoading, setSubmitStatus
+    updateField, handleBlur, validateForm, setLoading, setSubmitStatus, setTouched, setErrors
   } = useSignupForm();
 
   const passwordStrength = useMemo(() => 

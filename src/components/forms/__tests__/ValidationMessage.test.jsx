@@ -1,3 +1,4 @@
+/* global globalThis */
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import ValidationMessage from "../ValidationMessage";
@@ -12,18 +13,14 @@ const render = (element) => {
   document.body.appendChild(container);
   root = createRoot(container);
 
-  act(() => {
-    root.render(element);
-  });
+  root.render(element);
 
   return container;
 };
 
 afterEach(() => {
   if (root) {
-    act(() => {
-      root.unmount();
-    });
+    root.unmount();
   }
   document.body.innerHTML = "";
 });
