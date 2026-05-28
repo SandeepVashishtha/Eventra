@@ -11,6 +11,7 @@ import {
 import { motion } from "framer-motion";
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { ContributorCardSkeleton } from "./common/SkeletonLoaders";
+import FeatureErrorBoundary from "./common/FeatureErrorBoundary";
 import { storageManager, validators } from "../utils/storage/storageManager";
 import { STORAGE_KEYS } from "../utils/storage/storageKeys";
 
