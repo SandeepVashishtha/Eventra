@@ -306,20 +306,15 @@ const EventCreation = () => {
     error: submitError, 
     success: submitSuccess 
   } = useFormSubmit(async (eventData) => {
-    const token = sessionStorage.getItem("token");
-    if (!token) {
-      throw new Error("Authentication required. Please log in and try again.");
-    }
-
-    // Only mock when API endpoint is not configured
+    // Auth is handled by the HttpOnly session cookie — apiUtils sends it
+    // automatically via withCredentials. Never read tokens from sessionStorage;
+    // setToken was removed as part of the HttpOnly cookie migration.
     if (!API_ENDPOINTS.EVENTS.CREATE) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       return { id: "mock-event-id", success: true };
     }
 
-    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData, {
-      headers: { Authorization: token }
-    });
+    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData);
     
     const result = response.data;
     if (!(response.status === 200 && result?.success)) {
