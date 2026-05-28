@@ -382,3 +382,5 @@ const useOfflineSync = () => {
 };
 
 export default useOfflineSync;
+
+export const getSyncIntervalCooldown = () => 30000;
