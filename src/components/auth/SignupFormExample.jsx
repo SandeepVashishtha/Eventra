@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { logger } from "../../utils/logger";
 import { Check, AlertCircle, Loader } from "lucide-react";
 import useFormValidation from "../hooks/useFormValidation.enhanced";
 import useValidationState from "../hooks/useValidationState";
@@ -117,7 +118,7 @@ const SignupFormExample = ({ onSignupSuccess }) => {
   // Handle form submission
   const handleFormSubmit = handleSubmit(async (formValues) => {
     try {
-      console.log("Form submitted with values:", formValues);
+      logger.info("Form submitted with values:", formValues);
       // In production, call your signup API here
       // await api.post('/auth/signup', formValues);
 

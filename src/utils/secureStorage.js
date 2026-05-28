@@ -201,6 +201,7 @@ const cryptoSupported = isCryptoAvailable();
 })();
 
 // ---------------------------------------------------------------------------
+
 // Encrypted key-value storage wrapper (localStorage — AES-GCM encrypted)
 // ---------------------------------------------------------------------------
 
