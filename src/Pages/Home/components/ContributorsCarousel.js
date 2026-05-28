@@ -15,7 +15,6 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
   fetchProfileWithCache,
-  fetchWithConcurrencyLimit,
 } from "../../../utils/githubProfileCache";
 import { fetchWithTimeout } from "../../../utils/fetchWithTimeout";
 
@@ -26,14 +25,37 @@ const STORAGE_KEY = "github_contributors";
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
 const REQUEST_TIMEOUT = 10000;
 const MAX_CONTRIBUTOR_PAGES = 2; // Limit carousel to top contributors
-const PROFILE_FETCH_DELAY_MS = 100;
+// Delay inserted between batches (not between individual requests) to avoid
+// triggering GitHub's unauthenticated rate limit of 60 req/hr.
+const BATCH_DELAY_MS = 200;
+// Number of profile requests fired in parallel within each batch.
+// Increasing from 5 → 10 halves the number of serial batch rounds while still
+// keeping per-batch concurrency well within rate-limit budgets.
+const PROFILE_BATCH_SIZE = 10;
 
-let profileFetchCounter = 0;
-const throttleProfileFetch = async () => {
-  profileFetchCounter++;
-  if (profileFetchCounter % 5 === 0) {
-    await new Promise(resolve => setTimeout(resolve, PROFILE_FETCH_DELAY_MS));
+/**
+ * Fetches items in parallel batches, inserting a short delay between batches
+ * to stay within GitHub's unauthenticated rate limit.
+ *
+ * @param {Array}    items      - Array of items to process
+ * @param {Function} asyncFn   - Async function to call for each item
+ * @param {number}   batchSize - Number of items per parallel batch
+ * @returns {Promise<PromiseSettledResult[]>}
+ */
+const fetchInBatches = async (items, asyncFn, batchSize = PROFILE_BATCH_SIZE) => {
+  const results = [];
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    // eslint-disable-next-line no-await-in-loop
+    const batchResults = await Promise.allSettled(batch.map(asyncFn));
+    results.push(...batchResults);
+    // Insert a delay between batches (but not after the last one)
+    if (i + batchSize < items.length) {
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
+    }
   }
+  return results;
 };
 
 // Role assignment
@@ -182,11 +204,12 @@ const Contributors = () => {
       }
 
       // Enrich each contributor with profile data fetched in parallel batches
-      // of 5 to avoid overwhelming the proxy or triggering GitHub rate limits.
-      // Promise.allSettled ensures a single failed profile fetch does not abort
-      // the rest — contributors whose profiles fail to load fall back to the
-      // default values returned by fetchGitHubProfile's catch branch.
-      const settledProfiles = await fetchWithConcurrencyLimit(
+      // of PROFILE_BATCH_SIZE (10) to balance throughput against GitHub's
+      // unauthenticated rate limit. A short BATCH_DELAY_MS pause is inserted
+      // between batches. Promise.allSettled ensures a single failed profile
+      // fetch does not abort the rest — contributors whose profiles fail to
+      // load fall back to the default values from fetchGitHubProfile's catch.
+      const settledProfiles = await fetchInBatches(
         allContributors,
         async (c) => {
           const profile = await fetchGitHubProfile(c.login);
@@ -196,7 +219,7 @@ const Contributors = () => {
             role: getRoleByGitHubActivity({ ...c, ...profile }),
           };
         },
-        5
+        PROFILE_BATCH_SIZE
       );
 
       const enhanced = settledProfiles

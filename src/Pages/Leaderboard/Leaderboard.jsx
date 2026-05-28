@@ -1,3 +1,24 @@
+ feat/user-engagement-system
+import confetti from "canvas-confetti";
+import { useEffect, useState } from "react";
+import {
+  FaChevronLeft,
+  FaChevronRight,
+  FaCode,
+  FaStar,
+  FaUsers
+} from "react-icons/fa";
+import {
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
+import StyledDropdown from "../../components/StyledDropdown";
+import GSSoCContribution from "./GSSoCContribution";
+
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import FeatureErrorBoundary from "../../components/common/FeatureErrorBoundary";
@@ -78,6 +99,7 @@ function RankMovementIndicator({ liveDifference }) {
     </span>
   );
 }
+ master
 
 // Repository constant — update if the leaderboard should point to another repo
 const GITHUB_REPO = ENV.GITHUB_REPO;
@@ -87,11 +109,17 @@ const LEADERBOARD_CACHE_KEY = "leaderboardData:v2";
 // AnimatedCounter uses requestAnimationFrame instead of setInterval to keep
 // count-up animations aligned with the browser's paint cycle, avoiding
 // invisible ticks that setInterval fires even when the tab is hidden.
-
-
+//
+// React.memo prevents unnecessary re-renders from parent SSE updates: the
+// leaderboard streams live data via useLeaderboardStream, causing the parent
+// to re-render on every tick. Without React.memo, every AnimatedCounter on
+// the page would cancel its in-progress RAF loop and restart the animation
+// from zero — causing visible flicker on each stream update. With React.memo,
+// an AnimatedCounter only re-renders (and restarts its animation) when its
+// own `value` prop actually changes.
 
 // Custom lightweight high-performance count-up component
-const AnimatedCounter = ({ value }) => {
+const AnimatedCounter = React.memo(({ value }) => {
   const [count, setCount] = useState(0);
   const rafRef = useRef(null);
 
@@ -99,6 +127,10 @@ const AnimatedCounter = ({ value }) => {
     const end = parseInt(value, 10);
     if (isNaN(end)) return;
     if (end === 0) { setCount(0); return; }
+
+    // Cancel any in-flight animation before starting a new one so that a
+    // rapid value change does not leave two concurrent RAF loops running.
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
     const duration = 1200; // ms
     const startTime = performance.now();
@@ -120,7 +152,7 @@ const AnimatedCounter = ({ value }) => {
   }, [value]);
 
   return <span>{count}</span>;
-};
+});
 
 function LiveStatusBadge({ status }) {
   if (status === SSE_STATUS.CONNECTED) {
@@ -343,6 +375,12 @@ const sortedContributors = useMemo(
 
     storageManager.set(STORAGE_KEYS.RECENT_SEARCHES, updatedSearches);
   };
+  const performanceData = [
+  { name: "Participated", value: 80 },
+  { name: "Won", value: 20 },
+];
+
+const COLORS = ["#6366F1", "#22C55E"];
 
   const totalPages = useMemo(
     () => totalLeaderboardPages(filteredContributors.length, CONTRIBUTORS_PER_PAGE),
@@ -376,6 +414,135 @@ const sortedContributors = useMemo(
     ].filter(x => x.item);
   }, [top3]);
 
+ feat/user-engagement-system
+        {/* stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {/* Contributors Card */}
+          <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
+            <div className="flex items-center">
+              <div className="p-3 rounded-xl mr-4 bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+                <FaUsers className="text-2xl" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Contributors
+                </p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {loading ? "..." : stats.totalContributors}
+                </p>
+              </div>
+            </div>
+          </div>
+          {/* User Engagement Dashboard */}
+<div className="bg-gray-50 dark:bg-gray-900 rounded-2xl shadow-lg p-8 mb-10">
+  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">
+    User Engagement Dashboard
+  </h2>
+
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+
+    {/* Achievement Section */}
+    <div>
+      <div className="grid grid-cols-2 gap-4">
+
+        <div className="bg-indigo-100 dark:bg-indigo-900 p-5 rounded-xl">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+            Events Participated
+          </h3>
+          <p className="text-3xl font-bold text-indigo-600 mt-2">
+            80
+          </p>
+        </div>
+
+        <div className="bg-green-100 dark:bg-green-900 p-5 rounded-xl">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+            Events Won
+          </h3>
+          <p className="text-3xl font-bold text-green-600 mt-2">
+            20
+          </p>
+        </div>
+
+        <div className="bg-yellow-100 dark:bg-yellow-900 p-5 rounded-xl">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+            Success Ratio
+          </h3>
+          <p className="text-3xl font-bold text-yellow-600 mt-2">
+            25%
+          </p>
+        </div>
+
+        <div className="bg-pink-100 dark:bg-pink-900 p-5 rounded-xl">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+            Recent Activity
+          </h3>
+          <p className="text-md font-medium text-pink-600 mt-2">
+            5 Events This Month
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    {/* Pie Chart */}
+    <div className="h-80">
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={performanceData}
+            cx="50%"
+            cy="50%"
+            labelLine={false}
+            outerRadius={100}
+            dataKey="value"
+            label
+          >
+            {performanceData.map((entry, index) => (
+              <Cell
+                key={`cell-${index}`}
+                fill={COLORS[index % COLORS.length]}
+              />
+            ))}
+          </Pie>
+          <Tooltip />
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
+
+  </div>
+</div>
+          {/* Pull Requests Card */}
+          <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
+            <div className="flex items-center">
+              <div className="p-3 rounded-xl mr-4 bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400">
+                <FaCode className="text-2xl" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Pull Requests
+                </p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {loading ? "..." : stats.flooredTotalPRs}
+                </p>
+              </div>
+            </div>
+          </div>
+          {/* Total Points Card */}
+          <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
+            <div className="flex items-center">
+              <div className="p-3 rounded-xl mr-4 bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-400">
+                <FaStar className="text-2xl" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Total Points
+                </p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {loading ? "..." : stats.flooredTotalPoints}
+                </p>
+              </div>
+            </div>
+
   return (
     <FeatureErrorBoundary>
       <div className="bg-slate-50 dark:bg-slate-950 pt-20 md:pt-24 py-12 sm:py-16 transition-colors duration-300">
@@ -401,6 +568,7 @@ const sortedContributors = useMemo(
               Honoring our elite open-source creators driving the core features of Eventra with
               robust code and design improvements.
             </p>
+
           </div>
 
           {/* ── HIGH-FIDELITY OLYMPIC PODIUM (Top 3) ───────────────────────────── */}
@@ -453,8 +621,7 @@ const sortedContributors = useMemo(
                           <img
                             src={item.avatar}
                             alt={item.username}
-                            className={`relative ${size} rounded-full border-4 ${borderColor} shadow-md object-cover`}
-                          />
+                            className={`relative ${size} rounded-full border-4 ${borderColor} shadow-md object-cover`} loading="lazy"/>
                           {isFirst && <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-2xl animate-bounce">👑</div>}
                           <div className={`absolute -bottom-2 -right-1 flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black uppercase tracking-tight shadow ${medalColor}`}>
                             {position}
