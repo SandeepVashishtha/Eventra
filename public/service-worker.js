@@ -9,7 +9,8 @@
  * authenticated API responses. Only public, non-authenticated endpoints
  * are cached to prevent privacy leaks and stale data exposure.
  */
-const CACHE_NAME = 'eventra-cache-v2';
+const CACHE_NAME = 'eventra-cache-v3';
+const BACKGROUND_SYNC_TAG = 'eventra-offline-queue-sync';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -17,8 +18,7 @@ const ASSETS_TO_CACHE = [
   '/favicon.png',
   '/Eventra.png',
   '/moon.svg',
-  '/sun.svg',
-  '/static/js/bundle.js'
+  '/sun.svg'
 ];
 
 /**
@@ -134,6 +134,17 @@ const log = (...args) => {
   }
 };
 
+const addAllSafely = async (cache, assets) => {
+  const uniqueAssets = [...new Set(assets)];
+  await Promise.allSettled(
+    uniqueAssets.map((asset) =>
+      cache.add(asset).catch((error) => {
+        log('[Service Worker] Skipping unavailable precache asset:', asset, error);
+      })
+    )
+  );
+};
+
 // Install Service Worker and cache core static assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -171,13 +182,13 @@ self.addEventListener('install', (event) => {
         }
         return caches.open(CACHE_NAME).then((cache) => {
           log('[Service Worker] Precaching hashed assets from manifest:', assets);
-          return cache.addAll(assets);
+          return addAllSafely(cache, assets);
         });
       })
       .catch((err) => {
         log('[Service Worker] Precaching failed or manifest not found, falling back to static assets:', err);
         return caches.open(CACHE_NAME).then((cache) => {
-          return cache.addAll(ASSETS_TO_CACHE);
+          return addAllSafely(cache, ASSETS_TO_CACHE);
         });
       })
       .then(() => self.skipWaiting())
@@ -204,6 +215,30 @@ self.addEventListener('activate', (event) => {
       });
     }).then(() => self.clients.claim())
   );
+});
+
+const notifyClientsToSyncOfflineQueue = async () => {
+  const clients = await self.clients.matchAll({
+    includeUncontrolled: true,
+    type: 'window',
+  });
+
+  clients.forEach((client) => {
+    client.postMessage({
+      type: 'EVENTRA_BACKGROUND_SYNC',
+      tag: BACKGROUND_SYNC_TAG,
+    });
+  });
+};
+
+// Background Sync wakes the app after connectivity returns. The authenticated
+// replay still happens in the page context so tokens and conflict UI stay there.
+self.addEventListener('sync', (event) => {
+  if (event.tag !== BACKGROUND_SYNC_TAG) {
+    return;
+  }
+
+  event.waitUntil(notifyClientsToSyncOfflineQueue());
 });
 
 // Intercept fetch requests and apply offline caching strategies
