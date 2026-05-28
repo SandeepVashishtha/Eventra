@@ -1,7 +1,7 @@
 /**
  * Local mock SSE server for testing useRealTimeConnection.
  * Run: node sse-mock-server.js
- * Then set REACT_APP_API_URL=http://localhost:4001 in .env.local and restart the dev server.
+ * Then set VITE_API_URL=http://localhost:4001 in .env.local and restart the dev server.
  */
 const http = require("http");
 
@@ -108,7 +108,7 @@ server.listen(PORT, () => {
   console.log(`  GET http://localhost:${PORT}/stream/leaderboard`);
   console.log(`  GET http://localhost:${PORT}/stream/analytics`);
   console.log("\nNext steps:");
-  console.log(`  1. Create/update .env.local with: REACT_APP_API_URL=http://localhost:${PORT}`);
+  console.log(`  1. Create/update .env.local with: VITE_API_URL=http://localhost:${PORT}`);
   console.log("  2. Restart the React dev server (npm run dev)");
   console.log(`  3. Run with SSE_DEBUG=true to enable verbose streaming logs\n`);
 });

@@ -9,8 +9,8 @@
 import assert from "node:assert/strict";
 
 // ── Environment stubs ───────────────────────────────────────────────────────
-// Messenger platform reads process.env.REACT_APP_FACEBOOK_APP_ID
-process.env.REACT_APP_FACEBOOK_APP_ID = "12345";
+// Messenger platform reads process.env.VITE_FACEBOOK_APP_ID
+process.env.VITE_FACEBOOK_APP_ID = "12345";
 
 // generateEventSharingData reads window.location in browser environments;
 // in Node.js window is undefined so it falls back to the deployed domain.
@@ -83,8 +83,8 @@ assert.ok(
 );
 
 // ── generateSharingUrl : messenger without app ID ───────────────────────────
-const savedAppId = process.env.REACT_APP_FACEBOOK_APP_ID;
-delete process.env.REACT_APP_FACEBOOK_APP_ID;
+const savedAppId = process.env.VITE_FACEBOOK_APP_ID;
+delete process.env.VITE_FACEBOOK_APP_ID;
 // Re-import required to pick up env change — we call generateSharingUrl
 // with a fresh module import cleared from the cache via a query string trick
 // Instead, we verify the branch via a new shareData with known conditions.
@@ -96,8 +96,8 @@ const { generateSharingUrl: genNoAppId } = await import(
 // The cached module still has process.env captured at call time from the live
 // env — since we deleted it above the next call should reflect the change.
 const noAppIdUrl = generateSharingUrl(shareData, "messenger");
-assert.equal(noAppIdUrl, "", "messenger returns empty string when REACT_APP_FACEBOOK_APP_ID is unset");
-process.env.REACT_APP_FACEBOOK_APP_ID = savedAppId;
+assert.equal(noAppIdUrl, "", "messenger returns empty string when VITE_FACEBOOK_APP_ID is unset");
+process.env.VITE_FACEBOOK_APP_ID = savedAppId;
 
 // ── generateSharingUrl : linkedin ───────────────────────────────────────────
 const liUrl = generateSharingUrl(shareData, "linkedin");
