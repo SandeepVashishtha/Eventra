@@ -215,7 +215,7 @@ const ProjectGallery = () => {
           project.description.toLowerCase().includes(query) ||
           project.category.toLowerCase().includes(query) ||
           project.author.toLowerCase().includes(query) ||
-          (project.techStack &&
+          (Array.isArray(project.techStack) &&
             project.techStack.some((tech) =>
               tech.toLowerCase().includes(query)
             ))
