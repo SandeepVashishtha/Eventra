@@ -143,3 +143,5 @@ export const useValidationState = (
 };
 
 export default useValidationState;
+
+export const isValidPayload = (data) => data !== null && typeof data === "object";
