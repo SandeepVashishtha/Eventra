@@ -1,20 +1,48 @@
-// Button.jsx
 import React from 'react';
-import './Button.css'; // Imports your standard styles
+import './Button.css';
 
-export const Button = ({ 
-  children, 
-  variant = 'primary', // Default color is primary
-  size = 'medium',     // Default size is medium
-  className = '',      // Allows adding extra custom classes if ever needed
-  ...props             // Passes down onClick, disabled, type, etc.
+export const Button = ({
+  children,
+  variant = 'primary',
+  size = 'medium',
+  className = '',
+  type = 'button',
+  disabled = false,
+  ariaLabel,
+  ...props
 }) => {
-  
-  // This stitches your standard classes together dynamically
-  const buttonClass = `btn btn-${variant} btn-${size} ${className}`;
+
+  // Allowed variants and sizes
+  const validVariants = ['primary', 'secondary', 'danger'];
+  const validSizes = ['small', 'medium', 'large'];
+
+  // Fallback protection
+  const safeVariant = validVariants.includes(variant)
+    ? variant
+    : 'primary';
+
+  const safeSize = validSizes.includes(size)
+    ? size
+    : 'medium';
+
+  // Combined class names
+  const buttonClass = `
+    btn
+    btn-${safeVariant}
+    btn-${safeSize}
+    ${disabled ? 'btn-disabled' : ''}
+    ${className}
+  `;
 
   return (
-    <button className={buttonClass.trim()} {...props}>
+    <button
+      type={type}
+      disabled={disabled}
+      aria-disabled={disabled}
+      aria-label={ariaLabel}
+      className={buttonClass.trim()}
+      {...props}
+    >
       {children}
     </button>
   );

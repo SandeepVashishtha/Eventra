@@ -54,7 +54,7 @@ This Code of Conduct applies within all project spaces, both public and private,
 
 ### Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project team at *Eventra@noreply.github.com*.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project team at sandeepvashishtha@outlook.in.
 
 All complaints will be reviewed and investigated promptly, fairly, and confidentially. The project team will:
 

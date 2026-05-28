@@ -1,5 +1,7 @@
-import { Grid, List } from "lucide-react";
+import { Grid, List, Search, X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import StyledDropdown from "../../components/StyledDropdown";
+import AdvancedFilterPanel from "../../components/common/AdvancedFilterPanel";
 
 const EVENT_FILTERS = [
   { key: "all", label: "All" },
@@ -11,7 +13,6 @@ const EVENT_FILTERS = [
 
 const FilterButton = ({ filter, filterType, onFilterChange }) => {
   const isActive = filterType === filter.key;
-
   return (
     <button
       onClick={() => onFilterChange(filter.key)}
@@ -29,7 +30,6 @@ const FilterButton = ({ filter, filterType, onFilterChange }) => {
 
 const ViewModeButton = ({ mode, activeMode, onViewModeChange, icon: Icon }) => {
   const isActive = activeMode === mode;
-
   return (
     <button
       onClick={() => onViewModeChange(mode)}
@@ -53,9 +53,76 @@ const EventFiltersToolbar = ({
   onSortChange,
   viewMode,
   onViewModeChange,
+  advancedFilters = {},
+  onAdvancedFiltersChange,
+  isAdvancedFiltersOpen,
+  onToggleAdvancedFilters,
+  priceStats,
+  dateRangeStats,
+  searchQuery,
+  onSearchChange,
 }) => {
+  const [localQuery, setLocalQuery] = useState(searchQuery || "");
+  const debounceRef = useRef(null);
+
+  useEffect(() => {
+    setLocalQuery(searchQuery || "");
+  }, [searchQuery]);
+
+  const handleInput = (e) => {
+    const value = e.target.value;
+    setLocalQuery(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      onSearchChange?.(value);
+    }, 300);
+  };
+
+  const handleClear = () => {
+    setLocalQuery("");
+    onSearchChange?.("");
+  };
+
   return (
     <div className="mb-8 sm:mb-10 flex flex-col gap-4">
+      {/* Advanced Filter Panel */}
+      <AdvancedFilterPanel
+        filters={advancedFilters}
+        onFiltersChange={onAdvancedFiltersChange}
+        priceStats={priceStats}
+        dateRange={dateRangeStats}
+        isOpen={isAdvancedFiltersOpen}
+        onToggleOpen={onToggleAdvancedFilters}
+      />
+
+      {/* Basic Filters */}
+
+      {/* Search Bar */}
+      <div className="relative w-full">
+        <Search
+          size={16}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none"
+        />
+        <input
+          type="text"
+          value={localQuery}
+          onChange={handleInput}
+          placeholder="Search events by title, category, date..."
+          aria-label="Search events"
+          className="w-full pl-9 pr-10 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 focus:border-transparent transition-all duration-200 shadow-sm"
+        />
+        {localQuery && (
+          <button
+            onClick={handleClear}
+            aria-label="Clear search"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          >
+            <X size={15} />
+          </button>
+        )}
+      </div>
+
+      {/* Filter Buttons */}
       <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center sm:justify-start">
         {EVENT_FILTERS.map((filter) => (
           <FilterButton
@@ -67,6 +134,8 @@ const EventFiltersToolbar = ({
         ))}
       </div>
 
+      {/* Sort and View Controls */}
+      {/* Sort + View Mode */}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
         <div className="w-full sm:w-auto">
           <label htmlFor="sort-events" className="sr-only">

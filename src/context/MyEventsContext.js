@@ -18,12 +18,11 @@
  *   const { myEvents, addRegistration, isRegistered, removeRegistration } = useMyEvents();
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useAuth } from './AuthContext';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import { useAuth } from "./AuthContext";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 const MyEventsContext = createContext(null);
-
-// ---------- helpers ----------
 
 const storageKey = (userId) => `my_events_${userId}`;
 
@@ -31,7 +30,7 @@ const loadFromStorage = (userId) => {
   if (!userId) return [];
   try {
     const raw = localStorage.getItem(storageKey(userId));
-    return raw ? JSON.parse(raw) : [];
+    return safeJsonParse(raw, []);
   } catch {
     return [];
   }
@@ -46,21 +45,29 @@ const saveToStorage = (userId, data) => {
   }
 };
 
-// ---------- provider ----------
-
 export const MyEventsProvider = ({ children }) => {
   const { user } = useAuth();
-  const userId = user?.id || user?.email || null; // use email as fallback id
+  const userId = user?.id || user?.email || null;
 
-  const [myEvents, setMyEvents] = useState([]);
+  // 🔥 FIX 2: Lazy init — loads data immediately, no effect needed
+  const [myEvents, setMyEvents] = useState(() => loadFromStorage(userId));
+  const [loading, setLoading] = useState(false);
+
+  // 🔥 FIX 1: Guard ref — skips save on initial load to prevent data wipe
+  const isInitialLoad = useRef(true);
 
   // Load from localStorage whenever the logged-in user changes
   useEffect(() => {
+    isInitialLoad.current = true;
     setMyEvents(loadFromStorage(userId));
   }, [userId]);
 
   // Persist to localStorage whenever myEvents changes
   useEffect(() => {
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      return;
+    }
     if (userId !== null) {
       saveToStorage(userId, myEvents);
     }
@@ -104,7 +111,13 @@ export const MyEventsProvider = ({ children }) => {
 
   return (
     <MyEventsContext.Provider
-      value={{ myEvents, addRegistration, removeRegistration, isRegistered }}
+      value={{
+        myEvents,
+        addRegistration,
+        removeRegistration,
+        isRegistered,
+        loading,
+      }}
     >
       {children}
     </MyEventsContext.Provider>
@@ -113,6 +126,6 @@ export const MyEventsProvider = ({ children }) => {
 
 export const useMyEvents = () => {
   const ctx = useContext(MyEventsContext);
-  if (!ctx) throw new Error('useMyEvents must be used inside <MyEventsProvider>');
+  if (!ctx) throw new Error("useMyEvents must be used inside <MyEventsProvider>");
   return ctx;
 };

@@ -1,21 +1,41 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom"; // <-- 1. Added this import
 
-import App from './App';
-import { MotionConfig } from "framer-motion";
-import { ThemeProvider } from './context/ThemeContext';
-import GlobalErrorBoundary from './components/common/ErrorBoundary';
+import "./index.css";
+import App from "./App";
+import { ThemeProvider } from "./context/ThemeContext";
+import GlobalErrorBoundary from "./components/common/ErrorBoundary";
+import { initializeGlobalErrorHandling } from "./utils/globalErrorHandler";
+import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
+import { RealTimeProvider } from "./context/RealTimeContext";
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+// Initialize Global Runtime Monitoring
+initializeGlobalErrorHandling();
+
+// Register in production for PWA/offline support; keep dev/test cache-free.
+if (process.env.NODE_ENV === "production") {
+  serviceWorkerRegistration.register();
+} else {
+  serviceWorkerRegistration.unregister();
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+
 root.render(
   <React.StrictMode>
     <GlobalErrorBoundary>
-      <MotionConfig reducedMotion="user">
-        <ThemeProvider>
+      <ThemeProvider>
+        <RealTimeProvider>
+        <BrowserRouter>
+          {" "}
+          {/* <-- 2. Wrapped the App here */}
           <App />
-        </ThemeProvider>
-      </MotionConfig>
+        </BrowserRouter>
+        </RealTimeProvider>
+      </ThemeProvider>
     </GlobalErrorBoundary>
   </React.StrictMode>
 );
+
+

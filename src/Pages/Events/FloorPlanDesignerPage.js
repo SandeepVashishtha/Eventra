@@ -1,12 +1,17 @@
-import React from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import React, { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Calendar, MapPin, Users, Info } from "lucide-react";
 import FloorPlanDesigner from "../../components/events/FloorPlanDesigner";
+import ConfirmationModal from "../../components/common/ConfirmationModal";
 import eventsMockData from "./eventsMockData.json";
 
 const FloorPlanDesignerPage = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
+
+  const [isDirty, setIsDirty] = useState(false);
+  const [pendingPath, setPendingPath] = useState(null);
+  const [isExitModalOpen, setIsExitModalOpen] = useState(false);
 
   // Load the corresponding event info from mock data
   const event = eventsMockData.find((e) => e.id === parseInt(eventId)) || {
@@ -19,15 +24,24 @@ const FloorPlanDesignerPage = () => {
     type: "meetup"
   };
 
+  const handleNavigate = (path) => {
+    if (isDirty) {
+      setPendingPath(path);
+      setIsExitModalOpen(true);
+    } else {
+      navigate(path);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-950 dark:to-black py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white dark:bg-slate-950 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* Navigation Breadcrumbs and Back Button */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/40 dark:bg-gray-900/40 backdrop-blur-md border border-gray-200/50 dark:border-gray-800/50 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate(`/events/${event.id}`)}
+              onClick={() => handleNavigate(`/events/${event.id}`)}
               className="p-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-xl transition-all cursor-pointer border border-indigo-500/15"
               title="Back to event details"
             >
@@ -35,11 +49,21 @@ const FloorPlanDesignerPage = () => {
             </button>
             <div>
               <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">
-                <Link to="/events" className="hover:text-indigo-500">Events</Link>
+                <button
+                  onClick={() => handleNavigate("/events")}
+                  className="hover:text-indigo-500 cursor-pointer bg-transparent border-none p-0 text-inherit font-semibold text-xs uppercase tracking-wider"
+                >
+                  Events
+                </button>
                 <span>/</span>
-                <Link to={`/events/${event.id}`} className="hover:text-indigo-500 line-clamp-1">{event.title}</Link>
+                <button
+                  onClick={() => handleNavigate(`/events/${event.id}`)}
+                  className="hover:text-indigo-500 cursor-pointer bg-transparent border-none p-0 text-inherit font-semibold text-xs uppercase tracking-wider line-clamp-1 max-w-[200px] text-left"
+                >
+                  {event.title}
+                </button>
                 <span>/</span>
-                <span className="text-indigo-500">Floor Plan</span>
+                <span className="text-indigo-500 font-semibold uppercase tracking-wider">Floor Plan</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white leading-tight mt-0.5">
                 {event.title}
@@ -68,7 +92,7 @@ const FloorPlanDesignerPage = () => {
 
         {/* Live Designer Component Mount */}
         <div className="bg-white/30 dark:bg-gray-900/30 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200/40 dark:border-gray-800/40 overflow-hidden">
-          <FloorPlanDesigner eventId={event.id} />
+          <FloorPlanDesigner eventId={event.id} onDirtyChange={setIsDirty} />
         </div>
 
         {/* Info Helper Footer bar */}
@@ -80,6 +104,20 @@ const FloorPlanDesignerPage = () => {
         </div>
 
       </div>
+
+      <ConfirmationModal
+        isOpen={isExitModalOpen}
+        onClose={() => setIsExitModalOpen(false)}
+        onConfirm={() => {
+          setIsExitModalOpen(false);
+          setIsDirty(false); // reset dirty flag to allow navigation
+          navigate(pendingPath);
+        }}
+        title="Unsaved Modifications"
+        message="You have unsaved changes on your floor plan designer layout. Are you sure you want to discard them and leave?"
+        confirmText="Discard & Exit"
+        cancelText="Keep Editing"
+      />
     </div>
   );
 };

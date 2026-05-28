@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { Link } from "react-router-dom";
+import useDocumentTitle from "../hooks/useDocumentTitle";
 import {
   FaLock,
   FaUserShield,
@@ -13,6 +14,7 @@ import {
 } from "react-icons/fa";
 
 export const Privacy = () => {
+  useDocumentTitle("Eventra | Privacy Policy");
   const controls = useAnimation();
   const [openSections, setOpenSections] = useState({});
 
@@ -91,7 +93,7 @@ export const Privacy = () => {
   ];
 
   return (
-    <div className="pastel-grid-bg min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white dark:bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-16">
         {" "}
         {/* Increased horizontal width */}
@@ -147,57 +149,57 @@ export const Privacy = () => {
           className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start"
         >
           {policySections.map((section, index) => (
-  <motion.div
-    key={index}
-    variants={item}
-    className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl border border-gray-200 dark:border-gray-700 shadow-md overflow-hidden group hover:border-blue-400 dark:hover:border-blue-500 transition-colors duration-300"
-  >
-    <div className="absolute inset-0 bg-gradient-to-r from-gray-100 via-gray-50 dark:from-gray-900/40 dark:via-gray-800/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+            <motion.div
+              key={index}
+              variants={item}
+              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl border border-gray-200 dark:border-gray-700 shadow-md overflow-hidden group hover:border-blue-400 dark:hover:border-blue-500 transition-colors duration-300"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-gray-100 via-gray-50 dark:from-gray-900/40 dark:via-gray-800/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
-    <div className="relative z-10">
-      <button
-        onClick={() => toggleSection(index)}
-        className="w-full flex items-center justify-between p-8 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 rounded-t-2xl"
-      >
-        <div className="flex items-center">
-          <div className="flex items-center justify-center w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-xl text-black dark:text-white text-2xl mr-4">
-            {section.icon}
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {section.title}
-          </h2>
-        </div>
-        <div className="flex-shrink-0 ml-4">
-          {openSections[index] ? (
-            <FaChevronUp className="text-black dark:text-white text-lg" />
-          ) : (
-            <FaChevronDown className="text-black dark:text-white text-lg" />
-          )}
-        </div>
-      </button>
+              <div className="relative z-10">
+                <button
+                  onClick={() => toggleSection(index)}
+                  className="w-full flex items-center justify-between p-8 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 rounded-t-2xl"
+                >
+                  <div className="flex items-center">
+                    <div className="flex items-center justify-center w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-xl text-black dark:text-white text-2xl mr-4">
+                      {section.icon}
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                      {section.title}
+                    </h2>
+                  </div>
+                  <div className="flex-shrink-0 ml-4">
+                    {openSections[index] ? (
+                      <FaChevronUp className="text-black dark:text-white text-lg" />
+                    ) : (
+                      <FaChevronDown className="text-black dark:text-white text-lg" />
+                    )}
+                  </div>
+                </button>
 
-      <motion.div
-        initial={false}
-        animate={{
-          height: openSections[index] ? "auto" : 0,
-          opacity: openSections[index] ? 1 : 0,
-        }}
-        transition={{
-          duration: 0.3,
-          ease: "easeInOut",
-        }}
-        className="overflow-hidden"
-      >
-        {/* Added a structural wrapper div here to guarantee clear layout calculations */}
-        <div className="px-8 pb-8 w-full block clear-both">
-          <p className="text-gray-700 dark:text-gray-300 text-base md:text-lg leading-relaxed antialiased">
-            {section.content}
-          </p>
-        </div>
-      </motion.div>
-    </div>
-  </motion.div>
-))}
+                <motion.div
+                  initial={false}
+                  animate={{
+                    height: openSections[index] ? "auto" : 0,
+                    opacity: openSections[index] ? 1 : 0,
+                  }}
+                  transition={{
+                    duration: 0.3,
+                    ease: "easeInOut",
+                  }}
+                  className="overflow-hidden"
+                >
+                  {/* Added a structural wrapper div here to guarantee clear layout calculations */}
+                  <div className="px-8 pb-8 w-full block clear-both">
+                    <p className="text-gray-700 dark:text-gray-300 text-base md:text-lg leading-relaxed antialiased">
+                      {section.content}
+                    </p>
+                  </div>
+                </motion.div>
+              </div>
+            </motion.div>
+          ))}
         </motion.div>
         {/* Additional Info Section */}
         <motion.div
@@ -228,19 +230,19 @@ export const Privacy = () => {
           variants={container}
           initial="hidden"
           animate={controls}
-          className="bg-white rounded-2xl p-8 text-center relative overflow-hidden shadow-md border border-gray-200"
+          className="bg-white dark:bg-gray-800 rounded-2xl p-8 text-center relative overflow-hidden shadow-md border border-gray-200 dark:border-gray-700"
         >
           <div className="relative z-10">
-            <h3 className="text-2xl font-bold text-black mb-4">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
               Have Questions?
             </h3>
-            <p className="text-black mb-6">
+            <p className="text-gray-700 dark:text-gray-300 mb-6">
               If you have any questions or concerns about this policy, we're
               here to help.
             </p>
             <Link
               to="/contact"
-              className="inline-flex items-center px-6 py-3 rounded-xl font-medium text-white bg-black hover:bg-zinc-800 transition-colors duration-300"
+              className="inline-flex items-center px-6 py-3 rounded-xl font-medium text-white dark:text-black bg-black dark:bg-white hover:bg-zinc-800 dark:hover:bg-gray-200 transition-colors duration-300"
             >
               Contact Us
             </Link>
