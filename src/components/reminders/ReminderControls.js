@@ -83,7 +83,14 @@ const ReminderControls = ({ event, canSetReminder, compact = false }) => {
       return;
     }
 
-    const permission = await requestBrowserNotificationPermission();
+    let permission = "default";
+    try {
+      permission = await requestBrowserNotificationPermission();
+    } catch (error) {
+      console.warn("Notification permission request failed or rejected:", error);
+      permission = "denied";
+    }
+    
     if (permission === "denied") {
       toast.info("Reminder saved. Browser notifications are blocked in your settings.", {
         toastId: `reminder-browser-denied-${event.id}`,
