@@ -553,7 +553,7 @@ const Signup = () => {
 };
 
 // ============ REUSABLE FORM FIELD COMPONENT ============
-const FormField = ({
+export const FormField = ({
   id, label, type = "text", icon: Icon, value, onChange, onBlur,
   error, success, hint, required, autoComplete, toggleVisibility, initialDelay = 0
 }) => {
@@ -659,7 +659,7 @@ const FormField = ({
 };
 
 // ============ PASSWORD FIELD WITH REQUIREMENTS ============
-const PasswordField = ({ id, label, value, onChange, error, strength, requirements }) => {
+export const PasswordField = ({ id, label, value, onChange, error, strength, requirements }) => {
   const [showPassword, setShowPassword] = useState(false);
   
   return (
