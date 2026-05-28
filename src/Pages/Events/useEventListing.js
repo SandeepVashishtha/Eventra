@@ -19,19 +19,26 @@ import {
 } from "./eventPaginationUtils";
 
 const getSearchResults = (events, searchQuery) => {
-  if (!searchQuery.trim()) {
-    return events;
-  }
-
+  if (!searchQuery.trim()) return events;
   return getRouteSearchResults(
     events,
     searchQuery,
     ["title", "description", "location", "tags", "type", "date", "status"],
-    {
-      threshold: 0.35,
-    },
+    { threshold: 0.35 },
   );
 };
+
+/**
+ * Normalizes a raw event object by computing its derived status field.
+ * Keeps the original status if already present and valid.
+ *
+ * @param {object} event
+ * @returns {object}
+ */
+const normalizeEvent = (event) => ({
+  ...event,
+  status: event.status || getEventStatus(event),
+});
 
 const useEventListing = () => {
   const [events, setEvents] = useState([]);
@@ -46,20 +53,12 @@ const useEventListing = () => {
   const [advancedFilters, setAdvancedFilters] = useState(getDefaultFilters());
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const normalizedEvents = mockEvents.map((event) => ({
-        ...event,
-        status: getEventStatus(event),
-      }));
-
-      setEvents(normalizedEvents);
-
-      setIsLoading(false);
-    }, 800);
-
-    return () => clearTimeout(timer);
-  }, []);
+  /**
+   * Fetches events from the backend API.
+   * In development, falls back to mock data when the API is unreachable.
+   * This is the single source of truth for the events state — there is no
+   * concurrent mock-data timer that could race with the API response.
+   */
   const fetchEvents = useCallback(async () => {
     setIsLoading(true);
     setLoadError("");
@@ -67,10 +66,12 @@ const useEventListing = () => {
     try {
       const response = await apiUtils.get(API_ENDPOINTS.EVENTS.ALL);
       const apiEvents = Array.isArray(response.data) ? response.data : [];
-      setEvents(apiEvents.map((event) => ({ ...event, status: getEventStatus(event) })));
+      setEvents(apiEvents.map(normalizeEvent));
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
-        setEvents(mockEvents.map((event) => ({ ...event, status: getEventStatus(event) })));
+        // Development fallback: use mock data when the API is not running locally.
+        // This path never executes in production — the else branch runs there.
+        setEvents(mockEvents.map(normalizeEvent));
       } else {
         setEvents([]);
         setLoadError(error?.message || "Failed to load events. Please try again.");
@@ -84,6 +85,14 @@ const useEventListing = () => {
     fetchEvents();
   }, [fetchEvents]);
 
+  /**
+   * filteredEvents — all events after search, type filter, advanced filters,
+   * and sort are applied. This is the full filtered set; it drives the total
+   * page count and is sliced by paginatedEvents below.
+   *
+   * Every dependency that affects the output is listed so the memo is never
+   * stale: events, filterType, searchQuery, sortType, advancedFilters.
+   */
   const filteredEvents = useMemo(() => {
     const searchResults = getSearchResults(events, searchQuery);
     const filtered = filterEventsByType(searchResults, filterType);
@@ -93,15 +102,25 @@ const useEventListing = () => {
 
   const totalPages = getTotalPages(filteredEvents.length, eventsPerPage);
 
+  /**
+   * paginatedEvents — the slice of filteredEvents for the current page.
+   * This is what the event grid renders. It is kept separate from
+   * filteredEvents so consumer components can access both the current page
+   * and the total count (filteredEvents.length) independently.
+   */
   const paginatedEvents = useMemo(
     () => getPaginatedEvents(filteredEvents, currentPage, eventsPerPage),
     [currentPage, eventsPerPage, filteredEvents],
   );
 
+  // Reset to page 1 whenever any filter or sort criterion changes so the user
+  // never sees an empty page caused by stale pagination.
   useEffect(() => {
     setCurrentPage(1);
   }, [eventsPerPage, filterType, searchQuery, sortType, advancedFilters]);
 
+  // Clamp currentPage when the total page count shrinks (e.g. after applying
+  // a filter that produces fewer results than the current page can show).
   useEffect(() => {
     if (currentPage > totalPages) {
       setCurrentPage(totalPages);
@@ -112,7 +131,6 @@ const useEventListing = () => {
     setCurrentPage(clampPage(page, totalPages));
   };
 
-  // Get price and date statistics from all events
   const priceStats = useMemo(() => getPriceStats(events), [events]);
   const dateRangeStats = useMemo(() => getDateRange(events), [events]);
 
