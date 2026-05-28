@@ -1,11 +1,7 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
-import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { useAuth } from '../../context/AuthContext';
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
 import { FormFieldWrapper, ValidationMessage } from "../forms";
@@ -69,8 +65,6 @@ const LoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateLoginForm()) return;
-    setLoading(true);
-    if (!validate()) return;
 
     try {
       const ok = await login(formData.usernameOrEmail, formData.password);
@@ -80,15 +74,7 @@ const LoginForm = () => {
         );
       }
     } catch (err) {
-      console.error("Login error:", err);
       setError({ general: err.message || "Invalid email or password" });
-      toast.error(err.message || "Login failed. Please check your credentials.");
-    } finally {
-      setLoading(false);
-      if (process.env.NODE_ENV === "development") {
-        // eslint-disable-next-line no-console
-        console.error("Login error:", err);
-      }
       toast.error(err.message || 'Login failed. Please check your credentials.');
     }
   };
@@ -142,7 +128,7 @@ const LoginForm = () => {
             value={formData.usernameOrEmail}
             onChange={handleChange}
             required
-            disabled={loading}
+            disabled={authRequest.loading}
             placeholder="Enter your email or username"
             className="w-full pl-10 pr-4 py-3 bg-[#0f172a]/60 border border-slate-700/50 rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner"
           />
@@ -215,14 +201,6 @@ const LoginForm = () => {
             />
           </FormFieldWrapper>
 
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-400 transition-all duration-200"
-            >
-              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-            </button>
-          </div>
           {error.password && (
             <motion.p id="password-error" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-1 flex items-center gap-1" role="alert">
               <span>⚠</span> {error.password}
