@@ -1,8 +1,28 @@
 import { useEffect, useState, useMemo } from "react";
 import { Clock } from "lucide-react";
 
+let serverOffsetMs = 0;
+let hasSynced = false;
+
+export const syncServerTime = async () => {
+  if (hasSynced || typeof window === "undefined") return;
+  try {
+    // Fetch HEAD from current origin to get standard HTTP Date header
+    const res = await fetch(window.location.href, { method: "HEAD", cache: "no-store" });
+    const serverDateStr = res.headers.get("Date");
+    if (serverDateStr) {
+      serverOffsetMs = new Date(serverDateStr).getTime() - Date.now();
+      hasSynced = true;
+    }
+  } catch (e) {
+    hasSynced = true; // Prevents infinite retries on failure
+  }
+};
+
+const getAccurateDate = () => new Date(Date.now() + serverOffsetMs);
+
 const calculateTimeLeft = (deadline) => {
-  const diff = new Date(deadline) - new Date();
+  const diff = new Date(deadline) - getAccurateDate();
   if (isNaN(diff) || diff <= 0) return null;
   return {
     days: Math.floor(diff / (1000 * 60 * 60 * 24)),
@@ -20,6 +40,7 @@ export const CountdownBadge = ({ date, time }) => {
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(deadline));
 
   useEffect(() => {
+    syncServerTime();
     const timer = setInterval(() => {
       const remaining = calculateTimeLeft(deadline);
       setTimeLeft(remaining);
@@ -50,6 +71,7 @@ const CountdownTimer = ({ date, time }) => {
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(deadline));
 
   useEffect(() => {
+    syncServerTime();
     const timer = setInterval(() => {
       const remaining = calculateTimeLeft(deadline);
       setTimeLeft(remaining);
