@@ -28,10 +28,16 @@ const RouteFallback = () => (
 const AppRoutes = () => (
   <Suspense fallback={<RouteFallback />}>
     <Routes>
+      {/* Public Routes */}
       {getPublicRoutes()}
+
+      {/* Protected Routes */}
       {getProtectedRoutes()}
+
+      {/* Auth Routes */}
       {getAuthRoutes()}
 
+      {/* Achievements Route */}
       <Route
         path="/dashboard/achievements"
         element={
@@ -40,28 +46,6 @@ const AppRoutes = () => (
           </ProtectedRoute>
         }
       />
-const AppRoutes = () => {
-  return (
-    <Suspense fallback={<PageLoader />}>
-      <Routes>
-        {/* Public Routes */}
-        {getPublicRoutes()}
-
-        {/* Protected Routes */}
-        {getProtectedRoutes()}
-
-        {/* Auth Routes */}
-        {getAuthRoutes()}
-
-        {/* Achievements Route */}
-        <Route
-          path="/dashboard/achievements"
-          element={
-            <ProtectedRoute>
-              <UserAchievements />
-            </ProtectedRoute>
-          }
-        />
 
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
