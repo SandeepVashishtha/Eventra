@@ -1,9 +1,9 @@
 import { useRef, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useEffect, useRef } from "react";
+
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
-import { getEventStatus } from "../../utils/eventUtils";
+
 import { useSearchParams } from "react-router-dom";
 import {
   Grid,

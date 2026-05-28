@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import FeatureErrorBoundary from "../../components/common/FeatureErrorBoundary";
 import { fetchWithTimeout } from "../../utils/fetchWithTimeout";
@@ -9,9 +8,6 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaUsers,
-  FaAward,
-  FaTrophy,
-  FaMedal,
   FaArrowUp,
   FaArrowDown,
   FaMinus,
