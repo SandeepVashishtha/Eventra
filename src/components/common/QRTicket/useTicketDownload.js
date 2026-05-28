@@ -7,6 +7,7 @@
  */
 
 import { useState, useCallback } from "react";
+import toast from "react-hot-toast";
 
 export function useTicketDownload(ticketRef, ticketId = "ticket") {
   const [downloading, setDownloading] = useState(false);
@@ -37,6 +38,7 @@ export function useTicketDownload(ticketRef, ticketId = "ticket") {
       link.click();
     } catch (err) {
       console.error("[QRTicket] PNG download failed:", err);
+      toast.error("Failed to download PNG. Please try again.");
     } finally {
       setDownloading(false);
     }
@@ -66,6 +68,7 @@ export function useTicketDownload(ticketRef, ticketId = "ticket") {
       pdf.save(`eventra-ticket-${ticketId}.pdf`);
     } catch (err) {
       console.error("[QRTicket] PDF download failed:", err);
+      toast.error("Failed to download PDF. Please try again.");
     } finally {
       setDownloading(false);
     }
