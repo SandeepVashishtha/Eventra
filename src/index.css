@@ -4,6 +4,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 @import "tailwindcss";
 @config "../tailwind.config.cjs";
+@custom-variant short (@media (max-height: 520px));
 
 @theme {
   --font-size-body: 16px;

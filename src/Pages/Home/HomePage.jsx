@@ -6,6 +6,7 @@ import RecommendationBanner from "./components/RecommendationBanner";
 import CollaborationNetworkMap from "../../components/visual/CollaborationNetworkMap";
 import CollaborationMap from "../../components/CollaborationMap";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import RecentlyViewedEvents from "../../components/common/RecentlyViewedEvents";
 
 const HomePage = () => {
   useDocumentTitle("Home | Eventra");

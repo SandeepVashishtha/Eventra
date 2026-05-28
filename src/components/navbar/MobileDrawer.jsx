@@ -3,13 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { LogIn, UserPlus } from "lucide-react";
 import NavbarLinks from "./NavbarLinks";
 
-const MobileDrawer = ({
-  isOpen,
-  closeMenu,
-  isAuthenticated,
-  user,
-  logout,
-}) => {
+const MobileDrawer = ({ isOpen, closeMenu, isAuthenticated, user, logout }) => {
   const location = useLocation();
   const drawerRef = useRef(null);
   const closeButtonRef = useRef(null);
@@ -53,6 +47,7 @@ const MobileDrawer = ({
           'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
         )
       );
+
       const firstElement = focusableElements[0];
       const lastElement = focusableElements[focusableElements.length - 1];
 
@@ -126,8 +121,11 @@ const MobileDrawer = ({
           {isAuthenticated ? (
             <div className="flex flex-col gap-2 border-t border-gray-200 pt-4 dark:border-gray-800">
               <div className="min-h-[44px] min-w-0 px-3 py-2 text-base text-gray-600 dark:text-gray-300">
-                <span className="block truncate">{user?.name || user?.email || "Account"}</span>
+                <span className="block truncate">
+                  {user?.name || user?.email || "Account"}
+                </span>
               </div>
+
               <Link
                 to="/dashboard"
                 onClick={closeMenu}
@@ -135,7 +133,7 @@ const MobileDrawer = ({
               >
                 Dashboard
               </Link>
-              {/* Standardized "View Profile" route to route consistently to /dashboard/profile across mobile and desktop viewports */}
+
               <Link
                 to="/dashboard/profile"
                 onClick={closeMenu}
@@ -143,6 +141,7 @@ const MobileDrawer = ({
               >
                 View Profile
               </Link>
+
               <button
                 type="button"
                 onClick={() => {
@@ -183,62 +182,9 @@ const MobileDrawer = ({
             </div>
           )}
         </div>
-            <Link
-              to="/dashboard"
-              onClick={closeMenu}
-              className="text-sm font-medium py-2"
-            >
-              Dashboard
-            </Link>
-            {/* Standardized "View Profile" route to route consistently to /dashboard/profile across mobile and desktop viewports */}
-            <Link
-              to="/dashboard/profile"
-              onClick={closeMenu}
-              className="text-sm font-medium py-2"
-            >
-              View Profile
-            </Link>
-            <button
-              type="button"
-              onClick={() => {
-                logout();
-                closeMenu();
-              }}
-              className="flex items-center gap-3 py-3 px-1 w-full text-left text-base text-gray-600 dark:text-gray-300 hover:text-red-500 transition-colors"
-            >
-              Logout
-            </button>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4 mt-4">
-            <Link
-              to="/login"
-              onClick={closeMenu}
-              className={`flex items-center gap-1.5 py-2 text-sm font-medium transition-all duration-200 pl-3 border-l-2 w-full ${
-                isActive("/login")
-                  ? "text-black dark:text-white border-black dark:border-white font-semibold"
-                  : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent"
-              }`}
-            >
-              <LogIn className="w-5 h-5" />
-              Login
-            </Link>
-            <Link
-              to="/signup"
-              onClick={closeMenu}
-              className={`flex items-center gap-1.5 py-2 text-sm font-medium transition-all duration-200 pl-3 border-l-2 w-full ${
-                isActive("/signup")
-                  ? "text-black dark:text-white border-black dark:border-white font-semibold"
-                  : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent"
-              }`}
-            >
-              <UserPlus className="w-5 h-5" />
-              Sign Up
-            </Link>
-          </div>
-        )}
       </div>
     </div>
   );
 };
+
 export default MobileDrawer;

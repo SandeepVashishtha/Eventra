@@ -1,10 +1,4 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-} from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { AtSign, Eye, EyeOff, Lock, User, Zap } from "lucide-react";
@@ -193,18 +187,15 @@ const SignupForm = () => {
     const lastNameResult = validate.lastName(formData.lastName.trim());
     if (lastNameResult !== true) nextErrors.lastName = lastNameResult;
 
-    if (!formData.email.trim()) {
-      nextErrors.email = "Email is required";
     const emailValue = formData.email.trim();
-    const emailFormatResult = validate.email(emailValue);
-    if (emailFormatResult !== true) {
-      nextErrors.email = emailFormatResult;
+    if (!emailValue) {
+      nextErrors.email = "Email is required";
     } else {
-      const emailResult = validate.email(formData.email.trim());
-      if (emailResult !== true) {
-        nextErrors.email = emailResult;
+      const emailFormatResult = validate.email(emailValue);
+      if (emailFormatResult !== true) {
+        nextErrors.email = emailFormatResult;
       } else {
-        const availability = await validateEmailAvailability(formData.email.trim());
+        const availability = await validateEmailAvailability(emailValue);
         if (!availability.isValid) {
           nextErrors.email = getResultMessage(availability, "Email is already registered");
         }
@@ -245,8 +236,6 @@ const SignupForm = () => {
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
   useEffect(() => {
     const { password, confirmPassword } = formData;
     if (password && confirmPassword && password === confirmPassword) {
@@ -398,17 +387,10 @@ const SignupForm = () => {
             <button
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
-              className="text-slate-500 hover:text-blue-400"
-              onClick={() = aria-label="button"> setShowPassword(!showPassword)}
-              className="text-slate-500 hover:text-slate-300"
-              type="button" onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-400"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            <button type="button" onClick={() = aria-label="button"> setShowPassword((prev) => !prev)} className="text-slate-500 hover:text-blue-400" aria-label={showPassword ? "Hide password" : "Show password"}>
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           }
         >
@@ -437,15 +419,10 @@ const SignupForm = () => {
             <button
               type="button"
               onClick={() => setShowConfirmPassword((prev) => !prev)}
-              className="text-slate-500 hover:text-blue-400"
-              onClick={() = aria-label="button"> setShowConfirmPassword(!showConfirmPassword)}
-              className="text-slate-500 hover:text-slate-300"
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-400"
               aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
             >
               {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            <button type="button" onClick={() = aria-label="button"> setShowConfirmPassword((prev) => !prev)} className="text-slate-500 hover:text-blue-400" aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}>
-              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           }
         >

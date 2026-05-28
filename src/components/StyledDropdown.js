@@ -16,6 +16,7 @@ const Dropdown = ({
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
   const labelId = useId();
+  const listboxId = useId();
   
   const allOptions = [placeholder, ...options];
   const selectedIndex = allOptions.findIndex((opt) => opt === value);
@@ -82,9 +83,6 @@ const Dropdown = ({
       event.preventDefault();
       setOpen(false);
       buttonRef.current?.focus();
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      handleSelect(allOptions[currentActiveIndex]);
     }
   };
 
@@ -143,12 +141,6 @@ const Dropdown = ({
             aria-labelledby={label ? labelId : undefined}
             aria-activedescendant={`${listboxId}-option-${currentActiveIndex}`}
             onKeyDown={handleKeyDown}
-            onKeyDown={handleListboxKeyDown}
-            className="absolute mt-2 w-full z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg"
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -5 }}
-            transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
           >
             {allOptions.map((opt, index) => (
               <li
@@ -167,18 +159,6 @@ const Dropdown = ({
                 }`}
               >
                 {opt}
-                <button
-                  type="button"
-                  onClick={() = aria-label="button"> handleSelect(opt)}
-                  onKeyDown={(event) => handleOptionKeyDown(event, opt)}
-                  className={`w-full px-4 py-2 text-left text-sm cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 focus:bg-indigo-50 dark:focus:bg-gray-700 focus:outline-none text-gray-700 dark:text-gray-100 ${
-                    value === opt
-                      ? "font-semibold bg-indigo-100 dark:bg-indigo-900"
-                      : ""
-                  }`}
-                >
-                  {opt}
-                </button>
               </li>
             ))}
           </motion.ul>
