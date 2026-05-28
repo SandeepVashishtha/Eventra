@@ -1,25 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { AlertCircle, X as XIcon } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import useReducedMotion from "../../hooks/useReducedMotion";
 import LoginForm from './LoginForm';
 import SignupForm from './SignupForm';
 
 const AuthPage = () => {
+  const prefersReducedMotion = useReducedMotion();
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   
   const isLogin = location.pathname === '/login';
+  const sessionExpired = location.state?.sessionExpired === true;
+  const from = location.state?.from;
+  const redirectPath =
+    typeof from === "string"
+      ? from
+      : from?.pathname
+        ? `${from.pathname}${from.search || ""}${from.hash || ""}`
+        : "/dashboard";
+  const [showExpiredBanner, setShowExpiredBanner] = useState(sessionExpired);
   
   useDocumentTitle(isLogin ? "Login | Eventra" : "Sign Up | Eventra");
 
   useEffect(() => {
     if (isAuthenticated()) {
-      navigate('/dashboard', { replace: true });
+      navigate(redirectPath, { replace: true });
     }
-  }, [navigate, isAuthenticated]);
+  }, [navigate, isAuthenticated, redirectPath]);
 
   const introPoints = [
     "Create your account to post events, join hackathons, and submit projects.",
@@ -49,7 +61,7 @@ const AuthPage = () => {
       opacity: 0,
       scale: 0.95,
       transition: {
-        duration: 0.2,
+        duration: prefersReducedMotion ? 0 : 0.2,
       },
     }),
   };
@@ -117,6 +129,24 @@ const AuthPage = () => {
 
           {/* RIGHT PANEL */}
           <div className="md:w-[60%] p-10 relative bg-[#1e293b]/40 overflow-hidden flex flex-col justify-center">
+            {/* Session-expired banner */}
+            {showExpiredBanner && (
+              <motion.div
+                initial={{ opacity: 0, y: -12 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full max-w-md mx-auto mb-4 flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-200 text-sm"
+              >
+                <AlertCircle size={18} className="shrink-0 text-amber-400" />
+                <span className="flex-1">Your session has expired. Please log in again.</span>
+                <button
+                  onClick={() => setShowExpiredBanner(false)}
+                  className="shrink-0 p-1 rounded-md hover:bg-amber-500/20 transition-colors"
+                  aria-label="Dismiss session expired notice"
+                >
+                  <XIcon size={14} />
+                </button>
+              </motion.div>
+            )}
             <AnimatePresence mode="wait" custom={isLogin}>
               <motion.div
                 key={isLogin ? "login" : "signup"}

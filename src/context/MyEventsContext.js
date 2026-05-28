@@ -18,21 +18,19 @@
  *   const { myEvents, addRegistration, isRegistered, removeRegistration } = useMyEvents();
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useAuth } from './AuthContext';
-import { syncSecureStorage } from '../utils/secureStorage';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import { useAuth } from "./AuthContext";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 const MyEventsContext = createContext(null);
-
-// ---------- helpers ----------
 
 const storageKey = (userId) => `my_events_${userId}`;
 
 const loadFromStorage = (userId) => {
   if (!userId) return [];
   try {
-    const raw = syncSecureStorage.getItem(storageKey(userId));
-    return raw ? JSON.parse(raw) : [];
+    const raw = localStorage.getItem(storageKey(userId));
+    return safeJsonParse(raw, []);
   } catch {
     return [];
   }
@@ -41,30 +39,35 @@ const loadFromStorage = (userId) => {
 const saveToStorage = (userId, data) => {
   if (!userId) return;
   try {
-    syncSecureStorage.setItem(storageKey(userId), JSON.stringify(data));
+    localStorage.setItem(storageKey(userId), JSON.stringify(data));
   } catch {
     // localStorage might be full — fail silently
   }
 };
 
-// ---------- provider ----------
-
 export const MyEventsProvider = ({ children }) => {
   const { user } = useAuth();
-  const userId = user?.id || user?.email || null; // use email as fallback id
+  const userId = user?.id || user?.email || null;
 
-  const [myEvents, setMyEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // 🔥 FIX 2: Lazy init — loads data immediately, no effect needed
+  const [myEvents, setMyEvents] = useState(() => loadFromStorage(userId));
+  const [loading, setLoading] = useState(false);
+
+  // 🔥 FIX 1: Guard ref — skips save on initial load to prevent data wipe
+  const isInitialLoad = useRef(true);
 
   // Load from localStorage whenever the logged-in user changes
   useEffect(() => {
-    setLoading(true);
+    isInitialLoad.current = true;
     setMyEvents(loadFromStorage(userId));
-    setLoading(false);
   }, [userId]);
 
   // Persist to localStorage whenever myEvents changes
   useEffect(() => {
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      return;
+    }
     if (userId !== null) {
       saveToStorage(userId, myEvents);
     }
@@ -123,6 +126,6 @@ export const MyEventsProvider = ({ children }) => {
 
 export const useMyEvents = () => {
   const ctx = useContext(MyEventsContext);
-  if (!ctx) throw new Error('useMyEvents must be used inside <MyEventsProvider>');
+  if (!ctx) throw new Error("useMyEvents must be used inside <MyEventsProvider>");
   return ctx;
 };
