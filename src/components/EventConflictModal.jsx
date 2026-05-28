@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { AlertTriangle, Clock, Calendar, X, ArrowRight, Globe } from 'lucide-react';
 import { formatTimeRange } from '../utils/conflictDetection';
 import { getUserTimezone } from '../utils/timezoneUtils';
@@ -29,7 +29,93 @@ const EventConflictModal = ({
   onSelectAlternative,
   strictMode = false,
 }) => {
+  const modalRef = useRef(null);
+  const previousFocusRef = useRef(null);
   const userTimezone = getUserTimezone();
+
+  useEffect(() => {
+    if (isOpen) {
+      previousFocusRef.current = document.activeElement;
+    } else {
+      if (previousFocusRef.current) {
+        previousFocusRef.current.focus();
+        previousFocusRef.current = null;
+      }
+    }
+    return () => {
+      // Restore focus if the component is unmounted while open
+      if (previousFocusRef.current) {
+        previousFocusRef.current.focus();
+      }
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onCancel();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onCancel]);
+
+  useEffect(() => {
+    if (!isOpen || !modalRef.current) return;
+
+    const getFocusableElements = () => {
+      return modalRef.current.querySelectorAll(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]'
+      );
+    };
+
+    const focusableElements = getFocusableElements();
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    // Focus the first element when modal opens, with a tiny timeout to ensure rendering is complete
+    const timeoutId = setTimeout(() => {
+      if (firstElement) {
+        firstElement.focus();
+      } else {
+        modalRef.current?.focus();
+      }
+    }, 50);
+
+    const handleTabKey = (e) => {
+      if (e.key !== 'Tab') return;
+
+      const currentFocusable = getFocusableElements();
+      if (currentFocusable.length === 0) return;
+
+      const first = currentFocusable[0];
+      const last = currentFocusable[currentFocusable.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          last?.focus();
+          e.preventDefault();
+        }
+      } else {
+        if (document.activeElement === last) {
+          first?.focus();
+          e.preventDefault();
+        }
+      }
+    };
+
+    const modalNode = modalRef.current;
+    modalNode.addEventListener('keydown', handleTabKey);
+    return () => {
+      clearTimeout(timeoutId);
+      modalNode.removeEventListener('keydown', handleTabKey);
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -41,10 +127,17 @@ const EventConflictModal = ({
       />
 
       {/* Modal Content */}
-      <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div 
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+        className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+      >
         {/* Close Button */}
         <button
           onClick={onCancel}
+          aria-label="Close conflict dialog"
           className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
         >
           <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
@@ -57,7 +150,7 @@ const EventConflictModal = ({
               <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <h2 id="modal-title" className="text-2xl font-bold text-gray-900 dark:text-white">
                 Scheduling Conflict Detected
               </h2>
               <p className="mt-1 text-gray-600 dark:text-gray-400">
@@ -149,6 +242,7 @@ const EventConflictModal = ({
                   <button
                     key={event.id}
                     onClick={() => onSelectAlternative?.(event)}
+                    aria-label={`Select alternative event: ${event.title}`}
                     className="w-full text-left bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors group"
                   >
                     <div className="flex items-center justify-between">
@@ -190,14 +284,14 @@ const EventConflictModal = ({
           <button
             onClick={onCancel}
             className="flex-1 px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
-          >
+           aria-label="button">
             Cancel Registration
           </button>
           {!strictMode && (
             <button
               onClick={onProceed}
               className="flex-1 px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-medium"
-            >
+             aria-label="button">
               Proceed Anyway
             </button>
           )}

@@ -1,14 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import mockEvents from "./eventsMockData.json";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
-import { getRouteSearchResults } from "../../utils/searchUtils";
 import { getEventStatus } from "../../utils/eventUtils";
-import {
-  applyAdvancedFilters,
-  getDefaultFilters,
-  getPriceStats,
-  getDateRange,
-} from "../../utils/advancedFilterUtils";
+import { applyAdvancedFilters, getDateRange, getPriceStats } from "../../utils/advancedFilterUtils";
 import {
   DEFAULT_EVENTS_PER_PAGE,
   clampPage,
@@ -16,82 +10,116 @@ import {
   getPaginatedEvents,
   getTotalPages,
   sortEventsByDate,
-} from "./eventPaginationUtils";
+} from "./eventPaginationUtils.mjs";
+import {
+  getCacheAgeLabel,
+  getCachedEvents,
+  saveCachedEventDetail,
+  saveCachedEvents,
+} from "../../utils/offlineEventCache";
 
-const getSearchResults = (events, searchQuery) => {
-  if (!searchQuery.trim()) {
-    return events;
+const normalizeEvent = (event) => ({
+  ...event,
+  status: event.status || getEventStatus(event),
+});
+
+const eventMatchesSearch = (event, query) => {
+  const safeQuery = query.trim().toLowerCase();
+
+  if (!safeQuery) {
+    return true;
   }
 
-  return getRouteSearchResults(
-    events,
-    searchQuery,
-    ["title", "description", "location", "tags", "type", "date", "status"],
-    {
-      threshold: 0.35,
-    },
-  );
+  return [
+    event.title,
+    event.description,
+    event.category,
+    event.type,
+    event.location,
+    event.date,
+    ...(event.tags || []),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase()
+    .includes(safeQuery);
 };
 
 const useEventListing = () => {
-  const [events, setEvents] = useState([]);
+  const fallbackEvents = useMemo(() => mockEvents.map(normalizeEvent), []);
+  const [events, setEvents] = useState(fallbackEvents);
   const [filterType, setFilterType] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortType, setSortType] = useState("Newest");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [cacheInfo, setCacheInfo] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [eventsPerPage, setEventsPerPage] = useState(DEFAULT_EVENTS_PER_PAGE);
-  const [advancedFilters, setAdvancedFilters] = useState(getDefaultFilters());
+  const [advancedFilters, setAdvancedFilters] = useState({});
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
+  const isInitialMount = useRef(true);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const normalizedEvents = mockEvents.map((event) => ({
-        ...event,
-        status: getEventStatus(event),
-      }));
-
-      setEvents(normalizedEvents);
-
-      setIsLoading(false);
-    }, 800);
-
-    return () => clearTimeout(timer);
-  }, []);
   const fetchEvents = useCallback(async () => {
     setIsLoading(true);
     setLoadError("");
 
     try {
-      const response = await apiUtils.get(API_ENDPOINTS.EVENTS.ALL);
-      const apiEvents = Array.isArray(response.data) ? response.data : [];
-      setEvents(apiEvents.map((event) => ({ ...event, status: getEventStatus(event) })));
+      const response = await apiUtils.get(API_ENDPOINTS.EVENTS.LIST);
+      const responseData = response?.data;
+      const apiEvents = Array.isArray(responseData?.content)
+        ? responseData.content
+        : Array.isArray(responseData)
+          ? responseData
+          : [];
+
+      const nextEvents = (apiEvents.length > 0 ? apiEvents : fallbackEvents).map(normalizeEvent);
+      setEvents(nextEvents);
+      setCacheInfo(null);
+      saveCachedEvents(nextEvents);
+      nextEvents.forEach(saveCachedEventDetail);
     } catch (error) {
-      if (process.env.NODE_ENV === "development") {
-        setEvents(mockEvents.map((event) => ({ ...event, status: getEventStatus(event) })));
+      const cached = getCachedEvents();
+      if (cached?.events?.length) {
+        setEvents(cached.events.map(normalizeEvent));
+        setCacheInfo({
+          cachedAt: cached.cachedAt,
+          label: getCacheAgeLabel(cached.cachedAt),
+        });
+        setLoadError(`You're offline. Showing ${getCacheAgeLabel(cached.cachedAt)} event data.`);
       } else {
-        setEvents([]);
-        setLoadError(error?.message || "Failed to load events. Please try again.");
+        setEvents(fallbackEvents);
+        setCacheInfo({
+          cachedAt: null,
+          label: "bundled fallback",
+        });
+        setLoadError("You're offline. Showing bundled event data until the network returns.");
       }
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [fallbackEvents]);
 
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
 
-  const filteredEvents = useMemo(() => {
-    const searchResults = getSearchResults(events, searchQuery);
-    const filtered = filterEventsByType(searchResults, filterType);
-    const advancedFiltered = applyAdvancedFilters(filtered, advancedFilters);
-    return sortEventsByDate(advancedFiltered, sortType);
-  }, [events, filterType, searchQuery, sortType, advancedFilters]);
+  const priceStats = useMemo(() => getPriceStats(events), [events]);
+  const dateRangeStats = useMemo(() => getDateRange(events), [events]);
 
-  const totalPages = getTotalPages(filteredEvents.length, eventsPerPage);
+  const filteredEvents = useMemo(() => {
+    const searchedEvents = events.filter((event) => eventMatchesSearch(event, searchQuery));
+    const typedEvents = filterEventsByType(searchedEvents, filterType);
+    const advancedFilteredEvents = applyAdvancedFilters(typedEvents, advancedFilters);
+
+    return sortEventsByDate(advancedFilteredEvents, sortType);
+  }, [advancedFilters, events, filterType, searchQuery, sortType]);
+
+  const totalPages = useMemo(
+    () => getTotalPages(filteredEvents.length, eventsPerPage),
+    [eventsPerPage, filteredEvents.length],
+  );
 
   const paginatedEvents = useMemo(
     () => getPaginatedEvents(filteredEvents, currentPage, eventsPerPage),
@@ -99,49 +127,75 @@ const useEventListing = () => {
   );
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
     setCurrentPage(1);
-  }, [eventsPerPage, filterType, searchQuery, sortType, advancedFilters]);
+  }, [advancedFilters, eventsPerPage, filterType, searchQuery, sortType]);
 
   useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
+    setCurrentPage((page) => clampPage(page, totalPages));
+  }, [totalPages]);
 
-  const setSafePage = (page) => {
-    setCurrentPage(clampPage(page, totalPages));
-  };
+  const setSafePage = useCallback(
+    (page) => {
+      setCurrentPage(clampPage(Number(page) || 1, totalPages));
+    },
+    [totalPages],
+  );
 
-  // Get price and date statistics from all events
-  const priceStats = useMemo(() => getPriceStats(events), [events]);
-  const dateRangeStats = useMemo(() => getDateRange(events), [events]);
-
-  return {
-    currentPage,
-    eventsPerPage,
-    fetchEvents,
-    filteredEvents,
-    filterType,
-    loadError,
-    isLoading,
-    paginatedEvents,
-    searchQuery,
-    sortType,
-    totalPages,
-    viewMode,
-    advancedFilters,
-    isAdvancedFiltersOpen,
-    priceStats,
-    dateRangeStats,
-    setEventsPerPage,
-    setFilterType,
-    setSafePage,
-    setSearchQuery,
-    setSortType,
-    setViewMode,
-    setAdvancedFilters,
-    setIsAdvancedFiltersOpen,
-  };
+  return useMemo(
+    () => ({
+      advancedFilters,
+      cacheInfo,
+      currentPage,
+      dateRangeStats,
+      eventsPerPage,
+      fetchEvents,
+      filteredEvents,
+      filterType,
+      isAdvancedFiltersOpen,
+      isLoading,
+      loadError,
+      paginatedEvents,
+      priceStats,
+      searchQuery,
+      sortType,
+      totalElements: filteredEvents.length,
+      totalPages,
+      viewMode,
+      setAdvancedFilters,
+      setEventsPerPage,
+      setFilterType,
+      setIsAdvancedFiltersOpen,
+      setSafePage,
+      setSearchQuery,
+      setSortType,
+      setViewMode,
+    }),
+    [
+      advancedFilters,
+      cacheInfo,
+      currentPage,
+      dateRangeStats,
+      eventsPerPage,
+      fetchEvents,
+      filteredEvents,
+      filterType,
+      isAdvancedFiltersOpen,
+      isLoading,
+      loadError,
+      paginatedEvents,
+      priceStats,
+      searchQuery,
+      setSafePage,
+      sortType,
+      totalPages,
+      viewMode,
+    ],
+  );
 };
 
 export default useEventListing;
