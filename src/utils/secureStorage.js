@@ -107,6 +107,83 @@ const cryptoSupported = isCryptoAvailable();
 // Encrypted key-value storage wrapper (localStorage — AES-GCM encrypted)
 // ---------------------------------------------------------------------------
 
+// Feature-detect Web Crypto API (only available in secure contexts / HTTPS)
+const cryptoSupported =
+  typeof window !== 'undefined' &&
+  typeof window.crypto !== 'undefined' &&
+  typeof window.crypto.subtle !== 'undefined';
+
+/**
+ * Derives a 256-bit AES-GCM key from the page origin using PBKDF2.
+ * The origin acts as a deterministic, per-site "passphrase" so that no
+ * hardcoded secrets are required in the source code.
+ *
+ * @returns {Promise<CryptoKey>}
+ */
+const deriveKey = async () => {
+  const encoder = new TextEncoder();
+  const keyMaterial = await window.crypto.subtle.importKey(
+    'raw',
+    encoder.encode(window.location.origin),
+    'PBKDF2',
+    false,
+    ['deriveKey'],
+  );
+  return window.crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: encoder.encode('eventra-secure-storage-salt'),
+      iterations: 100000,
+      hash: 'SHA-256',
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt'],
+  );
+};
+
+/**
+ * Encrypts a plaintext string with AES-GCM using a PBKDF2-derived key.
+ * Returns a Base64-encoded string containing `iv:ciphertext`.
+ *
+ * @param {string} plaintext
+ * @returns {Promise<string>}
+ */
+const encrypt = async (plaintext) => {
+  const key = await deriveKey();
+  const encoder = new TextEncoder();
+  const iv = window.crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await window.crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    encoder.encode(plaintext),
+  );
+  // Combine IV + ciphertext into a single Base64 string separated by ':'
+  const ivBase64 = btoa(String.fromCharCode(...iv));
+  const ctBase64 = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+  return `${ivBase64}:${ctBase64}`;
+};
+
+/**
+ * Decrypts a Base64-encoded `iv:ciphertext` string produced by `encrypt()`.
+ *
+ * @param {string} stored - The stored `iv:ciphertext` Base64 string
+ * @returns {Promise<string>}
+ */
+const decrypt = async (stored) => {
+  const key = await deriveKey();
+  const [ivBase64, ctBase64] = stored.split(':');
+  const iv = Uint8Array.from(atob(ivBase64), (c) => c.charCodeAt(0));
+  const ciphertext = Uint8Array.from(atob(ctBase64), (c) => c.charCodeAt(0));
+  const decrypted = await window.crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    ciphertext,
+  );
+  return new TextDecoder().decode(decrypted);
+};
+
 /**
  * syncSecureStorage
  *
