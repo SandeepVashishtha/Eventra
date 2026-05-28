@@ -77,10 +77,14 @@ const ProjectGallery = () => {
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
 
-  const [bookmarks, setBookmarks] = useState(() => {
+  const [bookmarks, setBookmarks] = useState([]);
+
+  useEffect(() => {
     const saved = localStorage.getItem("eventra_bookmarked_projects");
-    return safeJsonParse(saved, []);
-  });
+    if (saved) {
+      setBookmarks(safeJsonParse(saved, []));
+    }
+  }, []);
 
   const handleBookmarkToggle = (projectId) => {
     setBookmarks((prev) => {
