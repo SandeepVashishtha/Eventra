@@ -572,18 +572,11 @@ const AdminDashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredUsers.length === 0
-                        ? <tr><td colSpan={6} className="ad-table-empty">No users found.</td></tr>
-                        : filteredUsers.map(u => (
-                        <tr
-  key={u.id}
-  className="
-    transition-colors
-    duration-200
-    hover:bg-slate-50
-    dark:hover:bg-slate-800/50
-  "
->
+                      {filteredUsers.length === 0 ? (
+                        <tr><td colSpan={6} className="ad-table-empty">No users found.</td></tr>
+                      ) : (
+                        filteredUsers.map((u) => (
+                          <tr key={u.id} className="transition-colors duration-200 hover:bg-slate-50 dark:hover:bg-slate-800/50">
                             <td>
                               <div className="ad-table-user">
                                 <div className="ad-table-avatar">{u.firstName.charAt(0)}</div>
@@ -592,7 +585,7 @@ const AdminDashboard = () => {
                             </td>
                             <td className="ad-muted">{u.email}</td>
                             <td>
-                              {u.roles.map(r => (
+                              {u.roles.map((r) => (
                                 <span key={r} style={{ marginRight: '4px' }}><StatusBadge status={r} /></span>
                               ))}
                             </td>
@@ -613,54 +606,8 @@ const AdminDashboard = () => {
                               </div>
                             </td>
                           </tr>
-                        ) : (
-                          filteredUsers.map((u) => (
-                            <tr key={u.id}>
-                              <td>
-                                <div className="ad-table-user">
-                                  <div className="ad-table-avatar">{u.firstName.charAt(0)}</div>
-                                  <span>
-                                    {u.firstName} {u.lastName}
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="ad-muted">{u.email}</td>
-                              <td>
-                                {u.roles.map((r) => (
-                                  <span key={r} style={{ marginRight: "4px" }}>
-                                    <StatusBadge status={r} />
-                                  </span>
-                                ))}
-                              </td>
-                              <td className="ad-muted">{u.createdAt}</td>
-                              <td>
-                                <StatusBadge status={u.status} />
-                              </td>
-                              <td>
-                                <div className="ad-action-btns">
-                                  {hasPermission(PERMISSIONS.EDIT_USER) && (
-                                    <button
-                                      className="ad-icon-action"
-                                      title="Edit"
-                                      onClick={() => toast.info("Edit coming soon")}
-                                    >
-                                      <Edit2 size={14} />
-                                    </button>
-                                  )}
-                                  {hasPermission(PERMISSIONS.DELETE_USER) && (
-                                    <button
-                                      className="ad-icon-action ad-icon-danger"
-                                      title="Delete"
-                                      onClick={() => confirmDelete("user", u.id)}
-                                    >
-                                      <Trash2 size={14} />
-                                    </button>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          ))
-                        )}
+                        ))
+                      )}
                       </tbody>
                     </table>
                   )}
@@ -708,23 +655,13 @@ const AdminDashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredEvents.length === 0
-                        ? <tr><td colSpan={6} className="ad-table-empty">No events found.</td></tr>
-                        : filteredEvents.map(ev => (
-<tr
-  key={ev.id}
-  className="
-    transition-colors
-    duration-200
-    hover:bg-slate-50
-    dark:hover:bg-slate-800/50
-  "
->                            <td className="ad-table-bold">{ev.title}</td>
-                            <td>
-                              <StatusBadge status={ev.type} />
-                              
-                              
-                            </td>
+                      {filteredEvents.length === 0 ? (
+                        <tr><td colSpan={6} className="ad-table-empty">No events found.</td></tr>
+                      ) : (
+                        filteredEvents.map((ev) => (
+                          <tr key={ev.id} className="transition-colors duration-200 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                            <td className="ad-table-bold">{ev.title}</td>
+                            <td><StatusBadge status={ev.type} /></td>
                             <td className="ad-muted">{ev.date}</td>
                             <td className="ad-muted">{ev.participantCount}</td>
                             <td><StatusBadge status={ev.status} /></td>
@@ -743,43 +680,8 @@ const AdminDashboard = () => {
                               </div>
                             </td>
                           </tr>
-                        ) : (
-                          filteredEvents.map((ev) => (
-                            <tr key={ev.id}>
-                              <td className="ad-table-bold">{ev.title}</td>
-                              <td>
-                                <StatusBadge status={ev.type} />
-                              </td>
-                              <td className="ad-muted">{ev.date}</td>
-                              <td className="ad-muted">{ev.participantCount}</td>
-                              <td>
-                                <StatusBadge status={ev.status} />
-                              </td>
-                              <td>
-                                <div className="ad-action-btns">
-                                  {hasPermission(PERMISSIONS.EDIT_EVENT) && (
-                                    <button
-                                      className="ad-icon-action"
-                                      title="Edit"
-                                      onClick={() => toast.info("Edit coming soon")}
-                                    >
-                                      <Edit2 size={14} />
-                                    </button>
-                                  )}
-                                  {hasPermission(PERMISSIONS.DELETE_EVENT) && (
-                                    <button
-                                      className="ad-icon-action ad-icon-danger"
-                                      title="Delete"
-                                      onClick={() => confirmDelete("event", ev.id)}
-                                    >
-                                      <Trash2 size={14} />
-                                    </button>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          ))
-                        )}
+                        ))
+                      )}
                       </tbody>
                     </table>
                   )}

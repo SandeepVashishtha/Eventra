@@ -127,15 +127,8 @@ export function RealTimeProvider({ children }) {
   );
 }
 
-// --- 6. Exported Hooks ---
-export function useRealTime() {
-  const leaderboard = useContext(LeaderboardContext);
-  const analytics = useContext(AnalyticsContext);
-  if (!leaderboard || !analytics) {
-    throw new Error("useRealTime must be used inside RealTimeProvider");
-  }
-  return { leaderboard, analytics };
-}
+// The legacy useRealTime hook was removed because it defeated the split-provider architecture
+// by consuming both contexts simultaneously and triggering global re-renders.
 
 // 🔥 The Magic: These hooks now ONLY re-render when their specific stream updates!
 export const useLeaderboardStream = () => {

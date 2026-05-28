@@ -31,6 +31,7 @@
 import React, { useRef, useEffect } from "react";
 import QRTicket from "./QRTicket";
 import { useTicketDownload } from "./useTicketDownload";
+import { toast } from "react-toastify";
 
 export default function QRTicketModal({ isOpen, onClose, ticket }) {
   const ticketRef = useRef(null);
@@ -39,13 +40,14 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
     ticket?.ticketId || "ticket"
   );
 
-  // Close on Escape key
+  const modalRef = useRef(null);
+
+  // Focus modal on open to capture localized keyboard events
   useEffect(() => {
-    if (!isOpen) return;
-    const handler = (e) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [isOpen, onClose]);
+    if (isOpen && modalRef.current) {
+      modalRef.current.focus();
+    }
+  }, [isOpen]);
 
   // Lock body scroll while open
   useEffect(() => {
@@ -62,12 +64,45 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
           text: `Here's my ticket for ${ticket?.eventName} on ${ticket?.date}`,
           url: shareUrl,
         });
-      } catch (_) { /* user cancelled */ }
-    } else {
-      await navigator.clipboard.writeText(shareUrl);
-      // You can replace this with your existing toast system:
-      // toast.success("Link copied to clipboard!");
-      alert("Ticket link copied to clipboard!");
+        return;
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.error("Native share failed", err);
+        } else {
+          return; // User intentionally cancelled native share
+        }
+      }
+    }
+    
+    // Fallback to Clipboard API
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success("Ticket link copied to clipboard!");
+        return;
+      } catch (err) {
+        console.error("Clipboard API failed", err);
+      }
+    }
+
+    // Ultimate fallback for insecure contexts (HTTP) or unsupported browsers
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = shareUrl;
+      textArea.style.position = "fixed"; // Avoid scrolling to bottom
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.select();
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textArea);
+      if (successful) {
+        toast.success("Ticket link copied to clipboard!");
+      } else {
+        toast.error("Failed to copy link. Please copy manually.");
+      }
+    } catch (err) {
+      console.error("Fallback clipboard failed", err);
+      toast.error("Failed to copy link. Please copy manually.");
     }
   };
 
@@ -76,7 +111,10 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
   return (
     // Backdrop
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      ref={modalRef}
+      tabIndex={-1}
+      onKeyDown={(e) => e.key === "Escape" && onClose()}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 outline-none"
       style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
       role="dialog"
@@ -110,7 +148,7 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
             disabled={downloading}
             className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold text-white transition-opacity disabled:opacity-50"
             style={{ background: "#7c3aed" }}
-          >
+           aria-label="button">
             <DownloadIcon />
             {downloading ? "Saving…" : "Save PNG"}
           </button>
@@ -125,7 +163,7 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
               color: "white",
               border: "1px solid rgba(255,255,255,0.12)",
             }}
-          >
+           aria-label="button">
             <FileIcon />
             {downloading ? "…" : "PDF"}
           </button>
@@ -139,7 +177,7 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
               color: "white",
               border: "1px solid rgba(255,255,255,0.12)",
             }}
-          >
+           aria-label="button">
             <ShareIcon />
             Share
           </button>
