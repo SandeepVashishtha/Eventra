@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { GitHubStatCardSkeleton } from "../../../components/common/SkeletonLoaders";
 import {
@@ -31,10 +31,26 @@ const readCache = () => {
     return null;
   }
 };
+
 const writeCache = (data) => {
   try {
     localStorage.setItem(LS_KEY, JSON.stringify({ data, ts: Date.now() }));
   } catch {}
+};
+
+const API_BASE = process.env.REACT_APP_API_URL ?? "";
+
+/**
+ * Fetches a single backend endpoint and returns the parsed JSON body.
+ * Rejects if the response is not ok so Promise.allSettled can surface the error.
+ *
+ * @param {string} path - Relative path appended to REACT_APP_API_URL
+ * @returns {Promise<unknown>}
+ */
+const fetchStat = async (path) => {
+  const res = await fetch(`${API_BASE}${path}`);
+  if (!res.ok) throw new Error(`${path} responded with ${res.status}`);
+  return res.json();
 };
 
 export default function GitHubStats() {
@@ -56,64 +72,79 @@ export default function GitHubStats() {
   useEffect(() => {
     let mounted = true;
     const cached = readCache();
-    if (cached && mounted) {
+    if (cached) {
       setStats(cached);
       setIsLoading(false);
     }
 
     (async () => {
       try {
-        const repoRes = await fetch(`${process.env.REACT_APP_API_URL}/github/repo`);
-        if (!repoRes.ok) throw new Error(`Repo ${repoRes.status}`);
-        const repoData = await repoRes.json();
+        // Fire all three requests simultaneously — they are independent and
+        // there is no reason to wait for one before starting the next.
+        // Promise.allSettled ensures a single failure does not abort the others.
+        const [repoResult, contributorsResult, prResult] = await Promise.allSettled([
+          fetchStat("/github/repo"),
+          fetchStat("/github/contributors"),
+          fetchStat("/github/pulls"),
+        ]);
 
-        // contributors
-        let contribCount = "—";
-        try {
-          const cRes = await fetch(`${process.env.REACT_APP_API_URL}/github/contributors`);
-          if (cRes.ok) {
-            const cData = await cRes.json();
-            if (Array.isArray(cData)) contribCount = cData.length;
-          }
-        } catch {}
+        if (!mounted) return;
 
-        // pull requests
-        let prCount = "—";
-        try {
-          const pRes = await fetch(`${process.env.REACT_APP_API_URL}/github/pulls`);
-          if (pRes.ok) {
-            const pData = await pRes.json();
-            if (Array.isArray(pData)) prCount = pData.length;
+        // Extract fulfilled values with per-fetch fallbacks for rejected settlements
+        const repoData = repoResult.status === "fulfilled" ? repoResult.value : null;
+        const contributorsData =
+          contributorsResult.status === "fulfilled" ? contributorsResult.value : null;
+        const prData = prResult.status === "fulfilled" ? prResult.value : null;
+
+        if (contributorsResult.status === "rejected") {
+          console.warn("GitHub contributors fetch failed:", contributorsResult.reason);
+        }
+        if (prResult.status === "rejected") {
+          console.warn("GitHub pull requests fetch failed:", prResult.reason);
+        }
+        if (repoResult.status === "rejected") {
+          console.warn("GitHub repo fetch failed:", repoResult.reason);
+          // If the primary repo fetch failed and we had a cache, keep the cached
+          // display rather than partially overwriting it with null values.
+          if (cached) {
+            setIsLoading(false);
+            return;
           }
-        } catch {}
+          setStats((s) => ({ ...s, stars: "—", forks: "—", issues: "—" }));
+          setIsLoading(false);
+          return;
+        }
+
+        const contribCount = Array.isArray(contributorsData) ? contributorsData.length : "—";
+        const prCount = Array.isArray(prData) ? prData.length : "—";
 
         const next = {
-          stars: repoData.stargazers_count || 0,
-          forks: repoData.forks_count || 0,
-          issues: repoData.open_issues_count || 0,
+          stars: repoData?.stargazers_count || 0,
+          forks: repoData?.forks_count || 0,
+          issues: repoData?.open_issues_count || 0,
           contributors: contribCount,
-          lastCommit: repoData.pushed_at
+          lastCommit: repoData?.pushed_at
             ? new Date(repoData.pushed_at).toLocaleDateString("en-GB")
             : "N/A",
-          size: repoData.size || 0,
+          size: repoData?.size || 0,
           pullRequests: prCount,
           releases: "—",
-          license: repoData.license?.spdx_id || "N/A",
-          watchers: repoData.subscribers_count || 0,
+          license: repoData?.license?.spdx_id || "N/A",
+          watchers: repoData?.subscribers_count || 0,
           languages: {},
         };
 
-        if (mounted) {
-          setStats(next);
-          writeCache(next);
-          setIsLoading(false);
-        }
+        // Only update state and write cache after all three results are merged —
+        // preserving the all-or-nothing cache semantics of the original code.
+        setStats(next);
+        writeCache(next);
       } catch (err) {
-        console.warn("GitHub stats fetch failed", err);
+        console.warn("GitHub stats fetch failed:", err);
         if (!cached && mounted) {
           setStats((s) => ({ ...s, stars: "—", forks: "—", issues: "—" }));
-          setIsLoading(false);
         }
+      } finally {
+        if (mounted) setIsLoading(false);
       }
     })();
 
@@ -122,7 +153,7 @@ export default function GitHubStats() {
     };
   }, []);
 
-  const statCards = [
+  const statCards = useMemo(() => [
     {
       label: "Stars",
       value: stats.stars,
@@ -147,7 +178,6 @@ export default function GitHubStats() {
       icon: <GitPullRequest className="text-pink-500" size={40} />,
       link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/pulls`,
     },
-
     {
       label: "Contributors",
       value: stats.contributors,
@@ -186,17 +216,15 @@ export default function GitHubStats() {
       icon: <Languages className="text-amber-600" size={40} />,
       link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}`,
     },
-  ];
+  ], [stats]);
 
   return (
-    // UPDATED: Section background
-    <section className="py-16 bg-white dark:bg-black ">
+    <section className="py-16 bg-white dark:bg-black">
       <div className="max-w-7xl mx-auto px-6">
         <motion.h2
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          // UPDATED: Title text color with responsive sizing
           className="text-3xl sm:text-4xl font-extrabold text-center text-gray-900 dark:text-gray-100 mb-8 sm:mb-10 px-4"
         >
           Project Statistics
@@ -209,7 +237,7 @@ export default function GitHubStats() {
         >
           {isLoading
             ? [...Array(10)].map((_, i) => <GitHubStatCardSkeleton key={`skeleton-${i}`} />)
-            : statCards.map(({ label, value, icon, link }, index) => (
+            : statCards.map(({ label, value, icon, link }) => (
                 <motion.a
                   key={label}
                   href={link}
@@ -217,19 +245,14 @@ export default function GitHubStats() {
                   rel="noopener noreferrer"
                   whileHover={{ scale: 1.1, rotate: 1 }}
                   whileTap={{ scale: 0.95 }}
-                  // UPDATED: Card background, border, and responsive sizing
                   className="group flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-2xl px-3 py-4 sm:px-6 sm:py-6 md:px-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 relative overflow-hidden"
                 >
-                  {/* Glow effect */}
-                  {/* UPDATED: Glow effect for dark mode */}
                   <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition duration-700 blur-3xl rounded-2xl"></div>
 
                   <div className="z-10 flex flex-col items-center space-y-2 sm:space-y-3">
-                    {/* UPDATED: Icon wrapper background with responsive sizing */}
                     <div className="p-2 sm:p-3 md:p-4 bg-gray-50 dark:bg-gray-700 rounded-full shadow-inner [&>svg]:w-7 [&>svg]:h-7 sm:[&>svg]:w-9 sm:[&>svg]:h-9 md:[&>svg]:w-10 md:[&>svg]:h-10">
                       {icon}
                     </div>
-                    {/* UPDATED: Text colors with responsive sizing */}
                     <p className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 text-center break-words px-1">
                       {value}
                     </p>
@@ -238,7 +261,6 @@ export default function GitHubStats() {
                     </p>
                   </div>
 
-                  {/* UPDATED: Icon color */}
                   <ExternalLink
                     size={16}
                     className="absolute top-3 right-3 text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition duration-300"
