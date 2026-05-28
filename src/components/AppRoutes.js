@@ -6,6 +6,7 @@ import {
   getProtectedRoutes,
   getAuthRoutes,
 } from "./routes/ProtectedRoutes";
+
 import ProtectedRoute from "./auth/ProtectedRoute";
 
 const UserAchievements = lazy(() => import("../Pages/UserAchievements"));
@@ -18,6 +19,7 @@ const RouteFallback = () => (
         className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent"
         aria-hidden="true"
       />
+
       <span role="status" aria-live="polite">
         Loading page...
       </span>
@@ -25,24 +27,9 @@ const RouteFallback = () => (
   </div>
 );
 
-const AppRoutes = () => (
-  <Suspense fallback={<RouteFallback />}>
-    <Routes>
-      {getPublicRoutes()}
-      {getProtectedRoutes()}
-      {getAuthRoutes()}
-
-      <Route
-        path="/dashboard/achievements"
-        element={
-          <ProtectedRoute>
-            <UserAchievements />
-          </ProtectedRoute>
-        }
-      />
 const AppRoutes = () => {
   return (
-    <Suspense fallback={<PageLoader />}>
+    <Suspense fallback={<RouteFallback />}>
       <Routes>
         {/* Public Routes */}
         {getPublicRoutes()}
@@ -63,9 +50,11 @@ const AppRoutes = () => {
           }
         />
 
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
-  </Suspense>
-);
+        {/* 404 Route */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </Suspense>
+  );
+};
 
 export default AppRoutes;
