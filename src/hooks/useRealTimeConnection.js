@@ -79,13 +79,18 @@ export default function useRealTimeConnection(path, { onMessage, enabled = true 
     };
 
     source.onmessage = (evt) => {
+      let payload = evt.data;
+      
       try {
-        const data = JSON.parse(evt.data);
-        onMessageRef.current?.(data, evt.type);
+        payload = JSON.parse(evt.data);
       } catch {
-        // Forward raw string if JSON parsing fails
-        onMessageRef.current?.(evt.data, evt.type);
+        // Forward raw string if JSON parsing fails (payload remains evt.data)
       }
+      
+      // 🔥 FIX: Execute the callback completely outside the try/catch block.
+      // This ensures if the React UI throws an error, it doesn't get swallowed
+      // by the catch block above, preventing a double-execution bug.
+      onMessageRef.current?.(payload, evt.type);
     };
 
     source.onerror = () => {
