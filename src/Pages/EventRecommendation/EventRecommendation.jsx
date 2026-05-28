@@ -287,7 +287,7 @@ const EventRecommendation = () => {
                   <option>
                     Beginner
                   </option>
-//
+
                   <option>
                     Intermediate
                   </option>
