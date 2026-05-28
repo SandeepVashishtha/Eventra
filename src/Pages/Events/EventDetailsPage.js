@@ -6,8 +6,10 @@ import DOMPurify from "dompurify";
 import CountdownTimer from "../../components/common/CountdownTimer";
 import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft, WifiOff } from "lucide-react";
 import { Share2, Twitter, Facebook, Linkedin, MessageCircle, Copy, Check } from "lucide-react";
-import eventsMockData from "./eventsMockData.json";
 import { getEventStatus } from "../../utils/eventUtils";
+// Note: eventsMockData.json is NOT statically imported here.
+// It is loaded dynamically (and only in development/fallback mode) so that
+// the mock JSON is not bundled into the production build.
 
 const EventDetailsPage = () => {
   const { eventId } = useParams();
@@ -58,15 +60,39 @@ const EventDetailsPage = () => {
       setCacheInfo(null);
 
       try {
-        const foundEvent = eventsMockData.find(
-          (item) => String(item.id) === String(eventId)
-        );
-        setEvent(foundEvent || null);
-        if (foundEvent) {
-          setCacheInfo({ cachedAt: null, label: "bundled fallback" });
+        // Try the live API first
+        const apiUrl = `/api/events/${encodeURIComponent(eventId)}`;
+        const response = await fetch(apiUrl);
+        if (response.ok) {
+          const data = await response.json();
+          setEvent(data.event || data || null);
+          setCacheInfo({ cachedAt: null, label: "live" });
+        } else {
+          // API responded with an error status — fall back to mock data (dev/demo only)
+          // Dynamic import keeps the mock JSON out of the production bundle.
+          const { default: mockData } = await import("./eventsMockData.json");
+          const foundEvent = mockData.find(
+            (item) => String(item.id) === String(eventId)
+          );
+          setEvent(foundEvent || null);
+          if (foundEvent) {
+            setCacheInfo({ cachedAt: null, label: "mock fallback" });
+          }
         }
       } catch {
-        setEvent(null);
+        // Network error — try mock data as last resort
+        try {
+          const { default: mockData } = await import("./eventsMockData.json");
+          const foundEvent = mockData.find(
+            (item) => String(item.id) === String(eventId)
+          );
+          setEvent(foundEvent || null);
+          if (foundEvent) {
+            setCacheInfo({ cachedAt: null, label: "offline fallback" });
+          }
+        } catch {
+          setEvent(null);
+        }
       } finally {
         setLoading(false);
       }
