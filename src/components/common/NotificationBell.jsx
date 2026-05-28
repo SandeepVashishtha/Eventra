@@ -16,7 +16,7 @@ const NotificationBell = () => {
     <div className="notification-wrapper">
       <button
         className="notification-bell"
-        onClick={() => setOpen(!open)}
+        onClick={() = aria-label="button"> setOpen(!open)}
       >
         <Bell size={22} />
 
@@ -32,7 +32,7 @@ const NotificationBell = () => {
           <div className="notification-header">
             <h4>Notifications</h4>
 
-            <button onClick={markAllAsRead}>
+            <button onClick={markAllAsRead} aria-label="button">
               Mark all read
             </button>
           </div>

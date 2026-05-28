@@ -23,7 +23,7 @@ const ModeFilter = ({ modes, selectedModes, onModeChange }) => {
         {modes.map((mode) => (
           <button
             key={mode.id}
-            onClick={() => toggleMode(mode.id)}
+            onClick={() = aria-label="button"> toggleMode(mode.id)}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all text-left ${
               selectedModes.includes(mode.id)
                 ? "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-600"

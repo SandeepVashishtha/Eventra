@@ -1,4 +1,3 @@
-import SavedEventsPage from './Pages/SavedEventsPage';
 import EventRecommendation from "./Pages/EventRecommendation/EventRecommendation";
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
@@ -122,6 +121,7 @@ function App() {
                 <OnboardingChecklist />
 
                 <main
+                  id="main-content"
                   className="
                     relative z-10 min-h-[85vh]
                     bg-white dark:bg-slate-950

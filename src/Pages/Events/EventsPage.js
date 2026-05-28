@@ -1,12 +1,12 @@
+import { useCallback, useRef } from "react";
 import { useRef, useEffect, useState } from "react";
 import { useSearchParams, useLocation  } from "react-router-dom";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
+import { Grid, List } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { getEventStatus } from "../../utils/eventUtils";
-import {
-  Grid,
-  List,
-} from "lucide-react";
+import { Grid, List } from "lucide-react";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
 import EventFiltersToolbar from "./EventFiltersToolbar";
@@ -88,7 +88,7 @@ const renderCardSection = (
 const EventsPage = () => {
   useDocumentTitle("Eventra | Events");
 
-  const location = useLocation();
+  const location = useLocation(); // ✅ Now this works!
   const [searchParams, setSearchParams] = useSearchParams();
 
   // SECURITY: Safely decode and sanitize search query from URL params
@@ -107,6 +107,23 @@ const EventsPage = () => {
   }
 
   const listing = useEventListing();
+  const {
+    setAdvancedFilters,
+    setFilterType,
+    setSafePage,
+    setSearchQuery,
+    setSortType,
+    setViewMode,
+  } = listing;
+
+  const handleSearch = useCallback((query = "") => {
+    setSearchQuery(query);
+  }, [setSearchQuery]);
+
+  const handlePageChange = useCallback((page) => {
+    setSafePage(page);
+    cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [setSafePage]);
   const cardSectionRef = useRef();
 
   // Local input value updates immediately on each keystroke so the input
@@ -185,8 +202,19 @@ const EventsPage = () => {
     }
   }, [listing.isLoading, routeSearchQuery]);
 
-  const scrollToCard = () => {
+  const scrollToCard = useCallback(() => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setSearchQuery("");
+    setFilterType("all");
+    setSortType("Newest");
+    setViewMode("grid");
+    setAdvancedFilters({});
+  }, [setAdvancedFilters, setFilterType, setSearchQuery, setSortType, setViewMode]);
+  const handleClearFilters = () => {
+    setLocalSearchInput("");
   };
 
   const clearSearchAndFilters = () => {
@@ -197,7 +225,9 @@ const EventsPage = () => {
   };
 
   const hasActiveFilters =
-    listing.filterType !== "all" || listing.sortType !== "Newest" || listing.searchQuery !== "";
+    listing.filterType !== "all" ||
+    listing.sortType !== "Newest" ||
+    listing.searchQuery !== "";
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 overflow-x-hidden">
@@ -218,7 +248,7 @@ const EventsPage = () => {
             {FILTERS.map((filter) => (
               <button
                 key={filter.key}
-                onClick={() => listing.setFilterType(filter.key)}
+                onClick={() = aria-label="button"> listing.setFilterType(filter.key)}
                 className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-lg transition ${
                   listing.filterType === filter.key
                     ? "bg-blue-600 text-white dark:bg-blue-600 dark:text-white"
@@ -234,27 +264,28 @@ const EventsPage = () => {
               <button
                 onClick={clearSearchAndFilters}
                 className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-full transition bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 dark:bg-red-900/30 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/50 font-semibold"
-              >
+               aria-label="button">
                 Clear Filters
               </button>
             )}
           </div>
-        <EventFiltersToolbar
-          filterType={listing.filterType}
-          onFilterChange={listing.setFilterType}
-          sortType={listing.sortType}
-          onSortChange={listing.setSortType}
-          viewMode={listing.viewMode}
-          onViewModeChange={listing.setViewMode}
-          searchQuery={localSearchInput}
-          onSearchChange={setLocalSearchInput}
-          advancedFilters={listing.advancedFilters}
-          onAdvancedFiltersChange={listing.setAdvancedFilters}
-          isAdvancedFiltersOpen={listing.isAdvancedFiltersOpen}
-          onToggleAdvancedFilters={listing.setIsAdvancedFiltersOpen}
-          priceStats={listing.priceStats}
-          dateRangeStats={listing.dateRangeStats}
-        />
+
+          <EventFiltersToolbar
+            filterType={listing.filterType}
+            onFilterChange={listing.setFilterType}
+            sortType={listing.sortType}
+            onSortChange={listing.setSortType}
+            viewMode={listing.viewMode}
+            onViewModeChange={listing.setViewMode}
+            searchQuery={localSearchInput}
+            onSearchChange={setLocalSearchInput}
+            advancedFilters={listing.advancedFilters}
+            onAdvancedFiltersChange={listing.setAdvancedFilters}
+            isAdvancedFiltersOpen={listing.isAdvancedFiltersOpen}
+            onToggleAdvancedFilters={listing.setIsAdvancedFiltersOpen}
+            priceStats={listing.priceStats}
+            dateRangeStats={listing.dateRangeStats}
+          />
 
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
             <div className="w-full sm:w-48">
@@ -272,7 +303,7 @@ const EventsPage = () => {
 
             <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
               <button
-                onClick={() => listing.setViewMode("grid")}
+                onClick={() = aria-label="button"> listing.setViewMode("grid")}
                 className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
                   listing.viewMode === "grid"
                     ? "bg-black text-white shadow-md dark:bg-white dark:text-black"
@@ -284,7 +315,7 @@ const EventsPage = () => {
                 <Grid size={16} />
               </button>
               <button
-                onClick={() => listing.setViewMode("list")}
+                onClick={() = aria-label="button"> listing.setViewMode("list")}
                 className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
                   listing.viewMode === "list"
                     ? "bg-black text-white shadow-md dark:bg-white dark:text-black"
@@ -301,7 +332,10 @@ const EventsPage = () => {
 
         <ActiveFilters
           searchQuery={localSearchInput}
-          setSearchQuery={(val) => { setLocalSearchInput(val); listing.setSearchQuery(val); }}
+          setSearchQuery={(val) => {
+            setLocalSearchInput(val);
+            listing.setSearchQuery(val);
+          }}
           filterType={listing.filterType}
           setFilterType={listing.setFilterType}
           sortType={listing.sortType}

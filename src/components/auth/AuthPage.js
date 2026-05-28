@@ -139,7 +139,7 @@ const AuthPage = () => {
                 <AlertCircle size={18} className="shrink-0 text-amber-400" />
                 <span className="flex-1">Your session has expired. Please log in again.</span>
                 <button
-                  onClick={() => setShowExpiredBanner(false)}
+                  onClick={() = aria-label="button"> setShowExpiredBanner(false)}
                   className="shrink-0 p-1 rounded-md hover:bg-amber-500/20 transition-colors"
                   aria-label="Dismiss session expired notice"
                 >

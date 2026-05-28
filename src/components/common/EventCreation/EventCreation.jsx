@@ -499,7 +499,7 @@ const EventCreation = () => {
             dark:hover:bg-gray-800
             transition
           "
-              >
+               aria-label="button">
                 Discard
               </button>
 
@@ -514,7 +514,7 @@ const EventCreation = () => {
             font-medium
             transition
           "
-              >
+               aria-label="button">
                 Restore Draft
               </button>
             </div>
@@ -527,7 +527,7 @@ const EventCreation = () => {
           {/* Heading Section */}
           <div className="w-full max-w-4xl flex justify-end mb-6">
             <button
-              onClick={() => {
+              onClick={() = aria-label="button"> {
                 exportAttendeesToCSV(mockAttendees, "event-attendees.csv");
 
                 toast.success("CSV exported successfully!");
@@ -698,7 +698,7 @@ const EventCreation = () => {
                   {formData.banner && (
                     <button
                       type="button"
-                      onClick={() =>
+                      onClick={() = aria-label="button">
                         setFormData((prev) => ({
                           ...prev,
                           banner: null,
@@ -1354,7 +1354,7 @@ const EventCreation = () => {
         transition-all duration-300
         focus:ring-2 focus:ring-offset-2 focus:ring-indigo-400 text-sm
       "
-                  >
+                   aria-label="button">
                     <Plus className="w-4 h-4" />
                     Add
                   </button>
@@ -1368,7 +1368,7 @@ const EventCreation = () => {
                       #{tag}
                       <button
                         type="button"
-                        onClick={() => removeTag(tag)}
+                        onClick={() = aria-label="button"> removeTag(tag)}
                         className="ml-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 font-bold"
                       >
                         ×

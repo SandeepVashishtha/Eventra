@@ -8,9 +8,6 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaUsers,
-  FaAward,
-  FaTrophy,
-  FaMedal,
   FaArrowUp,
   FaArrowDown,
   FaMinus,
@@ -201,8 +198,8 @@ export default function LeaderBoard() {
       // Add achievement-based bonus points to gamify contributors
       data.forEach(applyAchievementBonus);
 
-      const sortedContributors = [...data].sort((a, b) => b.points - a.points);
-      setContributors(sortedContributors);
+      const filteredContributors = [...data].sort((a, b) => b.points - a.points);
+      setContributors(filteredContributors);
       setLastUpdated(new Date().toLocaleString());
       
       // Update local storage cache
@@ -256,8 +253,8 @@ const sortedContributors = useMemo(
 
 
   const currentContributors = useMemo(
-    () => paginateContributors(sortedContributors, currentPage, CONTRIBUTORS_PER_PAGE),
-    [sortedContributors, currentPage]
+    () => paginateContributors(filteredContributors, currentPage, CONTRIBUTORS_PER_PAGE),
+    [filteredContributors, currentPage]
   );
   const saveRecentSearch = (query) => {
     if (!query.trim()) return;
@@ -270,8 +267,8 @@ const sortedContributors = useMemo(
   };
 
   const totalPages = useMemo(
-    () => totalLeaderboardPages(sortedContributors.length, CONTRIBUTORS_PER_PAGE),
-    [sortedContributors.length]
+    () => totalLeaderboardPages(filteredContributors.length, CONTRIBUTORS_PER_PAGE),
+    [filteredContributors.length]
   );
 
   const ranksMap = useMemo(
@@ -291,7 +288,7 @@ const sortedContributors = useMemo(
   ], []);
 
   // Extraction of Top 3 for visual Olympic Podium
-  const top3 = sortedContributors.slice(0, 3);
+  const top3 = filteredContributors.slice(0, 3);
 
   return (
     <FeatureErrorBoundary>
@@ -780,6 +777,7 @@ const sortedContributors = useMemo(
 
                       <div className="flex items-center gap-2">
                         <button
+                          aria-label="Previous page"
                           onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                           disabled={currentPage === 1}
                           className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-50 hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 bg-transparent transition-all"
@@ -787,6 +785,7 @@ const sortedContributors = useMemo(
                           <FaChevronLeft className="w-3 h-3" />
                         </button>
                         <button
+                          aria-label="Next page"
                           onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                           disabled={currentPage === totalPages}
                           className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-50 hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 bg-transparent transition-all"

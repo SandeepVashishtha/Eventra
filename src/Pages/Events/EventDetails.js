@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet-async";
 import DOMPurify from "dompurify";
 import { toast } from "react-toastify";
 import { Link, useParams } from "react-router-dom";
-import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus } from "lucide-react";
+import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus, Link2 } from "lucide-react";
 import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
 import { isEventBookmarked } from "../../utils/bookmarkUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
@@ -12,7 +12,6 @@ import mockEvents from "./eventsMockData.json";
 import CertificateDownload from "../../components/CertificateDownload";
 import EventMaterials from "../../components/common/EventMaterials";
 import EventRecommendations from "../../components/events/EventRecommendations";
-import CopyLinkButton from "../../components/common/CopyLinkButton";
 import LazyImage from "../../components/common/LazyImage";
 import { useAuth } from "../../context/AuthContext";
 import { exportToCSV, exportToJSON } from "../../utils/exportUtils";
@@ -91,7 +90,7 @@ const EventDetails = () => {
         }
       }
       setCopied(true);
-      toast.success("Event link copied!");
+      toast.success("Link copied!");
       setTimeout(() => {
         setCopied(false);
       }, 2000);
@@ -137,7 +136,17 @@ const EventDetails = () => {
               <p className="inline-flex rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-200 px-4 py-1 text-sm font-semibold uppercase tracking-[0.2em]">
                 {event.type}
               </p>
-              <h1 className="mt-4 text-4xl sm:text-5xl font-extrabold tracking-tight">{event.title}</h1>
+              <div className="mt-4 flex items-center gap-3">
+                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">{event.title}</h1>
+                <button
+                  onClick={handleCopy}
+                  className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-full transition-colors"
+                  aria-label="Copy event link"
+                  title="Copy link"
+                >
+                  <Link2 size={28} />
+                </button>
+              </div>
               <div
                 className="mt-4 max-w-2xl text-gray-600 dark:text-gray-300 prose prose-indigo dark:prose-invert"
                 dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(event.description)) }}
@@ -160,10 +169,8 @@ const EventDetails = () => {
                 </Link>
               )}
 
-              <CopyLinkButton />
-
               <button
-                onClick={() => setShowShareModal(true)}
+                onClick={() = aria-label="button"> setShowShareModal(true)}
                 className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-indigo-700 transition"
               >
                 Share Event
@@ -173,14 +180,14 @@ const EventDetails = () => {
                 onClick={handlePrint}
                 disabled={isPrinting}
                 className="print-hide inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
-              >
+               aria-label="button">
                 {isPrinting ? "Preparing..." : "🖨️ Print / Save as PDF"}
               </button>
 
               {isOrganizer && (
                 <div className="relative print-hide">
                   <button
-                    onClick={() => setShowExportDropdown(!showExportDropdown)}
+                    onClick={() = aria-label="button"> setShowExportDropdown(!showExportDropdown)}
                     className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800 cursor-pointer"
                     aria-label="Export registrant data"
                   >
@@ -191,7 +198,7 @@ const EventDetails = () => {
                       <div className="fixed inset-0 z-10" onClick={() => setShowExportDropdown(false)} />
                       <div className="absolute right-0 mt-2 w-40 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg py-1.5 z-20 animate-fadeIn text-left">
                         <button
-                          onClick={async () => {
+                          onClick={async () = aria-label="button"> {
                             try {
                               setExportingRegistrants(true);
                               const response = await apiUtils.get(API_ENDPOINTS.EVENTS.REGISTRANTS(eventId));
@@ -210,7 +217,7 @@ const EventDetails = () => {
                           Export as CSV
                         </button>
                         <button
-                          onClick={async () => {
+                          onClick={async () = aria-label="button"> {
                             try {
                               setExportingRegistrants(true);
                               const response = await apiUtils.get(API_ENDPOINTS.EVENTS.REGISTRANTS(eventId));
@@ -313,7 +320,7 @@ const EventDetails = () => {
                 </ShareMenu>
 
                 <div className="flex flex-col gap-2">
-                  <button onClick={() => { downloadICSFile(event); toast.success("Calendar invite downloaded!"); }} className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 dark:hover:border-green-700 transition-all duration-200" aria-label="Download .ics calendar invite">
+                  <button onClick={() = aria-label="button"> { downloadICSFile(event); toast.success("Calendar invite downloaded!"); }} className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 dark:hover:border-green-700 transition-all duration-200" aria-label="Download .ics calendar invite">
                     <CalendarPlus size={15} className="text-green-500" /> Download .ics Invite
                   </button>
                   {generateGoogleCalendarLink(event) && (

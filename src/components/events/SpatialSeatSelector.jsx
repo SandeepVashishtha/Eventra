@@ -433,7 +433,7 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
             type="button"
             className="ssp-ctrl-btn" 
             title="Zoom In" 
-            onClick={() => setZoom((z) => Math.min(2.5, z + 0.15))}
+            onClick={() = aria-label="button"> setZoom((z) => Math.min(2.5, z + 0.15))}
           >
             <ZoomIn size={15} />
           </button>
@@ -442,7 +442,7 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
             type="button"
             className="ssp-ctrl-btn" 
             title="Zoom Out" 
-            onClick={() => setZoom((z) => Math.max(0.4, z - 0.15))}
+            onClick={() = aria-label="button"> setZoom((z) => Math.max(0.4, z - 0.15))}
           >
             <ZoomOut size={15} />
           </button>
@@ -451,7 +451,7 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
             type="button"
             className="ssp-ctrl-btn" 
             title="Reset View" 
-            onClick={() => { setZoom(0.85); setPanOffset({ x: 0, y: 0 }); }}
+            onClick={() = aria-label="button"> { setZoom(0.85); setPanOffset({ x: 0, y: 0 }); }}
           >
             <RotateCcw size={15} />
           </button>

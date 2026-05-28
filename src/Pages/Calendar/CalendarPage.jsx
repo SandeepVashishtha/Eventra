@@ -136,7 +136,7 @@ const CalendarToolbar = ({ label, onNavigate }) => {
       <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={() => onNavigate("PREV")}
+          onClick={() = aria-label="button"> onNavigate("PREV")}
           className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-500"
           aria-label="Previous month"
         >
@@ -144,14 +144,14 @@ const CalendarToolbar = ({ label, onNavigate }) => {
         </button>
         <button
           type="button"
-          onClick={() => onNavigate("TODAY")}
+          onClick={() = aria-label="button"> onNavigate("TODAY")}
           className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-500"
         >
           Today
         </button>
         <button
           type="button"
-          onClick={() => onNavigate("NEXT")}
+          onClick={() = aria-label="button"> onNavigate("NEXT")}
           className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-500"
           aria-label="Next month"
         >
@@ -293,7 +293,7 @@ const CalendarPage = () => {
               type="button"
               onClick={refresh}
               className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
-            >
+             aria-label="button">
               <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
               Refresh
             </button>
@@ -308,7 +308,7 @@ const CalendarPage = () => {
                 type="button"
                 onClick={refresh}
                 className="inline-flex items-center gap-2 rounded-full bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"
-              >
+               aria-label="button">
                 Try again
               </button>
             </div>
