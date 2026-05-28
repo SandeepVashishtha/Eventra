@@ -104,3 +104,7 @@ function useLoginRateLimit() {
 }
 
 export default useLoginRateLimit;
+
+export const getLoginAttemptMax = () => {
+  return MAX_LOGIN_ATTEMPTS;
+};
