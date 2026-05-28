@@ -42,7 +42,3 @@ root.render(
 </GlobalErrorBoundary>
   </React.StrictMode>
 );
-
-
-
-// [GSSoC-Critical-Landmark-3] Critical execution routing pathway tracking

@@ -19,6 +19,11 @@ export const NotificationProvider = ({ children }) => {
 
   // 🔥 FIX: Track mounted state to prevent ghost updates
   const isMounted = useRef(true);
+  const activeTokenRef = useRef(token);
+
+  useEffect(() => {
+    activeTokenRef.current = token;
+  }, [token]);
 
   useEffect(() => {
     isMounted.current = true;
@@ -30,6 +35,7 @@ export const NotificationProvider = ({ children }) => {
   const fetchNotifications = useCallback(async (options = { isBackground: false }) => {
     const { isBackground } = options;
     if (!token) return;
+    const requestToken = token;
 
     const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.ALL || API_ENDPOINTS?.NOTIFICATIONS?.BASE;
     if (!endpoint || typeof endpoint !== "string" || endpoint.includes("undefined")) {
@@ -38,26 +44,33 @@ export const NotificationProvider = ({ children }) => {
     }
 
     try {
-      if (!isBackground && isMounted.current) setLoading(true);
+      if (!isBackground && isMounted.current && activeTokenRef.current === requestToken) {
+        setLoading(true);
+      }
 
       const response = await apiUtils.get(endpoint);
 
       // 🔥 FIX: Guard all state updates after await
-      if (!isMounted.current) return;
+      if (!isMounted.current || activeTokenRef.current !== requestToken) return;
 
       const data = response.data;
       const normalizedData = Array.isArray(data) ? data : [];
       setNotifications(normalizedData);
       setUnreadCount(normalizedData.filter((n) => !n.isRead).length);
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      if (isMounted.current && activeTokenRef.current === requestToken) {
+        console.error('Error fetching notifications:', error);
+      }
     } finally {
-      if (!isBackground && isMounted.current) setLoading(false);
+      if (!isBackground && isMounted.current && activeTokenRef.current === requestToken) {
+        setLoading(false);
+      }
     }
   }, [token]);
 
   const fetchAchievements = useCallback(async () => {
     if (!token) return;
+    const requestToken = token;
 
     const endpoint = API_ENDPOINTS?.USERS?.ACHIEVEMENTS;
     if (!endpoint || typeof endpoint !== "string" || endpoint.includes("undefined")) {
@@ -68,15 +81,18 @@ export const NotificationProvider = ({ children }) => {
     try {
       const response = await apiUtils.get(endpoint);
       // 🔥 FIX: Guard after await
-      if (!isMounted.current) return;
+      if (!isMounted.current || activeTokenRef.current !== requestToken) return;
       setAchievements(response.data);
     } catch (error) {
-      console.error('Error fetching achievements:', error);
+      if (isMounted.current && activeTokenRef.current === requestToken) {
+        console.error('Error fetching achievements:', error);
+      }
     }
   }, [token]);
 
   const markAsRead = useCallback(async (notificationId) => {
     if (!token || !notificationId) return;
+    const requestToken = token;
 
     const endpointGetter = API_ENDPOINTS?.NOTIFICATIONS?.READ;
     if (typeof endpointGetter !== "function") return;
@@ -86,18 +102,23 @@ export const NotificationProvider = ({ children }) => {
 
     try {
       await apiUtils.put(endpoint, {});
-      if (!isMounted.current) return;
+      if (!isMounted.current || activeTokenRef.current !== requestToken) return;
       setNotifications((prev) =>
         prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n))
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      if (isMounted.current && activeTokenRef.current === requestToken) {
+        console.error('Error marking notification as read:', error);
+      }
     }
   }, [token]);
 
   const markAllAsRead = useCallback(async () => {
     if (!token) return;
+    const requestToken = token;
+
+    if (!isMounted.current) return;
 
     const unread = notifications.filter((n) => !n.isRead);
     if (unread.length === 0) return;
@@ -112,8 +133,10 @@ export const NotificationProvider = ({ children }) => {
     try {
       await apiUtils.put(endpoint, {});
     } catch (error) {
-      console.error('[NotificationContext] Error marking all as read:', error);
-      if (isMounted.current) fetchNotifications();
+      if (isMounted.current && activeTokenRef.current === requestToken) {
+        console.error('[NotificationContext] Error marking all as read:', error);
+        fetchNotifications();
+      }
     }
   }, [token, fetchNotifications, notifications]);
 
@@ -125,26 +148,31 @@ export const NotificationProvider = ({ children }) => {
       return;
     }
 
+    const requestToken = token;
     const initData = async () => {
       if (!isMounted.current) return;
-      setLoading(true);
+      if (isMounted.current && activeTokenRef.current === requestToken) {
+        setLoading(true);
+      }
       await Promise.allSettled([
         fetchNotifications({ isBackground: true }),
         fetchAchievements()
       ]);
       // 🔥 FIX: Check mounted before final state update
-      if (!isMounted.current) return;
+      if (!isMounted.current || activeTokenRef.current !== requestToken) return;
       setLoading(false);
     };
 
     initData();
 
     const intervalId = setInterval(() => {
-      fetchNotifications({ isBackground: true });
+      if (isMounted.current && activeTokenRef.current === requestToken) {
+        fetchNotifications({ isBackground: true });
+      }
     }, POLLING_INTERVAL_MS);
 
     return () => clearInterval(intervalId);
-  }, [token]);
+  }, [token, fetchNotifications, fetchAchievements]);
 
   return (
     <NotificationContext.Provider
