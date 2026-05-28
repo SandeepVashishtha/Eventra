@@ -24,7 +24,8 @@ import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useSessionRecovery } from "../../context/SessionRecoveryContext";
-import { useFormValidation } from "../../hooks/useFormValidation";
+import CalendarView from "../../components/CalendarView";
+
 import { validate } from "../../validation";
 import { toast } from "react-toastify";
 
@@ -140,6 +141,8 @@ const EventRegistration = () => {
       organization: "",
       designation: "",
       additionalInfo: "",
+      priority: "Medium",
+
     },
     validationRules,
     { debounceMs: 300 }
@@ -328,11 +331,12 @@ const EventRegistration = () => {
     try {
       await apiUtils.post(
         endpoint,
-        {
-          ...formData,
-          eventId: parseInt(eventId),
-          userId: user.id,
-        },
+          {
+            ...formData,
+            priority: formData.priority,
+            eventId: parseInt(eventId),
+            userId: user.id,
+          },
         // Registration is authenticated server-side; send the active token
         // explicitly instead of relying only on global storage lookup.
         token
@@ -677,8 +681,9 @@ const EventRegistration = () => {
             </div>
           </div>
 
-          {isEventFull ? "Waitlist Joined!" : "Registration Confirmed!"}
           <div className="p-8">
+            <CalendarView events={myEvents} />
+          
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
               Register for this Event
             </h2>
@@ -801,15 +806,27 @@ const EventRegistration = () => {
                 >
                   Designation (Optional)
                 </label>
-                <input
-                  type="text"
-                  id="designation"
-                  name="designation"
-                  value={formData.designation}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                  placeholder="Your job title or role"
-                />
+                {/* Priority */}
+                <div>
+                  <label
+                    htmlFor="priority"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                  >
+                    Priority (Optional)
+                  </label>
+                  <select
+                    id="priority"
+                    name="priority"
+                    value={formData.priority}
+                    onChange={handleChange}
+                    className="w-full pl-3 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  >
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                  </select>
+                </div>
+
               </div>
 
               {/* Additional Info */}
