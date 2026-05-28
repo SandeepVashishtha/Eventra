@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { apiUtils, API_ENDPOINTS } from '../../config/api';
+import { validateOAuthState } from '../../utils/oauthState';
 import { toast } from 'react-toastify';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
 import useReducedMotion from '../../hooks/useReducedMotion';
@@ -23,6 +24,7 @@ const OAuthCallback = () => {
       const params = new URLSearchParams(location.search);
       const token = params.get('token');
       const error = params.get('error');
+      const stateParam = params.get('state');
 
       if (error) {
         toast.error(`Authentication failed: ${error}`);
@@ -32,6 +34,17 @@ const OAuthCallback = () => {
 
       if (!token) {
         toast.error('Authentication failed: No token received.');
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      // Validate the CSRF state parameter before accepting the token.
+      // RFC 6749 §10.12: the state must match the nonce generated when the
+      // OAuth flow was initiated to prevent login CSRF (account fixation).
+      const stateResult = validateOAuthState(stateParam);
+      if (!stateResult.valid) {
+        console.error('[OAuthCallback] State validation failed:', stateResult.reason);
+        toast.error('Authentication failed: invalid session state. Please try logging in again.');
         navigate('/login', { replace: true });
         return;
       }
