@@ -23,51 +23,13 @@ import {
   User as UserIcon,
   LogOut,
   LogIn,
-  MessageSquare,
   Book,
   Bookmark,
   Bell,
   HelpCircle,
   ChevronDown,
   MousePointer,
-  Moon,
-  Sun,
-  MoreHorizontal,
-  Search,
-  Palette,
 } from "lucide-react";
-
-
-// --- Helpers to reduce complexity ---
-const getUserDisplayNames = (user) => {
-  if (!user) return { primary: "User", secondary: null };
-  const primary =
-    user.fullName?.trim() ||
-    [user.firstName, user.lastName].filter(Boolean).join(" ").trim() ||
-    user.username?.trim() ||
-    user.email?.trim() ||
-    "User";
-  const secondaryCand = user.email?.trim() || user.username?.trim() || "";
-  const secondary = secondaryCand && secondaryCand !== primary ? secondaryCand : null;
-  return { primary, secondary };
-};
-
-const clearBodyScrollStyles = () => {
-  try {
-    const stored = document.body.style.top;
-    Object.assign(document.body.style, { position: "", top: "", left: "", right: "", width: "" });
-    if (stored) window.scrollTo(0, parseInt(stored, 10) * -1 || 0);
-  } catch (e) {
-    /* ignore */
-  }
-};
-
-const setBodyScrollStyles = (top) => {
-  Object.assign(document.body.style, {
-    position: "fixed",
-    top: `-${top}px`,
-    left: "0",
-    right: "0",
     width: "100%",
   });
 };
@@ -296,27 +258,31 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
   };
 
   return (
-  <div className="relative">
-    <button
-      type="button"
-      onClick={onToggle}
-      onKeyDown={handleKeyDown}
-      aria-expanded={isOpen}
-      aria-haspopup="menu"
-      aria-controls={menuId}
-      className={`relative group flex items-center gap-1.5 text-[13px] xl:text-[14px] font-medium transition-all duration-200 whitespace-nowrap px-3.5 py-1.5 rounded-lg ${
-      className={`relative group flex items-center gap-1 text-[12px] xl:text-[13px] font-medium transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-lg ${
-        isActive || isOpen
-          ? "text-indigo-600 dark:text-indigo-400 font-semibold"
-          : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
-      }`}
-     aria-label="button">
-      <span className="relative z-10 flex items-center gap-1">
-        {item.name}
-        <ChevronDown
-          className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-        />
-      </span>
+    <div className="relative">
+      <button
+        type="button"
+        onClick={onToggle}
+        onKeyDown={handleKeyDown}
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
+        aria-controls={menuId}
+        className={`relative group flex items-center gap-1.5 text-[13px] xl:text-[14px] font-medium transition-all duration-200 whitespace-nowrap px-3.5 py-1.5 rounded-lg ${
+          isActive || isOpen
+            ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+            : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
+        }`}
+        aria-label={isActive || isOpen ? "Collapse submenu" : "Expand submenu"}
+      >
+        <span className="relative z-10 flex items-center gap-1">
+          {item.name}
+          <ChevronDown
+            className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+          />
+        </span>
+      </button>
+    </div>
+  );
+
   const btnRef = useRef(null);
   const [dropPos, setDropPos] = useState({ top: 0, left: 0 });
 
@@ -557,16 +523,14 @@ const UserProfileDropdown = ({
           exit={{ opacity: 0, y: 10, scale: 0.95 }}
           transition={{ duration: 0.15 }}
           className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-900 rounded-lg shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-800"
-        >
-          <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+            <button
+              type="button"
+              onClick={() => setShowProfileDropdown(!showProfileDropdown)}
             <div className="flex items-center gap-3">
               {user?.profilePicture ? (
                 <img
                   src={user.profilePicture}
-                  alt="Profile"
-                  className="w-12 h-12 rounded-full object-cover ring-2 ring-purple-500/20"
-                  onError={(e) => (e.currentTarget.style.display = "none")}
-                />
+            >
               ) : (
                 <div className="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-800 to-indigo-950 flex items-center justify-center">
                   <UserIcon className="w-6 h-6 text-white" />
