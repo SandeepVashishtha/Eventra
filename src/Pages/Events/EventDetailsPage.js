@@ -1,3 +1,4 @@
+import "./EventDetails.print.css";
 import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
