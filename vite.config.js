@@ -40,6 +40,9 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: "build",
       sourcemap: false,
+      // Disable CSS minification to avoid lightningcss parsing errors
+      // with some complex or non-standard generated CSS during build.
+      minify: false,
     },
   };
 });
