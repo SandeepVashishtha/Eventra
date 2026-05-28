@@ -108,9 +108,6 @@ const normalizeRequestConfig = (configOrToken = {}) => {
   if ("skipAuth" in config) {
     delete config.skipAuth;
   }
-  // With HttpOnly cookies, the browser automatically sends the session cookie.
-  // We no longer manually append the Authorization header here.
-
   return config;
 };
 
@@ -173,17 +170,12 @@ const normalizeApiError = (error) => {
   );
 };
 
+// 🔥 HERE IS WHERE WE FIXED THE BUG 🔥
+// We completely removed the `if (!config.signal)` block that was generating the Ghost AbortController.
 API.interceptors.request.use((config) => {
-  if (!config.signal) {
-    const controller = new AbortController();
-    config.signal = controller.signal;
-    config._abortController = controller;
-  }
-
   if (isDev) {
     console.debug(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
   }
-
   return config;
 });
 
@@ -219,6 +211,15 @@ API.interceptors.response.use(
 // ---------------------------------------------------------------------------
 
 export const API_ENDPOINTS = {
+  AUTH: { LOGIN: "/auth/login", SIGNUP: "/auth/signup", LOGOUT: "/auth/logout", RESET_PASSWORD: "/auth/reset-password", GOOGLE: "/auth/google" },
+  EVENTS: { CREATE: "/events/create", ALL: "/events", DETAIL: (id) => `/events/${id}`, REGISTER: (id) => `/events/${id}/register` },
+  PROJECTS: { ALL: "/projects", DETAIL: (id) => `/projects/${id}`, CATEGORIES: "/projects/categories", SUBMIT: "/projects" },
+  NOTIFICATIONS: { ALL: "/notifications", BASE: "/notifications", READ: (id) => `/notifications/${id}/read`, READ_ALL: "/notifications/read-all" },
+  USERS: { PROFILE: "/users/profile", ACHIEVEMENTS: "/users/achievements" },
+  VALIDATION: {
+    EMAIL: (email) => `/api/validate/email/${encodeURIComponent(email)}`,
+    USERNAME: (username) => `/api/validate/username/${encodeURIComponent(username)}`,
+    PHONE: "/api/validate/phone",
   AUTH: {
     LOGIN: buildApiUrl("/api/auth/login"),
     GOOGLE: buildApiUrl("/api/auth/google"),
@@ -226,6 +227,7 @@ export const API_ENDPOINTS = {
     SIGNUP: buildApiUrl("/api/auth/signup"),
     LOGOUT: buildApiUrl("/api/auth/logout"),
     RESET_PASSWORD: buildApiUrl("/api/auth/reset-password"),
+    OAUTH: buildApiUrl("/api/auth/oauth"),
   },
   EVENTS: {
     CREATE: buildApiUrl("/api/events/create"),
