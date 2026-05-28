@@ -5,8 +5,10 @@ import { createPortal } from "react-dom";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
-import ConfirmationModal from "../common/ConfirmationModal";
 import { toast } from "react-toastify";
+import ConfirmationModal from "../common/ConfirmationModal";
+import CommandPalette from "../common/CommandPalette";
+
 import { UserCog } from "lucide-react";
 import {
   Home,
@@ -34,7 +36,7 @@ import {
   Search,
   Palette,
 } from "lucide-react";
-import CommandPalette from "../common/CommandPalette";
+
 
 // --- Helpers to reduce complexity ---
 const getUserDisplayNames = (user) => {
@@ -98,7 +100,7 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile, setIsCustomizerO
     );
   }
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-2">
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
@@ -212,7 +214,10 @@ const MobileNavLink = ({ item, isActive, onClick }) => (
 const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, location }) => (
   <div key={item.name}>
     <button
+      type="button"
       onClick={onToggle}
+      aria-expanded={isOpen}
+      aria-controls={`mobile-nav-group-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
       className={`flex items-center justify-between w-full px-4 py-2.5 rounded-lg transition-colors text-left text-base font-medium border ${
         isActive
           ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
@@ -225,7 +230,10 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
       <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
     </button>
     {isOpen && (
-      <div className="mt-2 ml-3 pl-3 border-l-2 border-gray-200 dark:border-white/20 space-y-1">
+      <div
+        id={`mobile-nav-group-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
+        className="mt-2 ml-3 pl-3 border-l-2 border-gray-200 dark:border-white/20 space-y-1"
+      >
         {item.subItems.map((sub) => {
           const isSubActive = location.pathname.startsWith(sub.href);
           return (
@@ -252,8 +260,7 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
 const DesktopNavLink = ({ item, isActive, onClick }) => (
   <Link
     to={item.href}
-    onClick={onClick}
-    className={`relative text-[13px] font-semibold transition-colors duration-200 whitespace-nowrap px-3.5 py-1.5 rounded-lg ${
+    className={`relative group text-[12px] font-semibold transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-full ${
       isActive
         ? "text-indigo-700 dark:text-indigo-300"
         : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
@@ -272,17 +279,54 @@ const DesktopNavLink = ({ item, isActive, onClick }) => (
   </Link>
 );
 
-
 const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location }) => {
+  const menuId = `desktop-nav-menu-${item.name.toLowerCase().replace(/\s+/g, "-")}`;
+
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onToggle(event);
+      return;
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setOpenDropdown(null);
+    }
+  };
+
+  return (
+  <div className="relative">
+    <button
+      type="button"
+      onClick={onToggle}
+      onKeyDown={handleKeyDown}
+      aria-expanded={isOpen}
+      aria-haspopup="menu"
+      aria-controls={menuId}
+      className={`relative group flex items-center gap-1.5 text-[13px] xl:text-[14px] font-medium transition-all duration-200 whitespace-nowrap px-3.5 py-1.5 rounded-lg ${
+      className={`relative group flex items-center gap-1 text-[12px] xl:text-[13px] font-medium transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-lg ${
+        isActive || isOpen
+          ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+          : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
+      }`}
+    >
+      <span className="relative z-10 flex items-center gap-1">
+        {item.name}
+        <ChevronDown
+          className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+        />
+      </span>
   const btnRef = useRef(null);
   const [dropPos, setDropPos] = useState({ top: 0, left: 0 });
 
-  // Recalculate dropdown position whenever it opens so it tracks the button correctly
-  // even inside a horizontally-scrollable container.
   useEffect(() => {
     if (isOpen && btnRef.current) {
-      const r = btnRef.current.getBoundingClientRect();
-      setDropPos({ top: r.bottom + 8, left: r.left + r.width / 2 });
+      const rect = btnRef.current.getBoundingClientRect();
+      setDropPos({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + rect.width / 2 + window.scrollX,
+      });
     }
   }, [isOpen]);
 
@@ -291,20 +335,11 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
       <button
         ref={btnRef}
         onClick={onToggle}
-        className={`relative group flex items-center gap-1 text-[12px] xl:text-[13px] font-semibold transition-colors duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-lg ${
+        className={`relative group flex items-center gap-1 text-[12px] xl:text-[13px] font-medium transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-lg ${
           isActive || isOpen
-            ? "text-indigo-700 dark:text-indigo-300"
-            : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+            ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+            : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
         }`}
-        style={
-          isActive || isOpen
-            ? {
-                backgroundColor: 'rgba(99, 102, 241, 0.12)',
-                border: '1.5px solid rgba(99, 102, 241, 0.45)',
-                boxShadow: '0 0 0 3px rgba(99, 102, 241, 0.08)',
-              }
-            : { border: '1.5px solid transparent' }
-        }
       >
         <span className="relative z-10 flex items-center gap-1">
           {item.name}
@@ -312,11 +347,64 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
             className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
           />
         </span>
-        {isActive && (
-          <span className="absolute bottom-0 left-3 right-3 h-[2px] rounded-full bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1px]" />
+
+        {(isActive || isOpen) && (
+          <>
+            <motion.span
+              layoutId="activeBox"
+              className="absolute inset-0 bg-indigo-100/60 dark:bg-indigo-500/20 border border-indigo-200/80 dark:border-indigo-500/50 rounded-lg -z-0"
+              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            />
+            <motion.span
+              layoutId="activeBoxGlow"
+              className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
+              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            />
+          </>
         )}
       </button>
 
+    {isOpen && (
+      <motion.div
+        id={menuId}
+        role="menu"
+        aria-label={`${item.name} navigation`}
+        initial={{ opacity: 0, y: 15, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        className="absolute left-1/2 -translate-x-1/2 mt-4 w-60 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-3xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(99,102,241,0.1)] rounded-2xl z-50 border border-white/40 dark:border-zinc-700/40 p-2 overflow-hidden"
+      >
+        {item.subItems.map((sub) => (
+          <Link
+            key={sub.name}
+            to={sub.href}
+            onClick={() => setOpenDropdown(null)}
+            role="menuitem"
+            className={`group flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium rounded-lg transition-all duration-200 border ${
+              location.pathname.startsWith(sub.href)
+                ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
+                : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-transparent"
+            }`}
+          >
+            {React.cloneElement(sub.icon, {
+              className: `w-5 h-5 transition-colors ${
+                location.pathname.startsWith(sub.href)
+                  ? "text-indigo-600 dark:text-indigo-400"
+                  : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
+              }`,
+            })}
+            {sub.name}
+          </Link>
+        ))}
+      </motion.div>
+    )}
+  </div>
+  );
+};
+const MobileDrawerFooter = ({ 
+  isAuthenticated, user, primaryLine, secondaryLine, closeAllMenus, location, 
+  handleLogoutClick, isDarkMode, toggleTheme, cursorEnabled, toggleCursor 
       {/* Render dropdown via portal so it's never clipped by overflow-x-auto */}
       <AnimatePresence>
         {isOpen && createPortal(
@@ -328,8 +416,8 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
             style={{
               position: 'fixed',
-              top: `${dropPos.top}px`,
-              left: `${dropPos.left}px`,
+              top: '80px',
+              left: '50%',
               transform: 'translateX(-50%)',
               zIndex: 9999,
             }}
@@ -363,6 +451,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
     </div>
   );
 };
+
 const MobileDrawerFooter = ({
   isAuthenticated,
   user,
@@ -415,6 +504,13 @@ const UserProfileDropdown = ({
   handleLogoutClick,
 }) => (
   <div className="relative profile-container">
+    <button 
+      onClick={() => setShowProfileDropdown(!showProfileDropdown)} 
+      type="button"
+      aria-label="Open user menu"
+      aria-expanded={showProfileDropdown}
+      aria-haspopup="menu"
+      aria-controls="user-profile-menu"
     <button
       onClick={() => setShowProfileDropdown(!showProfileDropdown)}
       className="flex items-center gap-2 text-sm font-medium text-black/90 dark:text-white/90 hover:text-black dark:hover:text-white transition-colors"
@@ -434,6 +530,11 @@ const UserProfileDropdown = ({
     </button>
     <AnimatePresence>
       {showProfileDropdown && (
+        <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} transition={{ duration: 0.15 }}
+          id="user-profile-menu"
+          role="menu"
+          aria-label="User menu"
+          className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-900 rounded-lg shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-800">
         <motion.div
           initial={{ opacity: 0, y: 10, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -468,6 +569,19 @@ const UserProfileDropdown = ({
             </div>
           </div>
           <div className="p-2 bg-white dark:bg-gray-900">
+            <Link role="menuitem" to="/dashboard" onClick={() => setShowProfileDropdown(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/dashboard" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
+              <LayoutDashboard className="w-4 h-4" />Dashboard
+            </Link>
+            <Link role="menuitem" to="/dashboard/achievements" onClick={() => setShowProfileDropdown(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/dashboard/achievements" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
+              <Trophy className="w-4 h-4" />Achievements
+            </Link>
+            <Link role="menuitem" to="/profile" onClick={() => setShowProfileDropdown(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/profile" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
+              <UserCog className="w-4 h-4" />Edit Profile
+            </Link>
+          </div>
+          <div className="p-2 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+            <button type="button" role="menuitem" onClick={handleLogoutClick} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+              <LogOut className="w-4 h-4" />Logout
             <Link
               to="/dashboard"
               onClick={() => setShowProfileDropdown(false)}
@@ -572,9 +686,11 @@ const MobileUserSection = ({
 
 const NAV_ITEMS = [
   { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
- 
+  { name: "Calendar", href: "/calendar", icon: <CalendarDays className="w-5 h-5" /> },
+  { name: "Bookmarks", href: "/bookmarks", icon: <Bookmark className="w-5 h-5" /> },
+  { name: "Reminders", href: "/reminders", icon: <Bell className="w-5 h-5" /> },
   {
-    name: "Event Tools",
+   name: "Event Hub", 
     icon: <Calendar className="w-5 h-5" />,
     subItems: [
       { name: "Explore Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
@@ -608,29 +724,13 @@ const NAV_ITEMS = [
   },
 ];
 
-const NavList = ({ openDropdown, onToggleGroup, onLinkClick, isMobile }) => {
-  // Call useLocation() directly so NavList always has the current pathname
-  // from the Router context — never a stale prop from a parent render cycle.
-  const location = useLocation();
-  // When any dropdown is open, suppress the standalone-link active highlight so
-  // only one thing is visually "active" at a time (the open dropdown button).
-  // E.g. on /projects, opening Community should deactivate Projects' blue box.
-  const anyDropdownOpen = openDropdown !== null;
-
-  const standaloneActive = NAV_ITEMS
-    .filter(n => !n.subItems && n.href)
-    .some(n =>
-      n.href === "/" ? location.pathname === "/" : location.pathname.startsWith(n.href)
-    );
-
+const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile }) => {
   return (
     <>
-      {NAV_ITEMS.map((item) => {
+    {NAV_ITEMS.map((item) => {
         const isActive = item.href
-          // Standalone link: only active when no dropdown is open AND path matches
-          ? (!anyDropdownOpen && (item.href === "/" ? location.pathname === "/" : location.pathname.startsWith(item.href)))
-          // Group item: active when its sub-routes match (shown regardless of dropdown open state)
-          : (!standaloneActive && item.subItems?.some(s => location.pathname.startsWith(s.href)));
+          ? (item.href === "/" ? location.pathname === "/" : location.pathname.startsWith(item.href))
+          : item.subItems?.some(s => location.pathname.startsWith(s.href));
 
         if (item.subItems) {
           return isMobile ? (
@@ -649,17 +749,15 @@ const NavList = ({ openDropdown, onToggleGroup, onLinkClick, isMobile }) => {
   );
 };
 
-const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
+const DesktopNavLinks = ({ openDropdown, setOpenDropdown, location }) => {
   return (
-    <div className="hidden lg:flex items-center flex-1 min-w-0 pl-4 overflow-x-auto navbar-links-scroll">
-      <div className="flex items-center gap-0.5 flex-nowrap w-max">
-        <NavList
-          openDropdown={openDropdown}
-          onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)}
-          onLinkClick={() => setOpenDropdown(null)}
-          isMobile={false}
-        />
-      </div>
+    <div className="hidden lg:flex items-center justify-center flex-1 min-w-0 pl-6">
+      <NavList
+        location={location}
+        openDropdown={openDropdown}
+        onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)}
+        isMobile={false}
+      />
     </div>
   );
 };
@@ -674,7 +772,9 @@ const MobileDrawerHeader = ({ closeBtnRef, closeAllMenus }) => (
     </div>
     <button
       ref={closeBtnRef}
+      type="button"
       onClick={closeAllMenus}
+      aria-label="Close navigation menu"
       className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-gray-400 transition-colors"
     >
       <ChevronDown className="w-6 h-6 rotate-90" />
@@ -699,6 +799,7 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
           className="fixed inset-y-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-[20rem] sm:max-w-sm shadow-2xl z-50 flex flex-col bg-white backdrop-blur-lg dark:bg-gray-900/95"
           role="dialog"
           aria-modal="true"
+          aria-label="Mobile navigation"
           initial={{ x: "100%" }}
           animate={{ x: 0 }}
           exit={{ x: "100%" }}
@@ -865,6 +966,13 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
   return (
     <>
+      {/* Skip navigation — visible only on keyboard focus, WCAG 2.4.1 */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:bg-indigo-600 focus:text-white focus:px-4 focus:py-2 focus:rounded focus:outline-none"
+      >
+        Skip to main content
+      </a>
       <div
         className={`fixed inset-0 z-30 transition-opacity duration-300 ${
           isMobileMenuOpen || showLogoutModal
@@ -874,9 +982,11 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               : "opacity-0 pointer-events-none"
         }`}
         onClick={closeAllMenus}
+        aria-hidden="true"
       />
       <nav
         ref={navRef}
+        aria-label="Main navigation"
         data-aos="fade-down"
         data-aos-once="true"
         data-aos-duration="1000"
@@ -884,7 +994,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       >
         <div className="neon-navbar-border"></div>
 
-        <div className="max-w-screen-2xl mx-auto flex items-center justify-between min-h-[68px] px-4 md:px-6 xl:px-10 gap-2 w-full">
+        <div className="max-w-screen-2xl mx-auto flex items-center justify-between h-[68px] px-4 md:px-6 xl:px-10 gap-4 w-full overflow-hidden">
           
           {/* Logo */}
           <Link
@@ -898,17 +1008,19 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             />
           </Link>
 
-          {/* Desktop Nav Links */}
-          <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
+          {/* Centered Desktop Nav Links */}
+          <div className="flex-1 flex justify-start min-w-0">
+            <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} location={location} />
+          </div>
 
           {/* Right Controls */}
-          <div className="hidden lg:flex items-center gap-2 shrink-0 pl-2">
+          <div className="hidden xl:flex items-center gap-4 shrink-0">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowCommandPalette(true)}
               title="Open Command Palette (⌘K)"
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group mr-1"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 focus:outline-none bg-zinc-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 border border-zinc-200/60 dark:border-zinc-700/50 hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] group"
             >
               <Search className="w-4 h-4 text-zinc-500 dark:text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400" />
               <div className="flex items-center gap-0.5 text-[9px] font-black tracking-widest text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 uppercase">
@@ -929,8 +1041,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               isMobile={false}
             />
 
-            <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700"></div>
-
             {isAuthenticated() ? (
               <UserProfileDropdown
                 user={user}
@@ -946,8 +1056,16 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile menu button */}
           <div className="lg:hidden ml-auto">
+            <button 
+              ref={toggleBtnRef} 
+              type="button"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+              aria-expanded={isMobileMenuOpen} 
+              aria-haspopup="dialog"
+          {/* Mobile Menu Button */}
+          <div className="xl:hidden flex-shrink-0">
             <button
               ref={toggleBtnRef}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

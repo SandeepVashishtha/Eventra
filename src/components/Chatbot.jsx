@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useRef, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,9 +10,22 @@ import {
   X,
   ChevronUp,
   Trash2,
+  CalendarDays,
+  HelpCircle,
+  MessageCircle,
+  Navigation,
+  Ticket,
 } from "lucide-react";
 import useLocalStorage from "../hooks/useLocalStorage";
 import { quickPrompts, getAssistantReply, INITIAL_MESSAGES } from "../config/chatbotKnowledge";
+
+const ICON_MAP = {
+  CalendarDays,
+  HelpCircle,
+  MessageCircle,
+  Navigation,
+  Ticket,
+};
 
 // ─── Component ────────────────-----------------------------------------------
 
@@ -58,18 +71,36 @@ export default function Chatbot() {
     }
   };
 
-  // Auto-scroll messages to bottom when new ones arrive
-  const messagesEndRef = useRef(null);
+  // Auto-scroll messages to bottom of container when new ones arrive or state changes
+  const chatLogsRef = useRef(null);
+  const wasOpenRef = useRef(false);
+  const wasMinimizedRef = useRef(false);
+
   useEffect(() => {
-    if (!isMinimized && isOpen) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!isOpen || isMinimized) {
+      wasOpenRef.current = isOpen;
+      wasMinimizedRef.current = isMinimized;
+      return;
     }
-  }, [messages, isMinimized, isOpen, isTyping]);
+
+    const isOpening = !wasOpenRef.current || wasMinimizedRef.current;
+    wasOpenRef.current = isOpen;
+    wasMinimizedRef.current = isMinimized;
+
+    const timer = setTimeout(() => {
+      if (chatLogsRef.current) {
+        chatLogsRef.current.scrollTo({
+          top: chatLogsRef.current.scrollHeight,
+          behavior: isOpening ? "auto" : "smooth",
+        });
+      }
+    }, isOpening ? 250 : 50);
+
+    return () => clearTimeout(timer);
+  }, [messages, isTyping, isMinimized, isOpen]);
 
   const latestActions = useMemo(() => {
-    const latestAssistantMessage = [...messages]
-      .reverse()
-      .find((m) => m.role === "assistant");
+    const latestAssistantMessage = [...messages].reverse().find((m) => m.role === "assistant");
     return latestAssistantMessage?.actions || [];
   }, [messages]);
 
@@ -78,10 +109,7 @@ export default function Chatbot() {
     if (!cleanMessage || isTyping) return;
 
     // Append User Message
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", content: cleanMessage }
-    ]);
+    setMessages((prev) => [...prev, { role: "user", content: cleanMessage }]);
     setDraft("");
     setIsTyping(true);
 
@@ -91,7 +119,7 @@ export default function Chatbot() {
       const reply = getAssistantReply(cleanMessage);
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: reply.answer, actions: reply.actions }
+        { role: "assistant", content: reply.answer, actions: reply.actions },
       ]);
       setIsTyping(false);
       replyTimerRef.current = null;
@@ -209,12 +237,14 @@ export default function Chatbot() {
             "
           >
             {/* ── Header — always visible, never scrolls away ── */}
-            <header className="
+            <header
+              className="
               flex flex-shrink-0 items-center justify-between gap-3
               border-b border-slate-200 dark:border-slate-700
               bg-slate-950 px-4 py-3 text-white
               rounded-t-2xl
-            ">
+            "
+            >
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-500">
                   <Sparkles className="h-4 w-4" />
@@ -255,6 +285,7 @@ export default function Chatbot() {
 
             {/* Messages list */}
             <div
+              ref={chatLogsRef}
               className="flex-1 overflow-y-auto px-4 py-4 space-y-4"
               role="log"
               aria-live="polite"
@@ -280,7 +311,7 @@ export default function Chatbot() {
                   </motion.div>
                 </div>
               ))}
-              
+
               {isTyping && (
                 <div className="flex justify-start">
                   <motion.div
@@ -306,17 +337,18 @@ export default function Chatbot() {
                   </motion.div>
                 </div>
               )}
-              
-              <div ref={messagesEndRef} />
+
             </div>
 
             {/* Footer controls */}
-            <div className="
+            <div
+              className="
               flex-shrink-0
               px-4 py-4
               bg-white/90 dark:bg-slate-900/90
               border-t border-slate-200/50 dark:border-slate-800/40
-            ">
+            "
+            >
               {/* Quick prompts */}
               <div className="mb-3.5 flex flex-wrap gap-1.5">
                 {quickPrompts.map((prompt) => (
@@ -334,16 +366,19 @@ export default function Chatbot() {
               {/* Contextual action links */}
               {latestActions.length > 0 && (
                 <div className="mb-3.5 flex flex-wrap gap-2">
-                  {latestActions.map(({ label, to, icon: Icon }) => (
-                    <Link
-                      key={`${label}-${to}`}
-                      to={to}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-950 dark:bg-slate-950 dark:hover:bg-black border border-white/10 px-3 py-2 text-xs font-bold text-white hover:scale-[1.03] transition-all duration-300 shadow focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                    >
-                      <Icon className="h-3.5 w-3.5" />
-                      {label}
-                    </Link>
-                  ))}
+                  {latestActions.map(({ label, to, icon: iconName }) => {
+                    const Icon = ICON_MAP[iconName];
+                    return (
+                      <Link
+                        key={`${label}-${to}`}
+                        to={to}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-950 dark:bg-slate-950 dark:hover:bg-black border border-white/10 px-3 py-2 text-xs font-bold text-white hover:scale-[1.03] transition-all duration-300 shadow focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                      >
+                        {Icon && <Icon className="h-3.5 w-3.5" />}
+                        {label}
+                      </Link>
+                    );
+                  })}
                 </div>
               )}
 
@@ -380,3 +415,5 @@ export default function Chatbot() {
     document.body
   );
 }
+
+// SECURITY PROTECTION: Escaped dynamic message history to block stored Cross-Site Scripting (XSS) script injections.

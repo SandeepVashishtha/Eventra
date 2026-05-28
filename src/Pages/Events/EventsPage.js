@@ -1,16 +1,14 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useRef } from "react";
+import { useRef, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
-import { getEventStatus } from "../../utils/eventUtils";
-import { useSearchParams } from "react-router-dom";
-import {
-  Grid,
-  List,
-  Loader2,
-} from "lucide-react";
+import { Grid, List } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import { getEventStatus } from "../../utils/eventUtils";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
+import EventFiltersToolbar from "./EventFiltersToolbar";
 import StyledDropdown from "../../components/StyledDropdown";
 import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
 import SearchEmptyState from "../../components/common/SearchEmptyState";
@@ -18,21 +16,9 @@ import useDocumentTitle from "../../hooks/useDocumentTitle";
 import ActiveFilters from "./ActiveFilters";
 import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
-import { getRouteSearchResults } from "../../utils/searchUtils";
 import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
-
-
-
-const EVENT_SEARCH_KEYS = [
-  "title",
-  "description",
-  "location",
-  "tags",
-  "type",
-  "date",
-  "status",
-];
 
 const FILTERS = [
   { key: "all", label: "All" },
@@ -100,42 +86,108 @@ const renderCardSection = (
 
 const EventsPage = () => {
   useDocumentTitle("Eventra | Events");
+
   const location = useLocation();
-  const [searchParams] = useSearchParams();
-  // SECURITY: Decode URL parameter safely then sanitize before use.
-  // Raw URL params can contain encoded HTML/JS. decodeURIComponent may throw
-  // on malformed sequences — we catch and fall back to empty string.
-  const rawSearchParam = new URLSearchParams(location.search).get("search") || "";
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // SECURITY: Safely decode and sanitize search query from URL params
+  const rawSearchParam =
+    new URLSearchParams(location.search).get("search") || "";
+
   let routeSearchQuery = "";
+
   try {
-    routeSearchQuery = prepareSafeSearchQuery(decodeURIComponent(rawSearchParam));
+    routeSearchQuery = prepareSafeSearchQuery(
+      decodeURIComponent(rawSearchParam)
+    );
   } catch {
-    // Malformed URI component — treat as empty query
+    // Malformed URI component
     routeSearchQuery = "";
   }
 
   const listing = useEventListing();
+  const {
+    setAdvancedFilters,
+    setFilterType,
+    setSafePage,
+    setSearchQuery,
+    setSortType,
+    setViewMode,
+  } = listing;
+
+  const handleSearch = useCallback((query = "") => {
+    setSearchQuery(query);
+  }, [setSearchQuery]);
+
+  const handlePageChange = useCallback((page) => {
+    setSafePage(page);
+    cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [setSafePage]);
   const cardSectionRef = useRef();
 
-  // Initialize state from URL params on mount only
+  // Local input value updates immediately on each keystroke so the input
+  // feels responsive. The debounced value is passed to the listing hook so
+  // the Fuse.js search pipeline only runs after the user pauses typing.
+  const [localSearchInput, setLocalSearchInput] = useState(listing.searchQuery);
+  const debouncedSearchQuery = useDebouncedValue(localSearchInput, 300);
+
+  // Sync the debounced value into the listing hook whenever it settles.
+  useEffect(() => {
+    listing.setSearchQuery(debouncedSearchQuery);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearchQuery]);
+
+  // Initialize state from URL params
   useEffect(() => {
     const page = parseInt(searchParams.get("page")) || 1;
     const perPage = parseInt(searchParams.get("perPage")) || 6;
-    const search = prepareSafeSearchQuery(routeSearchQuery);
     const filter = searchParams.get("filter") || "all";
     const sort = searchParams.get("sort") || "Newest";
     const view = searchParams.get("view") || "grid";
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
+    if (routeSearchQuery) listing.setSearchQuery(routeSearchQuery);
+    if (filter !== "all") listing.setFilterType(filter);
+    if (sort !== "Newest") listing.setSortType(sort);
+    if (view !== "grid") listing.setViewMode(view);
+    if (perPage !== 6) listing.setEventsPerPage(perPage);
+    if (page !== 1) listing.setSafePage(page);
+  }, [searchParams, routeSearchQuery]);
 
   // Sync search query when URL param changes (e.g. navigating from navbar search)
   useEffect(() => {
+    const params = {};
+    if (listing.currentPage > 1) params.page = listing.currentPage;
+    if (listing.eventsPerPage !== 6) params.perPage = listing.eventsPerPage;
+    if (listing.searchQuery) params.search = listing.searchQuery;
+    if (listing.filterType !== "all") params.filter = listing.filterType;
+    if (listing.sortType !== "Newest") params.sort = listing.sortType;
+    if (listing.viewMode !== "grid") params.view = listing.viewMode;
+    setSearchParams(params, { replace: true });
+  }, [
+    listing.currentPage,
+    listing.eventsPerPage,
+    listing.searchQuery,
+    listing.filterType,
+    listing.sortType,
+    listing.viewMode,
+    setSearchParams,
+  ]);
+
+  // Keep local state in sync when route search changes.
+  useEffect(() => {
     const safeQuery = prepareSafeSearchQuery(routeSearchQuery);
     if (safeQuery !== listing.searchQuery) {
+      setLocalSearchInput(safeQuery);
       listing.setSearchQuery(safeQuery);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [routeSearchQuery]);
+  }, [routeSearchQuery, listing.searchQuery, listing.setSearchQuery]);
+
+  const handleSearch = (query = "") => {
+    const safeQuery = prepareSafeSearchQuery(query);
+    setLocalSearchInput(safeQuery);
+    listing.setSearchQuery(safeQuery);
+    return listing.filteredEvents;
+  };
 
   // Scroll to card section after loading when a route search is active
   useEffect(() => {
@@ -149,14 +201,26 @@ const EventsPage = () => {
     }
   }, [listing.isLoading, routeSearchQuery]);
 
-  const scrollToCard = () => {
+  const scrollToCard = useCallback(() => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setSearchQuery("");
+    setFilterType("all");
+    setSortType("Newest");
+    setViewMode("grid");
+    setAdvancedFilters({});
+  }, [setAdvancedFilters, setFilterType, setSearchQuery, setSortType, setViewMode]);
+  const handleClearFilters = () => {
+    setLocalSearchInput("");
   };
 
   const clearSearchAndFilters = () => {
     listing.setSearchQuery("");
     listing.setFilterType("all");
     listing.setSortType("Newest");
+    setLocalSearchInput("");
   };
 
   const hasActiveFilters =
@@ -165,15 +229,10 @@ const EventsPage = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 overflow-x-hidden">
       <EventHero
-        searchQuery={listing.searchQuery}
-        setSearchQuery={listing.setSearchQuery}
+        searchQuery={localSearchInput}
+        setSearchQuery={setLocalSearchInput}
         filteredEvents={listing.filteredEvents}
-        handleSearch={(query) => {
-          // SECURITY: Sanitize search query from user input before use
-          const safeQuery = prepareSafeSearchQuery(query);
-          listing.setSearchQuery(safeQuery);
-          return listing.filteredEvents;
-        }}
+        handleSearch={handleSearch}
         scrollToCard={scrollToCard}
       />
 
@@ -207,6 +266,22 @@ const EventsPage = () => {
               </button>
             )}
           </div>
+        <EventFiltersToolbar
+          filterType={listing.filterType}
+          onFilterChange={listing.setFilterType}
+          sortType={listing.sortType}
+          onSortChange={listing.setSortType}
+          viewMode={listing.viewMode}
+          onViewModeChange={listing.setViewMode}
+          searchQuery={localSearchInput}
+          onSearchChange={setLocalSearchInput}
+          advancedFilters={listing.advancedFilters}
+          onAdvancedFiltersChange={listing.setAdvancedFilters}
+          isAdvancedFiltersOpen={listing.isAdvancedFiltersOpen}
+          onToggleAdvancedFilters={listing.setIsAdvancedFiltersOpen}
+          priceStats={listing.priceStats}
+          dateRangeStats={listing.dateRangeStats}
+        />
 
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
             <div className="w-full sm:w-48">
@@ -252,8 +327,8 @@ const EventsPage = () => {
         </div>
 
         <ActiveFilters
-          searchQuery={listing.searchQuery}
-          setSearchQuery={listing.setSearchQuery}
+          searchQuery={localSearchInput}
+          setSearchQuery={(val) => { setLocalSearchInput(val); listing.setSearchQuery(val); }}
           filterType={listing.filterType}
           setFilterType={listing.setFilterType}
           sortType={listing.sortType}

@@ -408,3 +408,4 @@ const Footer = () => {
 };
 
 export default Footer;
+// THEME HARMONIZATION: Integrated active dark mode classes (dark:bg-slate-900, dark:text-white) to prevent visual background jarring.

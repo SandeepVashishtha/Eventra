@@ -2,7 +2,7 @@ import TeamMatchmaking from "./components/TeamMatchmaking";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import mockHackathons from "./hackathonMockData.json";
+import { fetchHackathons } from "../../services/hackathonService";
 import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
 import { FiCode, FiRotateCw, FiCompass, FiChevronDown, FiX } from "react-icons/fi";
@@ -15,6 +15,7 @@ import { filterHackathons } from "./hackathonFilterUtils.mjs";
 import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 
 import useReducedMotion from "../../hooks/useReducedMotion.js";
+import useDebounce from "../../hooks/useDebounce";
 import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
 // NEW: Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
@@ -39,6 +40,7 @@ const HackathonHub = () => {
   const [hackathons, setHackathons] = useState([]);
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [isLoading, setIsLoading] = useState(true);
   const [isScrollVisible, setIsScrollVisible] = useState(false);
   const [filters, setFilters] = useState({
@@ -62,18 +64,26 @@ const HackathonHub = () => {
     cardsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  // Simulate API call and wire page listeners
+  // Fetch hackathons and wire page listeners
   useEffect(() => {
-    setIsLoading(true);
-    setHackathons(mockHackathons);
-    setIsLoading(false);
-
-    const tags = [
-      ...new Set(
-        mockHackathons.flatMap((hackathon) => hackathon.techStack || []),
-      ),
-    ];
-    setAvailableTags(tags);
+    let isMounted = true;
+    
+    const loadHackathons = async () => {
+      setIsLoading(true);
+      const data = await fetchHackathons();
+      if (isMounted) {
+        setHackathons(data);
+        const tags = [
+          ...new Set(
+            data.flatMap((hackathon) => hackathon.techStack || []),
+          ),
+        ];
+        setAvailableTags(tags);
+        setIsLoading(false);
+      }
+    };
+    
+    loadHackathons();
 
     const handleScroll = () => {
       setIsScrollVisible(window.scrollY > 300);
@@ -90,6 +100,7 @@ const HackathonHub = () => {
     observer.observe(document.body, { childList: true, subtree: true });
 
     return () => {
+      isMounted = false;
       window.removeEventListener("scroll", handleScroll);
       observer.disconnect();
     };
@@ -153,8 +164,8 @@ const HackathonHub = () => {
     threshold: 0.4,
   });
 
-  const searchedHackathons = searchQuery
-    ? fuse.search(searchQuery).map((result) => result.item)
+  const searchedHackathons = debouncedSearchQuery
+    ? fuse.search(debouncedSearchQuery).map((result) => result.item)
     : hackathons;
 
   const filteredHackathons = filterHackathons(searchedHackathons, {
@@ -681,13 +692,13 @@ const HackathonHub = () => {
                 </h3>
 
                 <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                  {searchQuery ||
-                  filters.difficulty ||
-                  filters.prize ||
-                  filters.location ||
-                  selectedTags.length > 0
-                    ? "No hackathons match your current filters. Try adjusting your search or filters."
-                    : "Check back later for exciting new hackathons!"}
+                 {debouncedSearchQuery ||
+  filters.difficulty ||
+  filters.prize ||
+  filters.location ||
+  selectedTags.length > 0
+    ? "No hackathons match your current filters. Try adjusting your search or filters."
+    : "Check back later for exciting new hackathons!"}
                 </p>
 
                 <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">

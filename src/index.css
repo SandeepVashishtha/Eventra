@@ -2,6 +2,7 @@
 /* Issue #828: Standardize and Professionalize Font Text and Size */
 @import url("https://fonts.googleapis.com/css2?family=Oxanium:wght@800&family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+@config "../tailwind.config.cjs";
 
 @import "tailwindcss";
 
@@ -56,7 +57,17 @@
   padding: 0;
   box-sizing: border-box;
 }
-
+.responsive-btn {
+  @apply
+    max-w-full
+    min-w-0
+    whitespace-nowrap
+    overflow-hidden
+    text-ellipsis
+    px-4
+    sm:px-5
+    md:px-6;
+}
 .sr-only {
   position: absolute;
   width: 1px;
@@ -70,13 +81,42 @@
 }
 
 :where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
-  outline: 3px solid #2563eb;
+  outline: 3px solid #1d4ed8;
   outline-offset: 3px;
   border-radius: 0.5rem;
+  box-shadow: 0 0 0 6px rgba(191, 219, 254, 0.75);
 }
 
 .dark :where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
   outline-color: #93c5fd;
+  box-shadow: 0 0 0 6px rgba(30, 64, 175, 0.55);
+}
+
+.skip-to-content {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 100000;
+  transform: translateY(-150%);
+  border-radius: 0.5rem;
+  background: #111827;
+  color: #ffffff;
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 0.2s ease;
+}
+
+.skip-to-content:focus,
+.skip-to-content:focus-visible {
+  transform: translateY(0);
+  outline: 3px solid #facc15;
+  outline-offset: 3px;
+}
+
+.dark .skip-to-content {
+  background: #f8fafc;
+  color: #0f172a;
 }
 
 html {
@@ -91,7 +131,10 @@ html {
 
   --border-color: #e1e5e9;
   --card-bg-color: #ffffff;
-
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
   --scrollbar-track-color: #f1f1f1;
   --scrollbar-thumb-color: #000000;
   --scrollbar-thumb-hover-color: #262626;
@@ -145,7 +188,7 @@ html {
 .dark {
   --bg-color: #0f172a;
   --text-color: #f8fafc;
-  --text-color-light: #cbd5e1;
+  --text-color-light: #e2e8f0;
 
   --border-color: #334155;
 
@@ -155,12 +198,13 @@ html {
   --scrollbar-thumb-color: #475569;
   --scrollbar-thumb-hover-color: #64748b;
 
-  --btn-secondary-text: #f1f5f9;
+  --btn-secondary-text: #f8fafc;
 
   /* Additional Dark Theme Colors */
   --navbar-bg: #111827;
   --sidebar-bg: #0f172a;
 
+  --input-bg: #111827;
 
   --input-bg: #1e293b;
   --input-text: #f8fafc;

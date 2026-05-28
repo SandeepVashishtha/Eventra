@@ -111,3 +111,59 @@ export const exportAttendeesToCSV = (
     window.URL.revokeObjectURL(url);
   }
 };
+
+/**
+ * exportSurveyToCSV
+ *
+ * Generates a safe CSV file from the provided survey questions and dynamic response logs,
+ * fully escaped per RFC 4180 and guarded against CSV/formula injection.
+ *
+ * @param {Array<object>} questions  - Array of active survey question objects
+ * @param {Array<object>} responses  - Array of attendee response submission objects
+ * @param {string} surveyTitle       - Raw title of the survey (will be sanitized)
+ */
+export const exportSurveyToCSV = (
+  questions,
+  responses,
+  surveyTitle = "Survey"
+) => {
+  if (!questions || questions.length === 0 || !responses || responses.length === 0) {
+    return;
+  }
+
+  // Sanitize the filename to strip OS path separators and reserved chars
+  const sanitizedTitle = surveyTitle.replace(/[/\\:*?"<>|]/g, "_").trim() || "Survey";
+  const dateStr = new Date().toISOString().split("T")[0];
+  const safeFilename = `feedback-${sanitizedTitle}-${dateStr}.csv`;
+
+  // Columns: Timestamp followed by each question prompt
+  const headers = [
+    "Timestamp",
+    ...questions.map((q) => q.questionText || `Question (${q.type})`)
+  ];
+
+  // Rows: Each anonymous attendee submission
+  const rows = responses.map((resp) => [
+    resp.timestamp || "",
+    ...questions.map((q) => resp.answers[q.id] ?? "")
+  ]);
+
+  const csvContent = [headers, ...rows]
+    .map((row) => row.map(sanitizeCSVField).join(","))
+    .join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.setAttribute("download", safeFilename);
+  document.body.appendChild(link);
+
+  try {
+    link.click();
+  } finally {
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }
+};

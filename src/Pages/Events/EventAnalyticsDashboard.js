@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
@@ -32,33 +32,7 @@ const feedbackData = [
 const COLORS = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'];
 const TABS = ['overview', 'registrations', 'demographics', 'feedback'];
 
-const totalRegistrations = eventsData.reduce((sum, e) => sum + e.attendees, 0);
-const totalCapacity = eventsData.reduce((sum, e) => sum + e.maxAttendees, 0);
-const fillRate = Math.round((totalRegistrations / totalCapacity) * 100);
-const avgRating = (feedbackData.reduce((s, f) => s + f.rating, 0) / feedbackData.length).toFixed(1);
-
-const getTopEvents = () =>
-  [...eventsData].sort((a, b) => b.attendees - a.attendees).slice(0, 6)
-    .map(e => ({ name: e.title.length > 18 ? e.title.slice(0, 18) + '…' : e.title, attendees: e.attendees, capacity: e.maxAttendees }));
-
-const getTypeData = () => {
-  const map = {};
-  eventsData.forEach(e => { map[e.type] = (map[e.type] || 0) + e.attendees; });
-  return Object.entries(map).map(([name, value]) => ({ name, value }));
-};
-
-const getLocationData = () => {
-  const map = {};
-  eventsData.forEach(e => {
-    const loc = e.location === 'Online' ? 'Online' : e.location.split(',')[1]?.trim() || e.location;
-    map[loc] = (map[loc] || 0) + e.attendees;
-  });
-  return Object.entries(map).map(([name, value]) => ({ name, value }));
-};
-
-const topEvents = getTopEvents();
-const typeData = getTypeData();
-const locationData = getLocationData();
+// --- Subcomponents (Now accepting props instead of using global scope) ---
 
 const RegistrationLineChart = ({ height = 260, showLegend = false }) => (
   <ResponsiveContainer width="100%" height={height}>
@@ -73,9 +47,9 @@ const RegistrationLineChart = ({ height = 260, showLegend = false }) => (
   </ResponsiveContainer>
 );
 
-const AttendanceBarChart = ({ height = 260, layout = 'horizontal', showLegend = true }) => (
+const AttendanceBarChart = ({ data, height = 260, layout = 'horizontal', showLegend = true }) => (
   <ResponsiveContainer width="100%" height={height}>
-    <BarChart data={topEvents} layout={layout}>
+    <BarChart data={data} layout={layout}>
       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
       {layout === 'vertical' ? (
         <>
@@ -96,7 +70,7 @@ const AttendanceBarChart = ({ height = 260, layout = 'horizontal', showLegend = 
   </ResponsiveContainer>
 );
 
-const KPIHeader = () => (
+const KPIHeader = ({ totalEvents, registrations, fillRate, avgRating }) => (
   <div className="ead-header">
     <div className="ead-header-left">
       <span className="sb-badge sb-hosted">Organizer View</span>
@@ -105,11 +79,11 @@ const KPIHeader = () => (
     </div>
     <div className="ead-header-right">
       <div className="ead-kpi">
-        <span className="ead-kpi-val">{eventsData.length}</span>
+        <span className="ead-kpi-val">{totalEvents}</span>
         <span className="ead-kpi-label">Total Events</span>
       </div>
       <div className="ead-kpi">
-        <span className="ead-kpi-val">{totalRegistrations.toLocaleString()}</span>
+        <span className="ead-kpi-val">{registrations.toLocaleString()}</span>
         <span className="ead-kpi-label">Registrations</span>
       </div>
       <div className="ead-kpi">
@@ -124,7 +98,7 @@ const KPIHeader = () => (
   </div>
 );
 
-const OverviewTab = () => (
+const OverviewTab = ({ topEvents }) => (
   <div className="ead-grid">
     <div className="ead-card ead-card--wide">
       <h2 className="ead-card-title">📈 Registrations Over Time</h2>
@@ -132,12 +106,12 @@ const OverviewTab = () => (
     </div>
     <div className="ead-card ead-card--wide">
       <h2 className="ead-card-title">🏆 Top Performing Events</h2>
-      <AttendanceBarChart height={260} layout="vertical" />
+      <AttendanceBarChart data={topEvents} height={260} layout="vertical" />
     </div>
   </div>
 );
 
-const RegistrationsTab = () => (
+const RegistrationsTab = ({ topEvents }) => (
   <div className="ead-grid">
     <div className="ead-card ead-card--full">
       <h2 className="ead-card-title">📅 Monthly Registration Trends</h2>
@@ -145,12 +119,12 @@ const RegistrationsTab = () => (
     </div>
     <div className="ead-card ead-card--full">
       <h2 className="ead-card-title">📊 All Events — Attendance vs Capacity</h2>
-      <AttendanceBarChart height={320} />
+      <AttendanceBarChart data={topEvents} height={320} />
     </div>
   </div>
 );
 
-const DemographicsTab = () => (
+const DemographicsTab = ({ typeData, locationData }) => (
   <div className="ead-grid">
     <div className="ead-card">
       <h2 className="ead-card-title">🎯 Attendees by Event Type</h2>
@@ -221,31 +195,78 @@ const FeedbackTab = () => (
   </div>
 );
 
-const TAB_COMPONENTS = {
-  overview: <OverviewTab />,
-  registrations: <RegistrationsTab />,
-  demographics: <DemographicsTab />,
-  feedback: <FeedbackTab />,
-};
-
 const EventAnalyticsDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
+  // 🔥 THE ALGO FIX: Single O(N) pass utilizing Hash Maps and useMemo 🔥
+  const memoizedEventData = useMemo(() => {
+    let registrations = 0;
+    let capacity = 0;
+    const typeMap = {};
+    const locMap = {};
+
+    // 1. Single iteration pass combining the 3 previous separate loops
+    eventsData.forEach(e => {
+      registrations += e.attendees;
+      capacity += e.maxAttendees;
+      
+      typeMap[e.type] = (typeMap[e.type] || 0) + e.attendees;
+      
+      const loc = e.location === 'Online' ? 'Online' : e.location.split(',')[1]?.trim() || e.location;
+      locMap[loc] = (locMap[loc] || 0) + e.attendees;
+    });
+
+    const typeData = Object.entries(typeMap).map(([name, value]) => ({ name, value }));
+    const locationData = Object.entries(locMap).map(([name, value]) => ({ name, value }));
+    const fillRate = capacity ? Math.round((registrations / capacity) * 100) : 0;
+
+    // 2. Isolated Sort — top 6 events by attendees
+    const topEvents = [...eventsData]
+      .sort((a, b) => b.attendees - a.attendees)
+      .slice(0, 6)
+      .map(e => ({ name: e.title?.slice(0, 20) || e.name, attendees: e.attendees, capacity: e.maxAttendees }));
+
+    const avgRating = (
+      feedbackData.reduce((sum, f) => sum + f.rating, 0) / feedbackData.length
+    ).toFixed(1);
+
+    return { registrations, capacity, fillRate, typeData, locationData, topEvents, avgRating };
+  }, []);
+
+  const { registrations, fillRate, typeData, locationData, topEvents, avgRating } = memoizedEventData;
+  const totalEvents = eventsData.length;
+
   return (
     <div className="ead-root">
-      <KPIHeader />
-      <div className="ead-tabs">
+      <KPIHeader
+        totalEvents={totalEvents}
+        registrations={registrations}
+        fillRate={fillRate}
+        avgRating={avgRating}
+      />
+
+      {/* TABS */}
+      <div className="ead-tabs" role="tablist" aria-label="Analytics sections">
         {TABS.map(tab => (
           <button
             key={tab}
-            className={`ead-tab ${activeTab === tab ? 'ead-tab--active' : ''}`}
+            role="tab"
+            aria-selected={activeTab === tab}
             onClick={() => setActiveTab(tab)}
+            className={`ead-tab ${activeTab === tab ? 'ead-tab--active' : ''}`}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
           </button>
         ))}
       </div>
-      {TAB_COMPONENTS[activeTab]}
+
+      {/* TAB CONTENT */}
+      <div role="tabpanel">
+        {activeTab === 'overview' && <OverviewTab topEvents={topEvents} />}
+        {activeTab === 'registrations' && <RegistrationsTab topEvents={topEvents} />}
+        {activeTab === 'demographics' && <DemographicsTab typeData={typeData} locationData={locationData} />}
+        {activeTab === 'feedback' && <FeedbackTab />}
+      </div>
     </div>
   );
 };

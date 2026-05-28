@@ -31,14 +31,10 @@ const RegistrationsTab = ({
   setSelectedTicketEvent,
 }) => {
   // Derive display value for the type dropdown
-  const typeDisplayValue = selectedTypes.includes("All")
-    ? ""
-    : selectedTypes.join(", ");
+  const typeDisplayValue = selectedTypes.includes("All") ? "" : selectedTypes.join(", ");
 
   // Derive display value for the status dropdown
-  const statusDisplayValue = selectedStatuses.includes("All")
-    ? ""
-    : selectedStatuses.join(", ");
+  const statusDisplayValue = selectedStatuses.includes("All") ? "" : selectedStatuses.join(", ");
 
   // Handler adapters for StyledDropdown (single-select per click, but we
   // accumulate via toggleType / toggleStatus for multi-select behaviour)
@@ -72,7 +68,7 @@ const RegistrationsTab = ({
         <h2 className="ud-page-title" style={{ margin: 0 }}>
           <Users size={20} /> All Registrations
         </h2>
-        
+
         {filteredData.length > 0 && (
           <button
             onClick={() => downloadBulkICSFile(filteredData, "eventra-schedule")}
@@ -88,7 +84,7 @@ const RegistrationsTab = ({
               border: "none",
               borderRadius: "0.75rem",
               cursor: "pointer",
-              transition: "all 0.2s"
+              transition: "all 0.2s",
             }}
             onMouseOver={(e) => (e.currentTarget.style.opacity = "0.9")}
             onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
@@ -98,92 +94,91 @@ const RegistrationsTab = ({
         )}
       </div>
 
-        {/* Filters toolbar */}
-        <div className="ud-filter-row" style={{ flexWrap: "wrap", gap: "0.75rem" }}>
-          {/* Debounced search input */}
-          <div className="ud-search-wrap" style={{ minWidth: 220 }}>
-            <Search size={15} className="ud-search-icon" />
-            <input
-              className="ud-search"
-              placeholder="Search registrations…"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              id="registrations-search"
-            />
-            {searchTerm && (
-              <button
-                className="ud-search-clear"
-                onClick={() => setSearchTerm("")}
-                aria-label="Clear search"
-              >
-                <X size={13} />
-              </button>
-            )}
-            {isDebouncing && (
-              <span
-                className="ud-search-spinner"
-                aria-label="Searching…"
-                style={{
-                  position: "absolute",
-                  right: searchTerm ? 32 : 10,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  width: 14,
-                  height: 14,
-                  border: "2px solid #6366f1",
-                  borderTopColor: "transparent",
-                  borderRadius: "50%",
-                  animation: "spin 0.6s linear infinite",
-                }}
-              />
-            )}
-          </div>
-
-          {/* Type filter — StyledDropdown */}
-          <StyledDropdown
-            label=""
-            placeholder="All Types"
-            value={typeDisplayValue}
-            options={TYPE_OPTIONS}
-            onChange={handleTypeChange}
+      {/* Filters toolbar */}
+      <div className="ud-filter-row" style={{ flexWrap: "wrap", gap: "0.75rem" }}>
+        {/* Debounced search input */}
+        <div className="ud-search-wrap" style={{ minWidth: 220 }}>
+          <Search size={15} className="ud-search-icon" />
+          <input
+            className="ud-search"
+            placeholder="Search registrations…"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            id="registrations-search"
           />
-
-          {/* Status filter — StyledDropdown */}
-          <StyledDropdown
-            label=""
-            placeholder="All Statuses"
-            value={statusDisplayValue}
-            options={STATUS_OPTIONS}
-            onChange={handleStatusChange}
-          />
-
-          {/* Active filter badge + clear */}
-          {activeFilterCount > 0 && (
+          {searchTerm && (
             <button
-              onClick={clearAll}
-              className="ud-clear-filters-btn"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.35rem",
-                padding: "0.4rem 0.75rem",
-                fontSize: "0.75rem",
-                fontWeight: 600,
-                color: "#6366f1",
-                background: "#6366f110",
-                border: "1px solid #6366f130",
-                borderRadius: "0.75rem",
-                cursor: "pointer",
-                transition: "all 0.2s",
-              }}
-              aria-label="Clear all filters"
+              className="ud-search-clear"
+              onClick={() => setSearchTerm("")}
+              aria-label="Clear search"
             >
-              <SlidersHorizontal size={13} />
-              Clear {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""}
+              <X size={13} />
             </button>
+          )}
+          {isDebouncing && (
+            <span
+              className="ud-search-spinner"
+              aria-label="Searching…"
+              style={{
+                position: "absolute",
+                right: searchTerm ? 32 : 10,
+                top: "50%",
+                transform: "translateY(-50%)",
+                width: 14,
+                height: 14,
+                border: "2px solid #6366f1",
+                borderTopColor: "transparent",
+                borderRadius: "50%",
+                animation: "spin 0.6s linear infinite",
+              }}
+            />
           )}
         </div>
 
+        {/* Type filter — StyledDropdown */}
+        <StyledDropdown
+          label=""
+          placeholder="All Types"
+          value={typeDisplayValue}
+          options={TYPE_OPTIONS}
+          onChange={handleTypeChange}
+        />
+
+        {/* Status filter — StyledDropdown */}
+        <StyledDropdown
+          label=""
+          placeholder="All Statuses"
+          value={statusDisplayValue}
+          options={STATUS_OPTIONS}
+          onChange={handleStatusChange}
+        />
+
+        {/* Active filter badge + clear */}
+        {activeFilterCount > 0 && (
+          <button
+            onClick={clearAll}
+            className="ud-clear-filters-btn"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.35rem",
+              padding: "0.4rem 0.75rem",
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              color: "#6366f1",
+              background: "#6366f110",
+              border: "1px solid #6366f130",
+              borderRadius: "0.75rem",
+              cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+            aria-label="Clear all filters"
+          >
+            <SlidersHorizontal size={13} />
+            Clear {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""}
+          </button>
+        )}
+      </div>
 
       {/* Content */}
       {loading ? (
@@ -227,19 +222,13 @@ const RegistrationsTab = ({
                   <td className="ud-table-title" title={item.title}>
                     {item.title}
                   </td>
-                  <td title={item.date || ""}>
-                    {item.date ? getSmartDateLabel(item.date) : "—"}
-                  </td>
+                  <td title={item.date || ""}>{item.date ? getSmartDateLabel(item.date) : "—"}</td>
                   <td title={item.location || item.lastUpdate || "—"}>
                     {item.location || item.lastUpdate || "—"}
                   </td>
                   <td>
                     <StatusBadge
-                      status={
-                        item.projectStatus !== "-"
-                          ? item.projectStatus
-                          : item.status
-                      }
+                      status={item.projectStatus !== "-" ? item.projectStatus : item.status}
                     />
                   </td>
                   <td>

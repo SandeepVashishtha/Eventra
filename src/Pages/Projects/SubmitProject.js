@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { sanitizeInputText } from "../../utils/inputSanitization";
 import {
   ArrowRightIcon,
   LightBulbIcon,
@@ -137,57 +138,58 @@ const SubmitProject = () => {
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  const validateForm = (data) => {
-    const newErrors = {};
+const validateForm = (data) => {
+  const newErrors = {};
 
-    const formatFieldName = (fieldName) => {
-      const result = fieldName.replace(/([A-Z])/g, " $1");
-      return result.charAt(0).toUpperCase() + result.slice(1);
-    };
-
-    for (const field of requiredFields) {
-      if (!data[field]?.trim()) {
-        const formattedName = formatFieldName(field);
-        newErrors[field] = `${formattedName} is required.`;
-      }
-    }
-
-    if (data.projectName && data.projectName.trim().length < 3) {
-      newErrors.projectName =
-        "Project Name must be at least 3 characters long.";
-    }
-    if (data.teamName && data.teamName.trim().length < 3) {
-      newErrors.teamName = "Team Name must be at least 3 characters long.";
-    }
-    if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
-      newErrors.email = "Please enter a valid email address.";
-    }
-    if (
-      data.githubLink &&
-      !/^(https?:\/\/)?(www\.)?github\.com\/[\w-]+\/[\w-]+(\/)?$/i.test(
-        data.githubLink.trim()
-      )
-    ) {
-      newErrors.githubLink = "Please enter a valid GitHub repository URL.";
-    }
-    const urlRegex = /^(https?:\/\/)?([\w-]+(\.[\w-]+)+)(\/[\w-./?%&=]*)?$/i;
-    if (data.liveDemoLink?.trim() && !urlRegex.test(data.liveDemoLink)) {
-      newErrors.liveDemoLink = "Please enter a valid URL.";
-    }
-    if (data.projectImage?.trim()) {
-      const isBase64 = data.projectImage.startsWith("data:image/");
-      if (!isBase64 && !urlRegex.test(data.projectImage)) {
-        newErrors.projectImage = "Please enter a valid image URL.";
-      }
-    }
-    if (data.description && data.description.trim().length < 10) {
-      newErrors.description =
-        "Description must be at least 10 characters long.";
-    }
-    return newErrors;
+  const formatFieldName = (fieldName) => {
+    const result = fieldName.replace(/([A-Z])/g, " $1");
+    return result.charAt(0).toUpperCase() + result.slice(1);
   };
 
-  const handleSubmit = async (e) => {
+  // Required fields
+  for (const field of requiredFields) {
+    if (!data[field]?.trim()) {
+      const formattedName = formatFieldName(field);
+      newErrors[field] = `${formattedName} is required.`;
+    }
+  }
+
+  // Length validations
+  if (data.projectName && (data.projectName.trim().length < 3 || data.projectName.trim().length > 100)) {
+    newErrors.projectName = "Project Name must be between 3 and 100 characters.";
+  }
+  if (data.teamName && (data.teamName.trim().length < 3 || data.teamName.trim().length > 100)) {
+    newErrors.teamName = "Team Name must be between 3 and 100 characters.";
+  }
+  if (data.description && (data.description.trim().length < 20 || data.description.trim().length > 2000)) {
+    newErrors.description = "Description must be between 20 and 2000 characters.";
+  }
+
+  // Existing validation logic
+  if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
+    newErrors.email = "Please enter a valid email address.";
+  }
+  if (
+    data.githubLink &&
+    !/^(https?:\/\/)?(www\.)?github\.com\/[\w-]+\/[\w-]+(\/)?$/i.test(data.githubLink.trim())
+  ) {
+    newErrors.githubLink = "Please enter a valid GitHub repository URL.";
+  }
+  const urlRegex = /^(https?:\/\/)?([\w-]+(\.[\w-]+)+)(\/[\w-./?%&=]*)?$/i;
+  if (data.liveDemoLink?.trim() && !urlRegex.test(data.liveDemoLink)) {
+    newErrors.liveDemoLink = "Please enter a valid URL.";
+  }
+  if (data.projectImage?.trim()) {
+    const isBase64 = data.projectImage.startsWith("data:image/");
+    if (!isBase64 && !urlRegex.test(data.projectImage)) {
+      newErrors.projectImage = "Please enter a valid image URL.";
+    }
+  }
+
+  return newErrors;
+};
+
+const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!isAuthenticated()) {
@@ -224,12 +226,18 @@ const SubmitProject = () => {
 
     setIsSubmitting(true);
     try {
+      // Sanitize text fields before sending
+      const sanitizedData = {
+        ...formData,
+        projectName: sanitizeInputText(formData.projectName),
+        teamName: sanitizeInputText(formData.teamName),
+        description: sanitizeInputText(formData.description),
+        additionalNotes: sanitizeInputText(formData.additionalNotes),
+        submittedBy: user?.id,
+      };
       await apiUtils.post(
         API_ENDPOINTS.PROJECTS.SUBMIT,
-        {
-          ...formData,
-          submittedBy: user?.id,
-        },
+        sanitizedData,
         {
           headers: {
             Authorization: token
@@ -258,7 +266,14 @@ const SubmitProject = () => {
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       const message = err?.data?.message || err?.message || "Submission failed. Please try again.";
-      toast.error(message);
+      toast.error(message, {
+        // Provide a retry button in the toast
+        action: {
+          label: "Retry",
+          onClick: () => handleSubmit(new Event('submit')),
+        },
+        duration: 8000,
+      });
     } finally {
       setIsSubmitting(false);
     }

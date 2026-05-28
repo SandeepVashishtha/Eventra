@@ -53,15 +53,30 @@ startCleanupInterval();
 // CORS Headers
 // ---------------------------------------------------------------------------
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": process.env.ALLOWED_ORIGIN || "*",
-  "Access-Control-Allow-Credentials": "true",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+const corsHeaders = (req) => {
+  const allowedOrigin = process.env.ALLOWED_ORIGIN;
+  const requestOrigin = req.headers?.origin;
+
+  const corsOrigin = allowedOrigin || "*";
+  if (allowedOrigin && requestOrigin !== allowedOrigin) {
+    console.warn(`[CORS] Origin mismatch - Request: ${requestOrigin}, Allowed: ${allowedOrigin}`);
+  }
+
+  // Access-Control-Allow-Credentials must not be sent with a wildcard origin.
+  // Per the CORS spec, browsers reject credentialed responses when the reflected
+  // origin is "*". Only set the header when a specific origin is configured.
+  const isSpecificOrigin = corsOrigin !== "*";
+
+  return {
+    "Access-Control-Allow-Origin": corsOrigin,
+    ...(isSpecificOrigin && { "Access-Control-Allow-Credentials": "true" }),
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  };
 };
 
-const corsResponse = (res, status, data) => {
-  return res.status(status).set(corsHeaders).json(data);
+const corsResponse = (res, status, data, req) => {
+  return res.status(status).set(corsHeaders(req)).json(data);
 };
 
 // ---------------------------------------------------------------------------
@@ -128,12 +143,12 @@ const authenticateToken = (token) => {
 export default async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return res.status(200).set(corsHeaders).end();
+    return res.status(200).set(corsHeaders(req)).end();
   }
 
   // Only allow POST requests
   if (req.method !== "POST") {
-    return corsResponse(res, 405, { error: "Method not allowed" });
+    return corsResponse(res, 405, { error: "Method not allowed" }, req);
   }
 
   try {
@@ -147,7 +162,7 @@ export default async function handler(req, res) {
     if (!token) {
       return corsResponse(res, 401, { 
         error: "Authentication required. No token provided." 
-      });
+      }, req);
     }
 
     // -----------------------------------------------------------------------
@@ -159,7 +174,7 @@ export default async function handler(req, res) {
     if (!authResult.valid) {
       return corsResponse(res, 401, { 
         error: authResult.error 
-      });
+      }, req);
     }
 
     // -----------------------------------------------------------------------
@@ -175,13 +190,13 @@ export default async function handler(req, res) {
     return corsResponse(res, 200, {
       message: "Logged out successfully",
       timestamp: new Date().toISOString(),
-    });
+    }, req);
 
   } catch (error) {
     console.error("Logout Error:", error);
     return corsResponse(res, 500, { 
       error: "Internal server error. Please try again later." 
-    });
+    }, req);
   }
 }
 
