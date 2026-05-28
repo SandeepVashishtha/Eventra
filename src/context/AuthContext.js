@@ -182,8 +182,6 @@ export const AuthProvider = ({ children }) => {
     }
   }, [clearExpiredSession]);
 
-  useEffect(() => {
-    if (!token) return;
   // --- Smart Token Expiry Timeout ---
   useEffect(() => {
     if (!token) return;
