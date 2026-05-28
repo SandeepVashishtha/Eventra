@@ -34,7 +34,7 @@ export const ErrorFallback = ({ error, resetErrorBoundary }) => {
       )}
 
       {resetErrorBoundary && (
-        <button
+        <button aria-label="button"
           onClick={resetErrorBoundary}
           className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
         >

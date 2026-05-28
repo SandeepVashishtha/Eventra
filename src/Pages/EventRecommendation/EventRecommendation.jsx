@@ -352,7 +352,7 @@ const EventRecommendation = () => {
               </div>
 
               {/* Button */}
-              <button
+              <button aria-label="button"
                 onClick={generateRecommendations}
                 className="w-full mt-4 bg-blue-600 hover:bg-blue-700 transition-all text-white rounded-xl py-3 text-sm font-semibold"
               >
@@ -424,7 +424,7 @@ const EventRecommendation = () => {
                         {event.description}
                       </p>
 
-                      <button
+                      <button aria-label="button"
                         onClick={() => setSelectedEvent(event)}
                         className="mt-5 text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
                       >
@@ -440,7 +440,7 @@ const EventRecommendation = () => {
                 {/* Explore Other Events */}
                 <div className="mt-8">
 
-                  <button
+                  <button aria-label="button"
                     onClick={() =>
                       setShowOtherEvents(!showOtherEvents)
                     }
@@ -517,7 +517,7 @@ const EventRecommendation = () => {
                   Try changing your interests, skill level, or event type.
                 </p>
 
-                <button
+                <button aria-label="button"
                   onClick={() =>
                     setShowOtherEvents(!showOtherEvents)
                   }
@@ -581,7 +581,7 @@ const EventRecommendation = () => {
                   {selectedEvent.title}
                 </h3>
               </div>
-              <button
+              <button aria-label="button"
                 onClick={() => setSelectedEvent(null)}
                 className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
               >
@@ -640,13 +640,13 @@ const EventRecommendation = () => {
 
             {/* Footer Buttons */}
             <div className="flex gap-3 mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4">
-              <button
+              <button aria-label="button"
                 onClick={() => setSelectedEvent(null)}
                 className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-bold transition-all cursor-pointer"
               >
                 Close
               </button>
-              <button
+              <button aria-label="button"
                 onClick={() => {
                   toast.success(`Successfully registered for ${selectedEvent.title}! Check your email for confirmation.`);
                   setSelectedEvent(null);

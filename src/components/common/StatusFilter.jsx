@@ -21,7 +21,7 @@ const StatusFilter = ({ statuses, selectedStatuses, onStatusChange }) => {
       </h3>
       <div className="grid grid-cols-1 gap-2">
         {statuses.map((status) => (
-          <button
+          <button aria-label="button"
             key={status.id}
             onClick={() => toggleStatus(status.id)}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all text-left ${

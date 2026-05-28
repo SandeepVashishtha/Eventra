@@ -203,7 +203,7 @@ const EventConflictModal = ({
               </h3>
               <div className="space-y-3">
                 {suggestedEvents.map((event) => (
-                  <button
+                  <button aria-label="button"
                     key={event.id}
                     onClick={() => onSelectAlternative?.(event)}
                     aria-label={`Select alternative event: ${event.title}`}
@@ -245,14 +245,14 @@ const EventConflictModal = ({
 
         {/* Footer */}
         <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex gap-3">
-          <button
+          <button aria-label="button"
             onClick={onCancel}
             className="flex-1 px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
           >
             Cancel Registration
           </button>
           {!strictMode && (
-            <button
+            <button aria-label="button"
               onClick={onProceed}
               className="flex-1 px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-medium"
             >

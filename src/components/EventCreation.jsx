@@ -648,7 +648,7 @@ const EventCreation = () => {
             </p>
 
             <div className="flex justify-end gap-3">
-              <button
+              <button aria-label="button"
                 onClick={handleDiscardDraft}
                 className="
             px-4 py-2
@@ -663,7 +663,7 @@ const EventCreation = () => {
                 Discard
               </button>
 
-              <button
+              <button aria-label="button"
                 onClick={handleRestoreDraft}
                 className="
             px-5 py-2
@@ -705,7 +705,7 @@ const EventCreation = () => {
         <>
           {/* Heading Section */}
           <div className="w-full max-w-4xl flex justify-end mb-6">
-            <button
+            <button aria-label="button"
               onClick={() => {
                 exportAttendeesToCSV(mockAttendees, "event-attendees.csv");
 
@@ -875,7 +875,7 @@ const EventCreation = () => {
 
                   {/* Remove Button (only when uploaded) */}
                   {formData.banner && (
-                    <button
+                    <button aria-label="button"
                       type="button"
                       onClick={() =>
                         setFormData((prev) => ({
@@ -1502,7 +1502,7 @@ const EventCreation = () => {
                     </label>
                   </div>
 
-                  <button
+                  <button aria-label="button"
                     type="button"
                     onClick={addTicketTier}
                     className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-3xl text-sm font-medium shadow-md hover:bg-zinc-800 transition-all duration-300 transform hover:scale-[1.03] active:scale-[0.97]"
@@ -1522,7 +1522,7 @@ const EventCreation = () => {
                         Tier {index + 1}
                       </h4>
                       {formData.ticketTiers.length > 1 && (
-                        <button
+                        <button aria-label="button"
                           type="button"
                           onClick={() => removeTicketTier(index)}
                           className="text-red-500 hover:text-red-700 text-sm font-medium"
@@ -1649,7 +1649,7 @@ const EventCreation = () => {
                     }}
                     className="flex-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   />
-                  <button
+                  <button aria-label="button"
                     type="button"
                     onClick={addTag}
                     className="
@@ -1676,7 +1676,7 @@ const EventCreation = () => {
                       className="inline-flex items-center gap-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-sm font-medium"
                     >
                       #{tag}
-                      <button
+                      <button aria-label="button"
                         type="button"
                         onClick={() => removeTag(tag)}
                         className="ml-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 font-bold"

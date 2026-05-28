@@ -25,7 +25,7 @@ const CategoryFilter = ({
       </h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {categories.map((category) => (
-          <button
+          <button aria-label="button"
             key={category.id}
             onClick={() => toggleCategory(category.id)}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all text-left ${

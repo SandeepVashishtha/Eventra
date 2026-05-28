@@ -134,7 +134,7 @@ const CalendarToolbar = ({ label, onNavigate }) => {
         <span className="tracking-tight">{label}</span>
       </div>
       <div className="flex items-center gap-2">
-        <button
+        <button aria-label="button"
           type="button"
           onClick={() => onNavigate("PREV")}
           className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-500"
@@ -142,14 +142,14 @@ const CalendarToolbar = ({ label, onNavigate }) => {
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
-        <button
+        <button aria-label="button"
           type="button"
           onClick={() => onNavigate("TODAY")}
           className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-500"
         >
           Today
         </button>
-        <button
+        <button aria-label="button"
           type="button"
           onClick={() => onNavigate("NEXT")}
           className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-500"
@@ -289,7 +289,7 @@ const CalendarPage = () => {
             <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
               Upcoming events: {upcomingEvents.length}
             </div>
-            <button
+            <button aria-label="button"
               type="button"
               onClick={refresh}
               className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
@@ -304,7 +304,7 @@ const CalendarPage = () => {
           <div className="mt-6 rounded-3xl border border-red-200 bg-white p-6 text-sm text-red-700 shadow-sm dark:border-red-500/30 dark:bg-slate-950 dark:text-red-300">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <span>{loadError}</span>
-              <button
+              <button aria-label="button"
                 type="button"
                 onClick={refresh}
                 className="inline-flex items-center gap-2 rounded-full bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"

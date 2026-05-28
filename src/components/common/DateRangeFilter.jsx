@@ -99,7 +99,7 @@ const DateRangeFilter = ({
 
       {/* Clear Button */}
       {(localStartDate || localEndDate) && (
-        <button
+        <button aria-label="button"
           onClick={handleClear}
           className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"
         >

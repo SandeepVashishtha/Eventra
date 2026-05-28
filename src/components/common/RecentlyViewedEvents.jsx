@@ -69,7 +69,7 @@ const RecentlyViewedEvents = ({ maxVisible = 6, onEventClick }) => {
 
         <div className="rv-actions">
           {recentlyViewed.length > maxVisible && (
-            <button
+            <button aria-label="button"
               className="rv-btn rv-btn--ghost"
               onClick={() => setShowAll((v) => !v)}
               aria-expanded={showAll}

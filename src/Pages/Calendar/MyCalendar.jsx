@@ -153,7 +153,7 @@ const MyCalendar = () => {
           <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
             {/* VIEW SWITCHER */}
             <div className="flex items-center gap-2 bg-slate-150/80 dark:bg-slate-900/60 p-1.5 rounded-2xl border border-slate-200/40 dark:border-slate-800/30 backdrop-blur-xs shadow-inner">
-              <button
+              <button aria-label="button"
                 onClick={() => setViewMode("grid")}
                 className={`p-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${viewMode === "grid"
                     ? "bg-white dark:bg-slate-800 shadow-md text-indigo-650 dark:text-indigo-400"
@@ -164,7 +164,7 @@ const MyCalendar = () => {
                 <Grid className="w-3.5 h-3.5" />
                 Calendar Grid
               </button>
-              <button
+              <button aria-label="button"
                 onClick={() => setViewMode("timeline")}
                 className={`p-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${viewMode === "timeline"
                     ? "bg-white dark:bg-slate-800 shadow-md text-indigo-650 dark:text-indigo-400"
@@ -179,7 +179,7 @@ const MyCalendar = () => {
 
             {/* BULK EXPORT BUTTON */}
             {myEvents.length > 0 && (
-              <button
+              <button aria-label="button"
                 onClick={() => downloadBulkICSFile(myEvents)}
                 className="p-2.5 px-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white shadow-md hover:shadow-lg hover:scale-102"
                 aria-label="Export all events as ICS"
@@ -246,13 +246,13 @@ const MyCalendar = () => {
                         {monthNames[currentMonth]} {currentYear}
                       </h2>
                       <div className="flex items-center gap-1.5">
-                        <button
+                        <button aria-label="button"
                           onClick={prevMonth}
                           className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-100 dark:border-slate-800/40 transition cursor-pointer"
                         >
                           <ChevronLeft className="w-4 h-4 text-slate-600 dark:text-slate-350" />
                         </button>
-                        <button
+                        <button aria-label="button"
                           onClick={nextMonth}
                           className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-100 dark:border-slate-800/40 transition cursor-pointer"
                         >
@@ -295,7 +295,7 @@ const MyCalendar = () => {
                             new Date().getFullYear() === currentYear;
 
                           return (
-                            <button
+                            <button aria-label="button"
                               key={`day-${day}`}
                               role="gridcell"
                               onClick={() => setSelectedDate(cellDate)}
@@ -369,7 +369,7 @@ const MyCalendar = () => {
                               </div>
                               {/* EXPORT BUTTONS */}
                               <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
-                                <button
+                                <button aria-label="button"
                                   type="button"
                                   onClick={() => downloadICSFile(item.event)}
                                   aria-label={`Download ICS calendar file for ${item.event.title}`}
@@ -457,7 +457,7 @@ const MyCalendar = () => {
                               </div>
                             </div>
                             <div className="flex items-center gap-2 mt-4 sm:mt-0">
-                              <button
+                              <button aria-label="button"
                                 type="button"
                                 onClick={() => downloadICSFile(item.event)}
                                 aria-label={`Download ICS calendar file for ${item.event.title}`}

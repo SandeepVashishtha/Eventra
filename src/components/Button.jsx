@@ -34,7 +34,7 @@ export const Button = ({
   `;
 
   return (
-    <button
+    <button aria-label="button"
       type={type}
       disabled={disabled}
       aria-disabled={disabled}

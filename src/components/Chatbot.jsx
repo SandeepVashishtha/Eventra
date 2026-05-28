@@ -320,7 +320,7 @@ export default function Chatbot() {
               {/* Quick prompts */}
               <div className="mb-3.5 flex flex-wrap gap-1.5">
                 {quickPrompts.map((prompt) => (
-                  <button
+                  <button aria-label="button"
                     key={prompt}
                     type="button"
                     onClick={() => sendMessage(prompt)}

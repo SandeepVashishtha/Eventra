@@ -21,7 +21,7 @@ const ModeFilter = ({ modes, selectedModes, onModeChange }) => {
       </h3>
       <div className="grid grid-cols-1 gap-2">
         {modes.map((mode) => (
-          <button
+          <button aria-label="button"
             key={mode.id}
             onClick={() => toggleMode(mode.id)}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all text-left ${

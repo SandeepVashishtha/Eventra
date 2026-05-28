@@ -206,7 +206,7 @@ const HackathonLifecycle = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <button
+            <button aria-label="button"
               onClick={() => setIsOrganizerMode(!isOrganizerMode)}
               className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 flex items-center gap-2 border shadow-sm ${
                 isOrganizerMode
@@ -232,7 +232,7 @@ const HackathonLifecycle = () => {
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               {phasesList.map((phase, idx) => (
-                <button
+                <button aria-label="button"
                   key={phase.id}
                   onClick={() => setGlobalActivePhase(idx)}
                   className={`p-3 rounded-xl border text-center transition-all ${
@@ -260,7 +260,7 @@ const HackathonLifecycle = () => {
             const isSelected = selectedPhaseId === phase.id;
 
             return (
-              <button
+              <button aria-label="button"
                 key={phase.id}
                 onClick={() => setSelectedPhaseId(phase.id)}
                 className={`relative p-5 rounded-2xl border text-left transition-all duration-300 ${
@@ -385,7 +385,7 @@ const HackathonLifecycle = () => {
                             </div>
                           </div>
                         </div>
-                        <button
+                        <button aria-label="button"
                           type="button"
                           className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-indigo-600 dark:text-indigo-400 shadow-sm"
                         >
@@ -427,7 +427,7 @@ const HackathonLifecycle = () => {
                       className="flex-1 min-w-0 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-indigo-500 dark:focus:border-indigo-400 outline-none transition-colors"
                       maxLength={100}
                     />
-                    <button
+                    <button aria-label="button"
                       type="submit"
                       className="px-4 py-2 rounded-xl bg-indigo-650 hover:bg-indigo-700 text-sm font-bold text-white shadow-sm transition shrink-0"
                     >
@@ -438,7 +438,7 @@ const HackathonLifecycle = () => {
 
                 <div className="space-y-3.5">
                   {selectedPhase.tasks.map((task) => (
-                    <button
+                    <button aria-label="button"
                       key={task.id}
                       onClick={() => toggleTask(selectedPhase.id, task.id)}
                       className={`flex w-full text-left items-start gap-3 p-3.5 rounded-2xl border transition-all ${

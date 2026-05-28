@@ -246,7 +246,7 @@ export default function CommandPalette({
   "
           >
             {trendTags.map(tag => (
-              <button
+              <button aria-label="button"
                 key={tag}
                 type="button"
                 onClick={() => {

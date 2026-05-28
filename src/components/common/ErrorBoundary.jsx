@@ -154,19 +154,19 @@ ${JSON.stringify(report.localStorage, null, 2)}
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <button
+              <button aria-label="button"
                 onClick={() => window.location.reload()}
                 className="flex-1 px-4 py-3 bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl text-sm font-semibold transition"
               >
                 Reload App
               </button>
-              <button
+              <button aria-label="button"
                 onClick={this.handleResetCache}
                 className="flex-1 px-4 py-3 bg-rose-600 hover:bg-rose-500 rounded-xl text-sm font-semibold transition shadow-md shadow-rose-900/30"
               >
                 Reset Cache & Reload
               </button>
-              <button
+              <button aria-label="button"
                 onClick={this.handleCopyReport}
                 className={`flex-1 px-4 py-3 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-1.5 border border-indigo-500/30 ${this.state.copied
                     ? "bg-emerald-600/90 text-white border-emerald-500/30"

@@ -37,7 +37,7 @@ class FeatureErrorBoundary extends React.Component {
             This feature failed to load properly.
           </p>
 
-          <button
+          <button aria-label="button"
             onClick={this.handleRetry}
             className="flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-600"
           >

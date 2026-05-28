@@ -188,7 +188,7 @@ const TeamMatchmaking = () => {
           </div>
 
           <div className="flex gap-2 shrink-0">
-            <button
+            <button aria-label="button"
               onClick={() => {
                 setShowProfileSettings(!showProfileSettings);
                 setShowForm(false);
@@ -199,7 +199,7 @@ const TeamMatchmaking = () => {
               {showProfileSettings ? "Close Match Settings" : "Configure My Skills"}
             </button>
             
-            <button
+            <button aria-label="button"
               onClick={() => {
                 setShowForm(!showForm);
                 setShowProfileSettings(false);
@@ -373,7 +373,7 @@ const TeamMatchmaking = () => {
                   />
                 </div>
 
-                <button
+                <button aria-label="button"
                   type="submit"
                   className="md:col-span-2 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-md shadow-blue-500/10"
                 >
@@ -443,7 +443,7 @@ const TeamMatchmaking = () => {
                     {/* Skills Checklist analysis dropdown */}
                     {team.skills && team.skills.length > 0 && (
                       <div className="border-t border-slate-100 dark:border-slate-850/60 pt-4 mb-4">
-                        <button
+                        <button aria-label="button"
                           onClick={() => setExpandedSkillsCard(isExpanded ? null : team.id)}
                           className="w-full flex items-center justify-between text-[11px] font-black text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
                         >

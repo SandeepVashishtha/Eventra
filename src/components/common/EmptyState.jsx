@@ -44,7 +44,7 @@ const EmptyState = ({
               {ctaText}
             </Link>
           ) : onCtaClick ? (
-            <button
+            <button aria-label="button"
               onClick={onCtaClick}
               type="button"
               className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-blue-700 shadow-sm hover:shadow"

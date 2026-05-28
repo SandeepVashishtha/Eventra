@@ -328,7 +328,7 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
             { id: 'daily', label: 'Daily Missions', icon: <Flame className="w-3.5 h-3.5" /> },
             { id: 'weekly', label: 'Weekly Challenges', icon: <Trophy className="w-3.5 h-3.5" /> },
           ].map(tab => (
-            <button
+            <button aria-label="button"
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`

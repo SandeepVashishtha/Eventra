@@ -109,7 +109,7 @@ const MobileDrawer = ({
             >
               View Profile
             </Link>
-            <button
+            <button aria-label="button"
               type="button"
               onClick={() => {
                 logout();

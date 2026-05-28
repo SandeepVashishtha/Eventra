@@ -37,10 +37,10 @@ export default function ThemeCustomizer() {
           </div>
         </div>
         <div className="flex items-center gap-2 self-start sm:self-center">
-          <button onClick={handleReset} className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900 transition">
+          <button aria-label="button" onClick={handleReset} className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900 transition">
             <RotateCcw className="w-4.5 h-4.5" />
           </button>
-          <button onClick={handleToggle} className={`px-4 py-2 rounded-xl text-xs font-bold transition ${active ? "bg-indigo-600 text-white" : "border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300"}`}>
+          <button aria-label="button" onClick={handleToggle} className={`px-4 py-2 rounded-xl text-xs font-bold transition ${active ? "bg-indigo-600 text-white" : "border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300"}`}>
             {active ? "Custom Active" : "Enable Custom"}
           </button>
         </div>

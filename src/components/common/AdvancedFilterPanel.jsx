@@ -83,7 +83,7 @@ const AdvancedFilterPanel = ({
   return (
     <div className="w-full bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
       {/* Header */}
-      <button
+      <button aria-label="button"
         onClick={onToggleOpen}
         className="w-full px-4 py-3 sm:px-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
       >
@@ -103,7 +103,7 @@ const AdvancedFilterPanel = ({
         </h2>
         <div className="flex items-center gap-2">
           {hasFilters && (
-            <button
+            <button aria-label="button"
               onClick={(e) => {
                 e.stopPropagation();
                 handleClearAll();
@@ -125,7 +125,7 @@ const AdvancedFilterPanel = ({
         <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-4 sm:px-6 space-y-4">
           {/* Category Filter Section */}
           <div>
-            <button
+            <button aria-label="button"
               onClick={() => toggleSection("category")}
               className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
             >
@@ -150,7 +150,7 @@ const AdvancedFilterPanel = ({
 
           {/* Mode Filter Section */}
           <div>
-            <button
+            <button aria-label="button"
               onClick={() => toggleSection("mode")}
               className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
             >
@@ -175,7 +175,7 @@ const AdvancedFilterPanel = ({
 
           {/* Status Filter Section */}
           <div>
-            <button
+            <button aria-label="button"
               onClick={() => toggleSection("status")}
               className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
             >
@@ -200,7 +200,7 @@ const AdvancedFilterPanel = ({
 
           {/* Price Range Section */}
           <div>
-            <button
+            <button aria-label="button"
               onClick={() => toggleSection("price")}
               className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
             >
@@ -227,7 +227,7 @@ const AdvancedFilterPanel = ({
 
           {/* Date Range Section */}
           <div>
-            <button
+            <button aria-label="button"
               onClick={() => toggleSection("date")}
               className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
             >
@@ -254,7 +254,7 @@ const AdvancedFilterPanel = ({
 
           {/* Clear All Button */}
           {hasFilters && (
-            <button
+            <button aria-label="button"
               onClick={handleClearAll}
               className="w-full mt-4 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
             >

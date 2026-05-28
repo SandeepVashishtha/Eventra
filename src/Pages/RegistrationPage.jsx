@@ -162,19 +162,19 @@ const RegistrationPage = () => {
             Thank you for registering, <span className="font-semibold">{formData.fullName}</span>. Your spot has been confirmed. Check your dashboard for event details and updates.
           </p>
           <div className="flex flex-col gap-3">
-            <button
+            <button aria-label="button"
               onClick={() => navigate("/dashboard")}
               className="py-3.5 px-6 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-indigo-500/25 transition-all duration-300 hover:scale-105"
             >
               Go to Dashboard
             </button>
-            <button
+            <button aria-label="button"
               onClick={() => navigate("/")}
               className="py-3 px-6 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-semibold rounded-2xl transition-colors duration-300"
             >
               Back to Home
             </button>
-            <button
+            <button aria-label="button"
               onClick={() => window.print()}
               className="print-hide flex items-center justify-center gap-2 py-3 px-6 border border-gray-300 dark:border-slate-700 rounded-2xl text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors duration-300"
               aria-label="Print or save as PDF"
@@ -388,14 +388,14 @@ const RegistrationPage = () => {
 
             {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <button
+              <button aria-label="button"
                 type="button"
                 onClick={handleCancel}
                 className="flex-1 py-3.5 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-2xl font-bold transition-colors duration-300"
               >
                 Cancel
               </button>
-              <button
+              <button aria-label="button"
                 type="submit"
                 disabled={isSubmitting}
                 className="flex-1 py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-2xl font-bold hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-300 hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"

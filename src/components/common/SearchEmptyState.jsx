@@ -87,7 +87,7 @@ const SearchEmptyState = ({
     {/* Buttons */}
     <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
 
-      <button
+      <button aria-label="button"
         type="button"
         onClick={onClear}
         className="

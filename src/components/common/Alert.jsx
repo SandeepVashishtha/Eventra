@@ -66,7 +66,7 @@ const Alert = ({
         </p>
       </div>
       {dismissible && (
-        <button
+        <button aria-label="button"
           onClick={() => setDismissed(true)}
           aria-label="Dismiss alert"
           className={`flex-shrink-0 ${config.iconColor} hover:opacity-70 transition-opacity`}

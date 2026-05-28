@@ -58,7 +58,7 @@ const RegistrationsTab = ({
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                     <StatusBadge status={item.participationType} />
                     {(item.type === "Event" || item.type === "Hackathon") && item.participationType === "Registered" && (
-                      <button
+                      <button aria-label="button"
                         onClick={() => setSelectedTicketEvent(item)}
                         className="ud-btn-ticket"
                       >

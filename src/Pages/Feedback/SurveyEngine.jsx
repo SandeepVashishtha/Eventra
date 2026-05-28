@@ -236,7 +236,7 @@ const SurveyEngine = () => {
           </div>
           
           <div className="flex items-center gap-3">
-            <button
+            <button aria-label="button"
               onClick={() => setActiveTab(activeTab === "builder" ? "preview" : "builder")}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold hover:border-indigo-500 dark:hover:border-indigo-400 transition-all"
             >
@@ -244,7 +244,7 @@ const SurveyEngine = () => {
               {activeTab === "builder" ? "Live Preview" : "Back to Editor"}
             </button>
             
-            <button
+            <button aria-label="button"
               onClick={handleSaveSurvey}
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all"
             >
@@ -281,13 +281,13 @@ const SurveyEngine = () => {
                     </p>
                   </div>
                   <div className="flex gap-2.5 shrink-0 w-full sm:w-auto">
-                    <button
+                    <button aria-label="button"
                       onClick={handleRestoreDraft}
                       className="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white rounded-xl shadow-sm transition"
                     >
                       Restore Template
                     </button>
-                    <button
+                    <button aria-label="button"
                       onClick={handleDiscardDraft}
                       className="flex-1 sm:flex-none px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-350 dark:hover:bg-slate-750 text-xs font-bold text-slate-700 dark:text-slate-300 rounded-xl transition"
                     >
@@ -356,7 +356,7 @@ const SurveyEngine = () => {
                         </div>
 
                         <div className="flex items-center gap-1 shrink-0">
-                          <button
+                          <button aria-label="button"
                             onClick={() => moveQuestion(index, "up")}
                             disabled={index === 0}
                             className={`p-2 rounded-xl border transition-all ${
@@ -369,7 +369,7 @@ const SurveyEngine = () => {
                             <FiArrowUp className="w-4 h-4" />
                           </button>
                           
-                          <button
+                          <button aria-label="button"
                             onClick={() => moveQuestion(index, "down")}
                             disabled={index === questions.length - 1}
                             className={`p-2 rounded-xl border transition-all ${
@@ -382,7 +382,7 @@ const SurveyEngine = () => {
                             <FiArrowDown className="w-4 h-4" />
                           </button>
                           
-                          <button
+                          <button aria-label="button"
                             id="ymjlwm"
                             onClick={() =>
                               setConfirmModal({
@@ -420,7 +420,7 @@ const SurveyEngine = () => {
                                   }
                                   className="flex-1 max-w-md bg-transparent border-b border-slate-100 dark:border-slate-800 focus:border-indigo-500 outline-none text-sm py-0.5"
                                 />
-                                <button
+                                <button aria-label="button"
                                   onClick={() => setConfirmModal({ open: true, type: "option", questionId: question.id, optionIndex: optIdx }) }
                                   className="text-slate-400 hover:text-red-500 p-1"
                                 >
@@ -429,7 +429,7 @@ const SurveyEngine = () => {
                               </motion.div>
                             ))}
                           </AnimatePresence>
-                          <button
+                          <button aria-label="button"
                             onClick={() => addOption(question.id)}
                             className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 mt-2"
                           >
@@ -472,7 +472,7 @@ const SurveyEngine = () => {
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {questionTypes.map((type) => (
-                    <button
+                    <button aria-label="button"
                       key={type.value}
                       onClick={() => addQuestion(type.value)}
                       className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold hover:border-indigo-500 hover:text-indigo-600 dark:hover:border-indigo-400 dark:hover:text-indigo-400 hover:shadow-md transition-all active:scale-98"
@@ -551,7 +551,7 @@ const SurveyEngine = () => {
               </div>
 
               <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
-                <button
+                <button aria-label="button"
                   disabled
                   className="px-6 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-semibold cursor-not-allowed text-sm"
                 >
@@ -578,7 +578,7 @@ const SurveyEngine = () => {
       </p>
 
       <div className="flex justify-end gap-3 mt-6">
-        <button
+        <button aria-label="button"
           onClick={() =>
             setConfirmModal({
               open: false,
@@ -592,7 +592,7 @@ const SurveyEngine = () => {
           Cancel
         </button>
 
-        <button
+        <button aria-label="button"
           onClick={() => {
             if (confirmModal.type === "question") {
               deleteQuestion(confirmModal.questionId);

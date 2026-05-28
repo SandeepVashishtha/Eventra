@@ -86,7 +86,7 @@ const TicketTiersSection = ({
         </h4>
 
         {formData.ticketTiers.length > 1 && (
-          <button
+          <button aria-label="button"
             type="button"
             onClick={() => removeTicketTier(index)}
             className="text-red-500 hover:text-red-700 text-sm font-medium"
@@ -195,7 +195,7 @@ const TicketTiersSection = ({
     </div>
   ))}
 
-  <button
+  <button aria-label="button"
     type="button"
     onClick={addTicketTier}
     className="flex items-center gap-2 px-4 py-3 rounded-xl bg-black text-white hover:bg-zinc-800 transition-all duration-300"
