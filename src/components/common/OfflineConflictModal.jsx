@@ -33,7 +33,7 @@ export default function OfflineConflictModal() {
       detail: {
         itemId: item.id,
         resolution, // "local", "server", or "merge"
-        mergedPayload: resolution === "merge" ? { ...serverPayload, ...localPayload } : null
+        mergedPayload: resolution === "merge" ? { ...localPayload, ...serverPayload } : null
       }
     }));
     setIsOpen(false);
