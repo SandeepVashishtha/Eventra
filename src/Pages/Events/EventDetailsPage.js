@@ -17,49 +17,50 @@ const EventDetailsPage = () => {
 
   const { addRecentlyViewed } = useRecentlyViewed();
 
-  const [loading, setLoading] =
-    useState(true);
-
-  const [event, setEvent] =
-    useState(null);
+  const [loading, setLoading] = useState(true);
+  const [event, setEvent] = useState(null);
 
   useEffect(() => {
+    let isCancelled = false;
+
     const fetchEvent = async () => {
       try {
         setLoading(true);
 
-        // Simulate API delay
         await new Promise((resolve) =>
           setTimeout(resolve, 1000)
         );
+        if (isCancelled) return;
 
-        const foundEvent =
-          eventsMockData.find(
-            (e) =>
-              e.id ===
-              parseInt(eventId)
-          );
+        const foundEvent = eventsMockData.find(
+          (e) => e.id === parseInt(eventId)
+        );
 
+        if (isCancelled) return;
         setEvent(foundEvent);
+
         if (foundEvent) {
           addRecentlyViewed({
-            id:       foundEvent.id,
-            title:    foundEvent.title,
-            date:     foundEvent.date,
+            id: foundEvent.id,
+            title: foundEvent.title,
+            date: foundEvent.date,
             location: foundEvent.location,
-            image:    foundEvent.image,
+            image: foundEvent.image,
             category: foundEvent.type,
           });
         }
       } catch (error) {
-        console.error(error);
+        if (!isCancelled) {
+          console.error("Failed to fetch event details:", error);
+        }
       } finally {
-        setLoading(false);
+        if (!isCancelled) setLoading(false);
       }
     };
 
     fetchEvent();
-  }, [eventId , addRecentlyViewed]);
+    return () => { isCancelled = true; };
+  }, [eventId, addRecentlyViewed]);
 
   // Loading State
   if (loading) {
