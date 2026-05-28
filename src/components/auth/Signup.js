@@ -5,6 +5,7 @@ import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
+import GoogleLoginButton from "./GoogleLoginButton";
 import { 
   User, Mail, Lock, Eye, EyeOff, Check, X, AlertCircle, 
   Github, Chrome, ArrowRight, Sparkles 
@@ -236,20 +237,6 @@ const Signup = () => {
     }
   };
 
-  // Social login handler (placeholder)
-  const handleSocialLogin = useCallback(async (provider) => {
-    try {
-      setLoading(true);
-      // TODO: Implement OAuth flow
-      // const { url } = await apiUtils.get(`${API_ENDPOINTS.AUTH.OAUTH}/${provider}`);
-      // window.location.href = url;
-    } catch (err) {
-      setErrors(prev => ({ ...prev, submit: `Failed to connect with ${provider}` }));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -368,22 +355,8 @@ const Signup = () => {
               </div>
 
               {/* Social Login Buttons */}
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                {['google', 'github'].map(provider => (
-                  <motion.button
-                    key={provider}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    type="button"
-                    onClick={() => handleSocialLogin(provider)}
-                    disabled={loading}
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
-                    aria-label={`Sign up with ${provider}`}
-                  >
-                    <SocialIcon provider={provider} />
-                    <span className="capitalize">{provider}</span>
-                  </motion.button>
-                ))}
+              <div className="mb-6 flex justify-center w-full">
+                <GoogleLoginButton />
               </div>
 
               <div className="relative mb-6">
