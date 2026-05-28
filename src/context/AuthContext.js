@@ -32,7 +32,6 @@ export const AuthProvider = ({ children }) => {
   });
 
   const isMountedRef = useRef(false);
-  const needsExpiryCleanupRef = useRef(false);
   const expiryToastShownRef = useRef(false);
 
   useEffect(() => {
@@ -175,12 +174,10 @@ export const AuthProvider = ({ children }) => {
     return () => setOnUnauthorizedHandler(null);
   }, []); // <--- Empty array here ensures it only runs once!
 
-  useEffect(() => {
-    if (needsExpiryCleanupRef.current) {
-      needsExpiryCleanupRef.current = false;
-      clearExpiredSession();
-    }
-  }, [clearExpiredSession]);
+  // (removed broken ref-based cleanup) We no longer rely on a ref toggle
+  // to trigger expiry cleanup. Expiry is handled by the token expiry timer
+  // and by scheduling an async cleanup from `isAuthenticated()` when a
+  // stale token is observed during render checks.
 
   // --- Smart Token Expiry Timeout ---
   useEffect(() => {
@@ -384,7 +381,20 @@ export const AuthProvider = ({ children }) => {
   const isAuthenticated = useCallback(() => {
     if (!user || !token) return false;
     if (token !== "cookie-managed" && !isTokenValid(token)) {
-      needsExpiryCleanupRef.current = true;
+      // Schedule cleanup asynchronously to avoid side-effects during render.
+      // We double-check token validity when the microtask runs to avoid
+      // race conditions with concurrent state updates.
+      Promise.resolve().then(() => {
+        try {
+          if (!isTokenValid(token)) {
+            clearExpiredSessionRef.current?.();
+          }
+        } catch (e) {
+          // swallow any check errors — we don't want auth checks to crash render
+          // eslint-disable-next-line no-console
+          console.error("Error during scheduled auth cleanup:", e);
+        }
+      });
       return false;
     }
     return true;
