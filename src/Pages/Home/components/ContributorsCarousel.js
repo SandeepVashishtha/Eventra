@@ -116,14 +116,6 @@ const Contributors = () => {
   // Wrapped by fetchProfileWithCache so repeated calls for the same username
   // within the session return the cached value without a network round-trip.
   const fetchGitHubProfile = useCallback(async (username) => {
-    const doFetch = async (user) => {
-      const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(`/users/${user}`)}`;
-      const res = await fetch(proxyUrl);
-      if (!res.ok) throw new Error("Profile fetch failed");
-      const profile = await res.json();
-  // Fetch GitHub profile details
-
-  const fetchGitHubProfile = useCallback(async (username) => {
     await throttleProfileFetch();
     try {
       const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(

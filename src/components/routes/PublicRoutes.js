@@ -2,20 +2,23 @@ import React, { lazy } from "react";
 import { Route } from "react-router-dom";
 import PageLayout from "../Layout/PageLayout";
 import ProtectedRoute from "../auth/ProtectedRoute";
+import SectionErrorBoundary from "../common/SectionErrorBoundary";
+
+// ─── Lazy-loaded page components ─────────────────────────────────────────────
+// All components are loaded on-demand to keep the initial bundle small.
 
 const OAuthCallback = lazy(() => import("../auth/OAuthCallback"));
 const MockApiResponse = lazy(() => import("../MockApiResponse"));
+
 const HomePage = lazy(() => import("../../Pages/Home/HomePage"));
 const EventsPage = lazy(() => import("../../Pages/Events/EventsPage"));
 const EventDetails = lazy(() => import("../../Pages/Events/EventDetails"));
 const EventRegistration = lazy(() => import("../../Pages/Events/EventRegistration"));
-const BookmarkedEvents = lazy(() => import("../../Pages/Events/BookmarkedEvents"));
-const RemindersPage = lazy(() => import("../../Pages/Events/RemindersPage"));
-const FloorPlanDesignerPage = lazy(() => import("../../Pages/Events/FloorPlanDesignerPage"));
-const EventAnalyticsDashboard = lazy(() => import("../../Pages/Events/EventAnalyticsDashboard"));
+
 const HackathonPage = lazy(() => import("../../Pages/Hackathons/HackathonPage"));
 const HackathonDetailsPage = lazy(() => import("../../Pages/Hackathons/HackathonDetailsPage"));
 const HackathonLifecycle = lazy(() => import("../../Pages/Hackathons/HackathonLifecycle"));
+
 const ProjectsPage = lazy(() => import("../../Pages/Projects/ProjectsPage"));
 const SubmitProject = lazy(() => import("../../Pages/Projects/SubmitProject"));
 const Contributors = lazy(() => import("../Contributors"));
@@ -26,13 +29,19 @@ const AboutPage = lazy(() => import("../../Pages/About/AboutPage"));
 const DocumentationPage = lazy(() => import("../../Pages/About/DocumentationPage"));
 const FAQPage = lazy(() => import("../../Pages/FAQ/FAQPage"));
 const Terms = lazy(() => import("../../Pages/Terms"));
-const Privacy = lazy(() =>
-  import("../../Pages/Privacy").then((module) => ({ default: module.Privacy })),
-);
+const Privacy = lazy(() => import("../../Pages/Privacy").then((module) => ({ default: module.Privacy })));
 const ApiDocs = lazy(() => import("../../Pages/ApiDocs"));
 const HelpCenter = lazy(() => import("../../Pages/HelpCenter"));
 const ContactUs = lazy(() => import("../../Pages/Contact/ContactUs"));
 const FeedbackPage = lazy(() => import("../../Pages/Feedback/FeedbackPage"));
+
+// ─── Auth-required page components ───────────────────────────────────────────
+// These are imported separately to make the intent explicit: they MUST be
+// wrapped with <ProtectedRoute> — do not move them to the public list above.
+const BookmarkedEvents = lazy(() => import("../../Pages/Events/BookmarkedEvents"));
+const RemindersPage = lazy(() => import("../../Pages/Events/RemindersPage"));
+const EventAnalyticsDashboard = lazy(() => import("../../Pages/Events/EventAnalyticsDashboard"));
+const FloorPlanDesignerPage = lazy(() => import("../../Pages/Events/FloorPlanDesignerPage"));
 const MyCalendar = lazy(() => import("../../Pages/Calendar/MyCalendar"));
 
 export const getPublicRoutes = () => [
