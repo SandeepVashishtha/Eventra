@@ -236,15 +236,22 @@ const Signup = () => {
     }
   };
 
-  // Social login handler (placeholder)
+  // Social login handler
   const handleSocialLogin = useCallback(async (provider) => {
     try {
       setLoading(true);
-      // TODO: Implement OAuth flow
-      // const { url } = await apiUtils.get(`${API_ENDPOINTS.AUTH.OAUTH}/${provider}`);
-      // window.location.href = url;
+      const response = await apiUtils.get(`${API_ENDPOINTS.AUTH.OAUTH}/${provider}`);
+      
+      // Depending on wrapAxiosResponse, data could be response.data or response itself
+      const data = response.data || response;
+      if (data && data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("No redirect URL returned from server.");
+      }
     } catch (err) {
-      setErrors(prev => ({ ...prev, submit: `Failed to connect with ${provider}` }));
+      console.error(`OAuth error (${provider}):`, err);
+      setErrors(prev => ({ ...prev, submit: `Failed to connect with ${provider}. Please try again.` }));
     } finally {
       setLoading(false);
     }
