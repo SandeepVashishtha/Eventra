@@ -29,7 +29,7 @@ const RouteFallback = () => (
 
 const AppRoutes = () => {
   return (
-    <Suspense fallback={<RouteFallback />}>
+    <Suspense fallback={<PageLoader />}>
       <Routes>
         {/* Public Routes */}
         {getPublicRoutes()}

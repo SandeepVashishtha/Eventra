@@ -16,6 +16,7 @@ const Dropdown = ({
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
   const labelId = useId();
+  
   const allOptions = [placeholder, ...options];
   const selectedIndex = allOptions.findIndex((opt) => opt === value);
   const currentActiveIndex = activeIndex >= 0 ? activeIndex : Math.max(selectedIndex, 0);
@@ -147,16 +148,15 @@ const Dropdown = ({
           <motion.ul
             id={listboxId}
             role="listbox"
-            aria-label={label || placeholder}
+            tabIndex={-1}
+            aria-labelledby={label ? labelId : undefined}
+            aria-activedescendant={`${listboxId}-option-${currentActiveIndex}`}
+            onKeyDown={handleListboxKeyDown}
             className="absolute mt-2 w-full z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg"
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
             transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
-            tabIndex={-1}
-            aria-labelledby={label ? labelId : undefined}
-            aria-activedescendant={`${listboxId}-option-${currentActiveIndex}`}
-            onKeyDown={handleListboxKeyDown}
           >
             {allOptions.map((opt, index) => (
               <li

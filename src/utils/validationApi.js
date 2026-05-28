@@ -111,7 +111,7 @@ export const requestValidation = async (endpoint, options = {}) => {
     timeoutMs = DEFAULT_TIMEOUT_MS,
     retries = DEFAULT_RETRIES,
     retryDelayMs = 300,
-    fetchImpl = defaultFetch || ((typeof window !== "undefined" && window.fetch) ? window.fetch : undefined),
+    fetchImpl = defaultFetch,
     invalidMessage = "Validation failed",
     networkMessage = "Unable to validate right now. Please try again.",
     validMessage = "",

@@ -1,4 +1,3 @@
-import SavedEventsPage from './Pages/SavedEventsPage';
 import EventRecommendation from "./Pages/EventRecommendation/EventRecommendation";
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
@@ -12,7 +11,7 @@ import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
-import FluidCursor from "./jhalak/FluidCursor";
+import FluidCursor from "./components/visual/FluidCursor";
 import PageTransition from "./components/common/PageTransition";
 import ReminderChecker from "./components/reminders/ReminderChecker";
 import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";

@@ -2,9 +2,8 @@
 /* Issue #828: Standardize and Professionalize Font Text and Size */
 @import url("https://fonts.googleapis.com/css2?family=Oxanium:wght@800&family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
-@config "../tailwind.config.cjs";
-
 @import "tailwindcss";
+@config "../tailwind.config.cjs";
 
 @theme {
   --font-size-body: 16px;
@@ -58,15 +57,27 @@
   box-sizing: border-box;
 }
 .responsive-btn {
-  @apply
-    max-w-full
-    min-w-0
-    whitespace-nowrap
-    overflow-hidden
-    text-ellipsis
-    px-4
-    sm:px-5
-    md:px-6;
+  max-width: 100%;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .responsive-btn {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .responsive-btn {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
 }
 .sr-only {
   position: absolute;

@@ -99,7 +99,7 @@ export const getPublicRoutes = () => [
     <Route key="/events/:eventId/floor-plan" path="/events/:eventId/floor-plan" element={<FloorPlanDesignerPage />} />
     <Route key="/documentation" path="/documentation" element={<DocumentationPage />} />
     <Route key="/submit-project" path="/submit-project" element={<SubmitProject />} />
-  </Route>
+  </Route>,
 
   // Mock API endpoints (demo/documentation purposes)
   <Route key="/mock-api/hackathons" path="/mock-api/hackathons" element={<MockApiResponse />} />,

@@ -325,7 +325,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           {project.status || "Unknown"}
         </span>
         <button
-          onClick={(e) = aria-label="button"> {
+          onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             onBookmarkToggle(project.id);

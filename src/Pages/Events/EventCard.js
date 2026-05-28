@@ -78,7 +78,7 @@ const EventCard = ({ event }) => {
     () => new Date(`${event.date} ${event.time}`),
     [event.date, event.time],
   );
-  const isPastEvent = eventDateTime < new Date();
+  const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
 
   const eventSharingData = useMemo(
     () =>
@@ -96,20 +96,10 @@ const EventCard = ({ event }) => {
   const hasConflict = conflictCheck.hasConflict;
   const isUserRegistered = isRegistered(event.id);
 
-  const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
-useEffect(() => {
-  const saved =
-    getBookmarkedEvents();
-
-  setSavedEvents(saved);
-}, []);
-  const eventSharingData = generateEventSharingData({
-    ...event,
-    title: event.title,
-    description: event.description,
-    date: event.date,
-    id: event.id,
-  });
+  useEffect(() => {
+    const saved = getBookmarkedEvents();
+    setSavedEvents(saved);
+  }, []);
 
   const handleCopyLink = useCallback((e) => {
     e.preventDefault();
@@ -289,49 +279,6 @@ useEffect(() => {
           title="Copy Event Link"
           aria-label={`Copy link for ${event.title}`}
         >
-          {savedEvents.length > 0 && (
-  <section className="mb-10">
-
-    <div className="
-      flex
-      items-center
-      justify-between
-      mb-4
-    ">
-      <h2 className="
-        text-2xl
-        font-bold
-        text-slate-900
-        dark:text-white
-      ">
-        Saved Events
-      </h2>
-    </div>
-
-    <div className="
-      flex
-      gap-4
-      overflow-x-auto
-      pb-2
-    ">
-
-      {savedEvents.map((saved) => (
-        <div key={saved.id} className="min-w-[280px] flex-shrink-0">
-          <Link
-            to={`/events/${saved.id}`}
-            className="block p-3 bg-white/90 dark:bg-gray-900/80 rounded-lg shadow-sm hover:shadow-md"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">{saved.title}</div>
-            <div className="text-[11px] text-gray-500 truncate">{saved.location}</div>
-          </Link>
-        </div>
-      ))}
-
-    </div>
-
-  </section>
-)}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="14"
@@ -404,7 +351,7 @@ useEffect(() => {
       </div>
 
       {/* Image */}
-      <div className="relative h-40 overflow-hidden">
+      <div className="relative h-40 overflow-hidden bg-gray-100 dark:bg-gray-800">
         <LazyImage
           src={event.image}
           alt={event.imageAlt || `${event.title} event thumbnail`}
@@ -441,9 +388,6 @@ useEffect(() => {
           <span className="truncate">{event.type}</span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Calendar size={14} className="text-indigo-500 flex-shrink-0" aria-hidden="true" />
-          <span className="truncate">{formattedDate}</span>
         {/* Event Date */}
         <div className="flex items-start gap-2">
           <Calendar size={14} className="text-indigo-500 flex-shrink-0 mt-0.5" />
@@ -462,51 +406,39 @@ useEffect(() => {
       <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
         <ReminderControls event={event} canSetReminder={canSetReminder} compact />
       </div>
-      {/* Seats / Capacity */}
       {capacityInfo && (
-      {typeof event.maxAttendees === "number" && event.maxAttendees > 0 && (() => {
-        const registered = Number(event.attendees) || 0;
-        const capacity = Number(event.maxAttendees);
-        const isFull = registered >= capacity;
-        const ratio = Math.min(registered / capacity, 1);
-        const percent = Math.round(ratio * 100);
-        const spotsLeft = Math.max(capacity - registered, 0);
-
-        const { barColor, textColor } = getCapacityStyles(ratio, isFull);
-
-        return (
-          <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                Seats
+        <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+              Seats
+            </span>
+            {capacityInfo.isFull ? (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
+                Full
               </span>
-              {capacityInfo.isFull ? (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
-                  Full
-                </span>
-              ) : (
-                <span className={`text-xs font-semibold tabular-nums ${capacityInfo.textColor}`}>
-                  {capacityInfo.spotsLeft} spot{capacityInfo.spotsLeft === 1 ? "" : "s"} left
-                </span>
-              )}
-            </div>
-            <div
-              className="w-full h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden"
-              role="progressbar"
-              aria-valuenow={capacityInfo.percent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={`${capacityInfo.registered} of ${capacityInfo.capacity} seats filled`}
-            >
-              <div
-                className={`h-full ${capacityInfo.barColor} transition-all duration-500 ease-out`}
-                style={{ width: `${capacityInfo.percent}%` }}
-              />
-            </div>
-            <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-500 tabular-nums">
-              {capacityInfo.registered} / {capacityInfo.capacity} registered
-            </div>
+            ) : (
+              <span className={`text-xs font-semibold tabular-nums ${capacityInfo.textColor}`}>
+                {capacityInfo.spotsLeft} spot{capacityInfo.spotsLeft === 1 ? "" : "s"} left
+              </span>
+            )}
           </div>
+          <div
+            className="w-full h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden"
+            role="progressbar"
+            aria-valuenow={capacityInfo.percent}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`${capacityInfo.registered} of ${capacityInfo.capacity} seats filled`}
+          >
+            <div
+              className={`h-full ${capacityInfo.barColor} transition-all duration-500 ease-out`}
+              style={{ width: `${capacityInfo.percent}%` }}
+            />
+          </div>
+          <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-500 tabular-nums">
+            {capacityInfo.registered} / {capacityInfo.capacity} registered
+          </div>
+        </div>
       )}
 
       {/* CTA */}

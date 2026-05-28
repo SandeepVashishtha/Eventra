@@ -584,7 +584,7 @@ const HelpCenter = () => {
                 }`}
               >
                 <button
-                  onClick={() = aria-label="button"> toggleFAQ(faq.id)}
+                  onClick={() => toggleFAQ(faq.id)}
                   className="w-full p-6 text-left rounded-2xl transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   <div className="flex items-center justify-between">

@@ -534,7 +534,7 @@ export default function UserAchievements() {
                             </span>
                             <div className="flex flex-wrap gap-2 pt-0.5">
                               <button
-                                onClick={() = aria-label="button"> setActiveShareBadge(badge)}
+                                onClick={() => setActiveShareBadge(badge)}
                                 className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold rounded-xl bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white transition-all cursor-pointer shadow-xs hover:scale-[1.03]"
                               >
                                 <Share2 className="w-3.5 h-3.5" />
@@ -580,7 +580,7 @@ export default function UserAchievements() {
             >
               {/* Close Button */}
               <button
-                onClick={() = aria-label="button"> setActiveShareBadge(null)}
+                onClick={() => setActiveShareBadge(null)}
                 className="absolute right-4 top-4 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white cursor-pointer"
               >
                 <X size={16} />
@@ -623,14 +623,14 @@ export default function UserAchievements() {
               {/* Action Buttons */}
               <div className="grid grid-cols-2 gap-3">
                 <button
-                  onClick={() = aria-label="button"> handleShareLinkedIn(activeShareBadge)}
+                  onClick={() => handleShareLinkedIn(activeShareBadge)}
                   className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-slate-850 text-xs font-bold text-slate-350 transition cursor-pointer"
                 >
                   <Linkedin size={14} className="text-blue-500" />
                   <span>LinkedIn</span>
                 </button>
                 <button
-                  onClick={() = aria-label="button"> handleShareTwitter(activeShareBadge)}
+                  onClick={() => handleShareTwitter(activeShareBadge)}
                   className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-slate-850 text-xs font-bold text-slate-350 transition cursor-pointer"
                 >
                   <Twitter size={14} className="text-sky-400" />
@@ -638,7 +638,7 @@ export default function UserAchievements() {
                 </button>
                 
                 <button
-                  onClick={() = aria-label="button"> handleDownloadSVG(activeShareBadge)}
+                  onClick={() => handleDownloadSVG(activeShareBadge)}
                   className="col-span-2 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-indigo-650 hover:bg-indigo-700 text-xs font-bold text-white transition cursor-pointer shadow-md shadow-indigo-500/10"
                 >
                   <Share2 size={14} />

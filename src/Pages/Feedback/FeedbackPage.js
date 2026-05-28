@@ -224,7 +224,7 @@ const CustomFloatingSelect = ({
         <button
           type="button"
           id={id}
-          onClick={() = aria-label="button"> setIsOpen(!isOpen)}
+          onClick={() => setIsOpen(!isOpen)}
           className={`w-full text-left px-4 pt-6 pb-2 border-2 rounded-xl focus:ring-4 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-all duration-300 ${selectedIcon ? "pl-12" : "pl-4"
             } pr-12 ${error
               ? "border-red-500 focus:border-red-500 focus:ring-red-100 dark:focus:ring-red-900/30"
