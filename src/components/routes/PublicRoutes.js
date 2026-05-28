@@ -1,22 +1,29 @@
-import React, { lazy } from 'react';
-import { Route } from 'react-router-dom';
-import PageLayout from '../Layout/PageLayout';
-import SectionErrorBoundary from '../common/SectionErrorBoundary';
+import React, { lazy } from "react";
+import { Route } from "react-router-dom";
+import PageLayout from "../Layout/PageLayout";
+import ProtectedRoute from "../auth/ProtectedRoute";
 
+const OAuthCallback = lazy(() => import("../auth/OAuthCallback"));
+const MockApiResponse = lazy(() => import("../MockApiResponse"));
 const HomePage = lazy(() => import("../../Pages/Home/HomePage"));
 const EventsPage = lazy(() => import("../../Pages/Events/EventsPage"));
 const EventDetails = lazy(() => import("../../Pages/Events/EventDetails"));
 const EventRegistration = lazy(() => import("../../Pages/Events/EventRegistration"));
 const BookmarkedEvents = lazy(() => import("../../Pages/Events/BookmarkedEvents"));
 const RemindersPage = lazy(() => import("../../Pages/Events/RemindersPage"));
+const FloorPlanDesignerPage = lazy(() => import("../../Pages/Events/FloorPlanDesignerPage"));
+const EventAnalyticsDashboard = lazy(() => import("../../Pages/Events/EventAnalyticsDashboard"));
 const HackathonPage = lazy(() => import("../../Pages/Hackathons/HackathonPage"));
 const HackathonDetailsPage = lazy(() => import("../../Pages/Hackathons/HackathonDetailsPage"));
+const HackathonLifecycle = lazy(() => import("../../Pages/Hackathons/HackathonLifecycle"));
 const ProjectsPage = lazy(() => import("../../Pages/Projects/ProjectsPage"));
+const SubmitProject = lazy(() => import("../../Pages/Projects/SubmitProject"));
 const Contributors = lazy(() => import("../Contributors"));
 const CommunityEvent = lazy(() => import("../CommunityEvent"));
 const LeaderBoard = lazy(() => import("../../Pages/Leaderboard/Leaderboard"));
 const ContributorGuide = lazy(() => import("../../Pages/Leaderboard/ContributorGuide"));
 const AboutPage = lazy(() => import("../../Pages/About/AboutPage"));
+const DocumentationPage = lazy(() => import("../../Pages/About/DocumentationPage"));
 const FAQPage = lazy(() => import("../../Pages/FAQ/FAQPage"));
 const Terms = lazy(() => import("../../Pages/Terms"));
 const Privacy = lazy(() =>
@@ -26,6 +33,7 @@ const ApiDocs = lazy(() => import("../../Pages/ApiDocs"));
 const HelpCenter = lazy(() => import("../../Pages/HelpCenter"));
 const ContactUs = lazy(() => import("../../Pages/Contact/ContactUs"));
 const FeedbackPage = lazy(() => import("../../Pages/Feedback/FeedbackPage"));
+const MyCalendar = lazy(() => import("../../Pages/Calendar/MyCalendar"));
 const FloorPlanDesignerPage = lazy(() => import("../../Pages/Events/FloorPlanDesignerPage"));
 const DocumentationPage = lazy(() => import("../../Pages/About/DocumentationPage"));
 const SubmitProject = lazy(() => import("../../Pages/Projects/SubmitProject"));
@@ -37,30 +45,11 @@ const MyCalendar = lazy(() => import('../../Pages/Calendar/MyCalendar'));
 // Auth guard — redirects unauthenticated users to /login
 import ProtectedRoute from '../auth/ProtectedRoute';
 
-/**
- * getPublicRoutes
- *
- * Returns the array of <Route> elements that make up the application's
- * publicly accessible URL surface.
- *
- * SECURITY RULE
- * -------------
- * Routes that expose user-specific data (bookmarks, reminders, calendar,
- * personal analytics) or allow writing data on behalf of a user
- * (submit-project, floor-plan editor) MUST be wrapped with <ProtectedRoute>.
- * ProtectedRoute redirects unauthenticated visitors to /login and restores
- * them to the intended page after sign-in via React Router's `state.from`.
- *
- * Do NOT add authenticated-only pages to the bare public route list; use
- * ProtectedRoutes.js for that, or wrap individually here as shown below.
- */
 export const getPublicRoutes = () => [
-  // ── Fully public routes (no login required) ────────────────────────────────
   <Route key="/" path="/" element={<HomePage />} />,
   <Route key="/events" path="/events" element={<EventsPage />} />,
   <Route key="/event-details" path="/events/:eventId" element={<EventDetails />} />,
   <Route key="/oauth/callback" path="/oauth/callback" element={<OAuthCallback />} />,
-  // Registration writes to an authenticated backend endpoint; keep guarded.
   <Route
     key="/register"
     path="/events/:eventId/register"
@@ -104,7 +93,6 @@ export const getPublicRoutes = () => [
   <Route key="/mock-api/contributors" path="/mock-api/contributors" element={<MockApiResponse />} />,
   <Route key="/mock-api/leaderboard" path="/mock-api/leaderboard" element={<MockApiResponse />} />,
 
-  // ── Auth-protected routes (login required) ─────────────────────────────────
   <Route
     key="/bookmarks"
     path="/bookmarks"
@@ -113,8 +101,7 @@ export const getPublicRoutes = () => [
         <BookmarkedEvents />
       </ProtectedRoute>
     }
-   />,
-
+  />,
   <Route
     key="/reminders"
     path="/reminders"
@@ -123,8 +110,7 @@ export const getPublicRoutes = () => [
         <RemindersPage />
       </ProtectedRoute>
     }
-   />,
-
+  />,
   <Route
     key="/calendar"
     path="/calendar"
@@ -133,108 +119,85 @@ export const getPublicRoutes = () => [
         <MyCalendar />
       </ProtectedRoute>
     }
-   />,
+  />,
 
-  // ── PageLayout-wrapped routes ──────────────────────────────────────────────
-  <Route key="/contributors" path="/contributors" element={<PageLayout><Contributors /></PageLayout>} />,
-  <Route key="/communityEvent" path="/communityEvent" element={<PageLayout><CommunityEvent /></PageLayout>} />,
-  <Route key="/community-event" path="/community-event" element={<PageLayout><CommunityEvent /></PageLayout>} />,
-  <Route
-    key="/leaderBoard"
-    path="/leaderBoard"
-    element={
-      <ProtectedRoute>
-        <PageLayout><SectionErrorBoundary label="Leaderboard"><LeaderBoard /></SectionErrorBoundary></PageLayout>
-      </ProtectedRoute>
-    }
-  />,
-  <Route
-    key="/leaderboard"
-    path="/leaderboard"
-    element={
-      <ProtectedRoute>
-        <PageLayout><SectionErrorBoundary label="Leaderboard"><LeaderBoard /></SectionErrorBoundary></PageLayout>
-      </ProtectedRoute>
-    }
-  />,
-  <Route
-    key="/contributorguide"
-    path="/contributorguide"
-    element={
-      <ProtectedRoute>
-        <PageLayout><ContributorGuide /></PageLayout>
-      </ProtectedRoute>
-    }
-  />,
-  <Route
-    key="/contributor-guide"
-    path="/contributor-guide"
-    element={
-      <ProtectedRoute>
-        <PageLayout><ContributorGuide /></PageLayout>
-      </ProtectedRoute>
-    }
-  />,
-  <Route key="/about" path="/about" element={<PageLayout><AboutPage /></PageLayout>} />,
-  <Route key="/about-fallback" path="/about/*" element={<PageLayout><AboutPage /></PageLayout>} />,
-  <Route key="/faq" path="/faq" element={<PageLayout><FAQPage /></PageLayout>} />,
-  <Route key="/terms" path="/terms" element={<PageLayout><Terms /></PageLayout>} />,
-  <Route key="/privacy" path="/privacy" element={<PageLayout><Privacy /></PageLayout>} />,
-  <Route key="/apiDocs" path="/apiDocs" element={<PageLayout><ApiDocs /></PageLayout>} />,
-  <Route key="/api-docs" path="/api-docs" element={<PageLayout><ApiDocs /></PageLayout>} />,
-  <Route key="/helpcenter" path="/helpcenter" element={<PageLayout><HelpCenter /></PageLayout>} />,
-  <Route key="/contact" path="/contact" element={<PageLayout><ContactUs /></PageLayout>} />,
-  <Route key="/feedback" path="/feedback" element={<PageLayout><FeedbackPage /></PageLayout>} />,
-  <Route key="/documentation" path="/documentation" element={<PageLayout><DocumentationPage /></PageLayout>} />,
-
-  /*
-    /analytics — exposes organisation-level event analytics data.
-    Requires authentication so that only registered users can view
-    aggregate participant and event metrics.
-  */
-  <Route
-    key="/analytics"
-    path="/analytics"
-    element={
-      <PageLayout>
+  <Route key="page-layout" element={<PageLayout />}>
+    <Route key="/contributors" path="/contributors" element={<Contributors />} />
+    <Route key="/communityEvent" path="/communityEvent" element={<CommunityEvent />} />
+    <Route key="/community-event" path="/community-event" element={<CommunityEvent />} />
+    <Route
+      key="/leaderBoard"
+      path="/leaderBoard"
+      element={
+        <ProtectedRoute>
+          <LeaderBoard />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      key="/leaderboard"
+      path="/leaderboard"
+      element={
+        <ProtectedRoute>
+          <LeaderBoard />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      key="/contributorguide"
+      path="/contributorguide"
+      element={
+        <ProtectedRoute>
+          <ContributorGuide />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      key="/contributor-guide"
+      path="/contributor-guide"
+      element={
+        <ProtectedRoute>
+          <ContributorGuide />
+        </ProtectedRoute>
+      }
+    />
+    <Route key="/about" path="/about" element={<AboutPage />} />
+    <Route key="/about-fallback" path="/about/*" element={<AboutPage />} />
+    <Route key="/faq" path="/faq" element={<FAQPage />} />
+    <Route key="/terms" path="/terms" element={<Terms />} />
+    <Route key="/privacy" path="/privacy" element={<Privacy />} />
+    <Route key="/apiDocs" path="/apiDocs" element={<ApiDocs />} />
+    <Route key="/api-docs" path="/api-docs" element={<ApiDocs />} />
+    <Route key="/helpcenter" path="/helpcenter" element={<HelpCenter />} />
+    <Route key="/contact" path="/contact" element={<ContactUs />} />
+    <Route key="/feedback" path="/feedback" element={<FeedbackPage />} />
+    <Route key="/documentation" path="/documentation" element={<DocumentationPage />} />
+    <Route
+      key="/analytics"
+      path="/analytics"
+      element={
         <ProtectedRoute>
           <EventAnalyticsDashboard />
         </ProtectedRoute>
-      </PageLayout>
-    }
-   />,
-
-  /*
-    /events/:eventId/floor-plan — venue floor plan designer.
-    Requires authentication; only event organisers should be able
-    to view or edit a floor plan layout.
-  */
-  <Route
-    key="/events/:eventId/floor-plan"
-    path="/events/:eventId/floor-plan"
-    element={
-      <PageLayout>
+      }
+    />
+    <Route
+      key="/events/:eventId/floor-plan"
+      path="/events/:eventId/floor-plan"
+      element={
         <ProtectedRoute>
           <FloorPlanDesignerPage />
         </ProtectedRoute>
-      </PageLayout>
-    }
-   />,
-
-  /*
-    /submit-project — allows users to submit projects to hackathons.
-    Requires authentication so submissions are linked to a verified
-    user account and cannot be made anonymously.
-  */
-  <Route
-    key="/submit-project"
-    path="/submit-project"
-    element={
-      <PageLayout>
+      }
+    />
+    <Route
+      key="/submit-project"
+      path="/submit-project"
+      element={
         <ProtectedRoute>
           <SubmitProject />
         </ProtectedRoute>
-      </PageLayout>
-    }
-   />
+      }
+    />
+  </Route>,
 ];
