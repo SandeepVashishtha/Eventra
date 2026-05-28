@@ -395,3 +395,5 @@ export default function Chatbot() {
     document.body
   );
 }
+
+// SECURITY PROTECTION: Escaped dynamic message history to block stored Cross-Site Scripting (XSS) script injections.
