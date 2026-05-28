@@ -6,12 +6,6 @@ import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
 import GoogleLoginButton from "./GoogleLoginButton";
-import { 
-  User, Mail, Lock, Eye, EyeOff, Check, X, AlertCircle, 
-  Github, Chrome, ArrowRight, Sparkles 
-} from "lucide-react";
-
-// ============ CONSTANTS & CONFIG ============
 const PASSWORD_REQUIREMENTS = [
   { id: 'length', label: 'At least 8 characters', regex: /.{8,}/ },
   { id: 'uppercase', label: 'One uppercase letter', regex: /[A-Z]/ },
@@ -24,7 +18,7 @@ const NAME_VALIDATION = {
   min: 2,
   max: 50,
   pattern: /^[a-zA-Z\s'-]+$/,
-  patternError: "Only letters, spaces, hyphens & apostrophes allowed"
+  patternError: "Only letters, spaces, hyphens & apostrophes allowed",
 };
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -237,26 +231,7 @@ const Signup = () => {
     }
   };
 
-  // Social login handler
-  const handleSocialLogin = useCallback(async (provider) => {
-    try {
-      setLoading(true);
-      const response = await apiUtils.get(`${API_ENDPOINTS.AUTH.OAUTH}/${provider}`);
-      
-      // Depending on wrapAxiosResponse, data could be response.data or response itself
-      const data = response.data || response;
-      if (data && data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error("No redirect URL returned from server.");
-      }
-    } catch (err) {
-      console.error(`OAuth error (${provider}):`, err);
-      setErrors(prev => ({ ...prev, submit: `Failed to connect with ${provider}. Please try again.` }));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Social login is handled by `GoogleLoginButton`.
 
   // Animation variants
   const containerVariants = {
