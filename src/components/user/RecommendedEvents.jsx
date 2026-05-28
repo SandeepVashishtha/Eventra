@@ -167,3 +167,4 @@ const RecommendedEvents = () => {
 };
 
 export default RecommendedEvents;
+// DESIGN UPGRADE: Overhauled grid templates with responsive fluid cards and stagger-staged entry animations.
