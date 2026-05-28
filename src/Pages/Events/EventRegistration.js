@@ -1,7 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-// Calendar URL helpers — import from the timezone-aware utility instead of
-// using the old inline implementations (which were UTC-blind and hardcoded
-// a 1-hour event duration — fixed in issue #2015).
 import { getGoogleCalendarUrl, getOutlookCalendarUrl } from "../../utils/calendarUrlUtils";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import hackathonsData from "../Hackathons/hackathonMockData.json";
@@ -27,13 +24,11 @@ import { useSessionRecovery } from "../../context/SessionRecoveryContext";
 import { useFormValidation } from "../../hooks/useFormValidation";
 import { validate } from "../../validation";
 import { toast } from "react-toastify";
-
 import { pushToQueue } from "../../utils/offlineQueue";
 import EventConflictModal from "../../components/EventConflictModal";
 import ConfettiCanvas from "../../components/common/ConfettiCanvas";
 
 const MAX_NOTES_CHARS = 500;
-
 const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
 const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
 const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
@@ -51,17 +46,10 @@ function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
 }
 
 const getRegistrationFailureMessage = (error) => {
-  const message =
-    error?.data?.message ||
-    error?.data?.error ||
-    error?.message ||
-    "";
+  const message = error?.data?.message || error?.data?.error || error?.message || "";
   const normalizedMessage = message.toLowerCase();
 
-  if (
-    error?.status === 409 &&
-    /already registered|duplicate/.test(normalizedMessage)
-  ) {
+  if (error?.status === 409 && /already registered|duplicate/.test(normalizedMessage)) {
     return "You are already registered for this event.";
   }
 
@@ -80,18 +68,7 @@ const getRegistrationFailureMessage = (error) => {
   return message || "Registration failed. Please try again.";
 };
 
-// NOTE: getGoogleCalendarUrl and getOutlookCalendarUrl are now imported from
-// src/utils/calendarUrlUtils.js at the top of this file. The old inline
-// implementations (formatDateForGoogle, getGoogleCalendarUrl,
-// getOutlookCalendarUrl) have been removed because they:
-//   1. Treated local event times as UTC (no timezone conversion).
-//   2. Always generated a 1-hour end time, ignoring event.durationMinutes.
-// See issue #2015 for details.
-
-
-// Registration lock map to prevent concurrent registrations for the same event
 const registrationLocks = new Map();
-
 
 const EventRegistration = () => {
   const { eventId: routeEventId, id: routeId } = useParams();
@@ -110,7 +87,6 @@ const EventRegistration = () => {
   const [registered, setRegistered] = useState(false);
   const isSubmittingRef = useRef(false);
 
-  // Conflict detection state
   const [showConflictModal, setShowConflictModal] = useState(false);
   const [conflictData, setConflictData] = useState({
     conflicts: [],
@@ -145,12 +121,10 @@ const EventRegistration = () => {
     { debounceMs: 300 }
   );
 
-  // Load event data from backend API
   useEffect(() => {
     const loadEvent = async () => {
       setLoading(true);
 
-      const isHackathonPath = location.pathname.startsWith("/register");
       if (isHackathonPath) {
         const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
         if (foundMock) {
@@ -176,11 +150,6 @@ const EventRegistration = () => {
       }
 
       try {
-        // BACKEND FIX: Fetch authoritative event data from the backend API,
-        // not from local mock JSON. This ensures:
-        // - Users see real event details, pricing, and availability
-        // - Registration state matches backend state
-        // - No mismatch between mock data and production backend
         const response = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
 
         if (response.status === 200 && response.data) {
@@ -190,7 +159,6 @@ const EventRegistration = () => {
           };
           setEvent(fetchedEvent);
 
-          // Pre-fill form if user is authenticated
           if (isAuthenticated() && user) {
             setValues((prev) => ({
               ...prev,
@@ -201,7 +169,6 @@ const EventRegistration = () => {
         }
       } catch (error) {
         console.error("Failed to load event details:", error);
-        // Try fallback to hackathonsData as a last resort
         const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
         if (foundMock) {
           setEvent({
@@ -220,7 +187,7 @@ const EventRegistration = () => {
     };
 
     loadEvent();
-  }, [eventId, user, isAuthenticated, setValues, location.pathname]);
+  }, [eventId, user, isAuthenticated, setValues, location.pathname, isHackathonPath]);
 
   const checkEventCapacity = async (id, currentEvent) => {
     try {
@@ -230,7 +197,6 @@ const EventRegistration = () => {
         return freshEvent.attendees >= freshEvent.maxAttendees;
       }
     } catch {
-      // If the re-fetch fails, fall back to the cached snapshot
       return currentEvent.attendees >= currentEvent.maxAttendees;
     }
     return false;
@@ -260,62 +226,14 @@ const EventRegistration = () => {
     return false;
   };
 
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!isAuthenticated() || !user?.id) {
-      toast.error("Please log in to register for events.");
-      navigate("/login", {
-        state: { from: registrationPath },
-      });
-      return;
-    }
-
-    if (!validateAll()) {
-      toast.error("Please fill in all required fields correctly");
-      return;
-    }
-
-    // Prevent concurrent submissions for the same event
-    if (isSubmittingRef.current) {
-      toast.error("Registration already in progress. Please wait.");
-      return;
-    }
-
-    // Check if another registration is in progress for this event
-    if (registrationLocks.has(eventId)) {
-      toast.error("Another registration is in progress for this event. Please wait.");
-      return;
-    }
-
-    // Quick UX hint based on the latest visible event snapshot.
-    const isFull = await checkEventCapacity(eventId, event);
-    if (isFull) {
-      toast.info("This event is full. You will be added to the waitlist.");
-    }
-
-    // Check for scheduling conflicts
-    if (await checkAndHandleConflicts()) return;
-
-    // Proceed with registration if no conflicts
-    proceedWithRegistration();
-  };
-
-  // Proceed with registration after conflict check or user confirmation
   const proceedWithRegistration = async () => {
     if (!isAuthenticated() || !user?.id) {
       toast.error("Please log in to register for events.");
-      navigate("/login", {
-        state: { from: registrationPath },
-      });
+      navigate("/login", { state: { from: registrationPath } });
       return;
     }
 
-    // Close modal if open
     setShowConflictModal(false);
-
-    // Set lock and submission state
     registrationLocks.set(eventId, true);
     isSubmittingRef.current = true;
     setSubmitting(true);
@@ -333,12 +251,9 @@ const EventRegistration = () => {
           eventId: parseInt(eventId),
           userId: user.id,
         },
-        // Registration is authenticated server-side; send the active token
-        // explicitly instead of relying only on global storage lookup.
         token
       );
 
-      // Axios resolves for 2xx — treat as success
       setRegistered(true);
       toast.success("Registration successful!");
       sendConfirmationEmail(formData.email, formData.fullName, event?.title, event?.date);
@@ -351,8 +266,6 @@ const EventRegistration = () => {
       const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
 
       if (isOfflineFailure) {
-        // Offline sync fallback keeps registration intent intact without
-        // storing PII in localStorage.
         const payload = {
           eventId: parseInt(eventId),
           userId: user.id,
@@ -377,7 +290,6 @@ const EventRegistration = () => {
       if (isAlreadyRegistered) {
         setRegistered(true);
         toast.success(isEventFull ? "Successfully joined waitlist!" : "Registration successful!");
-        // ── Save to My Events ──
         addRegistration(event, formData);
         clearSession();
         toast.info(failureMessage);
@@ -386,14 +298,40 @@ const EventRegistration = () => {
 
       toast.error(failureMessage);
     } finally {
-      // Release lock and reset submission state
       registrationLocks.delete(eventId);
       isSubmittingRef.current = false;
       setSubmitting(false);
     }
   };
 
-  // Handle conflict modal actions
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!isAuthenticated() || !user?.id) {
+      toast.error("Please log in to register for events.");
+      navigate("/login", { state: { from: registrationPath } });
+      return;
+    }
+
+    if (!validateAll()) {
+      toast.error("Please fill in all required fields correctly");
+      return;
+    }
+
+    if (isSubmittingRef.current || registrationLocks.has(eventId)) {
+      toast.error("Registration already in progress. Please wait.");
+      return;
+    }
+
+    const isFull = await checkEventCapacity(eventId, event);
+    if (isFull) {
+      toast.info("This event is full. You will be added to the waitlist.");
+    }
+
+    if (await checkAndHandleConflicts()) return;
+    proceedWithRegistration();
+  };
+
   const handleConflictCancel = () => {
     setShowConflictModal(false);
     toast.info("Registration cancelled due to scheduling conflict.");
@@ -444,9 +382,7 @@ const EventRegistration = () => {
           Registration Unavailable
         </h2>
         <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
-          {isPastEvent
-            ? "This event has already ended."
-            : "This event is currently full. You can still check back later in case a spot opens up."}
+          This event has already ended.
         </p>
         <Link
           to={isHackathonPath ? `/hackathons/${eventId}` : `/events/${eventId}`}
@@ -479,8 +415,7 @@ const EventRegistration = () => {
       } else {
         navigator.clipboard.writeText(shareUrl).then(() => {
           toast.success("Event link copied to clipboard!");
-        }).catch((err) => {
-          console.error("Failed to copy link:", err);
+        }).catch(() => {
           toast.error("Could not copy link. Please copy manually.");
         });
       }
@@ -489,7 +424,6 @@ const EventRegistration = () => {
     return (
       <div className="min-h-screen relative flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 py-12 overflow-hidden">
         <ConfettiCanvas />
-
         <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-indigo-500/10 blur-[100px] pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 rounded-full bg-pink-500/10 blur-[100px] pointer-events-none" />
 
@@ -511,7 +445,7 @@ const EventRegistration = () => {
           </motion.div>
 
           <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-pink-600 dark:from-indigo-400 dark:to-pink-400 mb-2">
-            Registration Confirmed!
+            {isEventFull ? "Waitlist Joined!" : "Registration Confirmed!"}
           </h2>
           <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 max-w-md mx-auto leading-relaxed">
             You're all set! A confirmation email has been sent to <span className="font-bold text-gray-700 dark:text-gray-300">{formData.email}</span>.
@@ -609,7 +543,8 @@ const EventRegistration = () => {
                 onClick={handleNativeShare}
                 className="w-10 h-10 inline-flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title="Share / Copy Link"
-               aria-label="button">
+                aria-label="Share"
+              >
                 <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                   <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
                   <polyline points="16 6 12 2 8 6" />
@@ -623,7 +558,8 @@ const EventRegistration = () => {
             <button
               type="button"
               className="w-full py-3.5 px-6 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold hover:bg-slate-800 dark:hover:bg-slate-100 hover:scale-[1.02] active:scale-[0.98] shadow-lg transition-all duration-300"
-             aria-label="button">
+              aria-label="Back"
+            >
               Back to Details
             </button>
           </Link>
@@ -635,7 +571,6 @@ const EventRegistration = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        {/* Back Button */}
         <Link
           to={isHackathonPath ? "/hackathons" : "/events"}
           className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white mb-6 transition-colors"
@@ -645,9 +580,9 @@ const EventRegistration = () => {
         </Link>
 
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden">
-          {/* Event Header */}
           <div className="relative h-64 overflow-hidden">
-            <img loading="lazy"
+            <img
+              loading="lazy"
               src={event.image}
               alt={event.title}
               className="w-full h-full object-cover"
@@ -677,14 +612,12 @@ const EventRegistration = () => {
             </div>
           </div>
 
-          {isEventFull ? "Waitlist Joined!" : "Registration Confirmed!"}
           <div className="p-8">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-              Register for this Event
+              {isEventFull ? "Join the Waitlist" : "Register for this Event"}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Full Name */}
               <div>
                 <label
                   htmlFor="fullName"
@@ -701,10 +634,11 @@ const EventRegistration = () => {
                     value={formData.fullName}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${errors.fullName && touched.fullName
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${
+                      errors.fullName && touched.fullName
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
-                      }`}
+                    }`}
                     placeholder="Enter your full name"
                   />
                 </div>
@@ -713,7 +647,6 @@ const EventRegistration = () => {
                 )}
               </div>
 
-              {/* Email */}
               <div>
                 <label
                   htmlFor="email"
@@ -730,10 +663,11 @@ const EventRegistration = () => {
                     value={formData.email}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${errors.email && touched.email
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${
+                      errors.email && touched.email
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
-                      }`}
+                    }`}
                     placeholder="your.email@example.com"
                   />
                 </div>
@@ -742,7 +676,6 @@ const EventRegistration = () => {
                 )}
               </div>
 
-              {/* Phone */}
               <div>
                 <label
                   htmlFor="phone"
@@ -759,10 +692,11 @@ const EventRegistration = () => {
                     value={formData.phone}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${errors.phone && touched.phone
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${
+                      errors.phone && touched.phone
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
-                      }`}
+                    }`}
                     placeholder="+1 (555) 123-4567"
                   />
                 </div>
@@ -771,7 +705,6 @@ const EventRegistration = () => {
                 )}
               </div>
 
-              {/* Organization */}
               <div>
                 <label
                   htmlFor="organization"
@@ -793,7 +726,6 @@ const EventRegistration = () => {
                 </div>
               </div>
 
-              {/* Designation */}
               <div>
                 <label
                   htmlFor="designation"
@@ -812,7 +744,6 @@ const EventRegistration = () => {
                 />
               </div>
 
-              {/* Additional Info */}
               <div>
                 <label
                   htmlFor="additionalInfo"
@@ -825,13 +756,11 @@ const EventRegistration = () => {
                   name="additionalInfo"
                   value={formData.additionalInfo}
                   onChange={handleChange}
-                  maxLength={MAX_NOTES_CHARS} // 👈 Limits characters strictly
+                  maxLength={MAX_NOTES_CHARS}
                   rows="4"
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
                   placeholder="Any special requirements or questions?"
                 ></textarea>
-
-                {/* 👈 Dynamic counter box directly below */}
                 <div className="flex justify-end text-xs mt-1 text-gray-400 dark:text-gray-500">
                   <span className={(formData.additionalInfo?.length || 0) >= MAX_NOTES_CHARS - 20 ? "text-red-500 font-medium animate-pulse" : ""}>
                     {formData.additionalInfo?.length || 0} / {MAX_NOTES_CHARS} characters
@@ -839,8 +768,6 @@ const EventRegistration = () => {
                 </div>
               </div>
 
-
-              {/* Submit Button */}
               <div className="flex gap-4">
                 <button
                   type="button"
@@ -853,7 +780,8 @@ const EventRegistration = () => {
                   type="submit"
                   disabled={submitting || !isFormValid}
                   className="flex-1 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  aria-label="Submit registration">
+                  aria-label="Submit registration"
+                >
                   {submitting ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -869,12 +797,10 @@ const EventRegistration = () => {
         </div>
       </div>
 
-      {/* Conflict Detection Modal */}
       <EventConflictModal
         isOpen={showConflictModal}
         newEvent={event}
         conflictingEvents={conflictData.conflicts}
-        suggestedEvents={conflictData.suggestions}
         onCancel={handleConflictCancel}
         onProceed={handleConflictProceed}
         onSelectAlternative={handleSelectAlternative}

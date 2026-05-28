@@ -81,7 +81,6 @@ const EventDetailsPage = () => {
           <button
             type="button"
             onClick={() => navigate("/events")}
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white transition-colors hover:bg-indigo-700"
             className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-colors"
             aria-label="Back to Events"
           >
@@ -93,17 +92,7 @@ const EventDetailsPage = () => {
     );
   }
 
-  const isPastEvent =
-    getEventStatus(event) === "past" || getEventStatus(event) === "ended";
-
-  return (
-    <div className="mt-16 min-h-svh overflow-x-hidden bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
-      <header className="sticky top-16 z-40 border-b border-gray-200 bg-white/90 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/90 md:top-20">
-        <div className="mx-auto max-w-6xl safe-area-x py-3 sm:px-6 sm:py-4 lg:px-8">
-          <button
-            type="button"
-            onClick={() => navigate("/events")}
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-lg pr-2 text-sm font-semibold text-indigo-600 transition-colors hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 sm:text-base"
+  const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
   const pageUrl = `${window.location.origin}/events/${event.id}`;
   const pageTitle = `${event.title} | Eventra`;
   const pageDescription = event.description?.substring(0, 160) || "Join this event on Eventra.";
@@ -195,12 +184,6 @@ const EventDetailsPage = () => {
               >
                 About This Event
               </h2>
-              <p
-                className="overflow-wrap-anywhere text-base leading-7 text-gray-600 dark:text-gray-300 sm:text-lg sm:leading-relaxed"
-                dangerouslySetInnerHTML={{
-                  __html: DOMPurify.sanitize(event.description),
-                }}
-
               <p
                 className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed"
                 dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description) }}
