@@ -12,6 +12,55 @@ const isLoadingState = (state) => state === "loading" || state === "validating";
 
 const mergeDescribedBy = (...ids) => ids.filter(Boolean).join(" ") || undefined;
 
+const getFirstValidElement = (node) => {
+  if (Array.isArray(node)) {
+    for (const n of node) {
+      const found = getFirstValidElement(n);
+      if (found) return found;
+    }
+    return null;
+  }
+  if (!React.isValidElement(node)) return null;
+  if (node.type === React.Fragment) {
+    return getFirstValidElement(node.props.children);
+  }
+  return node;
+};
+
+const enhanceChildren = (node, propsToInject) => {
+  let enhanced = false;
+
+  const traverse = (childNode) => {
+    if (enhanced) return childNode;
+    
+    if (Array.isArray(childNode)) {
+      return React.Children.map(childNode, traverse);
+    }
+
+    if (!React.isValidElement(childNode)) {
+      return childNode;
+    }
+
+    if (childNode.type === React.Fragment) {
+      return React.createElement(
+        React.Fragment,
+        { key: childNode.key },
+        React.Children.map(childNode.props.children, traverse)
+      );
+    }
+
+    enhanced = true;
+    return React.cloneElement(childNode, {
+      ...propsToInject,
+      className: joinClasses(propsToInject.className, childNode.props.className),
+    });
+  };
+
+  return Array.isArray(node)
+    ? React.Children.map(node, traverse)
+    : traverse(node);
+};
+
 /**
  * Wraps a label, input, status icon, helper text, and validation message.
  * The child input receives aria-describedby, aria-invalid, and aria-busy.
@@ -43,7 +92,7 @@ const FormFieldWrapper = ({
   messageClassName = "",
   showStatusIcon = true,
 }) => {
-  const child = React.isValidElement(children) ? React.Children.only(children) : null;
+  const child = getFirstValidElement(children);
   const fieldName = name || child?.props?.name || child?.props?.id || "field";
   const fieldId = id || child?.props?.id || fieldName;
   const helperId = hasMessage(helperText) ? `${fieldId}-helper` : undefined;
@@ -57,7 +106,7 @@ const FormFieldWrapper = ({
   const loading = isLoadingState(validationState);
 
   const enhancedChild = child
-    ? React.cloneElement(child, {
+    ? enhanceChildren(children, {
         id: fieldId,
         name: child.props.name || fieldName,
         "aria-describedby": describedBy,
@@ -70,7 +119,6 @@ const FormFieldWrapper = ({
           validationState === "success" && "border-green-500 focus:border-green-500 focus:ring-green-500/20 dark:border-green-400",
           loading && "border-blue-500 dark:border-blue-400",
           showStatusIcon && "pr-10",
-          child.props.className,
         ),
       })
     : children;
