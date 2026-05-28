@@ -48,35 +48,55 @@ const EventDetailsPage = () => {
   const { addRecentlyViewed } = useRecentlyViewed();
   const [loading, setLoading] = useState(true);
   const [event, setEvent] = useState(null);
+  const [cacheInfo, setCacheInfo] = useState(null);
 
   useEffect(() => {
     const fetchEvent = async () => {
+      setLoading(true);
+      setCacheInfo(null);
+
       try {
-        setLoading(true);
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        const foundEvent = eventsMockData.find((item) => item.id === parseInt(eventId, 10));
-
-        setEvent(foundEvent);
-        if (foundEvent) {
-          addRecentlyViewed({
-            id: foundEvent.id,
-            title: foundEvent.title,
-            date: foundEvent.date,
-            location: foundEvent.location,
-            image: foundEvent.image,
-            category: foundEvent.type,
+        const response = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
+        const fetchedEvent = normalizeEvent(response.data);
+        setEvent(fetchedEvent);
+        saveCachedEventDetail(fetchedEvent);
+      } catch {
+        const cached = getCachedEventDetail(eventId);
+        if (cached?.event) {
+          setEvent(normalizeEvent(cached.event));
+          setCacheInfo({
+            cachedAt: cached.cachedAt,
+            label: getCacheAgeLabel(cached.cachedAt),
           });
+        } else {
+          const foundEvent = eventsMockData.find((item) => String(item.id) === String(eventId));
+          setEvent(foundEvent ? normalizeEvent(foundEvent) : null);
+          if (foundEvent) {
+            setCacheInfo({ cachedAt: null, label: "bundled fallback" });
+          }
         }
-      } catch (error) {
-        console.error(error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchEvent();
-  }, [eventId, addRecentlyViewed]);
+  }, [eventId]);
+
+  useEffect(() => {
+    if (!event) {
+      return;
+    }
+
+    addRecentlyViewed({
+      id: event.id,
+      title: event.title,
+      date: event.date,
+      location: event.location,
+      image: event.image,
+      category: event.type,
+    });
+  }, [addRecentlyViewed, event]);
 
   if (loading) {
     return (
@@ -87,13 +107,8 @@ const EventDetailsPage = () => {
         aria-busy="true"
       >
         <div className="flex flex-col items-center gap-4 text-center">
-          <div
-            className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent"
-            aria-hidden="true"
-          />
-          <p className="font-medium text-gray-600 dark:text-gray-400">
-            Loading event details...
-          </p>
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
+          <p className="font-medium text-gray-600 dark:text-gray-400">Loading event details...</p>
         </div>
       </main>
     );
@@ -113,8 +128,6 @@ const EventDetailsPage = () => {
             type="button"
             onClick={() => navigate("/events")}
             className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white transition-colors hover:bg-indigo-700"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-colors"
-            aria-label="Back to Events"
           >
             <ArrowLeft size={18} aria-hidden="true" />
             Back to Events
@@ -137,8 +150,7 @@ const EventDetailsPage = () => {
           <button
             type="button"
             onClick={() => navigate("/events")}
-            className="inline-flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold transition-colors"
-            aria-label="Back to Events"
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-lg pr-2 text-sm font-semibold text-indigo-600 transition-colors hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 sm:text-base"
           >
             <ArrowLeft size={20} aria-hidden="true" />
             Back to Events
@@ -147,6 +159,13 @@ const EventDetailsPage = () => {
       </header>
 
       <main className="mx-auto max-w-6xl safe-area-x py-5 sm:px-6 sm:py-10 lg:px-8">
+        {cacheInfo && (
+          <div className="mb-5 inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
+            <WifiOff size={16} aria-hidden="true" />
+            Showing {cacheInfo.label} details
+          </div>
+        )}
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -180,23 +199,14 @@ const EventDetailsPage = () => {
                     {isPastEvent ? "Past Event" : "Upcoming"}
                   </span>
                 </div>
-                <h1
-                  id="event-details-title"
-                  className="text-balance text-2xl font-bold leading-tight xs:text-3xl sm:text-4xl"
-                >
+                <h1 id="event-details-title" className="text-balance text-2xl font-bold leading-tight xs:text-3xl sm:text-4xl">
                   {event.title}
                 </h1>
               </div>
             </div>
 
-            <section
-              className="mb-5 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:mb-8 sm:p-6"
-              aria-labelledby="event-about-title"
-            >
-              <h2
-                id="event-about-title"
-                className="mb-3 text-xl font-bold text-gray-900 dark:text-white sm:mb-4 sm:text-2xl"
-              >
+            <section className="mb-5 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:mb-8 sm:p-6">
+              <h2 className="mb-3 text-xl font-bold text-gray-900 dark:text-white sm:mb-4 sm:text-2xl">
                 About This Event
               </h2>
               <p
@@ -211,52 +221,38 @@ const EventDetailsPage = () => {
             </section>
           </section>
 
-          <aside
-            className="flex min-w-0 flex-col gap-4 sm:gap-6 lg:col-span-1"
-            aria-label="Event registration and details"
-          >
+          <aside className="flex min-w-0 flex-col gap-4 sm:gap-6 lg:col-span-1" aria-label="Event registration and details">
             {!isPastEvent && <CountdownTimer date={event.date} time={event.time} />}
 
             <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:p-6">
-              <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">
-                Event Details
-              </h3>
+              <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">Event Details</h3>
               <div className="flex flex-col gap-4 text-sm text-gray-600 dark:text-gray-300">
                 <div className="flex min-w-0 items-start gap-3">
-                  <Calendar size={16} className="shrink-0 text-indigo-500" aria-hidden="true" />
-                  <span className="min-w-0">
-                    {new Date(event.date).toLocaleDateString("en-US", {
-                      weekday: "long",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </span>
+                  <Calendar size={16} className="shrink-0 text-indigo-500" />
+                  <span>{new Date(event.date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</span>
                 </div>
                 <div className="flex min-w-0 items-center gap-3">
-                  <Clock size={16} className="shrink-0 text-blue-500" aria-hidden="true" />
+                  <Clock size={16} className="shrink-0 text-blue-500" />
                   <span>{event.time}</span>
                 </div>
                 <div className="flex min-w-0 items-start gap-3">
-                  <MapPin size={16} className="shrink-0 text-pink-500" aria-hidden="true" />
+                  <MapPin size={16} className="shrink-0 text-pink-500" />
                   <span className="min-w-0 break-words">{event.location}</span>
                 </div>
                 <div className="flex min-w-0 items-center gap-3">
-                  <Users size={16} className="shrink-0 text-green-500" aria-hidden="true" />
-                  <span>{event.attendees} / {event.maxAttendees} registered</span>
+                  <Users size={16} className="shrink-0 text-green-500" />
+                  <span>{Number(event.attendees) || 0} / {Number(event.maxAttendees) || 0} registered</span>
                 </div>
                 <div className="flex min-w-0 items-center gap-3">
-                  <Tag size={16} className="shrink-0 text-yellow-500" aria-hidden="true" />
-                  <span className="capitalize">{event.type}</span>
+                  <Tag size={16} className="shrink-0 text-yellow-500" />
+                  <span className="capitalize">{event.type || event.category || "event"}</span>
                 </div>
               </div>
             </div>
 
             {!isPastEvent && (
-              <Link to={`/events/${event.id}/register`}>
-                <div className="inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-900 px-4 py-4 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 hover:shadow-xl sm:hover:scale-[1.02]">
-                  Register Now
-                </div>
+              <Link to={`/events/${event.id}/register`} className="inline-flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-900 px-4 py-4 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 hover:shadow-xl">
+                Register Now
               </Link>
             )}
 
@@ -334,7 +330,6 @@ const EventDetailsPage = () => {
               type="button"
               onClick={() => window.print()}
               className="print-hide flex min-h-[48px] w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-3 text-sm text-gray-800 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-100 dark:hover:bg-gray-800"
-              aria-label="Print or save as PDF"
             >
               Print / Save as PDF
             </button>
