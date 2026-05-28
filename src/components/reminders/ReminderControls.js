@@ -123,7 +123,7 @@ const ReminderControls = ({ event, canSetReminder, compact = false }) => {
             <button
               key={timing.value}
               type="button"
-              onClick={(e) = aria-label="button"> {
+              onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 handleReminderToggle(timing.value);

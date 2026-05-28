@@ -193,7 +193,7 @@ function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
           <button
             className="ad-btn-ghost"
             onClick={onCancel}
-            onKeyDown={(e) = aria-label="button"> {
+            onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 onCancel();
               }
@@ -205,7 +205,7 @@ function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
           <button
             className="ad-btn-danger"
             onClick={onConfirm}
-            onKeyDown={(e) = aria-label="button"> {
+            onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 onConfirm();
               }
@@ -299,7 +299,7 @@ const AdminDashboard = () => {
             <button
               key={item.id}
               className={`ad-nav-item ${activeTab === item.id ? "ad-nav-active" : ""}`}
-              onClick={() = aria-label="button"> setActiveTab(item.id)}
+              onClick={() => setActiveTab(item.id)}
             >
               {item.icon}
               <span>{item.label}</span>
@@ -319,7 +319,7 @@ const AdminDashboard = () => {
           </div>
           <button
             className="ad-nav-item ad-nav-logout"
-            onClick={() = aria-label="button"> setConfirmModal({ open: true, type: "logout", id: null })}
+            onClick={() => setConfirmModal({ open: true, type: "logout", id: null })}
           >
             <LogOut size={17} />
             <span>Logout</span>
@@ -339,7 +339,7 @@ const AdminDashboard = () => {
           </div>
           <div className="ad-topbar-right">
             {activeTab === "events" && hasPermission(PERMISSIONS.CREATE_EVENT) && (
-              <button className="ad-btn-primary" onClick={() = aria-label="button"> navigate("/create-event")}>
+              <button className="ad-btn-primary" onClick={() => navigate("/create-event")}>
                 <Plus size={15} /> New Event
               </button>
             )}
@@ -434,7 +434,7 @@ const AdminDashboard = () => {
                             <Users size={15} />
                           </span>
                           <h3>Recent Users</h3>
-                          <button className="ad-card-link" onClick={() = aria-label="button"> setActiveTab("users")}>
+                          <button className="ad-card-link" onClick={() => setActiveTab("users")}>
                             See all <ChevronRight size={13} />
                           </button>
                         </div>
@@ -461,7 +461,7 @@ const AdminDashboard = () => {
                             <Calendar size={15} />
                           </span>
                           <h3>Recent Events</h3>
-                          <button className="ad-card-link" onClick={() = aria-label="button"> setActiveTab("events")}>
+                          <button className="ad-card-link" onClick={() => setActiveTab("events")}>
                             See all <ChevronRight size={13} />
                           </button>
                         </div>
@@ -511,7 +511,7 @@ const AdminDashboard = () => {
                   <div className="ad-toolbar-right flex items-center gap-3">
                     <div className="relative">
                       <button
-                        onClick={() = aria-label="button"> setShowExportDropdown(!showExportDropdown)}
+                        onClick={() => setShowExportDropdown(!showExportDropdown)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
                       >
                         <Download size={13} />
@@ -529,7 +529,7 @@ const AdminDashboard = () => {
                           />
                           <div className="absolute right-0 mt-1.5 w-36 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg py-1 z-20 animate-fadeIn">
                             <button
-                              onClick={() = aria-label="button"> {
+                              onClick={() => {
                                 exportToCSV(filteredUsers, "users_list");
                                 setShowExportDropdown(false);
                               }}
@@ -538,7 +538,7 @@ const AdminDashboard = () => {
                               Export as CSV
                             </button>
                             <button
-                              onClick={() = aria-label="button"> {
+                              onClick={() => {
                                 exportToJSON(filteredUsers, "users_list");
                                 setShowExportDropdown(false);
                               }}
@@ -594,12 +594,12 @@ const AdminDashboard = () => {
                             <td>
                               <div className="ad-action-btns">
                                 {hasPermission(PERMISSIONS.EDIT_USER) && (
-                                  <button className="ad-icon-action" title="Edit" onClick={() = aria-label="button"> toast.info('Edit coming soon')}>
+                                  <button className="ad-icon-action" title="Edit" onClick={() => toast.info('Edit coming soon')}>
                                     <Edit2 size={14} />
                                   </button>
                                 )}
                                 {hasPermission(PERMISSIONS.DELETE_USER) && (
-                                  <button className="ad-icon-action ad-icon-danger" title="Delete" onClick={() = aria-label="button"> confirmDelete('user', u.id)}>
+                                  <button className="ad-icon-action ad-icon-danger" title="Delete" onClick={() => confirmDelete('user', u.id)}>
                                     <Trash2 size={14} />
                                   </button>
                                 )}
@@ -668,12 +668,12 @@ const AdminDashboard = () => {
                             <td>
                               <div className="ad-action-btns">
                                 {hasPermission(PERMISSIONS.EDIT_EVENT) && (
-                                  <button className="ad-icon-action" title="Edit" onClick={() = aria-label="button"> toast.info('Edit coming soon')}>
+                                  <button className="ad-icon-action" title="Edit" onClick={() => toast.info('Edit coming soon')}>
                                     <Edit2 size={14} />
                                   </button>
                                 )}
                                 {hasPermission(PERMISSIONS.DELETE_EVENT) && (
-                                  <button className="ad-icon-action ad-icon-danger" title="Delete" onClick={() = aria-label="button"> confirmDelete('event', ev.id)}>
+                                  <button className="ad-icon-action ad-icon-danger" title="Delete" onClick={() => confirmDelete('event', ev.id)}>
                                     <Trash2 size={14} />
                                   </button>
                                 )}

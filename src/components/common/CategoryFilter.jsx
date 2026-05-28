@@ -27,7 +27,7 @@ const CategoryFilter = ({
         {categories.map((category) => (
           <button
             key={category.id}
-            onClick={() = aria-label="button"> toggleCategory(category.id)}
+            onClick={() => toggleCategory(category.id)}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all text-left ${
               selectedCategories.includes(category.id)
                 ? "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-600"
