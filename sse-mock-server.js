@@ -5,7 +5,17 @@
  */
 const http = require("http");
 
-const PORT = 4001;
+const PORT = parseInt(process.env.SSE_MOCK_PORT || process.env.PORT || "4001", 10);
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "http://localhost:3000";
+
+// Gated behind SSE_DEBUG env var in development to reduce console noise
+const enableLogs = process.env.NODE_ENV !== "production" && process.env.SSE_DEBUG === "true";
+
+const log = (...args) => {
+  if (enableLogs) {
+    console.log(...args);
+  }
+};
 
 const MOCK_CONTRIBUTORS = [
   { username: "alice", name: "Alice Dev", avatar: "https://avatars.githubusercontent.com/u/1?v=4", profile: "https://github.com/alice", points: 42, prs: 6 },
@@ -21,8 +31,7 @@ function sseHeaders(res) {
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
     "Connection": "keep-alive",
-    // Allow the React dev server origin
-    "Access-Control-Allow-Origin": "http://localhost:3000",
+    "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
     "Access-Control-Allow-Credentials": "true",
   });
 }
@@ -34,7 +43,7 @@ function send(res, data) {
 const server = http.createServer((req, res) => {
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
-      "Access-Control-Allow-Origin": "http://localhost:3000",
+      "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
       "Access-Control-Allow-Methods": "GET",
       "Access-Control-Allow-Headers": "Content-Type",
     });
@@ -44,7 +53,7 @@ const server = http.createServer((req, res) => {
 
   if (req.url === "/stream/leaderboard") {
     sseHeaders(res);
-    console.log("[SSE] leaderboard client connected");
+    log("[SSE] leaderboard client connected");
 
     // Send initial snapshot immediately
     send(res, MOCK_CONTRIBUTORS);
@@ -57,19 +66,19 @@ const server = http.createServer((req, res) => {
         prs: c.prs + (Math.random() > 0.7 ? 1 : 0),
       })).sort((a, b) => b.points - a.points);
       send(res, updated);
-      console.log("[SSE] leaderboard update sent");
+      log("[SSE] leaderboard update sent");
     }, 8000);
 
     req.on("close", () => {
       clearInterval(interval);
-      console.log("[SSE] leaderboard client disconnected");
+      log("[SSE] leaderboard client disconnected");
     });
     return;
   }
 
   if (req.url === "/stream/analytics") {
     sseHeaders(res);
-    console.log("[SSE] analytics client connected");
+    log("[SSE] analytics client connected");
 
     // Push a new check-in every 5 seconds
     const interval = setInterval(() => {
@@ -78,12 +87,12 @@ const server = http.createServer((req, res) => {
       const status = Math.random() > 0.1 ? "Verified" : "Flagged";
       const checkin = { id: `sse-${Date.now()}`, name, event, time: "Just now", status };
       send(res, checkin);
-      console.log(`[SSE] analytics check-in: ${name} → ${status}`);
+      log(`[SSE] analytics check-in: ${name} → ${status}`);
     }, 5000);
 
     req.on("close", () => {
       clearInterval(interval);
-      console.log("[SSE] analytics client disconnected");
+      log("[SSE] analytics client disconnected");
     });
     return;
   }
@@ -93,12 +102,13 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`\nSSE mock server running on http://localhost:${PORT}`);
+  console.log(`\n[Dev Only] SSE mock server running on port ${PORT}`);
+  console.log(`Allowed Origin: ${ALLOWED_ORIGIN}`);
   console.log("Streams available:");
   console.log(`  GET http://localhost:${PORT}/stream/leaderboard`);
   console.log(`  GET http://localhost:${PORT}/stream/analytics`);
   console.log("\nNext steps:");
-  console.log("  1. Create .env.local with: REACT_APP_API_URL=http://localhost:4001");
+  console.log(`  1. Create/update .env.local with: REACT_APP_API_URL=http://localhost:${PORT}`);
   console.log("  2. Restart the React dev server (npm run dev)");
-  console.log("  3. Watch leaderboard and analytics update live\n");
+  console.log(`  3. Run with SSE_DEBUG=true to enable verbose streaming logs\n`);
 });
