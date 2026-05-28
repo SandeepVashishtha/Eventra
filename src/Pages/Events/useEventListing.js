@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import mockEvents from "./eventsMockData.json";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
@@ -16,6 +17,14 @@ const SORT_MAPPING = {
 };
 
 const useEventListing = () => {
+  const normalizedMockEvents = useMemo(
+    () =>
+      mockEvents.map((event) => ({
+        ...event,
+        status: getEventStatus(event),
+      })),
+    [],
+  );
   const [events, setEvents] = useState([]);
   const [filterType, setFilterType] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
@@ -43,6 +52,20 @@ const useEventListing = () => {
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
   const isInitialMount = useRef(true);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const timer = setTimeout(() => {
+      if (!isMounted) return;
+      setEvents(normalizedMockEvents);
+      setIsLoading(false);
+    }, 800);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [normalizedMockEvents]);
   const buildQueryParams = useCallback(() => {
     const params = new URLSearchParams();
 
@@ -122,6 +145,13 @@ const useEventListing = () => {
 
         setEvents(normalizedMockEvents);
 
+  const totalPages = useMemo(
+    () => getTotalPages(filteredEvents.length, eventsPerPage),
+    [eventsPerPage, filteredEvents.length],
+  );
+  const paginatedEvents = useMemo(() => {
+    return getPaginatedEvents(filteredEvents, currentPage, eventsPerPage);
+  }, [currentPage, eventsPerPage, filteredEvents]);
         setPagination({
           totalPages: 1,
           totalElements: normalizedMockEvents.length,
@@ -177,6 +207,9 @@ const useEventListing = () => {
     setCurrentPage(1);
   }, [searchQuery, filterType, sortType, advancedFilters, eventsPerPage]);
 
+  const setSafePage = useCallback((page) => {
+    setCurrentPage(clampPage(page, totalPages));
+  }, [totalPages]);
   const setSafePage = (page) => {
     if (page < 1) {
       setCurrentPage(1);
@@ -195,6 +228,49 @@ const useEventListing = () => {
 
   const paginatedEvents = useMemo(() => events, [events]);
 
+  return useMemo(
+    () => ({
+      currentPage,
+      eventsPerPage,
+      filteredEvents,
+      filterType,
+      isLoading,
+      paginatedEvents,
+      searchQuery,
+      sortType,
+      totalPages,
+      viewMode,
+      advancedFilters,
+      isAdvancedFiltersOpen,
+      priceStats,
+      dateRangeStats,
+      setEventsPerPage,
+      setFilterType,
+      setSafePage,
+      setSearchQuery,
+      setSortType,
+      setViewMode,
+      setAdvancedFilters,
+      setIsAdvancedFiltersOpen,
+    }),
+    [
+      advancedFilters,
+      currentPage,
+      dateRangeStats,
+      eventsPerPage,
+      filteredEvents,
+      filterType,
+      isAdvancedFiltersOpen,
+      isLoading,
+      paginatedEvents,
+      priceStats,
+      searchQuery,
+      setSafePage,
+      sortType,
+      totalPages,
+      viewMode,
+    ],
+  );
   return {
     currentPage,
     eventsPerPage,

@@ -51,20 +51,26 @@ The frontend communicates with the Spring Boot backend through `/api` routes. Fo
 
 Backend repository: https://github.com/SandeepVashishtha/Eventra-Backend
 
-## 🏗️ Architecture & Roles
+## Architecture & Documentation
 
-**New to Eventra?** Understand the complete system architecture, user roles, event lifecycle, and how everything works together:
+New to Eventra? Want to understand how the system works? Check out our comprehensive **Architecture & Roles Guide**:
 
-📖 **[Architecture & Roles Guide](docs/ARCHITECTURE_AND_ROLES.md)** – Comprehensive guide covering:
-- 👥 Role-Based Access Control (RBAC) with 5 roles
-- 🎟️ Event lifecycle stages and state transitions
+📖 **[Architecture & Roles Guide](docs/ARCHITECTURE_AND_ROLES.md)**
+- 🏗️ Complete system architecture overview
+- 👥 Role-Based Access Control (RBAC) explained
+- 🎟️ Event lifecycle and state management
 - 🏆 Hackathon workflow integration
-- 🔐 Authentication & route protection
-- 💬 Permission scopes and access control
+- 💬 Authentication and route protection
 - 🌐 Real-time & offline features
-- 🧠 Contributor code map and implementation guide
+- 🧠 Contributor code map and task guide
 
-Perfect for new contributors and maintainers onboarding! 🚀
+This guide is perfect for:
+- 🆕 **New Contributors** – Understand how everything fits together
+- 🔧 **Developers** – Find where to implement features
+- 👮 **Code Reviewers** – Verify permissions and access control
+- 🎯 **Project Maintainers** – Onboard team members quickly
+
+---
 
 ## Project Insights
 

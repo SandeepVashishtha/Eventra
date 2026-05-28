@@ -20,6 +20,7 @@ import {
   Cell,
 } from "recharts";
 import { toast } from "react-toastify";
+import { useSurveySimulator } from "./useSurveySimulator";
 
 // Pre-defined high-quality feedback pool for open text responses
 const FEEDBACK_COMMENTS_POOL = [
@@ -36,10 +37,49 @@ const FEEDBACK_COMMENTS_POOL = [
 ];
 
 const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
-  // Statics
-  const [totalSubmissions, setTotalSubmissions] = useState(142);
-  const [completionRate, setCompletionRate] = useState(87.3);
   const [isActive, setIsActive] = useState(true);
+
+  // Hook handles mock data generation - decoupled from UI components
+  const {
+    totalSubmissions,
+    completionRate,
+    simulatedData,
+    textFeed,
+    handleSimulateSubmission,
+  } = useSurveySimulator(questions, FEEDBACK_COMMENTS_POOL);
+
+  const choiceChartData = useMemo(() => {
+    const chartData = {};
+    questions.forEach((q) => {
+      if (q.type === "choice" && simulatedData[q.id]) {
+        chartData[q.id] = Object.entries(simulatedData[q.id]).map(([name, votes]) => ({
+          name,
+          votes,
+        }));
+      }
+    });
+    return chartData;
+  }, [questions, simulatedData]);
+
+  const analyzedRatings = useMemo(() => {
+    const ratings = {};
+    questions.forEach((q) => {
+      if (q.type === "rating" && simulatedData[q.id]) {
+        const distribution = simulatedData[q.id];
+        let total = 0;
+        let sum = 0;
+        Object.entries(distribution).forEach(([score, count]) => {
+          sum += parseInt(score) * count;
+          total += count;
+        });
+        ratings[q.id] = {
+          average: total > 0 ? (sum / total).toFixed(1) : "0.0",
+          total,
+        };
+      }
+    });
+    return ratings;
+  }, [questions, simulatedData]);
 
   // Reconstruct individual rows corresponding to each submission per question distribution
   const handleExportCSV = () => {
@@ -117,159 +157,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
     toast.success("Survey responses successfully exported to CSV file!");
   };
 
-  // Dynamic simulation seed - generated dynamically based on the current questions
-  const [simulatedData, setSimulatedData] = useState({});
-  const [textFeed, setTextFeed] = useState([]);
 
-  // Initialize simulated data once or if questions length changes
-  useEffect(() => {
-    const initialData = {};
-    const textComments = [];
-
-    questions.forEach((q) => {
-      if (q.type === "rating") {
-        // Biased rating counts: [5-star, 4-star, 3-star, 2-star, 1-star]
-        initialData[q.id] = {
-          5: Math.floor(Math.random() * 20) + 50,
-          4: Math.floor(Math.random() * 15) + 30,
-          3: Math.floor(Math.random() * 10) + 10,
-          2: Math.floor(Math.random() * 5) + 3,
-          1: Math.floor(Math.random() * 3) + 1,
-        };
-      } else if (q.type === "choice") {
-        const optionVotes = {};
-        q.options.forEach((opt) => {
-          optionVotes[opt] = Math.floor(Math.random() * 40) + 10;
-        });
-        initialData[q.id] = optionVotes;
-      } else if (q.type === "text") {
-        // Grab 3 random comments from our pool
-        const shuffled = [...FEEDBACK_COMMENTS_POOL].sort(() => 0.5 - Math.random());
-        textComments.push({
-          questionId: q.id,
-          questionText: q.questionText,
-          comments: shuffled.slice(0, 3).map((comment, index) => ({
-            id: `${q.id}-${index}`,
-            author: ["Aravind S.", "Meera N.", "Zoya A.", "Kabir D.", "Sara K."][index],
-            text: comment,
-            time: `${index * 4 + 2} mins ago`,
-          })),
-        });
-      }
-    });
-
-    setSimulatedData(initialData);
-    setTextFeed(textComments);
-  }, [questions]);
-
-  // Derived calculation metrics
-  const analyzedRatings = useMemo(() => {
-    const results = {};
-    Object.keys(simulatedData).forEach((qId) => {
-      const counts = simulatedData[qId];
-      // Check if it's a rating question (has keys 1-5)
-      if (counts["5"] !== undefined) {
-        const totalVotes = Object.values(counts).reduce((a, b) => a + b, 0);
-        if (totalVotes === 0) {
-          results[qId] = { average: 0, votes: counts, total: 0 };
-          return;
-        }
-        const weightedSum =
-          counts["5"] * 5 +
-          counts["4"] * 4 +
-          counts["3"] * 3 +
-          counts["2"] * 2 +
-          counts["1"] * 1;
-        const average = parseFloat((weightedSum / totalVotes).toFixed(1));
-        results[qId] = { average, votes: counts, total: totalVotes };
-      }
-    });
-    return results;
-  }, [simulatedData]);
-
-  // Derived calculations for Multiple Choice questions formatted for Recharts
-  const choiceChartData = useMemo(() => {
-    const charts = {};
-    Object.keys(simulatedData).forEach((qId) => {
-      const optionVotes = simulatedData[qId];
-      // Verify it's a choice question (not rating)
-      if (optionVotes["5"] === undefined) {
-        const data = Object.keys(optionVotes).map((opt) => ({
-          name: opt,
-          votes: optionVotes[opt],
-        }));
-        charts[qId] = data;
-      }
-    });
-    return charts;
-  }, [simulatedData]);
-
-  // Trigger manual simulation of an attendee submitting the survey
-  const handleSimulateSubmission = () => {
-    if (questions.length === 0) {
-      toast.warn("Please add some questions first before simulating submissions!");
-      return;
-    }
-
-    setTotalSubmissions((prev) => prev + 1);
-    setCompletionRate((prev) =>
-      parseFloat((Math.min(99.4, prev + (Math.random() * 0.4 - 0.1))).toFixed(1))
-    );
-
-    setSimulatedData((prev) => {
-      const updated = { ...prev };
-      questions.forEach((q) => {
-        if (q.type === "rating") {
-          const score = Math.random() > 0.4 ? (Math.random() > 0.4 ? 5 : 4) : 3;
-          updated[q.id] = {
-            ...updated[q.id],
-            [score]: (updated[q.id]?.[score] || 0) + 1,
-          };
-        } else if (q.type === "choice") {
-          if (q.options.length > 0) {
-            const randomOpt = q.options[Math.floor(Math.random() * q.options.length)];
-            updated[q.id] = {
-              ...updated[q.id],
-              [randomOpt]: (updated[q.id]?.[randomOpt] || 0) + 1,
-            };
-          }
-        }
-      });
-      return updated;
-    });
-
-    // Add a comment to the scrolling feed if there are text questions
-    const textQuestions = questions.filter((q) => q.type === "text");
-    if (textQuestions.length > 0) {
-      const targetQ = textQuestions[Math.floor(Math.random() * textQuestions.length)];
-      const randomAuthor = [
-        "Aarav S.", "Priya M.", "Rohan V.", "Sneha P.", "Karan J.", "Aditya R.", "Ishaan R."
-      ][Math.floor(Math.random() * 7)];
-      const randomComment = FEEDBACK_COMMENTS_POOL[Math.floor(Math.random() * FEEDBACK_COMMENTS_POOL.length)];
-
-      setTextFeed((prev) =>
-        prev.map((item) => {
-          if (item.questionId === targetQ.id) {
-            return {
-              ...item,
-              comments: [
-                {
-                  id: `new-${Date.now()}`,
-                  author: randomAuthor,
-                  text: randomComment,
-                  time: "Just now",
-                },
-                ...item.comments.slice(0, 4),
-              ],
-            };
-          }
-          return item;
-        })
-      );
-    }
-
-    toast.success("🚀 Simulator: Injected a new active survey submission record!");
-  };
 
   return (
     <div className="space-y-8">
