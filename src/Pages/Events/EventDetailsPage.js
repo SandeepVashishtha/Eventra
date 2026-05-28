@@ -2,7 +2,7 @@ import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import DOMPurify from "dompurify";
+import { sanitizeHtml } from "../../utils/sanitizeHtml";
 import CountdownTimer from "../../components/common/CountdownTimer";
 import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft, WifiOff } from "lucide-react";
 import { Share2, Twitter, Facebook, Linkedin, MessageCircle, Copy, Check } from "lucide-react";
@@ -199,10 +199,12 @@ const EventDetailsPage = () => {
               <h2 className="mb-3 text-xl font-bold text-gray-900 dark:text-white sm:mb-4 sm:text-2xl">
                 About This Event
               </h2>
-              
               <p
-                className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description) }} />
+                className="overflow-wrap-anywhere text-base leading-7 text-gray-600 dark:text-gray-300 sm:text-lg sm:leading-relaxed"
+                dangerouslySetInnerHTML={{
+                  __html: sanitizeHtml(event.description),
+                }}
+              />
             </section>
           </section>
 
