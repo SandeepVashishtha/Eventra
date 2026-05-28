@@ -1,7 +1,3 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { useAuth } from "../../context/AuthContext";
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -69,8 +65,6 @@ const LoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateLoginForm()) return;
-    setLoading(true);
-    if (!validate()) return;
 
     try {
       const ok = await login(formData.usernameOrEmail, formData.password);
@@ -83,13 +77,6 @@ const LoginForm = () => {
       console.error("Login error:", err);
       setError({ general: err.message || "Invalid email or password" });
       toast.error(err.message || "Login failed. Please check your credentials.");
-    } finally {
-      setLoading(false);
-      if (process.env.NODE_ENV === "development") {
-        // eslint-disable-next-line no-console
-        console.error("Login error:", err);
-      }
-      toast.error(err.message || 'Login failed. Please check your credentials.');
     }
   };
 
@@ -125,32 +112,10 @@ const LoginForm = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-        <FormFieldWrapper
-          id="usernameOrEmail"
-          label="Email or username"
-          required
-          validationState={validationState.usernameOrEmail}
-          message={error.usernameOrEmail}
-          className="space-y-1.5"
-          labelClassName="block text-xs font-semibold text-slate-300 uppercase tracking-wider"
-          messageClassName="text-red-400 text-xs mt-1"
-          prefix={<Mail className="w-5 h-5 text-slate-500" />}
-        >
-          <input
-            name="usernameOrEmail"
-            type="text"
-            value={formData.usernameOrEmail}
-            onChange={handleChange}
-            required
-            disabled={loading}
-            placeholder="Enter your email or username"
-            className="w-full pl-10 pr-4 py-3 bg-[#0f172a]/60 border border-slate-700/50 rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner"
-          />
-        </FormFieldWrapper>
-        {/* Email */}
+        {/* Email or Username */}
         <div className="space-y-1.5">
           <label htmlFor="usernameOrEmail" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
-            Email or username <span className='ml-1 text-red-400'>*</span>
+            Email or username <span className="ml-1 text-red-400">*</span>
           </label>
           <div className="relative group">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-400 transition-all duration-300 pointer-events-none" />
@@ -162,7 +127,7 @@ const LoginForm = () => {
               onChange={handleChange}
               required
               disabled={authRequest.loading}
-              placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
+              placeholder="john@example.com or username"
               aria-invalid={!!error.usernameOrEmail}
               aria-describedby={error.usernameOrEmail ? "usernameOrEmail-error" : undefined}
               className={`w-full pl-10 pr-4 py-3 bg-[#0f172a]/60 border ${
@@ -171,60 +136,57 @@ const LoginForm = () => {
             />
           </div>
           {error.usernameOrEmail && (
-            <motion.p id="usernameOrEmail-error" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-1 flex items-center gap-1" role="alert">
+            <motion.p
+              id="usernameOrEmail-error"
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-red-400 text-xs mt-1 flex items-center gap-1"
+              role="alert"
+            >
               <span>⚠</span> {error.usernameOrEmail}
             </motion.p>
           )}
         </div>
 
+        {/* Password */}
         <div className="space-y-1.5">
-          <FormFieldWrapper
-            id="password"
-            label="Password"
-            required
-            validationState={validationState.password}
-            message={error.password}
-            labelClassName="block text-xs font-semibold text-slate-300 uppercase tracking-wider"
-            messageClassName="text-red-400 text-xs mt-1"
-            showStatusIcon={false}
-            prefix={<Lock className="w-5 h-5 text-slate-500" />}
-            suffix={
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="text-slate-500 hover:text-blue-400 transition-all duration-200"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            }
-          >
+          <label htmlFor="password" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+            Password <span className="ml-1 text-red-400">*</span>
+          </label>
+          <div className="relative group">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-400 transition-all duration-300 pointer-events-none" />
             <input
+              id="password"
               name="password"
               type={showPassword ? "text" : "password"}
               value={formData.password}
               onChange={handleChange}
               required
               disabled={authRequest.loading}
-              placeholder="Create a secure password"
+              placeholder="Enter your password"
               aria-invalid={!!error.password}
               aria-describedby={error.password ? "password-error" : undefined}
               className={`w-full pl-10 pr-10 py-3 bg-[#0f172a]/60 border ${
                 error.password ? "border-red-500" : "border-slate-700/50"
               } rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner`}
             />
-          </FormFieldWrapper>
-
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-400 transition-all duration-200"
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
           </div>
           {error.password && (
-            <motion.p id="password-error" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-1 flex items-center gap-1" role="alert">
+            <motion.p
+              id="password-error"
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-red-400 text-xs mt-1 flex items-center gap-1"
+              role="alert"
+            >
               <span>⚠</span> {error.password}
             </motion.p>
           )}
@@ -238,11 +200,11 @@ const LoginForm = () => {
           </div>
         </div>
 
-        <ValidationMessage
-          message={error.general}
-          state="error"
-          className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm"
-        />
+        {error.general && (
+          <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm">
+            {error.general}
+          </div>
+        )}
         {authRequest.error && (
           <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm">
             {authRequest.error}
