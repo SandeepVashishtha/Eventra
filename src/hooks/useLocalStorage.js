@@ -17,6 +17,8 @@ const useLocalStorage = (key, initialValue) => {
   }, [key]);
 
   const [storedValue, setStoredValue] = useState(readValue);
+  const storedValueRef = useRef(storedValue);
+  storedValueRef.current = storedValue;
 
   const setValue = useCallback(
     (value) => {
@@ -50,7 +52,11 @@ const useLocalStorage = (key, initialValue) => {
   useEffect(() => {
     const handleStorageChange = (event) => {
       if (event.key === key || (event.type === "local-storage" && event.detail?.key === key)) {
-        setStoredValue(readValue());
+        const newValue = readValue();
+        // Avoid redundant state updates and re-evaluation loops if the value is already identical
+        if (JSON.stringify(storedValueRef.current) !== JSON.stringify(newValue)) {
+          setStoredValue(newValue);
+        }
       }
     };
 
