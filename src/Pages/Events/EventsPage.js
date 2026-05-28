@@ -21,6 +21,7 @@ import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+import SEOHead from "../../components/SEOHead";
 
 const getRouteSearchQuery = (location) => {
   const rawSearchParam = new URLSearchParams(location.search).get("search") || "";
@@ -168,6 +169,11 @@ const EventsPage = () => {
 
   return (
     <div className="flex min-h-screen flex-col overflow-x-hidden bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white text-slate-900 dark:bg-slate-950 dark:text-gray-100">
+      <SEOHead
+        title="Events | Eventra"
+        description="Browse upcoming tech events, conferences, and workshops hosted and shared on Eventra."
+        url="https://eventra.vercel.app/events"
+      />
       <EventHero
         searchQuery={localSearchInput}
         filteredEvents={listing.filteredEvents}

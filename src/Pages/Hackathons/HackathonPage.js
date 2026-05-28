@@ -11,6 +11,7 @@ import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
 import BackToTopButton from "../../components/common/BackToTopButton";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import SEOHead from "../../components/SEOHead";
 import { filterHackathons } from "./hackathonFilterUtils.mjs";
 import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
 
@@ -316,6 +317,11 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   return (
     <div className="overflow-x-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-6 transition-colors duration-300">
+      <SEOHead
+        title="Hackathons | Eventra"
+        description="Explore hackathons, build teams, and showcase your skills with Eventra’s curated community events."
+        url="https://eventra.vercel.app/hackathons"
+      />
       {/* Floating Action Button */}
       <motion.div
         className={`fixed z-50  ${positionClass}`}

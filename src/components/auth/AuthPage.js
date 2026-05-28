@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import SEOHead from "../SEOHead";
 import useReducedMotion from "../../hooks/useReducedMotion";
 import LoginForm from './LoginForm';
 import SignupForm from './SignupForm';
@@ -68,6 +69,14 @@ const AuthPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0f172a] py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      <SEOHead
+        title={isLogin ? "Login | Eventra" : "Sign Up | Eventra"}
+        description={isLogin
+          ? "Securely sign in to your Eventra account to manage events, join communities, and track registrations."
+          : "Create your Eventra account to host events, join hackathons, and engage with the tech community."
+        }
+        url={`https://eventra.vercel.app${location.pathname}`}
+      />
       {/* Background glowing effects */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[100px]"></div>
