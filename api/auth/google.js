@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import { users } from "./signup.js";
+import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
 
 // ---------------------------------------------------------------------------
 // Google OAuth Configuration
@@ -13,22 +14,34 @@ const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 // JWT Configuration
 // ---------------------------------------------------------------------------
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-jwt-key-change-in-production";
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+const JWT_SECRET = getJwtSecret();
 
 // ---------------------------------------------------------------------------
 // CORS Headers
 // ---------------------------------------------------------------------------
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": process.env.ALLOWED_ORIGIN || "*",
-  "Access-Control-Allow-Credentials": "true",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+const corsHeaders = (req) => {
+  const allowedOrigin = process.env.ALLOWED_ORIGIN;
+  const requestOrigin = req.headers?.origin;
+
+  let corsOrigin = allowedOrigin || "*";
+  if (allowedOrigin && requestOrigin !== allowedOrigin) {
+    console.warn(`[CORS] Origin mismatch - Request: ${requestOrigin}, Allowed: ${allowedOrigin}`);
+  }
+  if (allowedOrigin && allowedOrigin !== "*") {
+    corsOrigin = allowedOrigin;
+  }
+
+  return {
+    "Access-Control-Allow-Origin": corsOrigin,
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  };
 };
 
-const corsResponse = (res, status, data) => {
-  return res.status(status).set(corsHeaders).json(data);
+const corsResponse = (res, status, data, req) => {
+  return res.status(status).set(corsHeaders(req)).json(data);
 };
 
 // ---------------------------------------------------------------------------
@@ -241,12 +254,12 @@ const createOrUpdateUserFromGoogle = (googlePayload) => {
 export default async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return res.status(200).set(corsHeaders).end();
+    return res.status(200).set(corsHeaders(req)).end();
   }
 
   // Only allow POST requests
   if (req.method !== "POST") {
-    return corsResponse(res, 405, { error: "Method not allowed" });
+    return corsResponse(res, 405, { error: "Method not allowed" }, req);
   }
 
   try {
@@ -259,7 +272,7 @@ export default async function handler(req, res) {
     if (!credential) {
       return corsResponse(res, 400, { 
         error: "Google credential is required" 
-      });
+      }, req);
     }
 
     // -----------------------------------------------------------------------
@@ -271,7 +284,7 @@ export default async function handler(req, res) {
     if (!verificationResult.valid) {
       return corsResponse(res, 401, { 
         error: "Invalid or expired Google token" 
-      });
+      }, req);
     }
 
     const googlePayload = verificationResult.payload;
@@ -330,12 +343,12 @@ export default async function handler(req, res) {
       token,
       tokenType: "Bearer",
       ...userResponse,
-    });
+    }, req);
 
   } catch (error) {
     console.error("Google OAuth Error:", error);
     return corsResponse(res, 500, { 
       error: "Internal server error. Please try again later." 
-    });
+    }, req);
   }
 }

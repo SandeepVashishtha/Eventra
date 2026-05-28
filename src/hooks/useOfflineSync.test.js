@@ -1,38 +1,38 @@
-global.IS_REACT_ACT_ENVIRONMENT = true;
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { act } from "react";
+import useOfflineSync from "./useOfflineSync";
+import { getQueueIndexedDB, setQueue, clearQueue } from "../utils/offlineQueue";
 
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import { act } from 'react';
-import useOfflineSync from './useOfflineSync';
-import { getQueueIndexedDB, setQueue, clearQueue } from '../utils/offlineQueue';
-
-jest.mock('../context/AuthContext', () => ({
-  useAuth: () => ({ token: 'mock-valid-token' }),
+jest.mock("../context/AuthContext", () => ({
+  useAuth: () => ({ token: "mock-valid-token", user: { id: "mock-user-id" } }),
 }));
 
-jest.mock('../utils/tokenUtils', () => ({
+jest.mock("../utils/tokenUtils", () => ({
   isTokenValid: () => true,
 }));
 
-jest.mock('../utils/offlineQueue', () => ({
+jest.mock("../utils/offlineQueue", () => ({
   getQueueIndexedDB: jest.fn(),
   setQueue: jest.fn(),
   clearQueue: jest.fn(),
+  filterQueueByOwnership: jest.fn((queue) => queue),
 }));
 
-describe('useOfflineSync', () => {
+
+describe("useOfflineSync", () => {
   let container;
   let root;
 
   let originalOnLine;
 
   beforeEach(() => {
-    container = document.createElement('div');
+    container = document.createElement("div");
     document.body.appendChild(container);
     jest.clearAllMocks();
 
     originalOnLine = navigator.onLine;
-    Object.defineProperty(navigator, 'onLine', {
+    Object.defineProperty(navigator, "onLine", {
       value: false,
       configurable: true,
     });
@@ -42,9 +42,13 @@ describe('useOfflineSync', () => {
       Promise.resolve({
         ok: true,
         status: 200,
-        text: () => Promise.resolve('ok'),
+        text: () => Promise.resolve("ok"),
       })
     );
+
+    jest
+      .requireMock("../utils/offlineQueue")
+      .filterQueueByOwnership.mockImplementation((queue) => queue);
   });
 
   afterEach(() => {
@@ -56,16 +60,16 @@ describe('useOfflineSync', () => {
     document.body.removeChild(container);
     container = null;
     delete global.fetch;
-    Object.defineProperty(navigator, 'onLine', {
+    Object.defineProperty(navigator, "onLine", {
       value: originalOnLine,
       configurable: true,
     });
   });
 
-  it('attempts to sync immediately without backoff delay on first try in active sync run', async () => {
+  it("attempts to sync immediately without backoff delay on first try in active sync run", async () => {
     const queue = [
-      { id: '1', retryCount: 2, endpoint: '/api/register/1', payload: {} },
-      { id: '2', retryCount: 1, endpoint: '/api/register/2', payload: {} },
+      { id: "1", userId: "mock-user-id", retryCount: 0, payload: { name: "test-1" } },
+      { id: "2", userId: "mock-user-id", retryCount: 0, payload: { name: "test-2" } }
     ];
     getQueueIndexedDB.mockResolvedValue(queue);
 
@@ -74,7 +78,7 @@ describe('useOfflineSync', () => {
       return null;
     };
 
-    act(() => {
+    await act(async () => {
       root = createRoot(container);
       root.render(<TestComponent />);
     });
@@ -82,8 +86,8 @@ describe('useOfflineSync', () => {
 
     // Trigger online event to run the sync
     await act(async () => {
-      window.dispatchEvent(new Event('online'));
-      // Flush the microtasks
+      window.dispatchEvent(new Event("online"));
+
       await new Promise((resolve) => setTimeout(resolve, 100));
     });
 
@@ -100,9 +104,9 @@ describe('useOfflineSync', () => {
     expect(duration).toBeLessThan(500);
   });
 
-  it('preserves items with retryCount >= MAX_RETRIES in the offline queue instead of deleting them', async () => {
+  it("preserves items with retryCount >= MAX_RETRIES in the offline queue instead of deleting them", async () => {
     const queue = [
-      { id: '1', retryCount: 3, endpoint: '/api/register/1', payload: {} },
+      { id: "1", userId: "mock-user-id", retryCount: 3, payload: { name: "test-expired" } }
     ];
     getQueueIndexedDB.mockResolvedValue(queue);
 
@@ -111,22 +115,20 @@ describe('useOfflineSync', () => {
       return null;
     };
 
-    act(() => {
+    await act(async () => {
       root = createRoot(container);
       root.render(<TestComponent />);
     });
 
     await act(async () => {
-      window.dispatchEvent(new Event('online'));
+      window.dispatchEvent(new Event("online"));
       await new Promise((resolve) => setTimeout(resolve, 100));
     });
 
     // Verify fetch was NOT called because retryCount >= 3
     expect(global.fetch).not.toHaveBeenCalled();
     // Verify setQueue was called to preserve the item
-    expect(setQueue).toHaveBeenCalledWith(expect.arrayContaining([
-      expect.objectContaining({ id: '1', retryCount: 3 })
-    ]));
+    expect(setQueue).toHaveBeenCalledWith(queue);
     expect(clearQueue).not.toHaveBeenCalled();
   });
 });

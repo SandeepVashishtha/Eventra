@@ -19,7 +19,7 @@ Eventra is a comprehensive, open-source platform designed to empower organizers 
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
-- [Environment Variables](#environment-variables)
+- [🔧 Environment Setup](#-environment-setup--configuration)
 - [Project Structure](#project-structure)
 - [Deployment](#deployment)
 - [Contributing](#contributing)
@@ -148,7 +148,7 @@ Follow these steps to set up and run the frontend application on your local mach
     ```
 
 3.  **Configure Environment Variables:**
-    Set up your local `.env` file as described in the [Environment Variables](#environment-variables) section. The backend server runs on port `8080` by default.
+    See the [Environment Setup & Configuration](#-environment-setup--configuration) section below.
 
 > **Note:** For the backend setup instructions, please refer to the [backend repository's README](https://github.com/SandeepVashishtha/Eventra-Backend).
 
@@ -158,14 +158,42 @@ Follow these steps to set up and run the frontend application on your local mach
     ```
     The application will be available at `http://localhost:3000`.
 
-## Environment Variables
+## 🔧 Environment Setup & Configuration
 
-Create a `.env` file in the project root and add the variables below.
+### Quick Start
 
-```env
-REACT_APP_API_URL=http://localhost:8080/api
-
+```bash
+cp .env.example .env
+# Edit .env with your local values
+npm start
 ```
+
+### Complete Setup Guide
+
+For **comprehensive configuration instructions**, **troubleshooting**, **optional integrations**, and **deployment guidelines**, refer to:
+
+📖 **[⚙️ Eventra Environment Setup Guide](docs/ENV_SETUP_GUIDE.md)**
+
+This professional guide covers:
+- ✅ Local development architecture (React + Spring Boot)
+- ✅ Complete environment variables reference table (8+ variables)
+- ✅ Required vs optional integrations (Google OAuth, EmailJS, SSE)
+- ✅ Real API vs Mock API development workflows
+- ✅ Step-by-step frontend & backend setup
+- ✅ 8+ detailed troubleshooting scenarios with solutions
+- ✅ Security best practices & deployment configuration
+- ✅ Developer workflow recommendations
+
+### Key Environment Variables
+
+| Variable | Purpose | Required | Example |
+|----------|---------|----------|----------|
+| `REACT_APP_API_URL` | Backend API endpoint | ✅ Yes | `http://localhost:8080/api` |
+| `REACT_APP_USE_REAL_API` | Toggle real/mock API | ❌ Optional | `true` or `false` |
+| `REACT_APP_GOOGLE_CLIENT_ID` | Google OAuth (optional) | ❌ Optional | `123456789.apps.googleusercontent.com` |
+| `REACT_APP_EMAILJS_*` | Email service (optional) | ❌ Optional | See ENV guide for details |
+
+⚠️ **Security Reminder:** Variables prefixed with `REACT_APP_` are exposed in the frontend bundle. Never commit `.env` to Git (it's gitignored). See [Deployment & Security](docs/ENV_SETUP_GUIDE.md#-deployment--security-guidelines) in the environment guide for more details.
 
 ## Project Structure
 

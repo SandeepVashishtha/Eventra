@@ -20,6 +20,7 @@ import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
 import { getRouteSearchResults } from "../../utils/searchUtils";
+import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
 
 
 
@@ -99,37 +100,49 @@ const renderCardSection = (
 
 const EventsPage = () => {
   useDocumentTitle("Eventra | Events");
+
   const location = useLocation();
   const [searchParams] = useSearchParams();
 
+  // SECURITY: Safely decode and sanitize search query from URL params
+  const rawSearchParam =
+    new URLSearchParams(location.search).get("search") || "";
+
+  let routeSearchQuery = "";
+
+  try {
+    routeSearchQuery = prepareSafeSearchQuery(
+      decodeURIComponent(rawSearchParam)
+    );
+  } catch {
+    // Malformed URI component
+    routeSearchQuery = "";
+  }
+
   const listing = useEventListing();
   const cardSectionRef = useRef();
-  const routeSearchQuery =
-  new URLSearchParams(location.search).get("search") || "";
 
-  // Initialize state from URL params on mount only
+  // Initialize state from URL params
   useEffect(() => {
     const page = parseInt(searchParams.get("page")) || 1;
     const perPage = parseInt(searchParams.get("perPage")) || 6;
-    const search = prepareSafeSearchQuery(searchParams.get("search") || "");
     const filter = searchParams.get("filter") || "all";
     const sort = searchParams.get("sort") || "Newest";
     const view = searchParams.get("view") || "grid";
 
-    if (search) listing.setSearchQuery(search);
+    if (routeSearchQuery) listing.setSearchQuery(routeSearchQuery);
     if (filter !== "all") listing.setFilterType(filter);
     if (sort !== "Newest") listing.setSortType(sort);
     if (view !== "grid") listing.setViewMode(view);
     if (perPage !== 6) listing.setEventsPerPage(perPage);
     if (page !== 1) listing.setSafePage(page);
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [searchParams, routeSearchQuery]);
 
   // Sync search query when URL param changes (e.g. navigating from navbar search)
   useEffect(() => {
-    if (routeSearchQuery !== listing.searchQuery) {
-      listing.setSearchQuery(routeSearchQuery);
+    const safeQuery = prepareSafeSearchQuery(routeSearchQuery);
+    if (safeQuery !== listing.searchQuery) {
+      listing.setSearchQuery(safeQuery);
     }
   }, [routeSearchQuery, listing.searchQuery, listing.setSearchQuery]);
 
@@ -165,8 +178,10 @@ const EventsPage = () => {
         setSearchQuery={listing.setSearchQuery}
         filteredEvents={listing.filteredEvents}
         handleSearch={(query) => {
-          listing.setSearchQuery(query);
-          return listing.filteredEvents; 
+          // SECURITY: Sanitize search query from user input before use
+          const safeQuery = prepareSafeSearchQuery(query);
+          listing.setSearchQuery(safeQuery);
+          return listing.filteredEvents;
         }}
         scrollToCard={scrollToCard}
       />
@@ -256,23 +271,25 @@ const EventsPage = () => {
           setViewMode={listing.setViewMode}
         />
 
-        {renderCardSection(
-          listing.isLoading,
-          listing.paginatedEvents,
-          listing.viewMode,
-          listing.searchQuery,
-          clearSearchAndFilters
-        )}
+        <SectionErrorBoundary label="Events">
+          {renderCardSection(
+            listing.isLoading,
+            listing.paginatedEvents,
+            listing.viewMode,
+            listing.searchQuery,
+            clearSearchAndFilters
+          )}
 
-        {!listing.isLoading && listing.totalPages > 1 && (
-          <div className="mt-8 flex justify-center">
-            <PaginationControls
-              currentPage={listing.currentPage}
-              totalPages={listing.totalPages}
-              onPageChange={listing.setSafePage}
-            />
-          </div>
-        )}
+          {!listing.isLoading && listing.totalPages > 1 && (
+            <div className="mt-8 flex justify-center">
+              <PaginationControls
+                currentPage={listing.currentPage}
+                totalPages={listing.totalPages}
+                onPageChange={listing.setSafePage}
+              />
+            </div>
+          )}
+        </SectionErrorBoundary>
       </div>
 
       <EventCTA />

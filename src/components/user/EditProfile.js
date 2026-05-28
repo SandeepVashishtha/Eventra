@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 import {
   User as UserIcon,
@@ -83,12 +84,9 @@ const EditProfile = () => {
   // Initialize with fallback progression to prevent undefined fields
   const [form, setForm] = useState(() => {
     const saved = localStorage.getItem("user");
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (error) {
-        console.error('Error parsing user profile from localStorage:', error);
-      }
+    const parsed = safeJsonParse(saved, null);
+    if (parsed) {
+      return parsed;
     }
     return user ? { ...initialFormState, ...user } : initialFormState;
   });

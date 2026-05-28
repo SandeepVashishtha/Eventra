@@ -1,6 +1,7 @@
 import React, { lazy } from 'react';
 import { Route } from 'react-router-dom';
 import PageLayout from '../Layout/PageLayout';
+import SectionErrorBoundary from '../common/SectionErrorBoundary';
 
 // Auth guard — redirects unauthenticated users to /login
 import ProtectedRoute from '../auth/ProtectedRoute';
@@ -64,17 +65,26 @@ export const getPublicRoutes = () => [
   <Route key="/" path="/" element={<HomePage />} />,
   <Route key="/events" path="/events" element={<EventsPage />} />,
   <Route key="/event-details" path="/events/:eventId" element={<EventDetails />} />,
-  <Route key="/register" path="/events/:eventId/register" element={<EventRegistration />} />,
+  // Registration writes to an authenticated backend endpoint; keep guarded.
+  <Route
+    key="/register"
+    path="/events/:eventId/register"
+    element={
+      <ProtectedRoute>
+        <EventRegistration />
+      </ProtectedRoute>
+    }
+  />,
   <Route key="/hackathons" path="/hackathons" element={<HackathonPage />} />,
   <Route key="/hackathon-details" path="/hackathons/:hackathonId" element={<HackathonDetailsPage />} />,
   <Route key="/hackathons-lifecycle" path="/hackathons/:id/lifecycle" element={<HackathonLifecycle />} />,
   <Route key="/projects" path="/projects" element={<ProjectsPage />} />,
 
   // Mock API endpoints (demo/documentation purposes)
-  <Route key="/api/hackathons"  path="/api/hackathons"  element={<MockApiResponse />} />,
-  <Route key="/api/projects"    path="/api/projects"    element={<MockApiResponse />} />,
-  <Route key="/api/contributors" path="/api/contributors" element={<MockApiResponse />} />,
-  <Route key="/api/leaderboard" path="/api/leaderboard" element={<MockApiResponse />} />,
+  <Route key="/mock-api/hackathons" path="/mock-api/hackathons" element={<MockApiResponse />} />,
+  <Route key="/mock-api/projects" path="/mock-api/projects" element={<MockApiResponse />} />,
+  <Route key="/mock-api/contributors" path="/mock-api/contributors" element={<MockApiResponse />} />,
+  <Route key="/mock-api/leaderboard" path="/mock-api/leaderboard" element={<MockApiResponse />} />,
 
   // ── Auth-protected routes (login required) ─────────────────────────────────
   <Route
@@ -111,22 +121,59 @@ export const getPublicRoutes = () => [
   <Route key="/contributors" path="/contributors" element={<PageLayout><Contributors /></PageLayout>} />,
   <Route key="/communityEvent" path="/communityEvent" element={<PageLayout><CommunityEvent /></PageLayout>} />,
   <Route key="/community-event" path="/community-event" element={<PageLayout><CommunityEvent /></PageLayout>} />,
-  <Route key="/leaderBoard"    path="/leaderBoard"    element={<PageLayout><ProtectedRoute><LeaderBoard /></ProtectedRoute></PageLayout>} />,
-  <Route key="/leaderboard"    path="/leaderboard"    element={<PageLayout><ProtectedRoute><LeaderBoard /></ProtectedRoute></PageLayout>} />,
-  <Route key="/contributorguide"  path="/contributorguide"  element={<PageLayout><ProtectedRoute><ContributorGuide /></ProtectedRoute></PageLayout>} />,
-  <Route key="/contributor-guide" path="/contributor-guide" element={<PageLayout><ProtectedRoute><ContributorGuide /></ProtectedRoute></PageLayout>} />,
-  <Route key="/about"          path="/about"          element={<PageLayout><AboutPage /></PageLayout>} />,
-  <Route key="/about-fallback" path="/about/*"        element={<PageLayout><AboutPage /></PageLayout>} />,
-  <Route key="/faq"            path="/faq"            element={<PageLayout><FAQPage /></PageLayout>} />,
-  <Route key="/terms"          path="/terms"          element={<PageLayout><Terms /></PageLayout>} />,
-  <Route key="/privacy"        path="/privacy"        element={<PageLayout><Privacy /></PageLayout>} />,
-  <Route key="/apiDocs"        path="/apiDocs"        element={<PageLayout><ApiDocs /></PageLayout>} />,
-  <Route key="/api-docs"       path="/api-docs"       element={<PageLayout><ApiDocs /></PageLayout>} />,
-  <Route key="/helpcenter"     path="/helpcenter"     element={<PageLayout><HelpCenter /></PageLayout>} />,
-  <Route key="/contact"        path="/contact"        element={<PageLayout><ContactUs /></PageLayout>} />,
-  <Route key="/feedback"       path="/feedback"       element={<PageLayout><FeedbackPage /></PageLayout>} />,
-  <Route key="/documentation"  path="/documentation"  element={<PageLayout><DocumentationPage /></PageLayout>} />,
+  <Route
+    key="/leaderBoard"
+    path="/leaderBoard"
+    element={
+      <ProtectedRoute>
+        <PageLayout><SectionErrorBoundary label="Leaderboard"><LeaderBoard /></SectionErrorBoundary></PageLayout>
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/leaderboard"
+    path="/leaderboard"
+    element={
+      <ProtectedRoute>
+        <PageLayout><SectionErrorBoundary label="Leaderboard"><LeaderBoard /></SectionErrorBoundary></PageLayout>
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/contributorguide"
+    path="/contributorguide"
+    element={
+      <ProtectedRoute>
+        <PageLayout><ContributorGuide /></PageLayout>
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/contributor-guide"
+    path="/contributor-guide"
+    element={
+      <ProtectedRoute>
+        <PageLayout><ContributorGuide /></PageLayout>
+      </ProtectedRoute>
+    }
+  />,
+  <Route key="/about" path="/about" element={<PageLayout><AboutPage /></PageLayout>} />,
+  <Route key="/about-fallback" path="/about/*" element={<PageLayout><AboutPage /></PageLayout>} />,
+  <Route key="/faq" path="/faq" element={<PageLayout><FAQPage /></PageLayout>} />,
+  <Route key="/terms" path="/terms" element={<PageLayout><Terms /></PageLayout>} />,
+  <Route key="/privacy" path="/privacy" element={<PageLayout><Privacy /></PageLayout>} />,
+  <Route key="/apiDocs" path="/apiDocs" element={<PageLayout><ApiDocs /></PageLayout>} />,
+  <Route key="/api-docs" path="/api-docs" element={<PageLayout><ApiDocs /></PageLayout>} />,
+  <Route key="/helpcenter" path="/helpcenter" element={<PageLayout><HelpCenter /></PageLayout>} />,
+  <Route key="/contact" path="/contact" element={<PageLayout><ContactUs /></PageLayout>} />,
+  <Route key="/feedback" path="/feedback" element={<PageLayout><FeedbackPage /></PageLayout>} />,
+  <Route key="/documentation" path="/documentation" element={<PageLayout><DocumentationPage /></PageLayout>} />,
 
+  /*
+    /analytics — exposes organisation-level event analytics data.
+    Requires authentication so that only registered users can view
+    aggregate participant and event metrics.
+  */
   <Route
     key="/analytics"
     path="/analytics"
@@ -139,6 +186,11 @@ export const getPublicRoutes = () => [
     }
    />,
 
+  /*
+    /events/:eventId/floor-plan — venue floor plan designer.
+    Requires authentication; only event organisers should be able
+    to view or edit a floor plan layout.
+  */
   <Route
     key="/events/:eventId/floor-plan"
     path="/events/:eventId/floor-plan"
@@ -151,6 +203,11 @@ export const getPublicRoutes = () => [
     }
    />,
 
+  /*
+    /submit-project — allows users to submit projects to hackathons.
+    Requires authentication so submissions are linked to a verified
+    user account and cannot be made anonymously.
+  */
   <Route
     key="/submit-project"
     path="/submit-project"

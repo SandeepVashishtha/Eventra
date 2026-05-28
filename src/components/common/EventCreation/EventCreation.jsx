@@ -2,14 +2,17 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { Download } from "lucide-react";
-import useReducedMotion from "../../hooks/useReducedMotion";
+import { logger } from "../../../utils/logger";
+import useReducedMotion from "../../../hooks/useReducedMotion";
 import TicketTiersSection from "./components/TicketTiersSection";
-import { exportAttendeesToCSV } from "../../utils/exportCsv";
+import { exportAttendeesToCSV } from "../../../utils/exportCsv";
 import {
   DRAFT_KEY,
   categories,
   mockAttendees,
-} from "./constants/eventConstants";
+  initialFormData,
+  todayString,
+} from "../../../constants/eventDefaults";
 import {
   ArrowRightIcon,
   CalendarIcon,
@@ -21,7 +24,7 @@ import {
   CheckCircleIcon,
   PencilIcon,
 } from "@heroicons/react/24/solid";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { API_ENDPOINTS, apiUtils } from "../../../config/api";
 import {
   Calendar,
   MapPin,
@@ -40,8 +43,14 @@ import {
   Upload,
   Plus,
 } from "lucide-react";
-import { useFormSubmit } from "../../hooks/useFormSubmit";
-import { LoadingButton } from "../ui/LoadingButton";
+import { useFormSubmit } from "../../../hooks/useFormSubmit";
+import { LoadingButton } from "../../ui/LoadingButton";
+import {
+  parseTimeToMinutes,
+  formatDate,
+  formatTime,
+  validateCoordinates,
+} from "../../../utils/eventCreationUtils";
 
 
 const EventCreation = () => {
@@ -55,7 +64,7 @@ const EventCreation = () => {
       throw new Error("Authentication required. Please log in and try again.");
     }
 
-    if (!API_ENDPOINTS.EVENTS.CREATE || process.env.NODE_ENV === "development") {
+    if (!API_ENDPOINTS.EVENTS.CREATE) {
       // Mock event creation success (API inactive)
       await new Promise((resolve) => setTimeout(resolve, 1000));
       return;
@@ -78,52 +87,19 @@ const EventCreation = () => {
     if (submitSuccess) {
       toast.success("Event created successfully!");
       resetForm();
-      setCurrentStep("form");
-      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
     }
   }, [submitSuccess]);
-
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    category: "",
-    isMultiDay: false,
-    date: "",
-    startTime: "",
-    endTime: "",
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    location: {
-      name: "",
-      address: "",
-      coordinates: { latitude: "", longitude: "" },
-    },
-    isVirtual: false,
-    virtualLink: "",
-    capacity: "",
-    isPublic: true,
-    requiresApproval: false,
-    registrationStart: "",
-    registrationEnd: "",
-    tags: [],
-    ticketTiers: [
-      {
-        name: "General Admission",
-        price: 0,
-        capacity: "",
-        description: "Standard event access",
-      },
-    ],
-    banner: null,
-    bannerPreview: null,
-  });
+  const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [newTag, setNewTag] = useState("");
   // Track whether draft has been loaded to avoid overwriting on initial mount
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
-  
-
-  const todayString = new Date().toISOString().split("T")[0];
 
   const validateForm = () => {
     const newErrors = {};
@@ -155,11 +131,6 @@ const EventCreation = () => {
 
     if (!newErrors.startTime && !newErrors.endTime && !formData.isMultiDay) {
       // Convert time strings (HH:MM format) to minutes for proper comparison
-      const parseTimeToMinutes = (timeStr) => {
-        if (!timeStr) return 0;
-        const [hours, minutes] = timeStr.split(":").map(Number);
-        return (hours || 0) * 60 + (minutes || 0);
-      };
       const startMinutes = parseTimeToMinutes(formData.startTime);
       const endMinutes = parseTimeToMinutes(formData.endTime);
       if (startMinutes >= endMinutes) {
@@ -299,21 +270,14 @@ const EventCreation = () => {
     }
   };
 
-  const [successMessage, setSuccessMessage] = useState("");
-  const [generalError, setGeneralError] = useState("");
-
   const createEvent = () => {
-    setSuccessMessage("");
-    setGeneralError("");
     try {
       let coordinates = null;
       if (formData.location.coordinates.latitude && formData.location.coordinates.longitude) {
-        const lat = parseFloat(formData.location.coordinates.latitude);
-        const lng = parseFloat(formData.location.coordinates.longitude);
-
-        if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-          coordinates = { latitude: lat, longitude: lng };
-        }
+        coordinates = validateCoordinates(
+          formData.location.coordinates.latitude,
+          formData.location.coordinates.longitude
+        );
       }
 
       const eventStartDate = new Date(
@@ -365,7 +329,7 @@ const EventCreation = () => {
 
       submitEventForm(eventData);
     } catch (error) {
-      console.error("Error creating event:", error);
+      logger.error("Error creating event:", error);
       const backendMessage = error.response?.data?.message || error.response?.data?.error;
       let errorMessage = "Failed to create event. ";
       if (backendMessage) {
@@ -418,15 +382,6 @@ const EventCreation = () => {
 
     toast.info("Saved draft discarded.");
   };
-  useEffect(() => {
-    if (successMessage || generalError) {
-      const timer = setTimeout(() => {
-        setSuccessMessage("");
-        setGeneralError("");
-      }, 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [successMessage, generalError]);
 
   useEffect(() => {
     // Prevent saving before draft restoration
@@ -484,62 +439,11 @@ const EventCreation = () => {
   }, [formData]);
 
   const resetForm = () => {
-    setFormData({
-      title: "",
-      description: "",
-      category: "",
-      isMultiDay: false,
-      date: "",
-      startDate: "",
-      endDate: "",
-      startTime: "",
-      endTime: "",
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      location: {
-        name: "",
-        address: "",
-        coordinates: { latitude: "", longitude: "" },
-      },
-      isVirtual: false,
-      virtualLink: "",
-      capacity: "",
-      isPublic: true,
-      requiresApproval: false,
-      registrationStart: "",
-      registrationEnd: "",
-      tags: [],
-      ticketTiers: [
-        {
-          name: "General Admission",
-          price: 0,
-          capacity: "",
-          description: "Standard event access",
-        },
-      ],
-      banner: null,
-      bannerPreview: null,
-    });
+    setFormData(initialFormData);
     setErrors({});
     localStorage.removeItem(DRAFT_KEY);
     setNewTag("");
     setCurrentStep("form");
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const formatTime = (timeString) => {
-    return new Date(`2000-01-01T${timeString}`).toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
   };
 
   return (
@@ -616,25 +520,6 @@ const EventCreation = () => {
             </div>
           </div>
         </div>
-      )}
-      {successMessage && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 px-6 py-4 rounded-xl bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 font-medium shadow-md text-center"
-        >
-          {successMessage}
-        </motion.div>
-      )}
-
-      {generalError && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 px-6 py-4 rounded-xl bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 font-medium shadow-md text-center"
-        >
-          {generalError}
-        </motion.div>
       )}
 
       {currentStep === "form" ? (

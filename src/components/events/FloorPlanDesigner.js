@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useMemo,
-  useCallback,
-} from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import ConfirmationModal from "../common/ConfirmationModal";
 import {
   Plus, Minus, Trash2, Save, RotateCcw,
@@ -80,6 +74,17 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   const dragStartRef = useRef({ x: 0, y: 0 });
   const elementStartRef = useRef({ x: 0, y: 0 });
   const panStartRef = useRef({ x: 0, y: 0 });
+  // Track pending animation frame to cancel on cleanup (prevents memory leak)
+  const rafRef = useRef(null);
+  // Keep a stable ref to zoom so RAF callbacks don't capture stale closure values
+  const zoomRef = useRef(zoom);
+  const snapToGridRef = useRef(snapToGrid);
+  const selectedIdRef = useRef(selectedId);
+
+  // Sync mutable refs whenever state changes — avoids stale closures in RAF callbacks
+  useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+  useEffect(() => { snapToGridRef.current = snapToGrid; }, [snapToGrid]);
+  useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
 
   const isDirty = !!(lastSavedElementsStr && JSON.stringify(elements) !== lastSavedElementsStr);
 
@@ -156,7 +161,6 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
     // Set width and height explicitly to matching the viewBox dimensions for high resolution
     clonedSvg.setAttribute("width", "1000");
     clonedSvg.setAttribute("height", "800");
-
     // Restore selected shape's default stroke so it looks clean in the exported snapshot
     const selectedShape = clonedSvg.querySelector(".fp-svg-element-selected");
     if (selectedShape) {
@@ -386,8 +390,9 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
     }));
   };
 
-  // Event coordination
-  const handleMouseDown = (e, elementId = null) => {
+  // ─── Pointer / drag coordination ────────────────────────────────────────────
+
+  const handleMouseDown = useCallback((e, elementId = null) => {
     const clientX = e.clientX || (e.touches && e.touches[0].clientX);
     const clientY = e.clientY || (e.touches && e.touches[0].clientY);
 
@@ -396,62 +401,124 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
       panStartRef.current = { x: clientX - panOffset.x, y: clientY - panOffset.y };
     } else if (elementId) {
       setSelectedId(elementId);
+      selectedIdRef.current = elementId;
       isDraggingRef.current = true;
 
-      const el = elements.find(item => item.id === elementId);
-      if (el) {
-        // Convert screen delta to actual SVG coordinates
-        dragStartRef.current = { x: clientX, y: clientY };
-        elementStartRef.current = { x: el.x, y: el.y };
-      }
+      // Snapshot starting position directly from functional state to avoid
+      // capturing a stale `elements` closure value.
+      setElements(prev => {
+        const el = prev.find(item => item.id === elementId);
+        if (el) {
+          dragStartRef.current = { x: clientX, y: clientY };
+          elementStartRef.current = { x: el.x, y: el.y };
+        }
+        return prev; // no state change — side-effect only
+      });
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPanMode, panOffset.x, panOffset.y]);
 
-  const handleMouseMove = (e) => {
+  /**
+   * handleMouseMove — throttled via requestAnimationFrame.
+   *
+   * FIX #2745-A: Previously called setElements(elements.map(...)) which captured
+   * a stale `elements` closure from the render that attached the handler. This
+   * caused the grid-snapping matrix to compute positions against outdated
+   * coordinates, producing visual jitter and occasional position corruption.
+   *
+   * FIX #2745-B: Without RAF throttling, every pointer-move event triggered a
+   * full React re-render, effectively saturating the main thread ("thread crash"
+   * under the issue title). Queuing via RAF coalesces rapid events to one
+   * repaint per frame (~16 ms) and cancels any queued frame on unmount to
+   * prevent the associated memory leak.
+   */
+  const handleMouseMove = useCallback((e) => {
     const clientX = e.clientX || (e.touches && e.touches[0].clientX);
     const clientY = e.clientY || (e.touches && e.touches[0].clientY);
 
-    if (isPanningRef.current) {
-      setPanOffset({
-        x: clientX - panStartRef.current.x,
-        y: clientY - panStartRef.current.y
-      });
-    } else if (isDraggingRef.current && selectedId) {
-      const dx = (clientX - dragStartRef.current.x) / zoom;
-      const dy = (clientY - dragStartRef.current.y) / zoom;
-
-      let newX = elementStartRef.current.x + dx;
-      let newY = elementStartRef.current.y + dy;
-
-      if (snapToGrid) {
-        newX = Math.round(newX / 20) * 20;
-        newY = Math.round(newY / 20) * 20;
-      }
-
-      // Bound boundaries
-      newX = Math.max(10, Math.min(990, newX));
-      newY = Math.max(10, Math.min(990, newY));
-
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-
-      animationFrameRef.current = requestAnimationFrame(() => {
-        setElements((prev) =>
-          prev.map((el) =>
-            el.id === selectedId
-              ? { ...el, x: newX, y: newY }
-              : el
-          )
-        );
-      });
+    // Cancel the previous pending frame before queuing a new one.
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
     }
-  };
 
-  const handleMouseUp = () => {
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+
+      if (isPanningRef.current) {
+        setPanOffset({
+          x: clientX - panStartRef.current.x,
+          y: clientY - panStartRef.current.y
+        });
+        return;
+      }
+
+      const currentSelectedId = selectedIdRef.current;
+      if (isDraggingRef.current && currentSelectedId) {
+        // Read zoom / snapToGrid from refs so the RAF callback always sees
+        // the latest value without needing to be recreated on every render.
+        const currentZoom = zoomRef.current;
+        const currentSnap = snapToGridRef.current;
+
+        const dx = (clientX - dragStartRef.current.x) / currentZoom;
+        const dy = (clientY - dragStartRef.current.y) / currentZoom;
+
+        let newX = elementStartRef.current.x + dx;
+        let newY = elementStartRef.current.y + dy;
+
+        if (currentSnap) {
+          // Grid-snapping matrix: round to nearest 20px cell
+          newX = Math.round(newX / 20) * 20;
+          newY = Math.round(newY / 20) * 20;
+        }
+
+        // Clamp within canvas bounds
+        newX = Math.max(10, Math.min(990, newX));
+        newY = Math.max(10, Math.min(990, newY));
+
+        // Use functional updater — reads the LATEST elements state, not the
+        // stale closure value captured when the handler was last created.
+        setElements(prev => prev.map(el => {
+          if (el.id === currentSelectedId) {
+            return { ...el, x: newX, y: newY };
+          }
+          return el;
+        }));
+      }
+    });
+  }, []); // no dependencies — reads all mutable values via refs
+
+  const handleMouseUp = useCallback(() => {
     isDraggingRef.current = false;
     isPanningRef.current = false;
-  };
+    // Cancel any in-flight animation frame so it doesn't fire after release
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+  }, []);
+
+  // Attach global window listeners so drag/pan is never left in a stuck state
+  // if the pointer leaves the component boundary (e.g. leaves the browser window).
+  // Cleanup cancels the RAF and removes listeners — preventing the memory leak
+  // described in issue #2745.
+  useEffect(() => {
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("touchmove", handleMouseMove, { passive: true });
+    window.addEventListener("touchend", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("touchmove", handleMouseMove);
+      window.removeEventListener("touchend", handleMouseUp);
+      // Cancel any pending animation frame on unmount to avoid memory leak
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
+  }, [handleMouseMove, handleMouseUp]);
 
   const activeElement = useMemo(() => {
     return elements.find(el => el.id === selectedId);
@@ -538,22 +605,29 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   }, [elements]);
 
   // Computes whether there is ANY overlap / collision currently detected on the canvas
-  const collisionMap = useMemo(() => {
-    const collisions = new Map();
+  // FIX: Debounced O(N^2) collision calculation to prevent main-thread lag during drag
+  const [collisionMap, setCollisionMap] = useState(new Map());
 
-    for (let i = 0; i < elements.length; i++) {
-      for (let j = i + 1; j < elements.length; j++) {
-        const el1 = elements[i];
-        const el2 = elements[j];
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const collisions = new Map();
 
-        if (checkCollision(el1, el2)) {
-          collisions.set(el1.id, true);
-          collisions.set(el2.id, true);
+      for (let i = 0; i < elements.length; i++) {
+        for (let j = i + 1; j < elements.length; j++) {
+          const el1 = elements[i];
+          const el2 = elements[j];
+
+          if (checkCollision(el1, el2)) {
+            collisions.set(el1.id, true);
+            collisions.set(el2.id, true);
+          }
         }
       }
-    }
 
-    return collisions;
+      setCollisionMap(collisions);
+    }, 150);
+
+    return () => clearTimeout(timeoutId);
   }, [elements]);
 
   const anyCollision = collisionMap.size > 0;
@@ -587,7 +661,8 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
         </div>
       </div>
 
-      <div className="fp-workspace" onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
+      {/* Mouse/touch events are handled via global window listeners (see useEffect above) */}
+      <div className="fp-workspace">
         {/* Left Toolbox */}
         <aside
           className="fp-sidebar fp-sidebar-left"
@@ -627,7 +702,6 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
 
           <div className="fp-sidebar-section">
             <div className="fp-section-title">Designer Settings</div>
-
             <div className="fp-toggle-container mb-4">
               <span className="text-xs font-semibold text-gray-300 dark:text-gray-400">Snap to 20px Grid</span>
               <label className="fp-switch">

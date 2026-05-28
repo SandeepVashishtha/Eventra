@@ -1,4 +1,5 @@
 import { useEffect, useId, useState, memo } from "react";
+import { logger } from "../../utils/logger";
 import { getUserTimezone } from "../../utils/timezoneUtils";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,7 +9,6 @@ import {
   BookmarkCheck,
   Calendar,
   MapPin,
-  
   Tag,
   Star,
   Heart,
@@ -34,6 +34,28 @@ import {
   subscribeToBookmarkChanges,
 } from "../../utils/bookmarkUtils";
 import { checkRegistrationConflict } from "../../utils/conflictDetection";
+const [
+  savedEvents,
+  setSavedEvents,
+] = useState([]);
+const getCapacityStyles = (ratio, isFull) => {
+  if (isFull || ratio >= 0.85) {
+    return {
+      barColor: "bg-red-500",
+      textColor: "text-red-600 dark:text-red-400",
+    };
+  }
+  if (ratio >= 0.6) {
+    return {
+      barColor: "bg-amber-500",
+      textColor: "text-amber-600 dark:text-amber-400",
+    };
+  }
+  return {
+    barColor: "bg-emerald-500",
+    textColor: "text-emerald-600 dark:text-emerald-400",
+  };
+};
 
 const EventCard = ({ event }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
@@ -58,7 +80,12 @@ const EventCard = ({ event }) => {
   const isUserRegistered = isRegistered(event.id);
 
   const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
+useEffect(() => {
+  const saved =
+    getBookmarkedEvents();
 
+  setSavedEvents(saved);
+}, []);
   const eventSharingData = generateEventSharingData({
     ...event,
     title: event.title,
@@ -79,7 +106,7 @@ const EventCard = ({ event }) => {
         });
       })
       .catch((err) => {
-        console.error("Failed to copy: ", err);
+        logger.error("Failed to copy: ", err);
         toast.error("Could not copy link. Please try again.", {
           autoClose: 2500,
         });
@@ -195,6 +222,52 @@ const EventCard = ({ event }) => {
           title="Copy Event Link"
           aria-label={`Copy link for ${event.title}`}
         >
+          {savedEvents.length > 0 && (
+  <section className="mb-10">
+
+    <div className="
+      flex
+      items-center
+      justify-between
+      mb-4
+    ">
+      <h2 className="
+        text-2xl
+        font-bold
+        text-slate-900
+        dark:text-white
+      ">
+        Saved Events
+      </h2>
+    </div>
+
+    <div className="
+      flex
+      gap-4
+      overflow-x-auto
+      pb-2
+    ">
+
+      {savedEvents.map(
+        (event) => (
+          <div
+            key={event.id}
+            className="
+              min-w-[280px]
+              flex-shrink-0
+            "
+          >
+            <EventCard
+              event={event}
+            />
+          </div>
+        )
+      )}
+
+    </div>
+
+  </section>
+)}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="14"
@@ -331,21 +404,7 @@ const EventCard = ({ event }) => {
         const percent = Math.round(ratio * 100);
         const spotsLeft = Math.max(capacity - registered, 0);
 
-        const barColor = isFull
-          ? "bg-red-500"
-          : ratio >= 0.85
-            ? "bg-red-500"
-            : ratio >= 0.6
-              ? "bg-amber-500"
-              : "bg-emerald-500";
-
-        const textColor = isFull
-          ? "text-red-600 dark:text-red-400"
-          : ratio >= 0.85
-            ? "text-red-600 dark:text-red-400"
-            : ratio >= 0.6
-              ? "text-amber-600 dark:text-amber-400"
-              : "text-emerald-600 dark:text-emerald-400";
+        const { barColor, textColor } = getCapacityStyles(ratio, isFull);
 
         return (
           <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
