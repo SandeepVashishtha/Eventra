@@ -2,8 +2,8 @@ import { defineConfig, loadEnv, transformWithOxc } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
-// Lightweight check: does this code likely contain JSX syntax?
-// Avoids calling transformWithOxc on plain .js files with no JSX.
+// Quick regex to detect JSX syntax — lets us skip transformWithOxc
+// on plain .js files that have no JSX (the common case).
 const JSX_HINT_RE = /<[A-Za-z][A-Za-z0-9.]*[\s\n\r/>]|<>/;
 
 export default defineConfig(({ mode }) => {
@@ -11,26 +11,26 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [
-      // Must run BEFORE vite:oxc so JSX in .js files is handled correctly.
-      // Uses a quick regex pre-check so non-JSX .js files are skipped cheaply.
+      // Intercept .js files BEFORE vite:oxc / builtin:vite-transform so JSX
+      // inside them is compiled correctly in both dev and production builds.
+      // index.jsx / App.jsx are now .jsx so they don't need this path.
+      // Only the remaining .js files that still contain JSX hit the transform.
       {
         name: "jsx-in-js",
         enforce: "pre",
         async transform(code, id) {
-          // Only apply to .js files inside src/ — not node_modules
           if (!/[/\\]src[/\\].*\.js$/.test(id)) return null;
-          // Skip files that don't appear to have JSX (fast path)
           if (!JSX_HINT_RE.test(code)) return null;
-          // Transform JSX → JS using Vite's built-in OXC with JSX enabled
           return transformWithOxc(code, id, { lang: "jsx" });
         },
       },
       react({
+        // Only .jsx/.tsx — .js files are handled above
         include: /\.(jsx|tsx)$/,
       }),
     ],
 
-    // Path aliases — also speeds up module resolution
+    // Path aliases — cleaner imports and faster resolution
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "src"),
@@ -57,13 +57,10 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 3000,
       open: false,
-      hmr: {
-        overlay: true,
-      },
+      hmr: { overlay: true },
     },
 
-    // Pre-bundle heavy deps once → stored in node_modules/.vite/deps
-    // Eliminates per-request transform cost for these packages
+    // Pre-bundle heavy deps once → node_modules/.vite/deps
     optimizeDeps: {
       include: [
         "react",
@@ -88,10 +85,11 @@ export default defineConfig(({ mode }) => {
         "idb-keyval",
         "aos",
       ],
+      // The dep scanner uses esbuild under the hood and needs to know .js files
+      // may contain JSX. esbuildOptions is deprecated in Vite 8 but rolldownOptions
+      // has no equivalent `loader` key yet — this suppresses the scan PARSE_ERROR.
       esbuildOptions: {
-        loader: {
-          ".js": "jsx",
-        },
+        loader: { ".js": "jsx" },
       },
     },
 
@@ -99,15 +97,41 @@ export default defineConfig(({ mode }) => {
       outDir: "build",
       sourcemap: false,
       minify: "esbuild",
+      // Disable CSS minification — lightningcss (Vite 8 default) cannot parse
+      // the custom Tailwind `short` screen: (max-height: 520px) media query.
+      cssMinify: false,
       chunkSizeWarningLimit: 1500,
       rollupOptions: {
         output: {
-          manualChunks: {
-            "vendor-react": ["react", "react-dom", "react-router-dom"],
-            "vendor-motion": ["framer-motion"],
-            "vendor-charts": ["recharts"],
-            "vendor-icons": ["lucide-react", "react-icons"],
-            "vendor-ui": ["react-toastify", "react-hot-toast", "aos"],
+          // manualChunks must be a function in Vite 8 / Rolldown
+          manualChunks(id) {
+            if (
+              id.includes("node_modules/react/") ||
+              id.includes("node_modules/react-dom/") ||
+              id.includes("node_modules/react-router-dom/") ||
+              id.includes("node_modules/react-router/")
+            ) {
+              return "vendor-react";
+            }
+            if (id.includes("node_modules/framer-motion/")) {
+              return "vendor-motion";
+            }
+            if (id.includes("node_modules/recharts/")) {
+              return "vendor-charts";
+            }
+            if (
+              id.includes("node_modules/lucide-react/") ||
+              id.includes("node_modules/react-icons/")
+            ) {
+              return "vendor-icons";
+            }
+            if (
+              id.includes("node_modules/react-toastify/") ||
+              id.includes("node_modules/react-hot-toast/") ||
+              id.includes("node_modules/aos/")
+            ) {
+              return "vendor-ui";
+            }
           },
         },
       },
