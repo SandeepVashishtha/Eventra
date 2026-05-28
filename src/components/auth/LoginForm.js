@@ -16,6 +16,8 @@ const LoginForm = () => {
   const [error, setError] = useState({});
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [isThrottled, setIsThrottled] = useState(false);
   const [validationState, setValidationState] = useState({
     usernameOrEmail: "idle",
     password: "idle",
@@ -69,10 +71,14 @@ const LoginForm = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Check throttle status
+    if (isThrottled) {
+      toast.error("Too many attempts. Please wait 30 seconds before trying again.");
+      return;
+    }
     
     // Validate form before submitting
     if (!validateLoginForm()) return;
@@ -80,18 +86,28 @@ const LoginForm = () => {
     try {
       const ok = await login(formData.usernameOrEmail, formData.password);
       if (ok) {
+        setLoginAttempts(0);
         showAuthToast("Login successful! Redirecting...", () =>
           navigate(redirectPath, { replace: true }),
         );
       }
     } catch (err) {
-      const message = err.message || "Login failed. Please check your credentials.";
-      setError({ general: message });
-      toast.error(message);
-      console.error("Login error:", err);
+      const newCount = loginAttempts + 1;
+      setLoginAttempts(newCount);
+      
+      if (newCount >= 5) {
+        setIsThrottled(true);
+        toast.warn("Too many failed attempts. Locked for 30 seconds.");
+        setTimeout(() => {
+          setIsThrottled(false);
+          setLoginAttempts(0);
+        }, 30000);
+      }
+      
       const errorMsg = err.message || "Invalid email or password";
       setError({ general: errorMsg });
       toast.error(errorMsg);
+      console.error("Login error:", err);
     }
     // Note: loading state is now handled by authRequest.loading from context
   };
