@@ -534,10 +534,10 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
                 Remove <strong>{cancelTarget.title}</strong> from your registrations?
               </p>
               <div className="my-events-dialog-actions">
-                <button className="my-events-dialog-cancel" onClick={handleCancelDismiss}>
+                <button className="my-events-dialog-cancel" onClick={handleCancelDismiss} aria-label="button">
                   Keep it
                 </button>
-                <button className="my-events-dialog-confirm" onClick={handleCancelConfirm}>
+                <button className="my-events-dialog-confirm" onClick={handleCancelConfirm} aria-label="button">
                   Yes, remove
                 </button>
               </div>

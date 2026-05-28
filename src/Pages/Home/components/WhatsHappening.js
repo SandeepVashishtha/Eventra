@@ -238,7 +238,7 @@ border-t border-gray-100 dark:border-slate-800/80"
           <button
             onClick={prevSlide}
             className="absolute left-0 sm:left-2 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-white dark:bg-gray-700 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 z-10 text-gray-700 dark:text-gray-200 transition-all hover:scale-105"
-          >
+           aria-label="button">
             <svg
               className="w-4 h-4 sm:w-5 sm:h-5"
               fill="currentColor"

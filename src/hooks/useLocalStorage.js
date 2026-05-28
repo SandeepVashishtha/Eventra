@@ -5,6 +5,9 @@ const useLocalStorage = (key, initialValue) => {
   const initialValueRef = useRef(initialValue);
   initialValueRef.current = initialValue;
 
+  // 🔥 FIX: Track when WE fired the event so we don't react to ourselves
+  const isInternalWrite = useRef(false);
+
   const readValue = useCallback(() => {
     if (typeof window === "undefined") return initialValueRef.current;
     try {
@@ -25,7 +28,8 @@ const useLocalStorage = (key, initialValue) => {
           const newValue = value instanceof Function ? value(currentVal) : value;
           window.localStorage.setItem(key, JSON.stringify(newValue));
 
-          // Notify other hook instances with the same key (cross-tab sync)
+          // 🔥 FIX: Mark as internal before dispatching so listener skips it
+          isInternalWrite.current = true;
           window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
           return newValue;
         });
@@ -40,7 +44,9 @@ const useLocalStorage = (key, initialValue) => {
     try {
       window.localStorage.removeItem(key);
       setStoredValue(initialValueRef.current);
-      // Notify other hook instances with the same key (cross-tab sync)
+
+      // 🔥 FIX: Mark as internal before dispatching
+      isInternalWrite.current = true;
       window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
     } catch (error) {
       console.warn(`useLocalStorage: error removing key "${key}":`, error);
@@ -49,6 +55,12 @@ const useLocalStorage = (key, initialValue) => {
 
   useEffect(() => {
     const handleStorageChange = (event) => {
+      // 🔥 FIX: Skip events WE fired — they are already handled by setStoredValue
+      if (isInternalWrite.current) {
+        isInternalWrite.current = false;
+        return;
+      }
+
       if (event.key === key || (event.type === "local-storage" && event.detail?.key === key)) {
         setStoredValue(readValue());
       }

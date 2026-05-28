@@ -98,7 +98,7 @@ const SessionRecovery = () => {
                   onClick={handleRestore}
                   disabled={isRestoring}
                   className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
-                >
+                 aria-label="button">
                   {isRestoring ? (
                     <>
                       <RefreshCw size={16} className="animate-spin" />
@@ -114,7 +114,7 @@ const SessionRecovery = () => {
                 <button
                   onClick={handleDismiss}
                   className="flex-1 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-800 dark:text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
-                >
+                 aria-label="button">
                   <X size={16} />
                   Start Fresh
                 </button>

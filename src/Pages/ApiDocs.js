@@ -538,7 +538,7 @@ const ApiDocs = () => {
               onClick={executeMockRequest}
               disabled={isLoading}
               className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
-            >
+             aria-label="button">
               {isLoading ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />

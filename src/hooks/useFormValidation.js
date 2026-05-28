@@ -19,6 +19,8 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   const [touched, setTouched] = useState({});
   const [isFormValid, setIsFormValid] = useState(false);
 
+  const debounceTimerRef = useRef(null);
+
   // Validate a single field
   const validateField = useCallback((name, value, allValues) => {
     if (!validationRulesRef.current[name]) return null;
@@ -53,7 +55,7 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
     return isValid;
   }, [values, validateField]);
 
-  // Handle input change with debounced validation
+  // Handle input change — just updates state, debounced validation is in useEffect
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
     setValues(prev => ({ ...prev, [name]: value }));
@@ -108,6 +110,15 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
     setErrors({});
     setTouched({});
     setIsFormValid(false);
+  }, []);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, []);
 
   return {

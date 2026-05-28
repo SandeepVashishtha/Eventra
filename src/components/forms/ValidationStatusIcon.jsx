@@ -70,11 +70,20 @@ const joinClasses = (...classes) => classes.filter(Boolean).join(" ");
 /**
  * Renders a small accessible icon for the current validation state.
  *
+ * Supported states are `idle`, `validating`/`loading`, `success`/`valid`,
+ * `error`/`invalid`, `warning`, and `info`. Error states use `role="alert"`;
+ * non-error visible states use polite status semantics. Pass `ariaHidden` when
+ * the icon is decorative and a nearby message already explains the state.
+ *
  * @param {Object} props
- * @param {"idle"|"validating"|"loading"|"success"|"valid"|"error"|"invalid"|"warning"|"info"} [props.state="idle"]
+ * @param {"idle"|"validating"|"loading"|"success"|"valid"|"error"|"invalid"|"warning"|"info"} [props.state="idle"] - Validation state to visualize.
  * @param {string} [props.className] - Extra classes for sizing or spacing.
  * @param {string} [props.label] - Custom screen-reader label.
  * @param {boolean} [props.ariaHidden=false] - Hide icon from assistive tech when decorative.
+ * @returns {JSX.Element} Accessible validation icon.
+ *
+ * @example
+ * <ValidationStatusIcon state="validating" label="Checking email availability" />
  */
 const ValidationStatusIcon = ({
   state = "idle",

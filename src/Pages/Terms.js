@@ -242,7 +242,7 @@ const AccordionSection = ({ section, isOpen, onToggle, animateIn }) => {
         onClick={onToggle}
         className="w-full flex items-center justify-between gap-4 p-5 text-left"
         aria-expanded={isOpen}
-      >
+       aria-label="button">
         <div className="flex items-center gap-4">
           {/* Numbered badge */}
           <div className={`flex-shrink-0 w-8 h-8 rounded-xl ${c.badge} flex items-center justify-center font-bold text-sm transition-all duration-300`}>
