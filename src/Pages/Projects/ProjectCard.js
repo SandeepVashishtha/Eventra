@@ -349,8 +349,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           aria-hidden="true"
           className={`absolute inset-0 w-full h-full object-cover blur-xl scale-110 transition-opacity duration-500 z-0 ${
             isLoaded ? "opacity-0" : "opacity-100"
-          }`}
-        />
+          }`} loading="lazy"/>
         <img
           src={project.image}
           alt={project.title}

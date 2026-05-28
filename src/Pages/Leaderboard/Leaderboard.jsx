@@ -453,8 +453,7 @@ const sortedContributors = useMemo(
                           <img
                             src={item.avatar}
                             alt={item.username}
-                            className={`relative ${size} rounded-full border-4 ${borderColor} shadow-md object-cover`}
-                          />
+                            className={`relative ${size} rounded-full border-4 ${borderColor} shadow-md object-cover`} loading="lazy"/>
                           {isFirst && <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-2xl animate-bounce">👑</div>}
                           <div className={`absolute -bottom-2 -right-1 flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black uppercase tracking-tight shadow ${medalColor}`}>
                             {position}

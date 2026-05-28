@@ -459,6 +459,7 @@ const UserProfileDropdown = ({
           src={user.profilePicture}
           alt="Profile"
           className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20"
+          loading="lazy"
           onError={(e) => (e.currentTarget.style.display = "none")}
         />
       ) : (
@@ -577,8 +578,7 @@ const MobileUserSection = ({
         <img
           src={user.profilePicture}
           alt="Profile"
-          className="w-10 h-10 rounded-full object-cover"
-        />
+          className="w-10 h-10 rounded-full object-cover" loading="lazy"/>
       ) : (
         <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white">
           <UserIcon className="w-6 h-6" />
@@ -938,8 +938,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             <img
               src="/Eventra.png"
               alt="Eventra Logo"
-              className="h-9 w-auto object-contain"
-            />
+              className="h-9 w-auto object-contain" loading="lazy"/>
           </Link>
 
           {/* Centered Desktop Nav Links */}

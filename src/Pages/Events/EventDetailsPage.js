@@ -167,7 +167,7 @@ const EventDetailsPage = () => {
               <img
                 src={event.image}
                 alt={`${event.title} event banner`}
-                className="w-full h-96 object-cover" />
+                className="w-full h-96 object-cover" loading="lazy"/>
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
