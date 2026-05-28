@@ -19,6 +19,7 @@ const ConfirmationModal = ({
     if (!isOpen) return undefined;
 
     const previouslyFocusedElement = document.activeElement;
+    const originalOverflow = document.body.style.overflow;
 
     document.body.style.overflow = "hidden";
 
@@ -60,7 +61,7 @@ const ConfirmationModal = ({
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.body.style.overflow = "auto";
+      document.body.style.overflow = originalOverflow;
 
       document.removeEventListener(
         "keydown",
