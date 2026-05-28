@@ -14,12 +14,12 @@ Eventra is a comprehensive, open-source platform designed to empower organizers 
 - [Overview](#overview)
 - [Live Demo](#live-demo)
 - [API Reference](#api-reference)
+- [Architecture & Roles](#-architecture--roles)
 - [Project Insights](#project-insights)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
-
-- [Environment Variables](#environment-variables)
+- [🔧 Environment Setup](#-environment-setup--configuration)
 - [Project Structure](#project-structure)
 - [Deployment](#deployment)
 - [Contributing](#contributing)
@@ -50,6 +50,21 @@ This repository contains the React frontend application for Eventra. The backend
 The frontend communicates with the Spring Boot backend through `/api` routes. For local full-stack testing, run the backend service separately and configure the frontend API URL accordingly.
 
 Backend repository: https://github.com/SandeepVashishtha/Eventra-Backend
+
+## 🏗️ Architecture & Roles
+
+**New to Eventra?** Understand the complete system architecture, user roles, event lifecycle, and how everything works together:
+
+📖 **[Architecture & Roles Guide](docs/ARCHITECTURE_AND_ROLES.md)** – Comprehensive guide covering:
+- 👥 Role-Based Access Control (RBAC) with 5 roles
+- 🎟️ Event lifecycle stages and state transitions
+- 🏆 Hackathon workflow integration
+- 🔐 Authentication & route protection
+- 💬 Permission scopes and access control
+- 🌐 Real-time & offline features
+- 🧠 Contributor code map and implementation guide
+
+Perfect for new contributors and maintainers onboarding! 🚀
 
 ## Project Insights
 
@@ -133,7 +148,7 @@ Follow these steps to set up and run the frontend application on your local mach
     ```
 
 3.  **Configure Environment Variables:**
-    Set up your local `.env` file as described in the [Environment Variables](#environment-variables) section. The backend server runs on port `8080` by default.
+    See the [Environment Setup & Configuration](#-environment-setup--configuration) section below.
 
 > **Note:** For the backend setup instructions, please refer to the [backend repository's README](https://github.com/SandeepVashishtha/Eventra-Backend).
 
@@ -143,14 +158,42 @@ Follow these steps to set up and run the frontend application on your local mach
     ```
     The application will be available at `http://localhost:3000`.
 
-## Environment Variables
+## 🔧 Environment Setup & Configuration
 
-Create a `.env` file in the project root and add the variables below.
+### Quick Start
 
-```env
-REACT_APP_API_URL=http://localhost:8080/api
-
+```bash
+cp .env.example .env
+# Edit .env with your local values
+npm start
 ```
+
+### Complete Setup Guide
+
+For **comprehensive configuration instructions**, **troubleshooting**, **optional integrations**, and **deployment guidelines**, refer to:
+
+📖 **[⚙️ Eventra Environment Setup Guide](docs/ENV_SETUP_GUIDE.md)**
+
+This professional guide covers:
+- ✅ Local development architecture (React + Spring Boot)
+- ✅ Complete environment variables reference table (8+ variables)
+- ✅ Required vs optional integrations (Google OAuth, EmailJS, SSE)
+- ✅ Real API vs Mock API development workflows
+- ✅ Step-by-step frontend & backend setup
+- ✅ 8+ detailed troubleshooting scenarios with solutions
+- ✅ Security best practices & deployment configuration
+- ✅ Developer workflow recommendations
+
+### Key Environment Variables
+
+| Variable | Purpose | Required | Example |
+|----------|---------|----------|----------|
+| `REACT_APP_API_URL` | Backend API endpoint | ✅ Yes | `http://localhost:8080/api` |
+| `REACT_APP_USE_REAL_API` | Toggle real/mock API | ❌ Optional | `true` or `false` |
+| `REACT_APP_GOOGLE_CLIENT_ID` | Google OAuth (optional) | ❌ Optional | `123456789.apps.googleusercontent.com` |
+| `REACT_APP_EMAILJS_*` | Email service (optional) | ❌ Optional | See ENV guide for details |
+
+⚠️ **Security Reminder:** Variables prefixed with `REACT_APP_` are exposed in the frontend bundle. Never commit `.env` to Git (it's gitignored). See [Deployment & Security](docs/ENV_SETUP_GUIDE.md#-deployment--security-guidelines) in the environment guide for more details.
 
 ## Project Structure
 
@@ -225,6 +268,21 @@ We welcome contributions from the community! To get started, please follow these
 - To ensure active development, issues are **automatically unassigned after 7 days** of inactivity.
 - To keep your assignment, please **open a draft Pull Request** within the 7-day period to show progress.
 - For more details, see our [Auto-unassign Documentation](.github/AUTO_UNASSIGN.md).
+
+### Automatic PR Labels
+
+This repository uses GitHub Actions with `actions/labeler`
+to automatically apply labels to pull requests based on changed files.
+
+Examples:
+- `docs/**` → `type:docs`
+- `tests/**` → `type:testing`
+- `.github/**` → `type:devops`
+- `src/**` → `type:refactor`
+- `public/**` → `type:design`
+
+The workflow runs automatically whenever a pull request is opened,
+updated, or reopened.
 
 ## License
 
@@ -353,10 +411,13 @@ Update `.env.local` to point to the mock server. You have two options:
   ```env
   REACT_APP_SSE_URL=http://localhost:4001
   ```
-- **Option B**: Set the general `REACT_APP_API_URL` to point to the mock server port (this routes all endpoints through port 4001):
+- **Option B (Not Recommended)**: Set the general `REACT_APP_API_URL` to point to the mock server port (this routes all endpoints through port 4001):
   ```env
   REACT_APP_API_URL=http://localhost:4001
   ```
+  > [!WARNING]
+  > **Side-effects of Option B:** Setting the general `REACT_APP_API_URL` to the mock server port will break standard REST API calls (like fetching events, logging in, etc.) because the mock server does not proxy these requests. Use Option A for standard local development to prevent breaking your local environment.
+
 
 ---
 

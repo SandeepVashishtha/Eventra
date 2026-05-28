@@ -1,4 +1,5 @@
 import axios from "axios";
+import { ENV } from "./env";
 
 // ---------------------------------------------------------------------------
 // Base API URL
@@ -13,27 +14,26 @@ const normalizeApiBaseUrl = (value = "") => {
 
   try {
     const parsed = new URL(trimmed);
-    const hostname = parsed.hostname.toLowerCase();
-
-    if (
-      hostname === "localhost" ||
-      hostname === "127.0.0.1" ||
-      hostname === "0.0.0.0" ||
-      hostname === "::1"
-    ) {
-      return "";
-    }
-
     return `${parsed.origin}${parsed.pathname === "/" ? "" : parsed.pathname}`;
   } catch {
-    return /localhost|127\.0\.0\.1|0\.0\.0\.0|::1/i.test(trimmed) ? "" : trimmed;
+    return trimmed;
   }
 };
 
-const isDevelopment = process.env.NODE_ENV === "development";
+const isDev = process.env.NODE_ENV === "development";
 
 const resolveEnvApiBaseUrl = () => {
-  return normalizeApiBaseUrl(process.env.REACT_APP_API_URL || "http://localhost:8080");
+  const envUrl = ENV.API_URL;
+  if (envUrl) {
+    return normalizeApiBaseUrl(envUrl);
+  }
+  if (process.env.NODE_ENV === "production") {
+    if (isDev) {
+      console.warn("REACT_APP_API_URL environment variable is missing in production. Defaulting to relative API requests.");
+    }
+    return "";
+  }
+  return "http://localhost:8080";
 };
 
 export const API_BASE_URL = resolveEnvApiBaseUrl();
@@ -64,7 +64,6 @@ const REQUEST_TIMEOUT_MS = 15_000;
 const RETRYABLE_STATUS_CODES = [502, 503, 504];
 const MAX_RETRIES = 1;
 const RETRY_DELAY_MS = 1_000;
-const isDev = isDevelopment;
 
 // ---------------------------------------------------------------------------
 // Normalized API Error
@@ -103,22 +102,12 @@ export const setOnUnauthorizedHandler = (handler) => {
   onUnauthorized = handler;
 };
 
-const normalizeRequestConfig = (configOrToken = {}, maybeToken) => {
+const normalizeRequestConfig = (configOrToken = {}) => {
   const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
-  const token =
-    typeof configOrToken === "string"
-      ? configOrToken
-      : typeof maybeToken === "string"
-        ? maybeToken
-        : localStorage.getItem("token") || "";
-
-  if (token) {
-    config.headers = {
-      ...(config.headers || {}),
-      Authorization: `Bearer ${token}`,
-    };
+  
+  if ("skipAuth" in config) {
+    delete config.skipAuth;
   }
-
   return config;
 };
 
@@ -141,18 +130,52 @@ const wrapAxiosResponse = (response) => {
       typeof response.data === "string" ? response.data : JSON.stringify(response.data),
   };
 };
+const normalizeApiError = (error) => {
+  const config = error.config || {};
+  const status = error?.response?.status;
 
-API.interceptors.request.use((config) => {
-  if (!config.signal) {
-    const controller = new AbortController();
-    config.signal = controller.signal;
-    config._abortController = controller;
+  if (
+    error.code === "ECONNABORTED" ||
+    error.name === "AbortError" ||
+    error.message?.includes("timeout")
+  ) {
+    return new ApiError(
+      `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
+      {
+        status,
+        isTimeout: true,
+      }
+    );
   }
 
+  if (!error.response) {
+    return new ApiError(
+      error.message ||
+        `Network error: ${config.method?.toUpperCase()} ${config.url}`,
+      {
+        status,
+        isNetworkError: true,
+      }
+    );
+  }
+
+  return new ApiError(
+    error.response?.data?.message ||
+      error.message ||
+      `Request failed with status ${status}`,
+    {
+      status,
+      data: error.response?.data || null,
+    }
+  );
+};
+
+// 🔥 HERE IS WHERE WE FIXED THE BUG 🔥
+// We completely removed the `if (!config.signal)` block that was generating the Ghost AbortController.
+API.interceptors.request.use((config) => {
   if (isDev) {
     console.debug(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
   }
-
   return config;
 });
 
@@ -179,32 +202,7 @@ API.interceptors.response.use(
       await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
       return API(config);
     }
-
-    if (
-      error.code === "ECONNABORTED" ||
-      error.name === "AbortError" ||
-      error.message?.includes("timeout")
-    ) {
-      throw new ApiError(
-        `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
-        { isTimeout: true }
-      );
-    }
-
-    if (!error.response) {
-      throw new ApiError(
-        error.message || `Network error: ${config.method?.toUpperCase()} ${config.url}`,
-        { isNetworkError: true }
-      );
-    }
-
-    throw new ApiError(
-      error.response?.data?.message || error.message || `Request failed with status ${status}`,
-      {
-        status: error.response.status,
-        data: error.response.data,
-      }
-    );
+    throw normalizeApiError(error);
   }
 );
 
@@ -213,6 +211,15 @@ API.interceptors.response.use(
 // ---------------------------------------------------------------------------
 
 export const API_ENDPOINTS = {
+  AUTH: { LOGIN: "/auth/login", SIGNUP: "/auth/signup", LOGOUT: "/auth/logout", RESET_PASSWORD: "/auth/reset-password", GOOGLE: "/auth/google" },
+  EVENTS: { CREATE: "/events/create", ALL: "/events", DETAIL: (id) => `/events/${id}`, REGISTER: (id) => `/events/${id}/register` },
+  PROJECTS: { ALL: "/projects", DETAIL: (id) => `/projects/${id}`, CATEGORIES: "/projects/categories", SUBMIT: "/projects" },
+  NOTIFICATIONS: { ALL: "/notifications", BASE: "/notifications", READ: (id) => `/notifications/${id}/read`, READ_ALL: "/notifications/read-all" },
+  USERS: { PROFILE: "/users/profile", ACHIEVEMENTS: "/users/achievements" },
+  VALIDATION: {
+    EMAIL: (email) => `/api/validate/email/${encodeURIComponent(email)}`,
+    USERNAME: (username) => `/api/validate/username/${encodeURIComponent(username)}`,
+    PHONE: "/api/validate/phone",
   AUTH: {
     LOGIN: buildApiUrl("/api/auth/login"),
     GOOGLE: buildApiUrl("/api/auth/google"),
@@ -220,23 +227,27 @@ export const API_ENDPOINTS = {
     SIGNUP: buildApiUrl("/api/auth/signup"),
     LOGOUT: buildApiUrl("/api/auth/logout"),
     RESET_PASSWORD: buildApiUrl("/api/auth/reset-password"),
+    OAUTH: buildApiUrl("/api/auth/oauth"),
   },
   EVENTS: {
     CREATE: buildApiUrl("/api/events/create"),
-    ALL: buildApiUrl("/api/events"),
     LIST: buildApiUrl("/api/events"),
     DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
+    REGISTRANTS: (id) => buildApiUrl(`/api/events/${id}/registrants`),
   },
   PROJECTS: {
-    ALL: buildApiUrl("/api/projects"),
     LIST: buildApiUrl("/api/projects"),
     DETAIL: (id) => buildApiUrl(`/api/projects/${id}`),
     CATEGORIES: buildApiUrl("/api/projects/categories"),
     SUBMIT: buildApiUrl("/api/projects"),
   },
+  HACKATHONS: {
+    LIST: buildApiUrl("/api/hackathons"),
+    DETAIL: (id) => buildApiUrl(`/api/hackathons/${id}`),
+    HOST: buildApiUrl("/api/hackathons"),
+  },
   NOTIFICATIONS: {
-    ALL: buildApiUrl("/api/notifications"),
     BASE: buildApiUrl("/api/notifications"),
     READ: (id) => (id ? buildApiUrl(`/api/notifications/${id}/read`) : ""),
     READ_ALL: buildApiUrl("/api/notifications/read-all"),
@@ -248,16 +259,26 @@ export const API_ENDPOINTS = {
 };
 
 export const apiUtils = {
-  get: (url, configOrToken = {}, maybeToken) =>
-    API.get(url, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  post: (url, data = {}, configOrToken = {}, maybeToken) =>
-    API.post(url, data, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  put: (url, data = {}, configOrToken = {}, maybeToken) =>
-    API.put(url, data, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  patch: (url, data = {}, configOrToken = {}, maybeToken) =>
-    API.patch(url, data, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  delete: (url, configOrToken = {}, maybeToken) =>
-    API.delete(url, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
+  get: (url, config = {}) =>
+    API.get(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  post: (url, data = {}, config = {}) =>
+    API.post(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  put: (url, data = {}, config = {}) =>
+    API.put(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  patch: (url, data = {}, config = {}) =>
+    API.patch(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  delete: (url, config = {}) =>
+    API.delete(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
 };
 
 export default API;
+
+export { normalizeApiError };
+
+export const API_ENDPOINTS_UPDATED = {
+  ...API_ENDPOINTS,
+  NOTIFICATIONS: {
+    ...API_ENDPOINTS.NOTIFICATIONS,
+    READ_ALL: buildApiUrl("/api/notifications/read-all"),
+  }
+};
