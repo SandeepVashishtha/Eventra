@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import FeatureErrorBoundary from "../../components/common/FeatureErrorBoundary";
 import { fetchWithTimeout } from "../../utils/fetchWithTimeout";
@@ -254,10 +253,6 @@ export default function LeaderBoard() {
     [contributors, search, activeCategory]
   );
 
-  const sortedContributors = useMemo(
-    () => sortContributors(filteredContributors, sortBy),
-    [filteredContributors, sortBy]
-  );
 
   const currentContributors = useMemo(
     () => paginateContributors(sortedContributors, currentPage, CONTRIBUTORS_PER_PAGE),
