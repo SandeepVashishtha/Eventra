@@ -185,6 +185,13 @@ const InteractiveWhiteboard = () => {
     toast.info("Canvas cleared successfully.");
   };
 
+  const handleMouseUp = useCallback(() => {
+    if (!isDrawing || !currentElement) return;
+    setElements((prev) => [...prev, currentElement]);
+    setCurrentElement(null);
+    setIsDrawing(false);
+  }, [isDrawing, currentElement]);
+
   return (
     <div 
       className="flex flex-col h-full bg-slate-950 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative select-none"
