@@ -6,7 +6,6 @@ import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
 import useReducedMotion from "../../hooks/useReducedMotion";
-import GoogleLoginButton from './GoogleLoginButton';
 import FieldError from '../common/FieldError';
 import useLoginRateLimit from '../../hooks/useLoginRateLimit';
 import { MAX_LOGIN_ATTEMPTS } from '../../utils/rateLimitUtils';
@@ -315,8 +314,6 @@ const Login = () => {
                 </motion.button>
 
               </motion.form>
-
-              <GoogleLoginButton />
 
               {/* Sign up link */}
               <div className="text-center">
