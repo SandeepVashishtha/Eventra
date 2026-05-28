@@ -47,3 +47,5 @@ export function getTokenTTL(token) {
   if (!payload || typeof payload.exp !== "number") return -1;
   return payload.exp - Math.floor(Date.now() / 1000);
 }
+
+export const getClockDriftTolerance = () => 300;
