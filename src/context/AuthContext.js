@@ -149,15 +149,6 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const getAuthErrorMessage = useCallback((error, fallbackMessage) => {
-    return (
-      error?.response?.data?.message ||
-      error?.response?.data?.error ||
-      error?.message ||
-      fallbackMessage
-    );
-  }, []);
-
   useEffect(() => {
     const validateSession = async () => {
       try {
@@ -185,6 +176,8 @@ export const AuthProvider = ({ children }) => {
     validateSession();
   }, [clearSession, extractSession]);
 
+  // --- FIX: Stable Global 401 handler ---
+  // Keep the ref updated whenever the function changes
   useEffect(() => {
     clearExpiredSessionRef.current = clearExpiredSession;
   }, [clearExpiredSession]);
@@ -194,6 +187,7 @@ export const AuthProvider = ({ children }) => {
       clearExpiredSessionRef.current?.();
     });
 
+    // Cleanup only on unmount
     return () => setOnUnauthorizedHandler(null);
   }, []);
 
@@ -204,6 +198,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, [clearExpiredSession]);
 
+  // --- Smart Token Expiry Timeout ---
   useEffect(() => {
     if (!token) return;
 
@@ -241,8 +236,11 @@ export const AuthProvider = ({ children }) => {
     }
 
     return () => {
-      clearTimeout(timeoutId);
-      clearInterval(timeoutId);
+      if (typeof expSeconds === "number") {
+        clearTimeout(timeoutId);
+      } else {
+        clearInterval(timeoutId);
+      }
     };
   }, [token, clearExpiredSession]);
 
@@ -252,6 +250,15 @@ export const AuthProvider = ({ children }) => {
     },
     [persistSession]
   );
+
+  const getAuthErrorMessage = useCallback((error, fallbackMessage) => {
+    return (
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      error?.message ||
+      fallbackMessage
+    );
+  }, []);
 
   const login = useCallback(
     async (usernameOrEmail, password) => {

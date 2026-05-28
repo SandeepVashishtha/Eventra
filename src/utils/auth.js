@@ -1,11 +1,7 @@
 
-import { safeJsonParse } from "./safeJsonParse";
-
-import { safeJsonParse } from "./safeJsonParse";
-
 import { safeJsonParse } from "./safeJsonParse.js";
 
-
+/** Grace period (in seconds) to account for clock skew between browser and server. */
 const CLOCK_SKEW_BUFFER = 30;
 
 export function decodeJwtPayload(token) {
@@ -34,7 +30,6 @@ export function decodeJwtPayload(token) {
 export function isTokenExpired(token) {
   const payload = decodeJwtPayload(token);
   if (!payload || typeof payload.exp !== "number") {
-
     return true;
   }
 

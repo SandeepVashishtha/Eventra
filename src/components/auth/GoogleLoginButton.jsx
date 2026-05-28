@@ -37,7 +37,7 @@ const GoogleLoginButton = () => {
         : "/dashboard";
 
   // signInWithGoogle handles the full backend exchange — no local decoding here
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, authRequest } = useAuth();
 
   /**
    * Called by @react-oauth/google when the user successfully authenticates.
@@ -71,6 +71,15 @@ const GoogleLoginButton = () => {
   const handleError = () => {
     toast.error("Google Sign-In was cancelled or failed. Please try again.");
   };
+
+  if (authRequest.loading) {
+    return (
+      <div className="flex items-center justify-center gap-2 rounded-xl border border-slate-700/50 bg-slate-900/60 px-4 py-3 text-sm text-slate-300">
+        <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-transparent" />
+        Signing In...
+      </div>
+    );
+  }
 
   return <GoogleLogin onSuccess={handleSuccess} onError={handleError} />;
 };

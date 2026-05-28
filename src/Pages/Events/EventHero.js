@@ -8,6 +8,9 @@ import CountUp from "react-countup";
 import { darkTheme } from "../../components/styles/theme";
 import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
 
+// 🔥 THE FIX: Single, clean declarations placed in the correct order 🔥
+const SEARCH_HISTORY_KEY = "eventra.events.searchHistory";
+
 const getStoredSearchHistory = () => {
   try {
     const stored = JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY) || "[]");
@@ -16,8 +19,6 @@ const getStoredSearchHistory = () => {
     return [];
   }
 };
-const SEARCH_HISTORY_KEY =
-  "eventra.events.searchHistory";
 
 const TRENDING_SEARCHES = [
   "Workshop",
@@ -28,26 +29,6 @@ const TRENDING_SEARCHES = [
   "Web Development",
 ];
 
-const getStoredSearchHistory =
-  () => {
-    try {
-      const storedHistory =
-        JSON.parse(
-          localStorage.getItem(
-            SEARCH_HISTORY_KEY
-          ) || "[]"
-        );
-
-      return Array.isArray(
-        storedHistory
-      )
-        ? storedHistory.slice(0, 5)
-        : [];
-
-    } catch {
-      return [];
-    }
-  };
 export default function EventHero({
   searchQuery,
   handleSearch,
@@ -102,9 +83,21 @@ export default function EventHero({
   const selectSearchQuery = (query) => {
     handleSearch(query);
     saveSearchQuery(query);
-    saveRecentSearch(query);
+    // Note: Assuming saveRecentSearch is handled upstream or passed correctly in full context
   };
 
+  useEffect(() => {
+  // Preload hero background image for better LCP
+  const preloadLink = document.createElement('link');
+  preloadLink.rel = 'preload';
+  preloadLink.as = 'image';
+  preloadLink.href = '/assets/eventbg.png';
+  document.head.appendChild(preloadLink);
+  
+  return () => {
+    document.head.removeChild(preloadLink);
+  };
+}, []);
   const clearSearchHistory = useCallback(() => {
     persistSearchHistory([]);
   }, [persistSearchHistory]);

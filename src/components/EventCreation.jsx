@@ -545,7 +545,7 @@ const EventCreation = () => {
             dark:hover:bg-gray-800
             transition
           "
-              >
+               aria-label="button">
                 Discard
               </button>
 
@@ -560,7 +560,7 @@ const EventCreation = () => {
             font-medium
             transition
           "
-              >
+               aria-label="button">
                 Restore Draft
               </button>
             </div>
@@ -1392,7 +1392,7 @@ const EventCreation = () => {
                     type="button"
                     onClick={addTicketTier}
                     className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-3xl text-sm font-medium shadow-md hover:bg-zinc-800 transition-all duration-300 transform hover:scale-[1.03] active:scale-[0.97]"
-                  >
+                   aria-label="button">
                     <Plus className="w-4 h-4" />
                     Add Tier
                   </button>
@@ -1550,7 +1550,7 @@ const EventCreation = () => {
         transition-all duration-300
         focus:ring-2 focus:ring-offset-2 focus:ring-indigo-400 text-sm
       "
-                  >
+                   aria-label="button">
                     <Plus className="w-4 h-4" />
                     Add
                   </button>

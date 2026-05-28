@@ -1,17 +1,10 @@
+import React, { useEffect, useState, useMemo } from "react";
 import { Helmet } from "react-helmet-async";
-import ShareModal from "../../components/common/ShareModal";
-import React, {
-  useEffect,
-  useState,
-} from "react";
 import DOMPurify from "dompurify";
 import { toast } from "react-toastify";
 import { Link, useParams } from "react-router-dom";
-import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus } from "lucide-react";
-import {
-  getEventStatus,
-  isEventRegistrationClosed,
-} from "../../utils/eventUtils";
+import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus, Link2 } from "lucide-react";
+import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
 import { isEventBookmarked } from "../../utils/bookmarkUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
 import ReminderControls from "../../components/reminders/ReminderControls";
@@ -19,139 +12,85 @@ import mockEvents from "./eventsMockData.json";
 import CertificateDownload from "../../components/CertificateDownload";
 import EventMaterials from "../../components/common/EventMaterials";
 import EventRecommendations from "../../components/events/EventRecommendations";
-import CopyLinkButton from "../../components/common/CopyLinkButton";
 import LazyImage from "../../components/common/LazyImage";
 import { useAuth } from "../../context/AuthContext";
 import { exportToCSV, exportToJSON } from "../../utils/exportUtils";
 import { ROLES } from "../../config/roles";
-import { marked } from 'marked';
+import { marked } from "marked";
 import ShareMenu from "../../components/common/ShareMenu";
+import ShareModal from "../../components/common/ShareModal";
 import { generateEventSharingData } from "../../utils/shareUtils";
-import {
-  downloadICSFile,
-  generateGoogleCalendarLink,
-  generateOutlookLink,
-} from "../../utils/calendarExporter";
+import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
 import { safeParseJson } from "../../utils/jsonUtils";
+import { apiUtils, API_ENDPOINTS } from "../../config/api";
+
+// Removed mockRegistrants
 
 const EventDetails = () => {
   const { eventId } = useParams();
   const { user } = useAuth();
 
-  const isOrganizer =
-    user?.roles?.includes(ROLES.ORGANIZER) ||
-    user?.roles?.includes(ROLES.ADMIN);
+  const isOrganizer = user?.roles?.includes(ROLES.ORGANIZER) || user?.roles?.includes(ROLES.ADMIN);
 
-  const [showExportDropdown, setShowExportDropdown] =
-    useState(false);
-
-  const [showShareModal, setShowShareModal] =
-    useState(false);
-
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [exportingRegistrants, setExportingRegistrants] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
-
-  const mockRegistrants = [
-    {
-      id: 1,
-      name: "Aarav Sharma",
-      email: "aarav@example.com",
-      registeredAt: "2025-05-10",
-      status: "Confirmed",
-    },
-    {
-      id: 2,
-      name: "Priya Mehta",
-      email: "priya@example.com",
-      registeredAt: "2025-05-11",
-      status: "Confirmed",
-    },
-    {
-      id: 3,
-      name: "Rohan Verma",
-      email: "rohan@example.com",
-      registeredAt: "2025-05-12",
-      status: "Pending",
-    },
-    {
-      id: 4,
-      name: "Sneha Patel",
-      email: "sneha@example.com",
-      registeredAt: "2025-05-13",
-      status: "Confirmed",
-    },
-  ];
+  const [isPrinting, setIsPrinting] = useState(false); // FIX: Print UX State
 
   const { isRegistered } = useMyEvents();
 
-  const foundEvent = mockEvents.find(
-    (item) => String(item.id) === eventId
-  );
+  const event = useMemo(() => {
+    const foundEvent = mockEvents.find((item) => String(item.id) === eventId);
+    return foundEvent ? { ...foundEvent, status: getEventStatus(foundEvent) } : null;
+  }, [eventId]);
 
-  const event = foundEvent
-    ? {
-        ...foundEvent,
-        status: getEventStatus(foundEvent),
-      }
-    : null;
-
+  // FIX: Safely handle localStorage with try-catch
   useEffect(() => {
     if (!event) return;
 
-    const viewedEvents =
-      JSON.parse(
-        localStorage.getItem(
-          "recentlyViewedEvents"
-        )
-      ) || [];
-    const viewedEvents = safeParseJson(localStorage.getItem("recentlyViewedEvents"), []);
+    try {
+      const viewedEvents = safeParseJson(localStorage.getItem("recentlyViewedEvents"), []);
+      const updatedEvents = [
+        event,
+        ...viewedEvents.filter((item) => item.id !== event.id),
+      ].slice(0, 6);
 
-    const updatedEvents = [
-      event,
-      ...viewedEvents.filter(
-        (item) => item.id !== event.id
-      ),
-    ].slice(0, 6);
-
-    localStorage.setItem(
-      "recentlyViewedEvents",
-      JSON.stringify(updatedEvents)
-    );
+      localStorage.setItem("recentlyViewedEvents", JSON.stringify(updatedEvents));
+    } catch (error) {
+      console.warn("[EventDetails] Failed to access or save recently viewed events in localStorage:", error);
+    }
   }, [event]);
 
-  if (!event) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold">
-            Event Not Found
-          </h1>
-
-          <p className="mt-4 text-gray-600 dark:text-gray-300">
-            We could not find the event you were
-            looking for.
-          </p>
-
-          <Link
-            to="/events"
-            className="mt-6 inline-flex rounded-full bg-indigo-600 px-6 py-3 text-white font-semibold hover:bg-indigo-700 transition"
-          >
-            Browse Events
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  // FIX: Print stability handler
+  const handlePrint = () => {
+    setIsPrinting(true);
+    setTimeout(() => {
+      window.print();
+      setIsPrinting(false);
+    }, 500);
+  };
 
   const handleCopy = async () => {
+    const link = window.location.href;
     try {
-      await navigator.clipboard.writeText(
-        window.location.href
-      );
-
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(link);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = link;
+        textArea.style.position = "absolute";
+        textArea.style.left = "-999999px";
+        document.body.prepend(textArea);
+        textArea.select();
+        try {
+          document.execCommand("copy");
+        } finally {
+          textArea.remove();
+        }
+      }
       setCopied(true);
-
-      toast.success("Event link copied!");
-
+      toast.success("Link copied!");
       setTimeout(() => {
         setCopied(false);
       }, 2000);
@@ -160,66 +99,58 @@ const EventDetails = () => {
     }
   };
 
-  const canSetReminder =
-    isEventBookmarked(event.id) ||
-    isRegistered(event.id);
+  if (!event) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold">Event Not Found</h1>
+          <p className="mt-4 text-gray-600 dark:text-gray-300">We could not find the event you were looking for.</p>
+          <Link to="/events" className="mt-6 inline-flex rounded-full bg-indigo-600 px-6 py-3 text-white font-semibold hover:bg-indigo-700 transition">
+            Browse Events
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
-  const isRegistrationClosed =
-    isEventRegistrationClosed(event);
+  const canSetReminder = isEventBookmarked(event.id) || isRegistered(event.id);
+  const isRegistrationClosed = isEventRegistrationClosed(event);
 
   return (
     <>
       <Helmet>
-        <title>
-          {event.title} | Eventra
-        </title>
-
-        <meta
-          property="og:title"
-          content={event.title}
-        />
-
-        <meta
-          property="og:description"
-          content={event.description.slice(
-            0,
-            160
-          )}
-        />
-
-        <meta
-          property="og:image"
-          content={event.image}
-        />
-
-        <meta
-          property="og:url"
-          content={window.location.href}
-        />
-
-        <meta
-          name="twitter:card"
-          content="summary_large_image"
-        />
+        <title>{event.title} | Eventra</title>
+        <meta property="og:title" content={event.title} />
+        <meta property="og:description" content={event.description.slice(0, 160)} />
+        <meta property="og:image" content={event.image} />
+        <meta property="og:url" content={window.location.href} />
+        <meta name="twitter:card" content="summary_large_image" />
       </Helmet>
 
       <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 py-16 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl space-y-8">
-
+          
           {/* Header */}
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="inline-flex rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-200 px-4 py-1 text-sm font-semibold uppercase tracking-[0.2em]">
                 {event.type}
               </p>
-
-              <h1 className="mt-4 text-4xl sm:text-5xl font-extrabold tracking-tight">
-                {event.title}
-              </h1>
-
-              <p className="mt-4 max-w-2xl text-gray-600 dark:text-gray-300">
-                {event.description}
-              </p>
+              <div className="mt-4 flex items-center gap-3">
+                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">{event.title}</h1>
+                <button
+                  onClick={handleCopy}
+                  className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-full transition-colors"
+                  aria-label="Copy event link"
+                  title="Copy link"
+                >
+                  <Link2 size={28} />
+                </button>
+              </div>
+              <div
+                className="mt-4 max-w-2xl text-gray-600 dark:text-gray-300 prose prose-indigo dark:prose-invert"
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(event.description)) }}
+              />
             </div>
 
             <div className="flex flex-wrap gap-3">
@@ -228,63 +159,89 @@ const EventDetails = () => {
                   <span className="inline-flex items-center justify-center rounded-full bg-gray-200 px-6 py-3 text-sm font-semibold text-gray-600 shadow-sm cursor-not-allowed dark:bg-gray-800 dark:text-gray-300">
                     Event Ended
                   </span>
-
                   {event.status === "past" && (
-                    <CertificateDownload
-                      eventName={event.title}
-                      eventDate={event.date}
-                      eventType={event.type}
-                    />
+                    <CertificateDownload eventName={event.title} eventDate={event.date} eventType={event.type} />
                   )}
                 </>
               ) : (
-                <Link
-                  to={`/events/${event.id}/register`}
-                  className="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 transition"
-                >
+                <Link to={`/events/${event.id}/register`} className="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 transition">
                   Register Now
                 </Link>
               )}
 
-              <CopyLinkButton />
-
               <button
-                onClick={() =>
-                  setShowShareModal(true)
-                }
+                onClick={() => setShowShareModal(true)}
                 className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-indigo-700 transition"
               >
                 Share Event
               </button>
 
               <button
-                onClick={() => window.print()}
+                onClick={handlePrint}
+                disabled={isPrinting}
                 className="print-hide inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
-              >
-                🖨️ Print / Save as PDF
+               aria-label="button">
+                {isPrinting ? "Preparing..." : "🖨️ Print / Save as PDF"}
               </button>
-    <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 py-16 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl space-y-8">
 
-        {/* Header */}
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="inline-flex rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-200 px-4 py-1 text-sm font-semibold uppercase tracking-[0.2em]">
-              {event.type}
-            </p>
-            <h1 className="mt-4 text-4xl sm:text-5xl font-extrabold tracking-tight">
-              {event.title}
-            </h1>
-            <div
-              className="mt-4 max-w-2xl text-gray-600 dark:text-gray-300 prose prose-indigo dark:prose-invert"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(event.description)) }}
-            />
-          </div>
+              {isOrganizer && (
+                <div className="relative print-hide">
+                  <button
+                    onClick={() => setShowExportDropdown(!showExportDropdown)}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+                    aria-label="Export registrant data"
+                  >
+                    📥 Export Registrants
+                  </button>
+                  {showExportDropdown && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setShowExportDropdown(false)} />
+                      <div className="absolute right-0 mt-2 w-40 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg py-1.5 z-20 animate-fadeIn text-left">
+                        <button
+                          onClick={async () => {
+                            try {
+                              setExportingRegistrants(true);
+                              const response = await apiUtils.get(API_ENDPOINTS.EVENTS.REGISTRANTS(eventId));
+                              const registrants = await response.json();
+                              exportToCSV(registrants, `${event.title}_registrants`);
+                            } catch (error) {
+                              toast.error("Failed to fetch registrants");
+                            } finally {
+                              setExportingRegistrants(false);
+                              setShowExportDropdown(false);
+                            }
+                          }}
+                          disabled={exportingRegistrants}
+                          className="w-full text-left px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition disabled:opacity-50"
+                        >
+                          Export as CSV
+                        </button>
+                        <button
+                          onClick={async () => {
+                            try {
+                              setExportingRegistrants(true);
+                              const response = await apiUtils.get(API_ENDPOINTS.EVENTS.REGISTRANTS(eventId));
+                              const registrants = await response.json();
+                              exportToJSON(registrants, `${event.title}_registrants`);
+                            } catch (error) {
+                              toast.error("Failed to fetch registrants");
+                            } finally {
+                              setExportingRegistrants(false);
+                              setShowExportDropdown(false);
+                            }
+                          }}
+                          disabled={exportingRegistrants}
+                          className="w-full text-left px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition disabled:opacity-50"
+                        >
+                          Export as JSON
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
 
-              <Link
-                to="/events"
-                className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
-              >
+              <Link to="/events" className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800">
                 Back to Events
               </Link>
             </div>
@@ -292,10 +249,8 @@ const EventDetails = () => {
 
           {/* Main Grid */}
           <div className="grid gap-8 lg:grid-cols-[1.25fr_0.75fr] items-start">
-
-            {/* Left */}
+            {/* Left Column */}
             <div className="space-y-6 rounded-3xl bg-white p-8 shadow-xl dark:bg-gray-900">
-
               <LazyImage
                 src={event.image}
                 alt={event.title}
@@ -307,242 +262,103 @@ const EventDetails = () => {
               />
 
               <div className="grid gap-4 sm:grid-cols-2">
-
                 <div className="flex items-center gap-3 rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
                   <Calendar className="h-5 w-5 text-indigo-600" />
-
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Date
-                    </p>
-
-                    <p className="font-semibold">
-                      {new Date(
-                        event.date
-                      ).toLocaleDateString(
-                        "en-US",
-                        {
-                          weekday: "long",
-                          month: "long",
-                          day: "numeric",
-                          year: "numeric",
-                        }
-                      )}
-                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Date</p>
+                    <p className="font-semibold">{new Date(event.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</p>
                   </div>
                 </div>
-
                 <div className="flex items-center gap-3 rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
                   <Clock className="h-5 w-5 text-indigo-600" />
-
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Time
-                    </p>
-
-                    <p className="font-semibold">
-                      {event.time}
-                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Time</p>
+                    <p className="font-semibold">{event.time}</p>
                   </div>
                 </div>
-
                 <div className="flex items-center gap-3 rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
                   <MapPin className="h-5 w-5 text-indigo-600" />
-
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Location
-                    </p>
-
-                    <p className="font-semibold">
-                      {event.location}
-                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Location</p>
+                    <p className="font-semibold">{event.location}</p>
                   </div>
                 </div>
-
                 <div className="flex items-center gap-3 rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
                   <Tag className="h-5 w-5 text-indigo-600" />
-
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Status
-                    </p>
-
-                    <p className="font-semibold capitalize">
-                      {event.status}
-                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Status</p>
+                    <p className="font-semibold capitalize">{event.status}</p>
                   </div>
                 </div>
               </div>
 
-              {event.status === "past" && (
-                <EventMaterials
-                  materials={
-                    event.materials || []
-                  }
-                />
-              )}
+              {event.status === "past" && <EventMaterials materials={event.materials || []} />}
             </div>
 
-            {/* Right */}
+            {/* Right Column */}
             <aside className="space-y-6 rounded-3xl bg-white p-8 shadow-xl dark:bg-gray-900">
-
               <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
-                <ReminderControls
-                  event={event}
-                  canSetReminder={
-                    canSetReminder
-                  }
-                />
+                <ReminderControls event={event} canSetReminder={canSetReminder} />
               </div>
 
               <div className="space-y-4">
-                <h2 className="text-xl font-semibold">
-                  Event Details
-                </h2>
-
+                <h2 className="text-xl font-semibold">Event Details</h2>
                 <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                  <p>
-                    <span className="font-semibold">
-                      Attendees:
-                    </span>{" "}
-                    {event.attendees}/
-                    {event.maxAttendees}
-                  </p>
-
-                  <p>
-                    <span className="font-semibold">
-                      Type:
-                    </span>{" "}
-                    {event.type}
-                  </p>
-
-                  <p>
-                    <span className="font-semibold">
-                      Tags:
-                    </span>{" "}
-                    {event.tags.join(", ")}
-                  </p>
+                  <p><span className="font-semibold">Attendees:</span> {event.attendees}/{event.maxAttendees}</p>
+                  <p><span className="font-semibold">Type:</span> {event.type}</p>
+                  <p><span className="font-semibold">Tags:</span> {event.tags.join(", ")}</p>
                 </div>
               </div>
-            </div>
 
-            {/* ── Share & Add to Calendar ─────────────────────────────── */}
-            <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800 space-y-4">
-              <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
-                Share & Add to Calendar
-              </h3>
+              {/* Share & Add to Calendar */}
+              <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800 space-y-4">
+                <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Share & Add to Calendar</h3>
+                <ShareMenu shareData={generateEventSharingData({ ...event, title: event.title, description: event.description, date: event.date, id: event.id })} position="top-left">
+                  <button className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-300 dark:hover:border-indigo-600 transition-all duration-200" aria-label="Share this event">
+                    <Share2 size={15} className="text-indigo-500" /> Share Event
+                  </button>
+                </ShareMenu>
 
-              {/* Social Share */}
-              <ShareMenu
-                shareData={generateEventSharingData({
-                  ...event,
-                  title: event.title,
-                  description: event.description,
-                  date: event.date,
-                  id: event.id,
-                })}
-                position="top-left"
-              >
-                <button
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-300 dark:hover:border-indigo-600 transition-all duration-200"
-                  aria-label="Share this event"
-                >
-                  <Share2 size={15} className="text-indigo-500" />
-                  Share Event
-                </button>
-              </ShareMenu>
-
-              {/* Calendar export buttons */}
-              <div className="flex flex-col gap-2">
-                {/* Download .ics */}
-                <button
-                  onClick={() => {
-                    downloadICSFile(event);
-                    toast.success("Calendar invite downloaded!");
-                  }}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 dark:hover:border-green-700 transition-all duration-200"
-                  aria-label="Download .ics calendar invite"
-                >
-                  <CalendarPlus size={15} className="text-green-500" />
-                  Download .ics Invite
-                </button>
-
-                {/* Google Calendar */}
-                {generateGoogleCalendarLink(event) && (
-                  <a
-                    href={generateGoogleCalendarLink(event)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200"
-                    aria-label="Add to Google Calendar"
-                  >
-                    <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-                      <path fill="#4285F4" d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10z"/>
-                      <path fill="#fff" d="M13 7h-2v6l5.25 3.15.75-1.23-4-2.37z"/>
-                    </svg>
-                    Add to Google Calendar
-                  </a>
-                )}
-
-                {/* Outlook */}
-                {generateOutlookLink(event) && (
-                  <a
-                    href={generateOutlookLink(event)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200"
-                    aria-label="Add to Outlook Calendar"
-                  >
-                    <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-                      <path fill="#0078D4" d="M2 6l10-4 10 4v12l-10 4L2 18z"/>
-                      <path fill="#fff" d="M12 4L4 7v10l8 3 8-3V7z"/>
-                    </svg>
-                    Add to Outlook
-                  </a>
-                )}
+                <div className="flex flex-col gap-2">
+                  <button onClick={() => { downloadICSFile(event); toast.success("Calendar invite downloaded!"); }} className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 dark:hover:border-green-700 transition-all duration-200" aria-label="Download .ics calendar invite">
+                    <CalendarPlus size={15} className="text-green-500" /> Download .ics Invite
+                  </button>
+                  {generateGoogleCalendarLink(event) && (
+                    <a href={generateGoogleCalendarLink(event)} target="_blank" rel="noopener noreferrer" className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200" aria-label="Add to Google Calendar">
+                      <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+                        <path fill="#4285F4" d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10z"/>
+                        <path fill="#fff" d="M13 7h-2v6l5.25 3.15.75-1.23-4-2.37z"/>
+                      </svg> Add to Google Calendar
+                    </a>
+                  )}
+                  {generateOutlookLink(event) && (
+                    <a href={generateOutlookLink(event)} target="_blank" rel="noopener noreferrer" className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200" aria-label="Add to Outlook Calendar">
+                      <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+                        <path fill="#0078D4" d="M2 6l10-4 10 4v12l-10 4L2 18z"/>
+                        <path fill="#fff" d="M12 4L4 7v10l8 3 8-3V7z"/>
+                      </svg> Add to Outlook
+                    </a>
+                  )}
+                </div>
               </div>
-            </div>
-            {/* ─────────────────────────────────────────────────────────── */}
-
-            <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
-              <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Summary</h3>
-              <div
-                className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-6 prose prose-indigo dark:prose-invert"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(event.description)) }}
-              />
-            </div>
-          </aside>
 
               <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
-                <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
-                  Summary
-                </h3>
-
-                <p className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-6">
-                  {event.description}
-                </p>
+                <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Summary</h3>
+                <div
+                  className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-6 prose prose-indigo dark:prose-invert"
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(event.description)) }}
+                />
               </div>
             </aside>
           </div>
 
           <div className="mt-12">
-            <EventRecommendations
-              currentEventId={event.id}
-              currentCategory={
-                event.category
-              }
-            />
+            <EventRecommendations currentEventId={event.id} currentCategory={event.category} />
           </div>
         </div>
 
         {showShareModal && (
-          <ShareModal
-            event={event}
-            onClose={() =>
-              setShowShareModal(false)
-            }
-          />
+          <ShareModal event={event} onClose={() => setShowShareModal(false)} />
         )}
       </div>
     </>

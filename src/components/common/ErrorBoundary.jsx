@@ -14,7 +14,7 @@ function generateErrorId() {
   return id;
 }
 
-/** 
+/**
  * Attempt to recover component state from sessionStorage
  * This preserves state across soft retries and reloads
  */
@@ -160,6 +160,7 @@ Cookies Enabled: ${navigator.cookieEnabled}
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
+
     this.state = {
       hasError: false,
       error: null,
@@ -171,7 +172,7 @@ class ErrorBoundary extends React.Component {
       isRecovering: false,
       recoveryMessage: "",
     };
-    
+
     // Attempt to recover state on mount
     this.hasRecoveredState = attemptStateRecovery();
   }
@@ -185,159 +186,102 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
+    const { errorId } = this.state;
     this.setState({ errorInfo });
+    persistErrorLog(errorId, error, errorInfo);
 
-    // Structured logging
-    logError(error, errorInfo);
+    try {
+      logError(error, errorInfo);
+    } catch (_) {}
 
-    // Persist to localStorage so the error survives a reload
-    persistErrorLog(this.state.errorId || "EV-UNKNOWN", error, errorInfo);
-    
-    // Save app state snapshot
-    saveAppStateSnapshot();
+    console.error("Captured by ErrorBoundary:", error, errorInfo);
   }
 
-  // ── Recovery Actions ────────────────────────────────────────────────────────
-
-  /** Hard reload — fastest recovery */
   handleReload = () => {
     this.setState({ isRecovering: true, recoveryMessage: "Reloading page..." });
-    // Give UI time to update before reload
-    setTimeout(() => {
-      window.location.reload();
-    }, 300);
+    saveAppStateSnapshot();
+    setTimeout(() => window.location.reload(), 300);
   };
 
-  /**
-   * Soft retry — resets error boundary state without reloading.
-   * Preserves the full user session (auth tokens, preferences, etc.)
-   * Caps at 3 retries to avoid infinite loops.
-   */
   handleTryAgain = () => {
     const { retryCount } = this.state;
     if (retryCount >= 3) {
-      // Too many retries — fall back to hard reload
       this.handleReload();
       return;
     }
-    
-    this.setState({ isRecovering: true, recoveryMessage: "Attempting recovery..." });
-    
-    // Clear error after a brief delay to show feedback
+    this.setState({
+      isRecovering: true,
+      recoveryMessage: "Attempting recovery...",
+    });
     setTimeout(() => {
-      this.setState((prev) => ({
+      this.setState({
         hasError: false,
         error: null,
         errorInfo: null,
+        errorId: null,
         isRecovering: false,
         recoveryMessage: "",
-        retryCount: prev.retryCount + 1,
-      }));
-    }, 600);
+        retryCount: retryCount + 1,
+      });
+    }, 500);
   };
 
-  /**
-   * Cache reset — clears only Eventra-specific cache keys, not auth tokens,
-   * so the user stays logged in after the reload.
-   */
   handleResetCache = () => {
     this.setState({ isRecovering: true, recoveryMessage: "Clearing cache..." });
-    
+    saveAppStateSnapshot();
     try {
-      const SESSION_KEYS_TO_PRESERVE = [
-        "eventra_user",
-        "eventra_token",
-        "eventra_refresh_token",
-        "eventra_theme",
-        "eventra_preferences",
-        "cursor",
-      ];
-
-      // Save session data before wiping
       const preserved = {};
-      SESSION_KEYS_TO_PRESERVE.forEach((key) => {
+      ["theme", "cursor", "eventra_user_prefs"].forEach((key) => {
         const val = localStorage.getItem(key);
-        if (val !== null) preserved[key] = val;
+        if (val) preserved[key] = val;
       });
-
-      // Clear all localStorage
       localStorage.clear();
-
-      // Restore session data
-      Object.entries(preserved).forEach(([key, val]) => {
-        localStorage.setItem(key, val);
-      });
-      
-      // Also clear sessionStorage (non-critical data)
-      sessionStorage.clear();
-      
-      // Update feedback
-      this.setState({ recoveryMessage: "Cache cleared. Reloading..." });
-      
-      setTimeout(() => {
-        window.location.reload();
-      }, 800);
-    } catch (err) {
-      // If localStorage is unavailable, just reload
-      console.warn("Cache reset failed:", err);
-      this.setState({ recoveryMessage: "Reloading..." });
-      setTimeout(() => {
-        window.location.reload();
-      }, 800);
+      Object.entries(preserved).forEach(([k, v]) => localStorage.setItem(k, v));
+    } catch (_) {
+      localStorage.clear();
     }
+    setTimeout(() => window.location.reload(), 300);
   };
 
-  /** Copy the full diagnostic report to clipboard */
   handleCopyReport = () => {
     const { error, errorInfo, errorId } = this.state;
     const report = buildDiagnosticReport(errorId, error, errorInfo);
 
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard
-        .writeText(report)
-        .then(() => {
-          this.setState({ copied: true });
-          setTimeout(() => this.setState({ copied: false }), 2500);
-        })
-        .catch(() => {
-          this._fallbackCopy(report);
-        });
-    } else {
-      this._fallbackCopy(report);
-    }
-  };
-
-  _fallbackCopy = (text) => {
-    try {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.position = "fixed";
-      ta.style.left = "-9999px";
-      ta.style.top = "-9999px";
-      ta.style.opacity = "0";
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      document.body.removeChild(ta);
-      this.setState({ copied: true });
-      setTimeout(() => this.setState({ copied: false }), 2500);
-    } catch (_) {
-      console.warn("Fallback copy failed");
-    }
+    navigator.clipboard
+      .writeText(report)
+      .then(() => {
+        this.setState({ copied: true });
+        setTimeout(() => this.setState({ copied: false }), 2000);
+      })
+      .catch(() => {
+        // Clipboard API failed — fallback: open in new tab
+        try {
+          const blob = new Blob([report], { type: "text/plain" });
+          const url = URL.createObjectURL(blob);
+          window.open(url, "_blank");
+        } catch (_) {}
+      });
   };
 
   toggleDiagnostics = () => {
     this.setState((prev) => ({ showDiagnostics: !prev.showDiagnostics }));
   };
 
-  // ── Render ──────────────────────────────────────────────────────────────────
-
   render() {
     if (!this.state.hasError) {
       return this.props.children;
     }
 
-    const { error, errorInfo, errorId, copied, showDiagnostics, retryCount, isRecovering, recoveryMessage } = this.state;
+    const {
+      error,
+      errorInfo,
+      errorId,
+      copied,
+      showDiagnostics,
+      retryCount,
+      isRecovering,
+      recoveryMessage,
+    } = this.state;
     const tooManyRetries = retryCount >= 3;
 
     const lsSnapshot = (() => {
@@ -442,7 +386,13 @@ class ErrorBoundary extends React.Component {
                   ? "Maximum retries reached — please reload"
                   : `Try again without reloading (attempt ${retryCount + 1} of 3)`
               }
-              title={tooManyRetries ? "Too many retries — reloading instead" : isRecovering ? "Recovering..." : "Try again"}
+              title={
+                tooManyRetries
+                  ? "Too many retries — reloading instead"
+                  : isRecovering
+                  ? "Recovering..."
+                  : "Try again"
+              }
             >
               {isRecovering ? (
                 <>
@@ -518,8 +468,14 @@ class ErrorBoundary extends React.Component {
             disabled={isRecovering}
             aria-expanded={showDiagnostics}
             aria-controls="eb-diagnostics-panel"
-            title={isRecovering ? "Operation in progress..." : (showDiagnostics ? "Hide diagnostic information" : "Show diagnostic information")}
-          >
+            title={
+              isRecovering
+                ? "Operation in progress..."
+                : showDiagnostics
+                ? "Hide diagnostic information"
+                : "Show diagnostic information"
+            }
+           aria-label="button">
             <svg
               width="14"
               height="14"
