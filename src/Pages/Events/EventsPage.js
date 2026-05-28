@@ -1,12 +1,9 @@
 import { useRef, useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useLocation } from "react-router-dom"; // ✅ useLocation added here
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
 import { getEventStatus } from "../../utils/eventUtils";
-import {
-  Grid,
-  List,
-} from "lucide-react";
+import { Grid, List } from "lucide-react";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
 import EventFiltersToolbar from "./EventFiltersToolbar";
@@ -88,7 +85,7 @@ const renderCardSection = (
 const EventsPage = () => {
   useDocumentTitle("Eventra | Events");
 
-  const location = useLocation();
+  const location = useLocation(); // ✅ Now this works!
   const [searchParams, setSearchParams] = useSearchParams();
 
   // SECURITY: Safely decode and sanitize search query from URL params
@@ -197,7 +194,9 @@ const EventsPage = () => {
   };
 
   const hasActiveFilters =
-    listing.filterType !== "all" || listing.sortType !== "Newest" || listing.searchQuery !== "";
+    listing.filterType !== "all" ||
+    listing.sortType !== "Newest" ||
+    listing.searchQuery !== "";
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 overflow-x-hidden">
@@ -239,22 +238,23 @@ const EventsPage = () => {
               </button>
             )}
           </div>
-        <EventFiltersToolbar
-          filterType={listing.filterType}
-          onFilterChange={listing.setFilterType}
-          sortType={listing.sortType}
-          onSortChange={listing.setSortType}
-          viewMode={listing.viewMode}
-          onViewModeChange={listing.setViewMode}
-          searchQuery={localSearchInput}
-          onSearchChange={setLocalSearchInput}
-          advancedFilters={listing.advancedFilters}
-          onAdvancedFiltersChange={listing.setAdvancedFilters}
-          isAdvancedFiltersOpen={listing.isAdvancedFiltersOpen}
-          onToggleAdvancedFilters={listing.setIsAdvancedFiltersOpen}
-          priceStats={listing.priceStats}
-          dateRangeStats={listing.dateRangeStats}
-        />
+
+          <EventFiltersToolbar
+            filterType={listing.filterType}
+            onFilterChange={listing.setFilterType}
+            sortType={listing.sortType}
+            onSortChange={listing.setSortType}
+            viewMode={listing.viewMode}
+            onViewModeChange={listing.setViewMode}
+            searchQuery={localSearchInput}
+            onSearchChange={setLocalSearchInput}
+            advancedFilters={listing.advancedFilters}
+            onAdvancedFiltersChange={listing.setAdvancedFilters}
+            isAdvancedFiltersOpen={listing.isAdvancedFiltersOpen}
+            onToggleAdvancedFilters={listing.setIsAdvancedFiltersOpen}
+            priceStats={listing.priceStats}
+            dateRangeStats={listing.dateRangeStats}
+          />
 
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
             <div className="w-full sm:w-48">
@@ -301,7 +301,10 @@ const EventsPage = () => {
 
         <ActiveFilters
           searchQuery={localSearchInput}
-          setSearchQuery={(val) => { setLocalSearchInput(val); listing.setSearchQuery(val); }}
+          setSearchQuery={(val) => {
+            setLocalSearchInput(val);
+            listing.setSearchQuery(val);
+          }}
           filterType={listing.filterType}
           setFilterType={listing.setFilterType}
           sortType={listing.sortType}
