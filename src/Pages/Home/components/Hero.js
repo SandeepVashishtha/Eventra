@@ -434,7 +434,7 @@ text-gray-600 dark:text-gray-300"
                         >
                           No results match "
                           <span className="font-medium text-gray-700 dark:text-white">
-                            {searchQuery}
+                            {searchTerm}
                           </span>
                           "
                         </motion.div>
@@ -522,7 +522,7 @@ text-gray-600 dark:text-gray-300"
           </motion.div>
 
           {/* Animated Stats Cards */}
-          {!searchQuery.trim() && (
+          {!searchTerm.trim() && (
             <SectionErrorBoundary label="Statistics">
             <motion.div
               variants={fadeUp}

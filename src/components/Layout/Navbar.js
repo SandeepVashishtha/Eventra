@@ -317,8 +317,8 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
             style={{
               position: 'fixed',
-              top: `${dropPos.top}px`,
-              left: `${dropPos.left}px`,
+              top: '80px',
+              left: '50%',
               transform: 'translateX(-50%)',
               zIndex: 9999,
             }}
@@ -621,14 +621,14 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
     </>
 );
 
-const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
+const DesktopNavLinks = ({ openDropdown, setOpenDropdown, location }) => {
   return (
     <div className="hidden lg:flex items-center justify-center flex-1 min-w-0 pl-6">
-      <NavList 
-        location={location} 
-        openDropdown={openDropdown} 
-        onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)} 
-        isMobile={false} 
+      <NavList
+        location={location}
+        openDropdown={openDropdown}
+        onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)}
+        isMobile={false}
       />
     </div>
   );
@@ -870,7 +870,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
           {/* Centered Desktop Nav Links */}
           <div className="flex-1 flex justify-start min-w-0">
-            <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
+            <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} location={location} />
           </div>
 
           {/* Right Controls */}

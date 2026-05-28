@@ -33,11 +33,9 @@ import {
   removeBookmarkedEvent,
   subscribeToBookmarkChanges,
 } from "../../utils/bookmarkUtils";
+import { getBookmarkedEvents } from "../../utils/bookmarkUtils";
 import { checkRegistrationConflict } from "../../utils/conflictDetection";
-const [
-  savedEvents,
-  setSavedEvents,
-] = useState([]);
+// savedEvents state is component-scoped to avoid calling hooks at module level
 const getCapacityStyles = (ratio, isFull) => {
   if (isFull || ratio >= 0.85) {
     return {
@@ -58,6 +56,7 @@ const getCapacityStyles = (ratio, isFull) => {
 };
 
 const EventCard = ({ event }) => {
+  const [savedEvents, setSavedEvents] = useState([]);
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const titleId = useId();
   const { myEvents, isRegistered } = useMyEvents();
@@ -248,21 +247,18 @@ useEffect(() => {
       pb-2
     ">
 
-      {savedEvents.map(
-        (event) => (
-          <div
-            key={event.id}
-            className="
-              min-w-[280px]
-              flex-shrink-0
-            "
+      {savedEvents.map((saved) => (
+        <div key={saved.id} className="min-w-[280px] flex-shrink-0">
+          <Link
+            to={`/events/${saved.id}`}
+            className="block p-3 bg-white/90 dark:bg-gray-900/80 rounded-lg shadow-sm hover:shadow-md"
+            onClick={(e) => e.stopPropagation()}
           >
-            <EventCard
-              event={event}
-            />
-          </div>
-        )
-      )}
+            <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">{saved.title}</div>
+            <div className="text-[11px] text-gray-500 truncate">{saved.location}</div>
+          </Link>
+        </div>
+      ))}
 
     </div>
 
