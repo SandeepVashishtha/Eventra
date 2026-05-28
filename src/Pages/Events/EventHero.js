@@ -86,6 +86,18 @@ export default function EventHero({
     // Note: Assuming saveRecentSearch is handled upstream or passed correctly in full context
   };
 
+  useEffect(() => {
+  // Preload hero background image for better LCP
+  const preloadLink = document.createElement('link');
+  preloadLink.rel = 'preload';
+  preloadLink.as = 'image';
+  preloadLink.href = '/assets/eventbg.png';
+  document.head.appendChild(preloadLink);
+  
+  return () => {
+    document.head.removeChild(preloadLink);
+  };
+}, []);
   const clearSearchHistory = useCallback(() => {
     persistSearchHistory([]);
   }, [persistSearchHistory]);
@@ -188,7 +200,7 @@ export default function EventHero({
                           <button
                             key={item}
                             type="button"
-                            onClick={() = aria-label="button"> selectSearchQuery(item)}
+                            onClick={() => selectSearchQuery(item)}
                             className={`rounded-xl border px-3 py-1.5 text-sm font-medium transition-all ${darkTheme.card} ${darkTheme.textSecondary} hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:text-blue-700 dark:hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/30`}
                           >
                             {item}
@@ -208,7 +220,7 @@ export default function EventHero({
                         <button
                           key={tag}
                           type="button"
-                          onClick={() = aria-label="button"> selectSearchQuery(tag)}
+                          onClick={() => selectSearchQuery(tag)}
                           className="rounded-xl bg-blue-50 dark:bg-blue-950/40 px-3 py-1.5 text-sm font-semibold text-blue-700 dark:text-blue-300 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/60 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
                         >
                           {tag}
@@ -227,7 +239,7 @@ export default function EventHero({
                 <button
                   key={tag}
                   type="button"
-                  onClick={() = aria-label="button"> selectSearchQuery(tag)}
+                  onClick={() => selectSearchQuery(tag)}
                   className={`px-2 sm:px-3 py-1 text-xs font-medium rounded-xl cursor-pointer transition-all ${darkTheme.card} ${darkTheme.textSecondary} hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500/30`}
                 >
                   {tag}

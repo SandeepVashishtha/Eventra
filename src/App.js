@@ -1,4 +1,3 @@
-import EventRecommendation from "./Pages/EventRecommendation/EventRecommendation";
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import "./App.css";
@@ -6,7 +5,7 @@ import "./styles/reduced-motion.css";
 import "./styles/print.css";
 import { toast } from "react-toastify";
 import ScrollToTopButton from "./components/ScrollToTopButton";
-import Navbar from "./components/Layout/Navbar";
+import Navbar from "./components/navbar/Navbar";
 import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
 import ScrollToTop from "./components/ScrollToTop";
@@ -30,6 +29,7 @@ import SectionErrorBoundary from "./components/common/SectionErrorBoundary";
 import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
 import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
+import EventRecommendation from "./Pages/EventRecommendation/EventRecommendation";
 
 const Footer = lazy(() => import("./components/Layout/Footer"));
 const Chatbot = lazy(() => import("./components/Chatbot"));
@@ -41,10 +41,19 @@ const OfflineSyncManager = () => {
   return null;
 };
 
+const PageFallback = () => (
+  <div className="flex min-h-svh items-center justify-center safe-area-x">
+    Loading...
+  </div>
+);
+
 function App() {
   const location = useLocation();
-  const isDashboardOrAdmin = location.pathname === "/dashboard" || location.pathname === "/admin";
-  const [cursorEnabled, setCursorEnabled] = useState(localStorage.getItem("cursor") !== "off");
+  const isDashboardOrAdmin =
+    location.pathname === "/dashboard" || location.pathname === "/admin";
+  const [cursorEnabled, setCursorEnabled] = useState(
+    localStorage.getItem("cursor") !== "off",
+  );
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
 
   useLenis();
@@ -60,7 +69,9 @@ function App() {
     setCursorEnabled(newValue);
     try {
       localStorage.setItem("cursor", newValue ? "on" : "off");
-    } catch (error) {}
+    } catch {
+      // Ignore storage failures in private browsing or restricted contexts.
+    }
   };
 
   useEffect(() => {
@@ -69,6 +80,7 @@ function App() {
         setCursorEnabled(event.detail.cursorEnabled);
       }
     };
+
     window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
     return () => {
       window.removeEventListener("cursorPreferenceChanged", handleCursorPreference);
@@ -88,11 +100,13 @@ function App() {
         autoClose: 5000,
       });
     };
+
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
     if (!navigator.onLine) {
       handleOffline();
     }
+
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
