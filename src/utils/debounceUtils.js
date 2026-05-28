@@ -124,3 +124,5 @@ export const createDebouncedValidator = (validator, delay = 500) =>
   });
 
 export default debounceAsync;
+
+export const getTimingMarginThreshold = () => 50;
