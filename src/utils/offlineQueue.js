@@ -19,13 +19,13 @@ const STORE_NAME = "actions_queue";
  * time of the upgrade were wiped without warning or recovery attempt.
  *
  * The new implementation:
- *  1. Detects whether the store already exists before touching it.
- *  2. On upgrade, reads all items out of the OLD store first.
- *  3. Deletes the old store (required by IndexedDB API when changing keyPath).
- *  4. Creates the new store with the updated schema.
- *  5. Re-inserts all rescued items into the new store.
- *  6. Reconciles with the localStorage mirror so neither source loses data.
- *  7. Dispatches a custom DOM event so the UI can show a warning toast.
+ * 1. Detects whether the store already exists before touching it.
+ * 2. On upgrade, reads all items out of the OLD store first.
+ * 3. Deletes the old store (required by IndexedDB API when changing keyPath).
+ * 4. Creates the new store with the updated schema.
+ * 5. Re-inserts all rescued items into the new store.
+ * 6. Reconciles with the localStorage mirror so neither source loses data.
+ * 7. Dispatches a custom DOM event so the UI can show a warning toast.
  */
 const DB_VERSION = 2;
 
@@ -74,8 +74,8 @@ const openDB = () => {
 
     /**
      * onupgradeneeded fires when:
-     *  a) The database is opened for the first time (old version = 0).
-     *  b) DB_VERSION is higher than the stored version (schema upgrade).
+     * a) The database is opened for the first time (old version = 0).
+     * b) DB_VERSION is higher than the stored version (schema upgrade).
      *
      * FIX #2744: We now rescue existing items before any destructive
      * operation and re-insert them after the new schema is in place.
@@ -209,9 +209,10 @@ export const getQueue = () => {
  * Read the current offline queue from IndexedDB (Asynchronous core).
  */
 export const getQueueIndexedDB = async () => {
+  let db = null;
   try {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
+    db = await openDB();
+    return await new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, "readonly");
       const store = tx.objectStore(STORE_NAME);
       const request = store.getAll();
@@ -221,6 +222,8 @@ export const getQueueIndexedDB = async () => {
   } catch (err) {
     logger.warn("IndexedDB getQueue failed, falling back to localStorage:", err);
     return getQueue();
+  } finally {
+    if (db) db.close();
   }
 };
 
@@ -233,20 +236,20 @@ export const getQueueIndexedDB = async () => {
  * ───────────────────────────────────────────────
  * The previous expression was:
  *
- *   Date.now() + Math.random().toString(36).substring(2, 7)
+ * Date.now() + Math.random().toString(36).substring(2, 7)
  *
  * This had two problems:
  *
- *  1. String coercion ambiguity: the result of Date.now() (a number) was
- *     concatenated with a string via implicit coercion. The expression worked
- *     by accident but is fragile and non-obvious.
+ * 1. String coercion ambiguity: the result of Date.now() (a number) was
+ * concatenated with a string via implicit coercion. The expression worked
+ * by accident but is fragile and non-obvious.
  *
- *  2. Collision risk under rapid submissions: Date.now() returns the same
- *     millisecond timestamp for two events queued in the same tick (e.g. a
- *     double-tap or a rapid programmatic batch). With only 5 random characters
- *     from a 36-character alphabet (36^5 ≈ 60 million), collision probability
- *     is non-trivial under load. A collision causes the second IndexedDB put()
- *     to silently overwrite the first item (keyPath: 'id'), losing one action.
+ * 2. Collision risk under rapid submissions: Date.now() returns the same
+ * millisecond timestamp for two events queued in the same tick (e.g. a
+ * double-tap or a rapid programmatic batch). With only 5 random characters
+ * from a 36-character alphabet (36^5 ≈ 60 million), collision probability
+ * is non-trivial under load. A collision causes the second IndexedDB put()
+ * to silently overwrite the first item (keyPath: 'id'), losing one action.
  *
  * Fix
  * ───
@@ -321,8 +324,9 @@ export const pushToQueue = async (item, userId = null) => {
 
   // 2. Async IndexedDB background write
   let indexedDbSuccess = false;
+  let db = null;
   try {
-    const db = await openDB();
+    db = await openDB();
     await new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, "readwrite");
       const store = tx.objectStore(STORE_NAME);
@@ -333,6 +337,8 @@ export const pushToQueue = async (item, userId = null) => {
     indexedDbSuccess = true;
   } catch (err) {
     logger.error("IndexedDB push failed:", err);
+  } finally {
+    if (db) db.close();
   }
 
   // Return true if either storage successfully queued the item to prevent data loss
@@ -355,8 +361,9 @@ export const setQueue = async (newQueue) => {
   }
 
   // 2. Sync IndexedDB in background
+  let db = null;
   try {
-    const db = await openDB();
+    db = await openDB();
     await new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, "readwrite");
       const store = tx.objectStore(STORE_NAME);
@@ -382,6 +389,8 @@ export const setQueue = async (newQueue) => {
     });
   } catch (err) {
     logger.error("IndexedDB setQueue failed:", err);
+  } finally {
+    if (db) db.close();
   }
 };
 
@@ -397,8 +406,9 @@ export const clearQueue = async () => {
   }
 
   // 2. Sync IndexedDB
+  let db = null;
   try {
-    const db = await openDB();
+    db = await openDB();
     await new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, "readwrite");
       const store = tx.objectStore(STORE_NAME);
@@ -408,6 +418,8 @@ export const clearQueue = async () => {
     });
   } catch (err) {
     logger.error("IndexedDB clear failed:", err);
+  } finally {
+    if (db) db.close();
   }
 };
 
