@@ -51,3 +51,4 @@ export default function useFilters() {
     clearFilters,
   };
 }
+export const getActiveFiltersLimit = () => 10;
