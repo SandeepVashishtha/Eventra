@@ -393,7 +393,7 @@ const EventRecommendation = () => {
               <button
                 onClick={generateRecommendations}
                 className="w-full mt-4 bg-blue-600 hover:bg-blue-700 transition-all text-white rounded-xl py-3 text-sm font-semibold"
-               aria-label="button">
+                aria-label="Generate recommendations">
                 Generate Recommendations
               </button>
 
@@ -463,7 +463,7 @@ const EventRecommendation = () => {
                       </p>
 
                       <button
-                        onClick={() = aria-label="button"> setSelectedEvent(event)}
+                        onClick={() => setSelectedEvent(event)}
                         className="mt-5 text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
                       >
                         View Insights & Match Info <ChevronRight size={14} />
@@ -479,7 +479,7 @@ const EventRecommendation = () => {
                 <div className="mt-8">
 
                   <button
-                    onClick={() = aria-label="button">
+                    onClick={() =>
                       setShowOtherEvents(!showOtherEvents)
                     }
                     className="px-5 py-3 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-sm font-medium"
@@ -556,7 +556,7 @@ const EventRecommendation = () => {
                 </p>
 
                 <button
-                  onClick={() = aria-label="button">
+                  onClick={() =>
                     setShowOtherEvents(!showOtherEvents)
                   }
                   className="mt-6 px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-all"
@@ -620,7 +620,7 @@ const EventRecommendation = () => {
                 </h3>
               </div>
               <button
-                onClick={() = aria-label="button"> setSelectedEvent(null)}
+                onClick={() => setSelectedEvent(null)}
                 className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
               >
                 <X size={20} />
@@ -738,15 +738,16 @@ const EventRecommendation = () => {
             {/* Footer Buttons */}
             <div className="flex gap-3 mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-4">
               <button
-                onClick={() = aria-label="button"> setSelectedEvent(null)}
+                onClick={() => setSelectedEvent(null)}
                 className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-bold transition-all cursor-pointer"
               >
                 Close
               </button>
-              <button
-                onClick={() = aria-label="button"> {
+                onClick={() => {
+                onClick={() => {
                   toast.success(`Successfully registered for ${selectedEvent.title}! Check your email for confirmation.`);
                   setSelectedEvent(null);
+                }}
                 }}
                 className="flex-1 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
               >
