@@ -1,19 +1,36 @@
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig, loadEnv, transformWithOxc } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+
+// Lightweight check: does this code likely contain JSX syntax?
+// Avoids calling transformWithOxc on plain .js files with no JSX.
+const JSX_HINT_RE = /<[A-Za-z][A-Za-z0-9.]*[\s\n\r/>]|<>/;
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
 
   return {
     plugins: [
+      // Must run BEFORE vite:oxc so JSX in .js files is handled correctly.
+      // Uses a quick regex pre-check so non-JSX .js files are skipped cheaply.
+      {
+        name: "jsx-in-js",
+        enforce: "pre",
+        async transform(code, id) {
+          // Only apply to .js files inside src/ — not node_modules
+          if (!/[/\\]src[/\\].*\.js$/.test(id)) return null;
+          // Skip files that don't appear to have JSX (fast path)
+          if (!JSX_HINT_RE.test(code)) return null;
+          // Transform JSX → JS using Vite's built-in OXC with JSX enabled
+          return transformWithOxc(code, id, { lang: "jsx" });
+        },
+      },
       react({
-        // Tell the React plugin to also handle .js files that contain JSX
-        include: /\.(js|jsx|ts|tsx)$/,
+        include: /\.(jsx|tsx)$/,
       }),
     ],
 
-    // Path aliases for cleaner imports (also speeds up module resolution)
+    // Path aliases — also speeds up module resolution
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "src"),
@@ -39,15 +56,14 @@ export default defineConfig(({ mode }) => {
 
     server: {
       port: 3000,
-      // Don't auto-open; let the user open when ready (shaves ~200–500ms off apparent startup)
       open: false,
       hmr: {
         overlay: true,
       },
     },
 
-    // Pre-bundle these heavy deps once (stored in node_modules/.vite/deps)
-    // so each import during dev doesn't trigger a fresh transform
+    // Pre-bundle heavy deps once → stored in node_modules/.vite/deps
+    // Eliminates per-request transform cost for these packages
     optimizeDeps: {
       include: [
         "react",
@@ -72,8 +88,6 @@ export default defineConfig(({ mode }) => {
         "idb-keyval",
         "aos",
       ],
-      // Tell esbuild to treat .js files as JSX during dep scanning
-      // (replaces the old custom transformWithOxc plugin)
       esbuildOptions: {
         loader: {
           ".js": "jsx",
@@ -84,7 +98,6 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: "build",
       sourcemap: false,
-      // esbuild is 10–20× faster than terser
       minify: "esbuild",
       chunkSizeWarningLimit: 1500,
       rollupOptions: {
