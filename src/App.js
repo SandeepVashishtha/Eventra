@@ -4,20 +4,14 @@ import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
 import { toast } from "react-toastify";
-import ScrollToTopButton from "./components/ScrollToTopButton";
+
+// Critical path — loaded eagerly (needed before first paint)
 import Navbar from "./components/navbar/Navbar";
 import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
 import ScrollToTop from "./components/ScrollToTop";
-import FeedbackButton from "./components/FeedbackButton";
-import FluidCursor from "./components/visual/FluidCursor";
-import PageTransition from "./components/common/PageTransition";
-import ReminderChecker from "./components/reminders/ReminderChecker";
-import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
-import ThemeCustomizerDrawer from "./components/common/ThemeCustomizerDrawer";
-import SessionRecovery from "./components/SessionRecovery";
 import ErrorBoundary from "./components/common/ErrorBoundary";
-import OnboardingChecklist from "./components/user/OnboardingChecklist";
+import SectionErrorBoundary from "./components/common/SectionErrorBoundary";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import NotificationToastContainer from "./components/common/NotificationProvider";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -25,24 +19,33 @@ import { NotificationProvider } from "./context/NotificationContext";
 import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
 import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
-import SectionErrorBoundary from "./components/common/SectionErrorBoundary";
 import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
 import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
-import EventRecommendation from "./Pages/EventRecommendation/EventRecommendation";
 
+// Route-level lazy splits — loaded only when route is visited
 const Footer = lazy(() => import("./components/Layout/Footer"));
 const Chatbot = lazy(() => import("./components/Chatbot"));
 const AppRoutes = lazy(() => import("./components/AppRoutes"));
 const EventRegistration = lazy(() => import("./Pages/Events/EventRegistration"));
 const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
+const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
+
+// Non-critical UI — deferred after first paint
+const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
+const ThemeCustomizerDrawer = lazy(() => import("./components/common/ThemeCustomizerDrawer"));
+const KeyboardShortcutsModal = lazy(() => import("./components/common/KeyboardShortcutsModal"));
+const OnboardingChecklist = lazy(() => import("./components/user/OnboardingChecklist"));
+const FeedbackButton = lazy(() => import("./components/FeedbackButton"));
+const ScrollToTopButton = lazy(() => import("./components/ScrollToTopButton"));
+const ReminderChecker = lazy(() => import("./components/reminders/ReminderChecker"));
+const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
+const PageTransition = lazy(() => import("./components/common/PageTransition"));
 
 const OfflineSyncManager = () => {
   useOfflineSync();
   return null;
 };
-
-
 
 function App() {
   const location = useLocation();
@@ -118,7 +121,9 @@ function App() {
             <MyEventsProvider>
               <SessionRecoveryProvider>
                 <NotificationToastContainer />
-                <ReminderChecker />
+                <Suspense fallback={null}>
+                  <ReminderChecker />
+                </Suspense>
                 <OfflineSyncManager />
 
                 <div className="App">
@@ -129,20 +134,24 @@ function App() {
                   <OfflineBanner />
                   <OfflineConflictModal />
 
-                  <KeyboardShortcutsModal
-                    isOpen={showKeyboardModal}
-                    onClose={() => setShowKeyboardModal(false)}
-                  />
+                  <Suspense fallback={null}>
+                    <KeyboardShortcutsModal
+                      isOpen={showKeyboardModal}
+                      onClose={() => setShowKeyboardModal(false)}
+                    />
+                  </Suspense>
 
-                  <OnboardingChecklist />
+                  <Suspense fallback={null}>
+                    <OnboardingChecklist />
+                  </Suspense>
 
                   <main
                     id="main-content"
                     className="relative z-10 min-h-[85vh] bg-white dark:bg-slate-950 text-black dark:text-white transition-colors duration-300"
                   >
-                    <PageTransition>
-                      <SectionErrorBoundary label="Page Content">
-                        <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+                    <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-gray-500">Loading page...</div>}>
+                      <PageTransition>
+                        <SectionErrorBoundary label="Page Content">
                           <Routes>
                             <Route
                               path="/register/:id"
@@ -156,9 +165,9 @@ function App() {
                             <Route path="/saved-events" element={<SavedEventsPage />} />
                             <Route path="*" element={<AppRoutes />} />
                           </Routes>
-                        </Suspense>
-                      </SectionErrorBoundary>
-                    </PageTransition>
+                        </SectionErrorBoundary>
+                      </PageTransition>
+                    </Suspense>
                   </main>
 
                   <ScrollToTop />
@@ -175,13 +184,23 @@ function App() {
                     </Suspense>
                   </SectionErrorBoundary>
 
-                  <ScrollToTopButton />
-                  <FeedbackButton />
-                  <ThemeCustomizerDrawer />
-                  <SessionRecovery />
+                  <Suspense fallback={null}>
+                    <ScrollToTopButton />
+                  </Suspense>
+                  <Suspense fallback={null}>
+                    <FeedbackButton />
+                  </Suspense>
+                  <Suspense fallback={null}>
+                    <ThemeCustomizerDrawer />
+                  </Suspense>
+                  <Suspense fallback={null}>
+                    <SessionRecovery />
+                  </Suspense>
 
                   <SectionErrorBoundary label="Custom Cursor" silent>
-                    <FluidCursor enabled={cursorEnabled} />
+                    <Suspense fallback={null}>
+                      <FluidCursor enabled={cursorEnabled} />
+                    </Suspense>
                   </SectionErrorBoundary>
                 </div>
               </SessionRecoveryProvider>
