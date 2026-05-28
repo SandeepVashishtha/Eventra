@@ -533,8 +533,22 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         onClick={closeAllMenus}
       />
 
-      <nav ref={navRef} data-aos="fade-down" data-aos-once="true" data-aos-duration="1000"
-        className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white dark:bg-gray-900 border-b border-black/10 dark:border-white/10">
+      <nav
+  ref={navRef}
+  data-aos="fade-down"
+  data-aos-once="true"
+  data-aos-duration="1000"
+  className="
+    fixed top-0 left-0 w-full z-40
+    backdrop-blur-xl
+    bg-white/60 dark:bg-gray-900/50
+    border-b border-white/20 dark:border-white/10
+    shadow-lg shadow-black/5 dark:shadow-black/20
+    transition-all duration-300
+    supports-[backdrop-filter]:bg-white/40
+    dark:supports-[backdrop-filter]:bg-gray-900/40
+  "
+>
         <div className="w-full flex items-center h-20 px-6 md:px-12 relative">
           <Link to="/" className="flex-shrink-0 z-20">
             <h2 className="text-3xl font-semibold tracking-tight text-black dark:text-white" style={{ fontFamily: '"Anton", sans-serif' }}>
