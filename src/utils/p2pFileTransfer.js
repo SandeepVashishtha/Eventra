@@ -44,7 +44,7 @@ export async function isFileCached(fileId) {
     const db = await getDB();
     return new Promise((resolve) => {
       const transaction = db.transaction(STORE_NAME, "readonly");
-      const store = transaction.objectStore();
+      const store = transaction.objectStore(STORE_NAME);
       
       // Let's search by keys
       const request = store.openCursor();
