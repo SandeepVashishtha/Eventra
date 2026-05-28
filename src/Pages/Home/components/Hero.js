@@ -137,13 +137,13 @@ const Hero = () => {
   }, [controls]);
 
   useEffect(() => {
-    let timeoutId;
+    const timeoutRef = { current: null };
 
     const onResize = () => {
       if (typeof window === "undefined") return;
-      clearTimeout(timeoutId);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
-      timeoutId = setTimeout(() => {
+      timeoutRef.current = setTimeout(() => {
         setIsMobileView(window.innerWidth <= 420);
       }, 150);
     };
@@ -151,7 +151,7 @@ const Hero = () => {
     window.addEventListener("resize", onResize);
 
     return () => {
-      clearTimeout(timeoutId);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       window.removeEventListener("resize", onResize);
     };
   }, []);
