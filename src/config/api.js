@@ -86,6 +86,11 @@ export const API_ENDPOINTS = {
   PROJECTS: { ALL: "/projects", DETAIL: (id) => `/projects/${id}`, CATEGORIES: "/projects/categories", SUBMIT: "/projects" },
   NOTIFICATIONS: { ALL: "/notifications", BASE: "/notifications", READ: (id) => `/notifications/${id}/read`, READ_ALL: "/notifications/read-all" },
   USERS: { PROFILE: "/users/profile", ACHIEVEMENTS: "/users/achievements" },
+  VALIDATION: {
+    EMAIL: (email) => `/api/validate/email/${encodeURIComponent(email)}`,
+    USERNAME: (username) => `/api/validate/username/${encodeURIComponent(username)}`,
+    PHONE: "/api/validate/phone",
+  },
 };
 
 export const apiUtils = {
