@@ -1,3 +1,4 @@
+import "./EventDetails.print.css";
 import React, { useEffect, useState, useMemo } from "react";
 import { Helmet } from "react-helmet-async";
 import DOMPurify from "dompurify";
