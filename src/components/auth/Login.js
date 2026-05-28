@@ -79,7 +79,8 @@ const Login = () => {
     if (!validate()) return;
 
     try {
-      const ok = await login(formData.usernameOrEmail, formData.password);
+      const sanitizedUsernameOrEmail = formData.usernameOrEmail.trim();
+      const ok = await login(sanitizedUsernameOrEmail, formData.password);
       if (ok) {
         resetAttempts();
         showAuthToast("Login successful! Redirecting to dashboard...", () =>

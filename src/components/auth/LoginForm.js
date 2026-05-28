@@ -10,7 +10,8 @@ const LoginForm = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     setLoading(true);
-    // Placeholder behavior: pretend login succeeded
+    const sanitizedEmail = email.trim();
+    // Pass sanitizedEmail to your submission logic/payload
     setTimeout(() => {
       setLoading(false);
       navigate("/dashboard");
