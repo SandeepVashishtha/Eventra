@@ -158,7 +158,7 @@ export const Privacy = () => {
 
               <div className="relative z-10">
                 <button
-                  onClick={() => toggleSection(index)}
+                  onClick={() = aria-label="button"> toggleSection(index)}
                   className="w-full flex items-center justify-between p-8 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 rounded-t-2xl"
                 >
                   <div className="flex items-center">

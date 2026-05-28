@@ -589,7 +589,7 @@ const ContributorGuide = () => {
                 </pre>
               </div>
               <button
-                onClick={() => copyCommand(c.cmd, c.id)}
+                onClick={() = aria-label="button"> copyCommand(c.cmd, c.id)}
                 className="flex items-center justify-center sm:justify-start gap-2 bg-sky-100 dark:bg-sky-900/40 text-black dark:text-white px-3 py-1.5 rounded hover:bg-amber-100 dark:hover:bg-amber-900/40 transition self-start sm:self-center flex-shrink-0"
               >
                 {copied === c.id ? <FiCheck /> : <FiCopy />}
@@ -624,7 +624,7 @@ const ContributorGuide = () => {
             return (
               <div key={index} className="py-3">
                 <button
-                  onClick={() => setExpandedFAQ(isOpen ? null : index)}
+                  onClick={() = aria-label="button"> setExpandedFAQ(isOpen ? null : index)}
                   className="w-full flex justify-between items-center px-2 py-3 text-left group"
                 >
                   <div className="flex items-center gap-3">

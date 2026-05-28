@@ -7,10 +7,11 @@ const MobileNavbar = ({ isOpen, setIsOpen, isAuthenticated, user, logout }) => {
     <>
       <button
         type="button"
-        onClick={() => setIsOpen(true)}
+        onClick={() = aria-label="button"> setIsOpen(true)}
         className="lg:hidden p-3 min-w-[44px] min-h-[44px] flex items-center justify-center"
         aria-label="Open navigation menu"
         aria-expanded={isOpen}
+        aria-haspopup="dialog"
         aria-controls="mobile-navigation-drawer"
       >
         <Menu className="h-6 w-6" aria-hidden="true" />

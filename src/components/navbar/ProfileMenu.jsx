@@ -33,7 +33,7 @@ const ProfileMenu = ({ user, logout }) => {
     <div className="relative" ref={menuRef}>
       <button 
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() = aria-label="button"> setIsOpen(!isOpen)}
         aria-label={isOpen ? "Close profile menu" : "Open profile menu"}
         aria-expanded={isOpen}
         aria-haspopup="menu"
@@ -87,7 +87,7 @@ const ProfileMenu = ({ user, logout }) => {
 
           <button
             type="button"
-            onClick={() => {
+            onClick={() = aria-label="button"> {
               setIsOpen(false);
               logout();
             }}

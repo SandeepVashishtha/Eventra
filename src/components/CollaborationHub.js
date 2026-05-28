@@ -235,7 +235,7 @@ const CollaborationHub = () => {
                 ? 'bg-indigo-600 text-white shadow-md' 
                 : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
             }`}
-            onClick={() => {
+            onClick={() = aria-label="button"> {
               setActiveSection(tab.id);
               setSearchQuery('');
             }}
@@ -269,7 +269,7 @@ const CollaborationHub = () => {
                         ? 'bg-indigo-650 dark:bg-indigo-600 text-white' 
                         : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-350 hover:bg-slate-300'
                     }`}
-                    onClick={() => setFilterType(type)}
+                    onClick={() = aria-label="button"> setFilterType(type)}
                   >
                     {type}
                   </button>
@@ -336,7 +336,7 @@ const CollaborationHub = () => {
                   
                   <div className="opportunity-actions flex gap-2 pt-2">
                     <button 
-                      onClick={() => setSelectedOpportunity(opportunity)}
+                      onClick={() = aria-label="button"> setSelectedOpportunity(opportunity)}
                       className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all text-center"
                     >
                       Apply Now
@@ -358,7 +358,7 @@ const CollaborationHub = () => {
             <div className="section-header flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">My Active Collaborations</h2>
               <button 
-                onClick={() => setActiveSection('create-request')}
+                onClick={() = aria-label="button"> setActiveSection('create-request')}
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
               >
                 <Plus size={14} />
@@ -408,10 +408,10 @@ const CollaborationHub = () => {
                   </div>
                   
                   <div className="collaboration-actions flex gap-2">
-                    <button className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-850 dark:text-slate-200 hover:bg-slate-200 rounded-xl text-xs font-bold transition-all">
+                    <button className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-850 dark:text-slate-200 hover:bg-slate-200 rounded-xl text-xs font-bold transition-all" aria-label="button">
                       View Details
                     </button>
-                    <button className="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all">
+                    <button className="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all" aria-label="button">
                       Schedule Meeting
                     </button>
                   </div>
@@ -458,10 +458,10 @@ const CollaborationHub = () => {
                     </div>
                     
                     <div className="networking-actions flex gap-2">
-                      <button className="flex-1 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1">
+                      <button className="flex-1 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1" aria-label="button">
                         <Check size={14} /> Accept Connection
                       </button>
-                      <button className="px-3 py-2 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all">
+                      <button className="px-3 py-2 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all" aria-label="button">
                         Message
                       </button>
                     </div>
@@ -599,7 +599,7 @@ const CollaborationHub = () => {
                 <span id="skills-hint" className="sr-only">Comma separated list of required skills</span>
               </div>
               
-              <button type="submit" className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all">
+              <button type="submit" className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all" aria-label="button">
                 Create Collaboration Request
               </button>
             </form>
@@ -626,7 +626,7 @@ const CollaborationHub = () => {
               className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-xl w-full p-6 shadow-2xl overflow-y-auto max-h-[90vh] z-10"
             >
               <button 
-                onClick={() => setSelectedOpportunity(null)}
+                onClick={() = aria-label="button"> setSelectedOpportunity(null)}
                 className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-400 hover:text-slate-900 dark:hover:text-white"
               >
                 <X size={16} />
@@ -720,7 +720,7 @@ const CollaborationHub = () => {
                 <div className="flex gap-3 pt-2">
                   <button 
                     type="button"
-                    onClick={() => setSelectedOpportunity(null)}
+                    onClick={() = aria-label="button"> setSelectedOpportunity(null)}
                     className="flex-1 py-2.5 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-350 rounded-xl text-xs font-bold"
                   >
                     Cancel
@@ -728,7 +728,7 @@ const CollaborationHub = () => {
                   <button 
                     type="submit"
                     className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold"
-                  >
+                   aria-label="button">
                     Submit Application
                   </button>
                 </div>

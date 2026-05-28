@@ -83,7 +83,7 @@ const ReminderControls = ({ event, canSetReminder, compact = false }) => {
       return;
     }
 
-    const permission = await requestBrowserNotificationPermission();
+    const permission = await requestBrowserNotificationPermission().catch(() => "denied");
     if (permission === "denied") {
       toast.info("Reminder saved. Browser notifications are blocked in your settings.", {
         toastId: `reminder-browser-denied-${event.id}`,
@@ -123,7 +123,7 @@ const ReminderControls = ({ event, canSetReminder, compact = false }) => {
             <button
               key={timing.value}
               type="button"
-              onClick={(e) => {
+              onClick={(e) = aria-label="button"> {
                 e.preventDefault();
                 e.stopPropagation();
                 handleReminderToggle(timing.value);

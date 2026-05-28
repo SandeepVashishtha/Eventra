@@ -465,7 +465,7 @@ export default function FAQSection() {
               />
               {searchTerm && (
                 <button
-                  onClick={() => {
+                  onClick={() = aria-label="button"> {
                     setSearchTerm("");
                     setShowSuggestions(false);
                   }}
@@ -482,7 +482,7 @@ export default function FAQSection() {
                   {suggestions.map((sug, idx) => (
                     <button
                       key={idx}
-                      onClick={() => {
+                      onClick={() = aria-label="button"> {
                         setSearchTerm(sug.question);
                         setShowSuggestions(false);
                       }}
@@ -499,7 +499,7 @@ export default function FAQSection() {
               {["All", "General", "Hackathons", "Account"].map((category) => (
                 <button
                   key={category}
-                  onClick={() => setSelectedCategory(category)}
+                  onClick={() = aria-label="button"> setSelectedCategory(category)}
                   aria-selected={selectedCategory === category}
                   className={`px-4 py-2 text-xs font-bold rounded-full transition-all duration-300 ${
                     selectedCategory === category
@@ -534,7 +534,7 @@ export default function FAQSection() {
                 We couldn't find any questions matching "{searchTerm}" under the {selectedCategory} category. Try broadening your keywords.
               </p>
               <button
-                onClick={() => {
+                onClick={() = aria-label="button"> {
                   setSearchTerm("");
                   setSelectedCategory("All");
                 }}
@@ -570,7 +570,7 @@ export default function FAQSection() {
                     </span>
                     <div className="flex gap-2 w-full sm:w-auto justify-end">
                       <button
-                        onClick={() => handleVote(faq.question, "yes")}
+                        onClick={() = aria-label="button"> handleVote(faq.question, "yes")}
                         className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 border cursor-pointer hover:scale-105 active:scale-95 ${
                           ratings[faq.question]?.voted === "yes"
                             ? "bg-green-50 border-green-200 text-green-600 dark:bg-green-950/20 dark:border-green-900/30 dark:text-green-400"
@@ -580,7 +580,7 @@ export default function FAQSection() {
                         👍 Yes ({ratings[faq.question]?.yes || 0})
                       </button>
                       <button
-                        onClick={() => handleVote(faq.question, "no")}
+                        onClick={() = aria-label="button"> handleVote(faq.question, "no")}
                         className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 border cursor-pointer hover:scale-105 active:scale-95 ${
                           ratings[faq.question]?.voted === "no"
                             ? "bg-rose-50 border-rose-200 text-rose-600 dark:bg-rose-950/20 dark:border-rose-900/30 dark:text-rose-400"

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { AlertTriangle, Server, ArrowRight, Save, X, Edit3 } from "lucide-react";
 import "./OfflineConflictModal.css";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 
 export default function OfflineConflictModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [conflictData, setConflictData] = useState(null);
+  const trapRef = useFocusTrap(isOpen);
 
   useEffect(() => {
     const handleConflict = (e) => {
@@ -42,22 +44,30 @@ export default function OfflineConflictModal() {
 
   return (
     <div className="ocm-modal-overlay">
-      <div className="ocm-modal-container">
+      <div
+        ref={trapRef}
+        className="ocm-modal-container"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ocm-title"
+        tabIndex={-1}
+        onKeyDown={(e) => { if (e.key === 'Escape') handleResolve("server"); }}
+      >
         {/* Header */}
         <div className="ocm-header">
           <div className="flex items-center gap-3">
             <div className="ocm-warning-icon">
-              <AlertTriangle size={20} />
+              <AlertTriangle size={20} aria-hidden="true" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">Offline Synchronization Conflict</h3>
+              <h3 id="ocm-title" className="text-base font-bold text-white">Offline Synchronization Conflict</h3>
               <p className="text-xs text-slate-400">
                 The offline action failed because the server version changed in the meantime.
               </p>
             </div>
           </div>
-          <button onClick={() => handleResolve("server")} className="text-slate-400 hover:text-white transition-colors">
-            <X size={18} />
+          <button onClick={() = aria-label="button"> handleResolve("server")} aria-label="Dismiss conflict — keep server version" className="text-slate-400 hover:text-white transition-colors">
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
 
@@ -101,21 +111,21 @@ export default function OfflineConflictModal() {
         <div className="ocm-footer">
           <button 
             className="ocm-btn ocm-btn-secondary" 
-            onClick={() => handleResolve("server")}
+            onClick={() = aria-label="button"> handleResolve("server")}
           >
             Discard Local & Keep Server
           </button>
           
           <button 
             className="ocm-btn ocm-btn-primary" 
-            onClick={() => handleResolve("local")}
+            onClick={() = aria-label="button"> handleResolve("local")}
           >
             Overwrite Server with Local
           </button>
           
           <button 
             className="ocm-btn ocm-btn-accent" 
-            onClick={() => handleResolve("merge")}
+            onClick={() = aria-label="button"> handleResolve("merge")}
           >
             Merge Both Changes
           </button>
