@@ -6,11 +6,18 @@ import { toast } from 'react-toastify';
 import './components.css';
 import CharacterCounter from "../../components/common/CharacterCounter";
 import { sanitizeInputText } from "../utils/inputSanitization";
+import EventMaterials from "./common/EventMaterials";
 
 const CollaborationHub = () => {
   const prefersReducedMotion = useReducedMotion();
   const [activeSection, setActiveSection] = useState('opportunities');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const mockMaterials = [
+    { id: 'slides-1', title: 'Tech Summit 2025 Keynote Presentation', type: 'ppt', size: '14.2 MB', url: '#' },
+    { id: 'code-1', title: 'Collaboration Hub Prototype Core Source', type: 'doc', size: '42.5 MB', url: '#' },
+    { id: 'deps-1', title: 'Hackathon Node Modules Pre-packaged Bundle', type: 'pdf', size: '84.1 MB', url: '#' }
+  ];
   const [filterType, setFilterType] = useState('All');
   const [selectedOpportunity, setSelectedOpportunity] = useState(null);
   const [applicationText, setApplicationText] = useState('');
@@ -226,6 +233,7 @@ const CollaborationHub = () => {
           { id: 'opportunities', name: 'Opportunities', icon: '🎯' },
           { id: 'my-collaborations', name: 'My Collaborations', icon: '🤝' },
           { id: 'networking', name: 'Networking', icon: '🌐' },
+          { id: 'materials', name: 'Shared Materials', icon: '📚' },
           { id: 'create-request', name: 'Create Request', icon: '➕' }
         ].map((tab) => (
           <button
@@ -254,6 +262,12 @@ const CollaborationHub = () => {
         transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
         className="tab-content"
       >
+        {activeSection === 'materials' && (
+          <div className="materials-section max-w-4xl mx-auto px-4" style={{ width: "100%", maxWidth: "56rem", margin: "0 auto", paddingLeft: "1rem", paddingRight: "1rem" }}>
+            <EventMaterials materials={mockMaterials} />
+          </div>
+        )}
+
         {activeSection === 'opportunities' && (
           <div className="opportunities-section">
             <div className="section-header flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
