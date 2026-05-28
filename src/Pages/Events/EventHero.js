@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import CountUp from "react-countup";
 import { darkTheme } from "../../components/styles/theme";
-import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+
 
 const SEARCH_HISTORY_KEY = "eventra.events.searchHistory";
 

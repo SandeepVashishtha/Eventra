@@ -21,9 +21,6 @@ import EventMaterials from "../../components/common/EventMaterials";
 import EventRecommendations from "../../components/events/EventRecommendations";
 import CopyLinkButton from "../../components/common/CopyLinkButton";
 import LazyImage from "../../components/common/LazyImage";
-import { useAuth } from "../../context/AuthContext";
-import { exportToCSV, exportToJSON } from "../../utils/exportUtils";
-import { ROLES } from "../../config/roles";
 import { marked } from 'marked';
 import ShareMenu from "../../components/common/ShareMenu";
 import { generateEventSharingData } from "../../utils/shareUtils";
@@ -36,50 +33,9 @@ import { safeParseJson } from "../../utils/jsonUtils";
 
 const EventDetails = () => {
   const { eventId } = useParams();
-  const { user } = useAuth();
-
-  const isOrganizer =
-    user?.roles?.includes(ROLES.ORGANIZER) ||
-    user?.roles?.includes(ROLES.ADMIN);
-
-  const [showExportDropdown, setShowExportDropdown] =
-    useState(false);
 
   const [showShareModal, setShowShareModal] =
     useState(false);
-
-  const [copied, setCopied] = useState(false);
-
-  const mockRegistrants = [
-    {
-      id: 1,
-      name: "Aarav Sharma",
-      email: "aarav@example.com",
-      registeredAt: "2025-05-10",
-      status: "Confirmed",
-    },
-    {
-      id: 2,
-      name: "Priya Mehta",
-      email: "priya@example.com",
-      registeredAt: "2025-05-11",
-      status: "Confirmed",
-    },
-    {
-      id: 3,
-      name: "Rohan Verma",
-      email: "rohan@example.com",
-      registeredAt: "2025-05-12",
-      status: "Pending",
-    },
-    {
-      id: 4,
-      name: "Sneha Patel",
-      email: "sneha@example.com",
-      registeredAt: "2025-05-13",
-      status: "Confirmed",
-    },
-  ];
 
   const { isRegistered } = useMyEvents();
 
@@ -87,12 +43,12 @@ const EventDetails = () => {
     (item) => String(item.id) === eventId
   );
 
-  const event = foundEvent
+  const event = React.useMemo(() => foundEvent
     ? {
         ...foundEvent,
         status: getEventStatus(foundEvent),
       }
-    : null;
+    : null, [foundEvent]);
 
   useEffect(() => {
     if (!event) return;
@@ -135,24 +91,6 @@ const EventDetails = () => {
       </div>
     );
   }
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(
-        window.location.href
-      );
-
-      setCopied(true);
-
-      toast.success("Event link copied!");
-
-      setTimeout(() => {
-        setCopied(false);
-      }, 2000);
-    } catch (err) {
-      toast.error("Failed to copy link");
-    }
-  };
 
   const canSetReminder =
     isEventBookmarked(event.id) ||
