@@ -103,6 +103,5 @@
         }
       ]
     }
-  ],
-  "_gssoc_comment_security": "/* SECURITY OPTIMIZATION: Configured strict build-time Content-Security-Policy (CSP) response headers. */"
+  ]
 }
