@@ -48,42 +48,37 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
     handleSimulateSubmission,
   } = useSurveySimulator(questions, FEEDBACK_COMMENTS_POOL);
 
-  const analyzedRatings = useMemo(() => {
-    const ratingMap = {};
-
-    questions.forEach((question) => {
-      if (question.type !== "rating") return;
-
-      const distribution = simulatedData[question.id] || {};
-      const total = Object.values(distribution).reduce((sum, count) => sum + count, 0);
-      const weighted = [1, 2, 3, 4, 5].reduce(
-        (sum, score) => sum + score * (distribution[score] || 0),
-        0
-      );
-
-      ratingMap[question.id] = {
-        total,
-        average: total > 0 ? (weighted / total).toFixed(1) : "0.0",
-      };
+  const choiceChartData = useMemo(() => {
+    const chartData = {};
+    questions.forEach((q) => {
+      if (q.type === "choice" && simulatedData[q.id]) {
+        chartData[q.id] = Object.entries(simulatedData[q.id]).map(([name, votes]) => ({
+          name,
+          votes,
+        }));
+      }
     });
-
-    return ratingMap;
+    return chartData;
   }, [questions, simulatedData]);
 
-  const choiceChartData = useMemo(() => {
-    const chartMap = {};
-
-    questions.forEach((question) => {
-      if (question.type !== "choice") return;
-
-      const distribution = simulatedData[question.id] || {};
-      chartMap[question.id] = Object.keys(distribution).map((option) => ({
-        name: option,
-        votes: distribution[option] || 0,
-      }));
+  const analyzedRatings = useMemo(() => {
+    const ratings = {};
+    questions.forEach((q) => {
+      if (q.type === "rating" && simulatedData[q.id]) {
+        const distribution = simulatedData[q.id];
+        let total = 0;
+        let sum = 0;
+        Object.entries(distribution).forEach(([score, count]) => {
+          sum += parseInt(score) * count;
+          total += count;
+        });
+        ratings[q.id] = {
+          average: total > 0 ? (sum / total).toFixed(1) : "0.0",
+          total,
+        };
+      }
     });
-
-    return chartMap;
+    return ratings;
   }, [questions, simulatedData]);
 
   // Reconstruct individual rows corresponding to each submission per question distribution
@@ -180,7 +175,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
           <button
             onClick={handleExportCSV}
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold hover:border-indigo-500 dark:hover:border-indigo-400 text-xs text-slate-700 dark:text-slate-350 hover:text-indigo-650 dark:hover:text-indigo-400 hover:shadow-md transition active:scale-95 cursor-pointer"
-          >
+           aria-label="button">
             <FiDownload className="w-4 h-4 text-indigo-500" />
             Export Results to CSV
           </button>
@@ -188,7 +183,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
           <button
             onClick={handleSimulateSubmission}
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-xs font-bold text-white shadow-lg shadow-indigo-600/15 transition self-start sm:self-auto cursor-pointer"
-          >
+           aria-label="button">
             <FiPlay className="w-4 h-4 fill-white" />
             Inject Survey Response
           </button>

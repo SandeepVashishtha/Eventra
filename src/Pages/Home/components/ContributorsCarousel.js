@@ -306,7 +306,7 @@ const Contributors = () => {
             // UPDATED: Arrow button styles
             className="absolute left-0 top-[35%] -translate-y-1/2 -translate-x-4 z-10 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 hover:scale-110 transition-all duration-300 border border-gray-200"
             disabled={currentIndex === 0}
-          >
+           aria-label="button">
             {/* UPDATED: Arrow icon color */}
             <FaChevronLeft className="text-black text-xl" />
           </button>
@@ -315,7 +315,7 @@ const Contributors = () => {
             onClick={nextSlide}
             // UPDATED: Arrow button styles
             className="absolute right-0 top-[35%] -translate-y-1/2 translate-x-4 z-10 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 hover:scale-110 transition-all duration-300 border border-gray-200"
-            disabled={currentIndex + itemsPerView >= contributors.length}
+            disabled={currentIndex + itemsPerView  aria-label="button">= contributors.length}
           >
             {/* UPDATED: Arrow icon color */}
             <FaChevronRight className="text-black text-xl" />
