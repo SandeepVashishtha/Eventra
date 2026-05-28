@@ -186,7 +186,7 @@ const EventTicket = ({ event, user, onClose }) => {
             onClick={onClose} 
             className="ud-ticket-action-btn close-btn"
             title="Close Ticket"
-          >
+           aria-label="button">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -217,10 +217,11 @@ const EventTicket = ({ event, user, onClose }) => {
               {/* Header Banner */}
               <div className={`ud-ticket-header bg-gradient-to-r ${theme.primary}`}>
                 {event.image && (
-                  <img 
-                    src={event.image} 
-                    alt={event.title} 
+                  <img
+                    src={event.image}
+                    alt={event.title}
                     className="ud-ticket-header-img"
+                    loading="lazy"
                     crossOrigin="anonymous"
                     onError={(e) => { e.target.style.display = 'none'; }}
                   />

@@ -284,14 +284,14 @@ const EventConflictModal = ({
           <button
             onClick={onCancel}
             className="flex-1 px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
-          >
+           aria-label="button">
             Cancel Registration
           </button>
           {!strictMode && (
             <button
               onClick={onProceed}
               className="flex-1 px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-medium"
-            >
+             aria-label="button">
               Proceed Anyway
             </button>
           )}

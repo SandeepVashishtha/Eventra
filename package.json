@@ -4,7 +4,7 @@
   "description": "A modern website for Eventra - platform for builders",
   "private": true,
   "engines": {
-    "node": ">=20.19.0",
+    "node": "22.x",
     "npm": ">=9.6.4"
   },
   "dependencies": {
@@ -26,6 +26,7 @@
     "google-auth-library": "10.6.2",
     "html2canvas": "^1.4.1",
     "html5-qrcode": "2.3.8",
+    "idb-keyval": "6.2.4",
     "jsdom": "29.1.1",
     "jsonwebtoken": "9.0.3",
     "jspdf": "^4.2.1",
@@ -49,6 +50,7 @@
   "scripts": {
     "dev": "vite",
     "start": "vite",
+    "vercel-build": "node scripts/validate-env.js && vite build",
     "prebuild": "node scripts/validate-env.js",
     "build": "vite build",
     "build:fast": "cross-env GENERATE_SOURCEMAP=false vite build",
@@ -70,6 +72,12 @@
       "react-app/jest"
     ]
   },
+  "jest": {
+    "moduleNameMapper": {
+      "^react-router-dom$": "<rootDir>/node_modules/react-router-dom/dist/index.js",
+      "^react-router/dom$": "<rootDir>/node_modules/react-router/dist/development/dom-export.js"
+    }
+  },
   "browserslist": {
     "production": [
       ">0.2%",
@@ -90,6 +98,7 @@
     "@storybook/preset-create-react-app": "10.4.1",
     "@storybook/react-webpack5": "^10.4.1",
     "@tailwindcss/line-clamp": "^0.4.4",
+    "@testing-library/react": "16.3.2",
     "@vitejs/plugin-react": "6.0.2",
     "autoprefixer": "^10.4.21",
     "bcryptjs": "3.0.3",

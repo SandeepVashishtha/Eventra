@@ -259,7 +259,7 @@ const Contributors = () => {
             type="button"
             onClick={fetchContributors}
             className="inline-flex items-center justify-center bg-black text-white px-6 py-3 rounded-full text-sm font-semibold shadow hover:bg-zinc-800 transition-colors"
-          >
+           aria-label="button">
             Retry
           </button>
         </div>
@@ -309,7 +309,7 @@ const Contributors = () => {
                 type="button"
                 onClick={fetchContributors}
                 className="mt-5 inline-flex items-center justify-center bg-black text-white px-6 py-3 rounded-full text-sm font-semibold shadow hover:bg-zinc-800 transition-colors"
-              >
+               aria-label="button">
                 Retry
               </button>
             )}

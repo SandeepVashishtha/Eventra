@@ -252,7 +252,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
           ref={buttonRef}
           className="flex w-full items-center justify-between gap-3 px-4 py-3 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-white/5 cursor-pointer hover:ring-2 hover:ring-indigo-500/30 dark:hover:ring-indigo-500/50 hover:border-indigo-300 dark:hover:border-indigo-500/30 transition-all text-slate-700 dark:text-slate-300"
           onClick={toggleOpen}
-        >
+         aria-label="button">
           <span
             className={`flex-1 text-left text-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis ${!value ? "text-slate-400 dark:text-slate-500" : "text-slate-900 dark:text-slate-200"}`}
           >
@@ -457,7 +457,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
                   <button
                     onClick={resetFilters}
                     className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold border border-indigo-200 dark:border-indigo-500/30 px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-all"
-                  >
+                   aria-label="button">
                     ✕ Clear filters
                   </button>
                 )}

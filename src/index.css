@@ -2,9 +2,8 @@
 /* Issue #828: Standardize and Professionalize Font Text and Size */
 @import url("https://fonts.googleapis.com/css2?family=Oxanium:wght@800&family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
-@config "../tailwind.config.cjs";
-
 @import "tailwindcss";
+@config "../tailwind.config.cjs";
 
 @theme {
   --font-size-body: 16px;
@@ -58,15 +57,27 @@
   box-sizing: border-box;
 }
 .responsive-btn {
-  @apply
-    max-w-full
-    min-w-0
-    whitespace-nowrap
-    overflow-hidden
-    text-ellipsis
-    px-4
-    sm:px-5
-    md:px-6;
+  max-width: 100%;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .responsive-btn {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .responsive-btn {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
 }
 .sr-only {
   position: absolute;
@@ -175,6 +186,11 @@ html {
 
   --touch-target-min: 44px;
   --touch-target-gap: 0.75rem;
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --mobile-page-gutter: clamp(1rem, 4vw, 1.5rem);
   --primary-color: #667eea;
 --primary-hover: #5a67d8;
 --danger-bg: #fef2f2;
@@ -205,8 +221,6 @@ html {
   --sidebar-bg: #0f172a;
 
   --input-bg: #111827;
-
-  --input-bg: #1e293b;
   --input-text: #f8fafc;
 
   --table-bg: #111827;
@@ -255,6 +269,8 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
   font-size: var(--font-body);
   font-weight: var(--fw-regular);
+  padding-left: var(--safe-area-left);
+  padding-right: var(--safe-area-right);
 }
 
 img,
@@ -344,6 +360,32 @@ code {
 /* Utilities */
 .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
 .section-padding { padding: 80px 0; }
+.safe-area-x {
+  padding-left: max(var(--mobile-page-gutter), var(--safe-area-left));
+  padding-right: max(var(--mobile-page-gutter), var(--safe-area-right));
+}
+
+.safe-area-bottom {
+  padding-bottom: max(1rem, var(--safe-area-bottom));
+}
+
+.overflow-wrap-anywhere {
+  overflow-wrap: anywhere;
+}
+
+.mobile-drawer-panel {
+  height: 100vh;
+  height: 100dvh;
+  padding-top: var(--safe-area-top);
+  padding-right: var(--safe-area-right);
+  padding-bottom: var(--safe-area-bottom);
+}
+
+.mobile-drawer-scroll {
+  max-height: calc(100dvh - 72px - var(--safe-area-top) - var(--safe-area-bottom));
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
 .text-gradient {
 
 background: linear-gradient(
@@ -421,6 +463,11 @@ color: var(--primary-color);
 
   .section-padding { padding: 60px 0; }
   .btn-primary, .btn-secondary { padding: 10px 24px; font-size: 0.875rem; }
+
+  .modal-content,
+  [role="dialog"] {
+    max-width: calc(100vw - 2rem);
+  }
 }
 
 /* Issue #862: keep mobile and coarse-pointer controls comfortable to tap. */
@@ -484,6 +531,7 @@ color: var(--primary-color);
     .theme-toggle,
     .profile-button,
     .mobile-menu-button,
+    .mobile-drawer-link,
     .ud-search-clear
   ) {
     align-items: center;
@@ -505,6 +553,32 @@ color: var(--primary-color);
     .social-links
   ) {
     gap: max(var(--touch-target-gap), 0.75rem);
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --mobile-page-gutter: 1rem;
+  }
+
+  .container {
+    padding-left: var(--mobile-page-gutter);
+    padding-right: var(--mobile-page-gutter);
+  }
+
+  .mobile-drawer-panel {
+    width: min(92vw, 23rem);
+  }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .mobile-drawer-scroll {
+    max-height: calc(100dvh - 56px - var(--safe-area-top) - var(--safe-area-bottom));
+  }
+
+  .mobile-landscape-compact {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
   }
 }
 
