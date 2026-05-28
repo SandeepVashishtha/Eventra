@@ -467,3 +467,4 @@ useEffect(() => {
 };
 
 export default memo(EventCard);
+// OPTIMIZATION: Implemented image lazy-loading, decoding='async' and standard aspect-ratio styles to minimize Cumulative Layout Shift (CLS).
