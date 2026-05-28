@@ -4,9 +4,53 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 @config "../tailwind.config.cjs";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --font-size-body: 16px;
+  --font-size-body--line-height: 24px;
+  --font-size-nav: 16px;
+  --font-size-nav--line-height: 24px;
+  --font-size-h1: 32px;
+  --font-size-h1--line-height: 40px;
+  --font-size-h2: 28px;
+  --font-size-h2--line-height: 36px;
+  --font-size-h3: 24px;
+  --font-size-h3--line-height: 32px;
+  --font-size-h4: 22px;
+  --font-size-h4--line-height: 28px;
+  --font-size-h5: 20px;
+  --font-size-h5--line-height: 26px;
+  --font-size-h6: 18px;
+  --font-size-h6--line-height: 24px;
+
+  --color-bg: var(--bg-color);
+  --color-bg-secondary: var(--bg-secondary-color);
+  --color-text: var(--text-color);
+  --color-text-light: var(--text-color-light);
+  --color-border: var(--border-color);
+  --color-card-bg: var(--card-bg-color);
+  --color-primary: var(--primary-color);
+  --color-secondary: var(--secondary-color);
+  --color-navbar: var(--navbar-color);
+  --color-sidebar: var(--sidebar-color);
+
+  --shadow-card: 0 4px 10px rgba(0,0,0,0.08);
+  --radius-xl2: 1rem;
+
+  --animate-slide-up: slide-up 0.3s ease-out;
+  --animate-slide-down: slide-down 0.3s ease-out;
+
+  @keyframes slide-up {
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes slide-down {
+    0% { transform: translateY(-20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+}
 
 * {
   margin: 0;
