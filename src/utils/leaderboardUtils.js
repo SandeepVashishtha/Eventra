@@ -16,6 +16,8 @@
  * test without mounting a React component.
  */
 
+import { FaTrophy, FaAward, FaStar, FaCode } from "react-icons/fa";
+
 // ─── Scoring constants ────────────────────────────────────────────────────────
 
 /** Points awarded per GSSoC label level. */
@@ -206,8 +208,6 @@ export function computeLeaderboardStats(contributors) {
     flooredTotalPoints: totalPoints,
   };
 }
-import { FaTrophy, FaAward, FaStar, FaCode } from "react-icons/fa";
-
 export const getAchievementBadge = (rank, prs, points) => {
   if (rank === 1) {
     return {
@@ -235,4 +235,8 @@ export const getAchievementBadge = (rank, prs, points) => {
     color: "from-slate-100 via-zinc-200 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 text-slate-800 dark:text-slate-200 border-slate-200/50 dark:border-slate-700/20",
     icon: FaCode
   };
+};
+
+export const calculatePointsMultiplier = (points, rate) => {
+  return points * (rate > 0 ? rate : 1.0);
 };

@@ -607,7 +607,7 @@ const ConfirmModal = ({ open, onCancel, onConfirm, loading }) => {
             type="button"
             onClick={onCancel}
             className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-          >
+           aria-label="button">
             Cancel
           </button>
           <button
@@ -615,7 +615,7 @@ const ConfirmModal = ({ open, onCancel, onConfirm, loading }) => {
             onClick={onConfirm}
             disabled={loading}
             className="px-4 py-2 rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
-          >
+           aria-label="button">
             {loading ? "Saving..." : "Save"}
           </button>
         </div>
