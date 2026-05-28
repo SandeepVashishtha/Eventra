@@ -47,7 +47,6 @@ export const AuthProvider = ({ children }) => {
 
     setUser(null);
     setToken(null);
-    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
     sessionStorage.removeItem("token");
     localStorage.removeItem("user");
     return true;
@@ -230,14 +229,6 @@ export const AuthProvider = ({ children }) => {
   const persistSession = useCallback((sessionToken, sessionUser) => {
     setToken(sessionToken);
     setUser(sessionUser);
-    try {
-      if (sessionToken && sessionToken !== 'cookie-managed') {
-        document.cookie = `token=${sessionToken}; path=/; Secure; SameSite=Strict`;
-      }
-    } catch (err) {
-      // Ignore cookie write failures in strict environments
-    }
-
     try {
       localStorage.setItem("user", JSON.stringify(sessionUser));
     } catch (error) {
