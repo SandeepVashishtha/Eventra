@@ -41,6 +41,7 @@
     "react-qr-code": "^2.0.21",
     "react-router-dom": "^7.15.1",
     "react-scripts": "5.0.1",
+//    "react-scripts": "^5.0.1",
     "react-toastify": "^11.1.0",
     "recharts": "^3.8.1"
   },
