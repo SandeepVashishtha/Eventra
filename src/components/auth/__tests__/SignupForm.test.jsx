@@ -234,4 +234,30 @@ describe("SignupForm integration", () => {
       "email-message",
     );
   });
+
+  it("exposes form-level live regions and password toggle states", () => {
+    renderSignup();
+
+    const form = container.querySelector("form");
+    const showPasswordButton = container.querySelector(
+      'button[aria-label="Show password"]',
+    );
+
+    expect(form.getAttribute("aria-describedby")).toContain("signup-form-error");
+    expect(form.getAttribute("aria-describedby")).toContain("signup-form-success");
+    expect(showPasswordButton.getAttribute("aria-controls")).toBe("password");
+    expect(showPasswordButton.getAttribute("aria-pressed")).toBe("false");
+
+    act(() => {
+      showPasswordButton.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, cancelable: true }),
+      );
+    });
+
+    expect(
+      container.querySelector('button[aria-label="Hide password"]').getAttribute(
+        "aria-pressed",
+      ),
+    ).toBe("true");
+  });
 });
