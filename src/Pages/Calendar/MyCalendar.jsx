@@ -477,12 +477,13 @@ const MyCalendar = () => {
                   exit={{ opacity: 0, y: -15 }}
                   className="relative pl-6 sm:pl-10 space-y-8"
                 >
-                  {/* Vertical line */}
-                  <div className="absolute left-3.5 sm:left-5 top-2 bottom-2 w-0.5 bg-slate-200 dark:bg-slate-800/80 rounded-full" />
-                  <div className="absolute left-3.5 sm:left-5 top-2 h-1/2 w-0.5 bg-gradient-to-b from-indigo-500 to-pink-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
-
                   {timelineEvents.length > 0 ? (
-                    <div className="space-y-8">
+                    <>
+                      {/* Vertical line */}
+                      <div className="absolute left-3.5 sm:left-5 top-2 bottom-2 w-0.5 bg-slate-200 dark:bg-slate-800/80 rounded-full" />
+                      <div className="absolute left-3.5 sm:left-5 top-2 h-1/2 w-0.5 bg-gradient-to-b from-indigo-500 to-pink-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+
+                      <div className="space-y-8">
                       {timelineEvents.map((item, index) => {
                         const theme = getCategoryTheme(item.event?.category);
                         const eventDate = new Date(item.event.date);
@@ -578,6 +579,7 @@ const MyCalendar = () => {
                         );
                       })}
                     </div>
+                  </>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
                       <CalendarIcon className="w-12 h-12 text-slate-300 dark:text-slate-700 animate-pulse" aria-hidden="true" />
