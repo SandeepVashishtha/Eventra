@@ -31,25 +31,17 @@ export const AuthProvider = ({ children }) => {
     error: null,
   });
 
-  const isMountedRef = useRef(false);
   const needsExpiryCleanupRef = useRef(false);
   const expiryToastShownRef = useRef(false);
 
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
-
   const clearSession = useCallback(() => {
-    if (!isMountedRef.current) return false;
-
-    setUser(null);
-    setToken(null);
+    // Persistent storage cleanup must ALWAYS run to avoid zombie credentials/sessions.
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
     sessionStorage.removeItem("token");
     localStorage.removeItem("user");
+
+    setUser(null);
+    setToken(null);
     return true;
   }, []);
 
@@ -69,8 +61,6 @@ export const AuthProvider = ({ children }) => {
   }, [clearSession]);
 
   const setAuthRequestState = useCallback((nextState) => {
-    if (!isMountedRef.current) return false;
-
     setAuthRequest(nextState);
     return true;
   }, []);
@@ -131,48 +121,31 @@ export const AuthProvider = ({ children }) => {
     const validateSession = async () => {
       try {
         const res = await apiUtils.get(API_ENDPOINTS.USERS.PROFILE);
-        if (!isMountedRef.current) return;
 
         if (res.ok && res.data) {
           const { sessionToken, sessionUser } = extractSession(res, res.data, null);
-          if (!isMountedRef.current) return;
           setToken(sessionToken || "cookie-managed");
           setUser(sessionUser);
         } else {
           clearSession();
         }
       } catch {
-        if (!isMountedRef.current) return;
         clearSession();
       } finally {
-        if (isMountedRef.current) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 
-    // 🔥 THE FIX: We removed the `if (localStorage.getItem("user"))` check! 🔥
-    // The app will now ALWAYS ping the backend to verify HttpOnly cookies on load.
+    // ALWAYS ping the backend to verify HttpOnly cookies on load.
     validateSession();
   }, [clearSession, extractSession]);
 
-  // --- FIX: Stable Global 401 handler ---
-  const clearExpiredSessionRef = useRef(clearExpiredSession);
-
-  // Keep the ref updated whenever the function changes
+  // Register global 401 handler directly when clearExpiredSession changes.
+  // This completely prevents stale closures and intermittent interception failure!
   useEffect(() => {
-    clearExpiredSessionRef.current = clearExpiredSession;
-  }, [clearExpiredSession]);
-
-  // Register handler once on mount, referencing the latest logic via the ref
-  useEffect(() => {
-    setOnUnauthorizedHandler(() => {
-      clearExpiredSessionRef.current();
-    });
-
-    // Cleanup only on unmount
+    setOnUnauthorizedHandler(clearExpiredSession);
     return () => setOnUnauthorizedHandler(null);
-  }, []); // <--- Empty array here ensures it only runs once!
+  }, [clearExpiredSession]);
 
   useEffect(() => {
     if (needsExpiryCleanupRef.current) {
@@ -315,7 +288,6 @@ export const AuthProvider = ({ children }) => {
         setAuthRequestState({ loading: false, error: null });
         return true;
       } catch (error) {
-        if (!isMountedRef.current) return false;
         setAuthRequestState({ loading: false, error: getAuthErrorMessage(error, "Login failed. Please try again.") });
         throw error;
       }
@@ -344,7 +316,6 @@ export const AuthProvider = ({ children }) => {
             networkError?.message || "Please check your connection and try again."
           }`
         );
-        if (!isMountedRef.current) return false;
         setAuthRequestState({ loading: false, error: error.message });
         throw error;
       }
@@ -355,7 +326,6 @@ export const AuthProvider = ({ children }) => {
         const error = new Error(
           data?.message || data?.error || `Google Sign-In failed: server returned ${res.status}`
         );
-        if (!isMountedRef.current) return false;
         setAuthRequestState({ loading: false, error: error.message });
         throw error;
       }
@@ -366,7 +336,6 @@ export const AuthProvider = ({ children }) => {
         const error = new Error(
           "Google Sign-In failed: the server did not return an authentication token."
         );
-        if (!isMountedRef.current) return false;
         setAuthRequestState({ loading: false, error: error.message });
         throw error;
       }
