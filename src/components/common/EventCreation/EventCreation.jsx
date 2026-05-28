@@ -8,6 +8,7 @@ import TicketTiersSection from "./components/TicketTiersSection";
 import { exportAttendeesToCSV } from "../../../utils/exportCsv";
 import {
   DRAFT_KEY,
+  CREATION_STEPS,
   categories,
   mockAttendees,
   initialFormData,
@@ -56,7 +57,7 @@ import {
 const EventCreation = () => {
   const prefersReducedMotion = useReducedMotion();
   
-  const [currentStep, setCurrentStep] = useState("form");
+  const [currentStep, setCurrentStep] = useState(CREATION_STEPS.FORM);
 
   const { handleSubmit: submitEventForm, isSubmitting, error: submitError, success: submitSuccess } = useFormSubmit(async (eventData) => {
     const token = sessionStorage.getItem("token");
@@ -266,7 +267,7 @@ const EventCreation = () => {
 
   const handleSubmit = () => {
     if (validateForm()) {
-      setCurrentStep("preview");
+      setCurrentStep(CREATION_STEPS.PREVIEW);
     }
   };
 
@@ -340,7 +341,7 @@ const EventCreation = () => {
         errorMessage += error.message || "Please try again.";
       }
       toast.error(errorMessage);
-      setCurrentStep("form");
+      setCurrentStep(CREATION_STEPS.FORM);
     }
   };
 
@@ -443,7 +444,7 @@ const EventCreation = () => {
     setErrors({});
     localStorage.removeItem(DRAFT_KEY);
     setNewTag("");
-    setCurrentStep("form");
+    setCurrentStep(CREATION_STEPS.FORM);
   };
 
   return (
@@ -522,7 +523,7 @@ const EventCreation = () => {
         </div>
       )}
 
-      {currentStep === "form" ? (
+      {currentStep === CREATION_STEPS.FORM ? (
         <>
           {/* Heading Section */}
           <div className="w-full max-w-4xl flex justify-end mb-6">
