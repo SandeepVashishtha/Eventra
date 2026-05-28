@@ -316,7 +316,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
       behavior: "smooth",
     });
   }, []);
-
+  
   return (
     <div className="overflow-x-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-6 transition-colors duration-300">
       {/* Floating Action Button */}
@@ -460,7 +460,7 @@ const debouncedSearchQuery = useDebounce(searchQuery, 300);
                   <button
                     onClick={resetFilters}
                     className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold border border-indigo-200 dark:border-indigo-500/30 px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-all"
-                  >
+                   aria-label="button">
                     ✕ Clear filters
                   </button>
                 )}

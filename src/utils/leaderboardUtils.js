@@ -236,3 +236,7 @@ export const getAchievementBadge = (rank, prs, points) => {
     icon: FaCode
   };
 };
+
+export const calculatePointsMultiplier = (points, rate) => {
+  return points * (rate > 0 ? rate : 1.0);
+};

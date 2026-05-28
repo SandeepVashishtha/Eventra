@@ -27,6 +27,11 @@ import { useSessionRecovery } from "../../context/SessionRecoveryContext";
 import { useFormValidation } from "../../hooks/useFormValidation";
 import { validate } from "../../validation";
 import { toast } from "react-toastify";
+import {
+  getCacheAgeLabel,
+  getCachedEventDetail,
+  saveCachedEventDetail,
+} from "../../utils/offlineEventCache";
 
 import { pushToQueue } from "../../utils/offlineQueue";
 import EventConflictModal from "../../components/EventConflictModal";
@@ -39,11 +44,12 @@ const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
 const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
 
 function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
+  const finalName = userName || "Participant";
   if (EMAILJS_PUBLIC_KEY && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && window.emailjs) {
     window.emailjs.init(EMAILJS_PUBLIC_KEY);
     window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
       to_email: userEmail,
-      to_name: userName,
+      to_name: finalName,
       event_name: eventName,
       event_date: eventDate,
     }).catch(() => { });
@@ -189,6 +195,7 @@ const EventRegistration = () => {
             status: getEventStatus(response.data),
           };
           setEvent(fetchedEvent);
+          saveCachedEventDetail(fetchedEvent);
 
           // Pre-fill form if user is authenticated
           if (isAuthenticated() && user) {
@@ -201,6 +208,21 @@ const EventRegistration = () => {
         }
       } catch (error) {
         console.error("Failed to load event details:", error);
+        const cached = getCachedEventDetail(eventId);
+        if (cached?.event) {
+          setEvent({
+            ...cached.event,
+            status: getEventStatus(cached.event),
+            cacheInfo: {
+              cachedAt: cached.cachedAt,
+              label: getCacheAgeLabel(cached.cachedAt),
+            },
+          });
+
+          toast.warning(`Showing ${getCacheAgeLabel(cached.cachedAt)} event details.`);
+          return;
+        }
+
         // Try fallback to hackathonsData as a last resort
         const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
         if (foundMock) {
@@ -351,14 +373,23 @@ const EventRegistration = () => {
       const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
 
       if (isOfflineFailure) {
-        // Offline sync fallback keeps registration intent intact without
-        // storing PII in localStorage.
+        // Offline sync fallback keeps the full registration intent intact so
+        // it can be replayed without asking the user to submit the form again.
         const payload = {
+          ...formData,
           eventId: parseInt(eventId),
           userId: user.id,
         };
 
-        const success = await pushToQueue({ eventId: parseInt(eventId), payload });
+        const success = await pushToQueue(
+          {
+            actionType: isEventFull ? "JOIN_WAITLIST" : "REGISTER_EVENT",
+            endpoint,
+            eventId: parseInt(eventId),
+            payload,
+          },
+          user.id
+        );
 
         if (success) {
           setRegistered(true);
@@ -609,7 +640,7 @@ const EventRegistration = () => {
                 onClick={handleNativeShare}
                 className="w-10 h-10 inline-flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title="Share / Copy Link"
-              >
+               aria-label="button">
                 <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                   <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
                   <polyline points="16 6 12 2 8 6" />
@@ -623,7 +654,7 @@ const EventRegistration = () => {
             <button
               type="button"
               className="w-full py-3.5 px-6 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold hover:bg-slate-800 dark:hover:bg-slate-100 hover:scale-[1.02] active:scale-[0.98] shadow-lg transition-all duration-300"
-            >
+             aria-label="button">
               Back to Details
             </button>
           </Link>
@@ -853,7 +884,7 @@ const EventRegistration = () => {
                   type="submit"
                   disabled={submitting || !isFormValid}
                   className="flex-1 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
+                  aria-label="Submit registration">
                   {submitting ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />

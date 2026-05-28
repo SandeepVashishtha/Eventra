@@ -59,22 +59,15 @@ const EventCreation = () => {
   const [currentStep, setCurrentStep] = useState("form");
 
   const { handleSubmit: submitEventForm, isSubmitting, error: submitError, success: submitSuccess } = useFormSubmit(async (eventData) => {
-    const token = sessionStorage.getItem("token");
-    if (!token) {
-      throw new Error("Authentication required. Please log in and try again.");
-    }
-
+    // Auth is handled by the HttpOnly session cookie — apiUtils sends it
+    // automatically via withCredentials. Never read tokens from sessionStorage;
+    // setToken was removed as part of the HttpOnly cookie migration.
     if (!API_ENDPOINTS.EVENTS.CREATE) {
-      // Mock event creation success (API inactive)
       await new Promise((resolve) => setTimeout(resolve, 1000));
       return;
     }
 
-    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData, {
-      headers: {
-        Authorization: token
-      }
-    });
+    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData);
     const result = response.data;
 
     if (!(response.status === 200 && result.success)) {
@@ -499,7 +492,7 @@ const EventCreation = () => {
             dark:hover:bg-gray-800
             transition
           "
-              >
+               aria-label="button">
                 Discard
               </button>
 
@@ -514,7 +507,7 @@ const EventCreation = () => {
             font-medium
             transition
           "
-              >
+               aria-label="button">
                 Restore Draft
               </button>
             </div>
@@ -1354,7 +1347,7 @@ const EventCreation = () => {
         transition-all duration-300
         focus:ring-2 focus:ring-offset-2 focus:ring-indigo-400 text-sm
       "
-                  >
+                   aria-label="button">
                     <Plus className="w-4 h-4" />
                     Add
                   </button>
