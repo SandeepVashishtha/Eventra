@@ -611,7 +611,7 @@ const FormField = ({
             onClick={() => setShowPassword(v => !v)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             aria-label={showPassword ? "Hide password" : "Show password"}
-            tabIndex={-1}
+            aria-pressed={showPassword}
           >
             <ToggleEyeIcon visible={showPassword} className="w-5 h-5" />
           </button>
@@ -633,6 +633,7 @@ const FormField = ({
             exit={{ opacity: 0, height: 0 }}
             className="text-xs text-red-500 dark:text-red-400 flex items-center gap-1"
             role="alert"
+            aria-live="assertive"
           >
             <X className="w-3.5 h-3.5" />
             {error}
@@ -704,7 +705,7 @@ const PasswordField = ({ id, label, value, onChange, error, strength, requiremen
           onClick={() => setShowPassword(v => !v)}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           aria-label={showPassword ? "Hide password" : "Show password"}
-          tabIndex={-1}
+          aria-pressed={showPassword}
         >
           <ToggleEyeIcon visible={showPassword} className="w-5 h-5" />
         </button>
@@ -767,6 +768,7 @@ const PasswordField = ({ id, label, value, onChange, error, strength, requiremen
             exit={{ opacity: 0, height: 0 }}
             className="text-xs text-red-500 dark:text-red-400 flex items-center gap-1"
             role="alert"
+            aria-live="assertive"
           >
             <X className="w-3.5 h-3.5" />
             {error}
