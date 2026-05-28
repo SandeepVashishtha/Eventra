@@ -368,9 +368,8 @@ const useOfflineSync = () => {
 
     return () => {
       window.removeEventListener("online", handleOnline);
-      // Abort any in-progress conflict resolution waiter so its event
-      // listener is removed and the sync loop exits cleanly on unmount.
       conflictController.abort();
+      isSyncing.current = false;
       if (idleId !== null) {
         window.cancelIdleCallback(idleId);
       }
