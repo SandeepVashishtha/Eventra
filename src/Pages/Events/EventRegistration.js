@@ -18,6 +18,7 @@ import {
   CheckCircle,
   Loader2,
 } from "lucide-react";
+import useFormValidation from "../../hooks/useFormValidation";
 import { getEventStatus } from "../../utils/eventUtils";
 import { checkRegistrationConflict, suggestAlternativeEvents } from "../../utils/conflictDetection";
 import { useAuth } from "../../context/AuthContext";
