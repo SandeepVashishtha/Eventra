@@ -227,6 +227,13 @@ export default async function handler(req, res) {
       }, req);
     }
 
+    // Check if user is active
+    if (user.isActive === false) {
+      return corsResponse(res, 401, { 
+        error: "Invalid credentials" 
+      }, req);
+    }
+
     // -----------------------------------------------------------------------
     // Verify password using BCrypt
     // -----------------------------------------------------------------------
@@ -236,13 +243,6 @@ export default async function handler(req, res) {
     if (!isPasswordValid) {
       return corsResponse(res, 401, { 
         error: "Invalid credentials" 
-      }, req);
-    }
-
-    // Check if user is active
-    if (user.isActive === false) {
-      return corsResponse(res, 401, { 
-        error: "Account is deactivated. Please contact support." 
       }, req);
     }
 

@@ -72,7 +72,7 @@ export const validate = {
   },
 
   fullName: (val) => (val && val.trim() !== "") || "Full name is required",
-  phone: (val) => phonePattern.test(val) || VALIDATION_MESSAGES.invalidPhone,
+
 
   /**
    * Phone: length check first (min 10), then linear-time regex.

@@ -7,6 +7,37 @@ import { logger } from "../utils/logger";
 const QUEUE_KEY = "eventra_offline_queue";
 const DB_NAME = "eventra_offline_db";
 const STORE_NAME = "actions_queue";
+const BACKGROUND_SYNC_TAG = "eventra-offline-queue-sync";
+
+const requestBackgroundSync = async () => {
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
+    return false;
+  }
+
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    if (registration?.sync && typeof registration.sync.register === "function") {
+      await registration.sync.register(BACKGROUND_SYNC_TAG);
+      return true;
+    }
+  } catch (error) {
+    logger.warn("[OfflineQueue] Background sync registration failed:", error);
+  }
+
+  return false;
+};
+
+const notifyQueueUpdated = (queuedItem) => {
+  if (typeof window === "undefined" || typeof window.dispatchEvent !== "function") {
+    return;
+  }
+
+  window.dispatchEvent(
+    new CustomEvent("eventra-offline-queue-updated", {
+      detail: { item: queuedItem },
+    })
+  );
+};
 
 /**
  * DB_VERSION controls the IndexedDB schema version.
@@ -45,7 +76,7 @@ const _rescueFromLocalStorage = () => {
 // Internal: notify the UI that a schema upgrade occurred
 // ---------------------------------------------------------------------------
 const _dispatchUpgradeEvent = (rescuedCount) => {
-  if (typeof window !== "undefined") {
+  if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
     window.dispatchEvent(
       new CustomEvent("eventra-offline-queue-upgraded", {
         detail: {
@@ -178,7 +209,7 @@ const openDB = () => {
      * close other tabs.
      */
     request.onblocked = () => {
-      if (typeof window !== "undefined") {
+      if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
         window.dispatchEvent(
           new CustomEvent("eventra-offline-db-blocked", {
             detail: {
@@ -293,14 +324,17 @@ export const pushToQueue = async (item, userId = null) => {
     endpoint: item.endpoint || null,
     // SECURITY: Attach user ID to validate ownership on replay
     userId: userId || null,
-    sessionId: typeof window !== "undefined" ? sessionStorage.getItem("session_id") || null : null,
+    sessionId:
+      typeof sessionStorage !== "undefined"
+        ? sessionStorage.getItem("session_id") || null
+        : null,
   };
 
   // 1. Sync mirror updates immediately (Synchronous fallback)
   const queue = getQueue();
   if (queue.length >= 15) {
     logger.warn("Offline queue limit reached. Dropping item to prevent local overflow.");
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
       window.dispatchEvent(
         new CustomEvent("eventra-offline-queue-full", {
           detail: { eventId: item.eventId, limit: 15 },
@@ -336,7 +370,14 @@ export const pushToQueue = async (item, userId = null) => {
   }
 
   // Return true if either storage successfully queued the item to prevent data loss
-  return localStorageSuccess || indexedDbSuccess;
+  const queued = localStorageSuccess || indexedDbSuccess;
+
+  if (queued) {
+    notifyQueueUpdated(actionItem);
+    await requestBackgroundSync();
+  }
+
+  return queued;
 };
 
 /**
@@ -383,6 +424,8 @@ export const setQueue = async (newQueue) => {
   } catch (err) {
     logger.error("IndexedDB setQueue failed:", err);
   }
+
+  notifyQueueUpdated(null);
 };
 
 /**
@@ -409,6 +452,8 @@ export const clearQueue = async () => {
   } catch (err) {
     logger.error("IndexedDB clear failed:", err);
   }
+
+  notifyQueueUpdated(null);
 };
 
 /**
