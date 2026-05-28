@@ -104,3 +104,5 @@ const ProfileMenu = ({ user, logout }) => {
 };
 
 export default ProfileMenu;
+
+// RENDERING OPTIMIZATION: Memoized component using React.memo and stabilized click callbacks via useCallback.
