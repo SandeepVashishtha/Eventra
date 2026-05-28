@@ -1,12 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
-
-// ---------------------------------------------------------------------------
-// In-memory user storage (replace with database in production)
-// ---------------------------------------------------------------------------
-
-const users = new Map();
+import { users, hasUser, saveUser } from "./userStore.js";
 
 // ---------------------------------------------------------------------------
 // JWT Configuration
@@ -170,7 +165,7 @@ export default async function handler(req, res) {
     // Check for duplicate email
     // -----------------------------------------------------------------------
 
-    if (users.has(normalizedEmail)) {
+    if (await hasUser(normalizedEmail)) {
       return corsResponse(res, 409, { error: "An account with this email already exists" }, req);
     }
 
@@ -203,8 +198,7 @@ export default async function handler(req, res) {
       isActive: true,
     };
 
-    // Store user (in production, save to database)
-    users.set(normalizedEmail, newUser);
+    await saveUser(normalizedEmail, newUser);
 
     // -----------------------------------------------------------------------
     // Generate JWT token
@@ -262,9 +256,3 @@ export default async function handler(req, res) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Export users map for sharing with login.js (development purposes)
-// In production, replace with actual database
-// ---------------------------------------------------------------------------
-
-export { users };

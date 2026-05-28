@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { users } from "./signup.js";
 import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
+import { users, getUser } from "./userStore.js";
 
 // ---------------------------------------------------------------------------
 // JWT Configuration
@@ -168,15 +168,17 @@ const getPermissionsForRoles = (roles) => {
 // Find user by username or email
 // ---------------------------------------------------------------------------
 
-const findUserByUsernameOrEmail = (usernameOrEmail) => {
+const findUserByUsernameOrEmail = async (usernameOrEmail) => {
   const normalizedInput = usernameOrEmail.trim().toLowerCase();
-  
-  // Search through all users
-  for (const [key, user] of users.entries()) {
+
+  // Fast path: email is the primary key in the store
+  const direct = await getUser(normalizedInput);
+  if (direct) return direct;
+
+  // Fallback: scan in-memory cache for username matches
+  for (const [, user] of users.entries()) {
     if (
-      user.email === normalizedInput ||
       user.username === normalizedInput ||
-      user.email === usernameOrEmail.trim() ||
       user.username === usernameOrEmail.trim()
     ) {
       return user;
@@ -218,7 +220,7 @@ export default async function handler(req, res) {
     // Find user by username or email
     // -----------------------------------------------------------------------
 
-    const user = findUserByUsernameOrEmail(usernameOrEmail);
+    const user = await findUserByUsernameOrEmail(usernameOrEmail);
     
     if (!user) {
       // Return generic message to prevent user enumeration
@@ -317,10 +319,5 @@ export default async function handler(req, res) {
     }, req);
   }
 }
-
-// ---------------------------------------------------------------------------
-// Export users map for sharing with signup.js (development purposes)
-// In production, replace with actual database
-// ---------------------------------------------------------------------------
 
 export { users };
