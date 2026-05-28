@@ -32,8 +32,10 @@ const ConfirmationModal = ({
 
       if (event.key !== "Tab" || !modalRef.current) return;
 
-      const focusableElements = modalRef.current.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      const focusableElements = Array.from(
+        modalRef.current.querySelectorAll(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        ),
       );
 
       if (!focusableElements.length) return;
@@ -42,6 +44,13 @@ const ConfirmationModal = ({
       const lastElement =
         focusableElements[focusableElements.length - 1];
 
+      if (!firstElement || !lastElement) {
+        event.preventDefault();
+        modalRef.current.focus();
+        return;
+      }
+
+      if (event.shiftKey && document.activeElement === firstElement) {
       if (
         event.shiftKey &&
         document.activeElement === firstElement
@@ -93,6 +102,7 @@ const ConfirmationModal = ({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
+        tabIndex={-1}
       >
         <div className="confirmation-modal-header">
           <h3 id={titleId}>{title}</h3>
