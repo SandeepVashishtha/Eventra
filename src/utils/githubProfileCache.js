@@ -24,6 +24,7 @@
  */
 
 const PROFILE_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const FETCH_TIMEOUT_MS = 10000; // 🔥 10 seconds timeout limit
 
 /** @type {Map<string, { data: object, fetchedAt: number }>} */
 const profileCache = new Map();
@@ -75,13 +76,20 @@ export function fetchProfileWithCache(username, fetcher) {
   const existing = inFlightRequests.get(username);
   if (existing) return existing;
 
-  const request = fetcher(username).then(
+  // 🔥 FIX: Create a timeout promise that rejects after 10 seconds
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error(`Fetch timeout for profile: ${username}`)), FETCH_TIMEOUT_MS)
+  );
+
+  // 🔥 FIX: Race the fetcher against the timeout
+  const request = Promise.race([fetcher(username), timeoutPromise]).then(
     (data) => {
       setCachedProfile(username, data);
       inFlightRequests.delete(username);
       return data;
     },
     (err) => {
+      // If the fetch fails OR the timeout triggers, we properly clean up the Map
       inFlightRequests.delete(username);
       throw err;
     }
@@ -101,7 +109,7 @@ export function fetchProfileWithCache(username, fetcher) {
  * caller.
  *
  * @template T, R
- * @param {T[]}             items        - Items to process
+ * @param {T[]}            items        - Items to process
  * @param {function(T): Promise<R>} taskFn - Async function to call per item
  * @param {number}          [concurrency=5]
  * @returns {Promise<PromiseSettledResult<R>[]>}
