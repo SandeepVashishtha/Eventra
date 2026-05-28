@@ -1,3 +1,4 @@
+import { useCallback, useRef } from "react";
 import { useRef, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import EventHero from "./EventHero";
@@ -5,8 +6,10 @@ import EventCard from "./EventCard";
 import { useSearchParams } from "react-router-dom";
 import { Grid, List } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import { getEventStatus } from "../../utils/eventUtils";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
+import EventFiltersToolbar from "./EventFiltersToolbar";
 import StyledDropdown from "../../components/StyledDropdown";
 import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
 import SearchEmptyState from "../../components/common/SearchEmptyState";
@@ -14,23 +17,9 @@ import useDocumentTitle from "../../hooks/useDocumentTitle";
 import ActiveFilters from "./ActiveFilters";
 import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
-import { darkTheme } from "../../components/styles/theme";
-import BackToTopButton from "../../components/common/BackToTopButton";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
 import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
-
-
-
-const EVENT_SEARCH_KEYS = [
-  "title",
-  "description",
-  "location",
-  "tags",
-  "type",
-  "date",
-  "status",
-];
 
 const FILTERS = [
   { key: "all", label: "All" },
@@ -100,7 +89,7 @@ const EventsPage = () => {
   useDocumentTitle("Eventra | Events");
 
   const location = useLocation();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // SECURITY: Safely decode and sanitize search query from URL params
   const rawSearchParam =
@@ -118,6 +107,23 @@ const EventsPage = () => {
   }
 
   const listing = useEventListing();
+  const {
+    setAdvancedFilters,
+    setFilterType,
+    setSafePage,
+    setSearchQuery,
+    setSortType,
+    setViewMode,
+  } = listing;
+
+  const handleSearch = useCallback((query = "") => {
+    setSearchQuery(query);
+  }, [setSearchQuery]);
+
+  const handlePageChange = useCallback((page) => {
+    setSafePage(page);
+    cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [setSafePage]);
   const cardSectionRef = useRef();
 
   // Local input value updates immediately on each keystroke so the input
@@ -155,25 +161,34 @@ const EventsPage = () => {
     if (listing.eventsPerPage !== 6) params.perPage = listing.eventsPerPage;
     if (listing.searchQuery) params.search = listing.searchQuery;
     if (listing.filterType !== "all") params.filter = listing.filterType;
-    if (listing.sortType !== "latest") params.sort = listing.sortType;
-if (listing.viewMode !== "grid") params.view = listing.viewMode;
+    if (listing.sortType !== "Newest") params.sort = listing.sortType;
+    if (listing.viewMode !== "grid") params.view = listing.viewMode;
     setSearchParams(params, { replace: true });
-  }, [ listing.currentPage,
-  listing.eventsPerPage,
-  listing.searchQuery,
-  listing.filterType,
-  listing.sortType,
-  listing.viewMode,
-  setSearchParams]);
+  }, [
+    listing.currentPage,
+    listing.eventsPerPage,
+    listing.searchQuery,
+    listing.filterType,
+    listing.sortType,
+    listing.viewMode,
+    setSearchParams,
+  ]);
 
-  const handleSearch = (query = "") => {
-    setLocalSearchInput(query);
-  };
+  // Keep local state in sync when route search changes.
+  useEffect(() => {
     const safeQuery = prepareSafeSearchQuery(routeSearchQuery);
     if (safeQuery !== listing.searchQuery) {
+      setLocalSearchInput(safeQuery);
       listing.setSearchQuery(safeQuery);
     }
   }, [routeSearchQuery, listing.searchQuery, listing.setSearchQuery]);
+
+  const handleSearch = (query = "") => {
+    const safeQuery = prepareSafeSearchQuery(query);
+    setLocalSearchInput(safeQuery);
+    listing.setSearchQuery(safeQuery);
+    return listing.filteredEvents;
+  };
 
   // Scroll to card section after loading when a route search is active
   useEffect(() => {
@@ -187,16 +202,26 @@ if (listing.viewMode !== "grid") params.view = listing.viewMode;
     }
   }, [listing.isLoading, routeSearchQuery]);
 
-  const scrollToCard = () => {
+  const scrollToCard = useCallback(() => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  }, []);
 
+  const handleClearFilters = useCallback(() => {
+    setSearchQuery("");
+    setFilterType("all");
+    setSortType("Newest");
+    setViewMode("grid");
+    setAdvancedFilters({});
+  }, [setAdvancedFilters, setFilterType, setSearchQuery, setSortType, setViewMode]);
   const handleClearFilters = () => {
     setLocalSearchInput("");
+  };
+
   const clearSearchAndFilters = () => {
     listing.setSearchQuery("");
     listing.setFilterType("all");
     listing.setSortType("Newest");
+    setLocalSearchInput("");
   };
 
   const hasActiveFilters =
@@ -208,12 +233,7 @@ if (listing.viewMode !== "grid") params.view = listing.viewMode;
         searchQuery={localSearchInput}
         setSearchQuery={setLocalSearchInput}
         filteredEvents={listing.filteredEvents}
-        handleSearch={(query) => {
-          // SECURITY: Sanitize search query from user input before use
-          const safeQuery = prepareSafeSearchQuery(query);
-          listing.setSearchQuery(safeQuery);
-          return listing.filteredEvents;
-        }}
+        handleSearch={handleSearch}
         scrollToCard={scrollToCard}
       />
 
@@ -247,7 +267,6 @@ if (listing.viewMode !== "grid") params.view = listing.viewMode;
               </button>
             )}
           </div>
-        ) : null}
         <EventFiltersToolbar
           filterType={listing.filterType}
           onFilterChange={listing.setFilterType}
