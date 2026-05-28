@@ -185,6 +185,28 @@ const InteractiveWhiteboard = () => {
     toast.info("Canvas cleared successfully.");
   };
 
+  const handleMouseMove = useCallback((e) => {
+    if (!isDrawing || !currentElement) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.clientX ?? (e.touches?.[0]?.clientX ?? 0);
+    const clientY = e.clientY ?? (e.touches?.[0]?.clientY ?? 0);
+    const coords = { x: clientX - rect.left, y: clientY - rect.top };
+    if (currentElement.type === "path") {
+      setCurrentElement((prev) => ({
+        ...prev,
+        points: [...prev.points, { x: coords.x, y: coords.y }],
+      }));
+    } else {
+      setCurrentElement((prev) => ({
+        ...prev,
+        width: coords.x - prev.x,
+        height: coords.y - prev.y,
+      }));
+    }
+  }, [isDrawing, currentElement]);
+
   return (
     <div 
       className="flex flex-col h-full bg-slate-950 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative select-none"
