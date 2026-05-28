@@ -24,6 +24,8 @@ const mergeDescribedBy = (...ids) => ids.filter(Boolean).join(" ") || undefined;
  * @param {boolean} [props.required=false] - Shows a required indicator and sets aria-required.
  * @param {React.ReactNode} [props.helperText] - Optional helper text below the input.
  * @param {React.ReactNode} [props.message] - Validation message below the input.
+ * @param {React.ReactNode} [props.prefix] - Optional content inside the left side of the input.
+ * @param {React.ReactNode} [props.suffix] - Optional content inside the right side of the input.
  * @param {"idle"|"validating"|"loading"|"success"|"valid"|"error"|"invalid"|"warning"|"info"} [props.validationState="idle"]
  * @param {string} [props.className] - Extra classes for the outer wrapper.
  */
@@ -35,6 +37,8 @@ const FormFieldWrapper = ({
   required = false,
   helperText,
   message,
+  prefix,
+  suffix,
   validationState = "idle",
   className = "",
   labelClassName = "",
@@ -69,7 +73,9 @@ const FormFieldWrapper = ({
           invalid && "border-red-500 focus:border-red-500 focus:ring-red-500/20 dark:border-red-400",
           validationState === "success" && "border-green-500 focus:border-green-500 focus:ring-green-500/20 dark:border-green-400",
           loading && "border-blue-500 dark:border-blue-400",
-          showStatusIcon && "pr-10",
+          prefix && "pl-10",
+          (showStatusIcon || suffix) && "pr-10",
+          showStatusIcon && suffix && "pr-16",
           child.props.className,
         ),
       })
@@ -99,9 +105,24 @@ const FormFieldWrapper = ({
       )}
 
       <div className={joinClasses("relative", inputWrapperClassName)}>
+        {prefix && (
+          <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
+            {prefix}
+          </span>
+        )}
         {enhancedChild}
+        {suffix && (
+          <span className="absolute inset-y-0 right-3 flex items-center">
+            {suffix}
+          </span>
+        )}
         {showStatusIcon && (
-          <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+          <span
+            className={joinClasses(
+              "pointer-events-none absolute inset-y-0 flex items-center",
+              suffix ? "right-10" : "right-3",
+            )}
+          >
             <ValidationStatusIcon state={validationState} />
           </span>
         )}
