@@ -7,3 +7,4 @@ const useDocumentTitle = (title) => {
 }
 
 export default useDocumentTitle
+export const getPageTitleSuffix = () => " | Eventra";
