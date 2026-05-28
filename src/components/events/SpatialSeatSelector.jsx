@@ -34,7 +34,27 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
     let initialElements = [];
     if (savedLayout) {
       try {
-        initialElements = JSON.parse(savedLayout);
+        const parsed = JSON.parse(savedLayout);
+        if (Array.isArray(parsed)) {
+          // Strict schema validation and sanitization
+          initialElements = parsed.map(el => ({
+            ...el,
+            id: typeof el.id === 'string' || typeof el.id === 'number' ? String(el.id) : Math.random().toString(36).substring(2, 9),
+            type: typeof el.type === 'string' ? el.type : 'round-table',
+            label: typeof el.label === 'string' ? el.label : 'Unknown',
+            x: Number(el.x) || 0,
+            y: Number(el.y) || 0,
+            width: Number(el.width) || 100,
+            height: Number(el.height) || 100,
+            rotation: Number(el.rotation) || 0,
+            seatsCount: Number(el.seatsCount) || 0,
+            tier: typeof el.tier === 'string' ? el.tier : 'General Seating',
+            assignedAttendees: typeof el.assignedAttendees === 'object' && el.assignedAttendees !== null ? el.assignedAttendees : {},
+            seatLabels: typeof el.seatLabels === 'object' && el.seatLabels !== null ? el.seatLabels : {}
+          }));
+        } else {
+          initialElements = DEFAULT_PRESETS.banquet;
+        }
       } catch (e) {
         initialElements = DEFAULT_PRESETS.banquet;
       }
