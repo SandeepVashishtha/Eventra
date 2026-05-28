@@ -19,6 +19,7 @@ const ConfirmationModal = ({
     if (!isOpen) return undefined;
 
     const previouslyFocusedElement = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
 
     document.body.style.overflow = "hidden";
 
@@ -50,7 +51,6 @@ const ConfirmationModal = ({
         return;
       }
 
-      if (event.shiftKey && document.activeElement === firstElement) {
       if (
         event.shiftKey &&
         document.activeElement === firstElement
@@ -69,7 +69,7 @@ const ConfirmationModal = ({
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.body.style.overflow = "auto";
+      document.body.style.overflow = previousOverflow;
 
       document.removeEventListener(
         "keydown",

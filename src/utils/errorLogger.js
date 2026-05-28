@@ -1,7 +1,12 @@
-import * as Sentry from "@sentry/react";
-
 const dsn = process.env.REACT_APP_SENTRY_DSN;
 const isProduction = process.env.NODE_ENV === "production";
+const Sentry = {
+  init: () => {},
+  browserTracingIntegration: () => null,
+  replayIntegration: () => null,
+  withScope: () => {},
+  captureException: () => {},
+};
 
 // ── Sentry initialisation (production only) ───────────────────────────────────
 if (isProduction && dsn) {
