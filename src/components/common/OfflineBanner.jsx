@@ -5,15 +5,16 @@ import "./OfflineBanner.css";
 export default function OfflineBanner() {
   const [status, setStatus] = useState(navigator.onLine ? "online" : "offline");
   const [visible, setVisible] = useState(!navigator.onLine);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     const handleOnline = () => {
       setStatus("online");
       setVisible(true);
-      const timer = setTimeout(() => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
         setVisible(false);
       }, 4000);
-      return () => clearTimeout(timer);
     };
 
     const handleOffline = () => {
@@ -27,6 +28,7 @@ export default function OfflineBanner() {
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+      if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
 
