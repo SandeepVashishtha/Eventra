@@ -8,11 +8,11 @@ import "./styles/print.css";
 
 import { toast } from "react-toastify";
 
-import BackToTopButton from "./components/common/BackToTopButton";
+import ScrollToTopButton from "./components/ScrollToTop";
 import Navbar from "./components/Layout/Navbar";
 import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
-import ScrollToTop from "./components/ScrollToTop";
+import ScrollToTop from "./components/ScrollToTop.jsx";
 import FeedbackButton from "./components/FeedbackButton";
 import FluidCursor from "./components/visual/FluidCursor";
 import PageTransition from "./components/common/PageTransition";
@@ -197,7 +197,7 @@ function App() {
                   </Suspense>
                 </SectionErrorBoundary>
 
-                <BackToTopButton />
+                <ScrollToTopButton />
                 <FeedbackButton />
                 <ThemeCustomizerDrawer />
                 <SessionRecovery />
