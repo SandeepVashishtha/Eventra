@@ -21,11 +21,8 @@ import SkeletonLeaderboard from "../../components/common/SkeletonLeaderboard";
 import EmptyState from "../../components/common/EmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useLeaderboardStream, SSE_STATUS } from "../../context/RealTimeContext";
-import {
-  storageManager,
-  STORAGE_KEYS,
-  validators,
-} from "../../utils/storageManager";
+import { storageManager, validators } from "../../utils/storage/storageManager";
+import { STORAGE_KEYS } from "../../utils/storage/storageKeys";
 
 // ─── Category filter definitions ───────────────────────────────────────────────
 const CATEGORY_FILTERS = [
