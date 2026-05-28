@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import { FormFieldWrapper, ValidationMessage } from "../forms";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
-import { User, AtSign, Lock, Eye, EyeOff, Zap } from 'lucide-react';
+import { User, AtSign, Lock, Eye, EyeOff, Zap } from "lucide-react";
 import {
   validate,
   validateEmailAvailability,
   validatePasswordStrength,
 } from "../../validation";
 
-const getResultMessage = (result) => (result?.isValid ? "" : result?.message || "");
+const getResultMessage = (result, fallback) =>
+  result?.isValid ? "" : result?.message || fallback;
 
 const parseSignupResponse = async (response) => {
   if (typeof response?.text === "function") {
@@ -33,11 +33,10 @@ const parseSignupResponse = async (response) => {
   };
 };
 
-const getFieldState = (message, fallbackState = "idle") =>
-  message ? "error" : fallbackState;
-
 const SignupForm = () => {
-  const prefersReducedMotion = useReducedMotion();
+  const navigate = useNavigate();
+  const { setAuthSession } = useAuth();
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -46,32 +45,12 @@ const SignupForm = () => {
     confirmPassword: "",
   });
 
-  const [loading, setLoading] = useState(false);
-  const [firstNameError, setFirstNameError] = useState("");
-  const [lastNameError, setLastNameError] = useState("");
-  const [emailError, setEmailError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const [confirmPasswordError, setConfirmPasswordError] = useState("");
-  const [fieldValidationState, setFieldValidationState] = useState({
-    firstName: "idle",
-    lastName: "idle",
-    email: "idle",
-    password: "idle",
-    confirmPassword: "idle",
-  });
-  const [error, setError] = useState("");
   const [errors, setErrors] = useState({});
+  const [submitError, setSubmitError] = useState("");
   const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [passwordMatchMessage, setPasswordMatchMessage] = useState("");
-  const navigate = useNavigate();
-  const { setAuthSession } = useAuth();
-  const emailValidationRequestRef = useRef(0);
-
-  const setFieldState = useCallback((fieldName, state) => {
-    setFieldValidationState((prev) => ({ ...prev, [fieldName]: state }));
-  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -192,6 +171,8 @@ const SignupForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitError("");
+    setSuccess("");
 
     const firstNameResult = validate.firstName(formData.firstName);
     if (firstNameResult !== true) {
@@ -259,10 +240,7 @@ const SignupForm = () => {
       return;
     }
 
-    setConfirmPasswordError("");
-    setFieldState("confirmPassword", "success");
     setLoading(true);
-    setErrors({});
 
     try {
       const signupEndpoint = API_ENDPOINTS.AUTH.REGISTER || API_ENDPOINTS.AUTH.SIGNUP;
@@ -277,12 +255,17 @@ const SignupForm = () => {
       const { ok, status, data } = await parseSignupResponse(response);
 
       if (!ok) {
-        const backendMessage = data?.message || data?.error || "";
-        setError(backendMessage ? `${backendMessage} (${status})` : `Registration failed (${status})`);
+        const backendMessage = data?.message || data?.error || "Registration failed";
+        setSubmitError(`${backendMessage} (${status})`);
         return;
       }
 
       const sessionToken = data?.token;
+      if (!sessionToken) {
+        setSubmitError("Signup completed but no token was returned.");
+        return;
+      }
+
       const sessionUser = {
         id: data?.id,
         firstName: data?.firstName ?? formData.firstName.trim(),
@@ -294,13 +277,11 @@ const SignupForm = () => {
         permissions: data?.permissions ?? [],
       };
 
-      if (!sessionToken) throw new Error("Token missing from signup response");
-
       setAuthSession(sessionToken, sessionUser);
-      setSuccess("Account created successfully! Redirecting to dashboard...");
-      setTimeout(() => navigate("/dashboard", { replace: true }), 1200);
+      setSuccess("Account created successfully. Redirecting to dashboard...");
+      setTimeout(() => navigate("/dashboard", { replace: true }), 1000);
     } catch (err) {
-      setErrors({ submit: err.message || "Network error. Please try again." });
+      setSubmitError(err?.message || "Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -309,11 +290,7 @@ const SignupForm = () => {
   return (
     <div className="w-full">
       <div className="text-center space-y-3 mb-6">
-        <motion.div
-          whileHover={{ scale: 1.05, rotate: 5 }}
-          whileTap={{ scale: 0.95 }}
-          className="mx-auto w-14 h-14 bg-gradient-to-br from-blue-100 to-yellow-100 rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(254,240,138,0.3)]"
-        >
+        <motion.div className="mx-auto w-14 h-14 bg-gradient-to-br from-blue-100 to-yellow-100 rounded-2xl flex items-center justify-center">
           <Zap className="w-7 h-7 text-blue-600" />
         </motion.div>
         <h1 className="text-2xl font-bold text-white">Create Your Account</h1>
@@ -497,33 +474,16 @@ const SignupForm = () => {
         )}
 
         <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
           type="submit"
           disabled={loading}
-          className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-[0_0_15px_rgba(147,197,253,0.3)] text-sm font-bold text-[#0f172a] bg-blue-300 hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0f172a] focus:ring-blue-500 transition-all duration-300 mt-2"
+          className="w-full py-3 rounded-xl text-sm font-bold text-[#0f172a] bg-gradient-to-r from-blue-400 to-indigo-400"
         >
-          {loading ? (
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 border-2 border-[#0f172a] border-t-transparent rounded-full animate-spin"></div>
-              Creating Account...
-            </div>
-          ) : "Create Account"}
+          {loading ? "Creating account..." : "Create Account"}
         </motion.button>
       </form>
 
-      <p className="text-[10px] text-center text-slate-500 mt-4 leading-relaxed">
-        By clicking on sign up, you agree to our{" "}
-        <Link to="/terms" className="hover:text-slate-300 underline transition-colors">Terms of Service</Link>{" "}
-        and{" "}
-        <Link to="/privacy" className="hover:text-slate-300 underline transition-colors">Privacy Policy</Link>
-      </p>
-
-      <p className="text-center text-xs text-slate-400 mt-3">
-        Already have an account?{" "}
-        <Link to="/login" className="text-blue-400 hover:text-blue-300 hover:underline font-medium transition-colors">
-          Sign in
-        </Link>
+      <p className="text-center text-sm text-slate-400 mt-4">
+        Already have an account? <Link to="/login" className="text-blue-400 hover:text-blue-300">Sign in</Link>
       </p>
     </div>
   );
