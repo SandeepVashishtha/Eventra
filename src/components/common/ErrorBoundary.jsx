@@ -54,10 +54,26 @@ class GlobalErrorBoundary extends React.Component {
     error,
     errorInfo
   ) {
-    logError(
-      error,
-      errorInfo
-    );
+    // 🟢 Flag the error immediately to stop globalErrorHandler from double-reporting
+    if (error && typeof error === 'object') {
+      error.__isReactHandled = true;
+    }
+
+    // 🟢 Construct the aligned telemetry payload structure
+    const payload = {
+      event: 'app_crash',
+      level: 'fatal',
+      source: 'React.GlobalErrorBoundary',
+      message: error?.message || 'React component tree crash',
+      metadata: {
+        errorId: this.state.errorId,
+        stack: error?.stack || null,
+        componentStack: errorInfo?.componentStack || null,
+      }
+    };
+
+    // 🟢 Log using the unified structure
+    logError(payload);
 
     this.setState({
       errorInfo,
