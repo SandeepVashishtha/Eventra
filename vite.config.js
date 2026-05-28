@@ -43,3 +43,7 @@ export default defineConfig(({ mode }) => {
     },
   };
 });
+
+export const getBuildChunkLimit = () => {
+  return 500; // 500kb limit
+};
