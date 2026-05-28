@@ -247,30 +247,6 @@ export const AuthProvider = ({ children }) => {
     return true;
   }, []);
 
-  /**
-   * Sign in with a Google credential returned by @react-oauth/google.
-   *
-   * SECURITY NOTE
-   * -------------
-   * The Google ID token (credential) MUST be verified server-side.
-   * Client-side JWT decoding only reads the payload — it does NOT verify
-   * the cryptographic signature, audience (aud), issuer (iss), or expiry.
-   * Skipping the backend exchange would allow any Google-issued token
-   * (even one issued for a completely different application) to create a
-   * valid session in Eventra.
-   *
-   * Flow:
-   *  1. POST the raw Google credential to the Eventra backend.
-   *  2. The backend verifies it against Google's JWKS endpoint and checks
-   *     aud, iss, exp, and email_verified.
-   *  3. On success the backend returns an Eventra-signed JWT + user object.
-   *  4. We persist ONLY the Eventra JWT — never the raw Google token.
-   *
-   * @param {string} credential - Raw Google ID token from @react-oauth/google
-   * @returns {Promise<true>} Resolves to true on success
-   * @throws {Error} If the credential is missing, the backend rejects it,
-   *                 or the response does not contain an Eventra token
-   */
   const setAuthSession = useCallback(
     (sessionToken, sessionUser) => {
       return persistSession(sessionToken, sessionUser);
@@ -325,62 +301,7 @@ export const AuthProvider = ({ children }) => {
     [extractSession, persistSession, setAuthRequestState]
   );
 
-  const signInWithGoogle = useCallback(
-    async (credential) => {
-      if (!credential) {
-        const error = new Error("Google Sign-In failed: missing credential");
-        setAuthRequestState({ loading: false, error: error.message });
-        throw error;
-      }
 
-      if (!setAuthRequestState({ loading: true, error: null })) {
-        return false;
-      }
-
-      let res;
-      try {
-        res = await apiUtils.post(API_ENDPOINTS.AUTH.GOOGLE, { token: credential });
-      } catch (networkError) {
-        const error = new Error(
-          `Google Sign-In failed: could not reach the server. ${
-            networkError?.message || "Please check your connection and try again."
-          }`
-        );
-        if (!isMountedRef.current) return false;
-        setAuthRequestState({ loading: false, error: error.message });
-        throw error;
-      }
-
-      const data = res.data;
-
-      if (res.status !== 200) {
-        const error = new Error(
-          data?.message || data?.error || `Google Sign-In failed: server returned ${res.status}`
-        );
-        if (!isMountedRef.current) return false;
-        setAuthRequestState({ loading: false, error: error.message });
-        throw error;
-      }
-
-      const { sessionToken, sessionUser } = extractSession(res, data, null);
-
-      if (!sessionToken) {
-        const error = new Error(
-          "Google Sign-In failed: the server did not return an authentication token."
-        );
-        if (!isMountedRef.current) return false;
-        setAuthRequestState({ loading: false, error: error.message });
-        throw error;
-      }
-
-      const persisted = persistSession(sessionToken, sessionUser);
-      if (!persisted) return false;
-
-      setAuthRequestState({ loading: false, error: null });
-      return true;
-    },
-    [extractSession, persistSession, setAuthRequestState]
-  );
 
   const logout = useCallback(() => {
     clearSession();
@@ -438,7 +359,6 @@ export const AuthProvider = ({ children }) => {
       authRequest,
       login,
       logout,
-      signInWithGoogle,
       setAuthSession,
       setUser,
       isAuthenticated,
@@ -460,7 +380,6 @@ export const AuthProvider = ({ children }) => {
       authRequest,
       login,
       logout,
-      signInWithGoogle,
       setAuthSession,
       isAuthenticated,
       hasRole,
