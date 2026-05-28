@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
+import { getPublicErrorMessage, AUTH_ERRORS } from "../../utils/errorMessages";
 import useReducedMotion from "../../hooks/useReducedMotion";
 import GoogleLoginButton from './GoogleLoginButton';
 import FieldError from '../common/FieldError';
@@ -88,7 +89,7 @@ const Login = () => {
       }
     } catch (err) {
       recordAttempt();
-      toast.error(err.message || 'Login failed. Please check your credentials.');
+      toast.error(getPublicErrorMessage(err, AUTH_ERRORS.loginFailed));
     }
   };
 
