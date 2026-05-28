@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 const ConfettiCanvas = ({ 
   particleCount = 150, 
@@ -6,6 +6,7 @@ const ConfettiCanvas = ({
   colors = ["#6366f1", "#a855f7", "#ec4899", "#10b981", "#3b82f6", "#f59e0b"] 
 }) => {
   const canvasRef = useRef(null);
+  const [opacity, setOpacity] = useState(1);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -69,10 +70,7 @@ const ConfettiCanvas = ({
     draw();
 
     const timer = setTimeout(() => {
-      if (canvas) {
-        canvas.style.opacity = "0";
-        canvas.style.transition = "opacity 1.5s ease-out";
-      }
+      setOpacity(0);
     }, duration);
 
     return () => {
@@ -86,8 +84,8 @@ const ConfettiCanvas = ({
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-[9999]"
-      style={{ mixBlendMode: "screen" }}
+      className="fixed inset-0 pointer-events-none z-[9999] transition-opacity duration-[1500ms] ease-out"
+      style={{ mixBlendMode: "screen", opacity }}
     />
   );
 };
