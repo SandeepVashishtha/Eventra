@@ -185,6 +185,33 @@ const InteractiveWhiteboard = () => {
     toast.info("Canvas cleared successfully.");
   };
 
+  const getCanvasCoords = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.clientX ?? (e.touches?.[0]?.clientX ?? 0);
+    const clientY = e.clientY ?? (e.touches?.[0]?.clientY ?? 0);
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  };
+
+  const handleMouseDown = useCallback((e) => {
+    if (tool === "sticky") return;
+    e.stopPropagation();
+    const coords = getCanvasCoords(e);
+    if (tool === "pen") {
+      setCurrentElement({
+        type: "path", color, size, isSolid,
+        points: [{ x: coords.x, y: coords.y }],
+      });
+    } else {
+      setCurrentElement({
+        type: "shape", shapeType: tool, color, size, isSolid,
+        x: coords.x, y: coords.y, width: 0, height: 0,
+      });
+    }
+    setIsDrawing(true);
+  }, [tool, color, size, isSolid]);
+
   return (
     <div 
       className="flex flex-col h-full bg-slate-950 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative select-none"
