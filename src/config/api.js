@@ -227,6 +227,7 @@ export const API_ENDPOINTS = {
     SIGNUP: buildApiUrl("/api/auth/signup"),
     LOGOUT: buildApiUrl("/api/auth/logout"),
     RESET_PASSWORD: buildApiUrl("/api/auth/reset-password"),
+    OAUTH: buildApiUrl("/api/auth/oauth"),
   },
   EVENTS: {
     CREATE: buildApiUrl("/api/events/create"),

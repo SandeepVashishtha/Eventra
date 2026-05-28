@@ -237,6 +237,27 @@ const Signup = () => {
     }
   };
 
+  // Social login handler
+  const handleSocialLogin = useCallback(async (provider) => {
+    try {
+      setLoading(true);
+      const response = await apiUtils.get(`${API_ENDPOINTS.AUTH.OAUTH}/${provider}`);
+      
+      // Depending on wrapAxiosResponse, data could be response.data or response itself
+      const data = response.data || response;
+      if (data && data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("No redirect URL returned from server.");
+      }
+    } catch (err) {
+      console.error(`OAuth error (${provider}):`, err);
+      setErrors(prev => ({ ...prev, submit: `Failed to connect with ${provider}. Please try again.` }));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },

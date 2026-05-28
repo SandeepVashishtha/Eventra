@@ -8,6 +8,7 @@ import ProtectedRoute from '../auth/ProtectedRoute';
 
 // ─── Lazy-loaded page components ─────────────────────────────────────────────
 // All components are loaded on-demand to keep the initial bundle small.
+const OAuthCallback = lazy(() => import('../auth/OAuthCallback'));
 const MockApiResponse = lazy(() => import('../MockApiResponse'));
 const HomePage = lazy(() => import('../../Pages/Home/HomePage'));
 const EventDetails = lazy(() => import('../../Pages/Events/EventDetails'));
@@ -65,6 +66,7 @@ export const getPublicRoutes = () => [
   <Route key="/" path="/" element={<HomePage />} />,
   <Route key="/events" path="/events" element={<EventsPage />} />,
   <Route key="/event-details" path="/events/:eventId" element={<EventDetails />} />,
+  <Route key="/oauth/callback" path="/oauth/callback" element={<OAuthCallback />} />,
   // Registration writes to an authenticated backend endpoint; keep guarded.
   <Route
     key="/register"
