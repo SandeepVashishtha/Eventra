@@ -120,3 +120,4 @@ const useKeyboardShortcuts = ({
 };
 
 export default useKeyboardShortcuts;
+export const isShortcutAllowed = (e) => !["INPUT", "TEXTAREA"].includes(e.target.tagName);
