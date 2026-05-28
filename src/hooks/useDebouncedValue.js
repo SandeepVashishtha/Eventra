@@ -32,7 +32,7 @@
  * @returns {*} The debounced value
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export function useDebouncedValue(value, delayMs = 300) {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -62,8 +62,6 @@ export function useDebouncedValue(value, delayMs = 300) {
  * @param {number}   [delayMs=300]
  * @returns {function} Debounced version of `callback`
  */
-
-import { useCallback, useRef } from "react";
 
 export function useDebouncedCallback(callback, delayMs = 300) {
   const timerRef = useRef(null);
