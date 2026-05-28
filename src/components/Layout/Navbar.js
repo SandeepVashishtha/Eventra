@@ -172,7 +172,10 @@ const MobileNavLink = ({ item, isActive, onClick }) => (
 const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, location }) => (
   <div key={item.name}>
     <button
+      type="button"
       onClick={onToggle}
+      aria-expanded={isOpen}
+      aria-controls={`mobile-nav-group-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
       className={`flex items-center justify-between w-full px-4 py-2.5 rounded-lg transition-colors text-left text-base font-medium border ${
         isActive
           ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
@@ -183,7 +186,10 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
       <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
     </button>
     {isOpen && (
-      <div className="mt-2 ml-3 pl-3 border-l-2 border-gray-200 dark:border-white/20 space-y-1">
+      <div
+        id={`mobile-nav-group-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
+        className="mt-2 ml-3 pl-3 border-l-2 border-gray-200 dark:border-white/20 space-y-1"
+      >
         {item.subItems.map((sub) => {
           const isSubActive = location.pathname.startsWith(sub.href);
           return (
@@ -235,10 +241,31 @@ const DesktopNavLink = ({ item, isActive }) => (
   </Link>
 );
 
-const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location }) => (
+const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location }) => {
+  const menuId = `desktop-nav-menu-${item.name.toLowerCase().replace(/\s+/g, "-")}`;
+
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onToggle(event);
+      return;
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setOpenDropdown(null);
+    }
+  };
+
+  return (
   <div className="relative">
     <button
+      type="button"
       onClick={onToggle}
+      onKeyDown={handleKeyDown}
+      aria-expanded={isOpen}
+      aria-haspopup="menu"
+      aria-controls={menuId}
       className={`relative group flex items-center gap-1.5 text-[13px] xl:text-[14px] font-medium transition-all duration-200 whitespace-nowrap px-3.5 py-1.5 rounded-lg ${
         isActive || isOpen
           ? "text-indigo-600 dark:text-indigo-400 font-semibold"
@@ -272,6 +299,9 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
 
     {isOpen && (
       <motion.div
+        id={menuId}
+        role="menu"
+        aria-label={`${item.name} navigation`}
         initial={{ opacity: 0, y: 15, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -283,6 +313,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
             key={sub.name}
             to={sub.href}
             onClick={() => setOpenDropdown(null)}
+            role="menuitem"
             className={`group flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium rounded-lg transition-all duration-200 border ${
               location.pathname.startsWith(sub.href)
                 ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
@@ -302,7 +333,8 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
       </motion.div>
     )}
   </div>
-);
+  );
+};
 const MobileDrawerFooter = ({ 
   isAuthenticated, user, primaryLine, secondaryLine, closeAllMenus, location, 
   handleLogoutClick, isDarkMode, toggleTheme, cursorEnabled, toggleCursor 
@@ -334,6 +366,11 @@ const UserProfileDropdown = ({
   <div className="relative profile-container">
     <button 
       onClick={() => setShowProfileDropdown(!showProfileDropdown)} 
+      type="button"
+      aria-label="Open user menu"
+      aria-expanded={showProfileDropdown}
+      aria-haspopup="menu"
+      aria-controls="user-profile-menu"
       className="flex items-center gap-2 text-sm font-medium text-black/90 dark:text-white/90 hover:text-black dark:hover:text-white transition-colors"
     >
       {user?.profilePicture ? (
@@ -347,6 +384,9 @@ const UserProfileDropdown = ({
     <AnimatePresence>
       {showProfileDropdown && (
         <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} transition={{ duration: 0.15 }}
+          id="user-profile-menu"
+          role="menu"
+          aria-label="User menu"
           className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-900 rounded-lg shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-800">
           <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
             <div className="flex items-center gap-3">
@@ -364,18 +404,18 @@ const UserProfileDropdown = ({
             </div>
           </div>
           <div className="p-2 bg-white dark:bg-gray-900">
-            <Link to="/dashboard" onClick={() => setShowProfileDropdown(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/dashboard" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
+            <Link role="menuitem" to="/dashboard" onClick={() => setShowProfileDropdown(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/dashboard" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
               <LayoutDashboard className="w-4 h-4" />Dashboard
             </Link>
-            <Link to="/dashboard/achievements" onClick={() => setShowProfileDropdown(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/dashboard/achievements" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
+            <Link role="menuitem" to="/dashboard/achievements" onClick={() => setShowProfileDropdown(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/dashboard/achievements" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
               <Trophy className="w-4 h-4" />Achievements
             </Link>
-            <Link to="/profile" onClick={() => setShowProfileDropdown(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/profile" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
+            <Link role="menuitem" to="/profile" onClick={() => setShowProfileDropdown(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${location.pathname === "/profile" ? "bg-black/5 dark:bg-white/10 text-black dark:text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
               <UserCog className="w-4 h-4" />Edit Profile
             </Link>
           </div>
           <div className="p-2 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
-            <button onClick={handleLogoutClick} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <button type="button" role="menuitem" onClick={handleLogoutClick} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
               <LogOut className="w-4 h-4" />Logout
             </button>
           </div>
@@ -495,7 +535,9 @@ const MobileDrawerHeader = ({ closeBtnRef, closeAllMenus, isDarkMode }) => (
     </div>
     <button
       ref={closeBtnRef}
+      type="button"
       onClick={closeAllMenus}
+      aria-label="Close navigation menu"
       className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-gray-400 transition-colors"
     >
       <ChevronDown className="w-6 h-6 rotate-90" />
@@ -520,6 +562,7 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
           className="fixed top-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-sm shadow-2xl z-50 flex flex-col bg-white backdrop-blur-lg dark:bg-gray-900/95"
           role="dialog"
           aria-modal="true"
+          aria-label="Mobile navigation"
           initial={{ x: "100%" }}
           animate={{ x: 0 }}
           exit={{ x: "100%" }}
@@ -661,6 +704,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
       <nav
         ref={navRef}
+        aria-label="Primary navigation"
         data-aos="fade-down"
         data-aos-once="true"
         data-aos-duration="1000"
@@ -726,8 +770,10 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           <div className="lg:hidden ml-auto">
             <button 
               ref={toggleBtnRef} 
+              type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
               aria-expanded={isMobileMenuOpen} 
+              aria-haspopup="dialog"
               aria-controls="mobile-drawer"
               aria-label={isMobileMenuOpen ? "Close navigation" : "Open navigation"} 
               className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10"

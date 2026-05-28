@@ -91,12 +91,17 @@ function App() {
 
             <Router>
             <div className="App">
+              <a href="#main-content" className="skip-to-content">
+                Skip to main content
+              </a>
               <Navbar
                 cursorEnabled={cursorEnabled}
                 toggleCursor={toggleCursor}
               />
 
               <main
+                id="main-content"
+                tabIndex={-1}
                 className="
                   relative
                   z-10

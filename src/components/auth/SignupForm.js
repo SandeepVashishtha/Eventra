@@ -363,7 +363,12 @@ const SignupForm = () => {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4"
+        noValidate
+        aria-describedby="signup-form-error signup-form-success"
+      >
         <div className="grid grid-cols-2 gap-4">
           <FormFieldWrapper
             id="firstName"
@@ -452,6 +457,8 @@ const SignupForm = () => {
               onClick={() => setShowPassword(!showPassword)}
               className="text-slate-500 hover:text-slate-300"
               aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-controls="password"
+              aria-pressed={showPassword}
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -490,6 +497,8 @@ const SignupForm = () => {
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               className="text-slate-500 hover:text-slate-300"
               aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+              aria-controls="confirmPassword"
+              aria-pressed={showConfirmPassword}
             >
               {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -516,11 +525,13 @@ const SignupForm = () => {
         )}
 
         <ValidationMessage
+          id="signup-form-error"
           message={error}
           state="error"
           className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-2 rounded-lg"
         />
         <ValidationMessage
+          id="signup-form-success"
           message={success}
           state="success"
           className="text-xs text-green-400 bg-green-500/10 border border-green-500/20 p-2 rounded-lg"
