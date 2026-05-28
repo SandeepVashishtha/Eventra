@@ -14,8 +14,25 @@ def run_cmd(cmd, check=True, capture_output=True):
     return result
 
 def get_open_prs():
-    res = run_cmd(['gh', 'pr', 'list', '--state', 'open', '--json', 'number,headRefName,baseRefName'])
-    return json.loads(res.stdout)
+    # Detect current repo
+    res_current = run_cmd(['gh', 'repo', 'view', '--json', 'nameWithOwner,parent'])
+    repo_info = json.loads(res_current.stdout)
+    current_repo = repo_info['nameWithOwner']
+    
+    # Check if there is an upstream parent
+    if repo_info.get('parent'):
+        target_repo = f"{repo_info['parent']['owner']['login']}/{repo_info['parent']['name']}"
+    else:
+        target_repo = current_repo
+        
+    print(f"Target repository for PRs: {target_repo}")
+    
+    res = run_cmd(['gh', 'pr', 'list', '--repo', target_repo, '--author', '@me', '--state', 'open', '--json', 'number,headRefName,headRepositoryOwner,baseRefName'])
+    prs = json.loads(res.stdout)
+    
+    # Filter PRs that originate from our fork
+    my_prs = [pr for pr in prs if pr.get('headRepositoryOwner') and pr['headRepositoryOwner']['login'] == current_repo.split('/')[0]]
+    return target_repo, my_prs
 
 def resolve_with_ai(file_path):
     with open(file_path, 'r') as f:
@@ -68,11 +85,15 @@ File Content:
     
     print(f"Resolved {file_path} using {model}")
 
-def process_pr(pr):
+def process_pr(pr, target_repo):
     pr_number = pr['number']
     branch = pr['headRefName']
     base = pr['baseRefName']
     print(f"Processing PR #{pr_number}: {branch} -> {base}")
+    
+    # Add upstream remote if not exists to fetch base branch
+    run_cmd(['git', 'remote', 'add', 'upstream', f'https://github.com/{target_repo}.git'], check=False)
+    run_cmd(['git', 'fetch', 'upstream'])
     
     # Reset repo state
     run_cmd(['git', 'reset', '--hard', 'HEAD'])
@@ -83,8 +104,8 @@ def process_pr(pr):
     run_cmd(['git', 'pull', 'origin', branch])
     
     # Try merge
-    print(f"Attempting merge with origin/{base}")
-    merge_result = run_cmd(['git', 'merge', f'origin/{base}'], check=False)
+    print(f"Attempting merge with upstream/{base}")
+    merge_result = run_cmd(['git', 'merge', f'upstream/{base}'], check=False)
     
     if merge_result.returncode == 0:
         print(f"PR #{pr_number} merged cleanly or is up to date.")
@@ -116,14 +137,14 @@ def main():
     run_cmd(['git', 'config', '--global', 'user.email', 'github-actions[bot]@users.noreply.github.com'])
     run_cmd(['git', 'fetch', '--all'])
     
-    prs = get_open_prs()
+    target_repo, prs = get_open_prs()
     if not prs:
         print("No open PRs found.")
         return
         
     for pr in prs:
         try:
-            process_pr(pr)
+            process_pr(pr, target_repo)
         except Exception as e:
             print(f"Failed to process PR #{pr['number']}: {e}")
             run_cmd(['git', 'merge', '--abort'], check=False)
