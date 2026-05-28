@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import { useRef } from "react";
+import { useNavigate } from "react-router-dom";
 
+import useReducedMotion from "../../hooks/useReducedMotion.js";
+import { useAuth } from "../../context/AuthContext";
+import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import {
   ArrowRightIcon,
   ChartBarIcon,
@@ -16,14 +19,22 @@ import {
   LinkIcon,
   CalendarDaysIcon,
   DocumentTextIcon,
-  ComputerDesktopIcon
+  ComputerDesktopIcon,
 } from "@heroicons/react/24/solid";
 
-
-
-
 const HostHackathon = () => {
+  const prefersReducedMotion = useReducedMotion();
+  const navigate = useNavigate();
+  const { user, token, isAuthenticated } = useAuth();
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      toast.error("You must be logged in to host a hackathon.");
+      navigate("/login", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
   const [formData, setFormData] = useState({
     hackathonName: "",
     organizerName: "",
@@ -94,9 +105,9 @@ const HostHackathon = () => {
       newErrors.location = "Location must be at least 3 characters long!";
     }
 
-    // ✅ Email validation — works even for incomplete email
+    // ✅ Email validation — stricter regex to prevent invalid TLDs
     if (data.email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
       if (!emailRegex.test(data.email.trim())) {
         newErrors.email = "Please enter a valid email address!";
       }
@@ -125,11 +136,23 @@ const HostHackathon = () => {
         "Description must be at least 20 characters long!";
     }
 
+    // Participant Limit validation
+    if (data.participantLimit && Number(data.participantLimit) < 1) {
+      newErrors.participantLimit = "Participant limit must be at least 1!";
+    }
+
     return newErrors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!isAuthenticated()) {
+      toast.error("You must be logged in to host a hackathon.");
+      navigate("/login");
+      return;
+    }
+
     const validationErrors = validateForm({ ...formData });
 
     if (Object.keys(validationErrors).length > 0) {
@@ -151,24 +174,45 @@ const HostHackathon = () => {
       return;
     }
 
-    toast.success("Hackathon submitted successfully!");
+    setIsSubmitting(true);
+    try {
+      await apiUtils.post(
+        API_ENDPOINTS.HACKATHONS.HOST,
+        {
+          ...formData,
+          hostUserId: user?.id,
+        },
+        {
+          headers: {
+            Authorization: token
+          }
+        }
+      );
 
-    setFormData({
-      hackathonName: "",
-      organizerName: "",
-      email: "",
-      startDate: "",
-      endDate: "",
-      description: "",
-      location: "",
-      participantLimit: "",
-      prizeDetails: "",
-      website: "",
-    });
+      toast.success("Hackathon submitted successfully! It will be reviewed before going live.");
 
-    window.scrollTo({ top: 0, behavior: "smooth" });
+      setFormData({
+        hackathonName: "",
+        organizerName: "",
+        email: "",
+        startDate: "",
+        endDate: "",
+        description: "",
+        location: "",
+        participantLimit: "",
+        prizeDetails: "",
+        website: "",
+      });
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      const message = err?.data?.message || err?.message || "Submission failed. Please try again.";
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-  
+
   const formFields = [
     {
       label: "Hackathon Name",
@@ -221,14 +265,13 @@ const HostHackathon = () => {
     },
   ];
 
-
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
       {/* Heading Section */}
       <motion.div
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
         className="text-center mb-10"
         data-aos="fade-down"
         data-aos-once="true"
@@ -247,7 +290,7 @@ const HostHackathon = () => {
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.7 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
         className="w-full max-w-4xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-2xl p-6 mb-10"
         data-aos="fade-up"
         data-aos-delay="200"
@@ -316,7 +359,7 @@ const HostHackathon = () => {
       <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
         className="w-full max-w-4xl bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 border border-indigo-300 dark:border-gray-700"
         data-aos="fade-up"
         data-aos-delay="400"
@@ -328,7 +371,7 @@ const HostHackathon = () => {
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
               data-aos="fade-right"
               data-aos-delay={index * 50 + 500}
             >
@@ -396,7 +439,7 @@ const HostHackathon = () => {
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: 0.2 }}
             data-aos="fade-up"
             data-aos-delay="1000"
           >
@@ -421,9 +464,11 @@ const HostHackathon = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full flex items-center justify-center gap-2 bg-black text-white font-semibold p-3 rounded-xl shadow-lg hover:bg-zinc-800 transition-all duration-300"
+            disabled={isSubmitting}
+            className="w-full flex items-center justify-center gap-2 bg-black text-white font-semibold p-3 rounded-xl shadow-lg hover:bg-zinc-800 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Submit Hackathon <ArrowRightIcon className="w-5 h-5" />
+            {isSubmitting ? "Submitting..." : "Submit Hackathon"}
+            {!isSubmitting && <ArrowRightIcon className="w-5 h-5" />}
           </button>
         </form>
       </motion.div>
@@ -433,7 +478,7 @@ const HostHackathon = () => {
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.7 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
         className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-4xl mb-8 mt-12"
         data-aos="fade-up"
         data-aos-delay="1200"
@@ -471,7 +516,7 @@ const HostHackathon = () => {
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.7 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
         className="w-full max-w-4xl mt-10 text-center bg-black border border-black rounded-2xl p-10 shadow-2xl"
         data-aos="fade-up"
         data-aos-delay="1600"
@@ -488,14 +533,14 @@ const HostHackathon = () => {
           today!
         </p>
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-6">
-          <motion.a
-            href="#"
+          <motion.button
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="inline-block bg-white text-black px-8 py-3 rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300"
           >
             Explore Hosting Options
-          </motion.a>
+          </motion.button>
 
           <motion.a
             href="/hackathons"

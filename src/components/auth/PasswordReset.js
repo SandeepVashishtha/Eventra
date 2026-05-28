@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { apiUtils } from '../../config/api';
+import { API_ENDPOINTS, apiUtils } from '../../config/api';
 import { motion } from "framer-motion";
-
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 const PasswordReset = () => {
+  useDocumentTitle("Reset Password | Eventra");
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -12,29 +13,38 @@ const PasswordReset = () => {
 
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+ const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    setError('');
-    setMessage('');
+  setError("");
+  setMessage("");
 
-    try {
-      const response = await apiUtils.post('/api/auth/password-reset', { email });
-      const data = await response.json();
+  if (!email.trim()) {
+    setError("Email is required");
+    return;
+  }
 
-      if (response.ok) {
-        setMessage('Password reset link sent! Check your email.');
-        setTimeout(() => navigate('/login'), 3000); // Redirect after 3 seconds
-      } else {
-        setError(data.message || 'Failed to send reset link. Please try again.');
-      }
-    } catch (error) {
-      setError('Network error. Please check your connection and try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  ) {
+    setError("Invalid email format");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const response = await apiUtils.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, { email });
+    // Axios throws on non-2xx, so if we're here the request succeeded
+    setMessage(response.data?.message || 'Password reset link sent! Check your email.');
+    setTimeout(() => navigate('/login'), 3000);
+  } catch (err) {
+    const backendMessage = err.response?.data?.message;
+    setError(backendMessage || 'Failed to send reset link. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     // UPDATED: Main page background

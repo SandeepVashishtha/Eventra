@@ -1,14 +1,37 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import CryptoJS from "crypto-js";
+import { safeJsonParse } from "../utils/safeJsonParse";
+import { logger } from "../utils/logger";
+import { sanitizeSessionState } from "../utils/sessionSanitization";
+import { getDeviceFingerprint } from "../utils/deviceFingerprint";
 
 const SessionRecoveryContext = createContext();
 
-const SESSION_KEY = 'eventra_session_state';
-const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+const SESSION_KEY = "eventra_session_state";
+const SESSION_TIMEOUT = 30 * 60 * 1000;
+const RECOVERY_KEY_NAME = "eventra_session_recovery_key";
+
+const getOrCreateSessionKey = () => {
+  if (typeof window === "undefined" || !window.sessionStorage) {
+    return null;
+  }
+  try {
+    let key = sessionStorage.getItem(RECOVERY_KEY_NAME);
+    if (!key) {
+      key = CryptoJS.lib.WordArray.random(32).toString();
+      sessionStorage.setItem(RECOVERY_KEY_NAME, key);
+    }
+    return key;
+  } catch (e) {
+    logger.error("Failed to manage session-bound recovery key:", e);
+    return null;
+  }
+};
 
 export const useSessionRecovery = () => {
   const context = useContext(SessionRecoveryContext);
   if (!context) {
-    throw new Error('useSessionRecovery must be used within a SessionRecoveryProvider');
+    throw new Error("useSessionRecovery must be used within a SessionRecoveryProvider");
   }
   return context;
 };
@@ -20,10 +43,16 @@ export const SessionRecoveryProvider = ({ children }) => {
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [showRecoveryPrompt, setShowRecoveryPrompt] = useState(false);
   const [lastActivity, setLastActivity] = useState(Date.now());
+
+  const lastActivityRef = useRef(Date.now());
   const saveTimeoutRef = useRef(null);
   const activityTimeoutRef = useRef(null);
 
-  // Check network connectivity
+  const updateActivity = useCallback(() => {
+    const now = Date.now();
+    lastActivityRef.current = now;
+  }, []);
+
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
@@ -36,53 +65,82 @@ export const SessionRecoveryProvider = ({ children }) => {
     };
 
     setIsOnline(navigator.onLine);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
-  // Track user activity for timeout
-  const updateActivity = useCallback(() => {
-    setLastActivity(Date.now());
-  }, []);
-
   useEffect(() => {
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-    events.forEach(event => window.addEventListener(event, updateActivity));
+    const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click"];
+    events.forEach((event) => window.addEventListener(event, updateActivity));
 
     return () => {
-      events.forEach(event => window.removeEventListener(event, updateActivity));
+      events.forEach((event) => window.removeEventListener(event, updateActivity));
     };
   }, [updateActivity]);
 
-  // Load session on mount
   useEffect(() => {
     try {
+      const key = getOrCreateSessionKey();
       const saved = localStorage.getItem(SESSION_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        const now = Date.now();
-        
-        // Check if session is still valid (not expired)
-        if (now - parsed.timestamp < SESSION_TIMEOUT) {
-          setSessionData(parsed);
-          setHasSession(true);
-          setShowRecoveryPrompt(true);
+      if (saved && key) {
+        let decryptedStr = null;
+        try {
+          const bytes = CryptoJS.AES.decrypt(saved, key);
+          decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
+        } catch (decryptError) {
+          logger.error("Decryption of session recovery state failed (invalid key or tampered state):", decryptError);
+          localStorage.removeItem(SESSION_KEY);
+          return;
+        }
+
+        if (decryptedStr) {
+          const parsed = safeJsonParse(decryptedStr, {});
+          const now = Date.now();
+
+          const isValidTimestamp =
+            parsed &&
+            parsed.timestamp &&
+            typeof parsed.timestamp === "number" &&
+            !isNaN(parsed.timestamp) &&
+            parsed.timestamp > 0;
+
+          if (isValidTimestamp && now - parsed.timestamp < SESSION_TIMEOUT) {
+            // Verify that the restored session matches the exact same device fingerprint
+            const currentFingerprint = getDeviceFingerprint();
+            if (!parsed.deviceFingerprint || parsed.deviceFingerprint !== currentFingerprint) {
+              logger.error("Security Alert: Session recovery attempted from a mismatched device/browser fingerprint. Rejecting session restoration.");
+              localStorage.removeItem(SESSION_KEY);
+              
+              // Safely redirect in browser environments
+              if (typeof window !== "undefined" && window.location) {
+                window.location.href = "/login";
+              }
+              return;
+            }
+
+            setSessionData(parsed);
+            setHasSession(true);
+            setShowRecoveryPrompt(true);
+          } else {
+            localStorage.removeItem(SESSION_KEY);
+          }
         } else {
-          // Session expired, clear it
           localStorage.removeItem(SESSION_KEY);
         }
+      } else if (saved) {
+        // Ciphertext exists but key is absent (e.g. new tab/session), clean up persistently stored data
+        localStorage.removeItem(SESSION_KEY);
       }
     } catch (e) {
-      console.error('Failed to load session:', e);
+      logger.error("Failed to load session:", e);
     }
   }, []);
 
-  // Save session with debounce
   const saveSession = useCallback((state) => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
@@ -90,21 +148,34 @@ export const SessionRecoveryProvider = ({ children }) => {
 
     saveTimeoutRef.current = setTimeout(() => {
       try {
+        const key = getOrCreateSessionKey();
+        if (!key) {
+          logger.warn("No session key available — skipping session recovery cache");
+          return;
+        }
+
+        // Recursively sanitize state to redact/strip any tokens, passwords, or JWT structures
+        const sanitizedState = sanitizeSessionState(state);
+
         const currentSession = {
-          ...state,
+          ...sanitizedState,
           timestamp: Date.now(),
-          lastActivity: Date.now(),
+          lastActivity: lastActivityRef.current,
+          deviceFingerprint: getDeviceFingerprint(),
         };
-        localStorage.setItem(SESSION_KEY, JSON.stringify(currentSession));
+
+        // Encrypt the state before persistently writing it to localStorage
+        const ciphertext = CryptoJS.AES.encrypt(JSON.stringify(currentSession), key).toString();
+
+        localStorage.setItem(SESSION_KEY, ciphertext);
         setSessionData(currentSession);
         setHasSession(true);
       } catch (e) {
-        console.error('Failed to save session:', e);
+        logger.error("Failed to save session:", e);
       }
-    }, 1000); // Debounce for 1 second
+    }, 1000);
   }, []);
 
-  // Clear session
   const clearSession = useCallback(() => {
     try {
       localStorage.removeItem(SESSION_KEY);
@@ -112,60 +183,36 @@ export const SessionRecoveryProvider = ({ children }) => {
       setHasSession(false);
       setShowRecoveryPrompt(false);
     } catch (e) {
-      console.error('Failed to clear session:', e);
+      logger.error("Failed to clear session:", e);
     }
   }, []);
 
-  // Restore session
   const restoreSession = useCallback(() => {
     if (!sessionData) return null;
     return sessionData;
   }, [sessionData]);
 
-  // Dismiss recovery prompt
   const dismissRecoveryPrompt = useCallback(() => {
     setShowRecoveryPrompt(false);
   }, []);
 
-  // Handle tab close - save session
   useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      if (hasSession) {
-        // Session is already being saved automatically
-        // This is just a safety net
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [hasSession]);
-
-  // Check for inactivity timeout
-  useEffect(() => {
-    const checkInactivity = () => {
+    const interval = setInterval(() => {
       const now = Date.now();
-      const inactiveTime = now - lastActivity;
-      
-      // If inactive for more than session timeout, clear session
+      const inactiveTime = now - lastActivityRef.current;
+
       if (inactiveTime > SESSION_TIMEOUT && hasSession) {
         clearSession();
       }
-    };
-
-    const interval = setInterval(checkInactivity, 60000); // Check every minute
+    }, 60000);
 
     return () => clearInterval(interval);
-  }, [lastActivity, hasSession, clearSession]);
+  }, [hasSession, clearSession]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-      if (activityTimeoutRef.current) {
-        clearTimeout(activityTimeoutRef.current);
-      }
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      if (activityTimeoutRef.current) clearTimeout(activityTimeoutRef.current);
     };
   }, []);
 
@@ -183,8 +230,6 @@ export const SessionRecoveryProvider = ({ children }) => {
   };
 
   return (
-    <SessionRecoveryContext.Provider value={value}>
-      {children}
-    </SessionRecoveryContext.Provider>
+    <SessionRecoveryContext.Provider value={value}>{children}</SessionRecoveryContext.Provider>
   );
 };
