@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import EventHero from "./EventHero";
 import EventCTA from "./EventCTA";
@@ -9,11 +9,24 @@ import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
 import { darkTheme } from "../../components/styles/theme";
 import BackToTopButton from "../../components/common/BackToTopButton";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
 const EventsPage = () => {
   const cardSectionRef = useRef();
   const listing = useEventListing();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Local input value updates immediately on each keystroke so the input
+  // feels responsive. The debounced value is passed to the listing hook so
+  // the Fuse.js search pipeline only runs after the user pauses typing.
+  const [localSearchInput, setLocalSearchInput] = useState(listing.searchQuery);
+  const debouncedSearchQuery = useDebouncedValue(localSearchInput, 300);
+
+  // Sync the debounced value into the listing hook whenever it settles.
+  useEffect(() => {
+    listing.setSearchQuery(debouncedSearchQuery);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearchQuery]);
 
   useEffect(() => {
     const page = parseInt(searchParams.get("page")) || 1;
@@ -49,7 +62,7 @@ if (listing.viewMode !== "grid") params.view = listing.viewMode;
   setSearchParams]);
 
   const handleSearch = (query = "") => {
-    listing.setSearchQuery(query);
+    setLocalSearchInput(query);
   };
 
   const handlePageChange = (page) => {
@@ -62,6 +75,7 @@ if (listing.viewMode !== "grid") params.view = listing.viewMode;
   };
 
   const handleClearFilters = () => {
+    setLocalSearchInput("");
     listing.setSearchQuery("");
     listing.setFilterType("all");
     listing.setSortType("Newest");
@@ -79,8 +93,8 @@ if (listing.viewMode !== "grid") params.view = listing.viewMode;
       `}
     >
       <EventHero
-        searchQuery={listing.searchQuery}
-        setSearchQuery={listing.setSearchQuery}
+        searchQuery={localSearchInput}
+        setSearchQuery={setLocalSearchInput}
         filteredEvents={listing.filteredEvents}
         handleSearch={handleSearch}
         scrollToCard={scrollToCard}
@@ -115,8 +129,8 @@ if (listing.viewMode !== "grid") params.view = listing.viewMode;
           onSortChange={listing.setSortType}
           viewMode={listing.viewMode}
           onViewModeChange={listing.setViewMode}
-          searchQuery={listing.searchQuery}
-          onSearchChange={listing.setSearchQuery}
+          searchQuery={localSearchInput}
+          onSearchChange={setLocalSearchInput}
           advancedFilters={listing.advancedFilters}
           onAdvancedFiltersChange={listing.setAdvancedFilters}
           isAdvancedFiltersOpen={listing.isAdvancedFiltersOpen}
@@ -127,8 +141,8 @@ if (listing.viewMode !== "grid") params.view = listing.viewMode;
 
         {/* Active Filters Display */}
         <ActiveFilters
-          searchQuery={listing.searchQuery}
-          setSearchQuery={listing.setSearchQuery}
+          searchQuery={localSearchInput}
+          setSearchQuery={(val) => { setLocalSearchInput(val); listing.setSearchQuery(val); }}
           filterType={listing.filterType}
           setFilterType={listing.setFilterType}
           sortType={listing.sortType}
