@@ -20,8 +20,8 @@ import MobileNavbar from "./MobileNavbar";
 import CursorToggle from "./CursorToggle";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
-import { useScrollProgress } from "../../hooks/useScrollProgress"; // ✅ New custom hook
-import ShortcutHint from "../common/ShortcutHint"; // ✅ New component
+import { useScrollProgress } from "../../hooks/useScrollProgress"; // custom hook (implemented in src/hooks)
+import KeyboardShortcutsModal from "../common/KeyboardShortcutsModal"; // existing component
 
 // 🎨 Animation variants for dropdowns & menus
 const dropdownVariants = {
@@ -551,9 +551,9 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       </nav>
 
       {/* ⌨️ Keyboard Shortcuts Modal */}
-      <ShortcutHint 
-        isOpen={showShortcuts} 
-        onClose={() => setShowShortcuts(false)} 
+      <KeyboardShortcutsModal
+        isOpen={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
         shortcuts={[
           { keys: ["Ctrl", "K"], action: "Open search", icon: Search },
           { keys: ["Ctrl", "N"], action: "Create new event", icon: Plus },
