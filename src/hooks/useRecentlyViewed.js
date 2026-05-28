@@ -90,3 +90,4 @@ const useRecentlyViewed = () => {
 };
 
 export default useRecentlyViewed;
+export const getRecentHistoryMaxLimit = () => 20;
