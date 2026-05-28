@@ -324,6 +324,61 @@ Authorization: Bearer YOUR_JWT_TOKEN
 
 ---
 
+## Update User Profile
+
+| Method | Endpoint |
+|--------|----------|
+| PUT | `/api/users/profile` |
+
+Allows the currently authenticated user to update their profile information.
+
+### Request Headers
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: application/json
+```
+
+### Request Body
+
+```json
+{
+  "firstName": "Johnny",
+  "lastName": "Updated",
+  "username": "johnny3164"
+}
+```
+
+### Successful Response (200)
+
+```json
+{
+  "id": 1,
+  "firstName": "Johnny",
+  "lastName": "Updated",
+  "username": "johnny3164",
+  "email": "john3164@example.com",
+  "role": "CLIENT"
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `400 Bad Request` | Validation failure |
+| `401 Unauthorized` | Missing or invalid JWT token |
+| `404 Not Found` | Authenticated user no longer exists |
+| `409 Conflict` | Username already exists |
+
+#### Notes
+
+- Only `firstName`, `lastName`, and `username` can be updated through this endpoint.
+- `id`, `email`, `password`, and `role` are not editable here.
+- The backend uses the authenticated email from the JWT to identify the user.
+
+---
+
 # Event APIs
 
 ## Create Event

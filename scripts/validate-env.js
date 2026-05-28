@@ -41,6 +41,21 @@ const SENSITIVE_KEY_PATTERNS = [
   /ssh[_\-]?key/i,
   /encryption[_\-]?key/i,
   /signing[_\-]?key/i,
+  // Generic token and secret patterns — catches REACT_APP_GITHUB_TOKEN,
+  // REACT_APP_*_TOKEN, REACT_APP_*_SECRET, REACT_APP_*_PASSWORD, etc.
+  // Any bearer/API/personal access token must never be in a REACT_APP_ var.
+  /github[_\-]?token/i,
+  /access[_\-]?token/i,
+  /bearer[_\-]?token/i,
+  /personal[_\-]?access/i,
+  /api[_\-]?token/i,
+  /auth[_\-]?token/i,
+  /[_\-]?password$/i,
+  /[_\-]?passwd$/i,
+  /[_\-]?credential/i,
+  /webhook[_\-]?secret/i,
+  /client[_\-]?secret/i,
+  /app[_\-]?secret/i,
 ];
 
 // ── Sensitive value patterns ──────────────────────────────────────────────────
