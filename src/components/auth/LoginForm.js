@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
+import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
 import { FormFieldWrapper, ValidationMessage } from "../forms";
 import { LogIn, Mail, Lock, Eye, EyeOff } from "lucide-react";
@@ -65,7 +66,18 @@ const LoginForm = () => {
   const handleFormSubmit = (e) => {
     e.preventDefault();
     if (!validateLoginForm()) return;
-    submitForm(formData);
+
+    try {
+      const ok = await login(formData.usernameOrEmail, formData.password);
+      if (ok) {
+        showAuthToast("Login successful! Redirecting...", () =>
+          navigate(redirectPath, { replace: true })
+        );
+      }
+    } catch (err) {
+      setError({ general: err.message || "Invalid email or password" });
+      toast.error(err.message || 'Login failed. Please check your credentials.');
+    }
   };
 
 
@@ -118,52 +130,25 @@ const LoginForm = () => {
             value={formData.usernameOrEmail}
             onChange={handleChange}
             required
-            disabled={isSubmitting}
+            disabled={authRequest.loading}
             placeholder="Enter your email or username"
             className="w-full pl-10 pr-4 py-3 bg-[#0f172a]/60 border border-slate-700/50 rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner"
           />
         </FormFieldWrapper>
 
-        <FormFieldWrapper
-          id="password"
-          label="Password"
-          required
-          validationState={validationState.password}
-          message={error.password}
-          labelClassName="block text-xs font-semibold text-slate-300 uppercase tracking-wider"
-          messageClassName="text-red-400 text-xs mt-1"
-          showStatusIcon={false}
-          prefix={<Lock className="w-5 h-5 text-slate-500" />}
-          suffix={
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="text-slate-500 hover:text-blue-400 transition-all duration-200"
-              aria-label={showPassword ? "Hide password" : "Show password"}
+          {error.password && (
+            <motion.p id="password-error" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-1 flex items-center gap-1" role="alert">
+              <span>⚠</span> {error.password}
+            </motion.p>
+          )}
+          <div className="flex justify-end pt-1">
+            <Link
+              to="/password-reset"
+              className="text-xs text-slate-400 hover:text-blue-400 transition-colors duration-200 hover:underline"
             >
-              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-            </button>
-          }
-        >
-          <input
-            name="password"
-            type={showPassword ? "text" : "password"}
-            value={formData.password}
-            onChange={handleChange}
-            required
-            disabled={isSubmitting}
-            placeholder="Enter your password"
-            className="w-full pl-10 pr-10 py-3 bg-[#0f172a]/60 border border-slate-700/50 rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner"
-          />
-        </FormFieldWrapper>
-
-        <div className="flex justify-end pt-1">
-          <Link
-            to="/password-reset"
-            className="text-xs text-slate-400 hover:text-blue-400 transition-colors duration-200 hover:underline"
-          >
-            Forgot Password?
-          </Link>
+              Forgot Password?
+            </Link>
+          </div>
         </div>
 
         <ValidationMessage

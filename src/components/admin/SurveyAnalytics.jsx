@@ -48,6 +48,44 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
     handleSimulateSubmission,
   } = useSurveySimulator(questions, FEEDBACK_COMMENTS_POOL);
 
+  const analyzedRatings = useMemo(() => {
+    const ratingMap = {};
+
+    questions.forEach((question) => {
+      if (question.type !== "rating") return;
+
+      const distribution = simulatedData[question.id] || {};
+      const total = Object.values(distribution).reduce((sum, count) => sum + count, 0);
+      const weighted = [1, 2, 3, 4, 5].reduce(
+        (sum, score) => sum + score * (distribution[score] || 0),
+        0
+      );
+
+      ratingMap[question.id] = {
+        total,
+        average: total > 0 ? (weighted / total).toFixed(1) : "0.0",
+      };
+    });
+
+    return ratingMap;
+  }, [questions, simulatedData]);
+
+  const choiceChartData = useMemo(() => {
+    const chartMap = {};
+
+    questions.forEach((question) => {
+      if (question.type !== "choice") return;
+
+      const distribution = simulatedData[question.id] || {};
+      chartMap[question.id] = Object.keys(distribution).map((option) => ({
+        name: option,
+        votes: distribution[option] || 0,
+      }));
+    });
+
+    return chartMap;
+  }, [questions, simulatedData]);
+
   // Reconstruct individual rows corresponding to each submission per question distribution
   const handleExportCSV = () => {
     if (questions.length === 0) {

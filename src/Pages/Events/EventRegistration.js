@@ -3,8 +3,8 @@ import React, { useState, useEffect, useRef } from "react";
 // using the old inline implementations (which were UTC-blind and hardcoded
 // a 1-hour event duration — fixed in issue #2015).
 import { getGoogleCalendarUrl, getOutlookCalendarUrl } from "../../utils/calendarUrlUtils";
-import SpatialSeatSelector from "../../components/events/SpatialSeatSelector";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
+import hackathonsData from "../Hackathons/hackathonMockData.json";
 import { motion } from "framer-motion";
 import {
   Calendar,
@@ -94,19 +94,21 @@ const registrationLocks = new Map();
 
 
 const EventRegistration = () => {
-  const { eventId } = useParams();
+  const { eventId: routeEventId, id: routeId } = useParams();
+  const eventId = routeEventId || routeId;
+  const location = useLocation();
   const navigate = useNavigate();
   const { user, token, isAuthenticated } = useAuth();
   const { addRegistration, myEvents } = useMyEvents();
   const { clearSession } = useSessionRecovery();
-  const registrationPath = `/events/${eventId}/register`;
+  const isHackathonPath = location.pathname.startsWith("/register");
+  const registrationPath = location.pathname;
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);
   const isSubmittingRef = useRef(false);
-  const [selectedSeat, setSelectedSeat] = useState(null);
 
   // Conflict detection state
   const [showConflictModal, setShowConflictModal] = useState(false);
@@ -148,6 +150,31 @@ const EventRegistration = () => {
     const loadEvent = async () => {
       setLoading(true);
 
+      const isHackathonPath = location.pathname.startsWith("/register");
+      if (isHackathonPath) {
+        const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
+        if (foundMock) {
+          setEvent({
+            ...foundMock,
+            date: foundMock.startDate,
+            time: "10:00 AM",
+            image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
+            attendees: foundMock.participants,
+            maxAttendees: 1500,
+            status: foundMock.status,
+          });
+          setLoading(false);
+          if (isAuthenticated() && user) {
+            setValues((prev) => ({
+              ...prev,
+              fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
+              email: user.email || "",
+            }));
+          }
+          return;
+        }
+      }
+
       try {
         // BACKEND FIX: Fetch authoritative event data from the backend API,
         // not from local mock JSON. This ensures:
@@ -174,14 +201,26 @@ const EventRegistration = () => {
         }
       } catch (error) {
         console.error("Failed to load event details:", error);
-        // Don't set event — will show "Event Not Found" UI
+        // Try fallback to hackathonsData as a last resort
+        const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
+        if (foundMock) {
+          setEvent({
+            ...foundMock,
+            date: foundMock.startDate,
+            time: "10:00 AM",
+            image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
+            attendees: foundMock.participants,
+            maxAttendees: 1500,
+            status: foundMock.status,
+          });
+        }
       } finally {
         setLoading(false);
       }
     };
 
     loadEvent();
-  }, [eventId, user, isAuthenticated, setValues]);
+  }, [eventId, user, isAuthenticated, setValues, location.pathname]);
 
   const checkEventCapacity = async (id, currentEvent) => {
     try {
@@ -293,39 +332,17 @@ const EventRegistration = () => {
           ...formData,
           eventId: parseInt(eventId),
           userId: user.id,
-          selectedSeat: selectedSeat,
         },
         // Registration is authenticated server-side; send the active token
         // explicitly instead of relying only on global storage lookup.
         token
       );
 
-      // Write back booked seat assignment to persistent event floorplan layouts
-      if (selectedSeat) {
-        const savedLayout = localStorage.getItem(`eventra_floorplan_${eventId}`);
-        if (savedLayout) {
-          try {
-            const elements = JSON.parse(savedLayout);
-            const updated = elements.map(el => {
-              if (el.id === selectedSeat.elementId) {
-                const nextAssignments = { ...el.assignedAttendees };
-                nextAssignments[selectedSeat.seatIndex] = formData.fullName || "Guest";
-                return { ...el, assignedAttendees: nextAssignments };
-              }
-              return el;
-            });
-            localStorage.setItem(`eventra_floorplan_${eventId}`, JSON.stringify(updated));
-          } catch (e) {
-            console.error("Failed to update floorplan seating", e);
-          }
-        }
-      }
-
       // Axios resolves for 2xx — treat as success
       setRegistered(true);
       toast.success("Registration successful!");
       sendConfirmationEmail(formData.email, formData.fullName, event?.title, event?.date);
-      addRegistration(event, { ...formData, selectedSeat });
+      addRegistration(event, formData);
       clearSession();
 
     } catch (error) {
@@ -339,35 +356,13 @@ const EventRegistration = () => {
         const payload = {
           eventId: parseInt(eventId),
           userId: user.id,
-          selectedSeat: selectedSeat,
         };
 
         const success = await pushToQueue({ eventId: parseInt(eventId), payload });
 
         if (success) {
-          // Write back booked seat assignment to persistent event floorplan layouts
-          if (selectedSeat) {
-            const savedLayout = localStorage.getItem(`eventra_floorplan_${eventId}`);
-            if (savedLayout) {
-              try {
-                const elements = JSON.parse(savedLayout);
-                const updated = elements.map(el => {
-                  if (el.id === selectedSeat.elementId) {
-                    const nextAssignments = { ...el.assignedAttendees };
-                    nextAssignments[selectedSeat.seatIndex] = formData.fullName || "Guest";
-                    return { ...el, assignedAttendees: nextAssignments };
-                  }
-                  return el;
-                });
-                localStorage.setItem(`eventra_floorplan_${eventId}`, JSON.stringify(updated));
-              } catch (e) {
-                console.error("Failed to update floorplan seating", e);
-              }
-            }
-          }
-
           setRegistered(true);
-          addRegistration(event, { ...formData, selectedSeat });
+          addRegistration(event, formData);
           clearSession();
           toast.warning(
             "Network error. Registration queued and will sync when you are online.",
@@ -380,31 +375,10 @@ const EventRegistration = () => {
       }
 
       if (isAlreadyRegistered) {
-        // Write back booked seat assignment to persistent event floorplan layouts
-        if (selectedSeat) {
-          const savedLayout = localStorage.getItem(`eventra_floorplan_${eventId}`);
-          if (savedLayout) {
-            try {
-              const elements = JSON.parse(savedLayout);
-              const updated = elements.map(el => {
-                if (el.id === selectedSeat.elementId) {
-                  const nextAssignments = { ...el.assignedAttendees };
-                  nextAssignments[selectedSeat.seatIndex] = formData.fullName || "Guest";
-                  return { ...el, assignedAttendees: nextAssignments };
-                }
-                return el;
-              });
-              localStorage.setItem(`eventra_floorplan_${eventId}`, JSON.stringify(updated));
-            } catch (e) {
-              console.error("Failed to update floorplan seating", e);
-            }
-          }
-        }
-
         setRegistered(true);
         toast.success(isEventFull ? "Successfully joined waitlist!" : "Registration successful!");
         // ── Save to My Events ──
-        addRegistration(event, { ...formData, selectedSeat });
+        addRegistration(event, formData);
         clearSession();
         toast.info(failureMessage);
         return;
@@ -475,11 +449,11 @@ const EventRegistration = () => {
             : "This event is currently full. You can still check back later in case a spot opens up."}
         </p>
         <Link
-          to={`/events/${eventId}`}
+          to={isHackathonPath ? `/hackathons/${eventId}` : `/events/${eventId}`}
           className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-colors font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Event Details
+          Back to Details
         </Link>
       </div>
     );
@@ -645,12 +619,12 @@ const EventRegistration = () => {
             </div>
           </div>
 
-          <Link to={`/events/${eventId}`} className="block">
+          <Link to={isHackathonPath ? `/hackathons/${eventId}` : `/events/${eventId}`} className="block">
             <button
               type="button"
               className="w-full py-3.5 px-6 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold hover:bg-slate-800 dark:hover:bg-slate-100 hover:scale-[1.02] active:scale-[0.98] shadow-lg transition-all duration-300"
             >
-              Back to Event Details
+              Back to Details
             </button>
           </Link>
         </motion.div>
@@ -663,11 +637,11 @@ const EventRegistration = () => {
       <div className="max-w-4xl mx-auto">
         {/* Back Button */}
         <Link
-          to="/events"
+          to={isHackathonPath ? "/hackathons" : "/events"}
           className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Events
+          {isHackathonPath ? "Back to Hackathons" : "Back to Events"}
         </Link>
 
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden">
@@ -863,35 +837,6 @@ const EventRegistration = () => {
                     {formData.additionalInfo?.length || 0} / {MAX_NOTES_CHARS} characters
                   </span>
                 </div>
-              </div>
-
-              {/* Seating Selection Card */}
-              <div className="mt-8 border-t border-gray-100 dark:border-gray-800 pt-8" style={{ borderTop: "1px solid rgba(255, 255, 255, 0.08)", paddingTop: "2rem" }}>
-                <h3 className="text-lg font-bold text-gray-950 dark:text-white mb-2 flex items-center gap-2" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <span className="w-1.5 h-6 rounded bg-indigo-600 block" style={{ width: "6px", height: "24px", background: "#4f46e5", borderRadius: "4px" }}></span>
-                  Select Your Seat
-                </h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4" style={{ marginBottom: "1rem" }}>
-                  Choose a seat from the interactive venue map below. Premium rows are highlighted in gold.
-                </p>
-                <SpatialSeatSelector
-                  eventId={eventId}
-                  selectedSeat={selectedSeat}
-                  onSelectSeat={(seat) => setSelectedSeat(seat)}
-                  readOnly={false}
-                />
-                
-                {selectedSeat && (
-                  <div className="mt-4 p-4 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 flex justify-between items-center" style={{ marginTop: "1rem", padding: "1rem", borderRadius: "12px", background: "rgba(99, 102, 241, 0.05)", border: "1px solid rgba(99, 102, 241, 0.15)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div>
-                      <p className="text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase tracking-wider" style={{ fontSize: "10px", color: "#6366f1", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.05em" }}>Your Selected Seat</p>
-                      <p className="text-sm font-bold text-gray-900 dark:text-white mt-0.5" style={{ fontSize: "14px", fontWeight: "bold", color: "#ffffff", marginTop: "2px" }}>{selectedSeat.seatLabel}</p>
-                    </div>
-                    <span className="text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider" style={{ fontSize: "12px", padding: "4px 10px", borderRadius: "9999px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.05em", background: selectedSeat.tier.toLowerCase().includes("vip") ? "rgba(245, 158, 11, 0.15)" : "rgba(99, 102, 241, 0.15)", color: selectedSeat.tier.toLowerCase().includes("vip") ? "#fbbf24" : "#818cf8" }}>
-                      {selectedSeat.tier}
-                    </span>
-                  </div>
-                )}
               </div>
 
 
