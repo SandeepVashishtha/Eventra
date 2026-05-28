@@ -22,6 +22,7 @@ import ErrorBoundary from "./components/common/ErrorBoundary";
 import OnboardingChecklist from "./components/user/OnboardingChecklist";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import NotificationToastContainer from "./components/common/NotificationProvider";
+import { ThemeProvider } from "./context/ThemeContext";
 import { NotificationProvider } from "./context/NotificationContext";
 import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
@@ -100,133 +101,85 @@ function App() {
   }, []);
 
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <MyEventsProvider>
-          <SessionRecoveryProvider>
-            <NotificationProvider />
-            <ReminderChecker />
-            <NotificationToastContainer />
+    <ThemeProvider>
+      <ErrorBoundary>
+        <AuthProvider>
+          <NotificationProvider>
+            <MyEventsProvider>
+              <SessionRecoveryProvider>
+                <NotificationToastContainer />
+                <ReminderChecker />
+                <OfflineSyncManager />
 
-            <OfflineSyncManager />
+                <div className="App">
+                  <SectionErrorBoundary label="Navigation Bar">
+                    <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+                  </SectionErrorBoundary>
 
-            <Router>
-            <div className="App">
-              <a href="#main-content" className="skip-to-content">
-                Skip to main content
-              </a>
-              <Navbar
-                cursorEnabled={cursorEnabled}
-                toggleCursor={toggleCursor}
-              />
+                  <OfflineBanner />
+                  <OfflineConflictModal />
 
-              <main
-                id="main-content"
-                tabIndex={-1}
-                className="
-                  relative
-                  z-10
-                min-h-[85vh]
-                  bg-white
-                  dark:bg-slate-950
-                  text-black
-                  dark:text-white
-                  transition-colors
-                  duration-300
-                "
-              >
-                <PageTransition>
-                  <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
-                    <Routes>
-                      <Route path="/register/:id" element={<RegistrationPage />} />
-                      <Route path="*" element={<AppRoutes />} />
-                    </Routes>
-    <ErrorBoundary>
-      <AuthProvider>
-        <NotificationProvider>
-          <MyEventsProvider>
-            <SessionRecoveryProvider>
-              <ReminderChecker />
-              <NotificationToastContainer />
-              <OfflineSyncManager />
+                  <KeyboardShortcutsModal
+                    isOpen={showKeyboardModal}
+                    onClose={() => setShowKeyboardModal(false)}
+                  />
 
-              <div className="App">
-                <SectionErrorBoundary label="Navigation Bar">
-                  <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
-                </SectionErrorBoundary>
-                <OfflineBanner />
-                <OfflineConflictModal />
-                <KeyboardShortcutsModal
-                  isOpen={showKeyboardModal}
-                  onClose={() => setShowKeyboardModal(false)}
-                />
-                <OnboardingChecklist />
+                  <OnboardingChecklist />
 
-                <main
-                  id="main-content"
-                  className="
-                    relative z-10 min-h-[85vh]
-                    bg-white dark:bg-slate-950
-                    text-black dark:text-white
-                    transition-colors duration-300
-                  "
-                >
-                  <PageTransition>
-                    <SectionErrorBoundary label="Page Content">
-                      <Suspense
-                        fallback={
-                          <div className="flex items-center justify-center min-h-screen">
-                            Loading...
-                          </div>
-                        }
-                      >
-                        <Routes>
-                          <Route
-                            path="/register/:id"
-                            element={
-                              <ProtectedRoute>
-                                <EventRegistration />
-                              </ProtectedRoute>
-                            }
-                          />
-                          <Route
-                            path="/event-recommendation"
-                            element={<EventRecommendation />}
-                          />
-                          <Route path="*" element={<AppRoutes />} />
-                        </Routes>
-                      </Suspense>
-                    </SectionErrorBoundary>
-                  </PageTransition>
-                </main>
+                  <main
+                    id="main-content"
+                    className="relative z-10 min-h-[85vh] bg-white dark:bg-slate-950 text-black dark:text-white transition-colors duration-300"
+                  >
+                    <PageTransition>
+                      <SectionErrorBoundary label="Page Content">
+                        <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+                          <Routes>
+                            <Route
+                              path="/register/:id"
+                              element={
+                                <ProtectedRoute>
+                                  <EventRegistration />
+                                </ProtectedRoute>
+                              }
+                            />
+                            <Route path="/event-recommendation" element={<EventRecommendation />} />
+                            <Route path="/saved-events" element={<SavedEventsPage />} />
+                            <Route path="*" element={<AppRoutes />} />
+                          </Routes>
+                        </Suspense>
+                      </SectionErrorBoundary>
+                    </PageTransition>
+                  </main>
 
-                <ScrollToTop />
+                  <ScrollToTop />
 
-                <SectionErrorBoundary label="Chatbot Assist" silent>
-                  <Suspense fallback={null}>
-                    <Chatbot />
-                  </Suspense>
-                </SectionErrorBoundary>
+                  <SectionErrorBoundary label="Chatbot Assist" silent>
+                    <Suspense fallback={null}>
+                      <Chatbot />
+                    </Suspense>
+                  </SectionErrorBoundary>
 
-                <SectionErrorBoundary label="Footer">
-                  <Suspense fallback={null}>
-                    {!isDashboardOrAdmin && <Footer />}
-                  </Suspense>
-                </SectionErrorBoundary>
+                  <SectionErrorBoundary label="Footer">
+                    <Suspense fallback={null}>
+                      {!isDashboardOrAdmin && <Footer />}
+                    </Suspense>
+                  </SectionErrorBoundary>
 
-                <ScrollToTopButton />
-                <FeedbackButton />
-                <ThemeCustomizerDrawer />
-                <SessionRecovery />
-                <SectionErrorBoundary label="Custom Cursor" silent>
-                  <FluidCursor enabled={cursorEnabled} />
-                </SectionErrorBoundary>
-              </div>
-            </SessionRecoveryProvider>
-          </MyEventsProvider>
-        </NotificationProvider>
-      </AuthProvider>
-    </ErrorBoundary>
+                  <ScrollToTopButton />
+                  <FeedbackButton />
+                  <ThemeCustomizerDrawer />
+                  <SessionRecovery />
+
+                  <SectionErrorBoundary label="Custom Cursor" silent>
+                    <FluidCursor enabled={cursorEnabled} />
+                  </SectionErrorBoundary>
+                </div>
+              </SessionRecoveryProvider>
+            </MyEventsProvider>
+          </NotificationProvider>
+        </AuthProvider>
+      </ErrorBoundary>
+    </ThemeProvider>
   );
 }
 
