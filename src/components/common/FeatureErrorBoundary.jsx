@@ -51,37 +51,8 @@ class FeatureErrorBoundary extends React.Component {
   }
 
   handleRetry = () => {
-
-    // 1. Reset the local error state
-    this.setState({ hasError: false });
-    
-    // 2. Trigger a manual re-fetch/recalculation callback if provided by the parent
-    if (this.props.onRetry) {
-      this.props.onRetry();
-    }
-  };
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/5 p-6 text-center">
-          <AlertTriangle className="mb-3 text-red-400" size={36} />
-
-          <h2 className="mb-2 text-lg font-bold text-red-400">Something went wrong</h2>
-
-          <p className="mb-4 text-sm text-gray-400">This feature failed to load properly.</p>
-
-          <button
-            onClick={this.handleRetry}
-            className="flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-600"
-          >
-            <RefreshCw size={16} />
-            Tap to Retry
-          </button>
-        </div>
-      );
-
-    if (this.state.retryCount >= 3) {
+    const { retryCount } = this.state;
+    if (retryCount >= 3) {
       window.location.reload();
       return;
     }
@@ -90,18 +61,22 @@ class FeatureErrorBoundary extends React.Component {
       error: null,
       retryCount: prev.retryCount + 1,
     }));
+    if (this.props.onRetry) {
+      this.props.onRetry();
+    }
   };
 
   render() {
-
-
-    // 2. If there is an error but a custom fallback is provided, use that
-    if (this.props.fallback) {
-      return this.props.fallback;
-
+    if (!this.state.hasError) {
+      return this.props.children;
     }
 
-    // 3. Otherwise, render the default advanced error UI
+    // If there is an error but a custom fallback is provided, use that
+    if (this.props.fallback) {
+      return this.props.fallback;
+    }
+
+    // Otherwise, render the default advanced error UI
     const { featureName = "Feature" } = this.props;
     const { retryCount } = this.state;
     const tooManyRetries = retryCount >= 3;

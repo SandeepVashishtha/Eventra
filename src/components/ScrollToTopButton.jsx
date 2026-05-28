@@ -1,20 +1,8 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
 import BackToTopButton from "./common/BackToTopButton";
 
 export default function ScrollToTopButton() {
-  const { pathname } = useLocation();
-
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
-
-  // Auto scroll to top on route change
-  useEffect(() => {
-    if (window.lenis) {
-      window.lenis.scrollTo(0, { immediate: true });
-    } else {
-      window.scrollTo(0, 0);
-    }
-  }, [pathname]);
 
   useEffect(() => {
     // Listen for chatbot state changes

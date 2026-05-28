@@ -528,7 +528,7 @@ const SurveyEngine = () => {
                 </div>
               </div>
             </motion.div>
-          ) : (
+          ) : activeTab === "preview" ? (
             <motion.div
               key="preview-tab"
               initial={{ opacity: 0, y: 15 }}

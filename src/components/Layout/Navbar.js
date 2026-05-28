@@ -273,38 +273,53 @@ const DesktopNavLink = ({ item, isActive, onClick }) => (
   </Link>
 );
 
-const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location }) => (
-  <div className="relative">
-    <button
-      onClick={onToggle}
-      className={`relative group flex items-center gap-1 text-[12px] xl:text-[13px] font-medium transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-lg ${
-        isActive || isOpen
-          ? "text-indigo-600 dark:text-indigo-400 font-semibold"
-          : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
-      }`}
-    >
-      <span className="relative z-10 flex items-center gap-1">
-        {item.name}
-        <ChevronDown
-          className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-        />
-      </span>
+const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, location }) => {
+  const btnRef = useRef(null);
+  const [dropPos, setDropPos] = useState({ top: 0, left: 0 });
 
-      {(isActive || isOpen) && (
-        <>
-          <motion.span
-            layoutId="activeBox"
-            className="absolute inset-0 bg-indigo-100/60 dark:bg-indigo-500/20 border border-indigo-200/80 dark:border-indigo-500/50 rounded-lg -z-0"
-            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+  useEffect(() => {
+    if (isOpen && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setDropPos({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + rect.width / 2 + window.scrollX,
+      });
+    }
+  }, [isOpen]);
+
+  return (
+    <div>
+      <button
+        ref={btnRef}
+        onClick={onToggle}
+        className={`relative group flex items-center gap-1 text-[12px] xl:text-[13px] font-medium transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-lg ${
+          isActive || isOpen
+            ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+            : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
+        }`}
+      >
+        <span className="relative z-10 flex items-center gap-1">
+          {item.name}
+          <ChevronDown
+            className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
           />
-          <motion.span
-            layoutId="activeBoxGlow"
-            className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
-            transition={{ type: "spring", stiffness: 380, damping: 30 }}
-          />
-        </>
-      )}
-    </button>
+        </span>
+
+        {(isActive || isOpen) && (
+          <>
+            <motion.span
+              layoutId="activeBox"
+              className="absolute inset-0 bg-indigo-100/60 dark:bg-indigo-500/20 border border-indigo-200/80 dark:border-indigo-500/50 rounded-lg -z-0"
+              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            />
+            <motion.span
+              layoutId="activeBoxGlow"
+              className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
+              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            />
+          </>
+        )}
+      </button>
 
       {/* Render dropdown via portal so it's never clipped by overflow-x-auto */}
       <AnimatePresence>
@@ -600,8 +615,9 @@ const NAV_ITEMS = [
   },
 ];
 
-const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile }) => (
-  <>
+const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile }) => {
+  return (
+    <>
     {NAV_ITEMS.map((item) => {
         const isActive = item.href
           ? (item.href === "/" ? location.pathname === "/" : location.pathname.startsWith(item.href))
@@ -624,7 +640,7 @@ const NavList = ({ location, openDropdown, onToggleGroup, onLinkClick, isMobile 
   );
 };
 
-const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
+const DesktopNavLinks = ({ openDropdown, setOpenDropdown, location }) => {
   return (
     <div className="hidden lg:flex items-center justify-center flex-1 min-w-0 pl-6">
       <NavList 
@@ -873,7 +889,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
           {/* Centered Desktop Nav Links */}
           <div className="flex-1 flex justify-start min-w-0">
-            <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
+            <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} location={location} />
           </div>
 
           {/* Right Controls */}

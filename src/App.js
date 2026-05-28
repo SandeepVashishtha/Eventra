@@ -6,7 +6,7 @@ import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
 import { toast } from "react-toastify";
-import BackToTopButton from "./components/common/BackToTopButton";
+import ScrollToTopButton from "./components/ScrollToTopButton";
 import Navbar from "./components/Layout/Navbar";
 import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
@@ -110,7 +110,6 @@ function App() {
               <OfflineSyncManager />
 
               <div className="App">
-                <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
                 <SectionErrorBoundary label="Navigation Bar">
                   <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
                 </SectionErrorBoundary>
@@ -129,38 +128,25 @@ function App() {
                     text-black dark:text-white
                     transition-colors duration-300
                   "
-                  relative
-                  z-10
-                  min-h-[85vh]
-                  bg-white
-                  dark:bg-slate-950
-                  text-black
-                  dark:text-white
-                  transition-colors
-                  duration-300
-                ">
-              <PageTransition>
-  <Suspense
-    fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        Loading...
-      </div>
-    }
-  >
-    <Routes>
-
-      <Route
-        path="/register/:id"
-        element={<RegistrationPage />}
-      />
-
-      <Route
-        path="/event-recommendation"
-        element={<EventRecommendation />}
-      />
-
-                          <Route path="/event-recommendation" element={<EventRecommendation />} />
-
+                >
+                  <PageTransition>
+                    <SectionErrorBoundary label="Page Content">
+                      <Suspense
+                        fallback={
+                          <div className="flex items-center justify-center min-h-screen">
+                            Loading...
+                          </div>
+                        }
+                      >
+                        <Routes>
+                          <Route
+                            path="/register/:id"
+                            element={<RegistrationPage />}
+                          />
+                          <Route
+                            path="/event-recommendation"
+                            element={<EventRecommendation />}
+                          />
                           <Route path="*" element={<AppRoutes />} />
                         </Routes>
                       </Suspense>
@@ -169,10 +155,6 @@ function App() {
                 </main>
 
                 <ScrollToTop />
-                <Suspense fallback={null}>
-                  <Chatbot />
-                  {!isDashboardOrAdmin && <Footer />}
-                </Suspense>
 
                 <SectionErrorBoundary label="Chatbot Assist" silent>
                   <Suspense fallback={null}>
@@ -181,14 +163,15 @@ function App() {
                 </SectionErrorBoundary>
 
                 <SectionErrorBoundary label="Footer">
-                  <Suspense fallback={null}>{!isDashboardOrAdmin && <Footer />}</Suspense>
+                  <Suspense fallback={null}>
+                    {!isDashboardOrAdmin && <Footer />}
+                  </Suspense>
                 </SectionErrorBoundary>
 
-                <BackToTopButton />
+                <ScrollToTopButton />
                 <FeedbackButton />
                 <ThemeCustomizerDrawer />
                 <SessionRecovery />
-                <FluidCursor enabled={cursorEnabled} />
                 <SectionErrorBoundary label="Custom Cursor" silent>
                   <FluidCursor enabled={cursorEnabled} />
                 </SectionErrorBoundary>

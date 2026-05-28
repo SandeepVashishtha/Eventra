@@ -477,10 +477,7 @@ const MyCalendar = () => {
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-
-            </motion.div>
+                </motion.div>
           ) : (
             /* PREMIUM INTERACTIVE TIMELINE VIEW */
             <motion.div
@@ -493,7 +490,6 @@ const MyCalendar = () => {
               {/* Central Glowing Vertical Line */}
               <div className="absolute left-3.5 sm:left-5 top-2 bottom-2 w-0.5 bg-slate-200 dark:bg-slate-800/80 rounded-full" />
               <div className="absolute left-3.5 sm:left-5 top-2 h-1/2 w-0.5 bg-gradient-to-b from-indigo-500 to-pink-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
-
               {timelineEvents.length > 0 ? (
                 <div className="space-y-8">
                   {timelineEvents.map((item, index) => {
@@ -546,7 +542,7 @@ const MyCalendar = () => {
                               <h4 className="font-extrabold text-base text-slate-850 dark:text-slate-100">
                                 {item.event.title}
                               </h4>
-                              <p className="text-xs text-slate-500 max-w-xl truncate mt-1">
+                              <p className="text-xs text-slate-550 max-w-xl truncate mt-1">
                                 {item.event.description}
                               </p>
                               <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 mt-2">
@@ -569,7 +565,7 @@ const MyCalendar = () => {
                                 type="button"
                                 onClick={() => downloadICSFile(item.event)}
                                 aria-label={`Download ICS calendar file for ${item.event.title}`}
-                                className="p-2.5 rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-350 shadow-sm"
+                                className="p-2.5 rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-350 shadow-sm"
                                 title="Download standard .ics iCalendar file"
                               >
                                 <Download className="w-4 h-4" aria-hidden="true" />
@@ -585,28 +581,30 @@ const MyCalendar = () => {
                               </a>
                             </div>
                           </div>
-                        ))
-                      ) : (
-                        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                          <CalendarIcon className="w-12 h-12 text-slate-300 dark:text-slate-700 animate-pulse" aria-hidden="true" />
-                          <div>
-                            <h4 className="font-extrabold text-slate-800 dark:text-slate-205">No Active Registrations</h4>
-                            <p className="text-slate-400 text-sm leading-relaxed max-w-sm mt-1 mx-auto">
-                              Get involved by exploring the Eventra portal events, team projects, and registering yourself to compile your grid schedule!
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </section>
-                </motion.div>
+                        </motion.div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+                  <CalendarIcon className="w-12 h-12 text-slate-300 dark:text-slate-700 animate-pulse" aria-hidden="true" />
+                  <div>
+                    <h4 className="font-extrabold text-slate-800 dark:text-slate-205">No Active Registrations</h4>
+                    <p className="text-slate-400 text-sm leading-relaxed max-w-sm mt-1 mx-auto">
+                      Get involved by exploring the Eventra portal events, team projects, and registering yourself to compile your grid schedule!
+                    </p>
+                  </div>
+                </div>
               )}
-            </AnimatePresence>
-          </>
-        )}
-      </div>
-    </main>
-  );
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </>
+    )}
+  </div>
+</main>
+);
 };
 
 export default MyCalendar;
