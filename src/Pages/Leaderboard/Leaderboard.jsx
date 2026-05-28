@@ -1,16 +1,22 @@
-import { useEffect, useState, Fragment } from "react";
+import confetti from "canvas-confetti";
+import { useEffect, useState } from "react";
 import {
-  FaCode,
-  FaStar,
-  FaChevronDown,
   FaChevronLeft,
   FaChevronRight,
-  FaUsers,
+  FaCode,
+  FaStar,
+  FaUsers
 } from "react-icons/fa";
-import { Menu, Transition } from "@headlessui/react";
-import confetti from "canvas-confetti";
-import GSSoCContribution from "./GSSoCContribution";
+import {
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
 import StyledDropdown from "../../components/StyledDropdown";
+import GSSoCContribution from "./GSSoCContribution";
+
 
 // Repository constant — update if the leaderboard should point to another repo
 const GITHUB_REPO = "SandeepVashishtha/Eventra";
@@ -230,6 +236,12 @@ export default function LeaderBoard() {
     flooredTotalPRs: contributors.reduce((sum, c) => sum + c.prs, 0),
     flooredTotalPoints: contributors.reduce((sum, c) => sum + c.points, 0),
   };
+  const performanceData = [
+  { name: "Participated", value: 80 },
+  { name: "Won", value: 20 },
+];
+
+const COLORS = ["#6366F1", "#22C55E"];
 
   const sortOptions = [
     { label: "Points", value: "points" },
@@ -300,6 +312,84 @@ export default function LeaderBoard() {
               </div>
             </div>
           </div>
+          {/* User Engagement Dashboard */}
+<div className="bg-gray-50 dark:bg-gray-900 rounded-2xl shadow-lg p-8 mb-10">
+  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">
+    User Engagement Dashboard
+  </h2>
+
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+
+    {/* Achievement Section */}
+    <div>
+      <div className="grid grid-cols-2 gap-4">
+
+        <div className="bg-indigo-100 dark:bg-indigo-900 p-5 rounded-xl">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+            Events Participated
+          </h3>
+          <p className="text-3xl font-bold text-indigo-600 mt-2">
+            80
+          </p>
+        </div>
+
+        <div className="bg-green-100 dark:bg-green-900 p-5 rounded-xl">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+            Events Won
+          </h3>
+          <p className="text-3xl font-bold text-green-600 mt-2">
+            20
+          </p>
+        </div>
+
+        <div className="bg-yellow-100 dark:bg-yellow-900 p-5 rounded-xl">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+            Success Ratio
+          </h3>
+          <p className="text-3xl font-bold text-yellow-600 mt-2">
+            25%
+          </p>
+        </div>
+
+        <div className="bg-pink-100 dark:bg-pink-900 p-5 rounded-xl">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+            Recent Activity
+          </h3>
+          <p className="text-md font-medium text-pink-600 mt-2">
+            5 Events This Month
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    {/* Pie Chart */}
+    <div className="h-80">
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={performanceData}
+            cx="50%"
+            cy="50%"
+            labelLine={false}
+            outerRadius={100}
+            dataKey="value"
+            label
+          >
+            {performanceData.map((entry, index) => (
+              <Cell
+                key={`cell-${index}`}
+                fill={COLORS[index % COLORS.length]}
+              />
+            ))}
+          </Pie>
+          <Tooltip />
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
+
+  </div>
+</div>
           {/* Pull Requests Card */}
           <div className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900">
             <div className="flex items-center">

@@ -1,31 +1,15 @@
-import { useTheme } from '../../context/ThemeContext';
-import React, { useState, useRef, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { motion, AnimatePresence } from "framer-motion";
-import ConfirmationModal from "../common/ConfirmationModal";
-import { toast } from "react-toastify";
-import { UserCog } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  Home,
-  Calendar,
-  Sparkles,
-  FolderKanban,
-  Users,
-  Trophy,
-  Info,
-  LayoutDashboard,
-  User as UserIcon,
-  LogOut,
-  LogIn,
-  MessageSquare,
-  Book,
-  HelpCircle,
-  ChevronDown,
-  MousePointer,
-  Moon,
-  Sun
+  Book, Calendar, ChevronDown, FolderKanban, HelpCircle, Home, Info,
+  LayoutDashboard, LogIn, LogOut, MessageSquare, Moon, MousePointer, Sparkles, Sun, Trophy, UserCog, User as UserIcon, Users
 } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { FaBell } from "react-icons/fa";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { useAuth } from "../../context/AuthContext";
+import { useTheme } from '../../context/ThemeContext';
+import ConfirmationModal from "../common/ConfirmationModal";
 
 // --- Helpers to reduce complexity ---
 const getUserDisplayNames = (user) => {
@@ -547,6 +531,11 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           <div className="hidden lg:flex items-center ml-auto z-20">
             <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={false} />
             <CursorToggleButton cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} isMobile={false} />
+            <button className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+  <FaBell className="text-lg text-black dark:text-white" />
+  
+  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+</button>
 
             <div className="flex items-center space-x-2 ml-2">
               {isAuthenticated() ? (
