@@ -12,7 +12,7 @@ import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
-import FluidCursor from "./components/visual/FluidCursor";
+import FluidCursor from "./jhalak/FluidCursor";
 import PageTransition from "./components/common/PageTransition";
 import ReminderChecker from "./components/reminders/ReminderChecker";
 import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";

@@ -364,6 +364,22 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown, lo
         )}
       </button>
 
+        {(isActive || isOpen) && (
+          <>
+            <motion.span
+              layoutId="activeBox"
+              className="absolute inset-0 bg-indigo-100/60 dark:bg-indigo-500/20 border border-indigo-200/80 dark:border-indigo-500/50 rounded-lg -z-0"
+              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            />
+            <motion.span
+              layoutId="activeBoxGlow"
+              className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
+              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            />
+          </>
+        )}
+      </button>
+
     {isOpen && (
       <motion.div
         id={menuId}
