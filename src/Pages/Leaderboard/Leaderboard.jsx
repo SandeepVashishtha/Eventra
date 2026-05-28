@@ -109,11 +109,17 @@ const LEADERBOARD_CACHE_KEY = "leaderboardData:v2";
 // AnimatedCounter uses requestAnimationFrame instead of setInterval to keep
 // count-up animations aligned with the browser's paint cycle, avoiding
 // invisible ticks that setInterval fires even when the tab is hidden.
-
-
+//
+// React.memo prevents unnecessary re-renders from parent SSE updates: the
+// leaderboard streams live data via useLeaderboardStream, causing the parent
+// to re-render on every tick. Without React.memo, every AnimatedCounter on
+// the page would cancel its in-progress RAF loop and restart the animation
+// from zero — causing visible flicker on each stream update. With React.memo,
+// an AnimatedCounter only re-renders (and restarts its animation) when its
+// own `value` prop actually changes.
 
 // Custom lightweight high-performance count-up component
-const AnimatedCounter = ({ value }) => {
+const AnimatedCounter = React.memo(({ value }) => {
   const [count, setCount] = useState(0);
   const rafRef = useRef(null);
 
@@ -121,6 +127,10 @@ const AnimatedCounter = ({ value }) => {
     const end = parseInt(value, 10);
     if (isNaN(end)) return;
     if (end === 0) { setCount(0); return; }
+
+    // Cancel any in-flight animation before starting a new one so that a
+    // rapid value change does not leave two concurrent RAF loops running.
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
     const duration = 1200; // ms
     const startTime = performance.now();
@@ -142,7 +152,7 @@ const AnimatedCounter = ({ value }) => {
   }, [value]);
 
   return <span>{count}</span>;
-};
+});
 
 function LiveStatusBadge({ status }) {
   if (status === SSE_STATUS.CONNECTED) {
