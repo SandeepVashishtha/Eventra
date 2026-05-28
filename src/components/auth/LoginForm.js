@@ -89,10 +89,9 @@ const LoginForm = () => {
       setErrors({ general: errorMsg });
       toast.error(errorMsg);
     } finally {
-    const sanitizedEmail = email.trim();
-    // Pass sanitizedEmail to your submission logic/payload
-    setTimeout(() => {
-      setLoading(false);
+      setTimeout(() => {
+        setLoading(false);
+      }, 300);
     }
   };
 
