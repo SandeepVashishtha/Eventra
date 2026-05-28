@@ -107,6 +107,10 @@ const ShareMenu = ({
       setTimeout(() => setCopied(false), 2000);
       return;
     }
+
+    if (!url) {
+      return;
+    }
     
     // Open URL in a new window for social platforms
     window.open(url, '_blank', 'noopener,noreferrer');
