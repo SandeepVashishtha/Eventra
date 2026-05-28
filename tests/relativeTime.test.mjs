@@ -12,8 +12,8 @@ const past = new Date(now.getTime() - 30000);
 assert.equal(getRelativeTime(future.toISOString()), "Starting soon", "30s in future is starting soon");
 assert.equal(getRelativeTime(past.toISOString()), "Just ended", "30s in past is just ended");
 
-assert.equal(getSmartDateLabel(null), "—", "null date returns —");
-assert.equal(getSmartDateLabel("invalid"), "—", "invalid date returns —");
+assert.equal(getSmartDateLabel(null), "TBD", "null date returns TBD");
+assert.equal(getSmartDateLabel("invalid"), "TBD", "invalid date returns TBD");
 
 const tomorrow = new Date(now.getTime() + 86400000);
 const yesterday = new Date(now.getTime() - 86400000);
