@@ -130,6 +130,7 @@ function App() {
               <OnboardingChecklist />
 
               <main
+                id="main-content"
                 className="
                   relative
                   z-10

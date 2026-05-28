@@ -826,6 +826,13 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
   return (
     <>
+      {/* Skip navigation — visible only on keyboard focus, WCAG 2.4.1 */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:bg-indigo-600 focus:text-white focus:px-4 focus:py-2 focus:rounded focus:outline-none"
+      >
+        Skip to main content
+      </a>
       <div
         className={`fixed inset-0 z-30 transition-opacity duration-300 ${
           isMobileMenuOpen || showLogoutModal
@@ -835,9 +842,11 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               : "opacity-0 pointer-events-none"
         }`}
         onClick={closeAllMenus}
+        aria-hidden="true"
       />
       <nav
         ref={navRef}
+        aria-label="Main navigation"
         data-aos="fade-down"
         data-aos-once="true"
         data-aos-duration="1000"
