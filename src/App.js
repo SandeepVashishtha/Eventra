@@ -14,7 +14,7 @@ import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackButton from "./components/FeedbackButton";
-import FluidCursor from "./jhalak/FluidCursor";
+import FluidCursor from "./components/visual/FluidCursor";
 import PageTransition from "./components/common/PageTransition";
 import ReminderChecker from "./components/reminders/ReminderChecker";
 import KeyboardShortcutsModal from "./components/common/KeyboardShortcutsModal";
@@ -43,11 +43,6 @@ const OfflineSyncManager = () => {
   return null;
 };
 
-// TEMPORARY COMPONENT TO TEST ERROR SCREEN
-const TestError = () => {
-  throw new Error("Testing redesigned ErrorBoundary");
-};
-
 function App() {
   const location = useLocation();
 
@@ -61,9 +56,6 @@ function App() {
 
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
 
-  // TURN TRUE ONLY FOR TESTING
-  const SHOW_ERROR_SCREEN = false;
-
   useLenis();
 
   useKeyboardShortcuts({
@@ -74,17 +66,10 @@ function App() {
 
   const toggleCursor = () => {
     const value = !cursorEnabled;
-
     setCursorEnabled(value);
-
     try {
-<<<<<<< HEAD
-      localStorage.setItem("cursor", newValue ? "on" : "off");
-    } catch (error) {}
-=======
       localStorage.setItem("cursor", value ? "on" : "off");
     } catch {}
->>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
   };
 
   useEffect(() => {
@@ -93,16 +78,9 @@ function App() {
         setCursorEnabled(event.detail.cursorEnabled);
       }
     };
-<<<<<<< HEAD
+
     window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
-=======
 
-    window.addEventListener(
-      "cursorPreferenceChanged",
-      handleCursorPreference
-    );
-
->>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
     return () => {
       window.removeEventListener(
         "cursorPreferenceChanged",
@@ -113,32 +91,24 @@ function App() {
 
   useEffect(() => {
     const handleOnline = () => {
-      toast.success(
-        "Back online! Your connections have been restored.",
-        {
-          position: "bottom-right",
-          autoClose: 4000,
-        }
-      );
+      toast.success("Back online! Your connections have been restored.", {
+        position: "bottom-right",
+        autoClose: 4000,
+      });
     };
     const handleOffline = () => {
-      toast.warning(
-        "You are currently offline.",
-        {
-          position: "bottom-right",
-          autoClose: 5000,
-        }
-      );
+      toast.warning("You are currently offline.", {
+        position: "bottom-right",
+        autoClose: 5000,
+      });
     };
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
-<<<<<<< HEAD
-=======
 
->>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
     if (!navigator.onLine) {
       handleOffline();
     }
+
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
@@ -147,106 +117,23 @@ function App() {
 
   return (
     <ErrorBoundary>
-
-      {/* TEMPORARY TEST */}
-      {SHOW_ERROR_SCREEN && <TestError />}
-
       <AuthProvider>
         <NotificationProvider>
           <MyEventsProvider>
             <SessionRecoveryProvider>
-<<<<<<< HEAD
+
               <ReminderChecker />
               <NotificationToastContainer />
               <OfflineSyncManager />
 
               <div className="App">
-                <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+
                 <SectionErrorBoundary label="Navigation Bar">
-                  <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+                  <Navbar
+                    cursorEnabled={cursorEnabled}
+                    toggleCursor={toggleCursor}
+                  />
                 </SectionErrorBoundary>
-                <OfflineBanner />
-                <OfflineConflictModal />
-                <KeyboardShortcutsModal
-                  isOpen={showKeyboardModal}
-                  onClose={() => setShowKeyboardModal(false)}
-                />
-                <OnboardingChecklist />
-
-                <main
-                  className="
-                    relative z-10 min-h-[85vh]
-                    bg-white dark:bg-slate-950
-                    text-black dark:text-white
-                    transition-colors duration-300
-                  "
-                  relative
-                  z-10
-                  min-h-[85vh]
-                  bg-white
-                  dark:bg-slate-950
-                  text-black
-                  dark:text-white
-                  transition-colors
-                  duration-300
-                ">
-              <PageTransition>
-  <Suspense
-    fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        Loading...
-      </div>
-    }
-  >
-    <Routes>
-
-      <Route
-        path="/register/:id"
-        element={<RegistrationPage />}
-      />
-
-      <Route
-        path="/event-recommendation"
-        element={<EventRecommendation />}
-      />
-
-                          <Route path="/event-recommendation" element={<EventRecommendation />} />
-
-                          <Route path="*" element={<AppRoutes />} />
-                        </Routes>
-                      </Suspense>
-                    </SectionErrorBoundary>
-                  </PageTransition>
-                </main>
-
-                <ScrollToTop />
-                <Suspense fallback={null}>
-                  <Chatbot />
-                  {!isDashboardOrAdmin && <Footer />}
-                </Suspense>
-
-                <SectionErrorBoundary label="Chatbot Assist" silent>
-                  <Suspense fallback={null}>
-                    <Chatbot />
-                  </Suspense>
-                </SectionErrorBoundary>
-
-                <SectionErrorBoundary label="Footer">
-                  <Suspense fallback={null}>{!isDashboardOrAdmin && <Footer />}</Suspense>
-                </SectionErrorBoundary>
-
-=======
-
-              <ReminderChecker />
-              <NotificationToastContainer />
-              <OfflineSyncManager />
-
-              <div className="App">
-
-                <Navbar
-                  cursorEnabled={cursorEnabled}
-                  toggleCursor={toggleCursor}
-                />
 
                 <OfflineBanner />
                 <OfflineConflictModal />
@@ -265,70 +152,66 @@ function App() {
                   transition-colors duration-300"
                 >
                   <PageTransition>
+                    <SectionErrorBoundary label="Page Content">
+                      <Suspense
+                        fallback={
+                          <div className="min-h-screen flex items-center justify-center">
+                            Loading...
+                          </div>
+                        }
+                      >
+                        <Routes>
 
-                    <Suspense
-                      fallback={
-                        <div className="min-h-screen flex items-center justify-center">
-                          Loading...
-                        </div>
-                      }
-                    >
+                          <Route
+                            path="/register/:id"
+                            element={<RegistrationPage />}
+                          />
 
-                      <Routes>
+                          <Route
+                            path="/event-recommendation"
+                            element={<EventRecommendation />}
+                          />
 
-                        <Route
-                          path="/register/:id"
-                          element={<RegistrationPage />}
-                        />
+                          <Route
+                            path="*"
+                            element={<AppRoutes />}
+                          />
 
-                        <Route
-                          path="/event-recommendation"
-                          element={<EventRecommendation />}
-                        />
-
-                        <Route
-                          path="*"
-                          element={<AppRoutes />}
-                        />
-
-                      </Routes>
-
-                    </Suspense>
-
+                        </Routes>
+                      </Suspense>
+                    </SectionErrorBoundary>
                   </PageTransition>
                 </main>
 
                 <ScrollToTop />
 
-                <Suspense fallback={null}>
-                  <Chatbot />
-                  {!isDashboardOrAdmin && <Footer />}
-                </Suspense>
+                <SectionErrorBoundary label="Chatbot Assist" silent>
+                  <Suspense fallback={null}>
+                    <Chatbot />
+                  </Suspense>
+                </SectionErrorBoundary>
 
->>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
+                <SectionErrorBoundary label="Footer">
+                  <Suspense fallback={null}>
+                    {!isDashboardOrAdmin && <Footer />}
+                  </Suspense>
+                </SectionErrorBoundary>
+
                 <BackToTopButton />
                 <FeedbackButton />
                 <ThemeCustomizerDrawer />
                 <SessionRecovery />
-                <FluidCursor enabled={cursorEnabled} />
-<<<<<<< HEAD
+
                 <SectionErrorBoundary label="Custom Cursor" silent>
                   <FluidCursor enabled={cursorEnabled} />
                 </SectionErrorBoundary>
-              </div>
-=======
 
               </div>
 
->>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
             </SessionRecoveryProvider>
           </MyEventsProvider>
         </NotificationProvider>
       </AuthProvider>
-<<<<<<< HEAD
-=======
-
->>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
     </ErrorBoundary>
   );
 }

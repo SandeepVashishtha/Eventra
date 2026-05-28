@@ -321,42 +321,30 @@ const CollaborationHub = () => {
                     </div>
                   </div>
                   
-                  <div className="opportunity-details">
+                  <div className="opportunity-details grid grid-cols-2 gap-3 mb-5 border-t border-slate-100 dark:border-slate-800/60 pt-4">
                     <div className="detail-item">
-                      <span className="label">Budget:</span>
-                      <span className="value">{opportunity.budget}</span>
+                      <span className="label block text-[10px] text-slate-400 font-bold uppercase">Budget</span>
+                      <span className="value text-xs font-black text-slate-800 dark:text-slate-200">{opportunity.budget}</span>
                     </div>
-                    <div className="detail-item">
-                      <span className="label">Deadline:</span>
-                      <span className="value">{new Date(opportunity.deadline).toLocaleDateString()}</span>
+                    <div className="detail-item text-right">
+                      <span className="label block text-[10px] text-slate-400 font-bold uppercase">Deadline</span>
+                      <span className="value text-xs font-black text-slate-800 dark:text-slate-200">
+                        {new Date(opportunity.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      </span>
                     </div>
-                    
-                    <div>
-                      <div className="opportunity-details grid grid-cols-2 gap-3 mb-5 border-t border-slate-100 dark:border-slate-800/60 pt-4">
-                        <div className="detail-item">
-                          <span className="label block text-[10px] text-slate-400 font-bold uppercase">Budget</span>
-                          <span className="value text-xs font-black text-slate-800 dark:text-slate-200">{opportunity.budget}</span>
-                        </div>
-                        <div className="detail-item text-right">
-                          <span className="label block text-[10px] text-slate-400 font-bold uppercase">Deadline</span>
-                          <span className="value text-xs font-black text-slate-800 dark:text-slate-200">
-                            {new Date(opportunity.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="opportunity-actions flex gap-2 pt-2">
-                        <button 
-                          onClick={() => setSelectedOpportunity(opportunity)}
-                          className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all text-center"
-                        >
-                          Apply Now
-                        </button>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))
-              ) : (
+                  </div>
+                  
+                  <div className="opportunity-actions flex gap-2 pt-2">
+                    <button 
+                      onClick={() => setSelectedOpportunity(opportunity)}
+                      className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all text-center"
+                    >
+                      Apply Now
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+              {filteredOpportunities.length === 0 && (
                 <div className="col-span-full py-16 text-center text-slate-500 dark:text-slate-400">
                   No opportunities match your filter or search query.
                 </div>
@@ -477,14 +465,19 @@ const CollaborationHub = () => {
                         Message
                       </button>
                     </div>
-                  </motion.div>
-                ))
-              ) : (
+                  </div>
+                </motion.div>
+              ))}
+              {filteredNetworking.length === 0 && (
                 <div className="col-span-full py-16 text-center text-slate-500 dark:text-slate-400">
                   No networking matches found.
                 </div>
               )}
-            <        {activeSection === 'create-request' && (
+            </div>
+          </div>
+        )}
+
+        {activeSection === 'create-request' && (
           <div className="create-request-section max-w-2xl mx-auto" role="region" aria-labelledby="form-heading">
             <h2 id="form-heading" className="text-xl font-bold text-slate-900 dark:text-white mb-6">Create Collaboration Request</h2>
             <form onSubmit={handleRequestSubmit} className="request-form p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl space-y-5">
