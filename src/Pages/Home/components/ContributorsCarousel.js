@@ -21,6 +21,16 @@ const GITHUB_REPO = "sandeepvashishtha/Eventra";
 const STORAGE_KEY = "github_contributors";
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
 const REQUEST_TIMEOUT = 10000;
+const MAX_CONTRIBUTOR_PAGES = 2; // Limit carousel to top contributors
+const PROFILE_FETCH_DELAY_MS = 100;
+
+let profileFetchCounter = 0;
+const throttleProfileFetch = async () => {
+  profileFetchCounter++;
+  if (profileFetchCounter % 5 === 0) {
+    await new Promise(resolve => setTimeout(resolve, PROFILE_FETCH_DELAY_MS));
+  }
+};
 
 // Role assignment
 const getRoleByGitHubActivity = (contributor) => {
@@ -101,6 +111,7 @@ const Contributors = () => {
   // Fetch GitHub profile details
 
   const fetchGitHubProfile = useCallback(async (username) => {
+    await throttleProfileFetch();
     try {
       const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(
         `/users/${username}`
@@ -146,7 +157,7 @@ const Contributors = () => {
       let allContributors = [];
       let page = 1;
       let hasMore = true;
-      while (hasMore) {
+      while (hasMore && page <= MAX_CONTRIBUTOR_PAGES) {
         const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(
           `/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`
         )}`;
@@ -177,8 +188,14 @@ const Contributors = () => {
       enhanced.sort((a, b) => b.contributions - a.contributions);
       setContributors(enhanced);
       cacheContributors(enhanced);
-    } catch {
+    } catch (error) {
+      console.error("Failed to fetch contributors:", error);
+
       setContributors([]);
+
+      if (error.name === "AbortError") {
+        console.error("Contributor request timed out");
+      }
     } finally {
       setLoading(false);
     }
@@ -307,7 +324,7 @@ const Contributors = () => {
                   <div className="absolute top-3 mt-3 left-1/2 -translate-x-1/2">
                     <div className="relative">
                       <img loading="lazy" decoding="async" width="65" height="65"
-  src={c.avatar_url}
+  src={c.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name || c.login || "Anon")}&background=random`}
   alt={`${c.name || c.login || "Contributor"}'s GitHub profile picture`}
   className="w-[65px] h-[65px] rounded-full border-4 border-black shadow-md relative z-10"
 />

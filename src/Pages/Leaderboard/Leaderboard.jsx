@@ -35,49 +35,11 @@ const CATEGORY_FILTERS = [
   { id: "mentors", label: "Project Mentors", icon: "🎓" },
 ];
 
-// ─── Deterministic rank movement generator (seeded by username hash) ──────────
-function getRankMovement(username) {
-  let hash = 0;
-  for (let i = 0; i < username.length; i++) {
-    hash = (hash << 5) - hash + username.charCodeAt(i);
-    hash |= 0;
-  }
-  const mod = Math.abs(hash) % 10;
-  if (mod < 4) return { direction: "up", delta: (mod % 3) + 1 };
-  if (mod < 7) return { direction: "stable", delta: 0 };
-  return { direction: "down", delta: (mod % 2) + 1 };
-}
-
-function RankMovementIndicator({ username }) {
-  const { direction, delta } = getRankMovement(username);
-  if (direction === "up") {
-    return (
-      <motion.span
-        initial={{ opacity: 0, y: 4 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="inline-flex items-center gap-0.5 text-[10px] font-black text-emerald-500"
-        title={`Up ${delta} position${delta > 1 ? "s" : ""}`}
-      >
-        <FaArrowUp className="w-2.5 h-2.5" /> {delta}
-      </motion.span>
-    );
-  }
-  if (direction === "down") {
-    return (
-      <motion.span
-        initial={{ opacity: 0, y: -4 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="inline-flex items-center gap-0.5 text-[10px] font-black text-rose-500"
-        title={`Down ${delta} position${delta > 1 ? "s" : ""}`}
-      >
-        <FaArrowDown className="w-2.5 h-2.5" /> {delta}
-      </motion.span>
-    );
-  }
+function RankMovementIndicator() {
   return (
     <span
       className="inline-flex items-center text-[10px] font-bold text-slate-400"
-      title="No change"
+      title="Stable"
     >
       <FaMinus className="w-2 h-2" />
     </span>
@@ -88,24 +50,7 @@ function RankMovementIndicator({ username }) {
 const GITHUB_REPO = ENV.GITHUB_REPO;
 // Token is managed securely by the backend proxy
 
-// Points mapping for PR labels (keeps scoring logic centralized)
-const POINTS = {
-  gssoclevel1: 3,
-  gssoclevel2: 7,
-  gssoclevel3: 10,
-};
-const DEFAULT_MERGED_PR_POINTS = 1;
 
-const normalizeLabel = (label = "") => label.toLowerCase().replace(/[^a-z0-9]/g, "");
-
-const calculatePrPoints = (labels) => {
-  const levelPoints = labels.reduce((total, label) => {
-    const normalized = normalizeLabel(label);
-    return total + (POINTS[normalized] || 0);
-  }, 0);
-
-  return levelPoints || DEFAULT_MERGED_PR_POINTS;
-};
 
 // Custom lightweight high-performance count-up component
 const AnimatedCounter = ({ value }) => {
@@ -232,89 +177,19 @@ export default function LeaderBoard() {
 
   const fetchContributors = async () => {
     try {
-      let contributorsMap = {};
-      let page = 1;
-      let hasMore = true;
+      // Fetch pre-computed leaderboard data from the new serverless backend
+      const { data } = await fetchWithTimeout("/api/leaderboard", {}, 15000);
 
-      const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(`/repos/${GITHUB_REPO}/contributors`)}`;
-      const { data: contributorsData } = await fetchWithTimeout(proxyUrl);
-      const contributorsInfo = {};
-
-      contributorsData.forEach((contributor) => {
-        contributorsInfo[contributor.login] = {
-          name: contributor.name || contributor.login,
-          avatar: contributor.avatar_url,
-          profile: contributor.html_url,
-        };
-      });
-
-      while (hasMore) {
-        const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(`/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`)}`;
-        const res = await fetch(proxyUrl);
-
-        if (!res.ok) {
-          logger.warn(`GitHub API request failed with status: ${res.status}`);
-          hasMore = false;
-          break;
-        }
-
-        const prs = await res.json();
-        if (!Array.isArray(prs) || prs.length === 0) {
-          hasMore = false;
-          break;
-        }
-
-        prs.forEach((pr) => {
-          if (!pr.merged_at) return;
-
-          const labels = pr.labels.map((l) => l.name.toLowerCase());
-          const hasGsocLabel = labels.some(
-            (label) => label.includes("gssoc") || label.includes("gsoc")
-          );
-          if (!hasGsocLabel) return;
-
-          const author = pr.user.login;
-          const points = calculatePrPoints(labels);
-
-          if (!contributorsMap[author]) {
-            const contributorInfo = contributorsInfo[author] || {
-              name: author,
-              avatar: pr.user.avatar_url,
-              profile: pr.user.html_url,
-            };
-            contributorsMap[author] = {
-              username: author,
-              name: contributorInfo.name,
-              avatar: contributorInfo.avatar,
-              profile: contributorInfo.profile,
-              points: 0,
-              prs: 0,
-            };
-          }
-
-          contributorsMap[author].points += points;
-          contributorsMap[author].prs += 1;
-        });
-
-        page++;
+      if (!Array.isArray(data)) {
+        throw new Error("Invalid payload format received from leaderboard API");
       }
 
-      // Add achievement-based bonus points to gamify contributors
-      Object.keys(contributorsMap).forEach((user) => {
-        const count = contributorsMap[user].prs;
-        if (count >= 10) {
-          contributorsMap[user].points += 10;
-        } else if (count >= 5) {
-          contributorsMap[user].points += 5;
-        }
-      });
-
-      const sortedContributors = Object.values(contributorsMap).sort((a, b) => b.points - a.points);
-
-      setContributors(sortedContributors);
+      setContributors(data);
       setLastUpdated(new Date().toLocaleString());
+      
+      // Update local storage cache
       storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
-        data: sortedContributors,
+        data: data,
         timestamp: Date.now(),
       });
     } catch (err) {
@@ -407,11 +282,11 @@ export default function LeaderBoard() {
     flooredTotalPoints: contributors.reduce((sum, c) => sum + c.points, 0),
   };
 
-  const sortOptions = [
+  const sortOptions = useMemo(() => [
     { label: "Points", value: "points" },
     { label: "PRs", value: "prs" },
     { label: "Username", value: "username" },
-  ];
+  ], []);
 
   // Extraction of Top 3 for visual Olympic Podium
   const top3 = sortedContributors.slice(0, 3);

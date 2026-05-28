@@ -1,4 +1,3 @@
-
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { act } from "react";
@@ -69,8 +68,8 @@ describe("useOfflineSync", () => {
 
   it("attempts to sync immediately without backoff delay on first try in active sync run", async () => {
     const queue = [
-      { id: "item-1", endpoint: "https://api/1", payload: { data: 1 }, retryCount: 2 },
-      { id: "item-2", endpoint: "https://api/2", payload: { data: 2 }, retryCount: 1 }
+      { id: "item-1", endpoint: "https://api/1", payload: { data: 1 }, retryCount: 2, userId: "mock-user-id" },
+      { id: "item-2", endpoint: "https://api/2", payload: { data: 2 }, retryCount: 1, userId: "mock-user-id" }
     ];
     getQueueIndexedDB.mockResolvedValue(queue);
 
@@ -79,6 +78,7 @@ describe("useOfflineSync", () => {
       return null;
     };
 
+    // eslint-disable-next-line testing-library/no-unnecessary-act
     await act(async () => {
       root = createRoot(container);
       root.render(<TestComponent />);
@@ -106,9 +106,8 @@ describe("useOfflineSync", () => {
   });
 
   it("preserves items with retryCount >= MAX_RETRIES in the offline queue instead of deleting them", async () => {
-
     const queue = [
-      { id: "item-3", endpoint: "https://api/3", payload: { data: 3 }, retryCount: 3 }
+      { id: "item-3", endpoint: "https://api/3", payload: { data: 3 }, retryCount: 3, userId: "mock-user-id" }
     ];
     getQueueIndexedDB.mockResolvedValue(queue);
 
@@ -117,6 +116,7 @@ describe("useOfflineSync", () => {
       return null;
     };
 
+    // eslint-disable-next-line testing-library/no-unnecessary-act
     await act(async () => {
       root = createRoot(container);
       root.render(<TestComponent />);
@@ -130,9 +130,7 @@ describe("useOfflineSync", () => {
     // Verify fetch was NOT called because retryCount >= 3
     expect(global.fetch).not.toHaveBeenCalled();
     // Verify setQueue was called to preserve the item
-    expect(setQueue).toHaveBeenCalledWith(
-      queue
-    );
+    expect(setQueue).toHaveBeenCalledWith(queue);
     expect(clearQueue).not.toHaveBeenCalled();
   });
 });

@@ -136,10 +136,15 @@ const useEventListing = () => {
           last: true,
         });
 
-        setLoadError(
-          error?.message ||
-          "Failed to load events. Please try again later.",
-        );
+        if (error?.response?.status === 403) {
+  setLoadError(
+    "Access to events is currently restricted. Please try again later.",
+  );
+} else {
+  setLoadError(
+    "Failed to load events. Please try again later.",
+  );
+}
       }
     } finally {
       setIsLoading(false);

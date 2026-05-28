@@ -12,6 +12,7 @@ import { logger } from "../../utils/logger";
  * - featureName {string}   Optional name of the feature for better error messages
  * - onError     {function} Optional callback invoked with (error, errorInfo)
  * - fallback    {ReactNode} Optional custom fallback node
+ * - onRetry     {function} Optional callback invoked on retry
  */
 class FeatureErrorBoundary extends React.Component {
   constructor(props) {
@@ -55,22 +56,31 @@ class FeatureErrorBoundary extends React.Component {
       window.location.reload();
       return;
     }
+
     this.setState((prev) => ({
       hasError: false,
       error: null,
       retryCount: prev.retryCount + 1,
     }));
+
+    if (this.props.onRetry) {
+      try {
+        this.props.onRetry();
+      } catch (_) {}
+    }
   };
 
   render() {
+    if (!this.state.hasError) {
+      return this.props.children;
+    }
 
-
-    // 2. If there is an error but a custom fallback is provided, use that
+    // If there is an error but a custom fallback is provided, use that
     if (this.props.fallback) {
       return this.props.fallback;
     }
 
-    // 3. Otherwise, render the default advanced error UI
+    // Otherwise, render the default advanced error UI
     const { featureName = "Feature" } = this.props;
     const { retryCount } = this.state;
     const tooManyRetries = retryCount >= 3;

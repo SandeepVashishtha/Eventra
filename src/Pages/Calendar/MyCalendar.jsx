@@ -127,6 +127,18 @@ const MyCalendar = () => {
     return CATEGORIES[0];
   };
 
+  // Maps category theme to a concrete hex color for inline styles (e.g., timeline node borders)
+  const getCategoryBorderColor = (theme) => {
+    const colorMap = {
+      "gssoc": "#ec4899",       // pink-500
+      "ai/web3": "#a855f7",     // purple-500
+      "workshops": "#06b6d4",   // cyan-500
+      "hackathons": "#10b981",  // emerald-500
+      "community": "#f59e0b",   // amber-500
+    };
+    return colorMap[theme.id] || "#6366f1"; // default indigo-500
+  };
+
   // Filter events registered in the current displayed month & selected category
   const getEventsForDate = (day) => {
     return myEvents.filter((item) => {
@@ -466,32 +478,58 @@ const MyCalendar = () => {
                     </div>
                   </div>
                 </motion.div>
-              ) : (
-                <motion.div
-                  key="timeline-container"
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -15 }}
-                  className="relative pl-6 sm:pl-10 space-y-8"
-                >
-                  {/* EVENT LIST VIEW */}
-                  <section
-                    className="bg-white dark:bg-slate-900 border border-slate-250/60 dark:border-slate-800/80 rounded-3xl p-6 shadow-md"
-                    aria-labelledby="registered-events-title"
-                  >
-                    <h3 id="registered-events-title" className="text-lg font-black text-slate-900 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800 pb-3">
-                      📝 Registered Events Schedule ({myEvents.length})
-                    </h3>
-                    <div className="mt-6 space-y-4">
-                      {myEvents.length > 0 ? (
-                        myEvents.map((item) => (
-                          <div
-                            key={item.eventId}
-                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-5 bg-slate-50 dark:bg-slate-800/20 hover:bg-slate-100/60 dark:hover:bg-slate-800/30 border border-slate-150 dark:border-slate-800/60 rounded-2xl transition"
-                          >
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-indigo-100 dark:bg-indigo-950 text-indigo-755 dark:text-indigo-300">
+          ) : (
+            /* PREMIUM INTERACTIVE TIMELINE VIEW */
+            <motion.div
+              key="timeline-container"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              className="relative pl-6 sm:pl-10 space-y-8"
+            >
+              <div className="absolute left-3.5 sm:left-5 top-2 bottom-2 w-0.5 bg-slate-200 dark:bg-slate-800/80 rounded-full" />
+              <div className="absolute left-3.5 sm:left-5 top-2 h-1/2 w-0.5 bg-gradient-to-b from-indigo-500 to-pink-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+
+              {timelineEvents.length > 0 ? (
+                <div className="space-y-8">
+                  {timelineEvents.map((item, index) => {
+                    const theme = getCategoryTheme(item.event?.category);
+                    const eventDate = new Date(item.event.date);
+
+                    return (
+                      <motion.div
+                        key={item.eventId}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.08, type: "spring", stiffness: 150 }}
+                        className="relative flex flex-col md:flex-row gap-5 items-start"
+                      >
+                        <div className="absolute -left-[30px] sm:-left-[37px] top-1.5 w-5 h-5 rounded-full bg-white dark:bg-slate-950 border-4 flex items-center justify-center z-10 transition-transform duration-300 hover:scale-130"
+                             style={{ borderColor: getCategoryBorderColor(theme) }}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${theme.color} animate-ping`} />
+                        </div>
+
+                        <div className="w-[110px] shrink-0 text-left md:text-right pt-0.5">
+                          <span className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                            {eventDate.toLocaleDateString("en-US", { weekday: "short" })}
+                          </span>
+                          <span className="block text-xl font-black text-slate-850 dark:text-slate-100 tracking-tight leading-none mt-1">
+                            {eventDate.getDate()} {eventDate.toLocaleDateString("en-US", { month: "short" })}
+                          </span>
+                          <span className="block text-[10px] font-black text-indigo-550 dark:text-indigo-400 uppercase tracking-wider mt-1.5">
+                            {eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+
+                        <motion.div
+                          whileHover={{ y: -4, scale: 1.01 }}
+                          className="flex-1 w-full bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 p-5 rounded-3xl shadow-sm hover:shadow-[0_12px_24px_rgba(99,102,241,0.06)] hover:border-indigo-400/40 dark:hover:border-indigo-500/30 transition-all duration-300"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                            <div className="space-y-1.5">
+                              <div className="flex items-center gap-2.5">
+                                <span className={`px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase bg-gradient-to-r ${theme.color} text-white shadow-xs`}>
                                   {item.event.category || "General"}
                                 </span>
                                 <span className="text-[11px] font-semibold text-slate-400">
@@ -506,15 +544,15 @@ const MyCalendar = () => {
                               </p>
                               <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 mt-2">
                                 <span className="flex items-center gap-1">
-                                  <CalendarIcon className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
+                                  <CalendarIcon className="w-3.5 h-3.5 text-indigo-500" />
                                   {new Date(item.event.date).toLocaleDateString()}
                                 </span>
                                 <span className="flex items-center gap-1">
-                                  <Clock className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
+                                  <Clock className="w-3.5 h-3.5 text-indigo-500" />
                                   {new Date(item.event.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                                 </span>
                                 <span className="flex items-center gap-1">
-                                  <MapPin className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
+                                  <MapPin className="w-3.5 h-3.5 text-indigo-500" />
                                   {item.event.location || "Online"}
                                 </span>
                               </div>
@@ -523,11 +561,9 @@ const MyCalendar = () => {
                               <button
                                 type="button"
                                 onClick={() => downloadICSFile(item.event)}
-                                aria-label={`Download ICS calendar file for ${item.event.title}`}
                                 className="p-2.5 rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-350 shadow-sm"
-                                title="Download standard .ics iCalendar file"
                               >
-                                <Download className="w-4 h-4" aria-hidden="true" />
+                                <Download className="w-4 h-4" />
                               </button>
                               <a
                                 href={generateGoogleCalendarLink(item.event)}
@@ -535,30 +571,32 @@ const MyCalendar = () => {
                                 rel="noopener noreferrer"
                                 className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-sm flex items-center gap-1.5"
                               >
-                                <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+                                <ExternalLink className="w-3.5 h-3.5" />
                                 Sync Google
                               </a>
                             </div>
                           </div>
-                        ))
-                      ) : (
-                        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                          <CalendarIcon className="w-12 h-12 text-slate-300 dark:text-slate-700 animate-pulse" aria-hidden="true" />
-                          <div>
-                            <h4 className="font-extrabold text-slate-800 dark:text-slate-205">No Active Registrations</h4>
-                            <p className="text-slate-400 text-sm leading-relaxed max-w-sm mt-1 mx-auto">
-                              Get involved by exploring the Eventra portal events, team projects, and registering yourself to compile your grid schedule!
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </section>
-                </motion.div>
+                        </motion.div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+                  <CalendarIcon className="w-12 h-12 text-slate-300 dark:text-slate-700 animate-pulse" />
+                  <div>
+                    <h4 className="font-extrabold text-slate-800 dark:text-slate-205">No Active Registrations</h4>
+                    <p className="text-slate-400 text-sm leading-relaxed max-w-sm mt-1 mx-auto">
+                      Get involved by exploring the Eventra portal events, team projects, and registering yourself to compile your grid schedule!
+                    </p>
+                  </div>
+                </div>
               )}
-            </AnimatePresence>
-          </>
-        )}
+            </motion.div>
+          )}
+          </AnimatePresence>
+        </>
+      )}
       </div>
     </main>
   );
