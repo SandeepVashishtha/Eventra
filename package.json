@@ -4,7 +4,7 @@
   "description": "A modern website for Eventra - platform for builders",
   "private": true,
   "engines": {
-    "node": ">=20.19.0",
+    "node": "22.x",
     "npm": ">=9.6.4"
   },
   "dependencies": {
@@ -50,6 +50,7 @@
   "scripts": {
     "dev": "vite",
     "start": "vite",
+    "vercel-build": "node scripts/validate-env.js && vite build",
     "prebuild": "node scripts/validate-env.js",
     "build": "vite build",
     "build:fast": "cross-env GENERATE_SOURCEMAP=false vite build",

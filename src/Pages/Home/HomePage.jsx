@@ -32,7 +32,6 @@ const HomePage = () => {
 
       <Hero />
       <WhatsHappening />
-      <RecentlyViewedEvents />
       <RecommendationBanner />
       <CollaborationNetworkMap />
       <CollaborationMap />

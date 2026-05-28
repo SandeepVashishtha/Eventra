@@ -1,12 +1,15 @@
 import StatusBadge from "./common/StatusBadge";
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { toast } from 'react-toastify';
 import './components.css';
 import CharacterCounter from "../../components/common/CharacterCounter";
 import { sanitizeInputText } from "../utils/inputSanitization";
 import EventMaterials from "./common/EventMaterials";
+import { Plus, Search, Check, X, Briefcase as BriefcaseIcon, DollarSign, Calendar, Users, Send } from 'lucide-react';
+import CollaborativeWhiteboard from './common/CollaborativeWhiteboard';
+
 
 const CollaborationHub = () => {
   const prefersReducedMotion = useReducedMotion();
@@ -234,7 +237,9 @@ const CollaborationHub = () => {
           { id: 'my-collaborations', name: 'My Collaborations', icon: '🤝' },
           { id: 'networking', name: 'Networking', icon: '🌐' },
           { id: 'materials', name: 'Shared Materials', icon: '📚' },
+          { id: 'whiteboard', name: 'Collaborative Whiteboard', icon: '🎨' },
           { id: 'create-request', name: 'Create Request', icon: '➕' }
+
         ].map((tab) => (
           <button
             key={tab.id}
@@ -267,6 +272,13 @@ const CollaborationHub = () => {
             <EventMaterials materials={mockMaterials} />
           </div>
         )}
+
+        {activeSection === 'whiteboard' && (
+          <div className="whiteboard-section max-w-4xl mx-auto px-4" style={{ width: "100%", maxWidth: "56rem", margin: "0 auto", paddingLeft: "1rem", paddingRight: "1rem" }}>
+            <CollaborativeWhiteboard />
+          </div>
+        )}
+
 
         {activeSection === 'opportunities' && (
           <div className="opportunities-section">
