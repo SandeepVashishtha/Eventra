@@ -1,8 +1,9 @@
-global.IS_REACT_ACT_ENVIRONMENT = true;
-
+/* eslint-disable testing-library/no-unnecessary-act */
 import React, { useEffect, act } from "react";
 import { createRoot } from "react-dom/client";
 import useLocalStorage from "./useLocalStorage";
+
+global.IS_REACT_ACT_ENVIRONMENT = true;
 
 describe("useLocalStorage", () => {
   let container;

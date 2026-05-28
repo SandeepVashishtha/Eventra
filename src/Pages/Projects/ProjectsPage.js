@@ -8,6 +8,7 @@ import ProjectCTA from "./ProjectCTA";
 
 import mockProjects from "./mockProjectsData.json";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 
 // Modern custom styled search input
@@ -77,12 +78,8 @@ const ProjectGallery = () => {
   const [sortOpen, setSortOpen] = useState(false);
 
   const [bookmarks, setBookmarks] = useState(() => {
-    try {
-      const saved = localStorage.getItem("eventra_bookmarked_projects");
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
+    const saved = localStorage.getItem("eventra_bookmarked_projects");
+    return safeJsonParse(saved, []);
   });
 
   const handleBookmarkToggle = (projectId) => {
@@ -496,7 +493,7 @@ const ProjectGallery = () => {
                 onClick={fetchProjects}
                 disabled={isLoading}
                 className="mt-6 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white disabled:opacity-60 disabled:cursor-not-allowed"
-              >
+               aria-label="button">
                 Try Again
               </button>
             </motion.div>

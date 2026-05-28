@@ -48,6 +48,14 @@ The frontend calls all APIs via an Axios instance configured with:
 
 ## 2. Base URL & Environment
 
+📖 **See [Environment Setup Guide](ENV_SETUP_GUIDE.md)** for:
+- How to configure `REACT_APP_API_URL` in frontend
+- Running the backend locally
+- Troubleshooting backend connection issues
+- Development vs production API endpoints
+
+**Current Configuration:**
+
 | Environment | Base URL |
 |-------------|----------|
 | Local Dev | `http://localhost:8080` |
@@ -323,14 +331,14 @@ GET /api/events
 **Auth Required:** No (public)  
 **Query Parameters (recommended for filtering & pagination):**
 
-| Param | Type | Description |
-|-------|------|-------------|
-| `page` | int | Page number (0-indexed) |
-| `size` | int | Items per page (default: 10) |
-| `category` | string | Filter by category |
-| `status` | string | `upcoming`, `ongoing`, `completed` |
-| `search` | string | Search by title/description |
-| `type` | string | `Event` or `Hackathon` |
+| Param | Type | Description                                |
+|-------|------|--------------------------------------------|
+| `page` | int | Page number (0-indexed)                    |
+| `size` | int | Items per page (default: 10)               |
+| `category` | string | Filter by category                         |
+| `status` | string | `upcoming`, `ongoing`, `past`, `cancelled` |
+| `search` | string | Search by title/description/location       |
+| `type` | string | `Event` or `Hackathon`                     |
 
 **Success Response `200`:**
 ```json

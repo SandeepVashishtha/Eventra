@@ -8,19 +8,28 @@ import { showAuthToast } from "../../utils/toast";
 import useReducedMotion from "../../hooks/useReducedMotion";
 import GoogleLoginButton from './GoogleLoginButton';
 import FieldError from '../common/FieldError';
+import useLoginRateLimit from '../../hooks/useLoginRateLimit';
+import { MAX_LOGIN_ATTEMPTS } from '../../utils/rateLimitUtils';
 import '../../styles/auth.css';
 
 const Login = () => {
   useDocumentTitle("Login | Eventra");
   const prefersReducedMotion = useReducedMotion();
   const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState({});
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isAuthenticated, user, token } = useAuth();
+  const { login, isAuthenticated, user, token, authRequest } = useAuth();
+  const {
+    lockedOutSeconds,
+    remainingAttempts,
+    recordAttempt,
+    resetAttempts,
+    isLockedOut,
+  } = useLoginRateLimit();
+
   // If ProtectedRoute redirected here because the JWT expired, show a notice.
   const sessionExpired = location.state?.sessionExpired ?? false;
   const introPoints = [
@@ -39,31 +48,23 @@ const Login = () => {
     const newErrors = {};
 
     if (!formData.usernameOrEmail.trim()) {
-      newErrors.usernameOrEmail =
-        "Email or username is required";
+      newErrors.usernameOrEmail = "Email or username is required";
     } else if (
       formData.usernameOrEmail.includes("@") &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
-        formData.usernameOrEmail
-      )
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.usernameOrEmail)
     ) {
-      newErrors.usernameOrEmail =
-        "Invalid email format";
+      newErrors.usernameOrEmail = "Invalid email format";
     }
 
     if (!formData.password.trim()) {
-      newErrors.password =
-        "Password is required";
+      newErrors.password = "Password is required";
     } else if (formData.password.length < 8) {
-      newErrors.password =
-        "Password must be at least 8 characters long";
+      newErrors.password = "Password must be at least 8 characters long";
     }
 
     setError(newErrors);
-
     return Object.keys(newErrors).length === 0;
   };
-
 
   useEffect(() => {
     if (isAuthenticated()) {
@@ -71,29 +72,27 @@ const Login = () => {
     }
   }, [navigate, isAuthenticated, user, token]);
 
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validate()) return;
-    setLoading(true);
 
+    if (isLockedOut()) return;
+    if (!validate()) return;
 
     try {
       const ok = await login(formData.usernameOrEmail, formData.password);
       if (ok) {
+        resetAttempts();
         showAuthToast("Login successful! Redirecting to dashboard...", () =>
           navigate("/dashboard", { replace: true })
         );
       }
     } catch (err) {
-      console.error("Login error:", err);
-      setError({ general: err.message || "Invalid email or password" });
-      // Show error toast
+      recordAttempt();
       toast.error(err.message || 'Login failed. Please check your credentials.');
-    } finally {
-      setLoading(false);
     }
   };
+
+  const isSubmitDisabled = authRequest.loading || isLockedOut();
 
   return (
     <motion.div
@@ -102,7 +101,6 @@ const Login = () => {
       transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
       className="pastel-grid-bg min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 section-theme"
     >
-
       <div className="max-w-4xl w-full mx-auto">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
@@ -117,12 +115,9 @@ const Login = () => {
 
             {/* LEFT PANEL */}
             <div className="relative z-10 w-full md:w-[38%] p-8 sm:p-10 lg:p-12 flex flex-col justify-between rounded-2xl md:rounded-l-2xl md:rounded-r-none"
-              style={{
-                background: "var(--accent-gradient)",
-                color: "white"
-              }}>
+              style={{ background: "var(--accent-gradient)", color: "white" }}>
               <div>
-                <h2 className="text-3xl sm:text-4xl text-center font-extrabold mb-5 md:text-left" >
+                <h2 className="text-3xl sm:text-4xl text-center font-extrabold mb-5 md:text-left">
                   Welcome Back
                 </h2>
                 <p className="mb-8 text-base sm:text-lg opacity-90 leading-relaxed md:text-left">
@@ -145,7 +140,7 @@ const Login = () => {
             {/* RIGHT PANEL */}
             <div className="md:w-3/5 p-10 space-y-6 backdrop-blur-xl section-theme">
 
-              {/* ✅ Session-expired banner — shown only after an auto-logout */}
+              {/* Session-expired banner */}
               {sessionExpired && (
                 <motion.div
                   initial={{ opacity: 0, y: -8 }}
@@ -158,6 +153,34 @@ const Login = () => {
                   ⚠️ Your session has expired. Please log in again.
                 </motion.div>
               )}
+
+              {/* Lockout banner */}
+              {isLockedOut() && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
+                  className="bg-red-50 dark:bg-red-900/40 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl text-sm font-medium"
+                  role="alert"
+                  aria-live="assertive"
+                >
+                  Too many failed attempts. Try again in {lockedOutSeconds}s.
+                </motion.div>
+              )}
+
+              {/* Remaining attempts warning */}
+              {!isLockedOut() && remainingAttempts <= MAX_LOGIN_ATTEMPTS - 3 && remainingAttempts > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 px-4 py-3 rounded-xl text-sm"
+                  role="status"
+                  aria-live="polite"
+                >
+                  {remainingAttempts} attempt{remainingAttempts !== 1 ? 's' : ''} remaining before temporary lockout.
+                </motion.div>
+              )}
+
               {/* Logo / Title */}
               <motion.div
                 initial={{ scale: 0 }}
@@ -170,45 +193,25 @@ const Login = () => {
                   whileTap={{ scale: 0.95 }}
                   className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-yellow-100 rounded-3xl flex items-center justify-center shadow-md border border-blue-100"
                 >
-                  <svg
-                    className="w-8 h-8 text-blue-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 10V3L4 14h7v7l9-11h-7z"
-                    />
+                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </motion.div>
-                <h1 className="text-2xl font-bold mt-2">
-                  Welcome Back
-                </h1>
+                <h1 className="text-2xl font-bold mt-2">Welcome Back</h1>
                 <p className="text-md" style={{ color: "var(--text-color-light)" }}>
                   Sign in to your Eventra account
                 </p>
               </motion.div>
 
               {/* Login Form */}
-              <motion.form
-                onSubmit={handleSubmit}
-                className="space-y-6"
-                noValidate
-              >
-                {/* Email */}
+              <motion.form onSubmit={handleSubmit} className="space-y-6" noValidate>
+
+                {/* Email / Username */}
                 <div className="space-y-2">
-                  <label
-                    htmlFor="usernameOrEmail"
-                    className="block text-sm font-semibold"
-                    style={{ color: "var(--text-color)" }}
-                  >
+                  <label htmlFor="usernameOrEmail" className="block text-sm font-semibold" style={{ color: "var(--text-color)" }}>
                     Email or username <sup className='ml-1 text-sm text-red-500'>*</sup>
                   </label>
                   <div className="relative group">
-
                     <input
                       id="usernameOrEmail"
                       name="usernameOrEmail"
@@ -216,14 +219,12 @@ const Login = () => {
                       value={formData.usernameOrEmail}
                       onChange={handleChange}
                       required
-                      disabled={loading}
+                      disabled={isSubmitDisabled}
                       placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
                       aria-invalid={!!error.usernameOrEmail}
                       aria-describedby={error.usernameOrEmail ? 'usernameOrEmail-error' : undefined}
                       className={`w-full pl-3 pr-4 py-3 bg-white dark:bg-gray-800 border ${
-                        error.usernameOrEmail
-                          ? 'border-red-500 dark:border-red-500'
-                          : 'border-gray-200 dark:border-gray-600'
+                        error.usernameOrEmail ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-gray-600'
                       } rounded-xl placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white`}
                     />
                   </div>
@@ -232,30 +233,15 @@ const Login = () => {
 
                 {/* Password */}
                 <div className="space-y-2">
-                  <label
-                    htmlFor="password"
-                    className="block text-sm font-semibold"
-                    style={{ color: "var(--text-color)" }}
-                  >
+                  <label htmlFor="password" className="block text-sm font-semibold" style={{ color: "var(--text-color)" }}>
                     Password <sup className='ml-1 text-sm text-red-500'>*</sup>
                   </label>
                   <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <svg
-                        className="h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                        />
+                      <svg className="h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
                     </div>
-
                     <input
                       id="password"
                       name="password"
@@ -263,17 +249,14 @@ const Login = () => {
                       value={formData.password}
                       onChange={handleChange}
                       required
-                      disabled={loading}
+                      disabled={isSubmitDisabled}
                       placeholder="Enter secure password / Minimum 8 characters / Use strong password"
                       aria-invalid={!!error.password}
                       aria-describedby={error.password ? 'password-error' : undefined}
                       className={`w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border ${
-                        error.password
-                          ? 'border-red-500 dark:border-red-500'
-                          : 'border-gray-200 dark:border-gray-600'
+                        error.password ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-gray-600'
                       } rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white`}
                     />
-
                     <button
                       type="button"
                       onClick={() => setShowPassword((s) => !s)}
@@ -292,26 +275,22 @@ const Login = () => {
                       )}
                     </button>
                   </div>
-
                   <FieldError id="password-error" message={error.password} />
                   <div className="flex justify-end">
-                    <Link
-                      to="/password-reset"
-                      className="text-blue-600 hover:underline text-sm"
-                    >
+                    <Link to="/password-reset" className="text-blue-600 hover:underline text-sm">
                       Forgot Password?
                     </Link>
                   </div>
                 </div>
 
-                {/* Error message */}
-                {error.general && (
+                {/* Auth error */}
+                {authRequest.error && (
                   <motion.div
                     initial={{ opacity: 0, y: -5 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm"
                   >
-                    {error.general}
+                    {authRequest.error}
                   </motion.div>
                 )}
 
@@ -320,10 +299,12 @@ const Login = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   type="submit"
-                  disabled={loading}
+                  disabled={isSubmitDisabled}
                   className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
                 >
-                  {loading ? (
+                  {isLockedOut() ? (
+                    `Locked — wait ${lockedOutSeconds}s`
+                  ) : authRequest.loading ? (
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       Signing In...
@@ -341,28 +322,18 @@ const Login = () => {
               <div className="text-center">
                 <p style={{ color: "var(--text-color-light)" }}>
                   Don't have an account?{' '}
-                  <Link
-                    to="/signup"
-                    className="text-blue-600 hover:underline font-semibold"
-                  >
+                  <Link to="/signup" className="text-blue-600 hover:underline font-semibold">
                     Create one here
                   </Link>
                 </p>
               </div>
 
               {/* Terms */}
-              <p
-                className="text-xs text-center"
-                style={{ color: "var(--text-color-light)" }}
-              >
+              <p className="text-xs text-center" style={{ color: "var(--text-color-light)" }}>
                 By signing in, you agree to our{' '}
-                <Link to="/terms" className="hover:underline text-blue-600 font-semibold">
-                  Terms of Service
-                </Link>{' '}
+                <Link to="/terms" className="hover:underline text-blue-600 font-semibold">Terms of Service</Link>{' '}
                 and{' '}
-                <Link to="/privacy" className="hover:underline text-blue-600 font-semibold">
-                  Privacy Policy
-                </Link>
+                <Link to="/privacy" className="hover:underline text-blue-600 font-semibold">Privacy Policy</Link>
               </p>
             </div>
           </div>

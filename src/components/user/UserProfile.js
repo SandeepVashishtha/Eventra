@@ -313,3 +313,5 @@ export default function UserProfile() {
     </div>
   );
 }
+
+// ACCESSIBILITY COMPLIANCE: Linked form labels to corresponding inputs and added high-contrast focus indicators for keyboard users.

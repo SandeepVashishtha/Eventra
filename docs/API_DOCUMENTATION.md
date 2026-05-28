@@ -1,5 +1,17 @@
 # Eventra API Documentation
 
+## 📖 Prerequisites
+
+Before working with the API, ensure your environment is properly configured:
+
+**\u2705 [Environment Setup Guide](ENV_SETUP_GUIDE.md)** – Complete configuration instructions including:
+- Backend API URL configuration (`REACT_APP_API_URL`)
+- Running the backend locally
+- Troubleshooting connection issues
+- Mock API vs real API modes
+
+---
+
 ## Overview
 
 Eventra provides a RESTful backend API built using Spring Boot and secured using JWT Authentication.
@@ -271,6 +283,47 @@ Authorization: Bearer YOUR_JWT_TOKEN
 
 ---
 
+## Get User Profile
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/api/users/profile` |
+
+Returns the currently authenticated user's basic profile details from the JWT security context.
+
+### Request Headers
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+### Successful Response (200)
+
+```json
+{
+  "id": 1,
+  "firstName": "John",
+  "lastName": "Doe",
+  "username": "john3163",
+  "email": "john3163@example.com",
+  "role": "CLIENT"
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `401 Unauthorized` | JWT token is missing, invalid, or expired |
+| `404 Not Found` | Authenticated user could not be found |
+
+#### Notes
+
+- This endpoint is used to restore logged-in user/session state after refresh.
+- The backend implementation is handled in the Eventra-Backend repository.
+
+---
+
 # Event APIs
 
 ## Create Event
@@ -435,6 +488,12 @@ This endpoint retrieves the event directly by ID and does not apply public-only 
       "timestamp": "2026-05-19T12:20:31"
     }
 ```
+
+### Event Response Note
+
+Event create, update, and detail APIs return a sanitized event response object instead of the raw backend entity. The response includes public event fields such as `id`, `title`, `description`, `location`, `eventDate`, `capacity`, `registeredCount`, and `public`.
+
+Internal backend fields such as registered user entities, attendee details, and JPA metadata are not exposed in event API responses.
 
 ---
 
@@ -677,6 +736,45 @@ Authorization: Bearer <token>
 | `403 Forbidden` | Unauthorized roles such as `CLIENT` |
 | `404 Not Found` | Event ID does not exist |
 | `409 Conflict` | Capacity is lower than current registeredCount |
+
+
+---
+
+## Delete Event
+
+| Method | Endpoint |
+|--------|----------|
+| DELETE | `/api/events/{id}` |
+
+Deletes an existing event by ID. This endpoint is restricted to authenticated users with `ADMIN` or `SUPER_ADMIN` authority.
+
+### Authentication
+
+---
+
+Requires a valid JWT token.
+
+```http
+Authorization: Bearer <token>
+```
+
+#### Success Response
+
+```http
+204 No Content
+```
+
+#### Error Responses
+
+| Status | Reason |
+|---|---|
+| `401 Unauthorized` | Missing or invalid JWT |
+| `403 Forbidden` | Authenticated user does not have `ADMIN` or `SUPER_ADMIN` authority |
+| `404 Not Found` | Event ID does not exist |
+
+#### Additional Notes
+
+- Related event registrations are automatically cleaned up by the backend before the event is deleted.
 
 
 ---

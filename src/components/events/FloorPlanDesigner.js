@@ -116,6 +116,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
       try {
         initialElements = JSON.parse(savedLayout);
       } catch (e) {
+        toast.error("Invalid floor plan format");
         initialElements = PRESETS.banquet;
       }
     } else {
@@ -140,10 +141,40 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   };
 
   const loadPreset = (presetName) => {
-    if (window.confirm(`Are you sure you want to load the ${presetName} layout? Current changes will be overwritten.`)) {
-      setElements(PRESETS[presetName]);
-      setSelectedId(null);
-    }
+    toast(
+      ({ closeToast }) => (
+        <div>
+          <p className="text-sm font-semibold mb-2">Load {presetName} layout?</p>
+          <p className="text-xs text-gray-500 mb-3">Current changes will be overwritten.</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setElements(PRESETS[presetName]);
+                setSelectedId(null);
+                toast.success(`${presetName} layout loaded!`);
+                closeToast();
+              }}
+              className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold rounded-lg transition-colors"
+            >
+              Yes, Load
+            </button>
+            <button
+              onClick={closeToast}
+              className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-semibold rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        closeButton: false,
+        position: "top-center",
+      }
+    );
   };
 
   // Helper to prepare the SVG for export by cloning and stripping specific attributes/styles
@@ -299,7 +330,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
         setSelectedId(null);
         toast.success("Floor plan layout imported successfully!");
       } catch (err) {
-        toast.error(`Failed to import floor plan: ${err.message}`);
+        toast.error("Invalid floor plan format");
       }
     };
     reader.readAsText(file);
@@ -605,22 +636,29 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   }, [elements]);
 
   // Computes whether there is ANY overlap / collision currently detected on the canvas
-  const collisionMap = useMemo(() => {
-    const collisions = new Map();
+  // FIX: Debounced O(N^2) collision calculation to prevent main-thread lag during drag
+  const [collisionMap, setCollisionMap] = useState(new Map());
 
-    for (let i = 0; i < elements.length; i++) {
-      for (let j = i + 1; j < elements.length; j++) {
-        const el1 = elements[i];
-        const el2 = elements[j];
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const collisions = new Map();
 
-        if (checkCollision(el1, el2)) {
-          collisions.set(el1.id, true);
-          collisions.set(el2.id, true);
+      for (let i = 0; i < elements.length; i++) {
+        for (let j = i + 1; j < elements.length; j++) {
+          const el1 = elements[i];
+          const el2 = elements[j];
+
+          if (checkCollision(el1, el2)) {
+            collisions.set(el1.id, true);
+            collisions.set(el2.id, true);
+          }
         }
       }
-    }
 
-    return collisions;
+      setCollisionMap(collisions);
+    }, 150);
+
+    return () => clearTimeout(timeoutId);
   }, [elements]);
 
   const anyCollision = collisionMap.size > 0;
@@ -647,7 +685,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
             <button onClick={() => loadPreset("conference")} className="text-xs font-semibold px-2 py-0.5 hover:text-indigo-400 text-gray-300 transition-colors">Keynote</button>
           </div>
 
-          <button onClick={saveLayout} className="fp-btn fp-btn-primary">
+          <button onClick={saveLayout} className="fp-btn fp-btn-primary" aria-label="button">
             <Save size={16} />
             Save Layout
           </button>
@@ -722,17 +760,17 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
             </p>
 
             <div className="fp-portability-grid mb-4">
-              <button className="fp-portability-btn font-semibold" onClick={handleExportPNG} title="Export as high-res PNG image">
+              <button className="fp-portability-btn font-semibold" onClick={handleExportPNG} title="Export as high-res PNG image" aria-label="button">
                 <Image className="fp-portability-icon" size={16} />
                 <span>Export PNG</span>
               </button>
-              <button className="fp-portability-btn font-semibold" onClick={handleExportSVG} title="Export as vector SVG image">
+              <button className="fp-portability-btn font-semibold" onClick={handleExportSVG} title="Export as vector SVG image" aria-label="button">
                 <Download className="fp-portability-icon" size={16} />
                 <span>Export SVG</span>
               </button>
             </div>
 
-            <button className="fp-btn fp-btn-secondary w-full justify-center mb-3 text-xs" onClick={handleDownloadJSON} title="Download backup config JSON file">
+            <button className="fp-btn fp-btn-secondary w-full justify-center mb-3 text-xs" onClick={handleDownloadJSON} title="Download backup config JSON file" aria-label="button">
               <FileJson size={14} className="text-indigo-400" />
               <span>Backup Layout JSON</span>
             </button>
@@ -765,7 +803,16 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
         </aside>
 
         {/* Dynamic Canvas Workspace */}
-        <div className="fp-canvas-wrapper" onMouseDown={(e) => handleMouseDown(e, null)}>
+        <div
+          className="fp-canvas-wrapper"
+          onMouseDown={(e) => handleMouseDown(e, null)}
+          onTouchStart={(e) => {
+            if (isPanMode && e.cancelable) {
+              e.preventDefault();
+            }
+            handleMouseDown(e, null);
+          }}
+        >
 
           {/* Real-time active collision notification */}
           {anyCollision && (
@@ -867,13 +914,26 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
                   data-element-type={el.type}
                   transform={`rotate(${el.rotation}, ${el.x + el.width / 2}, ${el.y + el.height / 2})`}
                   onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e, el.id); }}
+                  onTouchStart={(e) => {
+                    if (e.cancelable) e.preventDefault();
+                    e.stopPropagation();
+                    handleMouseDown(e, el.id);
+                  }}
                   className="fp-element-group"
                 >
                   {/* Chairs rendered around tables */}
                   {getSeatPositions(el).map((seat) => {
                     const isOccupied = el.assignedAttendees[seat.index];
+                    const seatLabel = (el.seatLabels && el.seatLabels[seat.index]) || `Seat ${seat.index + 1}`;
+                    const seatTier = el.tier || "General Admission";
                     return (
-                      <g key={`seat-${el.id}-${seat.index}`} className="fp-seat-25d">
+                      <g 
+                        key={`seat-${el.id}-${seat.index}`} 
+                        className="fp-seat-25d"
+                        data-seat-id={`${el.id}-${seat.index}`}
+                        data-seat-label={seatLabel}
+                        data-seat-tier={seatTier}
+                      >
                         {/* 2.5D Chair shadow/extrusion base */}
                         <circle
                           cx={seat.x}
@@ -1123,37 +1183,68 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
                     </div>
                   </div>
 
+                  <div className="fp-field mb-4">
+                    <label className="fp-field-label">Seat Tier Tag</label>
+                    <input
+                      type="text"
+                      className="fp-input"
+                      value={activeElement.tier || ""}
+                      onChange={(e) => updateSelectedElement("tier", e.target.value)}
+                      placeholder="e.g. VIP Front Row, Balcony Box"
+                    />
+                  </div>
+
                   <div className="text-xs font-semibold text-gray-400 mb-2">Assign registered attendees to table slots:</div>
                   <div className="fp-seating-grid">
                     {Array.from({ length: activeElement.seatsCount }).map((_, seatIdx) => {
                       const currentAssignee = activeElement.assignedAttendees[seatIdx];
+                      const seatLabel = (activeElement.seatLabels && activeElement.seatLabels[seatIdx]) || `Seat ${seatIdx + 1}`;
                       return (
-                        <div key={seatIdx} className="fp-seat-row">
-                          <span className="fp-seat-number">Seat {seatIdx + 1}</span>
-
-                          <select
-                            className="fp-attendee-select"
-                            value={currentAssignee || ""}
-                            onChange={(e) => handleSeatAssign(seatIdx, e.target.value)}
-                          >
-                            <option value="">-- Choose Attendee --</option>
-                            {MOCK_ATTENDEES.map((attName) => {
-                              // Enable choosing the attendee if they aren't assigned to another table or if they are assigned to THIS seat
-                              const isAssignedElsewhere = elements.some(
-                                el => Object.values(el.assignedAttendees).includes(attName) &&
-                                  !(el.id === activeElement.id && el.assignedAttendees[seatIdx] === attName)
-                              );
-                              return (
-                                <option
-                                  key={attName}
-                                  value={attName}
-                                  disabled={isAssignedElsewhere}
-                                >
-                                  {attName} {isAssignedElsewhere ? "(Booked)" : ""}
-                                </option>
-                              );
-                            })}
-                          </select>
+                        <div key={seatIdx} className="fp-seat-row flex-col items-stretch gap-2.5" style={{ display: "flex", flexDirection: "column", height: "auto" }}>
+                          <div className="flex items-center justify-between gap-2" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span className="fp-seat-number">{seatLabel}</span>
+                            <input
+                              type="text"
+                              className="fp-input py-0.5 px-2 text-xs w-28 h-6 text-right bg-white/5 border border-white/10 hover:border-white/20 focus:border-indigo-500 rounded"
+                              value={activeElement.seatLabels?.[seatIdx] || ""}
+                              onChange={(e) => {
+                                const nextLabels = { ...(activeElement.seatLabels || {}) };
+                                if (e.target.value) {
+                                  nextLabels[seatIdx] = e.target.value;
+                                } else {
+                                  delete nextLabels[seatIdx];
+                                }
+                                updateSelectedElement("seatLabels", nextLabels);
+                              }}
+                              placeholder="Rename Seat"
+                            />
+                          </div>
+                          <div className="flex items-center justify-between gap-2 mt-1" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span className="text-[10px] text-gray-500">Attendee:</span>
+                            <select
+                              className="fp-attendee-select text-xs py-0.5"
+                              value={currentAssignee || ""}
+                              onChange={(e) => handleSeatAssign(seatIdx, e.target.value)}
+                            >
+                              <option value="">-- Choose Attendee --</option>
+                              {MOCK_ATTENDEES.map((attName) => {
+                                // Enable choosing the attendee if they aren't assigned to another table or if they are assigned to THIS seat
+                                const isAssignedElsewhere = elements.some(
+                                  el => Object.values(el.assignedAttendees).includes(attName) &&
+                                    !(el.id === activeElement.id && el.assignedAttendees[seatIdx] === attName)
+                                );
+                                return (
+                                  <option
+                                    key={attName}
+                                    value={attName}
+                                    disabled={isAssignedElsewhere}
+                                  >
+                                    {attName} {isAssignedElsewhere ? "(Booked)" : ""}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          </div>
                         </div>
                       );
                     })}

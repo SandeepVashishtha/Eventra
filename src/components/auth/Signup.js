@@ -1,10 +1,11 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useReducedMotion } from '../../hooks/useReducedMotion';
+import useReducedMotion from '../../hooks/useReducedMotion';
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
+import GoogleLoginButton from "./GoogleLoginButton";
 import { 
   User, Mail, Lock, Eye, EyeOff, Check, X, AlertCircle, 
   Github, Chrome, ArrowRight, Sparkles 
@@ -236,7 +237,7 @@ const Signup = () => {
     }
   };
 
-  // Social login handler (placeholder)
+  // Social login handler
   const handleSocialLogin = useCallback(async (provider) => {
     const POPUP_POLL_INTERVAL = 500;
     const POPUP_TIMEOUT_MS = 60_000;
@@ -467,22 +468,8 @@ const Signup = () => {
               </div>
 
               {/* Social Login Buttons */}
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                {['google', 'github'].map(provider => (
-                  <motion.button
-                    key={provider}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    type="button"
-                    onClick={() => handleSocialLogin(provider)}
-                    disabled={loading}
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
-                    aria-label={`Sign up with ${provider}`}
-                  >
-                    <SocialIcon provider={provider} />
-                    <span className="capitalize">{provider}</span>
-                  </motion.button>
-                ))}
+              <div className="mb-6 flex justify-center w-full">
+                <GoogleLoginButton />
               </div>
 
               <div className="relative mb-6">
@@ -658,7 +645,7 @@ const Signup = () => {
 };
 
 // ============ REUSABLE FORM FIELD COMPONENT ============
-const FormField = ({
+export const FormField = ({
   id, label, type = "text", icon: Icon, value, onChange, onBlur,
   error, success, hint, required, autoComplete, toggleVisibility, initialDelay = 0
 }) => {
@@ -716,7 +703,7 @@ const FormField = ({
             onClick={() => setShowPassword(v => !v)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             aria-label={showPassword ? "Hide password" : "Show password"}
-            tabIndex={-1}
+            aria-pressed={showPassword}
           >
             <ToggleEyeIcon visible={showPassword} className="w-5 h-5" />
           </button>
@@ -738,6 +725,7 @@ const FormField = ({
             exit={{ opacity: 0, height: 0 }}
             className="text-xs text-red-500 dark:text-red-400 flex items-center gap-1"
             role="alert"
+            aria-live="assertive"
           >
             <X className="w-3.5 h-3.5" />
             {error}
@@ -764,7 +752,7 @@ const FormField = ({
 };
 
 // ============ PASSWORD FIELD WITH REQUIREMENTS ============
-const PasswordField = ({ id, label, value, onChange, error, strength, requirements }) => {
+export const PasswordField = ({ id, label, value, onChange, error, strength, requirements }) => {
   const [showPassword, setShowPassword] = useState(false);
   
   return (
@@ -809,7 +797,7 @@ const PasswordField = ({ id, label, value, onChange, error, strength, requiremen
           onClick={() => setShowPassword(v => !v)}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           aria-label={showPassword ? "Hide password" : "Show password"}
-          tabIndex={-1}
+          aria-pressed={showPassword}
         >
           <ToggleEyeIcon visible={showPassword} className="w-5 h-5" />
         </button>
@@ -872,6 +860,7 @@ const PasswordField = ({ id, label, value, onChange, error, strength, requiremen
             exit={{ opacity: 0, height: 0 }}
             className="text-xs text-red-500 dark:text-red-400 flex items-center gap-1"
             role="alert"
+            aria-live="assertive"
           >
             <X className="w-3.5 h-3.5" />
             {error}
