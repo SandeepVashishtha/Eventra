@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { FiGithub, FiExternalLink, FiPlus, FiX } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { getUserFullName } from "../../utils/userNameUtils.mjs";
 import "./ProjectSubmission.css";
 
 const ProjectSubmission = ({ onClose, onSubmit }) => {
@@ -10,7 +11,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    author: user?.firstName + " " + user?.lastName || "",
+    author: getUserFullName(user),
     category: "",
     techStack: [],
     githubUrl: "",
@@ -87,24 +88,24 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
       const response = await apiUtils.post(
         API_ENDPOINTS.PROJECTS.SUBMIT,
         formData,
-        token
+        {
+          headers: {
+            Authorization: token
+          }
+        }
       );
 
-      if (response.ok) {
-        const result = await response.json();
-        setSuccess(
-          "Project submitted successfully! It will be reviewed by administrators."
-        );
-        onSubmit && onSubmit(result);
-        setTimeout(() => {
-          onClose && onClose();
-        }, 2000);
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to submit project");
-      }
+      const result = response.data;
+      setSuccess(
+        "Project submitted successfully! It will be reviewed by administrators."
+      );
+      onSubmit && onSubmit(result);
+      setTimeout(() => {
+        onClose && onClose();
+      }, 2000);
     } catch (err) {
-      setError(err.message || "An error occurred while submitting the project");
+      const backendMessage = err.response?.data?.message;
+      setError(backendMessage || err.message || "An error occurred while submitting the project");
     } finally {
       setIsSubmitting(false);
     }

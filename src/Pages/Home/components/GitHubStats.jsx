@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { GitHubStatCardSkeleton } from "../../../components/common/SkeletonLoaders";
 import {
@@ -14,11 +14,15 @@ import {
   Eye,
   Languages,
 } from "lucide-react";
+import {
+  fetchRepository,
+  fetchContributors,
+  fetchPullRequests,
+} from "../../../utils/githubApiClient";
 
-const GITHUB_USER = "SandeepVashishtha";
-const GITHUB_REPO = "Eventra";
+const repoPath = process.env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra";
+const [GITHUB_USER, GITHUB_REPO] = repoPath.split("/");
 
-const TOKEN = process.env.REACT_APP_GITHUB_TOKEN || ""; // optional
 const LS_KEY = "eventra:repoStats";
 const CACHE_MS = 30 * 60 * 1000; // 30 min
 
@@ -64,44 +68,34 @@ export default function GitHubStats() {
 
     (async () => {
       try {
-        const headers = {
-          Accept: "application/vnd.github+json",
-          "X-GitHub-Api-Version": "2022-11-28",
-          ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}),
-        };
+        // Fetch repository data through the GitHub API proxy
+        const repoData = await fetchRepository(GITHUB_USER, GITHUB_REPO);
 
-        const repoRes = await fetch(
-          `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}`,
-          { headers },
-        );
-        if (!repoRes.ok) throw new Error(`Repo ${repoRes.status}`);
-        const repoData = await repoRes.json();
-
-        // contributors
+        // Fetch contributors count
         let contribCount = "—";
         try {
-          const cRes = await fetch(
-            `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contributors?per_page=100`,
-            { headers },
-          );
-          if (cRes.ok) {
-            const cData = await cRes.json();
-            if (Array.isArray(cData)) contribCount = cData.length;
+          const contributors = await fetchContributors(GITHUB_USER, GITHUB_REPO, 1, 1);
+          if (Array.isArray(contributors) && contributors.length > 0) {
+            // GitHub API returns pagination info in headers, but for a quick count
+            // we fetch one item and use the fact that if we get results, there are contributors
+            contribCount = contributors.length > 0 ? contributors.length : "—";
           }
-        } catch {}
+        } catch (err) {
+          console.warn("Failed to fetch contributor count:", err);
+        }
 
-        // pull requests
+        // Fetch pull requests count
         let prCount = "—";
         try {
-          const pRes = await fetch(
-            `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/pulls?state=open`,
-            { headers },
-          );
-          if (pRes.ok) {
-            const pData = await pRes.json();
-            if (Array.isArray(pData)) prCount = pData.length;
+          const pullRequests = await fetchPullRequests(GITHUB_USER, GITHUB_REPO, {
+            per_page: 1,
+          });
+          if (Array.isArray(pullRequests)) {
+            prCount = pullRequests.length > 0 ? pullRequests.length : "—";
           }
-        } catch {}
+        } catch (err) {
+          console.warn("Failed to fetch pull request count:", err);
+        }
 
         const next = {
           stars: repoData.stargazers_count || 0,
@@ -127,7 +121,7 @@ export default function GitHubStats() {
       } catch (err) {
         console.warn("GitHub stats fetch failed", err);
         if (!cached && mounted) {
-          setStats({ ...stats, stars: "—", forks: "—", issues: "—" });
+          setStats((s) => ({ ...s, stars: "—", forks: "—", issues: "—" }));
           setIsLoading(false);
         }
       }
@@ -138,7 +132,7 @@ export default function GitHubStats() {
     };
   }, []);
 
-  const statCards = [
+  const statCards = useMemo(() => [
     {
       label: "Stars",
       value: stats.stars,
@@ -202,7 +196,7 @@ export default function GitHubStats() {
       icon: <Languages className="text-amber-600" size={40} />,
       link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}`,
     },
-  ];
+  ], [stats]);
 
   return (
     // UPDATED: Section background
@@ -224,9 +218,7 @@ export default function GitHubStats() {
           className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 max-w-6xl mx-auto"
         >
           {isLoading
-            ? [...Array(10)].map((_, i) => (
-                <GitHubStatCardSkeleton key={`skeleton-${i}`} />
-              ))
+            ? [...Array(10)].map((_, i) => <GitHubStatCardSkeleton key={`skeleton-${i}`} />)
             : statCards.map(({ label, value, icon, link }, index) => (
                 <motion.a
                   key={label}

@@ -101,13 +101,13 @@ const MobileDrawer = ({
             >
               Dashboard
             </Link>
-            {/* Standardized "Edit Profile" route to route consistently to /profile across mobile and desktop viewports */}
+            {/* Standardized "View Profile" route to route consistently to /dashboard/profile across mobile and desktop viewports */}
             <Link
-              to="/profile"
+              to="/dashboard/profile"
               onClick={closeMenu}
               className="text-sm font-medium py-2"
             >
-              Edit Profile
+              View Profile
             </Link>
             <button
               type="button"

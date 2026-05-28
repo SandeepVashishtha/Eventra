@@ -1,0 +1,50 @@
+
+import { safeJsonParse } from "./safeJsonParse";
+
+
+const CLOCK_SKEW_BUFFER = 30;
+
+export function decodeJwtPayload(token) {
+  try {
+    if (!token || typeof token !== "string") return null;
+
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+
+    const jsonPayload = decodeURIComponent(
+      atob(padded)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+
+    return safeJsonParse(jsonPayload, {});
+  } catch {
+    return null;
+  }
+}
+
+export function isTokenExpired(token) {
+  const payload = decodeJwtPayload(token);
+  if (!payload || typeof payload.exp !== "number") {
+
+    return true;
+  }
+
+  const nowInSeconds = Math.floor(Date.now() / 1000);
+  return payload.exp - CLOCK_SKEW_BUFFER <= nowInSeconds;
+}
+
+export function isTokenValid(token) {
+  if (!token || typeof token !== "string") return false;
+  return !isTokenExpired(token);
+}
+
+export function getTokenTTL(token) {
+  const payload = decodeJwtPayload(token);
+  if (!payload || typeof payload.exp !== "number") return -1;
+  return payload.exp - Math.floor(Date.now() / 1000);
+}

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Route, Routes } from "react-router-dom";
 
 import { getPublicRoutes } from "./routes/PublicRoutes";
@@ -8,39 +8,41 @@ import {
 } from "./routes/ProtectedRoutes";
 
 import ProtectedRoute from "./auth/ProtectedRoute";
+import PageLoader from "./common/PageLoader";
 
-import UserAchievements from "../Pages/UserAchievements";
-
-import NotFoundPage from "../Pages/NotFoundPage";
+const UserAchievements = React.lazy(() => import("../Pages/UserAchievements"));
+const NotFoundPage = React.lazy(() => import("../Pages/NotFoundPage"));
 
 const AppRoutes = () => {
   return (
-    <Routes>
-      {/* Public Routes */}
-      {getPublicRoutes()}
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        {/* Public Routes */}
+        {getPublicRoutes()}
 
-      {/* Protected Routes */}
-      {getProtectedRoutes()}
+        {/* Protected Routes */}
+        {getProtectedRoutes()}
 
-      {/* Auth Routes */}
-      {getAuthRoutes()}
+        {/* Auth Routes */}
+        {getAuthRoutes()}
 
-      {/* Achievements Route */}
-      <Route
-        path="/dashboard/achievements"
-        element={
-          <ProtectedRoute>
-            <UserAchievements />
-          </ProtectedRoute>
-        }
-      />
+        {/* Achievements Route */}
+        <Route
+          path="/dashboard/achievements"
+          element={
+            <ProtectedRoute>
+              <UserAchievements />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* 404 Route */}
-      <Route
-        path="*"
-        element={<NotFoundPage />}
-      />
-    </Routes>
+        {/* 404 Route */}
+        <Route
+          path="*"
+          element={<NotFoundPage />}
+        />
+      </Routes>
+    </Suspense>
   );
 };
 

@@ -1,14 +1,14 @@
-import React, { useEffect, useId, useRef } from 'react';
-import './ConfirmationModal.css';
+import React, { useEffect, useId, useRef } from "react";
+import "./ConfirmationModal.css";
 
-const ConfirmationModal = ({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
-  title = "Are you sure?", 
-  message = "Are you sure you want to log out?",
-  confirmText = "Yes, Logout",
-  cancelText = "Cancel"
+const ConfirmationModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title = "Are you sure?",
+  message = "Are you sure you want to continue?",
+  confirmText = "Confirm",
+  cancelText = "Cancel",
 }) => {
   const cancelButtonRef = useRef(null);
   const modalRef = useRef(null);
@@ -19,6 +19,9 @@ const ConfirmationModal = ({
     if (!isOpen) return undefined;
 
     const previouslyFocusedElement = document.activeElement;
+
+    document.body.style.overflow = "hidden";
+
     cancelButtonRef.current?.focus();
 
     const handleKeyDown = (event) => {
@@ -34,8 +37,12 @@ const ConfirmationModal = ({
           'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
         ),
       );
+
+      if (!focusableElements.length) return;
+
       const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
+      const lastElement =
+        focusableElements[focusableElements.length - 1];
 
       if (!firstElement || !lastElement) {
         event.preventDefault();
@@ -44,9 +51,16 @@ const ConfirmationModal = ({
       }
 
       if (event.shiftKey && document.activeElement === firstElement) {
+      if (
+        event.shiftKey &&
+        document.activeElement === firstElement
+      ) {
         event.preventDefault();
         lastElement?.focus();
-      } else if (!event.shiftKey && document.activeElement === lastElement) {
+      } else if (
+        !event.shiftKey &&
+        document.activeElement === lastElement
+      ) {
         event.preventDefault();
         firstElement?.focus();
       }
@@ -55,10 +69,17 @@ const ConfirmationModal = ({
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "auto";
+
+      document.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
+
       previouslyFocusedElement?.focus?.();
     };
   }, [isOpen, onClose]);
+
 
   if (!isOpen) return null;
 
@@ -86,26 +107,27 @@ const ConfirmationModal = ({
         <div className="confirmation-modal-header">
           <h3 id={titleId}>{title}</h3>
         </div>
-        
+
         <div className="confirmation-modal-body">
           <p id={descriptionId}>{message}</p>
         </div>
-        
+
         <div className="confirmation-modal-actions">
-          <button 
+          <button
             ref={cancelButtonRef}
             type="button"
-            className="confirmation-modal-btn confirmation-modal-btn-cancel" 
+            className="confirmation-modal-btn confirmation-modal-btn-cancel"
             onClick={onClose}
           >
-             {cancelText}
+            {cancelText}
           </button>
-          <button 
+
+          <button
             type="button"
-            className="confirmation-modal-btn confirmation-modal-btn-confirm" 
+            className="confirmation-modal-btn confirmation-modal-btn-confirm"
             onClick={onConfirm}
           >
-             {confirmText}
+            {confirmText}
           </button>
         </div>
       </div>

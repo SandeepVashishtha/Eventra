@@ -1,0 +1,11 @@
+/* Blur-up placeholder transition for LazyImage component.
+   Applied automatically by LazyImage.jsx — do not use these classes manually. */
+.lazy-img--loading {
+  filter: blur(8px);
+  transition: filter 0.3s ease;
+}
+
+.lazy-img--loaded {
+  filter: none;
+  transition: filter 0.3s ease;
+}

@@ -1,18 +1,25 @@
-import React from 'react';
-import { useAuth } from '../context/AuthContext';
-import AdminDashboard from './admin/AdminDashboard';
-import UserDashboard from './user/UserDashboard';
+import React from "react";
+import { useAuth } from "../context/AuthContext";
+import AdminDashboard from "./admin/AdminDashboard";
+import UserDashboard from "./user/UserDashboard";
+import FeatureErrorBoundary from "../components/common/FeatureErrorBoundary";
 
 const Dashboard = () => {
   const { isAdmin } = useAuth();
 
-  // Show admin dashboard if user is admin
   if (isAdmin()) {
-    return <AdminDashboard />;
+    return (
+      <FeatureErrorBoundary>
+        <AdminDashboard />
+      </FeatureErrorBoundary>
+    );
   }
 
-  // Otherwise show regular user dashboard
-  return <UserDashboard />;
+  return (
+    <FeatureErrorBoundary>
+      <UserDashboard />
+    </FeatureErrorBoundary>
+  );
 };
 
 export default Dashboard;
