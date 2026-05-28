@@ -61,10 +61,10 @@ export const normalizeDateString = (dateInput) => {
   // "Month DD, YYYY" (e.g. "May 25, 2026")
   const parsed = new Date(dateInput);
   if (!Number.isNaN(parsed.getTime())) {
-    // Use UTC parts to avoid off-by-one from local tz offset
-    const y = parsed.getUTCFullYear();
-    const m = String(parsed.getUTCMonth() + 1).padStart(2, '0');
-    const d = String(parsed.getUTCDate()).padStart(2, '0');
+    // Use local parts to avoid off-by-one from local tz offset
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, '0');
+    const d = String(parsed.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
   }
 

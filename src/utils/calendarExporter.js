@@ -7,17 +7,21 @@
 
 // Helper to format Date objects into YYYYMMDDTHHmmSSZ format required by RFC 5545
 const formatToICSDate = (dateStr) => {
+  if (!dateStr) return null;
   const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  if (isNaN(date.getTime())) return null;
   return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
 };
 
-// Helper to safely escape special characters in ICS strings
+// Helper to safely escape special characters in ICS strings (RFC 5545 compliant).
+// Carriage returns (\r) are stripped before newlines are escaped so that
+// user-supplied text cannot inject extra ICS content lines via CRLF sequences.
 const escapeICSText = (text = "") => {
   return text
     .replace(/\\/g, "\\\\")
     .replace(/;/g, "\\;")
     .replace(/,/g, "\\,")
+    .replace(/\r/g, "")
     .replace(/\n/g, "\\n");
 };
 
@@ -28,7 +32,12 @@ export const downloadICSFile = (event) => {
   const { title, description, date, endDate, location, id } = event;
   
   const formattedStart = formatToICSDate(date);
-  const formattedEnd = endDate ? formatToICSDate(endDate) : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000)); // Default 2 hours duration
+  if (!formattedStart) {
+    console.error("Invalid event date provided for ICS export.");
+    return;
+  }
+  
+  const formattedEnd = endDate ? formatToICSDate(endDate) : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
   const createdDate = formatToICSDate(new Date());
 
   const icsLines = [
@@ -58,10 +67,16 @@ export const downloadICSFile = (event) => {
   const link = document.createElement("a");
   link.href = url;
   link.setAttribute("download", `${(title || "event").toLowerCase().replace(/[^a-z0-9]/g, "-")}.ics`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  
+  try {
+    document.body.appendChild(link);
+    link.click();
+  } finally {
+    if (document.body.contains(link)) {
+      document.body.removeChild(link);
+    }
+    URL.revokeObjectURL(url);
+  }
 };
 
 /**
@@ -70,6 +85,8 @@ export const downloadICSFile = (event) => {
 export const generateGoogleCalendarLink = (event) => {
   const { title, description, date, endDate, location } = event;
   const start = formatToICSDate(date);
+  if (!start) return null;
+  
   const end = endDate ? formatToICSDate(endDate) : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
   
   const baseUrl = "https://calendar.google.com/calendar/render";
@@ -91,8 +108,11 @@ export const generateGoogleCalendarLink = (event) => {
  */
 export const generateOutlookLink = (event) => {
   const { title, description, date, endDate, location } = event;
-  const start = new Date(date).toISOString();
-  const end = endDate ? new Date(endDate).toISOString() : new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000).toISOString();
+  const startDate = new Date(date);
+  if (isNaN(startDate.getTime())) return null;
+  
+  const start = startDate.toISOString();
+  const end = endDate ? new Date(endDate).toISOString() : new Date(startDate.getTime() + 2 * 60 * 60 * 1000).toISOString();
 
   const baseUrl = "https://outlook.live.com/calendar/0/deeplink/compose";
   const params = new URLSearchParams({
@@ -131,6 +151,8 @@ export const downloadBulkICSFile = (events, filename = "registered-events") => {
     const { title, description, date, endDate, location, id } = eventObj;
     
     const formattedStart = formatToICSDate(date);
+    if (!formattedStart) return; // Skip invalid event
+    
     const formattedEnd = endDate ? formatToICSDate(endDate) : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
 
     icsLines.push(
@@ -157,9 +179,15 @@ export const downloadBulkICSFile = (events, filename = "registered-events") => {
   const link = document.createElement("a");
   link.href = url;
   link.setAttribute("download", `${filename.toLowerCase().replace(/[^a-z0-9]/g, "-")}.ics`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  
+  try {
+    document.body.appendChild(link);
+    link.click();
+  } finally {
+    if (document.body.contains(link)) {
+      document.body.removeChild(link);
+    }
+    URL.revokeObjectURL(url);
+  }
 };
 

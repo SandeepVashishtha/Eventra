@@ -1,36 +1,18 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import mockEvents from "./eventsMockData.json";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
-import { getRouteSearchResults } from "../../utils/searchUtils";
 import { getEventStatus } from "../../utils/eventUtils";
-import {
-  applyAdvancedFilters,
-  getDefaultFilters,
-  getPriceStats,
-  getDateRange,
-} from "../../utils/advancedFilterUtils";
-import {
-  DEFAULT_EVENTS_PER_PAGE,
-  clampPage,
-  filterEventsByType,
-  getPaginatedEvents,
-  getTotalPages,
-  sortEventsByDate,
-} from "./eventPaginationUtils";
+import useDebounce from "../../hooks/useDebounce";
+import { getPriceStats, getDateRange } from "../../utils/advancedFilterUtils";
+import { DEFAULT_EVENTS_PER_PAGE, clampPage } from "./eventPaginationUtils";
 
-const getSearchResults = (events, searchQuery) => {
-  if (!searchQuery.trim()) {
-    return events;
-  }
-
-  return getRouteSearchResults(
-    events,
-    searchQuery,
-    ["title", "description", "location", "tags", "type", "date", "status"],
-    {
-      threshold: 0.35,
-    },
-  );
+const SORT_MAPPING = {
+  Newest: "date,desc",
+  Oldest: "date,asc",
+  "Title A-Z": "title,asc",
+  "Title Z-A": "title,desc",
+  "Price Low to High": "price,asc",
+  "Price High to Low": "price,desc",
 };
 
 const useEventListing = () => {
@@ -38,81 +20,161 @@ const useEventListing = () => {
   const [filterType, setFilterType] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 400);
   const [sortType, setSortType] = useState("Newest");
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState("");
+
   const [currentPage, setCurrentPage] = useState(1);
   const [eventsPerPage, setEventsPerPage] = useState(DEFAULT_EVENTS_PER_PAGE);
-  const [advancedFilters, setAdvancedFilters] = useState(getDefaultFilters());
+
+  const [advancedFilters, setAdvancedFilters] = useState({
+    category: "",
+    status: "",
+  });
+
+  const [pagination, setPagination] = useState({
+    totalPages: 1,
+    totalElements: 0,
+    first: true,
+    last: true,
+  });
+
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
+  const isInitialMount = useRef(true);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const normalizedEvents = mockEvents.map((event) => ({
-        ...event,
-        status: getEventStatus(event),
-      }));
+  const buildQueryParams = useCallback(() => {
+    const params = new URLSearchParams();
 
-      setEvents(normalizedEvents);
+    params.append("page", currentPage - 1);
+    params.append("size", eventsPerPage);
 
-      setIsLoading(false);
-    }, 800);
+    if (debouncedSearchQuery.trim()) {
+      params.append("search", debouncedSearchQuery.trim());
+    }
 
-    return () => clearTimeout(timer);
-  }, []);
+    if (filterType && filterType !== "all") {
+      params.append("status", filterType.toUpperCase());
+    }
+
+    if (advancedFilters?.category) {
+      params.append("category", advancedFilters.category);
+    }
+
+    if (advancedFilters?.status) {
+      params.append("status", advancedFilters.status.toUpperCase());
+    }
+
+    const sortValue = SORT_MAPPING[sortType];
+    if (sortValue) {
+      params.append("sort", sortValue);
+    }
+
+    return params.toString();
+  }, [
+    currentPage,
+    eventsPerPage,
+    debouncedSearchQuery,
+    filterType,
+    advancedFilters,
+    sortType,
+  ]);
+
   const fetchEvents = useCallback(async () => {
     setIsLoading(true);
     setLoadError("");
 
     try {
-      const response = await apiUtils.get(API_ENDPOINTS.EVENTS.ALL);
-      const apiEvents = Array.isArray(response.data) ? response.data : [];
-      setEvents(apiEvents.map((event) => ({ ...event, status: getEventStatus(event) })));
+      const query = buildQueryParams();
+      const response = await apiUtils.get(
+        `${API_ENDPOINTS.EVENTS.LIST}?${query}`,
+      );
+
+      const responseData = response?.data || {};
+      const apiEvents = Array.isArray(responseData.content)
+        ? responseData.content
+        : [];
+
+      const normalizedEvents = apiEvents.map((event) => ({
+        ...event,
+        status: event.status || getEventStatus(event),
+      }));
+
+      setEvents(normalizedEvents);
+
+      setPagination({
+        totalPages: responseData.totalPages || 1,
+        totalElements: responseData.totalElements || 0,
+        first: responseData.first ?? true,
+        last: responseData.last ?? true,
+      });
     } catch (error) {
+      console.error("Failed to fetch events:", error);
+
       if (process.env.NODE_ENV === "development") {
-        setEvents(mockEvents.map((event) => ({ ...event, status: getEventStatus(event) })));
+        const normalizedMockEvents = mockEvents.map((event) => ({
+          ...event,
+          status: getEventStatus(event),
+        }));
+
+        setEvents(normalizedMockEvents);
+        setPagination({
+          totalPages: 1,
+          totalElements: normalizedMockEvents.length,
+          first: true,
+          last: true,
+        });
       } else {
         setEvents([]);
-        setLoadError(error?.message || "Failed to load events. Please try again.");
+        setPagination({
+          totalPages: 1,
+          totalElements: 0,
+          first: true,
+          last: true,
+        });
+
+        if (error?.response?.status === 403) {
+          setLoadError(
+            "Access to events is currently restricted. Please try again later.",
+          );
+        } else {
+          setLoadError(
+            "Failed to load events. Please try again later.",
+          );
+        }
       }
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [buildQueryParams]);
 
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
 
-  const filteredEvents = useMemo(() => {
-    const searchResults = getSearchResults(events, searchQuery);
-    const filtered = filterEventsByType(searchResults, filterType);
-    const advancedFiltered = applyAdvancedFilters(filtered, advancedFilters);
-    return sortEventsByDate(advancedFiltered, sortType);
-  }, [events, filterType, searchQuery, sortType, advancedFilters]);
-
-  const totalPages = getTotalPages(filteredEvents.length, eventsPerPage);
-
-  const paginatedEvents = useMemo(
-    () => getPaginatedEvents(filteredEvents, currentPage, eventsPerPage),
-    [currentPage, eventsPerPage, filteredEvents],
-  );
-
   useEffect(() => {
-    setCurrentPage(1);
-  }, [eventsPerPage, filterType, searchQuery, sortType, advancedFilters]);
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
     }
-  }, [currentPage, totalPages]);
+    setCurrentPage(1);
+  }, [searchQuery, filterType, sortType, advancedFilters, eventsPerPage]);
 
-  const setSafePage = (page) => {
-    setCurrentPage(clampPage(page, totalPages));
-  };
+  const setSafePage = useCallback((page) => {
+    if (page < 1) {
+      setCurrentPage(1);
+      return;
+    }
+    if (page > pagination.totalPages) {
+      setCurrentPage(pagination.totalPages);
+      return;
+    }
+    setCurrentPage(page);
+  }, [pagination.totalPages]);
 
-  // Get price and date statistics from all events
+  const filteredEvents = useMemo(() => events, [events]);
+  const paginatedEvents = useMemo(() => events, [events]);
+
   const priceStats = useMemo(() => getPriceStats(events), [events]);
   const dateRangeStats = useMemo(() => getDateRange(events), [events]);
 
@@ -127,7 +189,8 @@ const useEventListing = () => {
     paginatedEvents,
     searchQuery,
     sortType,
-    totalPages,
+    totalPages: pagination.totalPages,
+    totalElements: pagination.totalElements,
     viewMode,
     advancedFilters,
     isAdvancedFiltersOpen,

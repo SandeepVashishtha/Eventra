@@ -6,11 +6,26 @@ const CopyLinkButton = () => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
+    const link = window.location.href;
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(link);
+      } else {
+        // Fallback for older browsers or non-HTTPS (Secure Context) environments
+        const textArea = document.createElement("textarea");
+        textArea.value = link;
+        textArea.style.position = "absolute";
+        textArea.style.left = "-999999px";
+        document.body.prepend(textArea);
+        textArea.select();
+        try {
+          document.execCommand("copy");
+        } finally {
+          textArea.remove();
+        }
+      }
 
       setCopied(true);
-
       toast.success("Event link copied successfully!");
 
       setTimeout(() => {
@@ -18,7 +33,6 @@ const CopyLinkButton = () => {
       }, 2000);
     } catch (error) {
       console.error("Failed to copy link:", error);
-
       toast.error("Failed to copy link");
     }
   };
