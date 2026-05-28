@@ -288,10 +288,11 @@ export default async function handler(req, res) {
       permissions: permissions,
     };
 
+    const isProd = process.env.NODE_ENV === "production";
+    res.setHeader('Set-Cookie', `token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict${isProd ? '; Secure' : ''}`);
+
     return corsResponse(res, 200, {
       message: "Login successful",
-      token,
-      tokenType: "Bearer",
       ...userResponse,
     }, req);
 
