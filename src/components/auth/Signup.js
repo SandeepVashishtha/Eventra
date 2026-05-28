@@ -608,7 +608,7 @@ export const FormField = ({
         {toggleVisibility && (
           <button
             type="button"
-            onClick={() = aria-label="button"> setShowPassword(v => !v)}
+            onClick={() => setShowPassword(v => !v)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             aria-label={showPassword ? "Hide password" : "Show password"}
             aria-pressed={showPassword}
@@ -702,7 +702,7 @@ export const PasswordField = ({ id, label, value, onChange, error, strength, req
         
         <button
           type="button"
-          onClick={() = aria-label="button"> setShowPassword(v => !v)}
+          onClick={() => setShowPassword(v => !v)}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           aria-label={showPassword ? "Hide password" : "Show password"}
           aria-pressed={showPassword}

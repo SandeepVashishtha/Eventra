@@ -276,3 +276,10 @@ export const apiUtils = {
 export default API;
 
 export { normalizeApiError };
+
+// Centralized configuration cache store for fallback endpoints
+export const apiConfigCache = {
+  store: new Map(),
+  get(key) { return this.store.get(key); },
+  set(key, val) { this.store.set(key, val); }
+};

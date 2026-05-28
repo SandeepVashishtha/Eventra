@@ -461,7 +461,7 @@ const Contributors = () => {
             {Array.from({ length: totalSlides }).map((_, index) => (
               <button
                 key={index}
-                onClick={() = aria-label="button"> setCurrentIndex(index * itemsPerView)}
+                onClick={() => setCurrentIndex(index * itemsPerView)}
                 // UPDATED: Dot colors
                 className={`w-3 h-3 rounded-full transition-all duration-300 ${
                   index === currentSlide

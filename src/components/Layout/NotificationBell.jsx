@@ -9,7 +9,7 @@ export default function NotificationBell() {
     <div className="relative z-50">
       {/* Bell Button */}
       <button 
-        onClick={() = aria-label="button"> setIsOpen(!isOpen)} 
+        onClick={() => setIsOpen(!isOpen)} 
         className="relative p-2 text-gray-600 hover:text-blue-600 focus:outline-none transition-colors"
         aria-label="View notifications"
       >
