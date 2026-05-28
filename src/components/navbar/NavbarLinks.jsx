@@ -8,7 +8,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { 
   Moon, Sun, Search, Bell, User, ChevronDown, 
   Plus, Settings, LogOut, HelpCircle, Globe, 
@@ -28,9 +28,6 @@ import { useScrollProgress } from "../../hooks/useScrollProgress"; // custom hoo
 // is code-split and does NOT conflict with the lazy import in App.jsx,
 // removing the "dynamically imported but also statically imported" Rollup warning.
 const KeyboardShortcutsModal = lazy(() => import("../common/KeyboardShortcutsModal"));
-import React, { useEffect, useRef, useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
-import { ChevronDown } from "lucide-react";
 import { NAV_ITEMS } from "./constants/navItems";
 
 const NavbarLinks = ({ vertical = false, onClick }) => {
@@ -176,6 +173,19 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           );
         }
 
+        return (
+          <NavLink
+            key={item.name}
+            to={item.href}
+            onClick={onClick}
+            className={({ isActive }) => getNavLinkClasses(isActive)}
+          >
+            {item.icon}
+            <span>{item.name}</span>
+          </NavLink>
+        );
+      })}
+
       {/* Keyboard Shortcuts Modal — loaded lazily to avoid bundling upfront */}
       <Suspense fallback={null}>
         <KeyboardShortcutsModal
@@ -190,19 +200,6 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           ]}
         />
       </Suspense>
-    </>
-        return (
-          <NavLink
-            key={item.name}
-            to={item.href}
-            onClick={onClick}
-            className={({ isActive }) => getNavLinkClasses(isActive)}
-          >
-            {item.icon}
-            <span>{item.name}</span>
-          </NavLink>
-        );
-      })}
     </nav>
   );
 };
