@@ -5,7 +5,7 @@
 Eventra is a comprehensive, open-source platform designed to empower organizers to create, manage, and track events seamlessly. Built with a modern tech stack featuring a React frontend and Spring Boot backend, Eventra provides a full suite of tools for running successful events, from initial creation to post-event analytics.
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![React](https://img.shields.io/badge/React-18.2.0-blue.svg)](https://reactjs.org/)
+[![React](https://img.shields.io/badge/React-19.2-blue.svg)](https://reactjs.org/)
 
 ---
 
@@ -114,7 +114,7 @@ Perfect for new contributors and maintainers onboarding! 🚀
 
 | Frontend                         | DevOps & Infrastructure              |
 | :------------------------------- | :----------------------------------- |
-| **React 18.2**                   | **Git & GitHub** for Version Control |
+| **React 19.2**                   | **Git & GitHub** for Version Control |
 | **React Router** for Routing     | **Vercel** for Frontend Hosting      |
 | **Framer Motion** for Animations | **npm** for Package Management       |
 | **Tailwind CSS** for Styling     |                                      |
@@ -128,7 +128,7 @@ Follow these steps to set up and run the frontend application on your local mach
 
 ### Prerequisites
 
-- **Node.js**: Version 16.x or higher
+- **Node.js**: Version 18.x or higher
 - **npm**: (usually comes with Node.js)
 - **Git**
 
@@ -304,7 +304,7 @@ A huge thank you to everyone who has contributed to Eventra! Your efforts make t
 
 <p align="left">
   <a href="https://github.com/SandeepVashishtha/Eventra/graphs/contributors">
-    <img src="https://contrib.rocks/image?repo=SandeepVashishtha/Eventra" alt="Contributors" />
+    <img src="https://contrib.rocks/image?repo=SandeepVashishtha/Eventra&max=1000" alt="Contributors" />
   </a>
 </p>
 
