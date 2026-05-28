@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import useCountUp from "../../hooks/useCountUp";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FaCode,
@@ -98,36 +99,16 @@ const calculatePrPoints = (labels) => {
   return levelPoints || DEFAULT_MERGED_PR_POINTS;
 };
 
-// Custom lightweight high-performance count-up component
+/**
+ * AnimatedCounter — counts from 0 to `value` using a single requestAnimationFrame
+ * loop instead of per-instance setInterval calls. With N leaderboard entries,
+ * this reduces concurrent timers from N to 0 (rAF is managed per hook instance
+ * but shares the browser's animation frame budget rather than competing interval
+ * callbacks, and React batches the resulting setState calls per reconciler pass).
+ */
 const AnimatedCounter = ({ value }) => {
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    let start = 0;
-    const end = parseInt(value, 10);
-    if (isNaN(end)) return;
-    if (start === end) {
-      setCount(end);
-      return;
-    }
-    const duration = 1200; // 1.2s total count duration
-    const steps = Math.min(end, 50);
-    const increment = Math.ceil(end / steps);
-    const stepTime = Math.floor(duration / steps);
-
-    const timer = setInterval(() => {
-      start += increment;
-      if (start >= end) {
-        setCount(end);
-        clearInterval(timer);
-      } else {
-        setCount(start);
-      }
-    }, stepTime);
-
-    return () => clearInterval(timer);
-  }, [value]);
-
+  const end = parseInt(value, 10);
+  const count = useCountUp(Number.isFinite(end) ? end : 0);
   return <span>{count}</span>;
 };
 
