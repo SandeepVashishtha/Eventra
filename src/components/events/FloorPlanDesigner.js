@@ -116,6 +116,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
       try {
         initialElements = JSON.parse(savedLayout);
       } catch (e) {
+        toast.error("Invalid floor plan format");
         initialElements = PRESETS.banquet;
       }
     } else {
@@ -299,7 +300,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
         setSelectedId(null);
         toast.success("Floor plan layout imported successfully!");
       } catch (err) {
-        toast.error(`Failed to import floor plan: ${err.message}`);
+        toast.error("Invalid floor plan format");
       }
     };
     reader.readAsText(file);
