@@ -76,3 +76,7 @@ export function useFocusTrap(isActive) {
 
   return containerRef;
 }
+
+export const isElementFocused = (element) => {
+  return document.activeElement === element;
+};
