@@ -107,7 +107,7 @@ Comprehensive documentation updates have been made across the Eventra project to
 
 ---
 
-### 8. **FILTERING_QUICK_REFERENCE.md**
+### 8. **docs/FILTERING_QUICK_REFERENCE.md**
 **Purpose:** Quick reference for filtering system
 
 **Updates:**
@@ -132,7 +132,7 @@ README.md (Main Entry Point)
   │     ├─→ Referenced from docs/BACKEND_API_REQUIREMENTS.md
   │     ├─→ Referenced from SESSION_RECOVERY.md
   │     ├─→ Referenced from ADVANCED_FILTERING_IMPLEMENTATION.md
-  │     └─→ Referenced from FILTERING_QUICK_REFERENCE.md
+  │     └─→ Referenced from docs/FILTERING_QUICK_REFERENCE.md
   │
   └─→ Other Documentation Files
         ├─ CONTRIBUTING.md (Contribution Guide)
