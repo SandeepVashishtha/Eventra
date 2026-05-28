@@ -220,8 +220,11 @@ export const AuthProvider = ({ children }) => {
     }
 
     return () => {
-      clearTimeout(timeoutId);
-      clearInterval(timeoutId);
+      if (typeof expSeconds === "number") {
+        clearTimeout(timeoutId);
+      } else {
+        clearInterval(timeoutId);
+      }
     };
   }, [token, clearExpiredSession]);
 
