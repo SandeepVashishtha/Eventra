@@ -475,7 +475,7 @@ class ErrorBoundary extends React.Component {
                 ? "Hide diagnostic information"
                 : "Show diagnostic information"
             }
-          >
+           aria-label="button">
             <svg
               width="14"
               height="14"

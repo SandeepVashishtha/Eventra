@@ -48,6 +48,7 @@ export const SessionRecoveryProvider = ({ children }) => {
   const saveTimeoutRef = useRef(null);
   const activityTimeoutRef = useRef(null);
 
+  // 🔥 FIX: Throttle React state updates to prevent main-thread thrashing
   const updateActivity = useCallback(() => {
     const now = Date.now();
     lastActivityRef.current = now;

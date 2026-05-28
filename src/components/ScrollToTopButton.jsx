@@ -1,20 +1,8 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
 import BackToTopButton from "./common/BackToTopButton";
 
 export default function ScrollToTopButton() {
-  const { pathname } = useLocation();
-
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
-
-  // Auto scroll to top on route change
-  useEffect(() => {
-    if (window.lenis) {
-      window.lenis.scrollTo(0, { immediate: true });
-    } else {
-      window.scrollTo(0, 0);
-    }
-  }, [pathname]);
 
   useEffect(() => {
     // Listen for chatbot state changes
@@ -39,3 +27,11 @@ export default function ScrollToTopButton() {
 
   return <BackToTopButton threshold={50} positionClass={positionClass} />;
 }
+// Accessible landmark container router focus shifting utility helper
+export const shiftLandmarkFocus = (elementId) => {
+  const container = document.getElementById(elementId);
+  if (container) {
+    container.setAttribute("tabindex", "-1");
+    container.focus();
+  }
+};

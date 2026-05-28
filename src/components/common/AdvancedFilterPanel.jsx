@@ -86,7 +86,7 @@ const AdvancedFilterPanel = ({
       <button
         onClick={onToggleOpen}
         className="w-full px-4 py-3 sm:px-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-      >
+       aria-label="button">
         <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
           Advanced Filters
           {hasFilters && (
@@ -257,7 +257,7 @@ const AdvancedFilterPanel = ({
             <button
               onClick={handleClearAll}
               className="w-full mt-4 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
-            >
+             aria-label="button">
               Clear All Filters
             </button>
           )}

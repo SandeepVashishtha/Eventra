@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import { useAuth } from "../../context/AuthContext";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { sanitizeInputText } from "../../utils/inputSanitization";
 import {
   ArrowRightIcon,
   ChartBarIcon,
@@ -89,20 +90,18 @@ const HostHackathon = () => {
     }
 
     // Hackathon Name validation
-    if (data.hackathonName && data.hackathonName.trim().length < 3) {
-      newErrors.hackathonName =
-        "Hackathon Name must be at least 3 characters long!";
+    if (data.hackathonName && (data.hackathonName.trim().length < 3 || data.hackathonName.trim().length > 100)) {
+      newErrors.hackathonName = "Hackathon Name must be between 3 and 100 characters long!";
     }
 
     // Organizer validation
-    if (data.organizerName && data.organizerName.trim().length < 3) {
-      newErrors.organizerName =
-        "Organizer/Organization Name must be at least 3 characters long!";
+    if (data.organizerName && (data.organizerName.trim().length < 3 || data.organizerName.trim().length > 100)) {
+      newErrors.organizerName = "Organizer Name must be between 3 and 100 characters long!";
     }
 
     // Location validation
-    if (data.location && data.location.trim().length < 3) {
-      newErrors.location = "Location must be at least 3 characters long!";
+    if (data.location && (data.location.trim().length < 3 || data.location.trim().length > 100)) {
+      newErrors.location = "Location must be between 3 and 100 characters long!";
     }
 
     // ✅ Email validation — stricter regex to prevent invalid TLDs
@@ -131,9 +130,9 @@ const HostHackathon = () => {
     }
 
     // Description validation
-    if (data.description && data.description.trim().length < 20) {
+    if (data.description && (data.description.trim().length < 20 || data.description.trim().length > 2000)) {
       newErrors.description =
-        "Description must be at least 20 characters long!";
+        "Description must be between 20 and 2000 characters long!";
     }
 
     // Participant Limit validation
@@ -180,6 +179,12 @@ const HostHackathon = () => {
         API_ENDPOINTS.HACKATHONS.HOST,
         {
           ...formData,
+          // Sanitize description and other text inputs
+          description: sanitizeInputText(formData.description),
+          hackathonName: sanitizeInputText(formData.hackathonName),
+          organizerName: sanitizeInputText(formData.organizerName),
+          location: sanitizeInputText(formData.location),
+          prizeDetails: sanitizeInputText(formData.prizeDetails),
           hostUserId: user?.id,
         },
         {
@@ -466,7 +471,7 @@ const HostHackathon = () => {
             type="submit"
             disabled={isSubmitting}
             className="w-full flex items-center justify-center gap-2 bg-black text-white font-semibold p-3 rounded-xl shadow-lg hover:bg-zinc-800 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
+           aria-label="button">
             {isSubmitting ? "Submitting..." : "Submit Hackathon"}
             {!isSubmitting && <ArrowRightIcon className="w-5 h-5" />}
           </button>

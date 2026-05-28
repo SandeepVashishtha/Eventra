@@ -47,8 +47,7 @@ export const AuthProvider = ({ children }) => {
 
     setUser(null);
     setToken(null);
-    document.cookie =
-      "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; HttpOnly; SameSite=Strict";
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
     sessionStorage.removeItem("token");
     localStorage.removeItem("user");
     return true;
@@ -220,25 +219,32 @@ export const AuthProvider = ({ children }) => {
     }
 
     return () => {
-      clearTimeout(timeoutId);
-      clearInterval(timeoutId);
+      if (typeof expSeconds === "number") {
+        clearTimeout(timeoutId);
+      } else {
+        clearInterval(timeoutId);
+      }
     };
   }, [token, clearExpiredSession]);
 
   const persistSession = useCallback((sessionToken, sessionUser) => {
     setToken(sessionToken);
     setUser(sessionUser);
-    
-    document.cookie = `token=${sessionToken}; path=/; Secure; HttpOnly; SameSite=Strict`;
-    
+    try {
+      if (sessionToken && sessionToken !== 'cookie-managed') {
+        document.cookie = `token=${sessionToken}; path=/; Secure; SameSite=Strict`;
+      }
+    } catch (err) {
+      // Ignore cookie write failures in strict environments
+    }
+
     try {
       localStorage.setItem("user", JSON.stringify(sessionUser));
-      return true;
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('[AuthContext] Error persisting user profile:', error);
-      return false;
+      console.error("[AuthContext] Error persisting user profile:", error);
     }
+    return true;
   }, []);
 
   /**
