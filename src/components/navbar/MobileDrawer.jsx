@@ -15,6 +15,7 @@ const MobileDrawer = ({
   const closeButtonRef = useRef(null);
   const closeTimerRef = useRef(null);
   const [shouldRender, setShouldRender] = useState(isOpen);
+
   const isActive = (path) => location.pathname === path;
 
   useEffect(() => {
@@ -37,6 +38,7 @@ const MobileDrawer = ({
 
     const previouslyFocusedElement = document.activeElement;
     const previousOverflow = document.body.style.overflow;
+
     closeButtonRef.current?.focus();
     document.body.style.overflow = "hidden";
 
@@ -53,13 +55,17 @@ const MobileDrawer = ({
           'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
         )
       );
+
       const firstElement = focusableElements[0];
       const lastElement = focusableElements[focusableElements.length - 1];
 
       if (event.shiftKey && document.activeElement === firstElement) {
         event.preventDefault();
         lastElement?.focus();
-      } else if (!event.shiftKey && document.activeElement === lastElement) {
+      } else if (
+        !event.shiftKey &&
+        document.activeElement === lastElement
+      ) {
         event.preventDefault();
         firstElement?.focus();
       }
@@ -105,10 +111,12 @@ const MobileDrawer = ({
               aria-hidden="true"
               className="h-8 w-8 shrink-0 rounded-xl object-contain"
             />
+
             <h2 className="truncate text-xl font-bold text-gray-900 dark:text-white xs:text-2xl">
               Eventra
             </h2>
           </div>
+
           <button
             ref={closeButtonRef}
             type="button"
@@ -126,8 +134,11 @@ const MobileDrawer = ({
           {isAuthenticated ? (
             <div className="flex flex-col gap-2 border-t border-gray-200 pt-4 dark:border-gray-800">
               <div className="min-h-[44px] min-w-0 px-3 py-2 text-base text-gray-600 dark:text-gray-300">
-                <span className="block truncate">{user?.name || user?.email || "Account"}</span>
+                <span className="block truncate">
+                  {user?.name || user?.email || "Account"}
+                </span>
               </div>
+
               <Link
                 to="/dashboard"
                 onClick={closeMenu}
@@ -135,7 +146,7 @@ const MobileDrawer = ({
               >
                 Dashboard
               </Link>
-              {/* Standardized "View Profile" route to route consistently to /dashboard/profile across mobile and desktop viewports */}
+
               <Link
                 to="/dashboard/profile"
                 onClick={closeMenu}
@@ -143,6 +154,7 @@ const MobileDrawer = ({
               >
                 View Profile
               </Link>
+
               <button
                 type="button"
                 onClick={() => {
@@ -168,6 +180,7 @@ const MobileDrawer = ({
                 <LogIn className="h-5 w-5 shrink-0" aria-hidden="true" />
                 Login
               </Link>
+
               <Link
                 to="/signup"
                 onClick={closeMenu}
@@ -183,62 +196,9 @@ const MobileDrawer = ({
             </div>
           )}
         </div>
-            <Link
-              to="/dashboard"
-              onClick={closeMenu}
-              className="text-sm font-medium py-2"
-            >
-              Dashboard
-            </Link>
-            {/* Standardized "View Profile" route to route consistently to /dashboard/profile across mobile and desktop viewports */}
-            <Link
-              to="/dashboard/profile"
-              onClick={closeMenu}
-              className="text-sm font-medium py-2"
-            >
-              View Profile
-            </Link>
-            <button
-              type="button"
-              onClick={() => {
-                logout();
-                closeMenu();
-              }}
-              className="flex items-center gap-3 py-3 px-1 w-full text-left text-base text-gray-600 dark:text-gray-300 hover:text-red-500 transition-colors"
-            >
-              Logout
-            </button>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4 mt-4">
-            <Link
-              to="/login"
-              onClick={closeMenu}
-              className={`flex items-center gap-1.5 py-2 text-sm font-medium transition-all duration-200 pl-3 border-l-2 w-full ${
-                isActive("/login")
-                  ? "text-black dark:text-white border-black dark:border-white font-semibold"
-                  : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent"
-              }`}
-            >
-              <LogIn className="w-5 h-5" />
-              Login
-            </Link>
-            <Link
-              to="/signup"
-              onClick={closeMenu}
-              className={`flex items-center gap-1.5 py-2 text-sm font-medium transition-all duration-200 pl-3 border-l-2 w-full ${
-                isActive("/signup")
-                  ? "text-black dark:text-white border-black dark:border-white font-semibold"
-                  : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent"
-              }`}
-            >
-              <UserPlus className="w-5 h-5" />
-              Sign Up
-            </Link>
-          </div>
-        )}
       </div>
     </div>
   );
 };
+
 export default MobileDrawer;
