@@ -5,7 +5,9 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
+
 import { toast } from "react-toastify";
+
 import BackToTopButton from "./components/common/BackToTopButton";
 import Navbar from "./components/Layout/Navbar";
 import OfflineBanner from "./components/common/OfflineBanner";
@@ -41,11 +43,26 @@ const OfflineSyncManager = () => {
   return null;
 };
 
+// TEMPORARY COMPONENT TO TEST ERROR SCREEN
+const TestError = () => {
+  throw new Error("Testing redesigned ErrorBoundary");
+};
+
 function App() {
   const location = useLocation();
-  const isDashboardOrAdmin = location.pathname === "/dashboard" || location.pathname === "/admin";
-  const [cursorEnabled, setCursorEnabled] = useState(localStorage.getItem("cursor") !== "off");
+
+  const isDashboardOrAdmin =
+    location.pathname === "/dashboard" ||
+    location.pathname === "/admin";
+
+  const [cursorEnabled, setCursorEnabled] = useState(
+    localStorage.getItem("cursor") !== "off"
+  );
+
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
+
+  // TURN TRUE ONLY FOR TESTING
+  const SHOW_ERROR_SCREEN = false;
 
   useLenis();
 
@@ -56,11 +73,18 @@ function App() {
   });
 
   const toggleCursor = () => {
-    const newValue = !cursorEnabled;
-    setCursorEnabled(newValue);
+    const value = !cursorEnabled;
+
+    setCursorEnabled(value);
+
     try {
+<<<<<<< HEAD
       localStorage.setItem("cursor", newValue ? "on" : "off");
     } catch (error) {}
+=======
+      localStorage.setItem("cursor", value ? "on" : "off");
+    } catch {}
+>>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
   };
 
   useEffect(() => {
@@ -69,27 +93,49 @@ function App() {
         setCursorEnabled(event.detail.cursorEnabled);
       }
     };
+<<<<<<< HEAD
     window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
+=======
+
+    window.addEventListener(
+      "cursorPreferenceChanged",
+      handleCursorPreference
+    );
+
+>>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
     return () => {
-      window.removeEventListener("cursorPreferenceChanged", handleCursorPreference);
+      window.removeEventListener(
+        "cursorPreferenceChanged",
+        handleCursorPreference
+      );
     };
   }, []);
 
   useEffect(() => {
     const handleOnline = () => {
-      toast.success("Back online! Your connections have been restored and sync is complete.", {
-        position: "bottom-right",
-        autoClose: 4000,
-      });
+      toast.success(
+        "Back online! Your connections have been restored.",
+        {
+          position: "bottom-right",
+          autoClose: 4000,
+        }
+      );
     };
     const handleOffline = () => {
-      toast.warning("You are currently offline. Running in secure local offline caching mode.", {
-        position: "bottom-right",
-        autoClose: 5000,
-      });
+      toast.warning(
+        "You are currently offline.",
+        {
+          position: "bottom-right",
+          autoClose: 5000,
+        }
+      );
     };
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
+<<<<<<< HEAD
+=======
+
+>>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
     if (!navigator.onLine) {
       handleOffline();
     }
@@ -101,10 +147,15 @@ function App() {
 
   return (
     <ErrorBoundary>
+
+      {/* TEMPORARY TEST */}
+      {SHOW_ERROR_SCREEN && <TestError />}
+
       <AuthProvider>
         <NotificationProvider>
           <MyEventsProvider>
             <SessionRecoveryProvider>
+<<<<<<< HEAD
               <ReminderChecker />
               <NotificationToastContainer />
               <OfflineSyncManager />
@@ -184,19 +235,100 @@ function App() {
                   <Suspense fallback={null}>{!isDashboardOrAdmin && <Footer />}</Suspense>
                 </SectionErrorBoundary>
 
+=======
+
+              <ReminderChecker />
+              <NotificationToastContainer />
+              <OfflineSyncManager />
+
+              <div className="App">
+
+                <Navbar
+                  cursorEnabled={cursorEnabled}
+                  toggleCursor={toggleCursor}
+                />
+
+                <OfflineBanner />
+                <OfflineConflictModal />
+
+                <KeyboardShortcutsModal
+                  isOpen={showKeyboardModal}
+                  onClose={() => setShowKeyboardModal(false)}
+                />
+
+                <OnboardingChecklist />
+
+                <main
+                  className="relative z-10 min-h-[85vh]
+                  bg-white dark:bg-slate-950
+                  text-black dark:text-white
+                  transition-colors duration-300"
+                >
+                  <PageTransition>
+
+                    <Suspense
+                      fallback={
+                        <div className="min-h-screen flex items-center justify-center">
+                          Loading...
+                        </div>
+                      }
+                    >
+
+                      <Routes>
+
+                        <Route
+                          path="/register/:id"
+                          element={<RegistrationPage />}
+                        />
+
+                        <Route
+                          path="/event-recommendation"
+                          element={<EventRecommendation />}
+                        />
+
+                        <Route
+                          path="*"
+                          element={<AppRoutes />}
+                        />
+
+                      </Routes>
+
+                    </Suspense>
+
+                  </PageTransition>
+                </main>
+
+                <ScrollToTop />
+
+                <Suspense fallback={null}>
+                  <Chatbot />
+                  {!isDashboardOrAdmin && <Footer />}
+                </Suspense>
+
+>>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
                 <BackToTopButton />
                 <FeedbackButton />
                 <ThemeCustomizerDrawer />
                 <SessionRecovery />
                 <FluidCursor enabled={cursorEnabled} />
+<<<<<<< HEAD
                 <SectionErrorBoundary label="Custom Cursor" silent>
                   <FluidCursor enabled={cursorEnabled} />
                 </SectionErrorBoundary>
               </div>
+=======
+
+              </div>
+
+>>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
             </SessionRecoveryProvider>
           </MyEventsProvider>
         </NotificationProvider>
       </AuthProvider>
+<<<<<<< HEAD
+=======
+
+>>>>>>> 58452a7a (Improve ErrorBoundary crash screen UI/UX)
     </ErrorBoundary>
   );
 }
