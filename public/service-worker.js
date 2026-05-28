@@ -9,7 +9,7 @@
  * authenticated API responses. Only public, non-authenticated endpoints
  * are cached to prevent privacy leaks and stale data exposure.
  */
-const CACHE_NAME = 'eventra-cache-v2';
+const CACHE_NAME = 'eventra-cache-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
