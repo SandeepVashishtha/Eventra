@@ -25,12 +25,12 @@ try {
   // 2. Register the driver command (%O = base, %A = ours, %B = theirs)
   // Git always wraps this command in a sh-like context internally, so 'cp' works on all platforms.
   execSync(
-    'git config merge.ours-then-install.driver "cp %B %A && npm install"',
+    'git config merge.ours-then-install.driver "cp %B %A"',
     { stdio: "inherit" }
   );
 
   if (process.env.NODE_ENV === "development") {
-   console.log("✅  Done. Git will now resolve package-lock.json conflicts automatically.");
+    console.log("✅  Done. Git will now resolve package-lock.json conflicts automatically.");
   }
 } catch (error) {
   console.error("❌  Failed to register git merge driver:", error.message);

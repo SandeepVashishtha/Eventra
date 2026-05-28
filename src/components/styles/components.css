@@ -7,6 +7,31 @@
 /* =================================== */
 
 /* --- General & Header --- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+/* ===== GLOBAL DARK MODE FIXES ===== */
+
+.dark {
+  color: #f3f4f6;
+  background-color: #111827;
+}
+
+.dark body,
+.dark section,
+.dark div,
+.dark p,
+.dark span,
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  color: inherit;
+}
 .dark .search-filter-container {
   color: #d1d5db; /* gray-300 */
 }
@@ -300,23 +325,133 @@
 }
 
 /* --- Create Request Form --- */
-.dark .request-form {
-  background-color: #1f2937; /* gray-800 */
-  border-color: #374151; /* gray-700 */
+.request-form {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(229, 231, 235, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05), 0 0 20px rgba(99, 102, 241, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 16px;
+  padding: 2.5rem;
+  max-width: 800px;
+  margin: 2rem auto;
 }
+
+.form-group {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #374151; /* gray-700 */
+}
+
+.request-form input,
+.request-form select,
+.request-form textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 1.5px solid #e5e7eb;
+  background-color: #ffffff;
+  color: #1f2937;
+  font-size: 1rem;
+  transition: all 0.25s ease;
+}
+
+.request-form input:hover,
+.request-form select:hover,
+.request-form textarea:hover {
+  border-color: #c7d2fe; /* indigo-200 */
+}
+
+.request-form input:focus,
+.request-form select:focus,
+.request-form textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+  outline: none;
+}
+
+.request-form input:focus-visible,
+.request-form select:focus-visible,
+.request-form textarea:focus-visible {
+  outline: 2px solid #6366f1 !important;
+  outline-offset: 2px !important;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0px;
+  }
+}
+
+.dark .request-form {
+  background: rgba(17, 24, 39, 0.7); /* gray-900 with transparency */
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(99, 102, 241, 0.1);
+}
+
 .dark .form-group label {
   color: #d1d5db; /* gray-300 */
 }
-.dark .form-group input,
-.dark .form-group select,
-.dark .form-group textarea {
-  background-color: #374151; /* gray-700 */
-  border-color: #4b5563; /* gray-600 */
+
+.dark .request-form input,
+.dark .request-form select,
+.dark .request-form textarea {
+  background-color: rgba(31, 41, 55, 0.8); /* gray-800 with transparency */
+  border: 1px solid rgba(75, 85, 99, 0.6);
   color: #f9fafb; /* gray-50 */
 }
-.dark .form-group input::placeholder,
-.dark .form-group textarea::placeholder {
+
+.dark .request-form input::placeholder,
+.dark .request-form textarea::placeholder {
   color: #9ca3af; /* gray-400 */
+}
+
+.dark .request-form input:hover,
+.dark .request-form select:hover,
+.dark .request-form textarea:hover {
+  border-color: rgba(129, 140, 248, 0.4);
+}
+
+.dark .request-form input:focus,
+.dark .request-form select:focus,
+.dark .request-form textarea:focus {
+  border-color: #818cf8;
+  box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.25);
+}
+
+.dark .request-form input:focus-visible,
+.dark .request-form select:focus-visible,
+.dark .request-form textarea:focus-visible {
+  outline: 2px solid #818cf8 !important;
+  outline-offset: 2px !important;
+}
+
+/* Screen reader utility class for accessibility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
 /* --- General Buttons --- */
@@ -415,6 +550,9 @@
   margin-bottom: 2rem;
   color: #1a1a1a;
 }
+.dark .hero-title {
+  color: #f9fafb;
+}
 
 .hero-subtitle {
   font-size: 1.3rem;
@@ -429,6 +567,9 @@
   text-align: center; /* Center-align text for a balanced look */
   user-select: text;
   transition: color 0.3s ease;
+}
+.dark .hero-subtitle {
+  color: #d1d5db;
 }
 
 /* Highlight strong tags inside subtitle */
@@ -635,7 +776,17 @@
   background: rgba(102, 126, 234, 0.35);
   gap: 0.8rem;
 }
+.dark .marquee-card {
+  color: #f9fafb;
+}
 
+.dark .marquee-card .feature-title,
+.dark .marquee-card .feature-description,
+.dark .marquee-card .feature-icon,
+.dark .marquee-card .feature-stat,
+.dark .marquee-card .feature-cta {
+  color: #f9fafb;
+}
 /* Animation for scroll */
 @keyframes scrollMarquee {
   0% {
@@ -662,6 +813,9 @@
   text-align: center;
   letter-spacing: -0.02em;
   text-shadow: none; /* removed shadow for clarity */
+}
+.dark .features-title {
+  color: #f9fafb;
 }
 
 .text-gradient {
@@ -1148,6 +1302,10 @@ font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
   position: relative;
   overflow: hidden;
 }
+.dark .features,
+.dark .community {
+  background: #111827;
+}
 
 .community-content {
   display: grid;
@@ -1168,12 +1326,18 @@ font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
   margin-bottom: 1.5rem;
   line-height: 1.3;
 }
+.dark .community-title {
+  color: #f9fafb;
+}
 
 .community-subtitle {
   font-size: 1.1rem;
   color: #6b7280;
   line-height: 1.6;
   margin-bottom: 2.5rem;
+}
+.dark .community-subtitle {
+  color: #d1d5db;
 }
 
 .community-actions {
@@ -1236,6 +1400,17 @@ font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
   font-size: 1.1rem;
   color: #6b7280;
   margin-bottom: 2rem;
+}
+.dark .cta-section {
+  background: #1f2937;
+}
+
+.dark .cta-title {
+  color: #f9fafb;
+}
+
+.dark .cta-subtitle {
+  color: #d1d5db;
 }
 
 .cta-button {
@@ -1344,4 +1519,10 @@ font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
   .cta-section {
     padding: 1.5rem;
   }
+}
+.btn:focus-visible,
+.search-input:focus-visible,
+.filter-select:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
 }

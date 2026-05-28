@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import { FormFieldWrapper, ValidationMessage } from "../forms";
@@ -42,6 +44,7 @@ const getFieldState = (message, fallbackState = "idle") =>
   message ? "error" : fallbackState;
 
 const SignupForm = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -64,6 +67,7 @@ const SignupForm = () => {
     confirmPassword: "idle",
   });
   const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -78,12 +82,13 @@ const SignupForm = () => {
   }, []);
 
   const handleChange = (e) => {
-    const newData = { ...formData, [e.target.name]: e.target.value };
-    setFormData(newData);
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
 
-    if (e.target.name === "confirmPassword" || e.target.name === "password") {
-      const password = e.target.name === "password" ? e.target.value : newData.password;
-      const confirmPassword = e.target.name === "confirmPassword" ? e.target.value : newData.confirmPassword;
+    // Clear the error for this field as the user corrects it
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
 
       setConfirmPasswordError("");
       if (password && confirmPassword) {
@@ -108,8 +113,17 @@ const SignupForm = () => {
           setError("");
           setFieldState("confirmPassword", "idle");
         }
+    // Show password match indicator (positive-only feedback while typing)
+    if (name === "confirmPassword" || name === "password") {
+      const password = name === "password" ? value : formData.password;
+      const confirmPassword = name === "confirmPassword" ? value : formData.confirmPassword;
+      if (password && confirmPassword) {
+        setPasswordMatchMessage(password === confirmPassword ? "Passwords match!" : "");
+      } else {
+        setPasswordMatchMessage("");
       }
     }
+  };
 
     if (e.target.name === "email") {
       const emailResult = validate.email(e.target.value);
@@ -129,12 +143,30 @@ const SignupForm = () => {
       const message = lastNameResult === true ? "" : lastNameResult;
       setLastNameError(message);
       setFieldState("lastName", getFieldState(message, "success"));
+  const validate = () => {
+    const newErrors = {};
+
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = "First name is required";
+    } else if (formData.firstName.trim().length < 2) {
+      newErrors.firstName = "At least 2 characters";
+    } else if (formData.firstName.trim().length > 50) {
+      newErrors.firstName = "Less than 50 characters";
     }
 
-    if (error && e.target.name !== "password" && e.target.name !== "confirmPassword") {
-      setError("");
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = "Last name is required";
+    } else if (formData.lastName.trim().length < 2) {
+      newErrors.lastName = "At least 2 characters";
+    } else if (formData.lastName.trim().length > 50) {
+      newErrors.lastName = "Less than 50 characters";
     }
-  };
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!validateEmail(formData.email)) {
+      newErrors.email = "Invalid email format";
+    }
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -219,6 +251,26 @@ const SignupForm = () => {
 
     return () => clearTimeout(timer);
   }, [formData.email, setFieldState]);
+    if (!formData.password.trim()) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters long";
+    } else {
+      const { criteriaMet } = assessStrength(formData.password);
+      if (criteriaMet < 5) {
+        newErrors.password = "Password doesn't meet the security criteria (must meet all 5 requirements)";
+      }
+    }
+
+    if (!formData.confirmPassword.trim()) {
+      newErrors.confirmPassword = "Please confirm your password";
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -283,6 +335,7 @@ const SignupForm = () => {
     }
     setPasswordError("");
     setFieldState("password", "success");
+    if (!validate()) return;
 
     if (!formData.confirmPassword.trim()) {
       setConfirmPasswordError("Confirm password is required");
@@ -301,7 +354,7 @@ const SignupForm = () => {
     setConfirmPasswordError("");
     setFieldState("confirmPassword", "success");
     setLoading(true);
-    setError("");
+    setErrors({});
 
     try {
       const signupEndpoint = API_ENDPOINTS.AUTH.REGISTER || API_ENDPOINTS.AUTH.SIGNUP;
@@ -320,6 +373,7 @@ const SignupForm = () => {
         setError(backendMessage ? `${backendMessage} (${status})` : `Registration failed (${status})`);
         return;
       }
+      const data = response.data || {};
 
       const sessionToken = data?.token;
       const sessionUser = {
@@ -339,7 +393,7 @@ const SignupForm = () => {
       setSuccess("Account created successfully! Redirecting to dashboard...");
       setTimeout(() => navigate("/dashboard", { replace: true }), 1200);
     } catch (err) {
-      setError(err.message || "Network error. Please try again.");
+      setErrors({ submit: err.message || "Network error. Please try again." });
     } finally {
       setLoading(false);
     }
@@ -409,6 +463,94 @@ const SignupForm = () => {
               onChange={handleChange}
               placeholder="Last name"
               className="w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-white"
+          <div className="space-y-1.5">
+            <label htmlFor="firstName" className="block text-xs font-medium text-slate-300">
+              First name <span className="text-red-500">*</span>
+            </label>
+            <div className="relative group">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-400 pointer-events-none" />
+              <input
+                id="firstName" name="firstName" type="text"
+                value={formData.firstName} onChange={handleChange}
+                placeholder="First name"
+                aria-invalid={!!errors.firstName}
+                aria-describedby={errors.firstName ? "firstName-error" : undefined}
+                className={`w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border ${
+                  errors.firstName ? "border-red-500" : "border-slate-700/50 focus:border-blue-500"
+                } rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-white`}
+                required
+              />
+            </div>
+            {errors.firstName && (
+              <p id="firstName-error" className="text-red-400 text-[10px] mt-1" role="alert">{errors.firstName}</p>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="lastName" className="block text-xs font-medium text-slate-300">
+              Last name <span className="text-red-500">*</span>
+            </label>
+            <div className="relative group">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-400 pointer-events-none" />
+              <input
+                id="lastName" name="lastName" type="text"
+                value={formData.lastName} onChange={handleChange}
+                placeholder="Last name"
+                aria-invalid={!!errors.lastName}
+                aria-describedby={errors.lastName ? "lastName-error" : undefined}
+                className={`w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border ${
+                  errors.lastName ? "border-red-500" : "border-slate-700/50 focus:border-blue-500"
+                } rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-white`}
+                required
+              />
+            </div>
+            {errors.lastName && (
+              <p id="lastName-error" className="text-red-400 text-[10px] mt-1" role="alert">{errors.lastName}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor="email" className="block text-xs font-medium text-slate-300">
+            Email address <span className="text-red-500">*</span>
+          </label>
+          <div className="relative group">
+            <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-400 pointer-events-none" />
+            <input
+              id="email" name="email" type="email"
+              value={formData.email} onChange={handleChange}
+              placeholder="Enter your email address"
+              aria-invalid={!!errors.email}
+              aria-describedby={errors.email ? "email-error" : undefined}
+              className={`w-full pl-9 pr-3 py-2.5 bg-[#0f172a]/50 border ${
+                errors.email ? "border-red-500" : "border-slate-700/50 focus:border-blue-500"
+              } rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-white`}
+              required
+            />
+          </div>
+          {errors.email && (
+            <p id="email-error" className="text-red-400 text-[10px] mt-1" role="alert">{errors.email}</p>
+          )}
+        </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor="password" className="block text-xs font-medium text-slate-300">
+            Password <span className="text-red-500">*</span>
+          </label>
+          <div className="relative group">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-400 pointer-events-none" />
+            <input
+              id="password" name="password" type={showPassword ? "text" : "password"}
+              value={formData.password} onChange={handleChange}
+              placeholder="Enter your password"
+              aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? "password-error" : undefined}
+              className={`w-full pl-9 pr-9 py-2.5 bg-[#0f172a]/50 border rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-white ${
+                errors.password
+                  ? "border-red-500"
+                  : formData.password && formData.confirmPassword
+                    ? passwordMatchMessage ? "border-green-500" : "border-red-400"
+                    : "border-slate-700/50 focus:border-blue-500"
+              }`}
               required
             />
           </FormFieldWrapper>
@@ -456,6 +598,8 @@ const SignupForm = () => {
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="text-slate-500 hover:text-slate-300"
+              type="button" onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
               aria-label={showPassword ? "Hide password" : "Show password"}
               aria-controls="password"
               aria-pressed={showPassword}
@@ -536,6 +680,62 @@ const SignupForm = () => {
           state="success"
           className="text-xs text-green-400 bg-green-500/10 border border-green-500/20 p-2 rounded-lg"
         />
+          </div>
+          {errors.password && (
+            <p id="password-error" className="text-red-400 text-[10px] mt-1" role="alert">{errors.password}</p>
+          )}
+          {formData.password && <PasswordStrengthIndicator password={formData.password} />}
+        </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor="confirmPassword" className="block text-xs font-medium text-slate-300">
+            Confirm Password <span className="text-red-500">*</span>
+          </label>
+          <div className="relative group">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-400 pointer-events-none" />
+            <input
+              id="confirmPassword" name="confirmPassword" type={showConfirmPassword ? "text" : "password"}
+              value={formData.confirmPassword} onChange={handleChange}
+              placeholder="Confirm your password"
+              aria-invalid={!!errors.confirmPassword}
+              aria-describedby={errors.confirmPassword ? "confirmPassword-error" : undefined}
+              className={`w-full pl-9 pr-9 py-2.5 bg-[#0f172a]/50 border rounded-lg text-sm placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 text-white ${
+                errors.confirmPassword
+                  ? "border-red-500"
+                  : formData.confirmPassword
+                    ? passwordMatchMessage ? "border-green-500" : "border-red-400"
+                    : "border-slate-700/50 focus:border-blue-500"
+              }`}
+              required
+            />
+            <button
+              type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+              aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+            >
+              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+          {errors.confirmPassword && (
+            <p id="confirmPassword-error" className="text-red-400 text-[10px] mt-1" role="alert">{errors.confirmPassword}</p>
+          )}
+          {passwordMatchMessage && !errors.confirmPassword && (
+            <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="text-[10px] mt-1 text-green-400">
+              {passwordMatchMessage}
+            </motion.p>
+          )}
+        </div>
+
+        {errors.submit && (
+          <div className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-2 rounded-lg" role="alert">
+            {errors.submit}
+          </div>
+        )}
+        {success && (
+          <div className="text-xs text-green-400 bg-green-500/10 border border-green-500/20 p-2 rounded-lg" role="status">
+            {success}
+          </div>
+        )}
 
         <motion.button
           whileHover={{ scale: 1.02 }}

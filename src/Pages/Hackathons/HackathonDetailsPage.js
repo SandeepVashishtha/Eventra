@@ -4,6 +4,7 @@ import { Calendar, MapPin, Award, Users, Trophy, Tag, ArrowLeft } from "lucide-r
 
 import hackathonsData from "./hackathonMockData.json";
 
+import useReducedMotion from "../../hooks/useReducedMotion.js";
 const getHackathonStatus = (hackathon) => {
   const now = new Date();
   const startDate = new Date(hackathon.startDate);
@@ -15,6 +16,7 @@ const getHackathonStatus = (hackathon) => {
 };
 
 const HackathonDetailsPage = () => {
+  const prefersReducedMotion = useReducedMotion();
   const { hackathonId } = useParams();
   const foundHackathon = hackathonsData.find((item) => String(item.id) === hackathonId);
 
@@ -67,7 +69,7 @@ const HackathonDetailsPage = () => {
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.45 }}
           className="grid gap-8 lg:grid-cols-[1.3fr_0.7fr]"
         >
           <section className="space-y-6">

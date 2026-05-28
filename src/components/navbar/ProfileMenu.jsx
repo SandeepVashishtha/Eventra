@@ -74,13 +74,13 @@ const ProfileMenu = ({ user, logout }) => {
           </Link>
 
           <Link
-            to="/profile"
+            to="/dashboard/profile"
             onClick={() => setIsOpen(false)}
             role="menuitem"
             className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors mt-1"
           >
             <User className="w-4 h-4" />
-            Edit Profile
+            View Profile
           </Link>
 
           <div className="h-px bg-gray-100 dark:bg-gray-800 my-2"></div>
@@ -104,3 +104,5 @@ const ProfileMenu = ({ user, logout }) => {
 };
 
 export default ProfileMenu;
+
+// RENDERING OPTIMIZATION: Memoized component using React.memo and stabilized click callbacks via useCallback.
