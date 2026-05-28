@@ -93,6 +93,15 @@
           "value": "Content-Type, Authorization"
         }
       ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Accept-Encoding",
+          "value": "gzip, br"
+        }
+      ]
     }
   ]
 }
