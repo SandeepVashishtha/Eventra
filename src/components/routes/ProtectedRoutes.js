@@ -16,16 +16,8 @@ const PasswordReset = lazy(() => import("../auth/PasswordReset"));
 const NotFound = lazy(() => import("../NotFound"));
 const AdminDashboard = lazy(() => import("../admin/AdminDashboard"));
 const Dashboard = lazy(() => import("../Dashboard"));
-const EventCreation = lazy(() =>
-  import("../common/EventCreation/EventCreation")
-);
-const HostHackathon = lazy(() => import("../../Pages/Hackathons/HostHackathon"));
+// 🔥 FIX: Rescued the unique imports from the duplicate block, and removed the fatal redeclarations
 const UserProfile = lazy(() => import("../user/UserProfile"));
-const EditProfile = lazy(() => import("../user/EditProfile"));
-const Settings = lazy(() => import("../../Pages/Settings"));
-const AuthPage = lazy(() => import("../auth/AuthPage"));
-const Unauthorized = lazy(() => import("../auth/Unauthorized"));
-const PasswordReset = lazy(() => import("../auth/PasswordReset"));
 const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
 
 export const getProtectedRoutes = () => [
