@@ -24,8 +24,6 @@ const EventDetailsPage = () => {
   const shareUrl = event ? `${window.location.origin}/events/${event.id}` : "";
   const shareText = event ? `Check out this event: ${event.title}` : "";
 
-  const [loading, setLoading] = useState(true);
-  const [event, setEvent] = useState(null);
   const shareLinks = event
     ? {
         twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
