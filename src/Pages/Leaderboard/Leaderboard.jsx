@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import FeatureErrorBoundary from "../../components/common/FeatureErrorBoundary";
@@ -21,6 +22,16 @@ import StyledDropdown from "../../components/StyledDropdown";
 import SkeletonLeaderboard from "../../components/common/SkeletonLeaderboard";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useLeaderboardStream, SSE_STATUS } from "../../context/RealTimeContext";
+import {
+  filterContributors,
+  sortContributors,
+  paginateContributors,
+  totalLeaderboardPages,
+  buildRanksMap,
+  computeLeaderboardStats,
+  calculatePrPoints,
+  applyAchievementBonus,
+} from "../../utils/leaderboardUtils";
 import { getAchievementBadge } from "../../utils/leaderboardUtils";
 import { logger } from "../../utils/logger";
 import { storageManager } from "../../utils/storage/storageManager";
@@ -49,37 +60,41 @@ function RankMovementIndicator() {
 // Repository constant — update if the leaderboard should point to another repo
 const GITHUB_REPO = ENV.GITHUB_REPO;
 // Token is managed securely by the backend proxy
+const LEADERBOARD_CACHE_KEY = "leaderboardData:v2";
+
+// AnimatedCounter uses requestAnimationFrame instead of setInterval to keep
+// count-up animations aligned with the browser's paint cycle, avoiding
+// invisible ticks that setInterval fires even when the tab is hidden.
 
 
 
 // Custom lightweight high-performance count-up component
 const AnimatedCounter = ({ value }) => {
   const [count, setCount] = useState(0);
+  const rafRef = useRef(null);
 
   useEffect(() => {
-    let start = 0;
     const end = parseInt(value, 10);
     if (isNaN(end)) return;
-    if (start === end) {
-      setCount(end);
-      return;
-    }
-    const duration = 1200; // 1.2s total count duration
-    const steps = Math.min(end, 50);
-    const increment = Math.ceil(end / steps);
-    const stepTime = Math.floor(duration / steps);
+    if (end === 0) { setCount(0); return; }
 
-    const timer = setInterval(() => {
-      start += increment;
-      if (start >= end) {
-        setCount(end);
-        clearInterval(timer);
-      } else {
-        setCount(start);
+    const duration = 1200; // ms
+    const startTime = performance.now();
+
+    const tick = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease-out cubic for a natural deceleration
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.round(eased * end));
+
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(tick);
       }
-    }, stepTime);
+    };
 
-    return () => clearInterval(timer);
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
   }, [value]);
 
   return <span>{count}</span>;
@@ -184,6 +199,14 @@ export default function LeaderBoard() {
         throw new Error("Invalid payload format received from leaderboard API");
       }
 
+      // Add achievement-based bonus points to gamify contributors
+      Object.values(contributorsMap).forEach(applyAchievementBonus);
+
+      const sortedContributors = Object.values(contributorsMap).sort(
+        (a, b) => b.points - a.points
+      );
+
+      setContributors(sortedContributors);
       setContributors(data);
       setLastUpdated(new Date().toLocaleString());
       
@@ -224,6 +247,22 @@ export default function LeaderBoard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchContributors is stable across renders
   }, []);
 
+  // Each derived value is memoized — only recomputes when its specific inputs
+  // change, preventing all six O(N) passes from running on every render.
+  const filteredContributors = useMemo(
+    () => filterContributors(contributors, search, activeCategory),
+    [contributors, search, activeCategory]
+  );
+
+  const sortedContributors = useMemo(
+    () => sortContributors(filteredContributors, sortBy),
+    [filteredContributors, sortBy]
+  );
+
+  const currentContributors = useMemo(
+    () => paginateContributors(sortedContributors, currentPage, CONTRIBUTORS_PER_PAGE),
+    [sortedContributors, currentPage]
+  );
   const saveRecentSearch = (query) => {
     if (!query.trim()) return;
 
@@ -271,11 +310,20 @@ export default function LeaderBoard() {
   const currentContributors = sortedContributors.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(sortedContributors.length / CONTRIBUTORS_PER_PAGE);
 
-  const ranksMap = {};
-  contributors.forEach((c, i) => {
-    ranksMap[c.username] = i + 1;
-  });
+  const totalPages = useMemo(
+    () => totalLeaderboardPages(sortedContributors.length, CONTRIBUTORS_PER_PAGE),
+    [sortedContributors.length]
+  );
 
+  const ranksMap = useMemo(
+    () => buildRanksMap(contributors),
+    [contributors]
+  );
+
+  const stats = useMemo(
+    () => computeLeaderboardStats(contributors),
+    [contributors]
+  );
   const stats = {
     totalContributors: contributors.length,
     flooredTotalPRs: contributors.reduce((sum, c) => sum + c.prs, 0),
