@@ -20,15 +20,15 @@
  *
  * USAGE
  * ─────
- *   const [inputValue, setInputValue] = useState("");
- *   const debouncedValue = useDebouncedValue(inputValue, 300);
+ * const [inputValue, setInputValue] = useState("");
+ * const debouncedValue = useDebouncedValue(inputValue, 300);
  *
- *   // Pass inputValue to the <input> so it appears immediately.
- *   // Pass debouncedValue to the search/filter pipeline.
+ * // Pass inputValue to the <input> so it appears immediately.
+ * // Pass debouncedValue to the search/filter pipeline.
  *
  * @param {*}      value    - The value to debounce (typically a string)
  * @param {number} [delayMs=300] - Idle period in milliseconds before the
- *                                 debounced value is updated
+ * debounced value is updated
  * @returns {*} The debounced value
  */
 
@@ -73,6 +73,16 @@ export function useDebouncedCallback(callback, delayMs = 300) {
     callbackRef.current = callback;
   }, [callback]);
 
+  // 🔥 FIX: Clean up the timeout if the component unmounts before the delay finishes.
+  // Without this, the callback will execute on an unmounted component, causing a memory leak.
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
+
   return useCallback(
     (...args) => {
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -90,21 +100,21 @@ export function useDebouncedCallback(callback, delayMs = 300) {
  *
  * Convenience hook that pairs a local input value with a debounced search
  * term. Returns three values:
- *   - `inputValue`   — the current (immediate) value, bind to `<input value>`
- *   - `searchTerm`   — the debounced value, pass to the search/filter pipeline
- *   - `setInputValue` — the setter, bind to `<input onChange>`
+ * - `inputValue`   — the current (immediate) value, bind to `<input value>`
+ * - `searchTerm`   — the debounced value, pass to the search/filter pipeline
+ * - `setInputValue` — the setter, bind to `<input onChange>`
  *
  * Callers that were previously doing:
  *
- *   onChange={(e) => listing.setSearchQuery(e.target.value)}
+ * onChange={(e) => listing.setSearchQuery(e.target.value)}
  *
  * can now do:
  *
- *   const { inputValue, searchTerm, setInputValue } = useDebouncedSearch(
- *     listing.searchQuery, 300
- *   );
- *   // <input value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
- *   // Use searchTerm as the prop passed to the filtering hook.
+ * const { inputValue, searchTerm, setInputValue } = useDebouncedSearch(
+ * listing.searchQuery, 300
+ * );
+ * // <input value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
+ * // Use searchTerm as the prop passed to the filtering hook.
  *
  * @param {string} initialValue
  * @param {number} [delayMs=300]
