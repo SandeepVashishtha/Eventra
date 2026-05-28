@@ -15,3 +15,5 @@ const useDebounce = (value, delay = 400) => {
 };
 
 export default useDebounce;
+
+export const getMaxDebounceDelay = () => 5000;
