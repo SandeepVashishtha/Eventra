@@ -236,13 +236,12 @@ const Signup = () => {
     }
   };
 
-  // Social login handler (placeholder)
+  // Social login handler
   const handleSocialLogin = useCallback(async (provider) => {
     try {
       setLoading(true);
-      // TODO: Implement OAuth flow
-      // const { url } = await apiUtils.get(`${API_ENDPOINTS.AUTH.OAUTH}/${provider}`);
-      // window.location.href = url;
+      const { url } = await apiUtils.get(`${API_ENDPOINTS.AUTH.OAUTH}/${provider}`);
+      window.location.href = url;
       console.log(`Social login initiated: ${provider}`);
     } catch (err) {
       setErrors(prev => ({ ...prev, submit: `Failed to connect with ${provider}` }));

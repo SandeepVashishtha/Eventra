@@ -225,10 +225,18 @@ const EventRegistration = () => {
     const conflictCheck = checkRegistrationConflict(event, myEvents);
 
     if (conflictCheck.hasConflict) {
-      // Get alternative suggestions
-      // TODO: In production, alternative events should be fetched from backend API
-      // for accurate availability and pricing. Mock data is used as a fallback.
-      const suggestions = suggestAlternativeEvents(event, mockEvents, myEvents);
+      // Get alternative suggestions from backend API for accurate availability
+      let allEvents = mockEvents;
+      try {
+        const response = await apiUtils.get(API_ENDPOINTS.EVENTS.LIST);
+        if (response.ok && response.data) {
+          allEvents = Array.isArray(response.data) ? response.data : (response.data.events || mockEvents);
+        }
+      } catch (err) {
+        console.warn("Failed to fetch alternative events from backend API. Falling back to mock data.");
+      }
+      
+      const suggestions = suggestAlternativeEvents(event, allEvents, myEvents);
       setConflictData({
         conflicts: conflictCheck.conflicts,
         suggestions,
