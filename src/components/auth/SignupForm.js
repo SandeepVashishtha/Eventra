@@ -71,6 +71,7 @@ const SignupForm = () => {
   const navigate = useNavigate();
   const { setAuthSession } = useAuth();
   const emailValidationRequestRef = useRef(0);
+  const { password, confirmPassword } = formData;
 
   const setFieldState = useCallback((fieldName, state) => {
     setFieldValidationState((prev) => ({ ...prev, [fieldName]: state }));
@@ -137,7 +138,6 @@ const SignupForm = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      const { password, confirmPassword } = formData;
       if (!password || !confirmPassword) {
         setError("");
         setPasswordMatchMessage("");
@@ -158,7 +158,7 @@ const SignupForm = () => {
       }
     }, 1000);
     return () => clearTimeout(timer);
-  }, [formData.password, formData.confirmPassword, setFieldState]);
+  }, [password, confirmPassword, setFieldState]);
 
   useEffect(() => {
     let isActive = true;

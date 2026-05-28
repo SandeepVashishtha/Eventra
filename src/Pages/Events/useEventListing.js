@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import mockEvents from "./eventsMockData.json";
 import { getRouteSearchResults } from "../../utils/searchUtils";
 import { getEventStatus } from "../../utils/eventUtils";
@@ -33,6 +33,14 @@ const getSearchResults = (events, searchQuery) => {
 };
 
 const useEventListing = () => {
+  const normalizedMockEvents = useMemo(
+    () =>
+      mockEvents.map((event) => ({
+        ...event,
+        status: getEventStatus(event),
+      })),
+    [],
+  );
   const [events, setEvents] = useState([]);
   const [filterType, setFilterType] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
@@ -45,19 +53,19 @@ const useEventListing = () => {
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+
     const timer = setTimeout(() => {
-      const normalizedEvents = mockEvents.map((event) => ({
-        ...event,
-        status: getEventStatus(event),
-      }));
-
-      setEvents(normalizedEvents);
-
+      if (!isMounted) return;
+      setEvents(normalizedMockEvents);
       setIsLoading(false);
     }, 800);
 
-    return () => clearTimeout(timer);
-  }, []);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [normalizedMockEvents]);
 
   const filteredEvents = useMemo(() => {
     const searchResults = getSearchResults(events, searchQuery);
@@ -66,7 +74,10 @@ const useEventListing = () => {
     return sortEventsByDate(advancedFiltered, sortType);
   }, [events, filterType, searchQuery, sortType, advancedFilters]);
 
-  const totalPages = getTotalPages(filteredEvents.length, eventsPerPage);
+  const totalPages = useMemo(
+    () => getTotalPages(filteredEvents.length, eventsPerPage),
+    [eventsPerPage, filteredEvents.length],
+  );
   const paginatedEvents = useMemo(() => {
     return getPaginatedEvents(filteredEvents, currentPage, eventsPerPage);
   }, [currentPage, eventsPerPage, filteredEvents]);
@@ -81,38 +92,57 @@ const useEventListing = () => {
     }
   }, [currentPage, totalPages]);
 
-  const setSafePage = (page) => {
+  const setSafePage = useCallback((page) => {
     setCurrentPage(clampPage(page, totalPages));
-  };
+  }, [totalPages]);
 
   // Get price and date statistics from all events
   const priceStats = useMemo(() => getPriceStats(events), [events]);
   const dateRangeStats = useMemo(() => getDateRange(events), [events]);
 
-  return {
-    currentPage,
-    eventsPerPage,
-    filteredEvents,
-    filterType,
-    isLoading,
-    paginatedEvents,
-    searchQuery,
-    sortType,
-    totalPages,
-    viewMode,
-    advancedFilters,
-    isAdvancedFiltersOpen,
-    priceStats,
-    dateRangeStats,
-    setEventsPerPage,
-    setFilterType,
-    setSafePage,
-    setSearchQuery,
-    setSortType,
-    setViewMode,
-    setAdvancedFilters,
-    setIsAdvancedFiltersOpen,
-  };
+  return useMemo(
+    () => ({
+      currentPage,
+      eventsPerPage,
+      filteredEvents,
+      filterType,
+      isLoading,
+      paginatedEvents,
+      searchQuery,
+      sortType,
+      totalPages,
+      viewMode,
+      advancedFilters,
+      isAdvancedFiltersOpen,
+      priceStats,
+      dateRangeStats,
+      setEventsPerPage,
+      setFilterType,
+      setSafePage,
+      setSearchQuery,
+      setSortType,
+      setViewMode,
+      setAdvancedFilters,
+      setIsAdvancedFiltersOpen,
+    }),
+    [
+      advancedFilters,
+      currentPage,
+      dateRangeStats,
+      eventsPerPage,
+      filteredEvents,
+      filterType,
+      isAdvancedFiltersOpen,
+      isLoading,
+      paginatedEvents,
+      priceStats,
+      searchQuery,
+      setSafePage,
+      sortType,
+      totalPages,
+      viewMode,
+    ],
+  );
 };
 
 export default useEventListing;

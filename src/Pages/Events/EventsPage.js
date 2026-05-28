@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useCallback, useRef } from "react";
 import EventHero from "./EventHero";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
@@ -11,27 +11,35 @@ import useEventListing from "./useEventListing";
 const EventsPage = () => {
   const cardSectionRef = useRef();
   const listing = useEventListing();
+  const {
+    setAdvancedFilters,
+    setFilterType,
+    setSafePage,
+    setSearchQuery,
+    setSortType,
+    setViewMode,
+  } = listing;
 
-  const handleSearch = (query = "") => {
-    listing.setSearchQuery(query);
-  };
+  const handleSearch = useCallback((query = "") => {
+    setSearchQuery(query);
+  }, [setSearchQuery]);
 
-  const handlePageChange = (page) => {
-    listing.setSafePage(page);
+  const handlePageChange = useCallback((page) => {
+    setSafePage(page);
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  }, [setSafePage]);
 
-  const scrollToCard = () => {
+  const scrollToCard = useCallback(() => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  }, []);
 
-  const handleClearFilters = () => {
-    listing.setSearchQuery("");
-    listing.setFilterType("all");
-    listing.setSortType("Newest");
-    listing.setViewMode("grid");
-    listing.setAdvancedFilters({});
-  };
+  const handleClearFilters = useCallback(() => {
+    setSearchQuery("");
+    setFilterType("all");
+    setSortType("Newest");
+    setViewMode("grid");
+    setAdvancedFilters({});
+  }, [setAdvancedFilters, setFilterType, setSearchQuery, setSortType, setViewMode]);
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 overflow-x-hidden">
