@@ -194,6 +194,7 @@ const useEventListing = () => {
       paginatedEvents,
       priceStats,
       searchQuery,
+      setAdvancedFilters,
       setSafePage,
       sortType,
       totalPages,
