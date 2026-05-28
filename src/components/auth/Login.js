@@ -6,6 +6,8 @@ import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
 import GoogleLoginButton from './GoogleLoginButton';
+import useLoginRateLimit from '../../hooks/useLoginRateLimit';
+import LoginLockoutBanner from './LoginLockoutBanner';
 import '../../styles/auth.css';
 
 const Login = () => {
@@ -18,7 +20,16 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isAuthenticated, user, token } = useAuth();
-  // If ProtectedRoute redirected here because the JWT expired, show a notice.
+
+  const {
+    isLocked,
+    secondsRemaining,
+    canAttempt,
+    recordFailure,
+    recordSuccess,
+    failedAttempts,
+  } = useLoginRateLimit();
+
   const sessionExpired = location.state?.sessionExpired ?? false;
   const introPoints = [
     "Pick up where you left off with your dashboard and event tools.",
@@ -36,31 +47,23 @@ const Login = () => {
     const newErrors = {};
 
     if (!formData.usernameOrEmail.trim()) {
-      newErrors.usernameOrEmail =
-        "Email or username is required";
+      newErrors.usernameOrEmail = "Email or username is required";
     } else if (
       formData.usernameOrEmail.includes("@") &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
-        formData.usernameOrEmail
-      )
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.usernameOrEmail)
     ) {
-      newErrors.usernameOrEmail =
-        "Invalid email format";
+      newErrors.usernameOrEmail = "Invalid email format";
     }
 
     if (!formData.password.trim()) {
-      newErrors.password =
-        "Password is required";
+      newErrors.password = "Password is required";
     } else if (formData.password.length < 8) {
-      newErrors.password =
-        "Password must be at least 8 characters long";
+      newErrors.password = "Password must be at least 8 characters long";
     }
 
     setError(newErrors);
-
     return Object.keys(newErrors).length === 0;
   };
-
 
   useEffect(() => {
     if (isAuthenticated()) {
@@ -68,29 +71,50 @@ const Login = () => {
     }
   }, [navigate, isAuthenticated, user, token]);
 
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-    setLoading(true);
 
+    // Block submission if the client-side rate limit is active
+    if (!canAttempt()) {
+      toast.error(`Too many failed attempts. Please wait ${secondsRemaining}s before trying again.`);
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const ok = await login(formData.usernameOrEmail, formData.password);
       if (ok) {
+        recordSuccess();
         showAuthToast("Login successful! Redirecting to dashboard...", () =>
           navigate("/dashboard", { replace: true })
         );
       }
     } catch (err) {
-      console.error("Login error:", err);
-      setError({ general: err.message || "Invalid email or password" });
-      // Show error toast
-      toast.error(err.message || 'Login failed. Please check your credentials.');
+      // Detect 429 Too Many Requests from the backend and synchronise the
+      // client lockout window with the server's Retry-After header.
+      const status = err?.response?.status ?? err?.status;
+      const retryAfter = err?.response?.headers?.get?.('Retry-After')
+        ?? err?.retryAfter
+        ?? null;
+
+      if (status === 429 && retryAfter !== null) {
+        const retrySeconds = parseInt(String(retryAfter), 10);
+        recordFailure(Number.isFinite(retrySeconds) ? retrySeconds : undefined);
+      } else {
+        recordFailure();
+      }
+
+      const message = err.message || 'Login failed. Please check your credentials.';
+      setError({ general: message });
+      toast.error(message);
     } finally {
       setLoading(false);
     }
   };
+
+  const submitDisabled = loading || isLocked;
 
   return (
     <motion.div
@@ -119,7 +143,7 @@ const Login = () => {
                 color: "white"
               }}>
               <div>
-                <h2 className="text-3xl sm:text-4xl text-center font-extrabold mb-5 md:text-left" >
+                <h2 className="text-3xl sm:text-4xl text-center font-extrabold mb-5 md:text-left">
                   Welcome Back
                 </h2>
                 <p className="mb-8 text-base sm:text-lg opacity-90 leading-relaxed md:text-left">
@@ -142,7 +166,7 @@ const Login = () => {
             {/* RIGHT PANEL */}
             <div className="md:w-3/5 p-10 space-y-6 backdrop-blur-xl section-theme">
 
-              {/* ✅ Session-expired banner — shown only after an auto-logout */}
+              {/* Session-expired banner */}
               {sessionExpired && (
                 <motion.div
                   initial={{ opacity: 0, y: -8 }}
@@ -155,6 +179,21 @@ const Login = () => {
                   ⚠️ Your session has expired. Please log in again.
                 </motion.div>
               )}
+
+              {/* Rate-limit lockout banner */}
+              {isLocked && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <LoginLockoutBanner
+                    secondsRemaining={secondsRemaining}
+                    failedAttempts={failedAttempts}
+                  />
+                </motion.div>
+              )}
+
               {/* Logo / Title */}
               <motion.div
                 initial={{ scale: 0 }}
@@ -205,7 +244,6 @@ const Login = () => {
                     Email or username <sup className='ml-1 text-sm text-red-500'>*</sup>
                   </label>
                   <div className="relative group">
-
                     <input
                       id="usernameOrEmail"
                       name="usernameOrEmail"
@@ -213,18 +251,19 @@ const Login = () => {
                       value={formData.usernameOrEmail}
                       onChange={handleChange}
                       required
-                      disabled={loading}
+                      disabled={submitDisabled}
                       placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
-                      className="w-full pl-3 pr-4 py-3 
+                      className="w-full pl-3 pr-4 py-3
 bg-white dark:bg-gray-800
 border border-gray-200 dark:border-gray-600
-rounded-xl 
+rounded-xl
 placeholder:text-gray-400 dark:placeholder:text-gray-500
-focus:ring-2 focus:ring-blue-500/20 
+focus:ring-2 focus:ring-blue-500/20
 focus:border-blue-500
-transition-all duration-200 
-hover:shadow-md 
-text-gray-900 dark:text-white"
+transition-all duration-200
+hover:shadow-md
+text-gray-900 dark:text-white
+disabled:opacity-60 disabled:cursor-not-allowed"
                     />
                   </div>
                   {error.usernameOrEmail && (
@@ -271,9 +310,9 @@ text-gray-900 dark:text-white"
                       value={formData.password}
                       onChange={handleChange}
                       required
-                      disabled={loading}
+                      disabled={submitDisabled}
                       placeholder="Enter secure password / Minimum 8 characters / Use strong password"
-                      className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
+                      className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white disabled:opacity-60 disabled:cursor-not-allowed"
                     />
 
                     <button
@@ -314,8 +353,8 @@ text-gray-900 dark:text-white"
                   </div>
                 </div>
 
-                {/* Error message */}
-                {error.general && (
+                {/* General error */}
+                {error.general && !isLocked && (
                   <motion.div
                     initial={{ opacity: 0, y: -5 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -327,17 +366,20 @@ text-gray-900 dark:text-white"
 
                 {/* Sign in button */}
                 <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: submitDisabled ? 1 : 1.02 }}
+                  whileTap={{ scale: submitDisabled ? 1 : 0.98 }}
                   type="submit"
-                  disabled={loading}
-                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
+                  disabled={submitDisabled}
+                  aria-disabled={submitDisabled}
+                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300"
                 >
                   {loading ? (
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       Signing In...
                     </div>
+                  ) : isLocked ? (
+                    `Locked — wait ${secondsRemaining}s`
                   ) : (
                     "Sign In"
                   )}
