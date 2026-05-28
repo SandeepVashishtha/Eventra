@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from "../config/api";
 import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils";
+import { syncSecureStorage } from "../utils/secureStorage";
 import { toast } from "react-toastify";
 import { ROLES, ROLE_PERMISSIONS } from "../config/roles";
 
@@ -49,7 +50,7 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
     sessionStorage.removeItem("token");
-    localStorage.removeItem("user");
+    syncSecureStorage.removeItem("user");
     return true;
   }, []);
 
@@ -234,14 +235,19 @@ export const AuthProvider = ({ children }) => {
       if (sessionToken && sessionToken !== 'cookie-managed') {
         document.cookie = `token=${sessionToken}; path=/; Secure; SameSite=Strict`;
       }
-    } catch (err) {
+    } catch {
       // Ignore cookie write failures in strict environments
     }
 
+    // Strip authorization fields before persisting to storage. Roles, scopes,
+    // and permissions are always re-derived from the backend on page load via
+    // validateSession, so storing them client-side only widens the XSS attack
+    // surface with no functional benefit.
     try {
-      localStorage.setItem("user", JSON.stringify(sessionUser));
+      // eslint-disable-next-line no-unused-vars
+      const { roles, permissions, scopes, ...displayProfile } = sessionUser;
+      syncSecureStorage.setItem("user", JSON.stringify(displayProfile));
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error("[AuthContext] Error persisting user profile:", error);
     }
     return true;
