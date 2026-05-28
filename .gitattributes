@@ -1,2 +1,8 @@
 # Auto-resolve conflicts in package-lock.json using the custom merge driver
 package-lock.json merge=ours-then-install
+* text=auto
+*.js text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
