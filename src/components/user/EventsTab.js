@@ -183,7 +183,7 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
           <>
             <button
               className="group/btn flex-1"
-              onClick={() = aria-label="button"> onRemoveRegistration?.(event?.id, event?.title)}
+              onClick={() => onRemoveRegistration?.(event?.id, event?.title)}
             >
               <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 hover:from-slate-900 hover:via-slate-800 hover:to-indigo-900 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
                 <Trash2 size={13} className="relative" />
@@ -192,7 +192,7 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
             </button>
             <button
               className="group/btn flex-1"
-              onClick={() = aria-label="button"> onViewTicket?.(event)}
+              onClick={() => onViewTicket?.(event)}
             >
               <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-650 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
                 <Ticket size={13} className="relative" />
@@ -366,7 +366,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             {searchQuery && (
-              <button className="ud-search-clear" onClick={() = aria-label="button"> setSearchQuery("")} aria-label="Clear search query">
+              <button className="ud-search-clear" onClick={() => setSearchQuery("")} aria-label="Clear search query">
                 <X size={13} />
               </button>
             )}
@@ -511,7 +511,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
             onClick={handleCancelDismiss}
           >
             <button
-              onClick={() = aria-label="button"> {
+              onClick={() => {
                 localStorage.removeItem(
                   "recentSearches"
                 );

@@ -210,7 +210,7 @@ border-t border-gray-100 dark:border-slate-800/80"
           {/* FIX 1: Auto-play button — moved closer to edge on mobile */}
           <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-20">
             <button
-              onClick={() = aria-label="button"> setIsAutoPlaying(!isAutoPlaying)}
+              onClick={() => setIsAutoPlaying(!isAutoPlaying)}
               className="p-2 rounded-full bg-white/20 dark:bg-gray-700/90 shadow-lg hover:bg-white dark:hover:bg-gray-700 transition-colors"
               title={isAutoPlaying ? "Pause auto-play" : "Resume auto-play"}
             >
@@ -253,7 +253,7 @@ border-t border-gray-100 dark:border-slate-800/80"
           </button>
 
           <button
-            onClick={() = aria-label="button"> {
+            onClick={() => {
               setDirection(1);
               setCurrent(
                 (prev) => (prev + cardsPerView) % upcomingEvents.length,
@@ -475,7 +475,7 @@ border-t border-gray-100 dark:border-slate-800/80"
             (_, index) => (
               <button
                 key={index}
-                onClick={() = aria-label="button"> {
+                onClick={() => {
                   setCurrent(index * cardsPerView);
                   setDirection(index * cardsPerView > current ? 1 : -1);
                   setIsAutoPlaying(false);

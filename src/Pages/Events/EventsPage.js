@@ -1,12 +1,9 @@
-import { useCallback, useRef } from "react";
-import { useRef, useEffect, useState } from "react";
-import { useSearchParams, useLocation } from "react-router-dom"; // ✅ useLocation added here
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams, useLocation } from "react-router-dom";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
 import { Grid, List } from "lucide-react";
-import { useLocation } from "react-router-dom";
 import { getEventStatus } from "../../utils/eventUtils";
-import { Grid, List } from "lucide-react";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
 import EventFiltersToolbar from "./EventFiltersToolbar";
@@ -116,9 +113,7 @@ const EventsPage = () => {
     setViewMode,
   } = listing;
 
-  const handleSearch = useCallback((query = "") => {
-    setSearchQuery(query);
-  }, [setSearchQuery]);
+
 
   const handlePageChange = useCallback((page) => {
     setSafePage(page);
@@ -183,12 +178,12 @@ const EventsPage = () => {
     }
   }, [routeSearchQuery, listing.searchQuery, listing.setSearchQuery]);
 
-  const handleSearch = (query = "") => {
+  const handleSearch = useCallback((query = "") => {
     const safeQuery = prepareSafeSearchQuery(query);
     setLocalSearchInput(safeQuery);
     listing.setSearchQuery(safeQuery);
     return listing.filteredEvents;
-  };
+  }, [listing]);
 
   // Scroll to card section after loading when a route search is active
   useEffect(() => {
@@ -205,17 +200,6 @@ const EventsPage = () => {
   const scrollToCard = useCallback(() => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
-
-  const handleClearFilters = useCallback(() => {
-    setSearchQuery("");
-    setFilterType("all");
-    setSortType("Newest");
-    setViewMode("grid");
-    setAdvancedFilters({});
-  }, [setAdvancedFilters, setFilterType, setSearchQuery, setSortType, setViewMode]);
-  const handleClearFilters = () => {
-    setLocalSearchInput("");
-  };
 
   const clearSearchAndFilters = () => {
     listing.setSearchQuery("");
@@ -248,7 +232,7 @@ const EventsPage = () => {
             {FILTERS.map((filter) => (
               <button
                 key={filter.key}
-                onClick={() = aria-label="button"> listing.setFilterType(filter.key)}
+                onClick={() => listing.setFilterType(filter.key)}
                 className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-lg transition ${
                   listing.filterType === filter.key
                     ? "bg-blue-600 text-white dark:bg-blue-600 dark:text-white"
@@ -303,7 +287,7 @@ const EventsPage = () => {
 
             <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
               <button
-                onClick={() = aria-label="button"> listing.setViewMode("grid")}
+                onClick={() => listing.setViewMode("grid")}
                 className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
                   listing.viewMode === "grid"
                     ? "bg-black text-white shadow-md dark:bg-white dark:text-black"
@@ -315,7 +299,7 @@ const EventsPage = () => {
                 <Grid size={16} />
               </button>
               <button
-                onClick={() = aria-label="button"> listing.setViewMode("list")}
+                onClick={() => listing.setViewMode("list")}
                 className={`p-2 rounded-md transition-all duration-200 flex items-center justify-center ${
                   listing.viewMode === "list"
                     ? "bg-black text-white shadow-md dark:bg-white dark:text-black"
