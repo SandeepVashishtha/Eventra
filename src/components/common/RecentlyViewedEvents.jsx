@@ -119,6 +119,9 @@ const RecentlyViewedEvents = ({ maxVisible = 6, onEventClick }) => {
                   src={event.image}
                   alt={event.title}
                   loading="lazy"
+                  decoding="async"
+                  width={300}
+                  height={200}
                   onError={(e) => {
                     e.target.style.display = 'none';
                     e.target.nextSibling.style.display = 'flex';

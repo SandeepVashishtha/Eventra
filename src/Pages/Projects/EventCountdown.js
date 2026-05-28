@@ -1,33 +1,36 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 
 const EventCountdown = ({ eventDate }) => {
-  const calculateTimeLeft = useCallback(() => {
+ const [timeLeft, setTimeLeft] = useState(() => {
     const difference = +new Date(eventDate) - +new Date();
-    let timeLeft = {};
-
     if (difference > 0) {
-      timeLeft = {
+      return {
         days: Math.floor(difference / (1000 * 60 * 60 * 24)),
         hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
         minutes: Math.floor((difference / 1000 / 60) % 60),
         seconds: Math.floor((difference / 1000) % 60),
       };
-    } else {
-      timeLeft = { days: 0, hours: 0, minutes: 0, seconds: 0 };
     }
-
-    return timeLeft;
-  }, [eventDate]);
-
-  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
-
+    return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+  });
   useEffect(() => {
+    const calculateTimeLeft = () => {
+      const difference = +new Date(eventDate) - +new Date();
+      if (difference > 0) {
+        return {
+          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+          minutes: Math.floor((difference / 1000 / 60) % 60),
+          seconds: Math.floor((difference / 1000) % 60),
+        };
+      }
+      return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+    };
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
     }, 1000);
-
     return () => clearInterval(timer);
-  }, [eventDate, calculateTimeLeft]);
+  }, [eventDate]);
 
   const formatNumber = (num) => String(num).padStart(2, '0');
 

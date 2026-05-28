@@ -2,8 +2,10 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { XCircleIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 const Unauthorized = () => {
+  const prefersReducedMotion = useReducedMotion();
   // Predefined bubble positions around the card
   // These positions are spread along edges and sides for visual variety
   const bubblePositions = [
@@ -22,7 +24,7 @@ const Unauthorized = () => {
       y: [0, -20 - i * 3, 0], // Vertical float
       x: [0, 20 + i * 5, 0], // Horizontal float
       transition: {
-        duration: 6 + i, // Slightly different speed for each bubble
+        duration: prefersReducedMotion ? 0 : 6 + i, // Slightly different speed for each bubble
         repeat: Infinity, // Infinite loop
         ease: "easeInOut", // Smooth easing in and out
       },

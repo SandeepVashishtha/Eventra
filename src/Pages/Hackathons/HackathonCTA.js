@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, UserPlus, X, Rocket } from "lucide-react";
 
+import useReducedMotion from "../../hooks/useReducedMotion.js";
 const HackathonCTA = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [showModal, setShowModal] = useState(false);
 
   // Floating orbs
@@ -31,7 +33,7 @@ const HackathonCTA = () => {
             className={`absolute rounded-full ${orb.color} blur-2xl dark:blur-3xl pointer-events-none`}
             style={{ width: orb.size, height: orb.size, top: orb.top, left: orb.left }}
             animate={{ y: [0, -20, 0], x: [0, 12, 0], scale: [1, 1.1, 1] }}
-            transition={{ duration: 8 + idx * 2, repeat: Infinity, ease: "easeInOut", delay: orb.delay }}
+            transition={{ duration: prefersReducedMotion ? 0 : 8 + idx * 2, repeat: Infinity, ease: "easeInOut", delay: orb.delay }}
           />
         ))}
 
@@ -52,7 +54,7 @@ const HackathonCTA = () => {
             initial={{ opacity: 0, y: -12 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
             className="inline-flex items-center gap-2 mb-6 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-indigo-600 shadow-sm dark:border-indigo-500/40 dark:bg-indigo-500/10 dark:text-indigo-300 dark:shadow-[0_0_20px_rgba(99,102,241,0.2)] backdrop-blur-sm"
           >
             <Rocket className="w-3 h-3" />
@@ -64,7 +66,7 @@ const HackathonCTA = () => {
             initial={{ opacity: 0, y: -20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.1 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.6, delay: 0.1 }}
           >
             Join Our{" "}
             <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 dark:from-blue-400 dark:via-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">
@@ -77,7 +79,7 @@ const HackathonCTA = () => {
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.7, delay: 0.2 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.7, delay: 0.2 }}
           >
             Participate in exciting hackathons, showcase your skills, and connect
             with innovators around the world.
@@ -120,7 +122,7 @@ const HackathonCTA = () => {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.25 }}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Close button */}
