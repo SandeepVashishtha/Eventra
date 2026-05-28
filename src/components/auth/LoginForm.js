@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
-
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
 import { FormFieldWrapper, ValidationMessage } from "../forms";
@@ -66,8 +65,7 @@ const LoginForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    if (!validateLoginForm()) { setLoading(false); return; }
+    if (!validateLoginForm()) return;
 
     try {
       const ok = await login(formData.usernameOrEmail, formData.password);
@@ -77,11 +75,8 @@ const LoginForm = () => {
         );
       }
     } catch (err) {
-      console.error("Login error:", err);
       setError({ general: err.message || "Invalid email or password" });
-      toast.error(err.message || "Login failed. Please check your credentials.");
-    } finally {
-      setLoading(false);
+      toast.error(err.message || 'Login failed. Please check your credentials.');
     }
   };
 
@@ -117,7 +112,28 @@ const LoginForm = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-
+        <FormFieldWrapper
+          id="usernameOrEmail"
+          label="Email or username"
+          required
+          validationState={validationState.usernameOrEmail}
+          message={error.usernameOrEmail}
+          className="space-y-1.5"
+          labelClassName="block text-xs font-semibold text-slate-300 uppercase tracking-wider"
+          messageClassName="text-red-400 text-xs mt-1"
+          prefix={<Mail className="w-5 h-5 text-slate-500" />}
+        >
+          <input
+            name="usernameOrEmail"
+            type="text"
+            value={formData.usernameOrEmail}
+            onChange={handleChange}
+            required
+            disabled={authRequest.loading}
+            placeholder="Enter your email or username"
+            className="w-full pl-10 pr-4 py-3 bg-[#0f172a]/60 border border-slate-700/50 rounded-xl placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/70 hover:border-slate-600 hover:bg-[#0f172a]/80 transition-all duration-300 text-white text-sm shadow-inner"
+          />
+        </FormFieldWrapper>
         {/* Email */}
         <div className="space-y-1.5">
           <label htmlFor="usernameOrEmail" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
@@ -186,8 +202,6 @@ const LoginForm = () => {
             />
           </FormFieldWrapper>
 
-
-          </div>
           {error.password && (
             <motion.p id="password-error" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs mt-1 flex items-center gap-1" role="alert">
               <span>⚠</span> {error.password}

@@ -14,7 +14,12 @@ const mergeDescribedBy = (...ids) => ids.filter(Boolean).join(" ") || undefined;
 
 /**
  * Wraps a label, input, status icon, helper text, and validation message.
+ *
  * The child input receives aria-describedby, aria-invalid, and aria-busy.
+ * Required fields also receive aria-required and a visual asterisk with hidden
+ * text for screen readers. Supported validation states are `idle`,
+ * `validating`/`loading`, `success`/`valid`, `error`/`invalid`, `warning`, and
+ * `info`.
  *
  * @param {Object} props
  * @param {string} [props.id] - Input ID. Falls back to child id or name.
@@ -28,6 +33,23 @@ const mergeDescribedBy = (...ids) => ids.filter(Boolean).join(" ") || undefined;
  * @param {React.ReactNode} [props.suffix] - Optional content inside the right side of the input.
  * @param {"idle"|"validating"|"loading"|"success"|"valid"|"error"|"invalid"|"warning"|"info"} [props.validationState="idle"]
  * @param {string} [props.className] - Extra classes for the outer wrapper.
+ * @param {string} [props.labelClassName] - Extra classes for the label.
+ * @param {string} [props.inputWrapperClassName] - Extra classes for the relative input wrapper.
+ * @param {string} [props.helperClassName] - Extra classes for helper text.
+ * @param {string} [props.messageClassName] - Extra classes for validation message text.
+ * @param {boolean} [props.showStatusIcon=true] - Whether to show the right-side validation icon.
+ * @returns {JSX.Element} Complete accessible field wrapper.
+ *
+ * @example
+ * <FormFieldWrapper
+ *   id="email"
+ *   label="Email"
+ *   required
+ *   validationState="error"
+ *   message="Email is already registered"
+ * >
+ *   <input type="email" />
+ * </FormFieldWrapper>
  */
 const FormFieldWrapper = ({
   id,

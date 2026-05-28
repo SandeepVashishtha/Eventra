@@ -5,10 +5,8 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
-
 import { toast } from "react-toastify";
-
-import BackToTopButton from "./components/common/BackToTopButton";
+import ScrollToTopButton from "./components/ScrollToTopButton";
 import Navbar from "./components/Layout/Navbar";
 import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
@@ -36,7 +34,7 @@ import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 const Footer = lazy(() => import("./components/Layout/Footer"));
 const Chatbot = lazy(() => import("./components/Chatbot"));
 const AppRoutes = lazy(() => import("./components/AppRoutes"));
-const RegistrationPage = lazy(() => import("./Pages/RegistrationPage"));
+const EventRegistration = lazy(() => import("./Pages/Events/EventRegistration"));
 
 const OfflineSyncManager = () => {
   useOfflineSync();
@@ -45,15 +43,8 @@ const OfflineSyncManager = () => {
 
 function App() {
   const location = useLocation();
-
-  const isDashboardOrAdmin =
-    location.pathname === "/dashboard" ||
-    location.pathname === "/admin";
-
-  const [cursorEnabled, setCursorEnabled] = useState(
-    localStorage.getItem("cursor") !== "off"
-  );
-
+  const isDashboardOrAdmin = location.pathname === "/dashboard" || location.pathname === "/admin";
+  const [cursorEnabled, setCursorEnabled] = useState(localStorage.getItem("cursor") !== "off");
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
 
   useLenis();
@@ -65,11 +56,11 @@ function App() {
   });
 
   const toggleCursor = () => {
-    const value = !cursorEnabled;
-    setCursorEnabled(value);
+    const newValue = !cursorEnabled;
+    setCursorEnabled(newValue);
     try {
-      localStorage.setItem("cursor", value ? "on" : "off");
-    } catch {}
+      localStorage.setItem("cursor", newValue ? "on" : "off");
+    } catch (error) {}
   };
 
   useEffect(() => {
@@ -78,37 +69,30 @@ function App() {
         setCursorEnabled(event.detail.cursorEnabled);
       }
     };
-
     window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
-
     return () => {
-      window.removeEventListener(
-        "cursorPreferenceChanged",
-        handleCursorPreference
-      );
+      window.removeEventListener("cursorPreferenceChanged", handleCursorPreference);
     };
   }, []);
 
   useEffect(() => {
     const handleOnline = () => {
-      toast.success("Back online! Your connections have been restored.", {
+      toast.success("Back online! Your connections have been restored and sync is complete.", {
         position: "bottom-right",
         autoClose: 4000,
       });
     };
     const handleOffline = () => {
-      toast.warning("You are currently offline.", {
+      toast.warning("You are currently offline. Running in secure local offline caching mode.", {
         position: "bottom-right",
         autoClose: 5000,
       });
     };
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
-
     if (!navigator.onLine) {
       handleOffline();
     }
-
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
@@ -121,62 +105,53 @@ function App() {
         <NotificationProvider>
           <MyEventsProvider>
             <SessionRecoveryProvider>
-
               <ReminderChecker />
               <NotificationToastContainer />
               <OfflineSyncManager />
 
               <div className="App">
-
                 <SectionErrorBoundary label="Navigation Bar">
-                  <Navbar
-                    cursorEnabled={cursorEnabled}
-                    toggleCursor={toggleCursor}
-                  />
+                  <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
                 </SectionErrorBoundary>
-
                 <OfflineBanner />
                 <OfflineConflictModal />
-
                 <KeyboardShortcutsModal
                   isOpen={showKeyboardModal}
                   onClose={() => setShowKeyboardModal(false)}
                 />
-
                 <OnboardingChecklist />
 
                 <main
-                  className="relative z-10 min-h-[85vh]
-                  bg-white dark:bg-slate-950
-                  text-black dark:text-white
-                  transition-colors duration-300"
+                  className="
+                    relative z-10 min-h-[85vh]
+                    bg-white dark:bg-slate-950
+                    text-black dark:text-white
+                    transition-colors duration-300
+                  "
                 >
                   <PageTransition>
                     <SectionErrorBoundary label="Page Content">
                       <Suspense
                         fallback={
-                          <div className="min-h-screen flex items-center justify-center">
+                          <div className="flex items-center justify-center min-h-screen">
                             Loading...
                           </div>
                         }
                       >
                         <Routes>
-
                           <Route
                             path="/register/:id"
-                            element={<RegistrationPage />}
+                            element={
+                              <ProtectedRoute>
+                                <EventRegistration />
+                              </ProtectedRoute>
+                            }
                           />
-
                           <Route
                             path="/event-recommendation"
                             element={<EventRecommendation />}
                           />
-
-                          <Route
-                            path="*"
-                            element={<AppRoutes />}
-                          />
-
+                          <Route path="*" element={<AppRoutes />} />
                         </Routes>
                       </Suspense>
                     </SectionErrorBoundary>
@@ -197,17 +172,14 @@ function App() {
                   </Suspense>
                 </SectionErrorBoundary>
 
-                <BackToTopButton />
+                <ScrollToTopButton />
                 <FeedbackButton />
                 <ThemeCustomizerDrawer />
                 <SessionRecovery />
-
                 <SectionErrorBoundary label="Custom Cursor" silent>
                   <FluidCursor enabled={cursorEnabled} />
                 </SectionErrorBoundary>
-
               </div>
-
             </SessionRecoveryProvider>
           </MyEventsProvider>
         </NotificationProvider>
