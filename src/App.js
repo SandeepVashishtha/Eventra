@@ -20,6 +20,7 @@ import ErrorBoundary from "./components/common/ErrorBoundary";
 import OnboardingChecklist from "./components/user/OnboardingChecklist";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import NotificationToastContainer from "./components/common/NotificationProvider";
+import { ThemeProvider } from "./context/ThemeContext";
 import { NotificationProvider } from "./context/NotificationContext";
 import { AuthProvider } from "./context/AuthContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
@@ -113,92 +114,85 @@ function App() {
   }, []);
 
   return (
-    <ErrorBoundary>
-      <AuthProvider>
-        <NotificationProvider>
-          <MyEventsProvider>
-            <SessionRecoveryProvider>
-              <ReminderChecker />
-              <NotificationToastContainer />
-              <OfflineSyncManager />
+    <ThemeProvider>
+      <ErrorBoundary>
+        <AuthProvider>
+          <NotificationProvider>
+            <MyEventsProvider>
+              <SessionRecoveryProvider>
+                <NotificationToastContainer />
+                <ReminderChecker />
+                <OfflineSyncManager />
 
-              <div className="App">
-                <a href="#main-content" className="skip-to-content">
-                  Skip to main content
-                </a>
+                <div className="App">
+                  <SectionErrorBoundary label="Navigation Bar">
+                    <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+                  </SectionErrorBoundary>
 
-                <SectionErrorBoundary label="Navigation Bar">
-                  <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
-                </SectionErrorBoundary>
+                  <OfflineBanner />
+                  <OfflineConflictModal />
 
-                <OfflineBanner />
-                <OfflineConflictModal />
-                <KeyboardShortcutsModal
-                  isOpen={showKeyboardModal}
-                  onClose={() => setShowKeyboardModal(false)}
-                />
-                <OnboardingChecklist />
+                  <KeyboardShortcutsModal
+                    isOpen={showKeyboardModal}
+                    onClose={() => setShowKeyboardModal(false)}
+                  />
 
-                <main
-                  id="main-content"
-                  tabIndex={-1}
-                  className="
-                    relative z-10 min-h-[85vh]
-                    bg-white dark:bg-slate-950
-                    text-black dark:text-white
-                    transition-colors duration-300
-                  "
-                >
-                  <PageTransition>
-                    <SectionErrorBoundary label="Page Content">
-                      <Suspense fallback={<PageFallback />}>
-                        <Routes>
-                          <Route
-                            path="/register/:id"
-                            element={
-                              <ProtectedRoute>
-                                <EventRegistration />
-                              </ProtectedRoute>
-                            }
-                          />
-                          <Route
-                            path="/event-recommendation"
-                            element={<EventRecommendation />}
-                          />
-                          <Route path="*" element={<AppRoutes />} />
-                        </Routes>
-                      </Suspense>
-                    </SectionErrorBoundary>
-                  </PageTransition>
-                </main>
+                  <OnboardingChecklist />
 
-                <ScrollToTop />
+                  <main
+                    id="main-content"
+                    className="relative z-10 min-h-[85vh] bg-white dark:bg-slate-950 text-black dark:text-white transition-colors duration-300"
+                  >
+                    <PageTransition>
+                      <SectionErrorBoundary label="Page Content">
+                        <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+                          <Routes>
+                            <Route
+                              path="/register/:id"
+                              element={
+                                <ProtectedRoute>
+                                  <EventRegistration />
+                                </ProtectedRoute>
+                              }
+                            />
+                            <Route path="/event-recommendation" element={<EventRecommendation />} />
+                            <Route path="/saved-events" element={<SavedEventsPage />} />
+                            <Route path="*" element={<AppRoutes />} />
+                          </Routes>
+                        </Suspense>
+                      </SectionErrorBoundary>
+                    </PageTransition>
+                  </main>
 
-                <SectionErrorBoundary label="Chatbot Assist" silent>
-                  <Suspense fallback={null}>
-                    <Chatbot />
-                  </Suspense>
-                </SectionErrorBoundary>
+                  <ScrollToTop />
 
-                <SectionErrorBoundary label="Footer">
-                  <Suspense fallback={null}>
-                    {!isDashboardOrAdmin && <Footer />}
-                  </Suspense>
-                </SectionErrorBoundary>
+                  <SectionErrorBoundary label="Chatbot Assist" silent>
+                    <Suspense fallback={null}>
+                      <Chatbot />
+                    </Suspense>
+                  </SectionErrorBoundary>
 
-                <ScrollToTopButton />
-                <FeedbackButton />
-                <ThemeCustomizerDrawer />
-                <SessionRecovery />
-                <SectionErrorBoundary label="Custom Cursor" silent>
-                  <FluidCursor enabled={cursorEnabled} />
-                </SectionErrorBoundary>
-              </div>
-            </SessionRecoveryProvider>
-          </MyEventsProvider>
-        </NotificationProvider>
-      </AuthProvider>
-    </ErrorBoundary>
+                  <SectionErrorBoundary label="Footer">
+                    <Suspense fallback={null}>
+                      {!isDashboardOrAdmin && <Footer />}
+                    </Suspense>
+                  </SectionErrorBoundary>
+
+                  <ScrollToTopButton />
+                  <FeedbackButton />
+                  <ThemeCustomizerDrawer />
+                  <SessionRecovery />
+
+                  <SectionErrorBoundary label="Custom Cursor" silent>
+                    <FluidCursor enabled={cursorEnabled} />
+                  </SectionErrorBoundary>
+                </div>
+              </SessionRecoveryProvider>
+            </MyEventsProvider>
+          </NotificationProvider>
+        </AuthProvider>
+      </ErrorBoundary>
+    </ThemeProvider>
   );
 }
 

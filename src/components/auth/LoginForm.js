@@ -7,6 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 import { showAuthToast } from "../../utils/toast";
 import { FormFieldWrapper, ValidationMessage } from "../forms";
 import { validate as fieldValidators } from "../../validation";
+import { useFormSubmit } from "../../hooks/useFormSubmit";
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({
@@ -95,6 +96,7 @@ const LoginForm = () => {
     }
     // Note: loading state is now handled by authRequest.loading from context
   };
+
 
   return (
     <div className="w-full">
@@ -262,7 +264,7 @@ const LoginForm = () => {
 
         {/* General Error Message */}
         <ValidationMessage
-          message={error.general}
+          message={error.general || submitError}
           state="error"
           className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400"
         />
