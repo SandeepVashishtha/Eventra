@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion";
 import { ZoomIn, ZoomOut, RotateCcw, MapPin, CheckCircle, ShieldAlert, Sparkles, HelpCircle } from "lucide-react";
 import "./SpatialSeatSelector.css";
+import IsometricSeatVisualizer from "./IsometricSeatVisualizer";
+
 
 // Fallback presets if no venue layout is stored yet
 const DEFAULT_PRESETS = {
@@ -22,6 +24,7 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
   const [zoom, setZoom] = useState(0.85);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [hoveredSeat, setHoveredSeat] = useState(null);
+  const [viewMode, setViewMode] = useState("3d");
 
   const containerRef = useRef(null);
   const isDraggingRef = useRef(false);
@@ -195,311 +198,340 @@ const SpatialSeatSelector = ({ eventId = "default", selectedSeat = null, onSelec
   return (
     <div className="ssp-container">
       {/* Premium Statistics Header */}
-      {!readOnly && (
-        <div className="ssp-stats-header">
-          <div className="ssp-stat-pill">
-            <Sparkles size={14} className="text-amber-400" />
-            <span>Interactive Floor Seating</span>
-          </div>
-          <div className="flex gap-4 items-center">
-            <div className="text-xs text-zinc-400">
-              Available: <span className="font-bold text-emerald-400">{seatStats.available}</span> / {seatStats.total}
-            </div>
-            <div className="text-xs text-zinc-400">
-              Occupied: <span className="font-bold text-indigo-400">{seatStats.occupied}</span>
-            </div>
-          </div>
+      <div className="ssp-stats-header">
+        <div className="ssp-stat-pill">
+          <Sparkles size={14} className="text-amber-400" />
+          <span>{readOnly ? "Allocated Seat Map" : "Interactive Floor Seating"}</span>
         </div>
-      )}
+
+        <div className="ssp-header-controls">
+          <div className="ssp-toggle-group">
+            <button
+              type="button"
+              className={`ssp-toggle-btn ${viewMode === "2d" ? "active" : ""}`}
+              onClick={() => setViewMode("2d")}
+            >
+              2D Blueprint
+            </button>
+            <button
+              type="button"
+              className={`ssp-toggle-btn ${viewMode === "3d" ? "active" : ""}`}
+              onClick={() => setViewMode("3d")}
+            >
+              Tactile 3D
+            </button>
+          </div>
+
+          {!readOnly && (
+            <div className="ssp-stats-counter">
+              <div className="text-xs text-zinc-400">
+                Available: <span className="font-bold text-emerald-400">{seatStats.available}</span> / {seatStats.total}
+              </div>
+              <div className="text-xs text-zinc-400">
+                Occupied: <span className="font-bold text-indigo-400">{seatStats.occupied}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Seating Viewport */}
-      <div 
-        ref={containerRef}
-        className="ssp-viewport"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onWheel={handleWheel}
-      >
-        <svg
-          className="ssp-blueprint-svg"
-          width="100%"
-          height="100%"
-          viewBox="0 0 1000 800"
-          style={{
-            transform: `scale(${zoom}) translate(${panOffset.x}px, ${panOffset.y}px)`,
-            transformOrigin: "center center",
-            transition: isDraggingRef.current ? "none" : "transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)"
-          }}
+      {viewMode === "2d" ? (
+        <div 
+          ref={containerRef}
+          className="ssp-viewport"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onWheel={handleWheel}
         >
-          {/* Visual Defs and Gradients */}
-          <defs>
-            <pattern id="blueprint-grid" width="30" height="30" patternUnits="userSpaceOnUse">
-              <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(99, 102, 241, 0.03)" strokeWidth="1" />
-            </pattern>
-            
-            {/* VIP/Premium Seat Gradients */}
-            <radialGradient id="ssp-vip-avail" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#fbbf24" />
-              <stop offset="100%" stopColor="#d97706" />
-            </radialGradient>
-            
-            {/* General Admission Gradients */}
-            <radialGradient id="ssp-gen-avail" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#818cf8" />
-              <stop offset="100%" stopColor="#4f46e5" />
-            </radialGradient>
+          <svg
+            className="ssp-blueprint-svg"
+            width="100%"
+            height="100%"
+            viewBox="0 0 1000 800"
+            style={{
+              transform: `scale(${zoom}) translate(${panOffset.x}px, ${panOffset.y}px)`,
+              transformOrigin: "center center",
+              transition: isDraggingRef.current ? "none" : "transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+            }}
+          >
+            {/* Visual Defs and Gradients */}
+            <defs>
+              <pattern id="blueprint-grid" width="30" height="30" patternUnits="userSpaceOnUse">
+                <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(99, 102, 241, 0.03)" strokeWidth="1" />
+              </pattern>
+              
+              {/* VIP/Premium Seat Gradients */}
+              <radialGradient id="ssp-vip-avail" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#fbbf24" />
+                <stop offset="100%" stopColor="#d97706" />
+              </radialGradient>
+              
+              {/* General Admission Gradients */}
+              <radialGradient id="ssp-gen-avail" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#818cf8" />
+                <stop offset="100%" stopColor="#4f46e5" />
+              </radialGradient>
 
-            {/* Selection Gradients */}
-            <radialGradient id="ssp-selected" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#22d3ee" />
-              <stop offset="100%" stopColor="#0891b2" />
-            </radialGradient>
-          </defs>
+              {/* Selection Gradients */}
+              <radialGradient id="ssp-selected" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#22d3ee" />
+                <stop offset="100%" stopColor="#0891b2" />
+              </radialGradient>
+            </defs>
 
-          {/* Grid Background */}
-          <rect width="1000" height="800" fill="url(#blueprint-grid)" rx="8" />
+            {/* Grid Background */}
+            <rect width="1000" height="800" fill="url(#blueprint-grid)" rx="8" />
 
-          {/* Render Room elements */}
-          {elements.map((el) => {
-            const isVIP = el.tier && el.tier.toLowerCase().includes("vip");
-            const projOffset = 10;
+            {/* Render Room elements */}
+            {elements.map((el) => {
+              const isVIP = el.tier && el.tier.toLowerCase().includes("vip");
+              const projOffset = 10;
 
-            return (
-              <g
-                key={el.id}
-                transform={`rotate(${el.rotation}, ${el.x + el.width / 2}, ${el.y + el.height / 2})`}
-              >
-                {/* Oblique 2.5D extrusion base walls */}
-                {el.type === "round-table" ? (
-                  <>
-                    <path
-                      d={`M ${el.x + el.width / 2 - el.width / 2} ${el.y + el.height / 2} 
-                          A ${el.width / 2} ${el.height / 2} 0 0 0 ${el.x + el.width / 2 + el.width / 2} ${el.y + el.height / 2} 
-                          L ${el.x + el.width / 2 + el.width / 2 - projOffset} ${el.y + el.height / 2 + projOffset} 
-                          A ${el.width / 2} ${el.height / 2} 0 0 1 ${el.x + el.width / 2 - el.width / 2 - projOffset} ${el.y + el.height / 2 + projOffset} Z`}
-                      fill="rgba(8, 7, 24, 0.9)"
-                      stroke="rgba(255, 255, 255, 0.03)"
-                    />
-                    <circle
-                      cx={el.x + el.width / 2 - projOffset}
-                      cy={el.y + el.height / 2 - projOffset}
-                      r={el.width / 2}
-                      fill="rgba(18, 16, 45, 0.95)"
-                      stroke={isVIP ? "#d97706" : "#4f46e5"}
-                      strokeWidth={1.5}
-                    />
-                  </>
-                ) : el.type !== "stage" && el.type !== "barrier" && el.type !== "exit" && el.type !== "booth" ? (
-                  <>
-                    <path
-                      d={`M ${el.x} ${el.y + el.height} 
-                          L ${el.x - projOffset} ${el.y + el.height - projOffset} 
-                          L ${el.x + el.width - projOffset} ${el.y + el.height - projOffset} 
-                          L ${el.x + el.width} ${el.y + el.height} Z`}
-                      fill="rgba(8, 7, 24, 0.9)"
-                    />
+              return (
+                <g
+                  key={el.id}
+                  transform={`rotate(${el.rotation}, ${el.x + el.width / 2}, ${el.y + el.height / 2})`}
+                >
+                  {/* Oblique 2.5D extrusion base walls */}
+                  {el.type === "round-table" ? (
+                    <>
+                      <path
+                        d={`M ${el.x + el.width / 2 - el.width / 2} ${el.y + el.height / 2} 
+                            A ${el.width / 2} ${el.height / 2} 0 0 0 ${el.x + el.width / 2 + el.width / 2} ${el.y + el.height / 2} 
+                            L ${el.x + el.width / 2 + el.width / 2 - projOffset} ${el.y + el.height / 2 + projOffset} 
+                            A ${el.width / 2} ${el.height / 2} 0 0 1 ${el.x + el.width / 2 - el.width / 2 - projOffset} ${el.y + el.height / 2 + projOffset} Z`}
+                        fill="rgba(8, 7, 24, 0.9)"
+                        stroke="rgba(255, 255, 255, 0.03)"
+                      />
+                      <circle
+                        cx={el.x + el.width / 2 - projOffset}
+                        cy={el.y + el.height / 2 - projOffset}
+                        r={el.width / 2}
+                        fill="rgba(18, 16, 45, 0.95)"
+                        stroke={isVIP ? "#d97706" : "#4f46e5"}
+                        strokeWidth={1.5}
+                      />
+                    </>
+                  ) : el.type !== "stage" && el.type !== "barrier" && el.type !== "exit" && el.type !== "booth" ? (
+                    <>
+                      <path
+                        d={`M ${el.x} ${el.y + el.height} 
+                            L ${el.x - projOffset} ${el.y + el.height - projOffset} 
+                            L ${el.x + el.width - projOffset} ${el.y + el.height - projOffset} 
+                            L ${el.x + el.width} ${el.y + el.height} Z`}
+                        fill="rgba(8, 7, 24, 0.9)"
+                      />
+                      <rect
+                        x={el.x - projOffset}
+                        y={el.y - projOffset}
+                        width={el.width}
+                        height={el.height}
+                        rx={6}
+                        fill="rgba(18, 16, 45, 0.95)"
+                        stroke={isVIP ? "#d97706" : "#4f46e5"}
+                        strokeWidth={1.5}
+                      />
+                    </>
+                  ) : (
+                    // Background/Static venue layouts (Stage, exits, etc)
                     <rect
                       x={el.x - projOffset}
                       y={el.y - projOffset}
                       width={el.width}
                       height={el.height}
-                      rx={6}
-                      fill="rgba(18, 16, 45, 0.95)"
-                      stroke={isVIP ? "#d97706" : "#4f46e5"}
-                      strokeWidth={1.5}
+                      rx={el.type === "stage" ? 8 : 2}
+                      fill={el.type === "stage" ? "rgba(30, 41, 59, 0.85)" : el.type === "exit" ? "rgba(220, 38, 38, 0.15)" : "rgba(31, 41, 55, 0.5)"}
+                      stroke={el.type === "stage" ? "#475569" : el.type === "exit" ? "#dc2626" : "#374151"}
+                      strokeWidth={el.type === "stage" ? 2 : 1}
                     />
-                  </>
-                ) : (
-                  // Background/Static venue layouts (Stage, exits, etc)
-                  <rect
-                    x={el.x - projOffset}
-                    y={el.y - projOffset}
-                    width={el.width}
-                    height={el.height}
-                    rx={el.type === "stage" ? 8 : 2}
-                    fill={el.type === "stage" ? "rgba(30, 41, 59, 0.85)" : el.type === "exit" ? "rgba(220, 38, 38, 0.15)" : "rgba(31, 41, 55, 0.5)"}
-                    stroke={el.type === "stage" ? "#475569" : el.type === "exit" ? "#dc2626" : "#374151"}
-                    strokeWidth={el.type === "stage" ? 2 : 1}
-                  />
-                )}
+                  )}
 
-                {/* Table or block Text Label */}
-                <text
-                  x={el.x + el.width / 2 - projOffset}
-                  y={el.y + el.height / 2 - projOffset + 4}
-                  textAnchor="middle"
-                  fill={isVIP ? "#fbbf24" : "#e2e8f0"}
-                  fontSize={el.type === "stage" ? "14" : "11"}
-                  fontWeight="bold"
-                  pointerEvents="none"
-                  style={{ userSelect: "none", opacity: 0.8 }}
-                >
-                  {el.label}
-                </text>
+                  {/* Table or block Text Label */}
+                  <text
+                    x={el.x + el.width / 2 - projOffset}
+                    y={el.y + el.height / 2 - projOffset + 4}
+                    textAnchor="middle"
+                    fill={isVIP ? "#fbbf24" : "#e2e8f0"}
+                    fontSize={el.type === "stage" ? "14" : "11"}
+                    fontWeight="bold"
+                    pointerEvents="none"
+                    style={{ userSelect: "none", opacity: 0.8 }}
+                  >
+                    {el.label}
+                  </text>
 
-                {/* Render Interactive Chair elements */}
-                {getSeatPositions(el).map((seat) => {
-                  const isOccupied = el.assignedAttendees[seat.index];
-                  const isSelected = isSeatSelected(el.id, seat.index);
-                  const seatLabel = (el.seatLabels && el.seatLabels[seat.index]) || `Seat ${seat.index + 1}`;
-                  const seatTier = el.tier || (isVIP ? "VIP Front Row" : "General Seating");
+                  {/* Render Interactive Chair elements */}
+                  {getSeatPositions(el).map((seat) => {
+                    const isOccupied = el.assignedAttendees[seat.index];
+                    const isSelected = isSeatSelected(el.id, seat.index);
+                    const seatLabel = (el.seatLabels && el.seatLabels[seat.index]) || `Seat ${seat.index + 1}`;
+                    const seatTier = el.tier || (isVIP ? "VIP Front Row" : "General Seating");
 
-                  // Glow effect for selected seat or active highlight
-                  const glowClass = isSelected ? "ssp-seat-glowing" : "";
+                    // Glow effect for selected seat or active highlight
+                    const glowClass = isSelected ? "ssp-seat-glowing" : "";
 
-                  return (
-                    <g
-                      key={`seat-${el.id}-${seat.index}`}
-                      className={`ssp-interactive-seat ${glowClass}`}
-                      onClick={() => handleSeatClick(el, seat, seat.index)}
-                      onMouseEnter={(e) => {
-                        const bbox = e.currentTarget.getBoundingClientRect();
-                        const vrect = containerRef.current.getBoundingClientRect();
-                        setHoveredSeat({
-                          el,
-                          seatIdx: seat.index,
-                          label: seatLabel,
-                          tier: seatTier,
-                          occupiedBy: isOccupied || null,
-                          x: bbox.left - vrect.left + bbox.width / 2,
-                          y: bbox.top - vrect.top - 10
-                        });
-                      }}
-                      onMouseLeave={() => setHoveredSeat(null)}
-                      style={{ cursor: isOccupied ? "not-allowed" : "pointer" }}
-                    >
-                      {/* 2.5D Chair base drop shadow */}
-                      <circle
-                        cx={seat.x}
-                        cy={seat.y + 3}
-                        r={11}
-                        fill="rgba(0, 0, 0, 0.45)"
-                      />
-
-                      {/* Main Interactive Seat circle */}
-                      <circle
-                        cx={seat.x}
-                        cy={seat.y}
-                        r={11}
-                        fill={
-                          isSelected 
-                            ? "url(#ssp-selected)" 
-                            : isOccupied 
-                              ? "#27272a" 
-                              : isVIP 
-                                ? "url(#ssp-vip-avail)" 
-                                : "url(#ssp-gen-avail)"
-                        }
-                        stroke={
-                          isSelected 
-                            ? "#67e8f9" 
-                            : isOccupied 
-                              ? "#18181b" 
-                              : isVIP 
-                                ? "#f59e0b" 
-                                : "#6366f1"
-                        }
-                        strokeWidth={1.5}
-                        style={{
-                          transition: "fill 0.25s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.25s cubic-bezier(0.4, 0, 0.2, 1)"
+                    return (
+                      <g
+                        key={`seat-${el.id}-${seat.index}`}
+                        className={`ssp-interactive-seat ${glowClass}`}
+                        onClick={() => handleSeatClick(el, seat, seat.index)}
+                        onMouseEnter={(e) => {
+                          const bbox = e.currentTarget.getBoundingClientRect();
+                          const vrect = containerRef.current.getBoundingClientRect();
+                          setHoveredSeat({
+                            el,
+                            seatIdx: seat.index,
+                            label: seatLabel,
+                            tier: seatTier,
+                            occupiedBy: isOccupied || null,
+                            x: bbox.left - vrect.left + bbox.width / 2,
+                            y: bbox.top - vrect.top - 10
+                          });
                         }}
-                      />
+                        onMouseLeave={() => setHoveredSeat(null)}
+                        style={{ cursor: isOccupied ? "not-allowed" : "pointer" }}
+                      >
+                        {/* 2.5D Chair base drop shadow */}
+                        <circle
+                          cx={seat.x}
+                          cy={seat.y + 3}
+                          r={11}
+                          fill="rgba(0, 0, 0, 0.45)"
+                        />
 
-                      {/* RADAR pulsing overlay loop animation inside dashboard view */}
-                      {readOnly && isSelected && (
+                        {/* Main Interactive Seat circle */}
                         <circle
                           cx={seat.x}
                           cy={seat.y}
-                          r={28}
-                          fill="none"
-                          stroke="#22d3ee"
-                          strokeWidth={2}
-                          className="ssp-radar-pulse"
-                          pointerEvents="none"
+                          r={11}
+                          fill={
+                            isSelected 
+                              ? "url(#ssp-selected)" 
+                              : isOccupied 
+                                ? "#27272a" 
+                                : isVIP 
+                                  ? "url(#ssp-vip-avail)" 
+                                  : "url(#ssp-gen-avail)"
+                          }
+                          stroke={
+                            isSelected 
+                              ? "#67e8f9" 
+                              : isOccupied 
+                                ? "#18181b" 
+                                : isVIP 
+                                  ? "#f59e0b" 
+                                  : "#6366f1"
+                          }
+                          strokeWidth={1.5}
+                          style={{
+                            transition: "fill 0.25s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.25s cubic-bezier(0.4, 0, 0.2, 1)"
+                          }}
                         />
-                      )}
-                    </g>
-                  );
-                })}
-              </g>
-            );
-          })}
-        </svg>
 
-        {/* Viewport Zoom & Reset Controls floating overlay */}
-        <div className="ssp-viewport-controls">
-          <button 
-            type="button"
-            className="ssp-ctrl-btn" 
-            title="Zoom In" 
-            onClick={() => setZoom((z) => Math.min(2.5, z + 0.15))}
-          >
-            <ZoomIn size={15} />
-          </button>
-          <div className="ssp-zoom-pct">{Math.round(zoom * 100)}%</div>
-          <button 
-            type="button"
-            className="ssp-ctrl-btn" 
-            title="Zoom Out" 
-            onClick={() => setZoom((z) => Math.max(0.4, z - 0.15))}
-          >
-            <ZoomOut size={15} />
-          </button>
-          <div className="ssp-ctrl-divider" />
-          <button 
-            type="button"
-            className="ssp-ctrl-btn" 
-            title="Reset View" 
-            onClick={() => { setZoom(0.85); setPanOffset({ x: 0, y: 0 }); }}
-          >
-            <RotateCcw size={15} />
-          </button>
-        </div>
+                        {/* RADAR pulsing overlay loop animation inside dashboard view */}
+                        {readOnly && isSelected && (
+                          <circle
+                            cx={seat.x}
+                            cy={seat.y}
+                            r={28}
+                            fill="none"
+                            stroke="#22d3ee"
+                            strokeWidth={2}
+                            className="ssp-radar-pulse"
+                            pointerEvents="none"
+                          />
+                        )}
+                      </g>
+                    );
+                  })}
+                </g>
+              );
+            })}
+          </svg>
 
-        {/* Dynamic Seating Hover POPUP Indicator Card */}
-        <AnimatePresence>
-          {hoveredSeat && (
-            <motion.div
-              className="ssp-hover-popup"
-              initial={{ opacity: 0, scale: 0.95, y: 5 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 5 }}
-              transition={{ duration: 0.15 }}
-              style={{
-                left: hoveredSeat.x,
-                top: hoveredSeat.y
-              }}
+          {/* Viewport Zoom & Reset Controls floating overlay */}
+          <div className="ssp-viewport-controls">
+            <button 
+              type="button"
+              className="ssp-ctrl-btn" 
+              title="Zoom In" 
+              onClick={() => setZoom((z) => Math.min(2.5, z + 0.15))}
             >
-              <div className="ssp-pop-title">
-                {hoveredSeat.el.label}
-              </div>
-              <div className="ssp-pop-seat">
-                {hoveredSeat.label}
-              </div>
-              <div className="ssp-pop-divider" />
-              <div className="ssp-pop-row">
-                <span className="ssp-pop-label">Tier:</span>
-                <span className={`ssp-pop-val ${hoveredSeat.tier.toLowerCase().includes("vip") ? "text-amber-400 font-bold" : "text-indigo-300"}`}>
-                  {hoveredSeat.tier}
-                </span>
-              </div>
-              <div className="ssp-pop-row">
-                <span className="ssp-pop-label">Status:</span>
-                {hoveredSeat.occupiedBy ? (
-                  <span className="ssp-pop-val text-red-400 flex items-center gap-1">
-                    <ShieldAlert size={10} /> Occupied
+              <ZoomIn size={15} />
+            </button>
+            <div className="ssp-zoom-pct">{Math.round(zoom * 100)}%</div>
+            <button 
+              type="button"
+              className="ssp-ctrl-btn" 
+              title="Zoom Out" 
+              onClick={() => setZoom((z) => Math.max(0.4, z - 0.15))}
+            >
+              <ZoomOut size={15} />
+            </button>
+            <div className="ssp-ctrl-divider" />
+            <button 
+              type="button"
+              className="ssp-ctrl-btn" 
+              title="Reset View" 
+              onClick={() => { setZoom(0.85); setPanOffset({ x: 0, y: 0 }); }}
+            >
+              <RotateCcw size={15} />
+            </button>
+          </div>
+
+          {/* Dynamic Seating Hover POPUP Indicator Card */}
+          <AnimatePresence>
+            {hoveredSeat && (
+              <motion.div
+                className="ssp-hover-popup"
+                initial={{ opacity: 0, scale: 0.95, y: 5 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 5 }}
+                transition={{ duration: 0.15 }}
+                style={{
+                  left: hoveredSeat.x,
+                  top: hoveredSeat.y
+                }}
+              >
+                <div className="ssp-pop-title">
+                  {hoveredSeat.el.label}
+                </div>
+                <div className="ssp-pop-seat">
+                  {hoveredSeat.label}
+                </div>
+                <div className="ssp-pop-divider" />
+                <div className="ssp-pop-row">
+                  <span className="ssp-pop-label">Tier:</span>
+                  <span className={`ssp-pop-val ${hoveredSeat.tier.toLowerCase().includes("vip") ? "text-amber-400 font-bold" : "text-indigo-300"}`}>
+                    {hoveredSeat.tier}
                   </span>
-                ) : (
-                  <span className="ssp-pop-val text-emerald-400 flex items-center gap-1">
-                    <CheckCircle size={10} /> Available
-                  </span>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+                </div>
+                <div className="ssp-pop-row">
+                  <span className="ssp-pop-label">Status:</span>
+                  {hoveredSeat.occupiedBy ? (
+                    <span className="ssp-pop-val text-red-400 flex items-center gap-1">
+                      <ShieldAlert size={10} /> Occupied
+                    </span>
+                  ) : (
+                    <span className="ssp-pop-val text-emerald-400 flex items-center gap-1">
+                      <CheckCircle size={10} /> Available
+                    </span>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      ) : (
+        <IsometricSeatVisualizer
+          elements={elements}
+          selectedSeat={selectedSeat}
+          onSelectSeat={onSelectSeat}
+          readOnly={readOnly}
+        />
+      )}
 
       {/* Guide Legend Row */}
       <div className="ssp-legend-row">

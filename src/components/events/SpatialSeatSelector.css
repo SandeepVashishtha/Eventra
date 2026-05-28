@@ -37,6 +37,51 @@
   letter-spacing: 0.05em;
 }
 
+/* Header Controls & Toggle Switch styling */
+.ssp-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ssp-toggle-group {
+  display: flex;
+  background: rgba(15, 15, 27, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.ssp-toggle-btn {
+  font-size: 0.725rem;
+  font-weight: 600;
+  color: #a1a1aa;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ssp-toggle-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.ssp-toggle-btn.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
+}
+
+.ssp-stats-counter {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
 /* Seating Viewport Area */
 .ssp-viewport {
   position: relative;
@@ -270,6 +315,19 @@
 
 /* Responsive Overrides */
 @media (max-width: 640px) {
+  .ssp-stats-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px 14px;
+  }
+  .ssp-header-controls {
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .ssp-stats-counter {
+    gap: 8px;
+  }
   .ssp-legend-row {
     gap: 10px;
     padding: 10px 14px;
