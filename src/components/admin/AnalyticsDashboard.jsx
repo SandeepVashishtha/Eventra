@@ -14,6 +14,9 @@ import {
 import { toast } from "react-toastify";
 import { useAnalyticsStream, SSE_STATUS } from "../../context/RealTimeContext";
 
+// =========================================================================
+// CONSTANTS & INITIAL DATA
+// =========================================================================
 const MOCK_CHECKINS = [
   {
     id: "c1",
@@ -70,6 +73,47 @@ const MOCK_CATEGORY_DATA = [
   { name: "Web3", value: 110, color: "#f59e0b" },
 ];
 
+// =========================================================================
+// DECOUPLED MOCK DATA ADAPTER (SIMULATION ENGINE)
+// =========================================================================
+/**
+ * Isolated payload generator ensuring visual graphs are decoupled
+ * from the local state generation mechanisms.
+ */
+const generateMockCheckinPayload = (isManual = false) => {
+  const checkinNames = [
+    "Aditya Rao", "Ishaan Roy", "Meera Nair", "Rohan Das", "Zoya Ali",
+    "Aryan Joshi", "Tanya Sen", "Kabir Dutt", "Riya Pillai", "Aravind Swami"
+  ];
+  const simulatorNames = ["Gaurav Kumar", "Shruti Shah", "Manish Pandey", "Pooja Hegde"];
+  
+  const checkinEvents = [
+    "Web Dev Workshop", "Global AI Hackathon", "AI & ML Bootcamp",
+    "React Conference 2025", "Hack for Sustainability"
+  ];
+
+  const pool = isManual ? simulatorNames : checkinNames;
+  const randomName = pool[Math.floor(Math.random() * pool.length)];
+  const randomEvent = isManual ? "Global AI Hackathon" : checkinEvents[Math.floor(Math.random() * checkinEvents.length)];
+  const randomStatus = isManual ? "Verified" : (Math.random() > 0.08 ? "Verified" : "Flagged");
+  const hourlyIncrement = isManual ? 3 : 1;
+
+  return {
+    id: isManual ? `c-manual-${Date.now()}` : `c-${Date.now()}`,
+    name: randomName,
+    event: randomEvent,
+    time: "Just now",
+    status: randomStatus,
+    meta: {
+      hourlyIncrement,
+      velocityDelta: parseFloat((Math.random() * 0.4 - 0.2).toFixed(1))
+    }
+  };
+};
+
+// =========================================================================
+// SUB-COMPONENTS
+// =========================================================================
 function AnalyticsStreamBadge({ status }) {
   if (status === SSE_STATUS.CONNECTED) {
     return (
@@ -130,37 +174,64 @@ const AnalyticsDashboard = () => {
   const [liveCount, setLiveCount] = useState(getInitialLiveCount);
   const [activeCheckinsPerMinute, setActiveCheckinsPerMinute] = useState(5.4);
 
-  // Real-time SSE stream — takes priority over the local simulation when connected
+  // Real-time SSE stream — takes priority over local simulation when connected
   const { recentCheckins: streamCheckins, status: streamStatus } = useAnalyticsStream();
   const isStreamActive = streamStatus === SSE_STATUS.CONNECTED;
-
-  // Track the last processed SSE check-in so we don't double-process on re-renders
   const lastStreamCheckinRef = useRef(null);
+
+  /**
+   * Unified Analytical State Consumer pipeline.
+   * Maps ingested data contract structure cleanly to the UI state.
+   */
+  const processIncomingCheckin = (checkinPayload) => {
+    const { meta, ...cleanCheckinData } = checkinPayload;
+    
+    // Fallback/Default metadata processing for standard payloads
+    const hourlyIncrement = meta?.hourlyIncrement ?? 1;
+    const velocityDelta = meta?.velocityDelta ?? parseFloat((Math.random() * 0.4 - 0.2).toFixed(1));
+
+    // 1. Update Core Checkin Stream Log
+    setCheckins((prev) => [cleanCheckinData, ...prev.slice(0, 4)]);
+    
+    // 2. Increment Aggregate Live Metric Counter
+    setLiveCount((prev) => prev + hourlyIncrement);
+    
+    // 3. Modulate Flow Velocity Analytics State
+    setActiveCheckinsPerMinute((prev) => parseFloat((prev + velocityDelta).toFixed(1)));
+
+    // 4. Propagate Vector into the Hourly Graph State
+    setHourlyData((prev) => {
+      const updated = [...prev];
+      const lastIndex = updated.length - 1;
+      if (lastIndex >= 0) {
+        updated[lastIndex] = {
+          ...updated[lastIndex],
+          checkins: updated[lastIndex].checkins + hourlyIncrement
+        };
+      }
+      return updated;
+    });
+
+    // 5. Fire Feedback Notifications Interceptors
+    if (cleanCheckinData.status === "Flagged") {
+      toast.warning(`⚠️ Security Alert: Flagged entry attempt from ${cleanCheckinData.name}`);
+    } else if (cleanCheckinData.id.includes("manual")) {
+      toast.success(`🚀 Simulator: Successfully injected real-time check-in record for ${cleanCheckinData.name}!`);
+    } else {
+      toast.info(`🔔 Check-in Verified: ${cleanCheckinData.name} matched to ${cleanCheckinData.event}`);
+    }
+  };
+
+  // Processing real-time production SSE streams via data consumer pipeline
   useEffect(() => {
     const latest = streamCheckins[0];
     if (!latest || latest === lastStreamCheckinRef.current) return;
     lastStreamCheckinRef.current = latest;
 
-    setCheckins((prev) => [latest, ...prev.slice(0, 4)]);
-    setLiveCount((prev) => prev + 1);
-    setActiveCheckinsPerMinute((prev) =>
-      parseFloat((prev + (Math.random() * 0.4 - 0.2)).toFixed(1))
-    );
-    setHourlyData((prev) => {
-      const updated = [...prev];
-      const last = updated.length - 1;
-      updated[last] = { ...updated[last], checkins: updated[last].checkins + 1 };
-      return updated;
-    });
-
-    if (latest.status === "Flagged") {
-      toast.warning(`⚠️ Security Alert: Flagged entry attempt from ${latest.name}`);
-    } else {
-      toast.info(`🔔 Check-in Verified: ${latest.name} matched to ${latest.event}`);
-    }
+    processIncomingCheckin(latest);
   }, [streamCheckins]);
 
-  // Simulation: only runs when SSE is not active, so real data takes precedence
+  // Automated background interval simulation logic loop
   useEffect(() => {
     if (isStreamActive) return;
     const checkinNames = [
@@ -228,7 +299,7 @@ const AnalyticsDashboard = () => {
     return () => clearInterval(interval);
   }, [isStreamActive]);
 
-  // Simulator helper: Trigger manual synthetic check-in instantly
+  // Manual interactive trigger pipeline router
   const triggerManualCheckin = () => {
     const simulatorNames = ["Gaurav Kumar", "Shruti Shah", "Manish Pandey", "Pooja Hegde"];
     const randomName = simulatorNames[Math.floor(Math.random() * simulatorNames.length)];
