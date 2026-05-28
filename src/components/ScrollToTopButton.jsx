@@ -27,3 +27,11 @@ export default function ScrollToTopButton() {
 
   return <BackToTopButton threshold={50} positionClass={positionClass} />;
 }
+// Accessible landmark container router focus shifting utility helper
+export const shiftLandmarkFocus = (elementId) => {
+  const container = document.getElementById(elementId);
+  if (container) {
+    container.setAttribute("tabindex", "-1");
+    container.focus();
+  }
+};

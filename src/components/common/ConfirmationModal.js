@@ -19,6 +19,7 @@ const ConfirmationModal = ({
     if (!isOpen) return undefined;
 
     const previouslyFocusedElement = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
 
     document.body.style.overflow = "hidden";
 
@@ -50,17 +51,14 @@ const ConfirmationModal = ({
         return;
       }
 
-      if (event.shiftKey && document.activeElement === firstElement) {
       if (
         event.shiftKey &&
         document.activeElement === firstElement
       ) {
+      if (event.shiftKey && document.activeElement === firstElement) {
         event.preventDefault();
         lastElement?.focus();
-      } else if (
-        !event.shiftKey &&
-        document.activeElement === lastElement
-      ) {
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
         event.preventDefault();
         firstElement?.focus();
       }
@@ -69,7 +67,7 @@ const ConfirmationModal = ({
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.body.style.overflow = "auto";
+      document.body.style.overflow = previousOverflow;
 
       document.removeEventListener(
         "keydown",
@@ -118,7 +116,7 @@ const ConfirmationModal = ({
             type="button"
             className="confirmation-modal-btn confirmation-modal-btn-cancel"
             onClick={onClose}
-          >
+           aria-label="button">
             {cancelText}
           </button>
 
@@ -126,7 +124,7 @@ const ConfirmationModal = ({
             type="button"
             className="confirmation-modal-btn confirmation-modal-btn-confirm"
             onClick={onConfirm}
-          >
+           aria-label="button">
             {confirmText}
           </button>
         </div>

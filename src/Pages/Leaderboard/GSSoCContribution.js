@@ -742,7 +742,7 @@ const GSSoCContribution = () => {
               <Users className="w-5 h-5 text-indigo-500" aria-hidden="true" />
               <h3 className="font-semibold text-gray-900 dark:text-white">Meet Your Mentors</h3>
             </div>
-            <button className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded">
+            <button className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded" aria-label="button">
               View All <ArrowRight className="w-3 h-3" aria-hidden="true" />
             </button>
           </div>
