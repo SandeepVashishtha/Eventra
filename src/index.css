@@ -9,7 +9,6 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --breakpoint-short: (max-height: 520px) and (orientation: landscape);
   --font-size-body: 16px;
   --font-size-body--line-height: 24px;
   --font-size-nav: 16px;
@@ -54,7 +53,7 @@
   }
 }
 
-body {
+body{
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -164,9 +163,16 @@ html {
 
   --input-bg: #ffffff;
   --input-text: #1a1a1a;
+  --input-border: #cbd5e1;
+  --input-placeholder: #64748b;
+  --input-focus-border: #2563eb;
+  --input-focus-ring: rgba(37, 99, 235, 0.18);
 
   --table-bg: #ffffff;
   --modal-bg: #ffffff;
+  --surface-muted: #f8fafc;
+  --surface-hover: #f1f5f9;
+  --card-shadow-color: rgba(15, 23, 42, 0.08);
 
   /* Typography */
   --font-body: 1rem;
@@ -202,6 +208,12 @@ html {
   --danger-bg: #fef2f2;
   --danger-border: #fca5a5;
   --danger-text: #dc2626;
+  --success-bg: #f0fdf4;
+  --success-border: #86efac;
+  --success-text: #15803d;
+  --warning-bg: #fefce8;
+  --warning-border: #fde047;
+  --warning-text: #a16207;
 }
 
 /* Fix #599: Changed from body.dark to .dark
@@ -228,10 +240,26 @@ html {
 
   --input-bg: #111827;
   --input-text: #f8fafc;
+  --input-border: #475569;
+  --input-placeholder: #94a3b8;
+  --input-focus-border: #60a5fa;
+  --input-focus-ring: rgba(96, 165, 250, 0.25);
 
   --table-bg: #111827;
 
   --modal-bg: #1e293b;
+  --surface-muted: #1e293b;
+  --surface-hover: #334155;
+  --card-shadow-color: rgba(0, 0, 0, 0.35);
+  --danger-bg: #450a0a;
+  --danger-border: #991b1b;
+  --danger-text: #fecaca;
+  --success-bg: #052e16;
+  --success-border: #166534;
+  --success-text: #bbf7d0;
+  --warning-bg: #422006;
+  --warning-border: #92400e;
+  --warning-text: #fde68a;
 }
 
 /* Global styles */
@@ -300,21 +328,6 @@ aside {
 
 .dark {
   color-scheme: dark;
-}
-
-/* Fix unreadable text */
-.dark p,
-.dark span,
-.dark h1,
-.dark h2,
-.dark h3,
-.dark h4,
-.dark h5,
-.dark h6,
-.dark label,
-.dark li,
-.dark a {
-  color: inherit;
 }
 
 /* Placeholder text fix */
@@ -702,14 +715,46 @@ textarea,
 select {
   background-color: var(--input-bg);
   color: var(--input-text);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--input-border);
   transition: all 0.3s ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--input-focus-border);
+  box-shadow: 0 0 0 3px var(--input-focus-ring);
+}
+
+input:disabled,
+textarea:disabled,
+select:disabled {
+  background-color: var(--surface-muted);
+  color: var(--text-color-light);
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--input-placeholder);
+  opacity: 1;
+}
+
+select option {
+  background-color: var(--input-bg);
+  color: var(--input-text);
 }
 
 /* Tables */
 table {
   background-color: var(--table-bg);
   color: var(--text-color);
+}
+
+th,
+td {
+  border-color: var(--border-color);
 }
 
 /* Modals */
@@ -787,6 +832,8 @@ select,
   color: var(--text-color);
 
   border: 1px solid var(--border-color);
+
+  box-shadow: 0 4px 16px var(--card-shadow-color);
 }
 
 .input-theme {
@@ -794,7 +841,7 @@ select,
 
   color: var(--input-text);
 
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--input-border);
 }
 
 .section-theme {

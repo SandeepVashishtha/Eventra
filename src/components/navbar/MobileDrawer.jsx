@@ -77,7 +77,7 @@ const MobileDrawer = ({
   if (!shouldRender) return null;
 
   return (
-    <div className="fixed inset-0 z-50 lg:hidden">
+    <div className="fixed inset-0 z-50 xl:hidden">
       <button
         type="button"
         aria-label="Close navigation menu"
