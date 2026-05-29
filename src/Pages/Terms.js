@@ -444,7 +444,7 @@ export const Terms = () => {
                   return (
                     <button
                       key={s.id}
-                      onClick={() = aria-label="button"> {
+                      onClick={() => {
                         toggle(s.id);
                         document.getElementById(`section-${s.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
                       }}
@@ -466,7 +466,7 @@ export const Terms = () => {
               {/* Expand/Collapse all */}
               <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/10 flex gap-2">
                 <button
-                  onClick={() = aria-label="button"> setOpenSection(null)}
+                  onClick={() => setOpenSection(null)}
                   className="flex-1 px-3 py-2 rounded-xl text-xs font-medium text-slate-500 dark:text-slate-400
                     hover:bg-slate-50 dark:hover:bg-white/5 border border-slate-200 dark:border-white/10 transition-all"
                 >

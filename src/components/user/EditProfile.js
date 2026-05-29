@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { safeJsonParse } from "../../utils/safeJsonParse";
+import { syncSecureStorage } from "../../utils/secureStorage";
 
 import {
   User as UserIcon,
@@ -83,7 +84,7 @@ const EditProfile = () => {
 
   // Initialize with fallback progression to prevent undefined fields
   const [form, setForm] = useState(() => {
-    const saved = localStorage.getItem("user");
+    const saved = syncSecureStorage.getItem("user");
     const parsed = safeJsonParse(saved, null);
     if (parsed) {
       return parsed;
@@ -100,7 +101,7 @@ const EditProfile = () => {
 
   // Keep state synchronized if the auth context updates lazily
   useEffect(() => {
-    const saved = localStorage.getItem("user");
+    const saved = syncSecureStorage.getItem("user");
     if (!saved && user) {
       setForm((prev) => ({ ...prev, ...user }));
     }
@@ -207,7 +208,7 @@ const EditProfile = () => {
       setSuccessMessage("Profile updated successfully");
       setConfirmOpen(false);
       setUser(resolvedForm);
-      localStorage.setItem("user", JSON.stringify(resolvedForm));
+      syncSecureStorage.setItem("user", JSON.stringify(resolvedForm));
 
       setTimeout(() => {
         navigate("/dashboard/profile");
@@ -447,7 +448,7 @@ const EditProfile = () => {
                         <button
                           key={suggestion}
                           type="button"
-                          onClick={() = aria-label="button"> addSkill(suggestion)}
+                          onClick={() => addSkill(suggestion)}
                           className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 hover:bg-indigo-100 hover:text-indigo-800 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-indigo-900/40 dark:hover:text-indigo-300"
                         >
                           + {suggestion}
@@ -466,7 +467,7 @@ const EditProfile = () => {
                           {skill}
                           <button
                             type="button"
-                            onClick={() = aria-label="button">
+                            onClick={() =>
                               setForm((prev) => ({
                                 ...prev,
                                 skills: prev.skills.filter((_, i) => i !== idx),
@@ -565,7 +566,7 @@ const EditProfile = () => {
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
-                onClick={() = aria-label="button"> window.history.back()}
+                onClick={() => window.history.back()}
                 className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 Cancel
@@ -573,7 +574,7 @@ const EditProfile = () => {
               <button
                 type="button"
                 disabled={loading}
-                onClick={() = aria-label="button"> setConfirmOpen(true)}
+                onClick={() => setConfirmOpen(true)}
                 className="px-4 py-2 rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
               >
                 {loading ? "Saving..." : "Save Changes"}

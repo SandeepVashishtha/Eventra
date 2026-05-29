@@ -3,8 +3,10 @@ import { motion, useInView } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
 
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-import CountUp from "react-countup";
+import CountUpLib from "react-countup";
 import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+
+const CountUp = CountUpLib.default;
 
 // Framer Motion Variants
 const container = {

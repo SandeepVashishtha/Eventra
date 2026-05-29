@@ -250,7 +250,7 @@ export default function TicketScanner() {
         {/* SCAN MODE TOGGLES */}
         <div className="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-xl self-start sm:self-auto">
           <button
-            onClick={() = aria-label="button"> {
+            onClick={() => {
               setManualMode(false);
               setScanResult(null);
               startScanner(selectedCameraId);
@@ -264,7 +264,7 @@ export default function TicketScanner() {
             Camera Scanner
           </button>
           <button
-            onClick={() = aria-label="button"> {
+            onClick={() => {
               setManualMode(true);
               stopScanner();
               setScanResult(null);
@@ -343,7 +343,7 @@ export default function TicketScanner() {
                       Make sure Eventra has browser camera access permissions.
                     </p>
                     <button
-                      onClick={() = aria-label="button"> startScanner(selectedCameraId)}
+                      onClick={() => startScanner(selectedCameraId)}
                       className="mt-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white transition-all shadow-md"
                     >
                       Start Camera Stream
@@ -367,7 +367,7 @@ export default function TicketScanner() {
                       Camera paused / feed stopped
                     </span>
                     <button
-                      onClick={() = aria-label="button"> startScanner(selectedCameraId)}
+                      onClick={() => startScanner(selectedCameraId)}
                       className="px-4 py-2 rounded-xl bg-indigo-600 text-xs font-bold"
                     >
                       Resume Scan

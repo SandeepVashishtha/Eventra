@@ -24,7 +24,7 @@ const ModernSearchInput = ({ value, onChange, placeholder }) => (
     />
     {value && (
       <button
-        onClick={() = aria-label="button"> onChange({ target: { value: "" } })}
+        onClick={() => onChange({ target: { value: "" } })}
         className="absolute right-4 text-gray-400 dark:text-gray-500 hover:text-black dark:hover:text-white transition-colors"
       >
         <FiX className="w-4 h-4" />
@@ -77,10 +77,14 @@ const ProjectGallery = () => {
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
 
-  const [bookmarks, setBookmarks] = useState(() => {
+  const [bookmarks, setBookmarks] = useState([]);
+
+  useEffect(() => {
     const saved = localStorage.getItem("eventra_bookmarked_projects");
-    return safeJsonParse(saved, []);
-  });
+    if (saved) {
+      setBookmarks(safeJsonParse(saved, []));
+    }
+  }, []);
 
   const handleBookmarkToggle = (projectId) => {
     setBookmarks((prev) => {
@@ -211,7 +215,7 @@ const ProjectGallery = () => {
           project.description.toLowerCase().includes(query) ||
           project.category.toLowerCase().includes(query) ||
           project.author.toLowerCase().includes(query) ||
-          (project.techStack &&
+          (Array.isArray(project.techStack) &&
             project.techStack.some((tech) =>
               tech.toLowerCase().includes(query)
             ))
@@ -291,7 +295,7 @@ const ProjectGallery = () => {
                   <button
                     type="button"
                     className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 hover:ring-2 hover:ring-black/20 transition-all min-w-[180px]"
-                    onClick={() = aria-label="button">
+                    onClick={() =>
                       setCategoryOpen((prev) => !prev)
                     }
                     onKeyDown={(event) => {
@@ -377,7 +381,7 @@ const ProjectGallery = () => {
                   <button
                     type="button"
                     className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-700 hover:ring-2 hover:ring-black/20 transition-all min-w-[200px]"
-                    onClick={() = aria-label="button"> setSortOpen((prev) => !prev)}
+                    onClick={() => setSortOpen((prev) => !prev)}
                     onKeyDown={(event) => {
                       if (event.key === "Escape") {
                         setSortOpen(false);
