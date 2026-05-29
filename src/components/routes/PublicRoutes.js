@@ -13,11 +13,9 @@ const HomePage = lazy(() => import("../../Pages/Home/HomePage"));
 const EventsPage = lazy(() => import("../../Pages/Events/EventsPage"));
 const EventDetails = lazy(() => import("../../Pages/Events/EventDetails"));
 const EventRegistration = lazy(() => import("../../Pages/Events/EventRegistration"));
-
 const HackathonPage = lazy(() => import("../../Pages/Hackathons/HackathonPage"));
 const HackathonDetailsPage = lazy(() => import("../../Pages/Hackathons/HackathonDetailsPage"));
-const HackathonLifecycle = lazy(() => import("../../Pages/Hackathons/HackathonLifecycle"));
-
+const HackathonLifecycle = lazy(() => import('../../Pages/Hackathons/HackathonLifecycle'));
 const ProjectsPage = lazy(() => import("../../Pages/Projects/ProjectsPage"));
 const SubmitProject = lazy(() => import("../../Pages/Projects/SubmitProject"));
 const Contributors = lazy(() => import("../Contributors"));
@@ -33,16 +31,19 @@ const ApiDocs = lazy(() => import("../../Pages/ApiDocs"));
 const HelpCenter = lazy(() => import("../../Pages/HelpCenter"));
 const ContactUs = lazy(() => import("../../Pages/Contact/ContactUs"));
 const FeedbackPage = lazy(() => import("../../Pages/Feedback/FeedbackPage"));
-const HealthCheckPage = lazy(() => import("../../Pages/HealthCheckPage"));
+const DocumentationPage = lazy(() => import("../../Pages/About/DocumentationPage"));
+const MockApiResponse = lazy(() => import("../MockApiResponse"));
+const OAuthCallback = lazy(() => import('../auth/OAuthCallback'));
 
 // ─── Auth-required page components ───────────────────────────────────────────
 // These are imported separately to make the intent explicit: they MUST be
 // wrapped with <ProtectedRoute> — do not move them to the public list above.
-const BookmarkedEvents = lazy(() => import("../../Pages/Events/BookmarkedEvents"));
-const RemindersPage = lazy(() => import("../../Pages/Events/RemindersPage"));
-const EventAnalyticsDashboard = lazy(() => import("../../Pages/Events/EventAnalyticsDashboard"));
-const FloorPlanDesignerPage = lazy(() => import("../../Pages/Events/FloorPlanDesignerPage"));
-const MyCalendar = lazy(() => import("../../Pages/Calendar/MyCalendar"));
+const BookmarkedEvents = lazy(() => import('../../Pages/Events/BookmarkedEvents'));
+const RemindersPage = lazy(() => import('../../Pages/Events/RemindersPage'));
+const EventAnalyticsDashboard = lazy(() => import('../../Pages/Events/EventAnalyticsDashboard'));
+const FloorPlanDesignerPage = lazy(() => import('../../Pages/Events/FloorPlanDesignerPage'));
+const SubmitProject = lazy(() => import('../../Pages/Projects/SubmitProject'));
+const MyCalendar = lazy(() => import('../../Pages/Calendar/MyCalendar'));
 
 export const getPublicRoutes = () => [
   // Health check endpoint — must be first and require no auth so uptime
