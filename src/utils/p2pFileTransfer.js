@@ -38,6 +38,22 @@ const getDB = () => {
   });
 };
 
+// Helper to attach error/abort handlers to an IndexedDB transaction and request
+const attachIdbReadHandlers = (transaction, request, resolve, fallbackValue, functionName) => {
+  transaction.onerror = (err) => {
+    console.error(`${functionName} transaction error:`, err);
+    resolve(fallbackValue);
+  };
+  transaction.onabort = (err) => {
+    console.error(`${functionName} transaction aborted:`, err);
+    resolve(fallbackValue);
+  };
+  request.onerror = (err) => {
+    console.error(`${functionName} request error:`, err);
+    resolve(fallbackValue);
+  };
+};
+
 // Check if all chunks for a file exist in IndexedDB
 export async function isFileCached(fileId) {
   try {
@@ -46,20 +62,12 @@ export async function isFileCached(fileId) {
       const transaction = db.transaction(STORE_NAME, "readonly");
       const store = transaction.objectStore(STORE_NAME);
       
-      transaction.onerror = (err) => {
-        console.error("isFileCached transaction error:", err);
-        resolve(false);
-      };
-      transaction.onabort = (err) => {
-        console.error("isFileCached transaction aborted:", err);
-        resolve(false);
-      };
-
-      // Let's search by keys
       const request = store.openCursor();
       let chunksCount = 0;
       let totalChunks = 0;
       
+      attachIdbReadHandlers(transaction, request, resolve, false, "isFileCached");
+
       request.onsuccess = (e) => {
         const cursor = e.target.result;
         if (cursor) {
@@ -71,11 +79,6 @@ export async function isFileCached(fileId) {
         } else {
           resolve(chunksCount > 0 && chunksCount === totalChunks);
         }
-      };
-
-      request.onerror = (err) => {
-        console.error("isFileCached request error:", err);
-        resolve(false);
       };
     });
   } catch (error) {
@@ -92,18 +95,11 @@ export async function getCachedFile(fileId) {
       const transaction = db.transaction(STORE_NAME, "readonly");
       const store = transaction.objectStore(STORE_NAME);
 
-      transaction.onerror = (err) => {
-        console.error("getCachedFile transaction error:", err);
-        resolve(null);
-      };
-      transaction.onabort = (err) => {
-        console.error("getCachedFile transaction aborted:", err);
-        resolve(null);
-      };
-
       const request = store.openCursor();
       const chunks = [];
       
+      attachIdbReadHandlers(transaction, request, resolve, null, "getCachedFile");
+
       request.onsuccess = (e) => {
         const cursor = e.target.result;
         if (cursor) {
@@ -116,11 +112,6 @@ export async function getCachedFile(fileId) {
           chunks.sort((a, b) => a.chunkIndex - b.chunkIndex);
           resolve(chunks.length > 0 ? chunks : null);
         }
-      };
-
-      request.onerror = (err) => {
-        console.error("getCachedFile request error:", err);
-        resolve(null);
       };
     });
   } catch (error) {
