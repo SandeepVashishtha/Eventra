@@ -25,7 +25,7 @@ const MAX_CONTRIBUTOR_PAGES = 10;
 const PROFILE_FETCH_DELAY_MS = 100; // Throttle profile API calls to avoid rate limiting
 
 let profileFetchCounter = 0;
-const throttleProfileFetch = async () => {
+export const throttleProfileFetch = async () => {
   profileFetchCounter++;
   if (profileFetchCounter % 5 === 0) {
     await new Promise(resolve => setTimeout(resolve, PROFILE_FETCH_DELAY_MS));

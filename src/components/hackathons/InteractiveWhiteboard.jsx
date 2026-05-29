@@ -212,6 +212,47 @@ const InteractiveWhiteboard = () => {
     setIsDrawing(true);
   }, [tool, color, size, isSolid]);
 
+  // Drawing move handler
+  const handleMouseMove = (e) => {
+    if (tool === "sticky") return;
+    if (!isDrawing) return;
+    e.stopPropagation();
+    const coords = getCanvasCoords(e);
+
+    setCurrentElement((prev) => {
+      if (!prev) return prev;
+      if (prev.type === "path") {
+        return {
+          ...prev,
+          points: [...prev.points, { x: coords.x, y: coords.y }],
+        };
+      }
+
+      // shape
+      return {
+        ...prev,
+        width: coords.x - prev.x,
+        height: coords.y - prev.y,
+      };
+    });
+  };
+
+  // Finalize drawing on mouse up / touch end
+  const handleMouseUp = (e) => {
+    if (tool === "sticky") return;
+    if (!isDrawing) return;
+    e.stopPropagation();
+
+    setCurrentElement((prev) => {
+      if (!prev) return null;
+      const finalized = prev;
+      setElements((els) => [...els, finalized]);
+      return null;
+    });
+
+    setIsDrawing(false);
+  };
+
   return (
     <div 
       className="flex flex-col h-full bg-slate-950 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative select-none"
