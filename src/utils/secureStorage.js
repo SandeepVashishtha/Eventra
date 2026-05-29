@@ -127,6 +127,97 @@ const cryptoSupported = isCryptoAvailable();
 
 
 // ---------------------------------------------------------------------------
+// AES-GCM Encryption Engine (Web Crypto API)
+// ---------------------------------------------------------------------------
+
+const CRYPTO_ALGORITHM = 'AES-GCM';
+const KEY_LENGTH = 256;
+const IV_LENGTH = 12; // 96-bit IV recommended for AES-GCM
+const PBKDF2_ITERATIONS = 100_000;
+const DERIVED_KEY_SALT = new TextEncoder().encode(
+  `eventra:${window.location.origin}:storage-key-v1`
+);
+
+let _keyPromise = null;
+
+const getDerivedKey = () => {
+  if (_keyPromise) return _keyPromise;
+
+  _keyPromise = (async () => {
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(window.location.origin),
+      'PBKDF2',
+      false,
+      ['deriveKey']
+    );
+
+    return crypto.subtle.deriveKey(
+      {
+        name: 'PBKDF2',
+        salt: DERIVED_KEY_SALT,
+        iterations: PBKDF2_ITERATIONS,
+        hash: 'SHA-256',
+      },
+      keyMaterial,
+      { name: CRYPTO_ALGORITHM, length: KEY_LENGTH },
+      false,
+      ['encrypt', 'decrypt']
+    );
+  })();
+
+  return _keyPromise;
+};
+
+const encrypt = async (plaintext) => {
+  const key = await getDerivedKey();
+  const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
+  const encoded = new TextEncoder().encode(plaintext);
+
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: CRYPTO_ALGORITHM, iv },
+    key,
+    encoded
+  );
+
+  const combined = new Uint8Array(iv.length + ciphertext.byteLength);
+  combined.set(iv, 0);
+  combined.set(new Uint8Array(ciphertext), iv.length);
+
+  return btoa(String.fromCharCode(...combined));
+};
+
+const decrypt = async (stored) => {
+  const key = await getDerivedKey();
+  const combined = Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
+
+  const iv = combined.slice(0, IV_LENGTH);
+  const ciphertext = combined.slice(IV_LENGTH);
+
+  const decrypted = await crypto.subtle.decrypt(
+    { name: CRYPTO_ALGORITHM, iv },
+    key,
+    ciphertext
+  );
+
+  return new TextDecoder().decode(decrypted);
+};
+
+const isCryptoAvailable = () => {
+  try {
+    return (
+      typeof crypto !== 'undefined' &&
+      typeof crypto.subtle !== 'undefined' &&
+      typeof crypto.getRandomValues === 'function'
+    );
+  } catch {
+    return false;
+  }
+};
+
+const cryptoSupported = isCryptoAvailable();
+
+// ---------------------------------------------------------------------------
 // Encrypted key-value storage wrapper (localStorage — AES-GCM encrypted)
 // ---------------------------------------------------------------------------
 
