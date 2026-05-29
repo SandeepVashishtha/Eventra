@@ -1,4 +1,6 @@
 import { memo, useCallback, useEffect, useId, useMemo, useState } from "react";
+import { logger } from "../../utils/logger";
+import { getUserTimezone } from "../../utils/timezoneUtils";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Bookmark,
@@ -218,15 +220,14 @@ const EventCard = ({ event, cacheInfo = null }) => {
         <StatusBadge status={computedStatus} />
       </div>
 
-      <div className="relative aspect-video overflow-hidden bg-gray-100 dark:bg-gray-800">
-        <img
-          loading="lazy"
-          decoding="async"
+      {/* Image */}
+      <div className="relative h-40 overflow-hidden">
+        <LazyImage
           src={event.image}
           alt={event.imageAlt || `${event.title} event thumbnail`}
-          width={640}
-          height={360}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          width={800}
+          height={160}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
         {cacheInfo && (
