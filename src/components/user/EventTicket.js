@@ -5,6 +5,9 @@ import { jsPDF } from "jspdf";
 import QRCode from "react-qr-code";
 import { toast } from "react-toastify";
 import "./EventTicket.css";
+import { useMyEvents } from "../../context/MyEventsContext";
+import SpatialSeatSelector from "../events/SpatialSeatSelector";
+import { motion, AnimatePresence } from "framer-motion";
 
 const EventTicket = ({ event, user, onClose }) => {
   const ticketRef = useRef(null);
@@ -12,6 +15,11 @@ const EventTicket = ({ event, user, onClose }) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [rotate, setRotate] = useState({ x: 0, y: 0 });
   const [shine, setShine] = useState({ x: 50, y: 50 });
+  const [showSeatMap, setShowSeatMap] = useState(false);
+
+  const { myEvents } = useMyEvents();
+  const registration = myEvents.find((r) => r.eventId === event.id);
+  const selectedSeat = registration?.formData?.selectedSeat;
 
   // Generate a mock ticket serial code based on event and user details
   const generateSerial = () => {
@@ -178,7 +186,7 @@ const EventTicket = ({ event, user, onClose }) => {
             onClick={onClose} 
             className="ud-ticket-action-btn close-btn"
             title="Close Ticket"
-          >
+           aria-label="button">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -209,10 +217,11 @@ const EventTicket = ({ event, user, onClose }) => {
               {/* Header Banner */}
               <div className={`ud-ticket-header bg-gradient-to-r ${theme.primary}`}>
                 {event.image && (
-                  <img 
-                    src={event.image} 
-                    alt={event.title} 
+                  <img
+                    src={event.image}
+                    alt={event.title}
                     className="ud-ticket-header-img"
+                    loading="lazy"
                     crossOrigin="anonymous"
                     onError={(e) => { e.target.style.display = 'none'; }}
                   />
@@ -266,6 +275,15 @@ const EventTicket = ({ event, user, onClose }) => {
                     <span className="ud-ticket-info-label">GATE / ENTRY</span>
                     <span className="ud-ticket-info-value">GENERAL</span>
                   </div>
+
+                  {selectedSeat && (
+                    <div className="ud-ticket-info-item">
+                      <span className="ud-ticket-info-label">SEAT</span>
+                      <span className="ud-ticket-info-value flex items-center gap-1" style={{ color: "#fbbf24", fontWeight: "bold" }}>
+                        {selectedSeat.seatLabel.split(" - ").pop()}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Attendee Details */}
@@ -286,6 +304,21 @@ const EventTicket = ({ event, user, onClose }) => {
                     </span>
                   </div>
                 </div>
+
+                {selectedSeat && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowSeatMap(true);
+                    }}
+                    className="mt-4 w-full py-2 px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-bold text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.02] cursor-pointer"
+                    style={{ marginTop: "1rem", cursor: "pointer" }}
+                  >
+                    <Map size={14} className="text-amber-400 animate-pulse" />
+                    <span>View Seat Location</span>
+                  </button>
+                )}
               </div>
 
               {/* Perforation Divider */}
@@ -380,6 +413,65 @@ const EventTicket = ({ event, user, onClose }) => {
           </div>
         </div>
       </div>
+
+      {/* Seating Map Modal Popup */}
+      <AnimatePresence>
+        {showSeatMap && selectedSeat && (
+          <div 
+            className="ud-ticket-modal-overlay"
+            style={{ 
+              zIndex: 1000, 
+              display: "flex", 
+              alignItems: "center", 
+              justifyContent: "center", 
+              position: "fixed", 
+              inset: 0, 
+              background: "rgba(0,0,0,0.85)", 
+              backdropFilter: "blur(8px)" 
+            }}
+            onClick={() => setShowSeatMap(false)}
+          >
+            <div 
+              className="relative max-w-xl w-full mx-4 bg-zinc-950 border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl"
+              style={{ padding: "1.5rem" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-4" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2" style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "16px" }}>
+                    <MapPin size={18} className="text-amber-400" />
+                    Venue Seat Location
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-0.5" style={{ fontSize: "11px", color: "#a1a1aa", marginTop: "2px" }}>Your exact allocated seat is pulsing in a glowing golden radar overlay</p>
+                </div>
+                <button 
+                  onClick={() => setShowSeatMap(false)}
+                  className="p-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                  style={{ cursor: "pointer", background: "#18181b", border: "1px solid #27272a", borderRadius: "8px", padding: "6px", color: "#a1a1aa" }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div style={{ background: "#05050a", borderRadius: "16px", overflow: "hidden", border: "1px solid rgba(255,255,255,0.05)" }}>
+                <SpatialSeatSelector
+                  eventId={event.id}
+                  selectedSeat={selectedSeat}
+                  readOnly={true}
+                />
+              </div>
+
+              <div className="mt-4 p-4 rounded-xl bg-amber-500/5 border border-amber-500/10 flex items-center gap-3 text-xs text-amber-400" style={{ marginTop: "1rem", padding: "1rem", borderRadius: "12px", background: "rgba(245, 158, 11, 0.05)", border: "1px solid rgba(245, 158, 11, 0.15)", display: "flex", gap: "0.75rem", fontSize: "12px", color: "#fbbf24" }}>
+                <Sparkles size={16} className="shrink-0" />
+                <div>
+                  <span className="font-bold">Allocated Seat: </span>
+                  {selectedSeat.seatLabel} ({selectedSeat.tier})
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

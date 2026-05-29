@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import { API_ENDPOINTS, apiUtils, setOnUnauthorizedHandler } from "../config/api";
 import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils";
+import { syncSecureStorage } from "../utils/secureStorage";
 import { toast } from "react-toastify";
 import { ROLES, ROLE_PERMISSIONS } from "../config/roles";
 
@@ -47,17 +48,22 @@ export const AuthProvider = ({ children }) => {
 
     setUser(null);
     setToken(null);
-    document.cookie =
-      "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; HttpOnly; SameSite=Strict";
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
     sessionStorage.removeItem("token");
-    localStorage.removeItem("user");
+    syncSecureStorage.removeItem("user");
     return true;
   }, []);
 
   const clearExpiredSession = useCallback(() => {
-    // eslint-disable-next-line no-console
+    // 🔥 FIX: Check if a user was actually logged in before blasting them with an "Expired" toast.
+    // Anonymous users (who trigger a 401 on mount) shouldn't see this.
+    const hadPreviousSession = !!localStorage.getItem("user") || !!sessionStorage.getItem("token");
+
     console.warn("[AuthContext] Session expiration detected. Clearing session state immediately.");
     clearSession();
+
+    // If they were never logged in, this is just a guest pinging the API. Silent exit.
+    if (!hadPreviousSession) return;
 
     if (expiryToastShownRef.current) {
       return;
@@ -153,12 +159,9 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      validateSession();
-    } else if (isMountedRef.current) {
-      setLoading(false);
-    }
+    // 🔥 THE FIX: We removed the `if (localStorage.getItem("user"))` check! 🔥
+    // The app will now ALWAYS ping the backend to verify HttpOnly cookies on load.
+    validateSession();
   }, [clearSession, extractSession]);
 
   // --- FIX: Stable Global 401 handler ---
@@ -186,8 +189,6 @@ export const AuthProvider = ({ children }) => {
     }
   }, [clearExpiredSession]);
 
-  useEffect(() => {
-    if (!token) return;
   // --- Smart Token Expiry Timeout ---
   useEffect(() => {
     if (!token) return;
@@ -226,51 +227,38 @@ export const AuthProvider = ({ children }) => {
     }
 
     return () => {
-      clearTimeout(timeoutId);
-      clearInterval(timeoutId);
+      if (typeof expSeconds === "number") {
+        clearTimeout(timeoutId);
+      } else {
+        clearInterval(timeoutId);
+      }
     };
   }, [token, clearExpiredSession]);
 
   const persistSession = useCallback((sessionToken, sessionUser) => {
     setToken(sessionToken);
     setUser(sessionUser);
-    
-    document.cookie = `token=${sessionToken}; path=/; Secure; HttpOnly; SameSite=Strict`;
-    
+
+    // The auth token is set exclusively by the server via a Set-Cookie response
+    // header with HttpOnly; Secure; SameSite=Strict. Writing the token through
+    // document.cookie here would create a second, JS-readable copy of the same
+    // credential, exposing it to XSS-based theft. The client-side code only
+    // needs to store the non-sensitive display profile (see below).
+
+    // Strip authorization fields before persisting to storage. Roles, scopes,
+    // and permissions are always re-derived from the backend on page load via
+    // validateSession, so storing them client-side only widens the XSS attack
+    // surface with no functional benefit.
     try {
-      localStorage.setItem("user", JSON.stringify(sessionUser));
-      return true;
+      // eslint-disable-next-line no-unused-vars
+      const { roles, permissions, scopes, ...displayProfile } = sessionUser;
+      syncSecureStorage.setItem("user", JSON.stringify(displayProfile));
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('[AuthContext] Error persisting user profile:', error);
-      return false;
+      console.error("[AuthContext] Error persisting user profile:", error);
     }
+    return true;
   }, []);
 
-  /**
-   * Sign in with a Google credential returned by @react-oauth/google.
-   *
-   * SECURITY NOTE
-   * -------------
-   * The Google ID token (credential) MUST be verified server-side.
-   * Client-side JWT decoding only reads the payload — it does NOT verify
-   * the cryptographic signature, audience (aud), issuer (iss), or expiry.
-   * Skipping the backend exchange would allow any Google-issued token
-   * (even one issued for a completely different application) to create a
-   * valid session in Eventra.
-   *
-   * Flow:
-   *  1. POST the raw Google credential to the Eventra backend.
-   *  2. The backend verifies it against Google's JWKS endpoint and checks
-   *     aud, iss, exp, and email_verified.
-   *  3. On success the backend returns an Eventra-signed JWT + user object.
-   *  4. We persist ONLY the Eventra JWT — never the raw Google token.
-   *
-   * @param {string} credential - Raw Google ID token from @react-oauth/google
-   * @returns {Promise<true>} Resolves to true on success
-   * @throws {Error} If the credential is missing, the backend rejects it,
-   *                 or the response does not contain an Eventra token
-   */
   const setAuthSession = useCallback(
     (sessionToken, sessionUser) => {
       return persistSession(sessionToken, sessionUser);
@@ -325,62 +313,7 @@ export const AuthProvider = ({ children }) => {
     [extractSession, persistSession, setAuthRequestState]
   );
 
-  const signInWithGoogle = useCallback(
-    async (credential) => {
-      if (!credential) {
-        const error = new Error("Google Sign-In failed: missing credential");
-        setAuthRequestState({ loading: false, error: error.message });
-        throw error;
-      }
 
-      if (!setAuthRequestState({ loading: true, error: null })) {
-        return false;
-      }
-
-      let res;
-      try {
-        res = await apiUtils.post(API_ENDPOINTS.AUTH.GOOGLE, { token: credential });
-      } catch (networkError) {
-        const error = new Error(
-          `Google Sign-In failed: could not reach the server. ${
-            networkError?.message || "Please check your connection and try again."
-          }`
-        );
-        if (!isMountedRef.current) return false;
-        setAuthRequestState({ loading: false, error: error.message });
-        throw error;
-      }
-
-      const data = res.data;
-
-      if (res.status !== 200) {
-        const error = new Error(
-          data?.message || data?.error || `Google Sign-In failed: server returned ${res.status}`
-        );
-        if (!isMountedRef.current) return false;
-        setAuthRequestState({ loading: false, error: error.message });
-        throw error;
-      }
-
-      const { sessionToken, sessionUser } = extractSession(res, data, null);
-
-      if (!sessionToken) {
-        const error = new Error(
-          "Google Sign-In failed: the server did not return an authentication token."
-        );
-        if (!isMountedRef.current) return false;
-        setAuthRequestState({ loading: false, error: error.message });
-        throw error;
-      }
-
-      const persisted = persistSession(sessionToken, sessionUser);
-      if (!persisted) return false;
-
-      setAuthRequestState({ loading: false, error: null });
-      return true;
-    },
-    [extractSession, persistSession, setAuthRequestState]
-  );
 
   const logout = useCallback(() => {
     clearSession();
@@ -438,7 +371,6 @@ export const AuthProvider = ({ children }) => {
       authRequest,
       login,
       logout,
-      signInWithGoogle,
       setAuthSession,
       setUser,
       isAuthenticated,
@@ -460,7 +392,6 @@ export const AuthProvider = ({ children }) => {
       authRequest,
       login,
       logout,
-      signInWithGoogle,
       setAuthSession,
       isAuthenticated,
       hasRole,

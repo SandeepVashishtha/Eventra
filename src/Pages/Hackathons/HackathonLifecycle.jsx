@@ -17,6 +17,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import confetti from "canvas-confetti";
+import TeamWorkspace from "../../components/hackathons/TeamWorkspace";
 
 const PHASES = [
   {
@@ -360,6 +361,12 @@ const HackathonLifecycle = () => {
                 </div>
               </div>
 
+              {selectedPhase.id === 3 && (
+                <div className="mt-8">
+                  <TeamWorkspace />
+                </div>
+              )}
+
               {/* RESOURCES & STARTER DOWNLOADS */}
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
                 <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -388,7 +395,7 @@ const HackathonLifecycle = () => {
                         <button
                           type="button"
                           className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-indigo-600 dark:text-indigo-400 shadow-sm"
-                        >
+                         aria-label="button">
                           Fetch File
                         </button>
                       </div>
@@ -430,7 +437,7 @@ const HackathonLifecycle = () => {
                     <button
                       type="submit"
                       className="px-4 py-2 rounded-xl bg-indigo-650 hover:bg-indigo-700 text-sm font-bold text-white shadow-sm transition shrink-0"
-                    >
+                     aria-label="button">
                       Add Task
                     </button>
                   </form>

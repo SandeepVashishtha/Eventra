@@ -159,7 +159,13 @@ export default function TicketScanner() {
   };
 
   const processTicket = (ticketData) => {
-    const savedCheckins = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
+    let savedCheckins = [];
+    try {
+      const parsed = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
+      savedCheckins = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      savedCheckins = [];
+    }
 
     // Check if duplicate check-in
     const isDuplicate = savedCheckins.some(
@@ -188,7 +194,13 @@ export default function TicketScanner() {
   // Log checkin to localStorage
   const logCheckIn = (name, event, status, ticketId = null) => {
     try {
-      const savedCheckins = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
+      let savedCheckins = [];
+      try {
+        const parsed = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
+        savedCheckins = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        savedCheckins = [];
+      }
       const newCheckin = {
         id: `scanned-${Date.now()}`,
         ticketId: ticketId || `unknown-${Date.now()}`,
@@ -381,7 +393,7 @@ export default function TicketScanner() {
                 <button
                   onClick={stopScanner}
                   className="px-5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900 text-xs font-bold text-slate-650 dark:text-slate-400 transition"
-                >
+                 aria-label="button">
                   Pause Scanner
                 </button>
               )}
@@ -450,7 +462,7 @@ export default function TicketScanner() {
               <button
                 type="submit"
                 className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md hover:shadow-lg transition-all rounded-xl mt-2 flex items-center justify-center gap-1.5"
-              >
+               aria-label="button">
                 <Search className="w-3.5 h-3.5" />
                 Find & Verify Check-In
               </button>
@@ -534,7 +546,7 @@ export default function TicketScanner() {
               <button
                 onClick={handleResetScan}
                 className="mt-2 inline-flex items-center gap-1.5 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white rounded-xl shadow-lg hover:shadow-indigo-500/25 transition-all"
-              >
+               aria-label="button">
                 <RefreshCw className="w-3.5 h-3.5" />
                 Scan Next Ticket
               </button>
@@ -557,7 +569,13 @@ export default function TicketScanner() {
           {/* History records stack */}
           <div className="flex-1 overflow-y-auto space-y-3 max-h-[320px] pr-1">
             {(() => {
-              const saved = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
+              let saved = [];
+              try {
+                const parsed = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
+                saved = Array.isArray(parsed) ? parsed : [];
+              } catch {
+                saved = [];
+              }
               if (saved.length === 0) {
                 return (
                   <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 dark:text-slate-500">

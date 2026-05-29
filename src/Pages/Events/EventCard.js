@@ -1,7 +1,7 @@
-import { useEffect, useId, useState, memo } from "react";
+import { memo, useCallback, useEffect, useId, useMemo, useState } from "react";
 import { logger } from "../../utils/logger";
 import { getUserTimezone } from "../../utils/timezoneUtils";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { getSmartDateLabel } from "../../utils/relativeTime";
 import {
@@ -21,6 +21,7 @@ import {
 import { toast } from "react-toastify";
 import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
 import ShareMenu from "../../components/common/ShareMenu";
+import LazyImage from "../../components/common/LazyImage";
 import { generateEventSharingData } from "../../utils/shareUtils";
 import StatusBadge from "../../components/common/StatusBadge";
 import LazyImage from "../../components/common/LazyImage";
@@ -33,11 +34,9 @@ import {
   removeBookmarkedEvent,
   subscribeToBookmarkChanges,
 } from "../../utils/bookmarkUtils";
+import { getBookmarkedEvents } from "../../utils/bookmarkUtils";
 import { checkRegistrationConflict } from "../../utils/conflictDetection";
-const [
-  savedEvents,
-  setSavedEvents,
-] = useState([]);
+// savedEvents state is component-scoped to avoid calling hooks at module level
 const getCapacityStyles = (ratio, isFull) => {
   if (isFull || ratio >= 0.85) {
     return {
@@ -58,6 +57,7 @@ const getCapacityStyles = (ratio, isFull) => {
 };
 
 const EventCard = ({ event }) => {
+  const [savedEvents, setSavedEvents] = useState([]);
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const titleId = useId();
   const { myEvents, isRegistered } = useMyEvents();
@@ -124,7 +124,7 @@ useEffect(() => {
     });
   }, [event.id]);
 
-  const handleBookmarkToggle = (e) => {
+  const handleBookmarkToggle = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -218,56 +218,10 @@ useEffect(() => {
         <button
           type="button"
           onClick={handleCopyLink}
-          className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow cursor-pointer hover:shadow-md border border-gray-200 group/copy relative focus-visible:ring-2 focus-visible:ring-indigo-500"
+          className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500"
           title="Copy Event Link"
           aria-label={`Copy link for ${event.title}`}
         >
-          {savedEvents.length > 0 && (
-  <section className="mb-10">
-
-    <div className="
-      flex
-      items-center
-      justify-between
-      mb-4
-    ">
-      <h2 className="
-        text-2xl
-        font-bold
-        text-slate-900
-        dark:text-white
-      ">
-        Saved Events
-      </h2>
-    </div>
-
-    <div className="
-      flex
-      gap-4
-      overflow-x-auto
-      pb-2
-    ">
-
-      {savedEvents.map(
-        (event) => (
-          <div
-            key={event.id}
-            className="
-              min-w-[280px]
-              flex-shrink-0
-            "
-          >
-            <EventCard
-              event={event}
-            />
-          </div>
-        )
-      )}
-
-    </div>
-
-  </section>
-)}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="14"
@@ -278,7 +232,7 @@ useEffect(() => {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="text-gray-600"
+            className="text-gray-600 dark:text-gray-300"
             aria-hidden="true"
           >
             <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
@@ -293,11 +247,17 @@ useEffect(() => {
           onClick={(e) => e.stopPropagation()}
           title="Add to Google Calendar"
           aria-label={`Add ${event.title} to Google Calendar`}
+<<<<<<< HEAD
           className="group/cal focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-full"
         >
           <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow cursor-pointer hover:shadow-md border border-gray-200">
             <Calendar size={14} className="text-gray-600" aria-hidden="true" />
           </div>
+=======
+          className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500"
+        >
+          <Calendar size={14} className="text-gray-600 dark:text-gray-300" aria-hidden="true" />
+>>>>>>> origin/fix/eslint-config-drift-3568
         </a>
       </div>
 
@@ -343,7 +303,11 @@ useEffect(() => {
       <div className="relative h-40 overflow-hidden">
         <LazyImage
           src={event.image}
+<<<<<<< HEAD
           alt={`${event.title} event thumbnail`}
+=======
+          alt={event.imageAlt || `${event.title} event thumbnail`}
+>>>>>>> origin/fix/eslint-config-drift-3568
           width={800}
           height={160}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -467,3 +431,4 @@ useEffect(() => {
 };
 
 export default memo(EventCard);
+// OPTIMIZATION: Implemented image lazy-loading, decoding='async' and standard aspect-ratio styles to minimize Cumulative Layout Shift (CLS).

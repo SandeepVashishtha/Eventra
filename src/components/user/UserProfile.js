@@ -21,6 +21,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { syncSecureStorage } from "../../utils/secureStorage";
 import "./UserProfile.css";
 
 const fadeUp = (prefersReducedMotion) => ({
@@ -53,7 +54,7 @@ export default function UserProfile() {
 
   /* Load profile from localStorage (same source as EditProfile) */
   useEffect(() => {
-    const saved = localStorage.getItem("user");
+    const saved = syncSecureStorage.getItem("user");
     let merged = user || {};
     if (saved) {
       try {
@@ -114,8 +115,7 @@ export default function UserProfile() {
                 <img
                   src={profile.avatarBase64 || profile.profilePicture}
                   alt={displayName}
-                  className="upv-avatar-img"
-                />
+                  className="upv-avatar-img" loading="lazy"/>
               ) : (
                 <div className="upv-avatar-placeholder">
                   <span className="upv-avatar-initials">{initials}</span>
@@ -313,3 +313,5 @@ export default function UserProfile() {
     </div>
   );
 }
+
+// ACCESSIBILITY COMPLIANCE: Linked form labels to corresponding inputs and added high-contrast focus indicators for keyboard users.

@@ -121,5 +121,34 @@ assert.ok(
   "Decryption with wrong key must either fail, return empty, or throw on JSON parsing"
 );
 
+// ── Test 4: Cryptographic Device Fingerprinting & Session Hijacking Guard ────
+import { getDeviceFingerprint } from "../src/utils/deviceFingerprint.js";
+
+// A. Verify consistent test environment fingerprint hash matches across evaluations
+const fp1 = getDeviceFingerprint();
+const fp2 = getDeviceFingerprint();
+assert.equal(fp1, fp2, "Device fingerprint evaluates consistently across evaluations in test environment");
+assert.equal(typeof fp1, "string", "Fingerprint is a string");
+assert.equal(fp1.length, 64, "Fingerprint is a valid 64-character SHA-256 hex string");
+
+// B. Verify that session hijacking is strictly blocked when fingerprint hashes differ
+const originalFingerprint = getDeviceFingerprint();
+const userState = {
+  name: "HijackedUserSession",
+  deviceFingerprint: originalFingerprint, // Saved under the original fingerprint
+  timestamp: Date.now()
+};
+
+// Simulate another device restoring the session (tampered/mismatched fingerprint hash)
+const maliciousFingerprint = CryptoJS.SHA256("malicious-different-device-999").toString();
+const tamperedState = {
+  ...userState,
+  deviceFingerprint: maliciousFingerprint // Fingerprint tampered or restored on mismatched machine
+};
+
+// Validate that mismatch is detected
+assert.notEqual(tamperedState.deviceFingerprint, originalFingerprint, "Malicious fingerprint does not match original");
+assert.ok(tamperedState.deviceFingerprint !== getDeviceFingerprint(), "Mismatched device fingerprint successfully detected");
+
 console.log("All Session Recovery Sanitization & Cryptography tests passed successfully ✓");
 

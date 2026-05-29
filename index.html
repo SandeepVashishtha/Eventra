@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+
+    <!-- Security: Content-Security-Policy fallback for non-Vercel environments -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; connect-src 'self' ws://localhost:* http://localhost:* http://127.0.0.1:* https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net https://accounts.google.com https://www.googleapis.com https://api.emailjs.com https://api.github.com https://fonts.googleapis.com https://fonts.gstatic.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com https://fonts.googleapis.com; frame-src 'self' https://accounts.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+    />
+
+    <!-- Security: Prevent MIME sniffing -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+
+    <!-- Favicons -->
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="/favicon.ico"
+    />       
+    <link
+      rel="shortcut icon"
+      href="/favicon.ico"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/favicon-32x32.png"
+    />
+
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="/favicon-16x16.png"
+    />
+
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="/apple-touch-icon.png"
+    />
+
+    <link
+      rel="manifest"
+      href="/manifest.json"
+    />
+
+    <!-- Responsive -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+
+    <!-- Theme -->
+    <meta
+      name="theme-color"
+      content="#0f172a"
+    />
+    <meta
+      name="mobile-web-app-capable"
+      content="yes"
+    />
+
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+
+    <meta
+      name="apple-mobile-web-app-title"
+      content="Eventra"
+    />
+    <!-- Primary SEO -->
+    <meta
+      name="description"
+      content="Open-source event management platform for communities, colleges, and organizations worldwide"
+    />
+
+    <!-- Preconnect for faster external resource loading -->
+    <link rel="preconnect" href="https://api.github.com" />
+    <link rel="dns-prefetch" href="https://api.github.com" />
+
+    <link
+      rel="preconnect"
+      href="https://accounts.google.com"
+      crossorigin
+    />
+    <link
+      rel="dns-prefetch"
+      href="https://accounts.google.com"
+    />
+
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+
+    <!-- Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <!-- Prevent Theme Flickering (inlined to avoid Vite module bundling warning) -->
+    <script>
+      (function () {
+        try {
+          var savedTheme = localStorage.getItem("theme");
+          var systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var theme = savedTheme || (systemDark ? "dark" : "light");
+          document.documentElement.classList.add("no-transition");
+          document.documentElement.classList.remove("light", "dark");
+          document.documentElement.classList.add(theme);
+          document.documentElement.style.colorScheme = theme;
+          window.addEventListener("load", function () {
+            document.documentElement.classList.remove("no-transition");
+          });
+        } catch (e) {
+          console.error("Theme initialization failed:", e);
+        }
+      })();
+    </script>
+
+    <!-- Title -->
+    <title>
+      Eventra - Open Source Event Management Platform
+    </title>
+    <meta property="og:title" content="Eventra - Platform for Builders" />
+    <meta property="og:description" content="A premium, modern platform for organizing and attending events, hackathons, and projects." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://eventra.vercel.app/" />
+    <meta property="og:image" content="/Eventra.png" />
+
+    <script
+      src="https://accounts.google.com/gsi/client"
+      async
+      defer
+    ></script>
+
+    <!-- EmailJS -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"
+      async
+    ></script>
+  </head>
+
+  <body class="bg-white text-black dark:bg-gray-900 dark:text-white">
+    <noscript>
+      You need to enable JavaScript to run this app.
+    </noscript>
+
+    <div id="root"></div>
+    <script type="module" src="/src/index.jsx"></script>
+  </body>
+</html>

@@ -16,11 +16,14 @@ build
 
 /.metadata/
 backend/azure-environment-variables.json
+
+
 GITHUB_ISSUE_ASYNC_VALIDATION.md
 PHASE_1_COMPLETION_SUMMARY.md
 PHASE_1_IMPLEMENTATION_GUIDE.md
 PHASE_1_QUICK_REFERENCE.md
 PULL_REQUEST_TEMPLATE_PHASE1.md
+PHASE_2_VALIDATION_UTILITIES.md
 # Dev artifacts & junk files
 *.log
 *.stackdump
