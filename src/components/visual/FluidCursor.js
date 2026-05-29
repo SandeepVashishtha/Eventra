@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useState } from "react";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
 
@@ -1218,7 +1218,7 @@ const FluidCursor = ({ enabled = true }) => {
       }
     };
 
-    const handleTouchEnd = (e) => {
+    const handleTouchEnd = () => {
       let pointer = pointers[0];
       pointer.down = false;
     };

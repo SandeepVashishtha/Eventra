@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Download } from 'lucide-react';
 import EmptyState from '../components/common/EmptyState';

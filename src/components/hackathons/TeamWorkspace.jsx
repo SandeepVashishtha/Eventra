@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Users, CheckCircle2, Pin, MessageSquare, Trash2, Send,
   User, Sparkles, X, RefreshCw, AlertTriangle
@@ -80,7 +80,7 @@ const TeamWorkspace = () => {
         }
       };
 
-      sseSource.onerror = (err) => {
+      sseSource.onerror = () => {
         // SSE error! Initiate immediate polling fallback.
         console.warn(`${logPrefix} Server-Sent Events stream interrupted. Fallback to short-polling activated.`);
         setConnectionStatus("polling_fallback");

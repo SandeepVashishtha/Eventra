@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Share2, Copy, Mail, Check } from 'lucide-react';
 import { FiFacebook, FiLinkedin } from 'react-icons/fi';

@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import ConfirmationModal from "../common/ConfirmationModal";
-import { useNavigate } from "react-router-dom";
 import {
   Plus, Minus, Trash2, Save, RotateCcw,
   Move, Grid, Users, Layout, MapPin, Minimize2,
