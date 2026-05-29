@@ -1,9 +1,10 @@
-import React from "react";
+import React, { lazy } from "react";
 import { Route } from "react-router-dom";
 
 import { lazyWithRetry } from "../../utils/lazyWithRetry";
 import ProtectedRoute from "../auth/ProtectedRoute";
 import { ROLES, PERMISSIONS } from "../../config/roles";
+import NotificationSettings from "../../Pages/NotificationSettings";
 
 const EventCreation = lazy(() => import("../common/EventCreation/EventCreation"));
 const HostHackathon = lazy(() => import("../../Pages/Hackathons/HostHackathon"));

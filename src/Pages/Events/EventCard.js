@@ -20,6 +20,7 @@ import {
 import { toast } from "react-toastify";
 import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
 import ShareMenu from "../../components/common/ShareMenu";
+import LazyImage from "../../components/common/LazyImage";
 import { generateEventSharingData } from "../../utils/shareUtils";
 import StatusBadge from "../../components/common/StatusBadge";
 import { getEventStatus } from "../../utils/eventUtils";

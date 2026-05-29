@@ -3,6 +3,7 @@ import { Route } from "react-router-dom";
 import PageLayout from "../Layout/PageLayout";
 import ProtectedRoute from "../auth/ProtectedRoute";
 import SectionErrorBoundary from "../common/SectionErrorBoundary";
+import HealthCheckPage from "../../Pages/HealthCheckPage";
 
 // ─── Lazy-loaded page components ─────────────────────────────────────────────
 // All components are loaded on-demand to keep the initial bundle small.
