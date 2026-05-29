@@ -1,12 +1,17 @@
 import assert from "node:assert/strict";
 import jwt from "jsonwebtoken";
 import handler from "../api/github-proxy.js";
+import { users } from "../api/auth/signup.js";
 
 // ---------------------------------------------------------------------------
 // Test helpers
 // ---------------------------------------------------------------------------
 
 const DEV_JWT_SECRET = "eventra-local-development-jwt-secret";
+
+// Register default test users in mock store for verifyAuth
+users.set("test@example.com", { id: "user-test-1", email: "test@example.com", isActive: true });
+users.set("ratelimit@example.com", { id: "user-rate-limit-test", email: "ratelimit@example.com", isActive: true });
 
 const makeToken = (payload = {}) =>
   jwt.sign({ id: "user-test-1", email: "test@example.com", ...payload }, DEV_JWT_SECRET, {
