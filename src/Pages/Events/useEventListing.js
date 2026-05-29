@@ -15,7 +15,7 @@ import {
 import {
   getCacheAgeLabel,
   getCachedEvents,
-  saveCachedEventDetail,
+  saveAllCachedEventDetails,
   saveCachedEvents,
 } from "../../utils/offlineEventCache";
 
@@ -62,7 +62,11 @@ const useEventListing = () => {
       setEvents(nextEvents);
       setCacheInfo(null);
       saveCachedEvents(nextEvents);
-      nextEvents.forEach(saveCachedEventDetail);
+      // Batch-write all detail entries in a single read+write cycle.
+      // Replaces nextEvents.forEach(saveCachedEventDetail) which triggered
+      // N independent localStorage read+write pairs — O(n) synchronous
+      // main-thread I/O that blocked the UI for each event in the list.
+      saveAllCachedEventDetails(nextEvents);
     } catch (error) {
       const cached = getCachedEvents();
       if (cached?.events?.length) {
