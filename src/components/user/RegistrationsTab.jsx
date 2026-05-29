@@ -71,7 +71,7 @@ const RegistrationsTab = ({
 
         {filteredData.length > 0 && (
           <button
-            onClick={() = aria-label="button"> downloadBulkICSFile(filteredData, "eventra-schedule")}
+            onClick={() => downloadBulkICSFile(filteredData, "eventra-schedule")}
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -109,7 +109,7 @@ const RegistrationsTab = ({
           {searchTerm && (
             <button
               className="ud-search-clear"
-              onClick={() = aria-label="button"> setSearchTerm("")}
+              onClick={() => setSearchTerm("")}
               aria-label="Clear search"
             >
               <X size={13} />
@@ -243,7 +243,7 @@ const RegistrationsTab = ({
                       {(item.type === "Event" || item.type === "Hackathon") &&
                         item.participationType === "Registered" && (
                           <button
-                            onClick={() = aria-label="button"> setSelectedTicketEvent(item)}
+                            onClick={() => setSelectedTicketEvent(item)}
                             className="ud-btn-ticket"
                           >
                             View Ticket

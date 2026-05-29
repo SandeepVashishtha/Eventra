@@ -196,10 +196,10 @@ border-t border-gray-100 dark:border-slate-800/80"
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
         >
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-black dark:text-white">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
             What's Happening Now
           </h2>
-          <p className="mt-2 sm:mt-3 max-w-xl mx-auto text-sm sm:text-lg text-black dark:text-gray-300">
+          <p className="mt-2 sm:mt-3 max-w-xl mx-auto text-sm sm:text-lg text-gray-600 dark:text-gray-300">
             Stay updated with {upcomingEvents.length} upcoming events, community
             programs, and opportunities to contribute to Eventra
           </p>
@@ -210,8 +210,8 @@ border-t border-gray-100 dark:border-slate-800/80"
           {/* FIX 1: Auto-play button — moved closer to edge on mobile */}
           <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-20">
             <button
-              onClick={() = aria-label="button"> setIsAutoPlaying(!isAutoPlaying)}
-              className="p-2 rounded-full bg-white/20 dark:bg-gray-700/90 shadow-lg hover:bg-white dark:hover:bg-gray-700 transition-colors"
+              onClick={() => setIsAutoPlaying(!isAutoPlaying)}
+              className="p-2 rounded-full bg-white/80 dark:bg-gray-700/80 shadow-lg hover:bg-white dark:hover:bg-gray-700 transition-colors"
               title={isAutoPlaying ? "Pause auto-play" : "Resume auto-play"}
             >
               {isAutoPlaying ? (
@@ -238,7 +238,7 @@ border-t border-gray-100 dark:border-slate-800/80"
           <button
             onClick={prevSlide}
             className="absolute left-0 sm:left-2 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-white dark:bg-gray-700 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 z-10 text-gray-700 dark:text-gray-200 transition-all hover:scale-105"
-           aria-label="button">
+           aria-label="Previous slide">
             <svg
               className="w-4 h-4 sm:w-5 sm:h-5"
               fill="currentColor"
@@ -253,7 +253,7 @@ border-t border-gray-100 dark:border-slate-800/80"
           </button>
 
           <button
-            onClick={() = aria-label="button"> {
+            onClick={() => {
               setDirection(1);
               setCurrent(
                 (prev) => (prev + cardsPerView) % upcomingEvents.length,
@@ -261,6 +261,7 @@ border-t border-gray-100 dark:border-slate-800/80"
               setIsAutoPlaying(false);
             }}
             className="absolute right-0 sm:right-2 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-white dark:bg-gray-700 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 z-10 text-gray-700 dark:text-gray-200 transition-all hover:scale-105"
+            aria-label="Next slide"
           >
             <svg
               className="w-4 h-4 sm:w-5 sm:h-5"
@@ -475,7 +476,7 @@ border-t border-gray-100 dark:border-slate-800/80"
             (_, index) => (
               <button
                 key={index}
-                onClick={() = aria-label="button"> {
+                onClick={() => {
                   setCurrent(index * cardsPerView);
                   setDirection(index * cardsPerView > current ? 1 : -1);
                   setIsAutoPlaying(false);

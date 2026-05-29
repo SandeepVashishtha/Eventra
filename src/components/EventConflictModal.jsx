@@ -241,7 +241,7 @@ const EventConflictModal = ({
                 {suggestedEvents.map((event) => (
                   <button
                     key={event.id}
-                    onClick={() = aria-label="button"> onSelectAlternative?.(event)}
+                    onClick={() => onSelectAlternative?.(event)}
                     aria-label={`Select alternative event: ${event.title}`}
                     className="w-full text-left bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors group"
                   >

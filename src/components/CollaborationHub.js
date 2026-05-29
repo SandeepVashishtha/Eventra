@@ -1,16 +1,26 @@
 import StatusBadge from "./common/StatusBadge";
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { toast } from 'react-toastify';
 import './components.css';
 import CharacterCounter from "../../components/common/CharacterCounter";
 import { sanitizeInputText } from "../utils/inputSanitization";
+import EventMaterials from "./common/EventMaterials";
+import { Plus, Search, Check, X, Briefcase as BriefcaseIcon, DollarSign, Calendar, Users, Send } from 'lucide-react';
+import CollaborativeWhiteboard from './common/CollaborativeWhiteboard';
+
 
 const CollaborationHub = () => {
   const prefersReducedMotion = useReducedMotion();
   const [activeSection, setActiveSection] = useState('opportunities');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const mockMaterials = [
+    { id: 'slides-1', title: 'Tech Summit 2025 Keynote Presentation', type: 'ppt', size: '14.2 MB', url: '#' },
+    { id: 'code-1', title: 'Collaboration Hub Prototype Core Source', type: 'doc', size: '42.5 MB', url: '#' },
+    { id: 'deps-1', title: 'Hackathon Node Modules Pre-packaged Bundle', type: 'pdf', size: '84.1 MB', url: '#' }
+  ];
   const [filterType, setFilterType] = useState('All');
   const [selectedOpportunity, setSelectedOpportunity] = useState(null);
   const [applicationText, setApplicationText] = useState('');
@@ -226,7 +236,10 @@ const CollaborationHub = () => {
           { id: 'opportunities', name: 'Opportunities', icon: '🎯' },
           { id: 'my-collaborations', name: 'My Collaborations', icon: '🤝' },
           { id: 'networking', name: 'Networking', icon: '🌐' },
+          { id: 'materials', name: 'Shared Materials', icon: '📚' },
+          { id: 'whiteboard', name: 'Collaborative Whiteboard', icon: '🎨' },
           { id: 'create-request', name: 'Create Request', icon: '➕' }
+
         ].map((tab) => (
           <button
             key={tab.id}
@@ -235,7 +248,7 @@ const CollaborationHub = () => {
                 ? 'bg-indigo-600 text-white shadow-md' 
                 : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
             }`}
-            onClick={() = aria-label="button"> {
+            onClick={() => {
               setActiveSection(tab.id);
               setSearchQuery('');
             }}
@@ -254,6 +267,19 @@ const CollaborationHub = () => {
         transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
         className="tab-content"
       >
+        {activeSection === 'materials' && (
+          <div className="materials-section max-w-4xl mx-auto px-4" style={{ width: "100%", maxWidth: "56rem", margin: "0 auto", paddingLeft: "1rem", paddingRight: "1rem" }}>
+            <EventMaterials materials={mockMaterials} />
+          </div>
+        )}
+
+        {activeSection === 'whiteboard' && (
+          <div className="whiteboard-section max-w-4xl mx-auto px-4" style={{ width: "100%", maxWidth: "56rem", margin: "0 auto", paddingLeft: "1rem", paddingRight: "1rem" }}>
+            <CollaborativeWhiteboard />
+          </div>
+        )}
+
+
         {activeSection === 'opportunities' && (
           <div className="opportunities-section">
             <div className="section-header flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -269,7 +295,7 @@ const CollaborationHub = () => {
                         ? 'bg-indigo-650 dark:bg-indigo-600 text-white' 
                         : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-350 hover:bg-slate-300'
                     }`}
-                    onClick={() = aria-label="button"> setFilterType(type)}
+                    onClick={() => setFilterType(type)}
                   >
                     {type}
                   </button>
@@ -336,7 +362,7 @@ const CollaborationHub = () => {
                   
                   <div className="opportunity-actions flex gap-2 pt-2">
                     <button 
-                      onClick={() = aria-label="button"> setSelectedOpportunity(opportunity)}
+                      onClick={() => setSelectedOpportunity(opportunity)}
                       className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all text-center"
                     >
                       Apply Now
@@ -358,7 +384,7 @@ const CollaborationHub = () => {
             <div className="section-header flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">My Active Collaborations</h2>
               <button 
-                onClick={() = aria-label="button"> setActiveSection('create-request')}
+                onClick={() => setActiveSection('create-request')}
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
               >
                 <Plus size={14} />
@@ -626,7 +652,7 @@ const CollaborationHub = () => {
               className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-xl w-full p-6 shadow-2xl overflow-y-auto max-h-[90vh] z-10"
             >
               <button 
-                onClick={() = aria-label="button"> setSelectedOpportunity(null)}
+                onClick={() => setSelectedOpportunity(null)}
                 className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-400 hover:text-slate-900 dark:hover:text-white"
               >
                 <X size={16} />
@@ -720,7 +746,7 @@ const CollaborationHub = () => {
                 <div className="flex gap-3 pt-2">
                   <button 
                     type="button"
-                    onClick={() = aria-label="button"> setSelectedOpportunity(null)}
+                    onClick={() => setSelectedOpportunity(null)}
                     className="flex-1 py-2.5 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-350 rounded-xl text-xs font-bold"
                   >
                     Cancel

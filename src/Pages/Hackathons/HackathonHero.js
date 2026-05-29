@@ -3,9 +3,11 @@ import { Award, Calendar, Code2, Sparkles, Users, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import { useAuth } from "../../context/AuthContext";
-import CountUp from "react-countup";
+import CountUpLib from "react-countup";
 import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
+
+const CountUp = CountUpLib.default;
 // Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
   <motion.div
@@ -16,7 +18,7 @@ const Tag = ({ tag, onRemove }) => (
   >
     <span>{tag}</span>
     <button
-      onClick={() = aria-label="button"> onRemove(tag)}
+      onClick={() => onRemove(tag)}
       className="rounded-full p-0.5 transition-colors hover:bg-indigo-200 dark:hover:bg-indigo-500/30"
     >
       <X className="w-3 h-3" />

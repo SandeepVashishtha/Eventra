@@ -178,21 +178,21 @@ export default function CollaborationNetworkMap() {
             <div className="cnm-controls">
               <button 
                 className="cnm-control-btn"
-                onClick={() = aria-label="button"> setDarkMode(!darkMode)}
+                onClick={() => setDarkMode(!darkMode)}
                 aria-label="Toggle theme"
               >
                 {darkMode ? <Sun size={16} /> : <Moon size={16} />}
               </button>
               <button 
                 className="cnm-control-btn"
-                onClick={() = aria-label="button"> setZoom(z => Math.min(z + 0.2, 2))}
+                onClick={() => setZoom(z => Math.min(z + 0.2, 2))}
                 aria-label="Zoom in"
               >
                 <ZoomIn size={16} />
               </button>
               <button 
                 className="cnm-control-btn"
-                onClick={() = aria-label="button"> setZoom(z => Math.max(z - 0.2, 0.5))}
+                onClick={() => setZoom(z => Math.max(z - 0.2, 0.5))}
                 aria-label="Zoom out"
               >
                 <ZoomOut size={16} />
@@ -469,7 +469,7 @@ export default function CollaborationNetworkMap() {
                 {pinnedHub && (
                   <button 
                     className="popup-close"
-                    onClick={(e) = aria-label="button"> { e.stopPropagation(); setPinnedHub(null); setActiveHub(null); }}
+                    onClick={(e) => { e.stopPropagation(); setPinnedHub(null); setActiveHub(null); }}
                     aria-label="Close popup"
                   >
                     <X size={14} />
