@@ -1,91 +1,151 @@
-import { useRef, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useLocation, useSearchParams } from "react-router-dom";
 import EventHero from "./EventHero";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
 import EventCardSection from "./EventCardSection";
 import EventFiltersToolbar from "./EventFiltersToolbar";
+import ActiveFilters from "./ActiveFilters";
 import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
-import { darkTheme } from "../../components/styles/theme";
-import BackToTopButton from "../../components/common/BackToTopButton";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
+import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
+
+const getRouteSearchQuery = (location) => {
+  const rawSearchParam = new URLSearchParams(location.search).get("search") || "";
+
+  try {
+    return prepareSafeSearchQuery(decodeURIComponent(rawSearchParam));
+  } catch {
+    return "";
+  }
+};
 
 const EventsPage = () => {
-  const cardSectionRef = useRef();
-  const listing = useEventListing();
+  useDocumentTitle("Eventra | Events");
+
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const cardSectionRef = useRef(null);
+  const listing = useEventListing();
+  const routeSearchQuery = getRouteSearchQuery(location);
+  const [localSearchInput, setLocalSearchInput] = useState(routeSearchQuery);
+  const debouncedSearchQuery = useDebouncedValue(localSearchInput, 300);
 
   useEffect(() => {
-    const page = parseInt(searchParams.get("page")) || 1;
-    const perPage = parseInt(searchParams.get("perPage")) || 6;
-    const search = searchParams.get("search") || "";
+    const page = Number(searchParams.get("page")) || 1;
+    const perPage = Number(searchParams.get("perPage")) || listing.eventsPerPage;
     const filter = searchParams.get("filter") || "all";
-    listing.setSafePage(page);
-    listing.setEventsPerPage(perPage);
-    listing.setSearchQuery(search);
+    const sort = searchParams.get("sort") || "Newest";
+    const view = searchParams.get("view") || "grid";
+
+    setLocalSearchInput(routeSearchQuery);
+    listing.setSearchQuery(routeSearchQuery);
     listing.setFilterType(filter);
-  }, []);
+    listing.setSortType(sort);
+    listing.setViewMode(view);
+    listing.setEventsPerPage(perPage);
+    listing.setSafePage(page);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
+
+  useEffect(() => {
+    listing.setSearchQuery(prepareSafeSearchQuery(debouncedSearchQuery));
+  }, [debouncedSearchQuery, listing]);
 
   useEffect(() => {
     const params = {};
-    if (listing.currentPage > 1) params.page = listing.currentPage;
-    if (listing.eventsPerPage !== 6) params.perPage = listing.eventsPerPage;
+
+    if (listing.currentPage > 1) params.page = String(listing.currentPage);
+    if (listing.eventsPerPage !== 6) params.perPage = String(listing.eventsPerPage);
     if (listing.searchQuery) params.search = listing.searchQuery;
     if (listing.filterType !== "all") params.filter = listing.filterType;
+    if (listing.sortType !== "Newest") params.sort = listing.sortType;
+    if (listing.viewMode !== "grid") params.view = listing.viewMode;
+
     setSearchParams(params, { replace: true });
-  }, [listing.currentPage, listing.eventsPerPage, listing.searchQuery, listing.filterType]);
+  }, [
+    listing.currentPage,
+    listing.eventsPerPage,
+    listing.filterType,
+    listing.searchQuery,
+    listing.sortType,
+    listing.viewMode,
+    setSearchParams,
+  ]);
 
-  const handleSearch = (query = "") => {
-    listing.setSearchQuery(query);
-  };
+  useEffect(() => {
+    if (!listing.isLoading && routeSearchQuery) {
+      window.setTimeout(() => {
+        cardSectionRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 100);
+    }
+  }, [listing.isLoading, routeSearchQuery]);
 
-  const handlePageChange = (page) => {
-    listing.setSafePage(page);
-    cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const handleSearch = useCallback(
+    (query = "") => {
+      const safeQuery = prepareSafeSearchQuery(query);
+      setLocalSearchInput(safeQuery);
+      listing.setSearchQuery(safeQuery);
+      return listing.filteredEvents;
+    },
+    [listing],
+  );
 
-  const scrollToCard = () => {
-    cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const scrollToCard = useCallback(() => {
+    cardSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  const handlePageChange = useCallback(
+    (page) => {
+      listing.setSafePage(page);
+      cardSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    },
+    [listing],
+  );
+
+  const handleClearFilters = useCallback(() => {
+    setLocalSearchInput("");
+    listing.setSearchQuery("");
+    listing.setFilterType("all");
+    listing.setSortType("Newest");
+    listing.setViewMode("grid");
+    listing.setAdvancedFilters({});
+  }, [listing]);
+
+  const hasActiveFilters =
+    listing.filterType !== "all" ||
+    listing.sortType !== "Newest" ||
+    listing.searchQuery !== "" ||
+    Object.keys(listing.advancedFilters || {}).length > 0;
 
   return (
-    <div
-      className={`
-        ${darkTheme.section}
-        flex flex-col
-        min-h-screen
-        overflow-x-hidden
-      `}
-    >
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white text-slate-900 dark:bg-slate-950 dark:text-gray-100">
       <EventHero
-        searchQuery={listing.searchQuery}
-        setSearchQuery={listing.setSearchQuery}
+        searchQuery={localSearchInput}
         filteredEvents={listing.filteredEvents}
         handleSearch={handleSearch}
         scrollToCard={scrollToCard}
       />
 
-      <div
+      <main
         ref={cardSectionRef}
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 w-full"
+        className="safe-area-x mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8"
       >
-        {listing.loadError && !listing.isLoading ? (
-          <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-red-100 dark:border-red-900/40 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-              Failed to load events
-            </h3>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              {listing.loadError}
-            </p>
-            <button
-              type="button"
-              onClick={listing.fetchEvents}
-              className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-            >
-              Try Again
-            </button>
+        {listing.loadError && (
+          <div
+            className="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200"
+            role="status"
+          >
+            {listing.loadError}
           </div>
-        ) : null}
+        )}
+
         <EventFiltersToolbar
           filterType={listing.filterType}
           onFilterChange={listing.setFilterType}
@@ -93,23 +153,52 @@ const EventsPage = () => {
           onSortChange={listing.setSortType}
           viewMode={listing.viewMode}
           onViewModeChange={listing.setViewMode}
-          searchQuery={listing.searchQuery}
-          onSearchChange={listing.setSearchQuery}
+          advancedFilters={listing.advancedFilters}
+          onAdvancedFiltersChange={listing.setAdvancedFilters}
+          isAdvancedFiltersOpen={listing.isAdvancedFiltersOpen}
+          onToggleAdvancedFilters={listing.setIsAdvancedFiltersOpen}
+          priceStats={listing.priceStats}
+          dateRangeStats={listing.dateRangeStats}
+          searchQuery={localSearchInput}
+          onSearchChange={setLocalSearchInput}
         />
 
-        {!listing.loadError && (
+        <ActiveFilters
+          searchQuery={localSearchInput}
+          setSearchQuery={(value) => {
+            setLocalSearchInput(value);
+            listing.setSearchQuery(value);
+          }}
+          filterType={listing.filterType}
+          setFilterType={listing.setFilterType}
+          sortType={listing.sortType}
+          setSortType={listing.setSortType}
+          viewMode={listing.viewMode}
+          setViewMode={listing.setViewMode}
+          advancedFilters={listing.advancedFilters}
+          onAdvancedFiltersChange={listing.setAdvancedFilters}
+        />
+
+        {hasActiveFilters && (
+          <button
+            type="button"
+            onClick={handleClearFilters}
+            className="mb-5 inline-flex min-h-[40px] items-center rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+          >
+            Clear Filters
+          </button>
+        )}
+
+        <SectionErrorBoundary label="Events">
           <EventCardSection
             isLoading={listing.isLoading}
             events={listing.paginatedEvents}
             viewMode={listing.viewMode}
             filterType={listing.filterType}
-            onClearFilters={() => {
-              listing.setSearchQuery("");
-              listing.setFilterType("all");
-            }}
+            onClearFilters={handleClearFilters}
+            cacheInfo={listing.cacheInfo}
           />
-        )}
-        {!listing.isLoading && !listing.loadError && (
+
           <PaginationControls
             currentPage={listing.currentPage}
             eventsPerPage={listing.eventsPerPage}
@@ -118,12 +207,11 @@ const EventsPage = () => {
             onPageChange={handlePageChange}
             onPageSizeChange={listing.setEventsPerPage}
           />
-        )}
-      </div>
+        </SectionErrorBoundary>
+      </main>
 
       <EventCTA />
       <FeedbackButton />
-      <BackToTopButton />
     </div>
   );
 };

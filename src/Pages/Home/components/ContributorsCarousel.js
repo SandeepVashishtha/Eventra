@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import useReducedMotion from "../../../hooks/useReducedMotion.js";
 import {
   FaGithub,
   FaExternalLinkAlt,
@@ -12,13 +13,50 @@ import {
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import {
+  fetchProfileWithCache,
+} from "../../../utils/githubProfileCache";
+import { fetchWithTimeout } from "../../../utils/fetchWithTimeout";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
-const TOKEN = process.env.REACT_APP_GITHUB_TOKEN || "";
 
 const STORAGE_KEY = "github_contributors";
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
+const REQUEST_TIMEOUT = 10000;
+const MAX_CONTRIBUTOR_PAGES = 2; // Limit carousel to top contributors
+// Delay inserted between batches (not between individual requests) to avoid
+// triggering GitHub's unauthenticated rate limit of 60 req/hr.
+const BATCH_DELAY_MS = 200;
+// Number of profile requests fired in parallel within each batch.
+// Increasing from 5 → 10 halves the number of serial batch rounds while still
+// keeping per-batch concurrency well within rate-limit budgets.
+const PROFILE_BATCH_SIZE = 10;
+
+/**
+ * Fetches items in parallel batches, inserting a short delay between batches
+ * to stay within GitHub's unauthenticated rate limit.
+ *
+ * @param {Array}    items      - Array of items to process
+ * @param {Function} asyncFn   - Async function to call for each item
+ * @param {number}   batchSize - Number of items per parallel batch
+ * @returns {Promise<PromiseSettledResult[]>}
+ */
+const fetchInBatches = async (items, asyncFn, batchSize = PROFILE_BATCH_SIZE) => {
+  const results = [];
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    // eslint-disable-next-line no-await-in-loop
+    const batchResults = await Promise.allSettled(batch.map(asyncFn));
+    results.push(...batchResults);
+    // Insert a delay between batches (but not after the last one)
+    if (i + batchSize < items.length) {
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
+    }
+  }
+  return results;
+};
 
 // Role assignment
 const getRoleByGitHubActivity = (contributor) => {
@@ -52,6 +90,7 @@ const cacheContributors = (data) => {
 };
 
 const Contributors = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -95,22 +134,32 @@ const Contributors = () => {
     return () => window.removeEventListener("resize", updateItemsPerView);
   }, []);
 
-  // Fetch GitHub profile details
+  // Fetches a single GitHub user profile via the backend proxy.
+  // Wrapped by fetchProfileWithCache so repeated calls for the same username
+  // within the session return the cached value without a network round-trip.
   const fetchGitHubProfile = useCallback(async (username) => {
+    await throttleProfileFetch();
     try {
-      const res = await fetch(`https://api.github.com/users/${username}`, {
-        headers: TOKEN ? { Authorization: `token ${TOKEN}` } : undefined,
+      return await fetchProfileWithCache(username, async () => {
+        const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(
+          `/users/${username}`
+        )}`;
+
+        const { data: profile } = await fetchWithTimeout(
+          proxyUrl,
+          {},
+          REQUEST_TIMEOUT
+        );
+
+        return {
+          followers: profile.followers || 0,
+          public_repos: profile.public_repos || 0,
+          name: profile.name || username,
+          bio: profile.bio || "Open source contributor",
+          company: profile.company,
+          location: profile.location,
+        };
       });
-      if (!res.ok) throw new Error("Profile fetch failed");
-      const profile = await res.json();
-      return {
-        followers: profile.followers || 0,
-        public_repos: profile.public_repos || 0,
-        name: profile.name || username,
-        bio: profile.bio || "Open source contributor",
-        company: profile.company,
-        location: profile.location,
-      };
     } catch {
       return {
         followers: 0,
@@ -137,14 +186,16 @@ const Contributors = () => {
       let allContributors = [];
       let page = 1;
       let hasMore = true;
-      while (hasMore) {
-        const res = await fetch(
-          `https://api.github.com/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`,
-          {
-            headers: TOKEN ? { Authorization: `token ${TOKEN}` } : undefined,
-          }
+      while (hasMore && page <= MAX_CONTRIBUTOR_PAGES) {
+        const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(
+          `/repos/${GITHUB_REPO}/contributors?per_page=100&page=${page}&anon=true`
+        )}`;
+
+        const { data } = await fetchWithTimeout(
+          proxyUrl,
+          {},
+          REQUEST_TIMEOUT
         );
-        const data = await res.json();
         if (!Array.isArray(data) || data.length === 0) hasMore = false;
         else {
           allContributors = [...allContributors, ...data];
@@ -152,22 +203,40 @@ const Contributors = () => {
         }
       }
 
-      const enhanced = await Promise.all(
-        allContributors.map(async (c) => {
+      // Enrich each contributor with profile data fetched in parallel batches
+      // of PROFILE_BATCH_SIZE (10) to balance throughput against GitHub's
+      // unauthenticated rate limit. A short BATCH_DELAY_MS pause is inserted
+      // between batches. Promise.allSettled ensures a single failed profile
+      // fetch does not abort the rest — contributors whose profiles fail to
+      // load fall back to the default values from fetchGitHubProfile's catch.
+      const settledProfiles = await fetchInBatches(
+        allContributors,
+        async (c) => {
           const profile = await fetchGitHubProfile(c.login);
           return {
             ...c,
             ...profile,
             role: getRoleByGitHubActivity({ ...c, ...profile }),
           };
-        })
+        },
+        PROFILE_BATCH_SIZE
       );
+
+      const enhanced = settledProfiles
+        .filter((r) => r.status === "fulfilled")
+        .map((r) => r.value);
 
       enhanced.sort((a, b) => b.contributions - a.contributions);
       setContributors(enhanced);
       cacheContributors(enhanced);
-    } catch {
+    } catch (error) {
+      console.error("Failed to fetch contributors:", error);
+
       setContributors([]);
+
+      if (error.name === "AbortError") {
+        console.error("Contributor request timed out");
+      }
     } finally {
       setLoading(false);
     }
@@ -232,7 +301,7 @@ const Contributors = () => {
           className="text-5xl font-extrabold text-center mb-16 text-gray-800 dark:text-gray-100 tracking-tight"
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" }}
           // AOS Implementation (Title)
           data-aos="fade-zoom-in"
           data-aos-once="true"
@@ -250,7 +319,7 @@ const Contributors = () => {
             // UPDATED: Arrow button styles
             className="absolute left-0 top-[35%] -translate-y-1/2 -translate-x-4 z-10 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 hover:scale-110 transition-all duration-300 border border-gray-200"
             disabled={currentIndex === 0}
-          >
+           aria-label="button">
             {/* UPDATED: Arrow icon color */}
             <FaChevronLeft className="text-black text-xl" />
           </button>
@@ -260,6 +329,7 @@ const Contributors = () => {
             // UPDATED: Arrow button styles
             className="absolute right-0 top-[35%] -translate-y-1/2 translate-x-4 z-10 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 hover:scale-110 transition-all duration-300 border border-gray-200"
             disabled={currentIndex + itemsPerView >= contributors.length}
+            aria-label="Next slide"
           >
             {/* UPDATED: Arrow icon color */}
             <FaChevronRight className="text-black text-xl" />
@@ -270,7 +340,7 @@ const Contributors = () => {
             <motion.div
               className="flex gap-6 items-stretch"
               animate={{ x: 0 }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.5, ease: "easeInOut" }}
             >
               {visibleContributors.map((c, i) => (
                 <motion.div
@@ -296,8 +366,8 @@ const Contributors = () => {
                   <div className="absolute top-3 mt-3 left-1/2 -translate-x-1/2">
                     <div className="relative">
                       <img loading="lazy" decoding="async" width="65" height="65"
-  src={c.avatar_url}
-  alt={c.login}
+  src={c.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name || c.login || "Anon")}&background=random`}
+  alt={`${c.name || c.login || "Contributor"}'s GitHub profile picture`}
   className="w-[65px] h-[65px] rounded-full border-4 border-black shadow-md relative z-10"
 />
                       <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 blur-sm -z-10"></div>

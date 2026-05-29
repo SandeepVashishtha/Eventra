@@ -612,6 +612,102 @@
   color: #64748b;
 }
 
+/* Layout Portability & Export Panel styling */
+.fp-portability-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.fp-portability-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.fp-portability-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.06);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:global(.light) .fp-portability-btn,
+.light-theme .fp-portability-btn {
+  background: rgba(99, 102, 241, 0.05);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  color: #4f46e5;
+}
+
+.fp-portability-btn:hover {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.45);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+:global(.light) .fp-portability-btn:hover,
+.light-theme .fp-portability-btn:hover {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.5);
+  color: #3730a3;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+}
+
+.fp-portability-icon {
+  color: #818cf8;
+  transition: transform 0.2s ease;
+}
+
+.fp-portability-btn:hover .fp-portability-icon {
+  transform: scale(1.1);
+}
+
+/* Portability Import Zone */
+.fp-import-zone {
+  position: relative;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1.5px dashed rgba(99, 102, 241, 0.2);
+  border-radius: 10px;
+  transition: all 0.25s ease;
+  overflow: hidden;
+}
+
+:global(.light) .fp-import-zone,
+.light-theme .fp-import-zone {
+  background: rgba(0, 0, 0, 0.005);
+  border: 1.5px dashed rgba(99, 102, 241, 0.3);
+}
+
+.fp-import-zone:hover {
+  background: rgba(99, 102, 241, 0.04);
+  border-color: rgba(99, 102, 241, 0.55);
+}
+
+:global(.light) .fp-import-zone:hover,
+.light-theme .fp-import-zone:hover {
+  background: rgba(99, 102, 241, 0.03);
+  border-color: rgba(99, 102, 241, 0.6);
+}
+
+.fp-import-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 10px;
+  width: 100%;
+  height: 100%;
+}
+
 /* Responsive configurations for mobile and tablet viewports */
 @media (max-width: 768px) {
   .fp-container {
@@ -704,3 +800,147 @@
   }
 }
 
+/* ── Collision Detection & Warning Visuals ── */
+.fp-collision-warning-badge {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(239, 68, 68, 0.16);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  color: #fca5a5;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.3);
+  z-index: 100;
+  pointer-events: none;
+  animation: fpBadgeBounce 1s infinite alternate ease-in-out;
+}
+
+@keyframes fpBadgeBounce {
+  from {
+    transform: translate(-50%, 0);
+  }
+  to {
+    transform: translate(-50%, -4px);
+  }
+}
+
+.fp-svg-element-colliding {
+  stroke: #ef4444 !important;
+  stroke-width: 2.5px !important;
+  filter: drop-shadow(0 0 14px rgba(239, 68, 68, 0.95)) !important;
+  animation: fpPulseRed 1.5s infinite alternate ease-in-out;
+}
+
+@keyframes fpPulseRed {
+  0% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 18px rgba(239, 68, 68, 1)) !important;
+  }
+}
+
+/* 2.5D element transition hooks */
+.fp-element-group {
+  transition: transform 0.1s ease-out;
+}
+
+.fp-seat-25d {
+  transition: transform 0.2s ease;
+}
+
+/* Mobile Touch Feedback Improvements */
+
+.fp-btn,
+.fp-tool-item,
+.fp-control-btn,
+.fp-portability-btn,
+.fp-attendee-select,
+.confirmation-modal-btn {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease,
+    background-color 0.2s ease;
+}
+
+/* Active press feedback */
+.fp-btn:active,
+.fp-tool-item:active,
+.fp-control-btn:active,
+.fp-portability-btn:active,
+.confirmation-modal-btn:active {
+  transform: scale(0.96);
+  opacity: 0.85;
+}
+
+/* Better touch target sizing */
+.fp-control-btn,
+.fp-tool-item,
+.fp-btn,
+.fp-portability-btn {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Improved mobile responsiveness */
+@media (max-width: 768px) {
+
+  .fp-topbar {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .fp-topbar-actions {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .fp-workspace {
+    flex-direction: column;
+  }
+
+  .fp-sidebar {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0;
+  }
+
+  .fp-controls-floating {
+    bottom: 12px;
+    right: 12px;
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .fp-control-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .fp-tool-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .fp-portability-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fp-canvas-wrapper {
+    overflow: auto;
+    touch-action: pan-x pan-y;
+  }
+}

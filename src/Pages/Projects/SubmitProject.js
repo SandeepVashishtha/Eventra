@@ -1,6 +1,10 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { sanitizeInputText } from "../../utils/inputSanitization";
 import {
   ArrowRightIcon,
   LightBulbIcon,
@@ -23,9 +27,21 @@ import {
   ArchiveBoxIcon,
   DocumentTextIcon,
   PencilSquareIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/solid";
 
 const SubmitProject = () => {
+  const navigate = useNavigate();
+  const { user, token, isAuthenticated } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      toast.error("You must be logged in to submit a project.");
+      navigate("/login", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
   const [formData, setFormData] = useState({
     projectName: "",
     teamName: "",
@@ -35,6 +51,7 @@ const SubmitProject = () => {
     description: "",
     projectType: "",
     techStack: "",
+    projectCategory: "",
     additionalNotes: "",
     projectImage: "",
     submissionCategory: "",
@@ -43,6 +60,49 @@ const SubmitProject = () => {
     targetAudience: "", // Added to state
   });
   const [errors, setErrors] = useState({});
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    processFile(file);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    processFile(file);
+  };
+
+  const processFile = (file) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file!");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setFormData((prev) => ({ ...prev, projectImage: event.target.result }));
+      setErrors((prev) => ({ ...prev, projectImage: "" }));
+      toast.success("Image uploaded successfully!");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = (e) => {
+    e.stopPropagation();
+    setFormData((prev) => ({ ...prev, projectImage: "" }));
+  };
 
   const inputRefs = {
     projectName: useRef(null),
@@ -78,55 +138,66 @@ const SubmitProject = () => {
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  const validateForm = (data) => {
-    const newErrors = {};
+const validateForm = (data) => {
+  const newErrors = {};
 
-    const formatFieldName = (fieldName) => {
-      const result = fieldName.replace(/([A-Z])/g, " $1");
-      return result.charAt(0).toUpperCase() + result.slice(1);
-    };
-
-    for (const field of requiredFields) {
-      if (!data[field]?.trim()) {
-        const formattedName = formatFieldName(field);
-        newErrors[field] = `${formattedName} is required.`;
-      }
-    }
-
-    if (data.projectName && data.projectName.trim().length < 3) {
-      newErrors.projectName =
-        "Project Name must be at least 3 characters long.";
-    }
-    if (data.teamName && data.teamName.trim().length < 3) {
-      newErrors.teamName = "Team Name must be at least 3 characters long.";
-    }
-    if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
-      newErrors.email = "Please enter a valid email address.";
-    }
-    if (
-      data.githubLink &&
-      !/^(https?:\/\/)?(www\.)?github\.com\/[\w-]+\/[\w-]+(\/)?$/i.test(
-        data.githubLink.trim()
-      )
-    ) {
-      newErrors.githubLink = "Please enter a valid GitHub repository URL.";
-    }
-    const urlRegex = /^(https?:\/\/)?([\w-]+(\.[\w-]+)+)(\/[\w-./?%&=]*)?$/i;
-    if (data.liveDemoLink?.trim() && !urlRegex.test(data.liveDemoLink)) {
-      newErrors.liveDemoLink = "Please enter a valid URL.";
-    }
-    if (data.projectImage?.trim() && !urlRegex.test(data.projectImage)) {
-      newErrors.projectImage = "Please enter a valid image URL.";
-    }
-    if (data.description && data.description.trim().length < 10) {
-      newErrors.description =
-        "Description must be at least 10 characters long.";
-    }
-    return newErrors;
+  const formatFieldName = (fieldName) => {
+    const result = fieldName.replace(/([A-Z])/g, " $1");
+    return result.charAt(0).toUpperCase() + result.slice(1);
   };
 
-  const handleSubmit = (e) => {
+  // Required fields
+  for (const field of requiredFields) {
+    if (!data[field]?.trim()) {
+      const formattedName = formatFieldName(field);
+      newErrors[field] = `${formattedName} is required.`;
+    }
+  }
+
+  // Length validations
+  if (data.projectName && (data.projectName.trim().length < 3 || data.projectName.trim().length > 100)) {
+    newErrors.projectName = "Project Name must be between 3 and 100 characters.";
+  }
+  if (data.teamName && (data.teamName.trim().length < 3 || data.teamName.trim().length > 100)) {
+    newErrors.teamName = "Team Name must be between 3 and 100 characters.";
+  }
+  if (data.description && (data.description.trim().length < 20 || data.description.trim().length > 2000)) {
+    newErrors.description = "Description must be between 20 and 2000 characters.";
+  }
+
+  // Existing validation logic
+  if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
+    newErrors.email = "Please enter a valid email address.";
+  }
+  if (
+    data.githubLink &&
+    !/^(https?:\/\/)?(www\.)?github\.com\/[\w-]+\/[\w-]+(\/)?$/i.test(data.githubLink.trim())
+  ) {
+    newErrors.githubLink = "Please enter a valid GitHub repository URL.";
+  }
+  const urlRegex = /^(https?:\/\/)?([\w-]+(\.[\w-]+)+)(\/[\w-./?%&=]*)?$/i;
+  if (data.liveDemoLink?.trim() && !urlRegex.test(data.liveDemoLink)) {
+    newErrors.liveDemoLink = "Please enter a valid URL.";
+  }
+  if (data.projectImage?.trim()) {
+    const isBase64 = data.projectImage.startsWith("data:image/");
+    if (!isBase64 && !urlRegex.test(data.projectImage)) {
+      newErrors.projectImage = "Please enter a valid image URL.";
+    }
+  }
+
+  return newErrors;
+};
+
+const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!isAuthenticated()) {
+      toast.error("You must be logged in to submit a project.");
+      navigate("/login");
+      return;
+    }
+
     const validationErrors = validateForm(formData);
 
     if (Object.keys(validationErrors).length > 0) {
@@ -134,8 +205,8 @@ const SubmitProject = () => {
       toast.error("Please fix the errors before submitting!");
 
       const fieldsInOrder = [
-        ...formFields.map(field => field.name), 
-        "description", 
+        ...formFields.map(field => field.name),
+        "description",
         "additionalNotes"
       ];
 
@@ -153,24 +224,59 @@ const SubmitProject = () => {
       return;
     }
 
-    toast.success("Project submitted successfully!");
-    setFormData({
-      projectName: "",
-      teamName: "",
-      email: "",
-      githubLink: "",
-      liveDemoLink: "",
-      description: "",
-      projectType: "",
-      techStack: "",
-      additionalNotes: "",
-      projectImage: "",
-      submissionCategory: "",
-      teamMembersCount: "",
-      projectDuration: "",
-      targetAudience: "",
-    });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setIsSubmitting(true);
+    try {
+      // Sanitize text fields before sending
+      const sanitizedData = {
+        ...formData,
+        projectName: sanitizeInputText(formData.projectName),
+        teamName: sanitizeInputText(formData.teamName),
+        description: sanitizeInputText(formData.description),
+        additionalNotes: sanitizeInputText(formData.additionalNotes),
+        submittedBy: user?.id,
+      };
+      await apiUtils.post(
+        API_ENDPOINTS.PROJECTS.SUBMIT,
+        sanitizedData,
+        {
+          headers: {
+            Authorization: token
+          }
+        }
+      );
+
+      toast.success("Project submitted successfully!");
+      setFormData({
+        projectName: "",
+        teamName: "",
+        email: "",
+        githubLink: "",
+        liveDemoLink: "",
+        description: "",
+        projectType: "",
+        techStack: "",
+        projectCategory: "",
+        additionalNotes: "",
+        projectImage: "",
+        submissionCategory: "",
+        teamMembersCount: "",
+        projectDuration: "",
+        targetAudience: "",
+      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      const message = err?.data?.message || err?.message || "Submission failed. Please try again.";
+      toast.error(message, {
+        // Provide a retry button in the toast
+        action: {
+          label: "Retry",
+          onClick: () => handleSubmit(new Event('submit')),
+        },
+        duration: 8000,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   // Define form fields with icons
@@ -373,15 +479,64 @@ const SubmitProject = () => {
                   <span className="text-red-500 ml-1">*</span>
                 )}
               </label>
-              <input
-                type={field.type}
-                name={field.name}
-                value={formData[field.name]}
-                onChange={handleChange}
-                placeholder={field.placeholder}
-                ref={inputRefs[field.name]}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
-              />
+              {field.name === "projectImage" ? (
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`w-full border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${
+                    isDragging
+                      ? "border-indigo-500 bg-indigo-50/30 dark:bg-indigo-950/20"
+                      : "border-gray-300 hover:border-indigo-500 hover:bg-slate-50/50 dark:border-gray-650 dark:hover:border-indigo-400 dark:hover:bg-slate-800/10"
+                  }`}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                  {formData.projectImage ? (
+                    <div className="relative w-full max-w-[200px] aspect-square flex items-center justify-center rounded-lg border border-gray-250 dark:border-gray-700 overflow-hidden bg-gray-50/50 dark:bg-gray-900 group">
+                      <img
+                        src={formData.projectImage}
+                        alt="Project Preview"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="absolute top-2 right-2 p-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-full shadow-md transition-all duration-200 cursor-pointer"
+                        title="Remove image"
+                       aria-label="button">
+                        <XMarkIcon className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-center space-y-2 pointer-events-none">
+                      <ArrowUpTrayIcon className={`w-8 h-8 mx-auto text-indigo-500 transition-transform duration-300 ${isDragging ? "animate-bounce" : ""}`} />
+                      <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                        Drag and drop your project logo here, or <span className="text-indigo-650 dark:text-indigo-400 underline decoration-wavy">browse</span>
+                      </div>
+                      <div className="text-xs text-slate-400 dark:text-slate-500">
+                        Supports PNG, JPG, JPEG, SVG up to 5MB
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <input
+                  type={field.type}
+                  name={field.name}
+                  value={formData[field.name]}
+                  onChange={handleChange}
+                  placeholder={field.placeholder}
+                  ref={inputRefs[field.name]}
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300"
+                />
+              )}
               {errors[field.name] && (
                 <p className="text-red-500 text-xs mt-1">
                   {errors[field.name]}
@@ -433,11 +588,13 @@ const SubmitProject = () => {
           </motion.div>
           <motion.button
             type="submit"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="w-full flex items-center justify-center gap-2 text-white font-semibold p-3 rounded-xl shadow-lg transition-all duration-300 bg-black hover:bg-zinc-800"
+            disabled={isSubmitting}
+            whileHover={{ scale: isSubmitting ? 1 : 1.05 }}
+            whileTap={{ scale: isSubmitting ? 1 : 0.95 }}
+            className="w-full flex items-center justify-center gap-2 text-white font-semibold p-3 rounded-xl shadow-lg transition-all duration-300 bg-black hover:bg-zinc-800 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Submit Project <ArrowRightIcon className="w-5 h-5" />
+            {isSubmitting ? "Submitting..." : "Submit Project"}
+            {!isSubmitting && <ArrowRightIcon className="w-5 h-5" />}
           </motion.button>
         </form>
       </motion.div>

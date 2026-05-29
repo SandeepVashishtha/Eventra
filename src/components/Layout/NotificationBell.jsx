@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNotification } from '../../context/NotificationContext';
-
+import { getRelativeTime } from '../../utils/relativeTime';
 export default function NotificationBell() {
   const { notifications, unreadCount, markAsRead } = useNotification();
   const [isOpen, setIsOpen] = useState(false);
@@ -24,8 +24,29 @@ export default function NotificationBell() {
       </button>
 
       {/* Dropdown Menu */}
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden">
+
+      <div
+  className={`
+    absolute
+    right-0
+    mt-2
+    w-80
+    bg-white
+    rounded-lg
+    shadow-xl
+    border
+    border-gray-100
+    overflow-hidden
+    transition-all
+    duration-300
+    origin-top-right
+    ${
+      isOpen
+        ? "opacity-100 scale-100 translate-y-0"
+        : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+    }
+  `}
+>
           <div className="p-3 font-semibold text-gray-700 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
             <span>Notifications</span>
             {unreadCount > 0 && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">{unreadCount} New</span>}
@@ -41,15 +62,15 @@ export default function NotificationBell() {
                   className={`p-3 border-b border-gray-50 cursor-pointer transition-colors ${!notif.isRead ? 'bg-blue-50/60 hover:bg-blue-50' : 'hover:bg-gray-50'}`}
                 >
                   <p className={`text-sm text-gray-800 ${!notif.isRead ? 'font-medium' : ''}`}>{notif.message}</p>
-                  <span className="text-xs text-gray-400 block mt-1">
-                    {new Date(notif.timestamp).toLocaleDateString()}
-                  </span>
+                  <span className="text-xs text-gray-400 block mt-1" title={new Date(notif.timestamp).toLocaleDateString()}>
+  {getRelativeTime(notif.timestamp) || new Date(notif.timestamp).toLocaleDateString()}
+</span>
                 </div>
               ))
             )}
           </div>
         </div>
-      )}
+
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { Grid, List, Search, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import StyledDropdown from "../../components/StyledDropdown";
+import AdvancedFilterPanel from "../../components/common/AdvancedFilterPanel";
 
 const EVENT_FILTERS = [
   { key: "all", label: "All" },
@@ -52,6 +53,12 @@ const EventFiltersToolbar = ({
   onSortChange,
   viewMode,
   onViewModeChange,
+  advancedFilters = {},
+  onAdvancedFiltersChange,
+  isAdvancedFiltersOpen,
+  onToggleAdvancedFilters,
+  priceStats,
+  dateRangeStats,
   searchQuery,
   onSearchChange,
 }) => {
@@ -78,6 +85,17 @@ const EventFiltersToolbar = ({
 
   return (
     <div className="mb-8 sm:mb-10 flex flex-col gap-4">
+      {/* Advanced Filter Panel */}
+      <AdvancedFilterPanel
+        filters={advancedFilters}
+        onFiltersChange={onAdvancedFiltersChange}
+        priceStats={priceStats}
+        dateRange={dateRangeStats}
+        isOpen={isAdvancedFiltersOpen}
+        onToggleOpen={onToggleAdvancedFilters}
+      />
+
+      {/* Basic Filters */}
 
       {/* Search Bar */}
       <div className="relative w-full">
@@ -116,6 +134,7 @@ const EventFiltersToolbar = ({
         ))}
       </div>
 
+      {/* Sort and View Controls */}
       {/* Sort + View Mode */}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
         <div className="w-full sm:w-auto">
