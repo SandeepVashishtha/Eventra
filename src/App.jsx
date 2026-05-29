@@ -5,7 +5,7 @@ import "./styles/reduced-motion.css";
 import "./styles/print.css";
 import { toast } from "react-toastify";
 
-// Critical path — loaded eagerly (needed before first paint)
+// Critical path - loaded eagerly (needed before first paint)
 import Navbar from "./components/navbar/Navbar";
 import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
@@ -23,7 +23,7 @@ import useOfflineSync from "./hooks/useOfflineSync";
 import useLenis from "./hooks/useLenis";
 import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 
-// Route-level lazy splits — loaded only when route is visited
+// Route-level lazy splits - loaded only when route is visited
 const Footer = lazy(() => import("./components/Layout/Footer"));
 const Chatbot = lazy(() => import("./components/Chatbot"));
 const AppRoutes = lazy(() => import("./components/AppRoutes"));
@@ -31,7 +31,7 @@ const EventRegistration = lazy(() => import("./Pages/Events/EventRegistration"))
 const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
 const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
 
-// Non-critical UI — deferred after first paint
+// Non-critical UI - deferred after first paint
 const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
 const ThemeCustomizerDrawer = lazy(() => import("./components/common/ThemeCustomizerDrawer"));
 const KeyboardShortcutsModal = lazy(() => import("./components/common/KeyboardShortcutsModal"));
@@ -188,7 +188,7 @@ function App() {
                   <Suspense fallback={null}>
                     <ScrollToTopButton />
                   </Suspense>
-                  {/* Enhanced back-to-top with progress ring — appears at 400px */}
+                  {/* Enhanced back-to-top with progress ring - appears at 400px */}
                   <Suspense fallback={null}>
                     <BackToTop />
                   </Suspense>
