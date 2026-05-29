@@ -481,7 +481,7 @@ text-gray-600 dark:text-gray-300"
                 aria-label="Join upcoming hackathons"
                 className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-amber-400 dark:bg-yellow-900 border border-amber-300 dark:border-yellow-700 text-white dark:text-white font-semibold shadow-md shadow-amber-100 dark:shadow-none hover:shadow-lg hover:bg-amber-500 dark:hover:bg-yellow-800 hover:scale-105 transition-all duration-300"
               >
-                <img src="/assets/hackathons.svg" alt="hackaton" className="mr-2"/>
+                <img src="/assets/hackathons.svg" alt="hackathons" className="mr-2"/>
                 Join Hackathons
                 <svg
                     className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
@@ -504,7 +504,7 @@ text-gray-600 dark:text-gray-300"
                 aria-label="Learn more about Eventra"
                 className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-pink-500 dark:bg-pink-900 text-white dark:text-white font-semibold shadow-md shadow-pink-100 dark:shadow-none transform transition-all duration-300 hover:scale-105 hover:bg-pink-600 dark:hover:bg-pink-800"
               >
-                <img src="/assets/learnmore.svg" alt="learnmore" className="mr-2"/>
+                <img src="/assets/learnmore.svg" alt="learn more" className="mr-2"/>
                 Learn More
                 <svg
                   className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
