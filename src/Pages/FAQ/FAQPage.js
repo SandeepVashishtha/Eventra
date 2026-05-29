@@ -500,7 +500,7 @@ export default function FAQSection() {
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
-                  aria-selected={selectedCategory === category}
+                  aria-pressed={selectedCategory === category}
                   className={`px-4 py-2 text-xs font-bold rounded-full transition-all duration-300 ${
                     selectedCategory === category
                       ? "bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-500/10"

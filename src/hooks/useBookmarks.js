@@ -5,7 +5,10 @@ const useBookmarks = (userId = 'guest') => {
 
   const [bookmarks, setBookmarks] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem(storageKey)) || [];
+      const stored = localStorage.getItem(storageKey);
+      if (!stored) return [];
+      const parsed = JSON.parse(stored);
+      return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
     }

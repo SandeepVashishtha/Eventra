@@ -55,6 +55,7 @@ const MobileDrawer = ({
   if (!isOpen) return null;
 
   return (
+<<<<<<< HEAD
     <div
       id="mobile-navigation-drawer"
       ref={drawerRef}
@@ -74,29 +75,51 @@ const MobileDrawer = ({
             className="h-8 w-8 rounded-xl object-contain"
           />
           <h2 className="text-2xl font-bold">Eventra</h2>
-        </div>
-        <button
-          ref={closeButtonRef}
-          type="button"
-          onClick={closeMenu}
-          className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-black dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
-          aria-label="Close navigation menu"
-        >
-          <svg
-            className="h-5 w-5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
+=======
+    <div className="fixed inset-0 z-50 xl:hidden">
+      <button
+        type="button"
+        aria-label="Close navigation menu"
+        onClick={closeMenu}
+        className={`absolute inset-0 h-full w-full bg-black/50 transition-opacity duration-200 ${
+          isOpen ? "opacity-100" : "opacity-0"
+        }`}
+      />
+
+      <div
+        id="mobile-navigation-drawer"
+        ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Mobile navigation"
+        className={`mobile-drawer-panel absolute right-0 top-0 flex w-[min(92vw,24rem)] max-w-drawer flex-col bg-white shadow-2xl transition-transform duration-200 ease-out dark:bg-gray-900 ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <div className="mobile-landscape-compact flex min-h-[64px] items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 dark:border-gray-800">
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gray-100 p-1 ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700">
+              <img
+                src="/favicon.png"
+                alt=""
+                aria-hidden="true"
+                className="block h-full w-full object-contain"
+              />
+            </div>
+            <h2 className="truncate text-xl font-bold text-gray-900 dark:text-white xs:text-2xl">
+              Eventra
+            </h2>
+          </div>
+          <button
+            ref={closeButtonRef}
+            type="button"
+            onClick={closeMenu}
+            aria-label="Close navigation menu"
+            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl px-3 text-xl font-semibold text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
           >
-            <path d="M18 6 6 18" />
-            <path d="m6 6 12 12" />
-          </svg>
-        </button>
-      </div>
+            <span aria-hidden="true">X</span>
+          </button>
+        </div>
 
       <div className="flex h-[calc(100%-73px)] flex-col overflow-y-auto px-4 py-5">
         <NavbarLinks

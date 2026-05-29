@@ -10,7 +10,6 @@ module.exports = {
     extend: {
       screens: {
         xs: '380px',
-        short: { raw: '(max-height: 520px) and (orientation: landscape)' },
       },
 
       // =========================

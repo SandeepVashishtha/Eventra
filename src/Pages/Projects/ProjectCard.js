@@ -352,7 +352,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           }`} loading="lazy"/>
         <img
           src={project.image}
-          alt={project.title}
+          alt={project.title || "Project preview"}
           loading="lazy"
           decoding="async"
           onLoad={() => setIsLoaded(true)}
