@@ -22,10 +22,21 @@ export const fetchWithTimeout = async (
     controller.abort();
   }, timeout);
 
+  // 🔥 FIX: Link the user's custom abort signal to our internal controller.
+  const handleUserAbort = () => controller.abort();
+
+  if (options.signal) {
+    if (options.signal.aborted) {
+      controller.abort();
+    } else {
+      options.signal.addEventListener("abort", handleUserAbort);
+    }
+  }
+
   try {
     const response = await fetch(url, {
       ...options,
-      signal: controller.signal,
+      signal: controller.signal, // This now responds to BOTH the timeout and the user's unmount signal
     });
 
     let data = null;
@@ -50,10 +61,10 @@ export const fetchWithTimeout = async (
     };
   } catch (error) {
     if (error.name === "AbortError") {
-      logger.error("[fetchWithTimeout] Request timeout:", url);
+      logger.error("[fetchWithTimeout] Request aborted or timed out:", url);
 
       throw new FetchError(
-        `Request timed out after ${timeout}ms`
+        `Request timed out after ${timeout}ms or was manually aborted`
       );
     }
 
@@ -62,5 +73,9 @@ export const fetchWithTimeout = async (
     throw error;
   } finally {
     clearTimeout(timeoutId);
+    // 🔥 FIX: Always clean up the event listener to prevent memory leaks
+    if (options.signal) {
+      options.signal.removeEventListener("abort", handleUserAbort);
+    }
   }
 };

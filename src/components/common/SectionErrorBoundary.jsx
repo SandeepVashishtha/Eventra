@@ -137,7 +137,7 @@ class SectionErrorBoundary extends React.Component {
             cursor: "pointer",
             transition: "transform 0.15s ease, opacity 0.15s ease",
           }}
-          onMouseOver={(e) = aria-label="button"> (e.currentTarget.style.opacity = "0.88")}
+          onMouseOver={(e) => (e.currentTarget.style.opacity = "0.88")}
           onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
           aria-label={
             retryCount >= 3
