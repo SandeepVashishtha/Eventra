@@ -11,10 +11,12 @@ import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
 import RespawningText from "../../../components/visual/RespawningText";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
-import CountUp from "react-countup";
+import CountUpLib from "react-countup";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
 import SectionErrorBoundary from "../../../components/common/SectionErrorBoundary";
 import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
+
+const CountUp = CountUpLib.default;
 
 const MotionLink = motion(Link);
 
