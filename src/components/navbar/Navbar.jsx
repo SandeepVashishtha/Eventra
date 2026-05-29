@@ -106,6 +106,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
           {/* Right Controls Container */}
           <div className="flex items-center gap-2 xl:gap-4 shrink-0">
+          <div className="hidden sm:flex items-center gap-2 xl:gap-4">
             <button
               type="button"
               onClick={toggleTheme}
@@ -118,10 +119,11 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               </div>
             </button>
             <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+            </div>
             <MobileNavbar isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} isAuthenticated={authenticated} user={user} logout={logout} />
           </div>
         </div>
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-transparent" aria-hidden="true">
+        <div iv className="absolute bottom-0 left-0 w-full h-1 bg-transparent" aria-hidden="true">
           <div className="h-full bg-blue-500 transition-all duration-100 ease-out" style={{ width: `${scrollProgress}%` }} />
         </div>
       </nav>
