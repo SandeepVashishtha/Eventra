@@ -3,13 +3,11 @@ import { useLocation, useSearchParams } from "react-router-dom";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
 import { getEventStatus } from "../../utils/eventUtils";
-import { useSearchParams } from "react-router-dom";
 import {
   Grid,
   List,
   Loader2,
 } from "lucide-react";
-import { useLocation } from "react-router-dom";
 import EventCTA from "./EventCTA";
 import EventCardSection from "./EventCardSection";
 import EventFiltersToolbar from "./EventFiltersToolbar";
