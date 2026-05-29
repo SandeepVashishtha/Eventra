@@ -1,6 +1,6 @@
 // Centralized JWT configuration shared by all auth endpoints.
-// JWT_SECRET must be configured in every environment. Falling back to a
-// predictable signing key would allow token forgery.
+// JWT_SECRET is mandatory in every environment. Falling back to a predictable
+// signing key would allow token forgery.
 const requireJwtSecret = () => {
   const secret = process.env.JWT_SECRET?.trim();
 
