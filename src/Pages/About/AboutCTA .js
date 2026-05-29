@@ -5,7 +5,14 @@ import { BookOpen, Mail, Users, Star, Globe } from "lucide-react";
 
 const AboutCTA = () => {
   // Bubbles with random delays for popping animation
-  const bubbles = [];
+  const bubbles = [
+  { size: 60, color: "bg-blue-200/40", top: "10%", left: "5%", delay: 0 },
+  { size: 40, color: "bg-indigo-300/30", top: "70%", left: "15%", delay: 0.5 },
+  { size: 80, color: "bg-purple-200/30", top: "20%", left: "80%", delay: 1 },
+  { size: 50, color: "bg-blue-300/40", top: "60%", left: "90%", delay: 1.5 },
+  { size: 35, color: "bg-indigo-200/50", top: "40%", left: "50%", delay: 2 },
+  { size: 45, color: "bg-violet-200/40", top: "80%", left: "70%", delay: 2.5 },
+];
 
   return (
     <section 
