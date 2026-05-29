@@ -212,6 +212,49 @@ const InteractiveWhiteboard = () => {
     setIsDrawing(true);
   }, [tool, color, size, isSolid]);
 
+  // Drawing move handler
+  const handleMouseMove = useCallback((e) => {
+    if (tool === "sticky") return;
+    if (!isDrawing) return;
+    e.stopPropagation();
+    const coords = getCanvasCoords(e);
+
+    setCurrentElement((prev) => {
+      if (!prev) return prev;
+      if (prev.type === "path") {
+        return {
+          ...prev,
+          points: [...prev.points, { x: coords.x, y: coords.y }],
+        };
+      }
+
+      // shape
+      return {
+        ...prev,
+        width: coords.x - prev.x,
+        height: coords.y - prev.y,
+      };
+    });
+  }, [tool, isDrawing]);
+
+  // Finalize drawing on mouse up / touch end / mouse leave
+  const handleMouseUp = useCallback((e) => {
+    if (tool === "sticky") return;
+    if (!isDrawing) return;
+    if (e && typeof e.stopPropagation === "function") {
+      e.stopPropagation();
+    }
+
+    setCurrentElement((prev) => {
+      if (prev) {
+        setElements((els) => [...els, prev]);
+      }
+      return null;
+    });
+
+    setIsDrawing(false);
+  }, [tool, isDrawing]);
+
   return (
     <div 
       className="flex flex-col h-full bg-slate-950 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative select-none"
@@ -358,9 +401,11 @@ const InteractiveWhiteboard = () => {
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
         onTouchStart={handleMouseDown}
         onTouchMove={handleMouseMove}
         onTouchEnd={handleMouseUp}
+        onTouchCancel={handleMouseUp}
       >
         {/* HTML5 Canvas Element */}
         <canvas ref={canvasRef} className="absolute inset-0 block bg-[#090a0f]" />

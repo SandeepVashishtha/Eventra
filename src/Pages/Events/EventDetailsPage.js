@@ -7,6 +7,7 @@ import { sanitizeHtml } from "../../utils/sanitizeHtml";
 import CountdownTimer from "../../components/common/CountdownTimer";
 import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft, WifiOff } from "lucide-react";
 import { Share2, Twitter, Facebook, Linkedin, MessageCircle, Copy, Check } from "lucide-react";
+import { toast } from "react-toastify";
 import { getEventStatus } from "../../utils/eventUtils";
 // Note: eventsMockData.json is NOT statically imported here.
 // It is loaded dynamically (and only in development/fallback mode) so that
@@ -39,7 +40,7 @@ const EventDetailsPage = () => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Clipboard write failed silently
+      toast.error("Failed to copy link to clipboard");
     }
   };
 
@@ -51,7 +52,11 @@ const EventDetailsPage = () => {
           text: shareText,
           url: shareUrl,
         });
-      } catch {}
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          toast.error("Unable to share event");
+        }
+      }
     }
   };
 
@@ -62,65 +67,72 @@ const EventDetailsPage = () => {
       setLoading(true);
       setCacheInfo(null);
 
-        await new Promise((resolve) =>
-          setTimeout(resolve, 1000)
-        );
-        if (isCancelled) return;
-
-        const foundEvent = eventsMockData.find(
-          (e) => e.id === parseInt(eventId)
-        );
-
-        if (isCancelled) return;
-        setEvent(foundEvent);
-
-        if (foundEvent) {
-          addRecentlyViewed({
-            id: foundEvent.id,
-            title: foundEvent.title,
-            date: foundEvent.date,
-            location: foundEvent.location,
-            image: foundEvent.image,
-            category: foundEvent.type,
-          });
-        }
-      } catch (error) {
-        if (!isCancelled) {
-          console.error("Failed to fetch event details:", error);
-        }
       try {
         // Try the live API first
         const apiUrl = `/api/events/${encodeURIComponent(eventId)}`;
         const response = await fetch(apiUrl);
+
         if (response.ok) {
           const data = await response.json();
-          setEvent(data.event || data || null);
-          setCacheInfo({ cachedAt: null, label: "live" });
+          const evt = data.event || data || null;
+          if (!isCancelled) {
+            setEvent(evt);
+            setCacheInfo({ cachedAt: null, label: "live" });
+            if (evt) {
+              addRecentlyViewed({
+                id: evt.id,
+                title: evt.title,
+                date: evt.date,
+                location: evt.location,
+                image: evt.image,
+                category: evt.type,
+              });
+            }
+          }
         } else {
-          // API responded with an error status — fall back to mock data (dev/demo only)
-          // Dynamic import keeps the mock JSON out of the production bundle.
+          // API returned error — fall back to mock data
           const { default: mockData } = await import("./eventsMockData.json");
           const foundEvent = mockData.find(
             (item) => String(item.id) === String(eventId)
           );
-          setEvent(foundEvent || null);
-          if (foundEvent) {
-            setCacheInfo({ cachedAt: null, label: "mock fallback" });
+          if (!isCancelled) {
+            setEvent(foundEvent || null);
+            if (foundEvent) setCacheInfo({ cachedAt: null, label: "mock fallback" });
+            if (foundEvent) {
+              addRecentlyViewed({
+                id: foundEvent.id,
+                title: foundEvent.title,
+                date: foundEvent.date,
+                location: foundEvent.location,
+                image: foundEvent.image,
+                category: foundEvent.type,
+              });
+            }
           }
         }
-      } catch {
-        // Network error — try mock data as last resort
+      } catch (err) {
+        // Network error or other failure — try mock data as last resort
         try {
           const { default: mockData } = await import("./eventsMockData.json");
           const foundEvent = mockData.find(
             (item) => String(item.id) === String(eventId)
           );
-          setEvent(foundEvent || null);
-          if (foundEvent) {
-            setCacheInfo({ cachedAt: null, label: "offline fallback" });
+          if (!isCancelled) {
+            setEvent(foundEvent || null);
+            if (foundEvent) setCacheInfo({ cachedAt: null, label: "offline fallback" });
+            if (foundEvent) {
+              addRecentlyViewed({
+                id: foundEvent.id,
+                title: foundEvent.title,
+                date: foundEvent.date,
+                location: foundEvent.location,
+                image: foundEvent.image,
+                category: foundEvent.type,
+              });
+            }
           }
-        } catch {
-          setEvent(null);
+        } catch (_) {
+          if (!isCancelled) setEvent(null);
         }
       } finally {
         if (!isCancelled) setLoading(false);

@@ -13,18 +13,17 @@ import {
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import {
-  fetchProfileWithCache,
-} from "../../../utils/githubProfileCache";
+import { throttleProfileFetch } from "../../../components/Contributors";
 import { fetchWithTimeout } from "../../../utils/fetchWithTimeout";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
 
 const STORAGE_KEY = "github_contributors";
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
+const CACHE_DURATION = 4 * 60 * 60 * 1000; // 4 hr
+const STALE_REVALIDATE_WINDOW = 2 * 60 * 60 * 1000; // 2 hr
 const REQUEST_TIMEOUT = 10000;
-const MAX_CONTRIBUTOR_PAGES = 2; // Limit carousel to top contributors
+const MAX_CONTRIBUTOR_PAGES = 1; // Limit carousel to top contributors
 // Delay inserted between batches (not between individual requests) to avoid
 // triggering GitHub's unauthenticated rate limit of 60 req/hr.
 const BATCH_DELAY_MS = 200;
@@ -73,11 +72,16 @@ const getRoleByGitHubActivity = (contributor) => {
 const getCachedContributors = () => {
   try {
     const cachedData = localStorage.getItem(STORAGE_KEY);
-    if (!cachedData) return null;
+    if (!cachedData) return { data: null, isStale: false };
     const { data, timestamp } = JSON.parse(cachedData);
-    return Date.now() - timestamp > CACHE_DURATION ? null : data;
+    const age = Date.now() - timestamp;
+    if (age <= CACHE_DURATION) return { data, isStale: false };
+    if (age <= CACHE_DURATION + STALE_REVALIDATE_WINDOW) {
+      return { data, isStale: true };
+    }
+    return { data: null, isStale: false };
   } catch {
-    return null;
+    return { data: null, isStale: false };
   }
 };
 const cacheContributors = (data) => {
@@ -135,31 +139,27 @@ const Contributors = () => {
   }, []);
 
   // Fetches a single GitHub user profile via the backend proxy.
-  // Wrapped by fetchProfileWithCache so repeated calls for the same username
-  // within the session return the cached value without a network round-trip.
   const fetchGitHubProfile = useCallback(async (username) => {
     await throttleProfileFetch();
     try {
-      return await fetchProfileWithCache(username, async () => {
-        const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(
-          `/users/${username}`
-        )}`;
+      const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(
+        `/users/${username}`
+      )}`;
 
-        const { data: profile } = await fetchWithTimeout(
-          proxyUrl,
-          {},
-          REQUEST_TIMEOUT
-        );
+      const { data: profile } = await fetchWithTimeout(
+        proxyUrl,
+        {},
+        REQUEST_TIMEOUT
+      );
 
-        return {
-          followers: profile.followers || 0,
-          public_repos: profile.public_repos || 0,
-          name: profile.name || username,
-          bio: profile.bio || "Open source contributor",
-          company: profile.company,
-          location: profile.location,
-        };
-      });
+      return {
+        followers: profile.followers || 0,
+        public_repos: profile.public_repos || 0,
+        name: profile.name || username,
+        bio: profile.bio || "Open source contributor",
+        company: profile.company,
+        location: profile.location,
+      };
     } catch {
       return {
         followers: 0,
@@ -173,13 +173,15 @@ const Contributors = () => {
   }, []);
 
   // Fetch contributors
-  const fetchContributors = useCallback(async () => {
-    setLoading(true);
+  const fetchContributors = useCallback(async ({ backgroundRefresh = false } = {}) => {
+    if (!backgroundRefresh) setLoading(true);
     const cached = getCachedContributors();
-    if (cached) {
-      setContributors(cached);
-      setLoading(false);
-      return;
+    if (cached.data) {
+      setContributors(cached.data);
+      if (!cached.isStale) {
+        if (!backgroundRefresh) setLoading(false);
+        return;
+      }
     }
 
     try {
@@ -232,13 +234,13 @@ const Contributors = () => {
     } catch (error) {
       console.error("Failed to fetch contributors:", error);
 
-      setContributors([]);
+      if (!backgroundRefresh) setContributors([]);
 
       if (error.name === "AbortError") {
         console.error("Contributor request timed out");
       }
     } finally {
-      setLoading(false);
+      if (!backgroundRefresh) setLoading(false);
     }
   }, [fetchGitHubProfile]);
 
@@ -307,7 +309,7 @@ const Contributors = () => {
           data-aos-once="true"
         >
           Our Amazing {/* UPDATED: Gradient text for dark mode */}
-          <span className="text-black animate-pulse">
+          <span className="text-gray-900 dark:text-white">
             Contributors
           </span>
         </motion.h2>
@@ -317,22 +319,22 @@ const Contributors = () => {
           <button
             onClick={prevSlide}
             // UPDATED: Arrow button styles
-            className="absolute left-0 top-[35%] -translate-y-1/2 -translate-x-4 z-10 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 hover:scale-110 transition-all duration-300 border border-gray-200"
+            className="absolute left-0 top-[35%] -translate-y-1/2 -translate-x-4 z-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 transition-all duration-300 border border-gray-200 dark:border-gray-700"
             disabled={currentIndex === 0}
-           aria-label="button">
+           aria-label="Previous slide">
             {/* UPDATED: Arrow icon color */}
-            <FaChevronLeft className="text-black text-xl" />
+            <FaChevronLeft className="text-gray-900 dark:text-white text-xl" />
           </button>
 
           <button
             onClick={nextSlide}
             // UPDATED: Arrow button styles
-            className="absolute right-0 top-[35%] -translate-y-1/2 translate-x-4 z-10 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 hover:scale-110 transition-all duration-300 border border-gray-200"
+            className="absolute right-0 top-[35%] -translate-y-1/2 translate-x-4 z-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 transition-all duration-300 border border-gray-200 dark:border-gray-700"
             disabled={currentIndex + itemsPerView >= contributors.length}
             aria-label="Next slide"
           >
             {/* UPDATED: Arrow icon color */}
-            <FaChevronRight className="text-black text-xl" />
+            <FaChevronRight className="text-gray-900 dark:text-white text-xl" />
           </button>
 
           {/* Carousel Content */}
@@ -345,7 +347,7 @@ const Contributors = () => {
               {visibleContributors.map((c, i) => (
                 <motion.div
                   key={c.id}
-                  className="relative bg-white/95 backdrop-blur-xl p-4 pt-10 rounded-xl shadow-md border border-gray-200 flex flex-col items-center text-center mb-6 transition-all duration-300 ease-out flex-shrink-0"
+                  className="relative bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl p-4 pt-10 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 flex flex-col items-center text-center mb-6 transition-all duration-300 ease-out flex-shrink-0"
                   style={{
                     flex: `0 0 calc((100% - ${
                       itemsPerView - 1
@@ -368,7 +370,7 @@ const Contributors = () => {
                       <img loading="lazy" decoding="async" width="65" height="65"
   src={c.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name || c.login || "Anon")}&background=random`}
   alt={`${c.name || c.login || "Contributor"}'s GitHub profile picture`}
-  className="w-[65px] h-[65px] rounded-full border-4 border-black shadow-md relative z-10"
+  className="w-[65px] h-[65px] rounded-full border-4 border-gray-900 dark:border-gray-300 shadow-md relative z-10"
 />
                       <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 blur-sm -z-10"></div>
                     </div>
@@ -376,53 +378,53 @@ const Contributors = () => {
                   {/* Name + Role + Badge */}
                   <div className="mt-16">
                     {/* UPDATED: Name and role text */}
-                    <h3 className="text-lg font-bold text-black">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                       {c.name ? c.name : c.login || "Unknown Contributor"}
                     </h3>
-                    <p className="text-black text-sm font-medium mb-3 flex items-center justify-center gap-1">
-                      <FaMedal className="text-yellow-500 animate-bounce" />{" "}
+                    <p className="text-gray-700 dark:text-gray-300 text-sm font-medium mb-3 flex items-center justify-center gap-1">
+                      <FaMedal className="text-yellow-500" />{" "}
                       {c.role}
                     </p>
 
                     {/* UPDATED: Contribution Badges */}
                     {currentIndex + i === 0 && (
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-black">
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/40 text-gray-900 dark:text-yellow-300">
                         🥇･ Top Contributor
                       </span>
                     )}
                     {currentIndex + i === 1 && (
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 text-black">
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200">
                         🥈･ Silver Contributor
                       </span>
                     )}
                     {currentIndex + i === 2 && (
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-black">
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 dark:bg-orange-900/40 text-gray-900 dark:text-orange-300">
                         🥉･ Bronze Contributor
                       </span>
                     )}
                   </div>
 
                   {/* UPDATED: Stat text colors */}
-                  <div className="grid grid-cols-3 gap-3 text-sm text-black my-3 w-full">
+                  <div className="grid grid-cols-3 gap-3 text-sm text-gray-900 dark:text-white my-3 w-full">
                     {/* UPDATED: Stat box background and icon colors */}
-                    <div className="flex flex-col items-center bg-white/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                      <FaCodeBranch className="text-black mb-1" />
+                    <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
+                      <FaCodeBranch className="text-gray-900 dark:text-indigo-400 mb-1" />
                       <span className="font-semibold">{c.public_repos}</span>
-                      <span className="text-xs text-black">
+                      <span className="text-xs text-gray-600 dark:text-gray-400">
                         Repos
                       </span>
                     </div>
-                    <div className="flex flex-col items-center bg-white/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                      <FaUserFriends className="text-black mb-1" />
+                    <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
+                      <FaUserFriends className="text-gray-900 dark:text-indigo-400 mb-1" />
                       <span className="font-semibold">{c.followers}</span>
-                      <span className="text-xs text-black">
+                      <span className="text-xs text-gray-600 dark:text-gray-400">
                         Followers
                       </span>
                     </div>
-                    <div className="flex flex-col items-center bg-white/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                      <FaCodeBranch className="text-black mb-1" />
+                    <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
+                      <FaCodeBranch className="text-gray-900 dark:text-indigo-400 mb-1" />
                       <span className="font-semibold">{c.contributions}</span>
-                      <span className="text-xs text-black">
+                      <span className="text-xs text-gray-600 dark:text-gray-400">
                         Contribs
                       </span>
                     </div>
@@ -430,13 +432,13 @@ const Contributors = () => {
 
                   {/* Contribution Progress Bar */}
                   {/* UPDATED: Progress bar background */}
-                  <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-4">
-                    <div className="h-2 bg-black" />
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden mb-4">
+                    <div className="h-2 bg-gray-900 dark:bg-indigo-400" />
                   </div>
 
                   {/* Extra Info */}
                   {/* UPDATED: Text color */}
-                  <div className="flex flex-col gap-1 text-xs text-black mb-4">
+                  <div className="flex flex-col gap-1 text-xs text-gray-700 dark:text-gray-300 mb-4">
                     {c.company && (
                       <span className="flex items-center gap-1 justify-center">
                         <FaBuilding /> {c.company}
@@ -453,9 +455,9 @@ const Contributors = () => {
                   <div className="mt-auto w-full">
                     <a
                       href={c.html_url}
-                      target="_blank"
+                      target="_blank" rel="noopener noreferrer"
                       rel="noopener noreferrer"
-                      className="group inline-flex items-center justify-center gap-2 bg-black text-white px-4 py-2 rounded-full text-sm font-semibold shadow hover:bg-zinc-800 hover:scale-105 transition-all duration-300 ease-out transform relative overflow-hidden"
+                      className="group inline-flex items-center justify-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-4 py-2 rounded-full text-sm font-semibold shadow hover:bg-zinc-800 dark:hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-out transform relative overflow-hidden"
                     >
                       {/* GitHub Icon with animation */}
                       <FaGithub className="text-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:text-gray-200" />
@@ -479,8 +481,8 @@ const Contributors = () => {
                 // UPDATED: Dot colors
                 className={`w-3 h-3 rounded-full transition-all duration-300 ${
                   index === currentSlide
-                    ? "bg-black scale-125"
-                    : "bg-gray-300 hover:bg-gray-400"
+                    ? "bg-gray-900 dark:bg-white scale-125"
+                    : "bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
                 }`}
               />
             ))}
@@ -490,7 +492,7 @@ const Contributors = () => {
             <Link
               to="/contributors"
               onClick={() => window.scrollTo(0, 0)}
-              className="inline-flex items-center gap-2 bg-black text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-zinc-800 hover:scale-105 transition-all duration-300 ease-out"
+              className="inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-zinc-800 dark:hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-out"
             >
               <span>View All Contributors</span>
               <FaExternalLinkAlt className="text-sm" />
@@ -498,7 +500,7 @@ const Contributors = () => {
             <Link
               to="/ContributorGuide"
               onClick={() => window.scrollTo(0, 0)}
-              className="inline-flex items-center gap-2 bg-white text-black px-8 py-3 rounded-full font-semibold shadow-lg border border-black/15 hover:bg-gray-100 hover:scale-105 transition-all duration-300 ease-out ml-10"
+              className="inline-flex items-center gap-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-8 py-3 rounded-full font-semibold shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 transition-all duration-300 ease-out ml-10"
             >
               <span>Guide</span>
               <FaExternalLinkAlt className="text-sm" />

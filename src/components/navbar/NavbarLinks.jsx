@@ -34,23 +34,19 @@ import CursorToggle from "./CursorToggle";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 import { useScrollProgress } from "../../hooks/useScrollProgress";
+import { NAV_ITEMS } from "./constants/navItems";
 
-// Lazy-load the modal so it is only bundled when first rendered.
 const KeyboardShortcutsModal = lazy(() =>
   import("../common/KeyboardShortcutsModal")
 );
-
-import { NAV_ITEMS } from "./constants/navItems";
 
 const NavbarLinks = ({ vertical = false, onClick }) => {
   const location = useLocation();
   const navRef = useRef(null);
 
-  const [openGroup, setOpenGroup] = useState(null);
-
-  // FIXED: Missing states/variables
-  const [showShortcuts, setShowShortcuts] = useState(false);
-  const { isDarkMode } = useTheme();
+const [openGroup, setOpenGroup] = useState(null);
+const [showShortcuts, setShowShortcuts] = useState(false);
+const { isDarkMode } = useTheme();
 
   useEffect(() => {
     setOpenGroup(null);
@@ -87,7 +83,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
             ? "text-black dark:text-white border-black dark:border-white font-semibold bg-gray-100 dark:bg-gray-800"
             : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent hover:bg-gray-50 dark:hover:bg-gray-800/50"
         }`
-      : `flex gap-1 items-center text-sm font-medium transition-all duration-200 px-1 lg:px-2 py-2 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 focus-visible:rounded-lg ${
+      : `flex gap-1 items-center text-xs xl:text-sm font-medium transition-all duration-200 px-1.5 xl:px-2 py-2 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 focus-visible:rounded-lg ${
           active
             ? "text-black dark:text-white border-black dark:border-white font-semibold"
             : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent hover:border-gray-300 dark:hover:border-gray-600"
@@ -100,7 +96,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
       className={`flex ${
         vertical
           ? "flex-col items-start w-full gap-2"
-          : "items-center gap-2 lg:gap-3 xl:gap-4 mx-2 lg:mx-4 min-w-0 flex-wrap"
+          : "items-center gap-1.5 xl:gap-3 mx-1 xl:mx-3 min-w-0 flex-nowrap"
       }`}
       aria-label={vertical ? "Mobile primary links" : "Primary links"}
     >
