@@ -381,7 +381,7 @@ const MyCalendar = () => {
                                     const theme = getCategoryTheme(item.event?.category);
                                     return (
                                       <span
-                                        key={i}
+                                        key={`${item.eventId}-${i}`}
                                         className={`w-1.5 h-1.5 rounded-full ${
                                           selected ? "bg-white" : `bg-gradient-to-r ${theme.color}`
                                         }`}
@@ -446,7 +446,7 @@ const MyCalendar = () => {
                                 </button>
                                 <a
                                   href={generateGoogleCalendarLink(item.event)}
-                                  target="_blank" rel="noopener noreferrer"
+                                  target="_blank"
                                   rel="noopener noreferrer"
                                   className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-[11px] font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 transition"
                                 >
@@ -484,7 +484,7 @@ const MyCalendar = () => {
                       <div className="absolute left-3.5 sm:left-5 top-2 h-1/2 w-0.5 bg-gradient-to-b from-indigo-500 to-pink-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
 
                       <div className="space-y-8">
-                      {timelineEvents.map((item, index) => {
+                        {timelineEvents.map((item, index) => {
                         const theme = getCategoryTheme(item.event?.category);
                         const eventDate = new Date(item.event.date);
 
@@ -565,7 +565,7 @@ const MyCalendar = () => {
                                   </button>
                                   <a
                                     href={generateGoogleCalendarLink(item.event)}
-                                    target="_blank" rel="noopener noreferrer"
+                                    target="_blank"
                                     rel="noopener noreferrer"
                                     className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-sm flex items-center gap-1.5"
                                   >
