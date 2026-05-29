@@ -4,6 +4,9 @@ import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
 import { toast } from "react-toastify";
+
+import OfflinePage from "./components/common/OfflinePage";
+import OnlineBanner from "./components/common/OnlineBanner";
 import ScrollToTopButton from "./components/ScrollToTopButton";
 import Navbar from "./components/navbar/Navbar";
 import OfflineBanner from "./components/common/OfflineBanner";
@@ -54,6 +57,8 @@ function App() {
     localStorage.getItem("cursor") !== "off",
   );
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
+const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [wasOffline, setWasOffline] = useState(false);
 
   useLenis();
 
@@ -73,13 +78,12 @@ function App() {
     }
   };
 
-  useEffect(() => {
+useEffect(() => {
     const handleCursorPreference = (event) => {
       if (event?.detail?.cursorEnabled !== undefined) {
         setCursorEnabled(event.detail.cursorEnabled);
       }
     };
-
     window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
     return () => {
       window.removeEventListener("cursorPreferenceChanged", handleCursorPreference);
@@ -88,29 +92,49 @@ function App() {
 
   useEffect(() => {
     const handleOnline = () => {
-      toast.success("Back online! Your connections have been restored and sync is complete.", {
+      setIsOnline(true);
+      setWasOffline(true);
+      toast.success("Back online! Your connections have been restored.", {
         position: "bottom-right",
         autoClose: 4000,
       });
     };
     const handleOffline = () => {
-      toast.warning("You are currently offline. Running in secure local offline caching mode.", {
+      setIsOnline(false);
+      toast.warning("You are currently offline.", {
         position: "bottom-right",
         autoClose: 5000,
       });
     };
-
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
     if (!navigator.onLine) {
       handleOffline();
     }
-
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("lastRoute", location.pathname);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    try {
+      const events = JSON.parse(localStorage.getItem('myEvents') || '[]');
+      if (events.length > 0) {
+        localStorage.setItem('cachedEvents', JSON.stringify(events));
+      }
+    } catch {
+      // ignore
+    }
+  }, [location.pathname]);
+
+  if (!isOnline) {
+    return <OfflinePage />;
+  }
 
   return (
     <ErrorBoundary>
@@ -123,6 +147,7 @@ function App() {
               <OfflineSyncManager />
 
               <div className="App">
+                 {wasOffline && <OnlineBanner />}
                 <a href="#main-content" className="skip-to-content">
                   Skip to main content
                 </a>
