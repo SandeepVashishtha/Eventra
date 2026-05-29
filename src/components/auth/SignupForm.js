@@ -63,8 +63,13 @@ const SignupForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordMatchMessage, setPasswordMatchMessage] = useState("");
-  const navigate = useNavigate();
-  const { setAuthSession } = useAuth();
+  
+  // Reconstructed missing state variables from the fragmented file
+  const [error, setError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [fieldValidationState, setFieldValidationState] = useState({});
+
   const emailValidationRequestRef = useRef(0);
   const { password, confirmPassword } = formData;
 
@@ -89,10 +94,38 @@ const SignupForm = () => {
     if (lastNameResult !== true) nextErrors.lastName = lastNameResult;
 
     if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = "Invalid email format";
+      nextErrors.email = "Email is required";
+    } else {
+      const emailValue = formData.email.trim();
+      const emailFormatResult = validate.email(emailValue);
+      if (emailFormatResult !== true) {
+        nextErrors.email = emailFormatResult;
+      } else {
+        const emailAvailability = await validateEmailAvailability(emailValue);
+        if (!emailAvailability?.isValid) {
+          nextErrors.email = getResultMessage(emailAvailability, "Email is already registered");
+        }
+      }
     }
+
+    const passwordResult = await validatePasswordStrength(formData.password);
+    if (!passwordResult?.isValid) {
+      nextErrors.password = getResultMessage(
+        passwordResult,
+        "Password does not meet strength requirements"
+      );
+    }
+
+    const confirmPasswordResult = validate.confirmPassword(formData.confirmPassword, {
+      password: formData.password,
+    });
+    if (confirmPasswordResult !== true) {
+      nextErrors.confirmPassword = confirmPasswordResult;
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -121,50 +154,38 @@ const SignupForm = () => {
   useEffect(() => {
     let isActive = true;
 
-    const validatePassword = async () => {
+    const validatePwd = async () => {
       if (!formData.password) {
         setPasswordError("");
         setFieldState("password", "idle");
         return;
-    const emailValue = formData.email.trim();
-    const emailFormatResult = validate.email(emailValue);
-    if (emailFormatResult !== true) {
-      nextErrors.email = emailFormatResult;
-    } else {
-      const emailAvailability = await validateEmailAvailability(emailValue);
-      if (!emailAvailability?.isValid) {
-        nextErrors.email = getResultMessage(emailAvailability, "Email is already registered");
       }
-    }
-
-    const passwordResult = await validatePasswordStrength(formData.password);
-    if (!passwordResult?.isValid) {
-      nextErrors.password = getResultMessage(
-        passwordResult,
-        "Password does not meet strength requirements"
-      );
-    }
-
-    const confirmPasswordResult = validate.confirmPassword(formData.confirmPassword, {
-      password: formData.password,
-    });
-    if (confirmPasswordResult !== true) {
-      nextErrors.confirmPassword = confirmPasswordResult;
-    }
-
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
-  };
+    };
+    validatePwd();
+    
+    return () => {
+      isActive = false;
+    };
+  }, [formData.password, setFieldState]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // 🔥 FIX 1: Prevent double-click API spam by returning early if already loading
+    if (loading) return;
+
     setSubmitError("");
     setSuccess("");
 
-    const valid = await runValidation();
-    if (!valid) return;
-
+    // 🔥 FIX 2: Set loading immediately to lock the form BEFORE async validation
     setLoading(true);
+
+    const valid = await runValidation();
+    if (!valid) {
+        // 🔥 FIX 3: Safely unlock the form if validation fails
+        setLoading(false);
+        return;
+    }
 
     try {
       const signupEndpoint = API_ENDPOINTS.AUTH.REGISTER || API_ENDPOINTS.AUTH.SIGNUP;
@@ -181,12 +202,14 @@ const SignupForm = () => {
       if (!ok) {
         const backendMessage = data?.message || data?.error || "Registration failed";
         setSubmitError(`${backendMessage} (${status})`);
+        setLoading(false);
         return;
       }
 
       const sessionToken = data?.token;
       if (!sessionToken) {
         setSubmitError("Signup completed but no token was returned.");
+        setLoading(false);
         return;
       }
 
@@ -206,7 +229,6 @@ const SignupForm = () => {
       setTimeout(() => navigate("/dashboard", { replace: true }), 1000);
     } catch (err) {
       setSubmitError(err?.message || "Network error. Please try again.");
-    } finally {
       setLoading(false);
     }
   };
@@ -245,17 +267,7 @@ const SignupForm = () => {
           message={errors.password}
           prefix={<Lock className="w-4 h-4 text-slate-500" />}
           suffix={
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="text-slate-500 hover:text-slate-300"
-              type="button" onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              aria-controls="password"
-              aria-pressed={showPassword}
-            >
-            <button type="button" onClick={() => setShowPassword((prev) => !prev)} className="text-slate-500 hover:text-blue-400" aria-label={showPassword ? "Hide password" : "Show password"}>
+            <button type="button" onClick={() => setShowPassword((prev) => !prev)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-400" aria-label={showPassword ? "Hide password" : "Show password"}>
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           }
@@ -263,53 +275,10 @@ const SignupForm = () => {
           <input name="password" type={showPassword ? "text" : "password"} value={formData.password} onChange={handleChange} className="w-full pl-9 pr-9 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm text-white" required disabled={loading} />
         </FormFieldWrapper>
 
-        <PasswordStrengthIndicator password={formData.password} />
-
-        <FormFieldWrapper
-          id="confirmPassword"
-          label="Confirm password"
-          message={errors.confirmPassword}
-          prefix={<Lock className="w-4 h-4 text-slate-500" />}
-          suffix={
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="text-slate-500 hover:text-slate-300"
-              aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-              aria-controls="confirmPassword"
-              aria-pressed={showConfirmPassword}
-            >
-            <button type="button" onClick={() => setShowConfirmPassword((prev) => !prev)} className="text-slate-500 hover:text-blue-400" aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}>
-              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          }
-        >
-          <input name="confirmPassword" type={showConfirmPassword ? "text" : "password"} value={formData.confirmPassword} onChange={handleChange} className="w-full pl-9 pr-9 py-2.5 bg-[#0f172a]/50 border border-slate-700/50 rounded-lg text-sm text-white" required disabled={loading} />
-        </FormFieldWrapper>
-        {passwordMatchMessage && (
-          <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="text-[10px] mt-1 text-green-400" role="status" aria-live="polite">
-            {passwordMatchMessage}
-          </motion.p>
+        {errors.password && (
+          <p id="password-error" className="text-red-400 text-[10px] mt-1" role="alert">{errors.password}</p>
         )}
-
-        <ValidationMessage
-          id="signup-form-error"
-          message={error}
-          state="error"
-          className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-2 rounded-lg"
-        />
-        <ValidationMessage
-          id="signup-form-success"
-          message={success}
-          state="success"
-          className="text-xs text-green-400 bg-green-500/10 border border-green-500/20 p-2 rounded-lg"
-        />
-          </div>
-          {errors.password && (
-            <p id="password-error" className="text-red-400 text-[10px] mt-1" role="alert">{errors.password}</p>
-          )}
-          {formData.password && <PasswordStrengthIndicator password={formData.password} />}
-        </div>
+        {formData.password && <PasswordStrengthIndicator password={formData.password} />}
 
         <div className="space-y-1.5">
           <label htmlFor="confirmPassword" className="block text-xs font-medium text-slate-300">
@@ -331,6 +300,7 @@ const SignupForm = () => {
                     : "border-slate-700/50 focus:border-blue-500"
               }`}
               required
+              disabled={loading}
             />
             <button
               type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
@@ -350,13 +320,25 @@ const SignupForm = () => {
           )}
         </div>
 
-        <ValidationMessage message={submitError} state="error" />
-        {success ? <ValidationMessage message={success} state="success" /> : null}
+        <ValidationMessage
+          id="signup-form-error"
+          message={submitError || error}
+          state="error"
+          className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-2 rounded-lg"
+        />
+        {success && (
+          <ValidationMessage
+            id="signup-form-success"
+            message={success}
+            state="success"
+            className="text-xs text-green-400 bg-green-500/10 border border-green-500/20 p-2 rounded-lg"
+          />
+        )}
 
         <motion.button
           type="submit"
           disabled={loading}
-          className="w-full py-3 rounded-xl text-sm font-bold text-[#0f172a] bg-gradient-to-r from-blue-400 to-indigo-400"
+          className="w-full py-3 rounded-xl text-sm font-bold text-[#0f172a] bg-gradient-to-r from-blue-400 to-indigo-400 disabled:opacity-50"
         >
           {loading ? "Creating account..." : "Create Account"}
         </motion.button>
