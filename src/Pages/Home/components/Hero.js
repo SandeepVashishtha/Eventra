@@ -13,6 +13,8 @@ import CountUpLib from "react-countup";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
 import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
 
+const CountUp = CountUpLib.default || CountUpLib;
+
 const MotionLink = motion(Link);
 
 // ─── STATIC SEARCH INDEX CONFIGURATION ───────────────────────────────────────
