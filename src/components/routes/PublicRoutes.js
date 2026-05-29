@@ -15,6 +15,7 @@ const EventsPage = lazy(() => import("../../Pages/Events/EventsPage"));
 const EventDetails = lazy(() => import("../../Pages/Events/EventDetails"));
 const EventRegistration = lazy(() => import("../../Pages/Events/EventRegistration"));
 const HackathonPage = lazy(() => import("../../Pages/Hackathons/HackathonPage"));
+const VirtualVenueWalkthrough = lazy(() => import("../../Pages/Events/VirtualVenueWalkthrough"));
 const HackathonDetailsPage = lazy(() => import("../../Pages/Hackathons/HackathonDetailsPage"));
 const HackathonLifecycle = lazy(() => import('../../Pages/Hackathons/HackathonLifecycle'));
 const ProjectsPage = lazy(() => import("../../Pages/Projects/ProjectsPage"));
@@ -81,6 +82,7 @@ export const getPublicRoutes = () => [
     <Route key="/feedback" path="/feedback" element={<FeedbackPage />} />
     <Route key="/analytics" path="/analytics" element={<EventAnalyticsDashboard />} />
     <Route key="/events/:eventId/floor-plan" path="/events/:eventId/floor-plan" element={<FloorPlanDesignerPage />} />
+    <Route key="/events/:eventId/virtual-venue-walkthrough" path="/events/:eventId/virtual-venue-walkthrough" element={<VirtualVenueWalkthrough />} />
     <Route key="/documentation" path="/documentation" element={<DocumentationPage />} />
     <Route key="/submit-project" path="/submit-project" element={<SubmitProject />} />
   </Route>,
