@@ -137,13 +137,13 @@ const Hero = () => {
   }, [controls]);
 
   useEffect(() => {
-    let timeoutId;
+    const timeoutRef = { current: null };
 
     const onResize = () => {
       if (typeof window === "undefined") return;
-      clearTimeout(timeoutId);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
-      timeoutId = setTimeout(() => {
+      timeoutRef.current = setTimeout(() => {
         setIsMobileView(window.innerWidth <= 420);
       }, 150);
     };
@@ -151,7 +151,7 @@ const Hero = () => {
     window.addEventListener("resize", onResize);
 
     return () => {
-      clearTimeout(timeoutId);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       window.removeEventListener("resize", onResize);
     };
   }, []);
@@ -284,7 +284,7 @@ border-b border-gray-100 dark:border-slate-900">
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
           minHeight: "100vh",
-          width: "100vw",
+          width: "100%",
            y: (isTouch || prefersReducedMotion) ? 0 : yText,
           opacity: isTouch ? 1 : opacityHero,
           willChange: "transform, opacity",
@@ -348,7 +348,7 @@ border-b border-gray-100 dark:border-slate-900">
           {/* Subtext */}
           <motion.p
             variants={fadeUp}
-            className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-800 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
+            className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
           >
             Connect with developers, learn new skills, and grow your network at
             the best tech events, hackathons, and workshops in your area.
@@ -415,7 +415,7 @@ text-gray-600 dark:text-gray-300"
                                       {result.item.searchType}
                                     </span>
                                   </div>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 absolute left-0">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
                                     {result.item.description?.substring(0, 80)}...
                                   </p>
                                 </div>
@@ -481,7 +481,7 @@ text-gray-600 dark:text-gray-300"
                 aria-label="Join upcoming hackathons"
                 className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-amber-400 dark:bg-yellow-900 border border-amber-300 dark:border-yellow-700 text-white dark:text-white font-semibold shadow-md shadow-amber-100 dark:shadow-none hover:shadow-lg hover:bg-amber-500 dark:hover:bg-yellow-800 hover:scale-105 transition-all duration-300"
               >
-                <img src="/assets/hackathons.svg" alt="hackaton" className="mr-2"/>
+                <img src="/assets/hackathons.svg" alt="hackathons" className="mr-2"/>
                 Join Hackathons
                 <svg
                     className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
@@ -504,7 +504,7 @@ text-gray-600 dark:text-gray-300"
                 aria-label="Learn more about Eventra"
                 className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-pink-500 dark:bg-pink-900 text-white dark:text-white font-semibold shadow-md shadow-pink-100 dark:shadow-none transform transition-all duration-300 hover:scale-105 hover:bg-pink-600 dark:hover:bg-pink-800"
               >
-                <img src="/assets/learnmore.svg" alt="learnmore" className="mr-2"/>
+                <img src="/assets/learnmore.svg" alt="learn more" className="mr-2"/>
                 Learn More
                 <svg
                   className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
@@ -540,10 +540,10 @@ text-gray-600 dark:text-gray-300"
                   variants={fadeUp}
                   whileHover={{ y: -5 }}
                   transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
-                  className="flex flex-col items-center justify-center p-6 bg-white/60 dark:bg-gray-900/40 backdrop-blur-md rounded-2xl border border-gray-200/60 dark:border-gray-800/60 shadow-sm"
+                  className="flex flex-col items-center justify-center p-6 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-gray-200/80 dark:border-slate-800/80 shadow-lg hover:shadow-indigo-500/10 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-300"
                 >
                   
-                  <p className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
+                  <p className="text-4xl font-extrabold mb-1 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
                     {statsReady ? (
                       // AFTER
 <CountUp
@@ -559,7 +559,7 @@ text-gray-600 dark:text-gray-300"
                       </>
                     )}
                   </p>
-                  <p className="text-gray-500 dark:text-gray-600 text-xs sm:text-sm font-semibold uppercase tracking-wider">
+                  <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-semibold uppercase tracking-wider">
                     {stat.label}
                   </p>
                 </motion.div>

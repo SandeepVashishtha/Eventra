@@ -2,6 +2,9 @@ process.env.ALLOWED_ORIGIN = "http://localhost:3000";
 import assert from "node:assert/strict";
 import handler, { users } from "../api/auth/login.js";
 
+// Mock allowed origin to test specific CORS headers correctly
+process.env.ALLOWED_ORIGIN = "http://localhost:3000";
+
 // ---------------------------------------------------------------------------
 // Mock Response Helper
 // ---------------------------------------------------------------------------

@@ -64,9 +64,9 @@ function persistToLocalStorage(entry) {
 export const logError = (error, errorInfo, extra = {}) => {
   try {
     console.group?.("[Eventra ErrorLogger]");
-    console.error("Error:", error);
+    console.error("[GlobalErrorBoundary]", error);
     if (errorInfo?.componentStack) {
-      console.error("Component Stack:", errorInfo.componentStack);
+      console.error("[ComponentStack]", errorInfo);
     }
     if (Object.keys(extra).length) {
       console.info("Context:", extra);

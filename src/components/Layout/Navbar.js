@@ -1,15 +1,15 @@
-import NotificationBell from "../common/NotificationBell.jsx";
-import { useTheme } from "../../context/ThemeContext";
-import React, { useState, useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
+
+import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import ConfirmationModal from "../common/ConfirmationModal";
+import NotificationBell from "../common/NotificationBell.jsx";
 import CommandPalette from "../common/CommandPalette";
 
-import { UserCog } from "lucide-react";
 import {
   Home,
   Calendar,
@@ -21,6 +21,7 @@ import {
   Info,
   LayoutDashboard,
   User as UserIcon,
+  UserCog,
   LogOut,
   LogIn,
   MessageSquare,
@@ -34,8 +35,9 @@ import {
   Sun,
   MoreHorizontal,
   Search,
-  Palette,
+  Palette
 } from "lucide-react";
+import { FaBell } from "react-icons/fa";
 
 
 // --- Helpers to reduce complexity ---
@@ -459,6 +461,7 @@ const UserProfileDropdown = ({
           src={user.profilePicture}
           alt="Profile"
           className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20"
+          loading="lazy"
           onError={(e) => (e.currentTarget.style.display = "none")}
         />
       ) : (
@@ -577,8 +580,7 @@ const MobileUserSection = ({
         <img
           src={user.profilePicture}
           alt="Profile"
-          className="w-10 h-10 rounded-full object-cover"
-        />
+          className="w-10 h-10 rounded-full object-cover" loading="lazy"/>
       ) : (
         <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white">
           <UserIcon className="w-6 h-6" />
@@ -938,8 +940,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             <img
               src="/Eventra.png"
               alt="Eventra Logo"
-              className="h-9 w-auto object-contain"
-            />
+              className="h-9 w-auto object-contain" loading="lazy"/>
           </Link>
 
           {/* Centered Desktop Nav Links */}

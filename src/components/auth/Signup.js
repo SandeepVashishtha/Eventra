@@ -3,15 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from '../../hooks/useReducedMotion';
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { getPublicErrorMessage, AUTH_ERRORS } from "../../utils/errorMessages";
 import { useAuth } from "../../context/AuthContext";
-import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
-import GoogleLoginButton from "./GoogleLoginButton";
-import { 
-  User, Mail, Lock, Eye, EyeOff, Check, X, AlertCircle, 
-  Github, Chrome, ArrowRight, Sparkles 
+import {
+  Sparkles, Check, ArrowRight, EyeOff, Eye, User, Mail, Lock, AlertCircle, X
 } from "lucide-react";
-
-// ============ CONSTANTS & CONFIG ============
 const PASSWORD_REQUIREMENTS = [
   { id: 'length', label: 'At least 8 characters', regex: /.{8,}/ },
   { id: 'uppercase', label: 'One uppercase letter', regex: /[A-Z]/ },
@@ -24,7 +20,7 @@ const NAME_VALIDATION = {
   min: 2,
   max: 50,
   pattern: /^[a-zA-Z\s'-]+$/,
-  patternError: "Only letters, spaces, hyphens & apostrophes allowed"
+  patternError: "Only letters, spaces, hyphens & apostrophes allowed",
 };
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -66,14 +62,6 @@ const getPasswordStrength = (password) => {
 // ============ REUSABLE ICON COMPONENTS ============
 const ToggleEyeIcon = ({ visible, className = "" }) => 
   visible ? <EyeOff className={className} /> : <Eye className={className} />;
-
-const SocialIcon = ({ provider }) => {
-  const icons = {
-    google: <Chrome className="w-5 h-5" />,
-    github: <Github className="w-5 h-5" />,
-  };
-  return icons[provider] || null;
-};
 
 // ============ CUSTOM HOOK: useSignupForm ============
 const useSignupForm = (onSuccess) => {
@@ -143,7 +131,8 @@ const useSignupForm = (onSuccess) => {
 
   return {
     formData, errors, touched, loading, submitStatus,
-    updateField, handleBlur, validateForm, setLoading, setSubmitStatus, resetForm
+    updateField, handleBlur, validateForm, setLoading, setSubmitStatus, resetForm,
+    setTouched, setErrors
   };
 };
 
@@ -155,7 +144,8 @@ const Signup = () => {
   
   const {
     formData, errors, touched, loading, submitStatus,
-    updateField, handleBlur, validateForm, setLoading, setSubmitStatus
+    updateField, handleBlur, validateForm, setLoading, setSubmitStatus,
+    setTouched, setErrors
   } = useSignupForm();
 
   const passwordStrength = useMemo(() => 
@@ -228,35 +218,12 @@ const Signup = () => {
       setSubmitStatus('error');
       setErrors(prev => ({ 
         ...prev, 
-        submit: err.message.includes('email') 
-          ? "This email is already registered. Try logging in instead." 
-          : err.message 
+        submit: getPublicErrorMessage(err, AUTH_ERRORS.registrationFailed) 
       }));
     } finally {
       setLoading(false);
     }
   };
-
-  // Social login handler
-  const handleSocialLogin = useCallback(async (provider) => {
-    try {
-      setLoading(true);
-      const response = await apiUtils.get(`${API_ENDPOINTS.AUTH.OAUTH}/${provider}`);
-      
-      // Depending on wrapAxiosResponse, data could be response.data or response itself
-      const data = response.data || response;
-      if (data && data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error("No redirect URL returned from server.");
-      }
-    } catch (err) {
-      console.error(`OAuth error (${provider}):`, err);
-      setErrors(prev => ({ ...prev, submit: `Failed to connect with ${provider}. Please try again.` }));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   // Animation variants
   const containerVariants = {
@@ -373,11 +340,6 @@ const Signup = () => {
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
                   Start your journey with Eventra today
                 </p>
-              </div>
-
-              {/* Social Login Buttons */}
-              <div className="mb-6 flex justify-center w-full">
-                <GoogleLoginButton />
               </div>
 
               <div className="relative mb-6">

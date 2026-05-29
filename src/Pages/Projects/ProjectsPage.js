@@ -77,10 +77,14 @@ const ProjectGallery = () => {
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
 
-  const [bookmarks, setBookmarks] = useState(() => {
+  const [bookmarks, setBookmarks] = useState([]);
+
+  useEffect(() => {
     const saved = localStorage.getItem("eventra_bookmarked_projects");
-    return safeJsonParse(saved, []);
-  });
+    if (saved) {
+      setBookmarks(safeJsonParse(saved, []));
+    }
+  }, []);
 
   const handleBookmarkToggle = (projectId) => {
     setBookmarks((prev) => {
@@ -211,7 +215,7 @@ const ProjectGallery = () => {
           project.description.toLowerCase().includes(query) ||
           project.category.toLowerCase().includes(query) ||
           project.author.toLowerCase().includes(query) ||
-          (project.techStack &&
+          (Array.isArray(project.techStack) &&
             project.techStack.some((tech) =>
               tech.toLowerCase().includes(query)
             ))
