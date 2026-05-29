@@ -106,6 +106,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
           {/* Right Controls Container */}
           <div className="flex items-center gap-2 xl:gap-4 shrink-0">
+          {/* Hide these on mobile */}
           <div className="hidden sm:flex items-center gap-2 xl:gap-4">
             <button
               type="button"
