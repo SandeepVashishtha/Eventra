@@ -264,6 +264,29 @@ const EventCreation = () => {
       setCurrentStep(CREATION_STEPS.PREVIEW);
     }
   };
+  const handleNext = () => {
+  try {
+    if (currentStep === CREATION_STEPS.FORM) {
+      const isValid = validateForm();
+
+      if (!isValid) {
+        toast.error("Please fix the form errors before continuing.");
+        return;
+      }
+
+      setCurrentStep(CREATION_STEPS.PREVIEW);
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
+  } catch (error) {
+    logger.error("Error progressing to next step:", error);
+
+    toast.error("Unable to continue to the next step.");
+  }
+};
 
   const createEvent = () => {
     try {
@@ -1161,7 +1184,7 @@ const EventCreation = () => {
               {/* Submit Button */}
               <motion.button
                 type="button"
-                onClick={handleSubmit}
+                onClick={handleNext}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="w-full flex items-center justify-center gap-2 bg-black text-white font-semibold p-4 rounded-xl shadow-lg hover:bg-zinc-800 transition-all duration-300"
