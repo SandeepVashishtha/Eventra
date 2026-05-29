@@ -352,17 +352,25 @@ const EventRegistration = () => {
       : (API_ENDPOINTS.EVENTS?.REGISTER ? API_ENDPOINTS.EVENTS.REGISTER(eventId) : `/api/events/${eventId}/register`);
 
     try {
+      // userId is intentionally omitted from the request body.
+      // The backend must derive the caller's identity exclusively from the
+      // verified JWT (via the HttpOnly cookie or Authorization header set
+      // by the Axios instance). Including userId here would allow any
+      // authenticated user to register under a different account by
+      // manipulating the field — a classic mass-assignment / IDOR vector.
+      //
+      // The third argument (token) has also been removed: apiUtils.post's
+      // normalizeRequestConfig silently converts a string argument to {}
+      // so it was never sent as an Authorization header — dead code.
+      // Authentication is handled automatically by withCredentials: true
+      // on the Axios instance, which attaches the HttpOnly session cookie.
       await apiUtils.post(
         endpoint,
-          {
-            ...formData,
-            priority: formData.priority,
-            eventId: parseInt(eventId),
-            userId: user.id,
-          },
-        // Registration is authenticated server-side; send the active token
-        // explicitly instead of relying only on global storage lookup.
-        token
+        {
+          ...formData,
+          priority: formData.priority,
+          eventId: parseInt(eventId),
+        },
       );
 
       // Axios resolves for 2xx — treat as success
@@ -378,12 +386,13 @@ const EventRegistration = () => {
       const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
 
       if (isOfflineFailure) {
-        // Offline sync fallback keeps the full registration intent intact so
-        // it can be replayed without asking the user to submit the form again.
+        // Offline sync fallback — userId is also excluded from the queued
+        // payload for the same reason it is excluded from the live POST.
+        // When the queue is replayed, the backend will re-derive the caller's
+        // identity from the session token attached to the replayed request.
         const payload = {
           ...formData,
           eventId: parseInt(eventId),
-          userId: user.id,
         };
 
         const success = await pushToQueue(
@@ -590,7 +599,7 @@ const EventRegistration = () => {
             <div className="flex gap-3 justify-center">
               <a
                 href={googleCalendarUrl}
-                target="_blank"
+                target="_blank" rel="noopener noreferrer"
                 rel="noopener noreferrer"
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
@@ -601,7 +610,7 @@ const EventRegistration = () => {
               </a>
               <a
                 href={outlookCalendarUrl}
-                target="_blank"
+                target="_blank" rel="noopener noreferrer"
                 rel="noopener noreferrer"
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
@@ -620,7 +629,7 @@ const EventRegistration = () => {
             <div className="flex gap-3 justify-center">
               <a
                 href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`}
-                target="_blank"
+                target="_blank" rel="noopener noreferrer"
                 rel="noopener noreferrer"
                 className="w-10 h-10 inline-flex items-center justify-center bg-slate-900 hover:bg-slate-950 dark:bg-slate-950 dark:hover:bg-black rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title="Share on Twitter / X"
@@ -631,7 +640,7 @@ const EventRegistration = () => {
               </a>
               <a
                 href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
-                target="_blank"
+                target="_blank" rel="noopener noreferrer"
                 rel="noopener noreferrer"
                 className="w-10 h-10 inline-flex items-center justify-center bg-[#0077b5] hover:bg-[#006297] rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title="Share on LinkedIn"
@@ -645,7 +654,7 @@ const EventRegistration = () => {
                 onClick={handleNativeShare}
                 className="w-10 h-10 inline-flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title="Share / Copy Link"
-               aria-label="button">
+              >
                 <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                   <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
                   <polyline points="16 6 12 2 8 6" />
@@ -659,7 +668,7 @@ const EventRegistration = () => {
             <button
               type="button"
               className="w-full py-3.5 px-6 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold hover:bg-slate-800 dark:hover:bg-slate-100 hover:scale-[1.02] active:scale-[0.98] shadow-lg transition-all duration-300"
-             aria-label="button">
+            >
               Back to Details
             </button>
           </Link>

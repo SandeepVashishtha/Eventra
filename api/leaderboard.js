@@ -7,6 +7,61 @@ const POINTS = {
 };
 const DEFAULT_MERGED_PR_POINTS = 1;
 
+// ---------------------------------------------------------------------------
+// Per-IP rate limiting
+//
+// Prevents a single unauthenticated caller from flooding this endpoint and
+// exhausting the authenticated GITHUB_TOKEN quota (5 000 req/hr). Each call
+// triggers up to 11 sequential GitHub API requests, so even a modest flood
+// drains the quota quickly.
+//
+// Limit: 5 requests per IP per minute. In-memory; resets on cold start.
+// ---------------------------------------------------------------------------
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 5;
+const ipRateLimitMap = new Map();
+
+const isRateLimited = (ip) => {
+  const now = Date.now();
+  const entry = ipRateLimitMap.get(ip);
+
+  if (!entry || now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
+    ipRateLimitMap.set(ip, { count: 1, windowStart: now });
+    return false;
+  }
+
+  if (entry.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return true;
+  }
+
+  entry.count += 1;
+  return false;
+};
+
+// Evict stale rate-limit entries at most once per window to avoid O(n)
+// iteration on every request.
+let lastEvictionAt = 0;
+const evictStaleIpEntries = () => {
+  const now = Date.now();
+  if (now - lastEvictionAt < RATE_LIMIT_WINDOW_MS) return;
+  lastEvictionAt = now;
+  for (const [key, entry] of ipRateLimitMap.entries()) {
+    if (now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
+      ipRateLimitMap.delete(key);
+    }
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Server-side in-memory cache
+//
+// Prevents every CDN cache miss / cold start from firing 11 GitHub API calls.
+// The leaderboard data changes slowly; 5-minute freshness is sufficient.
+// ---------------------------------------------------------------------------
+const CACHE_TTL_MS = 5 * 60_000; // 5 minutes
+let cachedLeaderboard = null;
+let cacheTimestamp = 0;
+
 const normalizeLabel = (label = "") => label.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 const calculatePrPoints = (labels) => {
@@ -18,10 +73,42 @@ const calculatePrPoints = (labels) => {
   return levelPoints || DEFAULT_MERGED_PR_POINTS;
 };
 
+// ---------------------------------------------------------------------------
+// Resolve the caller's IP from common proxy headers then socket address
+// ---------------------------------------------------------------------------
+const getClientIp = (req) => {
+  const forwarded = req.headers?.["x-forwarded-for"];
+  if (forwarded) {
+    return forwarded.split(",")[0].trim();
+  }
+  return req.socket?.remoteAddress || req.connection?.remoteAddress || "unknown";
+};
+
 export default async function handler(req, res) {
   // Only allow GET requests
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Method Not Allowed" });
+  }
+
+  // Per-IP rate limiting — prevents unauthenticated callers from draining the
+  // GitHub token quota (each leaderboard call can fire 11 GitHub API requests).
+  const clientIp = getClientIp(req);
+  evictStaleIpEntries();
+
+  if (isRateLimited(clientIp)) {
+    res.setHeader("Retry-After", "60");
+    return res.status(429).json({
+      error: "Too many requests. The leaderboard may be requested at most 5 times per minute per client.",
+    });
+  }
+
+  // Serve from the in-process cache when fresh — avoids redundant GitHub calls
+  // on warm instances within the same 5-minute window.
+  const now = Date.now();
+  if (cachedLeaderboard && now - cacheTimestamp < CACHE_TTL_MS) {
+    res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate=86400");
+    res.setHeader("X-Cache", "HIT");
+    return res.status(200).json(cachedLeaderboard);
   }
 
   const token = process.env.GITHUB_TOKEN;
@@ -37,7 +124,7 @@ export default async function handler(req, res) {
     // 1. Fetch contributors to get names and avatars
     const contributorsUrl = `https://api.github.com/repos/${GITHUB_REPO}/contributors`;
     const contributorsRes = await fetch(contributorsUrl, { headers });
-    
+
     if (!contributorsRes.ok) {
       throw new Error(`Failed to fetch contributors: ${contributorsRes.status}`);
     }
@@ -60,7 +147,7 @@ export default async function handler(req, res) {
 
     // Limit to 10 pages (1000 PRs) to avoid hitting Vercel 10s timeout limits
     // In production, consider Webhooks or a database-backed Cron job if > 1000 PRs
-    const MAX_PAGES = 10; 
+    const MAX_PAGES = 10;
 
     while (hasMore && page <= MAX_PAGES) {
       const pullsUrl = `https://api.github.com/repos/${GITHUB_REPO}/pulls?state=closed&per_page=100&page=${page}`;
@@ -73,7 +160,7 @@ export default async function handler(req, res) {
       }
 
       const prs = await prsRes.json();
-      
+
       if (!Array.isArray(prs) || prs.length === 0) {
         hasMore = false;
         break;
@@ -86,7 +173,7 @@ export default async function handler(req, res) {
         const hasGsocLabel = labels.some(
           (label) => label.includes("gssoc") || label.includes("gsoc")
         );
-        
+
         if (!hasGsocLabel) return; // Must have GSOC labels
 
         const author = pr.user.login;
@@ -126,17 +213,20 @@ export default async function handler(req, res) {
     });
 
     // 4. Sort contributors by points
-    const sortedContributors = Object.values(contributorsMap).sort((a, b) => b.points - a.points);
+    const sortedContributors = Object.values(contributorsMap).sort(
+      (a, b) => b.points - a.points
+    );
 
-    // 5. Apply Edge Caching (Cache-Control)
-    // s-maxage=3600 means Vercel's CDN will cache the response for 1 hour.
-    // stale-while-revalidate=86400 means if the cache is stale (older than 1h),
-    // it will immediately return the stale value to the user while re-fetching
-    // the fresh data in the background (preventing the 10-second wait).
-    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
-    
+    // 5. Populate the in-process cache so subsequent warm-instance calls skip
+    //    the GitHub round-trips entirely for the next CACHE_TTL_MS window.
+    cachedLeaderboard = sortedContributors;
+    cacheTimestamp = Date.now();
+
+    // 6. Apply Edge Caching (Cache-Control)
+    res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate=86400");
+    res.setHeader("X-Cache", "MISS");
+
     return res.status(200).json(sortedContributors);
-    
   } catch (error) {
     console.error("[Leaderboard API] Aggregation Error:", error);
     return res.status(500).json({ error: "Failed to compile leaderboard data" });
