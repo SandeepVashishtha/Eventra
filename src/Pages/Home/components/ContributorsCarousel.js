@@ -16,6 +16,7 @@ import { Link } from "react-router-dom";
 import {
   fetchProfileWithCache,
 } from "../../../utils/githubProfileCache";
+import { throttleProfileFetch } from "../../../components/Contributors";
 import { fetchWithTimeout } from "../../../utils/fetchWithTimeout";
 
 // GitHub repo

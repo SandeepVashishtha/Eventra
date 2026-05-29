@@ -12,8 +12,8 @@ jest.mock("idb-keyval", () => ({
   }),
 }));
 
-import { useNotifications } from "./useNotifications";
-import { get as idbGet, set as idbSet } from "idb-keyval";
+const { useNotifications } = require("./useNotifications");
+const { get: idbGet, set: idbSet } = require("idb-keyval");
 
 const STORAGE_KEY = "eventra_notifications";
 
