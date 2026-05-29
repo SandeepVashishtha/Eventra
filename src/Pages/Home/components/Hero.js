@@ -284,7 +284,7 @@ border-b border-gray-100 dark:border-slate-900">
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
           minHeight: "100vh",
-          width: "100vw",
+          width: "100%",
            y: (isTouch || prefersReducedMotion) ? 0 : yText,
           opacity: isTouch ? 1 : opacityHero,
           willChange: "transform, opacity",
@@ -415,7 +415,7 @@ text-gray-600 dark:text-gray-300"
                                       {result.item.searchType}
                                     </span>
                                   </div>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 absolute left-0">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
                                     {result.item.description?.substring(0, 80)}...
                                   </p>
                                 </div>
