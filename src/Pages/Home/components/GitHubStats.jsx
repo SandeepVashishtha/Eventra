@@ -231,7 +231,7 @@ export default function GitHubStats() {
                 <motion.a
                   key={label}
                   href={link}
-                  target="_blank"
+                  target="_blank" rel="noopener noreferrer"
                   rel="noopener noreferrer"
                   whileHover={{ scale: 1.1, rotate: 1 }}
                   whileTap={{ scale: 0.95 }}
