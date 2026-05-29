@@ -510,7 +510,7 @@ const handleSubmit = async (e) => {
                         onClick={handleRemoveImage}
                         className="absolute top-2 right-2 p-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-full shadow-md transition-all duration-200 cursor-pointer"
                         title="Remove image"
-                      >
+                       aria-label="button">
                         <XMarkIcon className="w-3.5 h-3.5" />
                       </button>
                     </div>

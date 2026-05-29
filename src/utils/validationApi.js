@@ -1,3 +1,5 @@
+import { apiUtils } from "../config/api";
+
 const DEFAULT_TIMEOUT_MS = 8000;
 const DEFAULT_RETRIES = 1;
 const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
@@ -111,19 +113,12 @@ export const requestValidation = async (endpoint, options = {}) => {
     timeoutMs = DEFAULT_TIMEOUT_MS,
     retries = DEFAULT_RETRIES,
     retryDelayMs = 300,
-    fetchImpl = defaultFetch,
-    fetchImpl = (typeof window !== "undefined" && window.fetch) ? window.fetch : undefined,
+    fetchImpl = defaultFetch || ((typeof window !== "undefined" && window.fetch) ? window.fetch : undefined),
     invalidMessage = "Validation failed",
     networkMessage = "Unable to validate right now. Please try again.",
     validMessage = "",
     availabilityField = "available",
   } = options;
-
-  if (typeof fetchImpl !== "function") {
-    return createValidationResponse(false, networkMessage, {
-      error: new Error("Fetch API is not available"),
-    });
-  }
 
   let lastError = null;
 
@@ -132,15 +127,23 @@ export const requestValidation = async (endpoint, options = {}) => {
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      const response = await fetchImpl(endpoint, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          ...headers,
-        },
-        body: body === undefined ? undefined : JSON.stringify(body),
-        signal: controller.signal,
-      });
+      const config = { headers, signal: controller.signal };
+      let response;
+      const uppercaseMethod = method.toUpperCase();
+      
+      if (uppercaseMethod === "GET") {
+        response = await apiUtils.get(endpoint, config);
+      } else if (uppercaseMethod === "POST") {
+        response = await apiUtils.post(endpoint, body, config);
+      } else if (uppercaseMethod === "PUT") {
+        response = await apiUtils.put(endpoint, body, config);
+      } else if (uppercaseMethod === "PATCH") {
+        response = await apiUtils.patch(endpoint, body, config);
+      } else if (uppercaseMethod === "DELETE") {
+        response = await apiUtils.delete(endpoint, config);
+      } else {
+        response = await apiUtils.get(endpoint, config);
+      }
 
       clearTimeout(timeoutId);
 
@@ -149,22 +152,6 @@ export const requestValidation = async (endpoint, options = {}) => {
         data = await response.json();
       } catch {
         data = null;
-      }
-
-      if (!response.ok) {
-        const shouldRetry =
-          RETRYABLE_STATUS_CODES.includes(response.status) && attempt < retries;
-
-        if (shouldRetry) {
-          await wait(retryDelayMs * (attempt + 1));
-          continue;
-        }
-
-        return createValidationResponse(
-          false,
-          data?.message || invalidMessage,
-          { status: response.status, data },
-        );
       }
 
       return normalizeValidationApiResponse(data, {
@@ -176,6 +163,19 @@ export const requestValidation = async (endpoint, options = {}) => {
       clearTimeout(timeoutId);
       lastError = error;
 
+      const status = error.status;
+      const data = error.data;
+
+      // If the API explicitly returned a validation failure (like 400, 409)
+      if (status && !RETRYABLE_STATUS_CODES.includes(status) && status < 500) {
+        return createValidationResponse(
+          false,
+          data?.message || invalidMessage,
+          { status, data },
+        );
+      }
+
+      // Retry on network errors, timeouts, or 5xx server errors
       if (attempt < retries) {
         await wait(retryDelayMs * (attempt + 1));
         continue;
@@ -183,7 +183,7 @@ export const requestValidation = async (endpoint, options = {}) => {
     }
   }
 
-  const timedOut = lastError?.name === "AbortError";
+  const timedOut = lastError?.isTimeout || lastError?.name === "AbortError";
   return createValidationResponse(
     false,
     timedOut ? "Validation request timed out. Please try again." : networkMessage,

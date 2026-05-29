@@ -5,11 +5,11 @@ import { useAuth } from '../../context/AuthContext';
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
+import { getPublicErrorMessage, AUTH_ERRORS } from "../../utils/errorMessages";
 import useReducedMotion from "../../hooks/useReducedMotion";
-import GoogleLoginButton from './GoogleLoginButton';
 import FieldError from '../common/FieldError';
 import useLoginRateLimit from '../../hooks/useLoginRateLimit';
-import { MAX_LOGIN_ATTEMPTS } from '../../utils/rateLimitUtils';
+import { MAX_LOGIN_ATTEMPTS, parseRetryAfterMs } from '../../utils/rateLimitUtils';
 import '../../styles/auth.css';
 
 const Login = () => {
@@ -28,6 +28,7 @@ const Login = () => {
     recordAttempt,
     resetAttempts,
     isLockedOut,
+    applyServerLockout,
   } = useLoginRateLimit();
 
   // If ProtectedRoute redirected here because the JWT expired, show a notice.
@@ -79,7 +80,8 @@ const Login = () => {
     if (!validate()) return;
 
     try {
-      const ok = await login(formData.usernameOrEmail, formData.password);
+      const sanitizedUsernameOrEmail = formData.usernameOrEmail.trim();
+      const ok = await login(sanitizedUsernameOrEmail, formData.password);
       if (ok) {
         resetAttempts();
         showAuthToast("Login successful! Redirecting to dashboard...", () =>
@@ -88,7 +90,25 @@ const Login = () => {
       }
     } catch (err) {
       recordAttempt();
-      toast.error(err.message || 'Login failed. Please check your credentials.');
+      toast.error(getPublicErrorMessage(err, AUTH_ERRORS.loginFailed));
+      // If the server returned 429, respect the Retry-After header rather than
+      // computing our own backoff — the server-side window may be longer.
+      const retryAfterHeader =
+        err?.response?.headers?.['retry-after'] ||
+        err?.response?.headers?.['Retry-After'] ||
+        err?.retryAfter ||
+        null;
+
+      const serverDelayMs = parseRetryAfterMs(retryAfterHeader);
+      if (serverDelayMs > 0) {
+        applyServerLockout(serverDelayMs / 1000);
+        toast.error(
+          `Too many requests. Please wait ${Math.ceil(serverDelayMs / 1000)} seconds before trying again.`,
+        );
+      } else {
+        recordAttempt();
+        toast.error(err.message || 'Login failed. Please check your credentials.');
+      }
     }
   };
 
@@ -315,8 +335,6 @@ const Login = () => {
                 </motion.button>
 
               </motion.form>
-
-              <GoogleLoginButton />
 
               {/* Sign up link */}
               <div className="text-center">

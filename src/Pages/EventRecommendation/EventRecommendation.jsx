@@ -287,7 +287,7 @@ const EventRecommendation = () => {
                   <option>
                     Beginner
                   </option>
-//
+
                   <option>
                     Intermediate
                   </option>
@@ -393,7 +393,7 @@ const EventRecommendation = () => {
               <button
                 onClick={generateRecommendations}
                 className="w-full mt-4 bg-blue-600 hover:bg-blue-700 transition-all text-white rounded-xl py-3 text-sm font-semibold"
-              >
+                aria-label="Generate recommendations">
                 Generate Recommendations
               </button>
 
