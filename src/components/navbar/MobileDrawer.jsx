@@ -99,12 +99,14 @@ const MobileDrawer = ({
       >
         <div className="mobile-landscape-compact flex min-h-[64px] items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 dark:border-gray-800">
           <div className="flex min-w-0 items-center gap-2">
-            <img
-              src="/Eventra.png"
-              alt=""
-              aria-hidden="true"
-              className="h-8 w-8 shrink-0 rounded-xl object-contain"
-            />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gray-100 p-1 ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700">
+              <img
+                src="/favicon.png"
+                alt=""
+                aria-hidden="true"
+                className="block h-full w-full object-contain"
+              />
+            </div>
             <h2 className="truncate text-xl font-bold text-gray-900 dark:text-white xs:text-2xl">
               Eventra
             </h2>

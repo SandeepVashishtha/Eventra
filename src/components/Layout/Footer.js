@@ -143,6 +143,11 @@ const ExternalLink = ({
 const isValidEmail = (value) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
+const formatFooterHeading = (key) =>
+  key
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
 const Newsletter = () => {
   const [email, setEmail] = useState("");
 
@@ -246,6 +251,7 @@ const Newsletter = () => {
             }}
             placeholder="Enter your email"
             className="pl-10 pr-4 py-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full"
+            style={{ paddingLeft: "2.5rem" }}
             disabled={isSubmitting}
             aria-describedby={
               feedback.message
@@ -301,7 +307,7 @@ const SocialLinksRender = () => (
         <ExternalLink
           key={link.name}
           href={link.href}
-          className="text-gray-400 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+          className="inline-flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
           aria-label={link.name}
           title={link.name}
         >
@@ -317,7 +323,7 @@ const SocialLinksRender = () => (
 );
 
 const FooterLinksRender = () => (
-  <>
+  <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-3 xl:gap-10">
     {Object.entries(footerLinks).map(
       ([key, links]) => (
         <div
@@ -325,7 +331,7 @@ const FooterLinksRender = () => (
           className="py-2"
         >
           <h4 className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-widest mb-6">
-            {key.replace("_", " ")}
+            {formatFooterHeading(key)}
           </h4>
 
           <ul className="space-y-4">
@@ -349,24 +355,33 @@ const FooterLinksRender = () => (
         </div>
       )
     )}
-  </>
+  </div>
 );
 
 const Footer = () => {
   return (
-    <footer className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 transition-colors duration-500">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-          <div className="space-y-4 lg:col-span-2">
-            <h2
-              className="text-2xl sm:text-3xl font-bold inline-block text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-black dark:from-white dark:to-gray-300 hover:from-indigo-600 hover:to-purple-600 dark:hover:from-indigo-400 dark:hover:to-purple-400 transition-all duration-300 hover:scale-105 hover:-translate-y-1 cursor-default"
-              style={{
-                fontFamily:
-                  "Anton, sans-serif",
-              }}
-            >
-              Eventra
-            </h2>
+    <footer className="relative z-50 overflow-hidden border-t border-gray-100 bg-gradient-to-b from-white via-slate-50 to-white transition-colors duration-500 dark:border-gray-800 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-8">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-5 xl:gap-12">
+          <div className="space-y-5 lg:col-span-1 xl:col-span-2">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700">
+                <img
+                  src="/favicon.png"
+                  alt=""
+                  aria-hidden="true"
+                  className="h-full w-full object-contain p-1"
+                />
+              </div>
+              <h2
+                className="text-2xl sm:text-3xl font-bold leading-none text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-black dark:from-white dark:to-gray-300"
+                style={{
+                  fontFamily: "Anton, sans-serif",
+                }}
+              >
+                Eventra
+              </h2>
+            </div>
 
             <p className="text-gray-600 dark:text-gray-400 text-sm">
               Open-source event management for communities worldwide.
@@ -377,7 +392,9 @@ const Footer = () => {
             <SocialLinksRender />
           </div>
 
-          <FooterLinksRender />
+          <div className="lg:col-span-1 xl:col-span-3">
+            <FooterLinksRender />
+          </div>
         </div>
       </div>
 

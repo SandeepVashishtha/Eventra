@@ -6,7 +6,10 @@
 @import "tailwindcss";
 @config "../tailwind.config.cjs";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
+  --breakpoint-short: (max-height: 520px) and (orientation: landscape);
   --font-size-body: 16px;
   --font-size-body--line-height: 24px;
   --font-size-nav: 16px;

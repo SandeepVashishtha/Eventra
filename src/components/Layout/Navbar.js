@@ -627,6 +627,31 @@ const MobileUserSection = ({
   </div>
 );
 
+const BrandMark = ({ compact = false }) => (
+  <div className="flex min-w-0 items-center gap-3">
+    <div
+      className={`flex flex-none items-center justify-center overflow-hidden rounded-2xl bg-white/90 shadow-sm ring-1 ring-zinc-200/70 dark:bg-zinc-900/80 dark:ring-zinc-700/60 ${
+        compact ? "h-10 w-10" : "h-11 w-11 sm:h-12 sm:w-12"
+      }`}
+    >
+      <img
+        src="/Eventra.png"
+        alt="Eventra"
+        className="block flex-none object-contain"
+        style={{ width: compact ? 40 : 44, height: compact ? 40 : 44 }}
+        loading="lazy"
+      />
+    </div>
+    <span
+      className={`truncate font-black tracking-tight text-zinc-900 dark:text-white ${
+        compact ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl"
+      }`}
+    >
+      Eventra
+    </span>
+  </div>
+);
+
 const NAV_ITEMS = [
   { name: "Home", href: "/", icon: <Home className="w-5 h-5" /> },
   {
@@ -701,12 +726,7 @@ const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
 
 const MobileDrawerHeader = ({ closeBtnRef, closeAllMenus }) => (
   <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-zinc-800/50">
-    <div className="flex items-center gap-2">
-      <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-        <Sparkles className="w-5 h-5 text-white" />
-      </div>
-      <span className="font-bold text-gray-900 dark:text-white">Menu</span>
-    </div>
+    <BrandMark compact />
     <button
       ref={closeBtnRef}
       onClick={closeAllMenus}
@@ -935,12 +955,9 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           {/* Logo */}
           <Link
             to="/"
-            className="flex items-center shrink-0 z-20 mr-2"
+            className="flex items-center shrink-0 z-20 mr-2 min-w-0"
           >
-            <img
-              src="/Eventra.png"
-              alt="Eventra Logo"
-              className="h-9 w-auto object-contain" loading="lazy"/>
+            <BrandMark />
           </Link>
 
           {/* Centered Desktop Nav Links */}
