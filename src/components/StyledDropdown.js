@@ -169,7 +169,8 @@ const Dropdown = ({
                 {opt}
                 <button
                   type="button"
-                  onClick={() = aria-label="button"> handleSelect(opt)}
+                  aria-label="button"
+                  onClick={() => handleSelect(opt)}
                   onKeyDown={(event) => handleOptionKeyDown(event, opt)}
                   className={`w-full px-4 py-2 text-left text-sm cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 focus:bg-indigo-50 dark:focus:bg-gray-700 focus:outline-none text-gray-700 dark:text-gray-100 ${
                     value === opt
