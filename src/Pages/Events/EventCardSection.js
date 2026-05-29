@@ -2,7 +2,7 @@ import { memo, useMemo } from "react";
 import EventCard from "./EventCard";
 import SkeletonEventCard from "../../components/common/SkeletonEventCard";
 
-const EventCardSection = ({ isLoading, events, viewMode, filterType, onClearFilters }) => {
+const EventCardSection = ({ isLoading, events, viewMode, filterType, onClearFilters, cacheInfo }) => {
   const skeletonItems = useMemo(
     () => Array.from({ length: 6 }, (_, index) => `skeleton-${index + 1}`),
     [],
@@ -68,15 +68,27 @@ const EventCardSection = ({ isLoading, events, viewMode, filterType, onClearFilt
   }
 
   return (
-    <div
-      key={filterType + viewMode}
-      className={gridClassName}
-      data-list-size={visibleEvents.length}
-    >
-      {visibleEvents.map((event, index) => (
-        <EventCard key={event.id || `${event.title}-${event.date}-${index}`} event={event} />
-      ))}
-    </div>
+    <>
+      {cacheInfo && (
+        <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
+          Showing {cacheInfo.label} cached events. New changes will appear when your connection returns.
+        </div>
+      )}
+
+      <div
+        key={filterType + viewMode}
+        className={gridClassName}
+        data-list-size={visibleEvents.length}
+      >
+        {visibleEvents.map((event, index) => (
+          <EventCard
+            key={event.id || `${event.title}-${event.date}-${index}`}
+            event={event}
+            cacheInfo={cacheInfo}
+          />
+        ))}
+      </div>
+    </>
   );
 };
 

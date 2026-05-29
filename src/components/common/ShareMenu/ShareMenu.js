@@ -199,7 +199,7 @@ const ShareMenu = ({
               {/* Native System Share (Only shows if browser supports it) */}
               {navigator.share && (
                 <button
-                onClick={() = aria-label="button"> handleShare('system')}
+                onClick={() => handleShare('system')}
                 role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-800"
                 >
@@ -217,7 +217,7 @@ const ShareMenu = ({
                 onClick={handleCopyLink}
                 role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-               aria-label="button">
+               aria-label="Copy link to clipboard">
                 <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                   {copied ? (
                     <Check className="w-4 h-4 text-green-600" />
@@ -232,7 +232,7 @@ const ShareMenu = ({
               
               {/* Email */}
               <button
-                onClick={() = aria-label="button"> handleShare('email')}
+                onClick={() => handleShare('email')}
                 role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
@@ -244,7 +244,7 @@ const ShareMenu = ({
               
               {/* WhatsApp */}
               <button
-                onClick={() = aria-label="button"> handleShare('whatsapp')}
+                onClick={() => handleShare('whatsapp')}
                 role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
@@ -256,7 +256,7 @@ const ShareMenu = ({
               
               {/* Twitter/X */}
               <button
-                onClick={() = aria-label="button"> handleShare('twitter')}
+                onClick={() => handleShare('twitter')}
                 role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
@@ -271,7 +271,7 @@ const ShareMenu = ({
               
               {/* Facebook */}
               <button
-                onClick={() = aria-label="button"> handleShare('facebook')}
+                onClick={() => handleShare('facebook')}
                 role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
@@ -283,7 +283,7 @@ const ShareMenu = ({
               
               {/* LinkedIn */}
               <button
-                onClick={() = aria-label="button"> handleShare('linkedin')}
+                onClick={() => handleShare('linkedin')}
                 role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
@@ -295,7 +295,7 @@ const ShareMenu = ({
               
               {/* Telegram */}
               <button
-                onClick={() = aria-label="button"> handleShare('telegram')}
+                onClick={() => handleShare('telegram')}
                 role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >

@@ -18,15 +18,22 @@ import {
   CheckCircle,
   Loader2,
 } from "lucide-react";
+import { useFormValidation } from "../../hooks/useFormValidation";
 import { getEventStatus } from "../../utils/eventUtils";
 import { checkRegistrationConflict, suggestAlternativeEvents } from "../../utils/conflictDetection";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useSessionRecovery } from "../../context/SessionRecoveryContext";
-import { useFormValidation } from "../../hooks/useFormValidation";
+import CalendarView from "../../components/CalendarView";
+
 import { validate } from "../../validation";
 import { toast } from "react-toastify";
+import {
+  getCacheAgeLabel,
+  getCachedEventDetail,
+  saveCachedEventDetail,
+} from "../../utils/offlineEventCache";
 
 import { pushToQueue } from "../../utils/offlineQueue";
 import EventConflictModal from "../../components/EventConflictModal";
@@ -39,11 +46,12 @@ const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
 const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
 
 function sendConfirmationEmail(userEmail, userName, eventName, eventDate) {
+  const finalName = userName || "Participant";
   if (EMAILJS_PUBLIC_KEY && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && window.emailjs) {
     window.emailjs.init(EMAILJS_PUBLIC_KEY);
     window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
       to_email: userEmail,
-      to_name: userName,
+      to_name: finalName,
       event_name: eventName,
       event_date: eventDate,
     }).catch(() => { });
@@ -140,6 +148,8 @@ const EventRegistration = () => {
       organization: "",
       designation: "",
       additionalInfo: "",
+      priority: "Medium",
+
     },
     validationRules,
     { debounceMs: 300 }
@@ -189,6 +199,7 @@ const EventRegistration = () => {
             status: getEventStatus(response.data),
           };
           setEvent(fetchedEvent);
+          saveCachedEventDetail(fetchedEvent);
 
           // Pre-fill form if user is authenticated
           if (isAuthenticated() && user) {
@@ -201,6 +212,21 @@ const EventRegistration = () => {
         }
       } catch (error) {
         console.error("Failed to load event details:", error);
+        const cached = getCachedEventDetail(eventId);
+        if (cached?.event) {
+          setEvent({
+            ...cached.event,
+            status: getEventStatus(cached.event),
+            cacheInfo: {
+              cachedAt: cached.cachedAt,
+              label: getCacheAgeLabel(cached.cachedAt),
+            },
+          });
+
+          toast.warning(`Showing ${getCacheAgeLabel(cached.cachedAt)} event details.`);
+          return;
+        }
+
         // Try fallback to hackathonsData as a last resort
         const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
         if (foundMock) {
@@ -328,11 +354,12 @@ const EventRegistration = () => {
     try {
       await apiUtils.post(
         endpoint,
-        {
-          ...formData,
-          eventId: parseInt(eventId),
-          userId: user.id,
-        },
+          {
+            ...formData,
+            priority: formData.priority,
+            eventId: parseInt(eventId),
+            userId: user.id,
+          },
         // Registration is authenticated server-side; send the active token
         // explicitly instead of relying only on global storage lookup.
         token
@@ -351,14 +378,23 @@ const EventRegistration = () => {
       const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
 
       if (isOfflineFailure) {
-        // Offline sync fallback keeps registration intent intact without
-        // storing PII in localStorage.
+        // Offline sync fallback keeps the full registration intent intact so
+        // it can be replayed without asking the user to submit the form again.
         const payload = {
+          ...formData,
           eventId: parseInt(eventId),
           userId: user.id,
         };
 
-        const success = await pushToQueue({ eventId: parseInt(eventId), payload });
+        const success = await pushToQueue(
+          {
+            actionType: isEventFull ? "JOIN_WAITLIST" : "REGISTER_EVENT",
+            endpoint,
+            eventId: parseInt(eventId),
+            payload,
+          },
+          user.id
+        );
 
         if (success) {
           setRegistered(true);
@@ -554,7 +590,7 @@ const EventRegistration = () => {
             <div className="flex gap-3 justify-center">
               <a
                 href={googleCalendarUrl}
-                target="_blank"
+                target="_blank" rel="noopener noreferrer"
                 rel="noopener noreferrer"
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
@@ -565,7 +601,7 @@ const EventRegistration = () => {
               </a>
               <a
                 href={outlookCalendarUrl}
-                target="_blank"
+                target="_blank" rel="noopener noreferrer"
                 rel="noopener noreferrer"
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
@@ -584,7 +620,7 @@ const EventRegistration = () => {
             <div className="flex gap-3 justify-center">
               <a
                 href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`}
-                target="_blank"
+                target="_blank" rel="noopener noreferrer"
                 rel="noopener noreferrer"
                 className="w-10 h-10 inline-flex items-center justify-center bg-slate-900 hover:bg-slate-950 dark:bg-slate-950 dark:hover:bg-black rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title="Share on Twitter / X"
@@ -595,7 +631,7 @@ const EventRegistration = () => {
               </a>
               <a
                 href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
-                target="_blank"
+                target="_blank" rel="noopener noreferrer"
                 rel="noopener noreferrer"
                 className="w-10 h-10 inline-flex items-center justify-center bg-[#0077b5] hover:bg-[#006297] rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title="Share on LinkedIn"
@@ -609,7 +645,7 @@ const EventRegistration = () => {
                 onClick={handleNativeShare}
                 className="w-10 h-10 inline-flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title="Share / Copy Link"
-               aria-label="button">
+              >
                 <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                   <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
                   <polyline points="16 6 12 2 8 6" />
@@ -623,7 +659,7 @@ const EventRegistration = () => {
             <button
               type="button"
               className="w-full py-3.5 px-6 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold hover:bg-slate-800 dark:hover:bg-slate-100 hover:scale-[1.02] active:scale-[0.98] shadow-lg transition-all duration-300"
-             aria-label="button">
+            >
               Back to Details
             </button>
           </Link>
@@ -677,8 +713,9 @@ const EventRegistration = () => {
             </div>
           </div>
 
-          {isEventFull ? "Waitlist Joined!" : "Registration Confirmed!"}
           <div className="p-8">
+            <CalendarView events={myEvents} />
+          
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
               Register for this Event
             </h2>
@@ -801,15 +838,27 @@ const EventRegistration = () => {
                 >
                   Designation (Optional)
                 </label>
-                <input
-                  type="text"
-                  id="designation"
-                  name="designation"
-                  value={formData.designation}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                  placeholder="Your job title or role"
-                />
+                {/* Priority */}
+                <div>
+                  <label
+                    htmlFor="priority"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                  >
+                    Priority (Optional)
+                  </label>
+                  <select
+                    id="priority"
+                    name="priority"
+                    value={formData.priority}
+                    onChange={handleChange}
+                    className="w-full pl-3 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  >
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                  </select>
+                </div>
+
               </div>
 
               {/* Additional Info */}
@@ -844,7 +893,7 @@ const EventRegistration = () => {
               <div className="flex gap-4">
                 <button
                   type="button"
-                  onClick={() = aria-label="button"> navigate(-1)}
+                  onClick={() => navigate(-1)}
                   className="flex-1 px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
                 >
                   Cancel
@@ -853,7 +902,7 @@ const EventRegistration = () => {
                   type="submit"
                   disabled={submitting || !isFormValid}
                   className="flex-1 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                 aria-label="button">
+                  aria-label="Submit registration">
                   {submitting ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
