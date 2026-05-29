@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import ConfirmationModal from "../common/ConfirmationModal";
+import { useNavigate } from "react-router-dom";
 import {
   Plus, Minus, Trash2, Save, RotateCcw,
   Move, Grid, Users, Layout, MapPin, Minimize2,
@@ -808,6 +809,9 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
             <button onClick={() => loadPreset("conference")} className="text-xs font-semibold px-2 py-0.5 hover:text-indigo-400 text-gray-300 transition-colors">Keynote</button>
           </div>
 
+          <button onClick={() => navigate(`/events/${eventId}/virtual-venue-walkthrough`)} className="fp-btn fp-btn-primary" aria-label="3D Walkthrough">
+            3D Walkthrough
+          </button>
           <button onClick={saveLayout} className="fp-btn fp-btn-primary" aria-label="button">
             <Save size={16} />
             Save Layout
