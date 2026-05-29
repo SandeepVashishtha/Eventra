@@ -4,6 +4,7 @@ import { Share2, Copy, Mail, Check } from 'lucide-react';
 import { FiFacebook, FiLinkedin } from 'react-icons/fi';
 import { FaWhatsapp, FaTelegram } from 'react-icons/fa';
 import { generateSharingUrl, copyToClipboard } from '../../../utils/shareUtils';
+import { toast } from 'react-toastify';
 import './ShareMenu.css';
 
 /**
@@ -98,7 +99,10 @@ const ShareMenu = ({
         url: shareData.url || window.location.href,
       })
       .then(()=>setIsOpen(false))
-      .catch((err)=>console.error('Error sharing:', err));
+      .catch((err) => {
+        console.error('Error sharing:', err);
+        toast.error("Failed to share event", { autoClose: 2000 });
+      });
       return;
     }
     if (platform === 'copy') {
