@@ -22,25 +22,33 @@ const RouteFallback = () => (
   </div>
 );
 
-const AppRoutes = () => (
-  <Suspense fallback={<RouteFallback />}>
-    <Routes>
-      {getPublicRoutes()}
-      {getProtectedRoutes()}
-      {getAuthRoutes()}
+const AppRoutes = () => {
+  return (
+    <Suspense fallback={<RouteFallback />}>
+      <Routes>
+        {/* Public Routes */}
+        {getPublicRoutes()}
 
-      <Route
-        path="/dashboard/achievements"
-        element={
-          <ProtectedRoute>
-            <UserAchievements />
-          </ProtectedRoute>
-        }
-      />
+        {/* Protected Routes */}
+        {getProtectedRoutes()}
+
+        {/* Auth Routes */}
+        {getAuthRoutes()}
+
+        {/* Achievements Route */}
+        <Route
+          path="/dashboard/achievements"
+          element={
+            <ProtectedRoute>
+              <UserAchievements />
+            </ProtectedRoute>
+          }
+        />
 
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   </Suspense>
-);
+  );
+};
 
 export default AppRoutes;

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useStableFilters } from "../../hooks/useStableFilters";
+import Fuse from "fuse.js";
 import mockEvents from "./eventsMockData.json";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { getEventStatus } from "../../utils/eventUtils";
@@ -23,26 +25,10 @@ const normalizeEvent = (event) => ({
   status: event.status || getEventStatus(event),
 });
 
-const eventMatchesSearch = (event, query) => {
-  const safeQuery = query.trim().toLowerCase();
-
-  if (!safeQuery) {
-    return true;
-  }
-
-  return [
-    event.title,
-    event.description,
-    event.category,
-    event.type,
-    event.location,
-    event.date,
-    ...(event.tags || []),
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase()
-    .includes(safeQuery);
+const FUSE_OPTIONS = {
+  keys: ['title', 'description', 'location', 'category', 'type', 'tags'],
+  threshold: 0.4,
+  includeScore: true,
 };
 
 const useEventListing = () => {
@@ -57,14 +43,16 @@ const useEventListing = () => {
   const [cacheInfo, setCacheInfo] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [eventsPerPage, setEventsPerPage] = useState(DEFAULT_EVENTS_PER_PAGE);
-  const [advancedFilters, setAdvancedFilters] = useState({});
+  // useStableFilters wraps useState with deep-equality comparison so setting
+  // filters to a semantically identical object does not trigger recomputation
+  // of the filteredEvents memo (and everything downstream of it).
+  const [advancedFilters, setAdvancedFilters] = useStableFilters({});
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
   const isInitialMount = useRef(true);
 
   const fetchEvents = useCallback(async () => {
     setIsLoading(true);
     setLoadError("");
-
     try {
       const response = await apiUtils.get(API_ENDPOINTS.EVENTS.LIST);
       const responseData = response?.data;
@@ -109,10 +97,13 @@ const useEventListing = () => {
   const dateRangeStats = useMemo(() => getDateRange(events), [events]);
 
   const filteredEvents = useMemo(() => {
-    const searchedEvents = events.filter((event) => eventMatchesSearch(event, searchQuery));
-    const typedEvents = filterEventsByType(searchedEvents, filterType);
+    let searched = events;
+    if (searchQuery.trim()) {
+      const fuse = new Fuse(events, FUSE_OPTIONS);
+      searched = fuse.search(searchQuery.trim()).map((r) => r.item);
+    }
+    const typedEvents = filterEventsByType(searched, filterType);
     const advancedFilteredEvents = applyAdvancedFilters(typedEvents, advancedFilters);
-
     return sortEventsByDate(advancedFilteredEvents, sortType);
   }, [advancedFilters, events, filterType, searchQuery, sortType]);
 
@@ -131,7 +122,6 @@ const useEventListing = () => {
       isInitialMount.current = false;
       return;
     }
-
     setCurrentPage(1);
   }, [advancedFilters, eventsPerPage, filterType, searchQuery, sortType]);
 
@@ -190,6 +180,7 @@ const useEventListing = () => {
       paginatedEvents,
       priceStats,
       searchQuery,
+      setAdvancedFilters,
       setSafePage,
       sortType,
       totalPages,

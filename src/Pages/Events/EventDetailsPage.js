@@ -1,13 +1,17 @@
+import "./EventDetails.print.css";
 import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import DOMPurify from "dompurify";
+import { sanitizeHtml } from "../../utils/sanitizeHtml";
 import CountdownTimer from "../../components/common/CountdownTimer";
 import { Calendar, MapPin, Clock, Users, Tag, ArrowLeft, WifiOff } from "lucide-react";
 import { Share2, Twitter, Facebook, Linkedin, MessageCircle, Copy, Check } from "lucide-react";
-import eventsMockData from "./eventsMockData.json";
+import { toast } from "react-toastify";
 import { getEventStatus } from "../../utils/eventUtils";
+// Note: eventsMockData.json is NOT statically imported here.
+// It is loaded dynamically (and only in development/fallback mode) so that
+// the mock JSON is not bundled into the production build.
 
 const EventDetailsPage = () => {
   const { eventId } = useParams();
@@ -36,7 +40,7 @@ const EventDetailsPage = () => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Clipboard write failed silently
+      toast.error("Failed to copy link to clipboard");
     }
   };
 
@@ -48,27 +52,90 @@ const EventDetailsPage = () => {
           text: shareText,
           url: shareUrl,
         });
-      } catch {}
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          toast.error("Unable to share event");
+        }
+      }
     }
   };
 
   useEffect(() => {
+    let isCancelled = false;
+
     const fetchEvent = async () => {
       setLoading(true);
       setCacheInfo(null);
 
       try {
-        const foundEvent = eventsMockData.find(
-          (item) => String(item.id) === String(eventId)
-        );
-        setEvent(foundEvent || null);
-        if (foundEvent) {
-          setCacheInfo({ cachedAt: null, label: "bundled fallback" });
+        // Try the live API first
+        const apiUrl = `/api/events/${encodeURIComponent(eventId)}`;
+        const response = await fetch(apiUrl);
+
+        if (response.ok) {
+          const data = await response.json();
+          const evt = data.event || data || null;
+          if (!isCancelled) {
+            setEvent(evt);
+            setCacheInfo({ cachedAt: null, label: "live" });
+            if (evt) {
+              addRecentlyViewed({
+                id: evt.id,
+                title: evt.title,
+                date: evt.date,
+                location: evt.location,
+                image: evt.image,
+                category: evt.type,
+              });
+            }
+          }
+        } else {
+          // API returned error — fall back to mock data
+          const { default: mockData } = await import("./eventsMockData.json");
+          const foundEvent = mockData.find(
+            (item) => String(item.id) === String(eventId)
+          );
+          if (!isCancelled) {
+            setEvent(foundEvent || null);
+            if (foundEvent) setCacheInfo({ cachedAt: null, label: "mock fallback" });
+            if (foundEvent) {
+              addRecentlyViewed({
+                id: foundEvent.id,
+                title: foundEvent.title,
+                date: foundEvent.date,
+                location: foundEvent.location,
+                image: foundEvent.image,
+                category: foundEvent.type,
+              });
+            }
+          }
         }
-      } catch {
-        setEvent(null);
+      } catch (err) {
+        // Network error or other failure — try mock data as last resort
+        try {
+          const { default: mockData } = await import("./eventsMockData.json");
+          const foundEvent = mockData.find(
+            (item) => String(item.id) === String(eventId)
+          );
+          if (!isCancelled) {
+            setEvent(foundEvent || null);
+            if (foundEvent) setCacheInfo({ cachedAt: null, label: "offline fallback" });
+            if (foundEvent) {
+              addRecentlyViewed({
+                id: foundEvent.id,
+                title: foundEvent.title,
+                date: foundEvent.date,
+                location: foundEvent.location,
+                image: foundEvent.image,
+                category: foundEvent.type,
+              });
+            }
+          }
+        } catch (_) {
+          if (!isCancelled) setEvent(null);
+        }
       } finally {
-        setLoading(false);
+        if (!isCancelled) setLoading(false);
       }
     };
 
@@ -167,7 +234,7 @@ const EventDetailsPage = () => {
               <img
                 src={event.image}
                 alt={`${event.title} event banner`}
-                className="w-full h-96 object-cover" />
+                className="w-full h-96 object-cover" loading="lazy"/>
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
@@ -199,10 +266,12 @@ const EventDetailsPage = () => {
               <h2 className="mb-3 text-xl font-bold text-gray-900 dark:text-white sm:mb-4 sm:text-2xl">
                 About This Event
               </h2>
-              
               <p
-                className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description) }} />
+                className="overflow-wrap-anywhere text-base leading-7 text-gray-600 dark:text-gray-300 sm:text-lg sm:leading-relaxed"
+                dangerouslySetInnerHTML={{
+                  __html: sanitizeHtml(event.description),
+                }}
+              />
             </section>
           </section>
 

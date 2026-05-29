@@ -1246,6 +1246,71 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
                   />
                 </div>
 
+                <div className="fp-field border-t border-white/5 pt-3 mt-3">
+                  <div className="fp-toggle-container">
+                    <span className="text-xs font-semibold text-gray-300">Mark as Sponsor Booth</span>
+                    <label className="fp-switch">
+                      <input
+                        type="checkbox"
+                        checked={!!activeElement.isSponsorBooth}
+                        onChange={(e) => updateSelectedElement("isSponsorBooth", e.target.checked)}
+                      />
+                      <span className="fp-slider-round"></span>
+                    </label>
+                  </div>
+                </div>
+
+                {activeElement.isSponsorBooth && (
+                  <div className="bg-indigo-500/5 border border-indigo-500/10 rounded-xl p-3 mb-4 space-y-3">
+                    <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-1">
+                      Sponsor Settings
+                    </div>
+                    
+                    <div className="fp-field mb-2">
+                      <label className="fp-field-label text-[10px]">Sponsor Logo URL</label>
+                      <input
+                        type="text"
+                        className="fp-input text-xs py-1"
+                        value={activeElement.sponsorLogo || ""}
+                        onChange={(e) => updateSelectedElement("sponsorLogo", e.target.value)}
+                        placeholder="https://example.com/logo.png"
+                      />
+                    </div>
+
+                    <div className="fp-field mb-2">
+                      <label className="fp-field-label text-[10px]">Representative Contact</label>
+                      <input
+                        type="text"
+                        className="fp-input text-xs py-1"
+                        value={activeElement.sponsorContact || ""}
+                        onChange={(e) => updateSelectedElement("sponsorContact", e.target.value)}
+                        placeholder="rep@sponsor.com or Name"
+                      />
+                    </div>
+
+                    <div className="fp-field mb-2">
+                      <label className="fp-field-label text-[10px]">Sponsor Description</label>
+                      <textarea
+                        className="fp-input text-xs py-1 h-16 resize-none"
+                        value={activeElement.sponsorDescription || ""}
+                        onChange={(e) => updateSelectedElement("sponsorDescription", e.target.value)}
+                        placeholder="Brief summary about the sponsor..."
+                      />
+                    </div>
+
+                    <div className="fp-field mb-0">
+                      <label className="fp-field-label text-[10px]">Job Openings (comma sep.)</label>
+                      <input
+                        type="text"
+                        className="fp-input text-xs py-1"
+                        value={activeElement.sponsorJobs || ""}
+                        onChange={(e) => updateSelectedElement("sponsorJobs", e.target.value)}
+                        placeholder="React Dev, Product Designer"
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {/* Dimension adjusters */}
                 <div className="fp-field">
                   <label className="fp-field-label">Rotation Angle</label>

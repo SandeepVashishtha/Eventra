@@ -18,13 +18,15 @@ import {
   CheckCircle,
   Loader2,
 } from "lucide-react";
+import { useFormValidation } from "../../hooks/useFormValidation";
 import { getEventStatus } from "../../utils/eventUtils";
 import { checkRegistrationConflict, suggestAlternativeEvents } from "../../utils/conflictDetection";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { useSessionRecovery } from "../../context/SessionRecoveryContext";
-import { useFormValidation } from "../../hooks/useFormValidation";
+import CalendarView from "../../components/CalendarView";
+
 import { validate } from "../../validation";
 import { toast } from "react-toastify";
 import {
@@ -146,6 +148,8 @@ const EventRegistration = () => {
       organization: "",
       designation: "",
       additionalInfo: "",
+      priority: "Medium",
+
     },
     validationRules,
     { debounceMs: 300 }
@@ -350,11 +354,12 @@ const EventRegistration = () => {
     try {
       await apiUtils.post(
         endpoint,
-        {
-          ...formData,
-          eventId: parseInt(eventId),
-          userId: user.id,
-        },
+          {
+            ...formData,
+            priority: formData.priority,
+            eventId: parseInt(eventId),
+            userId: user.id,
+          },
         // Registration is authenticated server-side; send the active token
         // explicitly instead of relying only on global storage lookup.
         token
@@ -585,7 +590,7 @@ const EventRegistration = () => {
             <div className="flex gap-3 justify-center">
               <a
                 href={googleCalendarUrl}
-                target="_blank"
+                target="_blank" rel="noopener noreferrer"
                 rel="noopener noreferrer"
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
@@ -596,7 +601,7 @@ const EventRegistration = () => {
               </a>
               <a
                 href={outlookCalendarUrl}
-                target="_blank"
+                target="_blank" rel="noopener noreferrer"
                 rel="noopener noreferrer"
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
@@ -615,7 +620,7 @@ const EventRegistration = () => {
             <div className="flex gap-3 justify-center">
               <a
                 href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`}
-                target="_blank"
+                target="_blank" rel="noopener noreferrer"
                 rel="noopener noreferrer"
                 className="w-10 h-10 inline-flex items-center justify-center bg-slate-900 hover:bg-slate-950 dark:bg-slate-950 dark:hover:bg-black rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title="Share on Twitter / X"
@@ -626,7 +631,7 @@ const EventRegistration = () => {
               </a>
               <a
                 href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
-                target="_blank"
+                target="_blank" rel="noopener noreferrer"
                 rel="noopener noreferrer"
                 className="w-10 h-10 inline-flex items-center justify-center bg-[#0077b5] hover:bg-[#006297] rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title="Share on LinkedIn"
@@ -640,7 +645,7 @@ const EventRegistration = () => {
                 onClick={handleNativeShare}
                 className="w-10 h-10 inline-flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title="Share / Copy Link"
-               aria-label="button">
+              >
                 <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                   <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
                   <polyline points="16 6 12 2 8 6" />
@@ -654,7 +659,7 @@ const EventRegistration = () => {
             <button
               type="button"
               className="w-full py-3.5 px-6 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold hover:bg-slate-800 dark:hover:bg-slate-100 hover:scale-[1.02] active:scale-[0.98] shadow-lg transition-all duration-300"
-             aria-label="button">
+            >
               Back to Details
             </button>
           </Link>
@@ -708,8 +713,9 @@ const EventRegistration = () => {
             </div>
           </div>
 
-          {isEventFull ? "Waitlist Joined!" : "Registration Confirmed!"}
           <div className="p-8">
+            <CalendarView events={myEvents} />
+          
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
               Register for this Event
             </h2>
@@ -832,15 +838,27 @@ const EventRegistration = () => {
                 >
                   Designation (Optional)
                 </label>
-                <input
-                  type="text"
-                  id="designation"
-                  name="designation"
-                  value={formData.designation}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                  placeholder="Your job title or role"
-                />
+                {/* Priority */}
+                <div>
+                  <label
+                    htmlFor="priority"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                  >
+                    Priority (Optional)
+                  </label>
+                  <select
+                    id="priority"
+                    name="priority"
+                    value={formData.priority}
+                    onChange={handleChange}
+                    className="w-full pl-3 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  >
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                  </select>
+                </div>
+
               </div>
 
               {/* Additional Info */}

@@ -1,15 +1,15 @@
-import NotificationBell from "../common/NotificationBell.jsx";
-import { useTheme } from "../../context/ThemeContext";
-import React, { useState, useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
+
+import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import ConfirmationModal from "../common/ConfirmationModal";
+import NotificationBell from "../common/NotificationBell.jsx";
 import CommandPalette from "../common/CommandPalette";
 
-import { UserCog } from "lucide-react";
 import {
   Home,
   Calendar,
@@ -21,6 +21,7 @@ import {
   Info,
   LayoutDashboard,
   User as UserIcon,
+  UserCog,
   LogOut,
   LogIn,
   MessageSquare,
@@ -34,8 +35,9 @@ import {
   Sun,
   MoreHorizontal,
   Search,
-  Palette,
+  Palette
 } from "lucide-react";
+import { FaBell } from "react-icons/fa";
 
 
 // --- Helpers to reduce complexity ---
@@ -459,6 +461,7 @@ const UserProfileDropdown = ({
           src={user.profilePicture}
           alt="Profile"
           className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20"
+          loading="lazy"
           onError={(e) => (e.currentTarget.style.display = "none")}
         />
       ) : (
@@ -577,8 +580,7 @@ const MobileUserSection = ({
         <img
           src={user.profilePicture}
           alt="Profile"
-          className="w-10 h-10 rounded-full object-cover"
-        />
+          className="w-10 h-10 rounded-full object-cover" loading="lazy"/>
       ) : (
         <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white">
           <UserIcon className="w-6 h-6" />
@@ -622,6 +624,31 @@ const MobileUserSection = ({
       <LogOut className="w-5 h-5" />
       Logout
     </button>
+  </div>
+);
+
+const BrandMark = ({ compact = false }) => (
+  <div className="flex min-w-0 items-center gap-3">
+    <div
+      className={`flex flex-none items-center justify-center overflow-hidden rounded-2xl bg-white/90 shadow-sm ring-1 ring-zinc-200/70 dark:bg-zinc-900/80 dark:ring-zinc-700/60 ${
+        compact ? "h-10 w-10" : "h-11 w-11 sm:h-12 sm:w-12"
+      }`}
+    >
+      <img
+        src="/Eventra.png"
+        alt="Eventra"
+        className="block flex-none object-contain"
+        style={{ width: compact ? 40 : 44, height: compact ? 40 : 44 }}
+        loading="lazy"
+      />
+    </div>
+    <span
+      className={`truncate font-black tracking-tight text-zinc-900 dark:text-white ${
+        compact ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl"
+      }`}
+    >
+      Eventra
+    </span>
   </div>
 );
 
@@ -699,12 +726,7 @@ const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
 
 const MobileDrawerHeader = ({ closeBtnRef, closeAllMenus }) => (
   <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-zinc-800/50">
-    <div className="flex items-center gap-2">
-      <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-        <Sparkles className="w-5 h-5 text-white" />
-      </div>
-      <span className="font-bold text-gray-900 dark:text-white">Menu</span>
-    </div>
+    <BrandMark compact />
     <button
       ref={closeBtnRef}
       onClick={closeAllMenus}
@@ -729,7 +751,7 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          className="fixed inset-y-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-[20rem] sm:max-w-sm shadow-2xl z-50 flex flex-col bg-white backdrop-blur-lg dark:bg-gray-900/95"
+          className="fixed inset-y-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-[20rem] sm:max-w-sm shadow-2xl z-[110] flex flex-col bg-white/95 backdrop-blur-xl dark:bg-slate-900/95"
           role="dialog"
           aria-modal="true"
           initial={{ x: "100%" }}
@@ -908,7 +930,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         Skip to main content
       </a>
       <div
-        className={`fixed inset-0 z-30 transition-opacity duration-300 ${
+        className={`fixed inset-0 z-[100] transition-opacity duration-300 ${
           isMobileMenuOpen || showLogoutModal
             ? "bg-black/60 opacity-100"
             : showProfileDropdown || openDropdown
@@ -924,7 +946,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         data-aos="fade-down"
         data-aos-once="true"
         data-aos-duration="1000"
-        className="fixed top-0 left-0 w-full z-40 shadow-sm bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 transition-colors duration-300 overflow-visible"
+        className="fixed top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 max-w-7xl mx-auto z-[90] shadow-lg shadow-indigo-500/5 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border border-gray-200/50 dark:border-slate-800/80 transition-all duration-300 overflow-visible rounded-2xl"
       >
         <div className="neon-navbar-border"></div>
 
@@ -933,13 +955,9 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           {/* Logo */}
           <Link
             to="/"
-            className="flex items-center shrink-0 z-20 mr-2"
+            className="flex items-center shrink-0 z-20 mr-2 min-w-0"
           >
-            <img
-              src="/Eventra.png"
-              alt="Eventra Logo"
-              className="h-9 w-auto object-contain"
-            />
+            <BrandMark />
           </Link>
 
           {/* Centered Desktop Nav Links */}

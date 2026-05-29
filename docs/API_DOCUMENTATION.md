@@ -256,7 +256,11 @@ Authenticates the user via Google OAuth and returns a JWT token. Creates a new u
 |--------|----------|
 | POST | `/api/auth/logout` |
 
-Logs out the authenticated user and invalidates their JWT token. Requires JWT authentication.
+Logs out the authenticated user and invalidates the current JWT session. This endpoint invalidates the JWT by adding it to a server-side blacklist; once logged out, the same token can no longer be used to access protected APIs.
+
+### Authentication
+
+Requires a valid Bearer JWT in the `Authorization` header.
 
 ### Request Headers
 
@@ -264,22 +268,21 @@ Logs out the authenticated user and invalidates their JWT token. Requires JWT au
 Authorization: Bearer YOUR_JWT_TOKEN
 ```
 
+### Request Body
+
+None required.
+
 ### Successful Response (200)
 
-```json
-{
-  "message": "Logged out successfully",
-  "timestamp": "2026-05-27T16:00:00.000Z"
-}
+```text
+Logged out successfully
 ```
 
 ### Error Responses
 
 | Status | Reason |
 |--------|--------|
-| `401 Unauthorized` | Missing, invalid, or expired token |
-| `401 Unauthorized` | Token has already been invalidated (logged out) |
-| `405 Method Not Allowed` | Invalid HTTP method (only POST allowed) |
+| `401 Unauthorized` | Missing, malformed, invalid, or blacklisted token |
 
 ---
 
@@ -321,6 +324,61 @@ Authorization: Bearer YOUR_JWT_TOKEN
 
 - This endpoint is used to restore logged-in user/session state after refresh.
 - The backend implementation is handled in the Eventra-Backend repository.
+
+---
+
+## Update User Profile
+
+| Method | Endpoint |
+|--------|----------|
+| PUT | `/api/users/profile` |
+
+Allows the currently authenticated user to update their profile information.
+
+### Request Headers
+
+```bash
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: application/json
+```
+
+### Request Body
+
+```json
+{
+  "firstName": "Johnny",
+  "lastName": "Updated",
+  "username": "johnny3164"
+}
+```
+
+### Successful Response (200)
+
+```json
+{
+  "id": 1,
+  "firstName": "Johnny",
+  "lastName": "Updated",
+  "username": "johnny3164",
+  "email": "john3164@example.com",
+  "role": "CLIENT"
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+|--------|--------|
+| `400 Bad Request` | Validation failure |
+| `401 Unauthorized` | Missing or invalid JWT token |
+| `404 Not Found` | Authenticated user no longer exists |
+| `409 Conflict` | Username already exists |
+
+#### Notes
+
+- Only `firstName`, `lastName`, and `username` can be updated through this endpoint.
+- `id`, `email`, `password`, and `role` are not editable here.
+- The backend uses the authenticated email from the JWT to identify the user.
 
 ---
 
