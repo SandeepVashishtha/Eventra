@@ -284,7 +284,7 @@ border-b border-gray-100 dark:border-slate-900">
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
           minHeight: "100vh",
-          width: "100vw",
+          width: "100%",
            y: (isTouch || prefersReducedMotion) ? 0 : yText,
           opacity: isTouch ? 1 : opacityHero,
           willChange: "transform, opacity",
@@ -348,7 +348,7 @@ border-b border-gray-100 dark:border-slate-900">
           {/* Subtext */}
           <motion.p
             variants={fadeUp}
-            className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-800 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
+            className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
           >
             Connect with developers, learn new skills, and grow your network at
             the best tech events, hackathons, and workshops in your area.
@@ -415,7 +415,7 @@ text-gray-600 dark:text-gray-300"
                                       {result.item.searchType}
                                     </span>
                                   </div>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 absolute left-0">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
                                     {result.item.description?.substring(0, 80)}...
                                   </p>
                                 </div>
@@ -559,7 +559,7 @@ text-gray-600 dark:text-gray-300"
                       </>
                     )}
                   </p>
-                  <p className="text-gray-500 dark:text-gray-600 text-xs sm:text-sm font-semibold uppercase tracking-wider">
+                  <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-semibold uppercase tracking-wider">
                     {stat.label}
                   </p>
                 </motion.div>
