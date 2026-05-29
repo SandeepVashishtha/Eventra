@@ -198,7 +198,7 @@ const EventCard = ({ event, cacheInfo = null }) => {
 
         <a
           href={addEventToGoogleCalendar(event)}
-          target="_blank" rel="noopener noreferrer"
+          target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
           title="Add to Google Calendar"
