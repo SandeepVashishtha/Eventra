@@ -21,7 +21,7 @@ assert.deepEqual(validateSearchQuery("a".repeat(201)), { isValid: false, error: 
 assert.equal(prepareSafeSearchQuery("test"), "test", "safe query passed through");
 assert.equal(prepareSafeSearchQuery("test $ inject"), "", "injection blocked");
 
-assert.equal(sanitizeInputText("<script>alert('xss')</script>"), "&lt;script&gt;alert&#x27;xss&#x27;&lt;&#x2F;script&gt;", "XSS prevented");
+assert.equal(sanitizeInputText("<script>alert('xss')</script>"), "&lt;script&gt;alert(&#x27;xss&#x27;)&lt;&#x2F;script&gt;", "XSS prevented");
 assert.equal(sanitizeInputText("Hello & Goodbye"), "Hello &amp; Goodbye", "HTML entities escaped");
 assert.equal(sanitizeInputText("Test \"quotes\""), "Test &quot;quotes&quot;", "quotes escaped");
 

@@ -5,13 +5,16 @@ import FormFieldWrapper from "../FormFieldWrapper";
 let container;
 let root;
 
+/* eslint-disable no-undef */
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+/* eslint-enable no-undef */
 
 const render = (element) => {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
 
+  // eslint-disable-next-line testing-library/no-unnecessary-act
   act(() => {
     root.render(element);
   });
@@ -21,6 +24,7 @@ const render = (element) => {
 
 afterEach(() => {
   if (root) {
+    // eslint-disable-next-line testing-library/no-unnecessary-act
     act(() => {
       root.unmount();
     });

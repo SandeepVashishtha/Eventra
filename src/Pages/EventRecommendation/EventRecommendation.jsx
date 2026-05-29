@@ -287,7 +287,7 @@ const EventRecommendation = () => {
                   <option>
                     Beginner
                   </option>
-//
+
                   <option>
                     Intermediate
                   </option>
@@ -743,11 +743,10 @@ const EventRecommendation = () => {
               >
                 Close
               </button>
-                onClick={() => {
+              <button
                 onClick={() => {
                   toast.success(`Successfully registered for ${selectedEvent.title}! Check your email for confirmation.`);
                   setSelectedEvent(null);
-                }}
                 }}
                 className="flex-1 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
               >

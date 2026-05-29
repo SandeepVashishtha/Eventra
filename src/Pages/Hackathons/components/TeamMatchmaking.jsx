@@ -189,7 +189,7 @@ const TeamMatchmaking = () => {
 
           <div className="flex gap-2 shrink-0">
             <button
-              onClick={() = aria-label="button"> {
+              onClick={() => {
                 setShowProfileSettings(!showProfileSettings);
                 setShowForm(false);
               }}
@@ -200,7 +200,7 @@ const TeamMatchmaking = () => {
             </button>
             
             <button
-              onClick={() = aria-label="button"> {
+              onClick={() => {
                 setShowForm(!showForm);
                 setShowProfileSettings(false);
               }}
@@ -444,7 +444,7 @@ const TeamMatchmaking = () => {
                     {team.skills && team.skills.length > 0 && (
                       <div className="border-t border-slate-100 dark:border-slate-850/60 pt-4 mb-4">
                         <button
-                          onClick={() = aria-label="button"> setExpandedSkillsCard(isExpanded ? null : team.id)}
+                          onClick={() => setExpandedSkillsCard(isExpanded ? null : team.id)}
                           className="w-full flex items-center justify-between text-[11px] font-black text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
                         >
                           <span>Skills Compatibility Fit</span>

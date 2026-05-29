@@ -1,0 +1,226 @@
+name: PR Status Lifecycle Labeler
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Manages three mutually-exclusive status label groups on every PR:
+#
+#   review:needed     — PR is open and awaiting a maintainer review
+#   deploy:verified   — Vercel deployment succeeded; PR is clean and ready
+#   changes:required  — Vercel failed OR a reviewer requested changes
+#
+# Additionally controls gssoc:approved:
+#   Added  → only when Vercel deploy succeeds (PR is truly verified)
+#   Removed → when new commits arrive, deploy fails, or changes are requested
+#
+# Label namespace owned exclusively by this workflow:
+#   review:*, deploy:*, changes:*
+#   gssoc:* (shared with pr-auto-assign.yml which no longer sets it on open)
+# ──────────────────────────────────────────────────────────────────────────────
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, closed]
+  deployment_status: {}
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  manage-status-labels:
+    name: Manage PR status labels
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update PR status labels based on event
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const repo = { owner: context.repo.owner, repo: context.repo.repo };
+
+            // ── Label catalogue ────────────────────────────────────────────
+            const STATUS_LABELS = {
+              'review:needed': {
+                color: 'FBCA04',
+                description: '⏳ Awaiting maintainer review'
+              },
+              'deploy:verified': {
+                color: '0E8A16',
+                description: '✅ Vercel deployment passed — ready to merge'
+              },
+              'changes:required': {
+                color: 'D93F0B',
+                description: '❌ Changes required before this PR can be merged'
+              }
+            };
+
+            const GSSOC_APPROVED = 'gssoc:approved';
+            const GSSOC_META = {
+              color: '7B2D8B',
+              description: '🎉 Verified GSSoC 2026 contribution — deployment passed'
+            };
+
+            const STATUS_LABEL_NAMES = Object.keys(STATUS_LABELS);
+
+            // ── Helpers ────────────────────────────────────────────────────
+            async function ensureLabelsExist() {
+              const all = { ...STATUS_LABELS, [GSSOC_APPROVED]: GSSOC_META };
+              await Promise.all(
+                Object.entries(all).map(async ([name, { color, description }]) => {
+                  try {
+                    await github.rest.issues.getLabel({ ...repo, name });
+                  } catch (err) {
+                    if (err.status !== 404) throw err;
+                    await github.rest.issues.createLabel({ ...repo, name, color, description });
+                    console.log(`✅ Created label: ${name}`);
+                  }
+                })
+              );
+            }
+
+            async function getCurrentLabels(prNumber) {
+              const { data } = await github.rest.issues.get({ ...repo, issue_number: prNumber });
+              return new Set(data.labels.map(l => (typeof l === 'string' ? l : l.name)));
+            }
+
+            async function addLabels(prNumber, labels) {
+              const current = await getCurrentLabels(prNumber);
+              const toAdd = labels.filter(l => !current.has(l));
+              if (toAdd.length === 0) return;
+              await github.rest.issues.addLabels({ ...repo, issue_number: prNumber, labels: toAdd });
+              console.log(`🏷  Added [${toAdd.join(', ')}] → PR #${prNumber}`);
+            }
+
+            async function removeLabels(prNumber, labels) {
+              const current = await getCurrentLabels(prNumber);
+              const toRemove = labels.filter(l => current.has(l));
+              await Promise.all(
+                toRemove.map(name =>
+                  github.rest.issues.removeLabel({ ...repo, issue_number: prNumber, name })
+                    .then(() => console.log(`🗑  Removed [${name}] ← PR #${prNumber}`))
+                    .catch(err => console.warn(`⚠️  Could not remove "${name}": ${err.message}`))
+                )
+              );
+            }
+
+            // Find open PR by branch name (strips refs/heads/ prefix if present)
+            async function findPRForBranch(ref) {
+              const branch = ref.replace(/^refs\/heads\//, '');
+              const { data: prs } = await github.rest.pulls.list({
+                ...repo,
+                state: 'open',
+                head: `${context.repo.owner}:${branch}`,
+                per_page: 10
+              });
+              return prs[0] || null;
+            }
+
+            // ── Event routing ──────────────────────────────────────────────
+            const eventName = context.eventName;
+            console.log(`\n📣 Event: ${eventName} | Action: ${context.payload.action || 'n/a'}`);
+
+            await ensureLabelsExist();
+
+            // ──────────────────────────────────────────────────────────────
+            // 1. pull_request_target — PR lifecycle state changes
+            // ──────────────────────────────────────────────────────────────
+            if (eventName === 'pull_request_target') {
+              const action = context.payload.action;
+              const prNumber = context.payload.pull_request.number;
+              console.log(`PR #${prNumber} | action: ${action}`);
+
+              if (action === 'opened' || action === 'reopened') {
+                // Fresh PR — awaiting first review
+                await addLabels(prNumber, ['review:needed']);
+
+              } else if (action === 'synchronize') {
+                // Contributor pushed new commits → reset all outcome labels,
+                // re-request review (deployment needs to re-run, review is stale)
+                await removeLabels(prNumber, ['changes:required', 'deploy:verified', GSSOC_APPROVED]);
+                await addLabels(prNumber, ['review:needed']);
+                console.log(`🔄 PR #${prNumber}: new commits pushed — reset to review:needed`);
+
+              } else if (action === 'closed') {
+                // PR merged or closed — clean up all status labels
+                await removeLabels(prNumber, [...STATUS_LABEL_NAMES, GSSOC_APPROVED]);
+                console.log(`🧹 PR #${prNumber}: closed — cleared all status labels`);
+              }
+
+            // ──────────────────────────────────────────────────────────────
+            // 2. deployment_status — Vercel reports deployment result
+            // ──────────────────────────────────────────────────────────────
+            } else if (eventName === 'deployment_status') {
+              const state = context.payload.deployment_status.state;
+              const branchRef = context.payload.deployment.ref;
+              const environment = (context.payload.deployment.environment || '').toLowerCase();
+              const creator = (context.payload.deployment_status.creator?.login || '').toLowerCase();
+
+              console.log(`🚀 Deployment | state: ${state} | branch: ${branchRef} | env: ${environment} | by: ${creator}`);
+
+              // Only react to terminal states — skip in-progress/pending/queued/inactive
+              const terminalStates = new Set(['success', 'failure', 'error']);
+              if (!terminalStates.has(state)) {
+                console.log(`⏭  Non-terminal state "${state}" — skipping`);
+                return;
+              }
+
+              // Only react to Vercel deployments
+              // Vercel bot login is "vercel[bot]", environments are "Preview" or "Production"
+              const isVercel =
+                creator.includes('vercel') ||
+                environment.includes('preview') ||
+                environment.includes('production');
+
+              if (!isVercel) {
+                console.log(`⏭  Not a Vercel deployment (env="${environment}", creator="${creator}") — skipping`);
+                return;
+              }
+
+              const pr = await findPRForBranch(branchRef);
+              if (!pr) {
+                console.log(`⚠️  No open PR found for branch "${branchRef}" — skipping`);
+                return;
+              }
+
+              const prNumber = pr.number;
+              console.log(`Matched PR #${prNumber} for branch "${branchRef}"`);
+
+              if (state === 'success') {
+                // Vercel passed — PR is clean and verified for GSSoC
+                await removeLabels(prNumber, ['review:needed', 'changes:required']);
+                await addLabels(prNumber, ['deploy:verified', GSSOC_APPROVED]);
+                console.log(`✅ Deploy SUCCESS → PR #${prNumber}: deploy:verified + gssoc:approved`);
+
+              } else {
+                // state === 'failure' || 'error'
+                await removeLabels(prNumber, ['review:needed', 'deploy:verified', GSSOC_APPROVED]);
+                await addLabels(prNumber, ['changes:required']);
+                console.log(`❌ Deploy FAILED → PR #${prNumber}: changes:required`);
+              }
+
+            // ──────────────────────────────────────────────────────────────
+            // 3. pull_request_review — maintainer submits a review
+            // ──────────────────────────────────────────────────────────────
+            } else if (eventName === 'pull_request_review') {
+              const reviewState = context.payload.review.state; // approved | changes_requested | commented
+              const prNumber = context.payload.pull_request.number;
+              const reviewer = context.payload.review.user?.login || 'unknown';
+
+              console.log(`📝 Review on PR #${prNumber} by @${reviewer}: ${reviewState}`);
+
+              if (reviewState === 'changes_requested') {
+                // Maintainer explicitly requested changes
+                await removeLabels(prNumber, ['review:needed', 'deploy:verified', GSSOC_APPROVED]);
+                await addLabels(prNumber, ['changes:required']);
+                console.log(`❌ Changes requested → PR #${prNumber}: added changes:required`);
+
+              } else if (reviewState === 'approved') {
+                // Review approved — remove request/required labels
+                // Note: gssoc:approved is NOT added here — it requires Vercel success too
+                await removeLabels(prNumber, ['review:needed', 'changes:required']);
+                console.log(`✔  Review approved → PR #${prNumber}: removed review:needed + changes:required`);
+                console.log(`ℹ️  gssoc:approved will be added when Vercel deployment also succeeds`);
+
+              }
+              // 'commented' state — informational only, no label change
+            }

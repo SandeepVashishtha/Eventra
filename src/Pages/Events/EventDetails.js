@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useMemo } from "react";
+import "./EventDetails.print.css";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
-import DOMPurify from "dompurify";
+import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
 import { toast } from "react-toastify";
 import { Link, useParams } from "react-router-dom";
 import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus, Link2 } from "lucide-react";
@@ -36,14 +37,40 @@ const EventDetails = () => {
   const [exportingRegistrants, setExportingRegistrants] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [isPrinting, setIsPrinting] = useState(false); // FIX: Print UX State
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [event, setEvent] = useState(null);
+  const [fetchLoading, setFetchLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
 
   const { isRegistered } = useMyEvents();
 
-  const event = useMemo(() => {
-    const foundEvent = mockEvents.find((item) => String(item.id) === eventId);
-    return foundEvent ? { ...foundEvent, status: getEventStatus(foundEvent) } : null;
+  const loadEvent = useCallback(async () => {
+    setFetchLoading(true);
+    setFetchError(null);
+    try {
+      const res = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
+      if (res.ok && res.data) {
+        const raw = res.data?.data ?? res.data;
+        setEvent({ ...raw, status: getEventStatus(raw) });
+      } else {
+        throw new Error(res.data?.message || `Event not found (${res.status})`);
+      }
+    } catch {
+      // Fall back to bundled mock data when the API is unreachable
+      const fallback = mockEvents.find((item) => String(item.id) === eventId);
+      if (fallback) {
+        setEvent({ ...fallback, status: getEventStatus(fallback) });
+      } else {
+        setFetchError("Event not found.");
+      }
+    } finally {
+      setFetchLoading(false);
+    }
   }, [eventId]);
+
+  useEffect(() => {
+    loadEvent();
+  }, [loadEvent]);
 
   // FIX: Safely handle localStorage with try-catch
   useEffect(() => {
@@ -99,15 +126,36 @@ const EventDetails = () => {
     }
   };
 
-  if (!event) {
+  if (fetchLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+          <p className="text-gray-500 dark:text-gray-400">Loading event…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (fetchError || !event) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100">
         <div className="text-center">
           <h1 className="text-4xl font-bold">Event Not Found</h1>
-          <p className="mt-4 text-gray-600 dark:text-gray-300">We could not find the event you were looking for.</p>
-          <Link to="/events" className="mt-6 inline-flex rounded-full bg-indigo-600 px-6 py-3 text-white font-semibold hover:bg-indigo-700 transition">
-            Browse Events
-          </Link>
+          <p className="mt-4 text-gray-600 dark:text-gray-300">
+            {fetchError || "We could not find the event you were looking for."}
+          </p>
+          <div className="mt-6 flex items-center justify-center gap-3">
+            <button
+              onClick={loadEvent}
+              className="inline-flex rounded-full bg-indigo-600 px-6 py-3 text-white font-semibold hover:bg-indigo-700 transition"
+            >
+              Try Again
+            </button>
+            <Link to="/events" className="inline-flex rounded-full border border-gray-300 px-6 py-3 font-semibold hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800 transition">
+              Browse Events
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -149,7 +197,7 @@ const EventDetails = () => {
               </div>
               <div
                 className="mt-4 max-w-2xl text-gray-600 dark:text-gray-300 prose prose-indigo dark:prose-invert"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(event.description)) }}
+                dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(event.description, marked.parse) }}
               />
             </div>
 
@@ -170,7 +218,7 @@ const EventDetails = () => {
               )}
 
               <button
-                onClick={() = aria-label="button"> setShowShareModal(true)}
+                onClick={() => setShowShareModal(true)}
                 className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-indigo-700 transition"
               >
                 Share Event
@@ -187,7 +235,7 @@ const EventDetails = () => {
               {isOrganizer && (
                 <div className="relative print-hide">
                   <button
-                    onClick={() = aria-label="button"> setShowExportDropdown(!showExportDropdown)}
+                    onClick={() => setShowExportDropdown(!showExportDropdown)}
                     className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800 cursor-pointer"
                     aria-label="Export registrant data"
                   >
@@ -198,7 +246,7 @@ const EventDetails = () => {
                       <div className="fixed inset-0 z-10" onClick={() => setShowExportDropdown(false)} />
                       <div className="absolute right-0 mt-2 w-40 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg py-1.5 z-20 animate-fadeIn text-left">
                         <button
-                          onClick={async () = aria-label="button"> {
+                          onClick={async () => {
                             try {
                               setExportingRegistrants(true);
                               const response = await apiUtils.get(API_ENDPOINTS.EVENTS.REGISTRANTS(eventId));
@@ -217,7 +265,7 @@ const EventDetails = () => {
                           Export as CSV
                         </button>
                         <button
-                          onClick={async () = aria-label="button"> {
+                          onClick={async () => {
                             try {
                               setExportingRegistrants(true);
                               const response = await apiUtils.get(API_ENDPOINTS.EVENTS.REGISTRANTS(eventId));
@@ -320,7 +368,7 @@ const EventDetails = () => {
                 </ShareMenu>
 
                 <div className="flex flex-col gap-2">
-                  <button onClick={() = aria-label="button"> { downloadICSFile(event); toast.success("Calendar invite downloaded!"); }} className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 dark:hover:border-green-700 transition-all duration-200" aria-label="Download .ics calendar invite">
+                  <button onClick={() => { downloadICSFile(event); toast.success("Calendar invite downloaded!"); }} className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 dark:hover:border-green-700 transition-all duration-200" aria-label="Download .ics calendar invite">
                     <CalendarPlus size={15} className="text-green-500" /> Download .ics Invite
                   </button>
                   {generateGoogleCalendarLink(event) && (
@@ -346,7 +394,7 @@ const EventDetails = () => {
                 <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Summary</h3>
                 <div
                   className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-6 prose prose-indigo dark:prose-invert"
-                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(event.description)) }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(event.description, marked.parse) }}
                 />
               </div>
             </aside>

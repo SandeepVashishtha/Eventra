@@ -224,7 +224,7 @@ const MyCalendar = () => {
                 Calendar Grid
               </button>
               <button
-                onClick={() = aria-label="button"> setViewMode("timeline")}
+                onClick={() => setViewMode("timeline")}
                 className={`p-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
                   viewMode === "timeline"
                     ? "bg-white dark:bg-slate-800 shadow-md text-indigo-600 dark:text-indigo-400"
@@ -240,7 +240,7 @@ const MyCalendar = () => {
             {/* BULK EXPORT */}
             {myEvents.length > 0 && (
               <button
-                onClick={() = aria-label="button"> downloadBulkICSFile(myEvents)}
+                onClick={() => downloadBulkICSFile(myEvents)}
                 className="p-2.5 px-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white shadow-md hover:shadow-lg"
                 aria-label="Export all events as ICS"
               >
@@ -361,7 +361,7 @@ const MyCalendar = () => {
                               key={`day-${day}`}
                               id={`calendar-cell-${day}`}
                               role="gridcell"
-                              onClick={() = aria-label="button"> selectDay(day)}
+                              onClick={() => selectDay(day)}
                               onKeyDown={(e) => handleDayKeyDown(e, day)}
                               aria-selected={selected}
                               className={`aspect-square rounded-2xl border p-2 flex flex-col justify-between items-start cursor-pointer transition-all ${
@@ -437,7 +437,7 @@ const MyCalendar = () => {
                               <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 mt-3">
                                 <button
                                   type="button"
-                                  onClick={() = aria-label="button"> downloadICSFile(item.event)}
+                                  onClick={() => downloadICSFile(item.event)}
                                   aria-label={`Download ICS for ${item.event.title}`}
                                   className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-[11px] font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 transition"
                                 >
@@ -477,12 +477,13 @@ const MyCalendar = () => {
                   exit={{ opacity: 0, y: -15 }}
                   className="relative pl-6 sm:pl-10 space-y-8"
                 >
-                  {/* Vertical line */}
-                  <div className="absolute left-3.5 sm:left-5 top-2 bottom-2 w-0.5 bg-slate-200 dark:bg-slate-800/80 rounded-full" />
-                  <div className="absolute left-3.5 sm:left-5 top-2 h-1/2 w-0.5 bg-gradient-to-b from-indigo-500 to-pink-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
-
                   {timelineEvents.length > 0 ? (
-                    <div className="space-y-8">
+                    <>
+                      {/* Vertical line */}
+                      <div className="absolute left-3.5 sm:left-5 top-2 bottom-2 w-0.5 bg-slate-200 dark:bg-slate-800/80 rounded-full" />
+                      <div className="absolute left-3.5 sm:left-5 top-2 h-1/2 w-0.5 bg-gradient-to-b from-indigo-500 to-pink-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+
+                      <div className="space-y-8">
                       {timelineEvents.map((item, index) => {
                         const theme = getCategoryTheme(item.event?.category);
                         const eventDate = new Date(item.event.date);
@@ -555,7 +556,7 @@ const MyCalendar = () => {
                                 <div className="flex items-center gap-2 mt-4 sm:mt-0">
                                   <button
                                     type="button"
-                                    onClick={() = aria-label="button"> downloadICSFile(item.event)}
+                                    onClick={() => downloadICSFile(item.event)}
                                     aria-label={`Download ICS for ${item.event.title}`}
                                     className="p-2.5 rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 shadow-sm"
                                     title="Download .ics file"
@@ -578,6 +579,7 @@ const MyCalendar = () => {
                         );
                       })}
                     </div>
+                  </>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
                       <CalendarIcon className="w-12 h-12 text-slate-300 dark:text-slate-700 animate-pulse" aria-hidden="true" />
