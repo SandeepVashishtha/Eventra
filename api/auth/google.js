@@ -179,9 +179,22 @@ const getPermissionsForRoles = (roles) => {
 // ---------------------------------------------------------------------------
 // Generate User ID
 // ---------------------------------------------------------------------------
-
-let userIdCounter = 1;
-const generateUserId = () => `google_user_${Date.now()}_${userIdCounter++}`;
+//
+// The previous implementation combined Date.now() with a module-level
+// sequential counter. Both components reset or diverge in a serverless
+// environment:
+//  - Date.now(): two concurrent cold-start instances can share the same
+//    millisecond, producing identical timestamps.
+//  - The counter: resets to 1 on every cold start, so instance A and
+//    instance B both produce `google_user_<timestamp>_1` for their first
+//    new user.
+//
+// crypto.randomUUID() generates a v4 UUID using the OS CSPRNG. The
+// collision probability across the entire UUID space is negligible
+// (2^-122 per pair) and is unaffected by cold-start timing.
+//
+// Node.js 14.17+ and all current Vercel runtimes include crypto.randomUUID().
+const generateUserId = () => crypto.randomUUID();
 
 // ---------------------------------------------------------------------------
 // Find user by email

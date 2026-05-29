@@ -88,9 +88,12 @@ const corsResponse = (res, status, data, req) => {
 // ---------------------------------------------------------------------------
 // Generate User ID
 // ---------------------------------------------------------------------------
-
-let userIdCounter = 1;
-const generateUserId = () => `user_${Date.now()}_${userIdCounter++}`;
+//
+// Replaced Date.now() + sequential counter with crypto.randomUUID().
+// The counter-based approach was not collision-safe: two concurrent
+// serverless instances cold-starting within the same millisecond both
+// produced `user_<timestamp>_1`. See google.js for the full rationale.
+const generateUserId = () => crypto.randomUUID();
 
 // ---------------------------------------------------------------------------
 // Default Roles and Permissions
