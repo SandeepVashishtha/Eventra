@@ -4,7 +4,6 @@ import {
   Sliders,
   CheckCircle2,
   AlertCircle,
-  Award,
   Sparkles,
   ChevronRight,
 } from "lucide-react";
@@ -679,13 +678,13 @@ const EventRecommendation = () => {
   </span>
 
   Fits best for developers with
-  <strong className="text-slate-755 dark:text-slate-200 font-bold">
+  <strong className="text-slate-700 dark:text-slate-200 font-bold">
     {selectedEvent.level}
   </strong>
 
   level experience, interested in
 
-  <strong className="text-slate-755 dark:text-slate-200 font-bold">
+  <strong className="text-slate-700 dark:text-slate-200 font-bold">
     {selectedEvent.category}
   </strong>.
 

@@ -481,7 +481,7 @@ const COLORS = ["#6366F1", "#22C55E"];
                         <div className="flex items-center gap-1.5">
                           <a
                             href={item.profile}
-                            target="_blank"
+                            target="_blank" rel="noopener noreferrer"
                             rel="noopener noreferrer"
                             className={`text-base font-black hover:text-indigo-500 transition-colors truncate max-w-[150px] ${isFirst ? "bg-gradient-to-r from-slate-950 via-indigo-950 to-pink-950 dark:from-white dark:via-indigo-200 dark:to-pink-100 bg-clip-text text-transparent" : "text-slate-900 dark:text-white"}`}
                           >
@@ -746,7 +746,7 @@ const COLORS = ["#6366F1", "#22C55E"];
                                   <div>
                                     <a
                                       href={c.profile}
-                                      target="_blank"
+                                      target="_blank" rel="noopener noreferrer"
                                       rel="noopener noreferrer"
                                       className="text-sm font-semibold text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                                     >

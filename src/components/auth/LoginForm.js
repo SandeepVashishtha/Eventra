@@ -159,7 +159,7 @@ const LoginForm = () => {
               onChange={handleChange}
               aria-invalid={!!errors.email}
               aria-describedby={errors.email ? "email-error" : undefined}
-              className={`w-full rounded-lg border pl-10 pr-3 py-2.5 text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white ${
+              className={`w-full rounded-lg border pl-10 pr-3 py-2.5 text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white ${
                 errors.email
                   ? "border-red-400 dark:border-red-500"
                   : "border-gray-300 dark:border-gray-600"
@@ -193,7 +193,7 @@ const LoginForm = () => {
               onChange={handleChange}
               aria-invalid={!!errors.password}
               aria-describedby={errors.password ? "password-error" : undefined}
-              className={`w-full rounded-lg border pl-10 pr-10 py-2.5 text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white ${
+              className={`w-full rounded-lg border pl-10 pr-10 py-2.5 text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white ${
                 errors.password
                   ? "border-red-400 dark:border-red-500"
                   : "border-gray-300 dark:border-gray-600"

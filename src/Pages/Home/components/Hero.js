@@ -1,5 +1,5 @@
 import { motion, useAnimation, AnimatePresence, MotionConfig, useScroll, useTransform } from "framer-motion";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
 import { Search, Calendar, Trophy, Code, ExternalLink, ArrowRight } from "lucide-react";
@@ -8,14 +8,12 @@ import useReducedMotion from "../../../hooks/useReducedMotion.js";
 import eventsData from "../../Events/eventsMockData.json";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
-import RespawningText from "../../../components/visual/RespawningText";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
-import CountUp from "react-countup";
+import CountUpLib from "react-countup";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
-import SectionErrorBoundary from "../../../components/common/SectionErrorBoundary";
 import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
 
-const MotionLink = motion(Link);
+const CountUp = CountUpLib.default || CountUpLib;
 
 // ─── STATIC SEARCH INDEX CONFIGURATION ───────────────────────────────────────
 const createSearchItem = (item, type, searchType) => ({
@@ -25,11 +23,8 @@ const createSearchItem = (item, type, searchType) => ({
   location: item.location,
   tags: item.tags,
   techStack: item.techStack,
-  category: item.category,
-  author: item.author,
-  organizer: item.organizer,
-  searchType,
   type,
+  searchType,
 });
 
 const allData = [
@@ -43,7 +38,6 @@ const fuse = new Fuse(allData, {
   threshold: 0.3,
   includeScore: true,
 });
-// ─────────────────────────────────────────────────────────────────────────────
 
 const Hero = () => {
   const prefersReducedMotion = useReducedMotion();
@@ -57,6 +51,7 @@ const Hero = () => {
   ];
 
   const containerRef = useRef(null);
+
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end start"],
@@ -114,8 +109,7 @@ const Hero = () => {
 
   useEffect(() => {
     if (debouncedTerm.trim()) {
-      const results = fuse.search(debouncedTerm).slice(0, 8);
-      setSearchResults(results);
+      setSearchResults(fuse.search(debouncedTerm).slice(0, 5));
       setShowResults(true);
     } else {
       setSearchResults([]);
@@ -201,7 +195,7 @@ const Hero = () => {
   const secondaryBtn = `${primaryBtn} border border-transparent`;
 
   return (
-    <section
+    <section 
       ref={containerRef}
       aria-label="Hero section"
       className="relative overflow-hidden bg-gradient-to-b from-blue-50/80 via-indigo-50/40 to-white dark:from-slate-950 dark:via-slate-900/80 dark:to-black text-slate-900 dark:text-gray-100 pb-16 sm:pb-20 md:pb-24 border-b border-gray-100/60 dark:border-slate-800/60"
