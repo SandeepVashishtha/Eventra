@@ -4,8 +4,8 @@ import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
   Lightbulb, Code2, GitBranch, BookOpen, Users, CheckCircle,
   Trophy, Clock, Star, ArrowRight, Search, Filter, ExternalLink,
-  Calendar, TrendingUp, Award, MessageCircle, Zap, Target, Globe,
-  Copy, Bell, WifiOff, Loader2
+  Calendar, Award, MessageCircle, Zap, Target, Globe,
+  Copy, Bell, WifiOff
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
@@ -486,7 +486,7 @@ const GSSoCContribution = () => {
   
   // Stats section visibility
   const statsRef = useRef(null);
-  const areStatsInView = useInView(statsRef, { once: true, margin: "-100px" });
+   
   
   if (isLoading) {
     return (
