@@ -155,7 +155,7 @@ GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxx
 # ============================================
 # Optional: SSE Real-time Features
 # ============================================
-REACT_APP_SSE_SERVER_URL=http://localhost:5000
+REACT_APP_SSE_URL=http://localhost:4001
 ```
 
 ---
@@ -172,7 +172,7 @@ REACT_APP_SSE_SERVER_URL=http://localhost:5000
 | **REACT_APP_EMAILJS_SERVICE_ID** | ❌ Optional | EmailJS service identifier | `service_abc123xyz` | ✅ Yes | Enables contact form emails |
 | **REACT_APP_EMAILJS_TEMPLATE_ID** | ❌ Optional | EmailJS email template | `template_abc123xyz` | ✅ Yes | Paired with SERVICE_ID |
 | **REACT_APP_EMAILJS_PUBLIC_KEY** | ❌ Optional | EmailJS public API key | `AbCdEfGhIjKlMnOpQrS` | ✅ Yes | Public key for client-side requests |
-| **REACT_APP_SSE_SERVER_URL** | ❌ Optional | Server-Sent Events endpoint | `http://localhost:5000` | ✅ Yes | Enables real-time notifications |
+| **REACT_APP_SSE_URL** | ❌ Optional | Server-Sent Events endpoint | `http://localhost:4001` | ✅ Yes | Enables real-time notifications |
 | **GITHUB_TOKEN** | ❌ Optional | GitHub API authentication | `ghp_xxxxxxxxxxxxxxxxxxxx` | ❌ **No** | Keep private! Use Vercel secrets |
 | **REACT_APP_MOCK_EVENTS** | ❌ Optional | Enable mock event data | `true` or `false` | ✅ Yes | Fallback when API unavailable |
 
@@ -190,7 +190,7 @@ Understanding what happens when optional integrations are missing helps prevent 
 |---------|-------------------|-------------------|----------|
 | **Google OAuth Sign-In** | `REACT_APP_GOOGLE_CLIENT_ID` | 🔴 Disabled | Google button hidden or shows error; email/password login still works |
 | **Contact Form Emails** | All `REACT_APP_EMAILJS_*` (3 vars) | 🟡 Warning | Contact form shows; submission attempted but may fail silently or log error |
-| **Real-time Notifications** | `REACT_APP_SSE_SERVER_URL` | 🟡 Degraded | Page still loads; live updates won't work; user sees stale data until refresh |
+| **Real-time Notifications** | `REACT_APP_SSE_URL` | 🟡 Degraded | Page still loads; live updates won't work; user sees stale data until refresh |
 | **GitHub Integration** | `GITHUB_TOKEN` | 🟡 Limited | GitHub profile links work; direct API calls may fail (rate limited) |
 | **Event Analytics** | Backend running | 🔴 Disabled | Analytics dashboard still renders but shows no data |
 | **Email Notifications** | Backend + EmailJS | 🟡 Partial | Users won't receive email; but can still see in-app notifications |
@@ -651,7 +651,7 @@ EventSource connection failed
 2. **SSE URL Misconfigured:**
    ```bash
    # .env should have:
-   REACT_APP_SSE_SERVER_URL=http://localhost:5000
+   REACT_APP_SSE_URL=http://localhost:4001
    ```
 
 3. **Browser Not Supporting SSE:**

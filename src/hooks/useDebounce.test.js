@@ -24,9 +24,7 @@ describe("useDebounce", () => {
     rerender();
 
     // Advance only partially through the delay
-    act(() => {
-      jest.advanceTimersByTime(200);
-    });
+    jest.advanceTimersByTime(200);
 
     expect(result.current).toBe("initial");
   });
@@ -38,9 +36,7 @@ describe("useDebounce", () => {
     value = "updated";
     rerender();
 
-    act(() => {
-      jest.advanceTimersByTime(400);
-    });
+    jest.advanceTimersByTime(400);
 
     expect(result.current).toBe("updated");
   });
@@ -50,25 +46,21 @@ describe("useDebounce", () => {
     const { result, rerender } = renderHook(() => useDebounce(value, 300));
 
     // Rapid successive changes
-    act(() => {
-      value = "b";
-      rerender();
-      jest.advanceTimersByTime(100);
-      value = "c";
-      rerender();
-      jest.advanceTimersByTime(100);
-      value = "d";
-      rerender();
-      jest.advanceTimersByTime(100);
-    });
+    value = "b";
+    rerender();
+    jest.advanceTimersByTime(100);
+    value = "c";
+    rerender();
+    jest.advanceTimersByTime(100);
+    value = "d";
+    rerender();
+    jest.advanceTimersByTime(100);
 
     // Still at "a" because the 300ms window has not completed since last change
     expect(result.current).toBe("a");
 
     // Let the full delay pass after the last change
-    act(() => {
-      jest.advanceTimersByTime(300);
-    });
+    jest.advanceTimersByTime(300);
 
     expect(result.current).toBe("d");
   });
@@ -80,10 +72,10 @@ describe("useDebounce", () => {
     value = "changed";
     rerender();
 
-    act(() => jest.advanceTimersByTime(999));
+    jest.advanceTimersByTime(999);
     expect(result.current).toBe("initial");
 
-    act(() => jest.advanceTimersByTime(1));
+    jest.advanceTimersByTime(1);
     expect(result.current).toBe("changed");
   });
 
@@ -94,10 +86,10 @@ describe("useDebounce", () => {
     value = "end";
     rerender();
 
-    act(() => jest.advanceTimersByTime(399));
+    jest.advanceTimersByTime(399);
     expect(result.current).toBe("start");
 
-    act(() => jest.advanceTimersByTime(1));
+    jest.advanceTimersByTime(1);
     expect(result.current).toBe("end");
   });
 
@@ -108,7 +100,7 @@ describe("useDebounce", () => {
     value = 42;
     rerender();
 
-    act(() => jest.advanceTimersByTime(200));
+    jest.advanceTimersByTime(200);
     expect(result.current).toBe(42);
   });
 
@@ -121,7 +113,7 @@ describe("useDebounce", () => {
     value = obj2;
     rerender();
 
-    act(() => jest.advanceTimersByTime(200));
+    jest.advanceTimersByTime(200);
     expect(result.current).toBe(obj2);
   });
 
@@ -133,7 +125,7 @@ describe("useDebounce", () => {
     value = undefined;
     rerender();
 
-    act(() => jest.advanceTimersByTime(200));
+    jest.advanceTimersByTime(200);
     expect(result.current).toBeUndefined();
   });
 
