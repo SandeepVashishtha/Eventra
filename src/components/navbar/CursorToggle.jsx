@@ -1,4 +1,3 @@
-import React from "react";
 import { MousePointer } from "lucide-react";
 
 const CursorToggle = ({ cursorEnabled, toggleCursor }) => {

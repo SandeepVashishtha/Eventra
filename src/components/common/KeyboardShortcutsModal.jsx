@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Keyboard, Sparkles, X } from "lucide-react";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
@@ -134,7 +134,7 @@ const virtualKeys = [
   { label: "Spacebar", id: " " }
 ];
 
-const ShortcutRow = ({ action, shortcut, keys, isPressed }) => (
+const ShortcutRow = ({ action, keys, isPressed }) => (
   <motion.div
     layout
     initial={{ opacity: 0, y: 10 }}

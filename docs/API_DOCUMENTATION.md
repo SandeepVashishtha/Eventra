@@ -898,7 +898,12 @@ Content-Type: application/json
 |--------|----------|
 | GET | `/api/projects` |
 
-Returns a list of all submitted projects. No authentication required.
+Returns the list of projects for the Projects gallery/module.
+
+*This documentation update corresponds to the backend implementation PR for `GET /api/projects`.*
+
+### Authentication
+Not required. Public endpoint.
 
 ### Example Request
 
@@ -906,7 +911,12 @@ Returns a list of all submitted projects. No authentication required.
 GET /api/projects
 ```
 
-### Successful Response (200)
+### Success Response
+Status: `200 OK`
+
+Returns a JSON array of project objects. Returns `[]` if no projects exist.
+
+#### Response Example:
 
 ```json
 [
@@ -915,16 +925,18 @@ GET /api/projects
     "title": "Eventra Mobile App",
     "description": "A cross-platform mobile application for event management",
     "category": "Mobile Development",
-    "repositoryUrl": "https://github.com/example/eventra-mobile",
-    "submittedBy": "john@example.com"
+    "thumbnailUrl": "https://example.com/thumbnail1.png",
+    "githubUrl": "https://github.com/example/eventra-mobile",
+    "upvotes": 42
   },
   {
     "id": 2,
     "title": "Eventra CLI Tool",
     "description": "Command-line tool for managing Eventra events",
     "category": "Developer Tools",
-    "repositoryUrl": "https://github.com/example/eventra-cli",
-    "submittedBy": "jane@example.com"
+    "thumbnailUrl": "https://example.com/thumbnail2.png",
+    "githubUrl": "https://github.com/example/eventra-cli",
+    "upvotes": 15
   }
 ]
 ```

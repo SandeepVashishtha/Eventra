@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import CountUpLib from "react-countup";
 import { darkTheme } from "../../components/styles/theme";
-import SectionErrorBoundary from "../../components/common/SectionErrorBoundary";
 
 const CountUp = CountUpLib.default;
 

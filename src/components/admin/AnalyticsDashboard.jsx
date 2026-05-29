@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Users, Clock, TrendingUp, Activity, CheckCircle2, Play, Zap } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -80,36 +80,6 @@ const MOCK_CATEGORY_DATA = [
  * Isolated payload generator ensuring visual graphs are decoupled
  * from the local state generation mechanisms.
  */
-const generateMockCheckinPayload = (isManual = false) => {
-  const checkinNames = [
-    "Aditya Rao", "Ishaan Roy", "Meera Nair", "Rohan Das", "Zoya Ali",
-    "Aryan Joshi", "Tanya Sen", "Kabir Dutt", "Riya Pillai", "Aravind Swami"
-  ];
-  const simulatorNames = ["Gaurav Kumar", "Shruti Shah", "Manish Pandey", "Pooja Hegde"];
-  
-  const checkinEvents = [
-    "Web Dev Workshop", "Global AI Hackathon", "AI & ML Bootcamp",
-    "React Conference 2025", "Hack for Sustainability"
-  ];
-
-  const pool = isManual ? simulatorNames : checkinNames;
-  const randomName = pool[Math.floor(Math.random() * pool.length)];
-  const randomEvent = isManual ? "Global AI Hackathon" : checkinEvents[Math.floor(Math.random() * checkinEvents.length)];
-  const randomStatus = isManual ? "Verified" : (Math.random() > 0.08 ? "Verified" : "Flagged");
-  const hourlyIncrement = isManual ? 3 : 1;
-
-  return {
-    id: isManual ? `c-manual-${Date.now()}` : `c-${Date.now()}`,
-    name: randomName,
-    event: randomEvent,
-    time: "Just now",
-    status: randomStatus,
-    meta: {
-      hourlyIncrement,
-      velocityDelta: parseFloat((Math.random() * 0.4 - 0.2).toFixed(1))
-    }
-  };
-};
 
 // =========================================================================
 // SUB-COMPONENTS

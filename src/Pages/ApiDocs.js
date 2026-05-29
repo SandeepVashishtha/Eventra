@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import useReducedMotion from "../hooks/useReducedMotion.js";
@@ -12,8 +12,7 @@ import {
   RefreshCw,
   Terminal,
   Settings,
-  ShieldAlert,
-} from "lucide-react";
+  } from "lucide-react";
 
 const endpoints = [
   {

@@ -28,7 +28,7 @@
  *   />
  */
 
-import React, { useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import QRTicket from "./QRTicket";
 import { useTicketDownload } from "./useTicketDownload";
 import { toast } from "react-toastify";

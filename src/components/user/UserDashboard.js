@@ -3,7 +3,7 @@ import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { getSmartDateLabel } from "../../utils/relativeTime";
 import {
   Calendar, Trophy, FolderOpen, Users, Settings,
-  Clock, MapPin, Zap, Activity, Bell, ChevronRight,
+  Clock, Zap, Activity, Bell, ChevronRight,
   LogOut, User, Plus, Search, X
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -15,14 +15,12 @@ import HackathonsTab from "./HackathonsTab";
 import ProjectsTab from "./ProjectsTab";
 import RegistrationsTab from "./RegistrationsTab";
 import {
-  DashboardItemCardSkeleton,
   DashboardListCardSkeleton,
   DashboardProfileSkeleton,
   DashboardQuickActionSkeleton,
   DashboardSectionTitleSkeleton,
   DashboardStatCardSkeleton,
-  DashboardTableSkeleton,
-} from "../common/SkeletonLoaders";
+  } from "../common/SkeletonLoaders";
 import "./UserDashboard.css";
 import EventTicket from "./EventTicket";
 import EmptyState from "../common/EmptyState";

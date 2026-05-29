@@ -17,7 +17,7 @@ import { addHackathonToGoogleCalendar } from "../../utils/calendarUtils";
 import { generateEventSharingData } from "../../utils/shareUtils";
 
 const useCountdown = (targetDate) => {
-  const prefersReducedMotion = useReducedMotion();
+  useReducedMotion();
   const calculateTimeLeft = useCallback(() => {
     const difference = new Date(targetDate) - new Date();
 
