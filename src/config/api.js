@@ -81,6 +81,13 @@ export class ApiError extends Error {
   }
 }
 
+export class RateLimitError extends ApiError {
+  constructor(message, { status = 429, data = null } = {}) {
+    super(message, { status, data });
+    this.name = "RateLimitError";
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Axios Instance
 // ---------------------------------------------------------------------------
@@ -157,6 +164,13 @@ const normalizeApiError = (error) => {
     );
   }
 
+  if (status === 429) {
+    return new RateLimitError(
+      error.response?.data?.message || "Too many requests, please try again later.",
+      { status, data: error.response?.data || null }
+    );
+  }
+
   return new ApiError(
     error.response?.data?.message ||
       error.message ||
@@ -188,16 +202,21 @@ API.interceptors.response.use(
     }
 
     const retryCount = config._retryCount || 0;
-    if (RETRYABLE_STATUS_CODES.includes(status) && retryCount < MAX_RETRIES) {
+    const isNonMutating = config.method?.toUpperCase() === 'GET';
+    const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status) || (status === 429);
+    
+    // Retry non-mutating requests with exponential backoff
+    if (isNonMutating && isRetryableStatus && retryCount < MAX_RETRIES) {
       config._retryCount = retryCount + 1;
+      const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
 
       if (isDev) {
         console.debug(
-          `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${RETRY_DELAY_MS}ms (attempt ${config._retryCount})...`
+          `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${delay}ms (attempt ${config._retryCount})...`
         );
       }
 
-      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+      await new Promise((resolve) => setTimeout(resolve, delay));
       return API(config);
     }
     throw normalizeApiError(error);
@@ -211,12 +230,10 @@ API.interceptors.response.use(
 export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: buildApiUrl("/api/auth/login"),
-    GOOGLE: buildApiUrl("/api/auth/google"),
     REGISTER: buildApiUrl("/api/auth/signup"),
     SIGNUP: buildApiUrl("/api/auth/signup"),
     LOGOUT: buildApiUrl("/api/auth/logout"),
     RESET_PASSWORD: buildApiUrl("/api/auth/reset-password"),
-    OAUTH: buildApiUrl("/api/auth/oauth"),
   },
   EVENTS: {
     CREATE: buildApiUrl("/api/events/create"),
@@ -247,6 +264,9 @@ export const API_ENDPOINTS = {
     ALL: buildApiUrl("/api/notifications"),
     READ: (id) => (id ? buildApiUrl(`/api/notifications/${id}/read`) : ""),
     READ_ALL: buildApiUrl("/api/notifications/read-all"),
+    PREFERENCES: buildApiUrl("/api/notifications/preferences"),
+    PUSH_SUBSCRIBE: buildApiUrl("/api/notifications/push-subscriptions"),
+    PUSH_UNSUBSCRIBE: buildApiUrl("/api/notifications/push-subscriptions/unsubscribe"),
   },
   USERS: {
     PROFILE: buildApiUrl("/api/users/profile"),
@@ -276,3 +296,10 @@ export const apiUtils = {
 export default API;
 
 export { normalizeApiError };
+
+// Centralized configuration cache store for fallback endpoints
+export const apiConfigCache = {
+  store: new Map(),
+  get(key) { return this.store.get(key); },
+  set(key, val) { this.store.set(key, val); }
+};

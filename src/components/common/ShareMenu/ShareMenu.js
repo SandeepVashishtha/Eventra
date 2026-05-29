@@ -217,7 +217,7 @@ const ShareMenu = ({
                 onClick={handleCopyLink}
                 role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
+               aria-label="Copy link to clipboard">
                 <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                   {copied ? (
                     <Check className="w-4 h-4 text-green-600" />

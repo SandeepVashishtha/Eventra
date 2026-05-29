@@ -51,11 +51,17 @@ export const debounceAsync = (asyncFn, delay = 500, options = {}) => {
   let timeoutId = null;
   let pendingReject = null;
   let pendingResolve = null;
+  let activeAbortController = null;
 
   const cancelPending = () => {
     if (timeoutId) {
       clearTimeout(timeoutId);
       timeoutId = null;
+    }
+
+    if (activeAbortController) {
+      activeAbortController.abort(new DebounceCancelledError());
+      activeAbortController = null;
     }
 
     if (pendingReject || pendingResolve) {
@@ -80,13 +86,34 @@ export const debounceAsync = (asyncFn, delay = 500, options = {}) => {
 
       timeoutId = setTimeout(async () => {
         timeoutId = null;
-        pendingResolve = null;
-        pendingReject = null;
+        
+        const currentResolve = pendingResolve;
+        const currentReject = pendingReject;
+        
+        const controller = new AbortController();
+        activeAbortController = controller;
 
         try {
-          resolve(await asyncFn(...args));
+          // Pass signal as an extra argument so callers can wire it up to fetch()
+          const result = await asyncFn(...args, { signal: controller.signal });
+          
+          if (activeAbortController === controller) {
+            activeAbortController = null;
+            if (pendingResolve === currentResolve) {
+              pendingResolve = null;
+              pendingReject = null;
+            }
+            currentResolve(result);
+          }
         } catch (error) {
-          reject(error);
+          if (activeAbortController === controller) {
+            activeAbortController = null;
+            if (pendingReject === currentReject) {
+              pendingResolve = null;
+              pendingReject = null;
+            }
+            currentReject(error);
+          }
         }
       }, delay);
     });
