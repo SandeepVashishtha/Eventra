@@ -46,6 +46,15 @@ export async function isFileCached(fileId) {
       const transaction = db.transaction(STORE_NAME, "readonly");
       const store = transaction.objectStore(STORE_NAME);
       
+      transaction.onerror = (err) => {
+        console.error("isFileCached transaction error:", err);
+        resolve(false);
+      };
+      transaction.onabort = (err) => {
+        console.error("isFileCached transaction aborted:", err);
+        resolve(false);
+      };
+
       // Let's search by keys
       const request = store.openCursor();
       let chunksCount = 0;
@@ -63,6 +72,11 @@ export async function isFileCached(fileId) {
           resolve(chunksCount > 0 && chunksCount === totalChunks);
         }
       };
+
+      request.onerror = (err) => {
+        console.error("isFileCached request error:", err);
+        resolve(false);
+      };
     });
   } catch (error) {
     console.error("Failed checking file cache:", error);
@@ -77,6 +91,16 @@ export async function getCachedFile(fileId) {
     return new Promise((resolve) => {
       const transaction = db.transaction(STORE_NAME, "readonly");
       const store = transaction.objectStore(STORE_NAME);
+
+      transaction.onerror = (err) => {
+        console.error("getCachedFile transaction error:", err);
+        resolve(null);
+      };
+      transaction.onabort = (err) => {
+        console.error("getCachedFile transaction aborted:", err);
+        resolve(null);
+      };
+
       const request = store.openCursor();
       const chunks = [];
       
@@ -92,6 +116,11 @@ export async function getCachedFile(fileId) {
           chunks.sort((a, b) => a.chunkIndex - b.chunkIndex);
           resolve(chunks.length > 0 ? chunks : null);
         }
+      };
+
+      request.onerror = (err) => {
+        console.error("getCachedFile request error:", err);
+        resolve(null);
       };
     });
   } catch (error) {
