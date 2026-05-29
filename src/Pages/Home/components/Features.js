@@ -146,7 +146,7 @@
 //               <p className="text-gray-600 mb-6 flex-1 text-justify">{feature.description}</p>
 
 //               <button
-//                 onClick={feature.action || (() = aria-label="button"> { })}
+//                 onClick={feature.action || (() => { })}
 //                 disabled={!feature.action}
 //                 className={`mt-auto w-full inline-flex items-center justify-center px-4 py-2.5 border border-indigo-100 rounded-lg text-sm font-medium text-indigo-600 bg-white hover:bg-indigo-50 transition-colors duration-200 ${feature.action ? 'cursor-pointer' : 'cursor-not-allowed'}`}
 //               >

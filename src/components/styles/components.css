@@ -18,20 +18,6 @@
   color: #f3f4f6;
   background-color: #111827;
 }
-
-.dark body,
-.dark section,
-.dark div,
-.dark p,
-.dark span,
-.dark h1,
-.dark h2,
-.dark h3,
-.dark h4,
-.dark h5,
-.dark h6 {
-  color: inherit;
-}
 .dark .search-filter-container {
   color: #d1d5db; /* gray-300 */
 }
@@ -39,7 +25,9 @@
   font-size: 3rem;
   font-weight: 700;
   line-height: 1.2;
-  color: white !important;
+}
+.dark .search-title {
+  color: white;
 }
 .dark .search-header .search-subtitle {
   color: #9ca3af; /* gray-400 */
@@ -589,7 +577,7 @@
   font-family: monospace;
   overflow: hidden;          /* Ensures the text is hidden when typing */
   white-space: nowrap;       /* Prevent line breaks */
-  border-right: 2px solid black;  /* Cursor */
+  border-right: 2px solid currentColor;  /* Cursor */
   animation: typing 4s steps(24) infinite, blink 0.75s step-end infinite;
   width: 0;
   display: inline-block;
@@ -604,7 +592,7 @@
 /* Cursor blink animation */
 @keyframes blink {
   50% { border-color: transparent; }
-  100% { border-color: black; }
+  100% { border-color: currentColor; }
 }
 
 .hero-actions {

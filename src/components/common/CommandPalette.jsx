@@ -249,7 +249,7 @@ export default function CommandPalette({
               <button
                 key={tag}
                 type="button"
-                onClick={() = aria-label="button"> {
+                onClick={() => {
                   setQuery(tag);
                   inputRef.current?.focus();
                 }}

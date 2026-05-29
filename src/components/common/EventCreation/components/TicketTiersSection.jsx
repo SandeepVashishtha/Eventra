@@ -88,7 +88,7 @@ const TicketTiersSection = ({
         {formData.ticketTiers.length > 1 && (
           <button
             type="button"
-            onClick={() = aria-label="button"> removeTicketTier(index)}
+            onClick={() => removeTicketTier(index)}
             className="text-red-500 hover:text-red-700 text-sm font-medium"
           >
             Remove
