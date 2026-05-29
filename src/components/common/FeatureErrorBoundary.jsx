@@ -1,6 +1,6 @@
 import React from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
-import { logger } from "../utils/logger";
+import { logger } from "../../utils/logger";
 
 class FeatureErrorBoundary extends React.Component {
   constructor(props) {
