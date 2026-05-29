@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import { apiUtils, API_ENDPOINTS } from "../config/api";
 import { useAuth } from "./AuthContext";
+import usePageVisibility from "../hooks/usePageVisibility";
 import {
   DEFAULT_NOTIFICATION_PREFERENCES,
   PUSH_SUBSCRIPTION_KEY,
@@ -68,6 +69,7 @@ const normalizeNotification = (notification = {}) => ({
 
 export const NotificationProvider = ({ children }) => {
   const { token } = useAuth();
+  const isPageVisible = usePageVisibility();
   const [notifications, setNotifications] = useState([]);
   const [achievements, setAchievements] = useState({
     totalEvents: 0,
@@ -490,14 +492,28 @@ export const NotificationProvider = ({ children }) => {
 
     initData();
 
+    // Visibility-aware polling: skip the network call when the tab is hidden.
+    // The setInterval still fires on schedule so the cadence is maintained, but
+    // the fetch is gated on isPageVisible. When the tab becomes visible again,
+    // a separate useEffect (below) fires an immediate catch-up fetch so no
+    // notifications are missed.
     const intervalId = setInterval(() => {
-      if (isMounted.current && activeTokenRef.current === requestToken) {
+      if (isMounted.current && activeTokenRef.current === requestToken && isPageVisible) {
         fetchNotifications({ isBackground: true });
       }
     }, POLLING_INTERVAL_MS);
 
     return () => clearInterval(intervalId);
-  }, [token, fetchNotifications, fetchAchievements]);
+  }, [token, fetchNotifications, fetchAchievements, isPageVisible]);
+
+  // Catch-up fetch: when the tab becomes visible after being hidden, immediately
+  // fetch notifications so the user sees fresh data without waiting up to
+  // POLLING_INTERVAL_MS for the next scheduled tick.
+  useEffect(() => {
+    if (!isPageVisible || !token) return;
+    if (!hasCompletedInitialFetch.current) return;
+    fetchNotifications({ isBackground: true });
+  }, [isPageVisible, token, fetchNotifications]);
 
   return (
     <NotificationContext.Provider
