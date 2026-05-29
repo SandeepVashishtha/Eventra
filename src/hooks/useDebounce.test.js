@@ -1,4 +1,4 @@
-import { renderHook, act } from "@testing-library/react";
+import { renderHook } from "@testing-library/react";
 import useDebounce from "./useDebounce";
 
 describe("useDebounce", () => {
@@ -49,9 +49,11 @@ describe("useDebounce", () => {
     value = "b";
     rerender();
     jest.advanceTimersByTime(100);
+
     value = "c";
     rerender();
     jest.advanceTimersByTime(100);
+
     value = "d";
     rerender();
     jest.advanceTimersByTime(100);
@@ -107,6 +109,7 @@ describe("useDebounce", () => {
   it("handles object values (by reference)", () => {
     const obj1 = { id: 1 };
     const obj2 = { id: 2 };
+
     let value = obj1;
     const { result, rerender } = renderHook(() => useDebounce(value, 200));
 
@@ -120,6 +123,7 @@ describe("useDebounce", () => {
   it("handles null and undefined values gracefully", () => {
     let value = null;
     const { result, rerender } = renderHook(() => useDebounce(value, 200));
+
     expect(result.current).toBeNull();
 
     value = undefined;
@@ -131,8 +135,11 @@ describe("useDebounce", () => {
 
   it("clears pending timer on unmount to prevent memory leaks", () => {
     const clearTimeoutSpy = jest.spyOn(global, "clearTimeout");
+
     let value = "initial";
-    const { rerender, unmount } = renderHook(() => useDebounce(value, 400));
+    const { rerender, unmount } = renderHook(() =>
+      useDebounce(value, 400)
+    );
 
     value = "changed";
     rerender();
@@ -141,20 +148,26 @@ describe("useDebounce", () => {
 
     // clearTimeout should have been called during cleanup
     expect(clearTimeoutSpy).toHaveBeenCalled();
+
     clearTimeoutSpy.mockRestore();
   });
 
   it("updates correctly when delay prop changes between renders", () => {
     let value = "hello";
     let delay = 400;
-    const { result, rerender } = renderHook(() => useDebounce(value, delay));
+
+    const { result, rerender } = renderHook(() =>
+      useDebounce(value, delay)
+    );
 
     // Change value and delay together
     value = "world";
     delay = 100;
+
     rerender();
 
-    act(() => jest.advanceTimersByTime(100));
+    jest.advanceTimersByTime(100);
+
     expect(result.current).toBe("world");
   });
 });
