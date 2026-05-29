@@ -1,3 +1,4 @@
+process.env.ALLOWED_ORIGIN = "http://localhost:3000";
 import assert from "node:assert/strict";
 import handler from "../api/auth/signup.js";
 

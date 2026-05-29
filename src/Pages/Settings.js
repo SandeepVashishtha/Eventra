@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
-import { Sun, Moon, MousePointer, Bell, ShieldCheck, ArrowRight, Palette, Key, Eye, EyeOff, Clipboard, Download, Check, ShieldAlert, RefreshCw } from "lucide-react";
+import { Sun, Moon, MousePointer, Bell, ShieldCheck, ArrowRight, Palette, Key, Eye, EyeOff, Clipboard, Download, ShieldAlert, RefreshCw, SlidersHorizontal } from "lucide-react";
 import useLocalStorage from "../hooks/useLocalStorage";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { toast } from "react-hot-toast";
@@ -135,7 +135,7 @@ const Settings = () => {
 
               <button
                 type="button"
-                onClick={() = aria-label="button"> setIsCustomizerOpen(true)}
+                onClick={() => setIsCustomizerOpen(true)}
                 aria-label="Open theme customizer skins panel"
                 className="w-full inline-flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-left text-sm font-medium text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition cursor-pointer"
               >
@@ -176,7 +176,7 @@ const Settings = () => {
             <div className="space-y-3">
               <button
                 type="button"
-                onClick={() = aria-label="button"> setNotificationsEnabled((prev) => !prev)}
+                onClick={() => setNotificationsEnabled((prev) => !prev)}
                 aria-label={
                   notificationsEnabled ? "Pause notifications" : "Enable notifications"
                 }
@@ -192,6 +192,16 @@ const Settings = () => {
               <p className="text-sm text-slate-500 dark:text-slate-400">
                 We'll keep you updated about new events, hackathons, and important account alerts.
               </p>
+              <Link
+                to="/settings/notifications"
+                className="w-full inline-flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-left text-sm font-medium text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition"
+              >
+                <span className="flex items-center gap-3">
+                  <SlidersHorizontal className="w-5 h-5 text-cyan-500" aria-hidden="true" />
+                  Notification Preferences
+                </span>
+                <ArrowRight className="w-4 h-4 text-slate-500" aria-hidden="true" />
+              </Link>
             </div>
           </article>
 
@@ -209,7 +219,7 @@ const Settings = () => {
             <div className="space-y-3">
               <button
                 type="button"
-                onClick={() = aria-label="button"> setPrivacyMode((prev) => !prev)}
+                onClick={() => setPrivacyMode((prev) => !prev)}
                 aria-label={privacyMode ? "Disable privacy mode" : "Enable privacy mode"}
                 aria-pressed={!!privacyMode}
                 className="w-full inline-flex items-center justify-between rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-left text-sm font-medium text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-900 transition"
@@ -269,7 +279,7 @@ const Settings = () => {
 
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
                     <button
-                      onClick={() = aria-label="button"> setShowKey(!showKey)}
+                      onClick={() => setShowKey(!showKey)}
                       className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
                       title={showKey ? "Hide credentials" : "Show credentials"}
                     >
@@ -340,7 +350,7 @@ const Settings = () => {
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={() = aria-label="button"> {
+                onClick={() => {
                   localStorage.removeItem("eventra_onboarding_dismissed");
                   localStorage.removeItem("eventra_onboarding_completed_fired");
                   localStorage.removeItem("eventra_sandbox_executed");
