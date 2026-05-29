@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useStableFilters } from "../../hooks/useStableFilters";
 import Fuse from "fuse.js";
 import mockEvents from "./eventsMockData.json";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
@@ -42,7 +43,10 @@ const useEventListing = () => {
   const [cacheInfo, setCacheInfo] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [eventsPerPage, setEventsPerPage] = useState(DEFAULT_EVENTS_PER_PAGE);
-  const [advancedFilters, setAdvancedFilters] = useState({});
+  // useStableFilters wraps useState with deep-equality comparison so setting
+  // filters to a semantically identical object does not trigger recomputation
+  // of the filteredEvents memo (and everything downstream of it).
+  const [advancedFilters, setAdvancedFilters] = useStableFilters({});
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
   const isInitialMount = useRef(true);
 
@@ -176,6 +180,7 @@ const useEventListing = () => {
       paginatedEvents,
       priceStats,
       searchQuery,
+      setAdvancedFilters,
       setSafePage,
       sortType,
       totalPages,

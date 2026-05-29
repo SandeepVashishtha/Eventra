@@ -1,4 +1,6 @@
 import { memo, useCallback, useEffect, useId, useMemo, useState } from "react";
+import { logger } from "../../utils/logger";
+import { getUserTimezone } from "../../utils/timezoneUtils";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Bookmark,
@@ -18,6 +20,7 @@ import {
 import { toast } from "react-toastify";
 import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
 import ShareMenu from "../../components/common/ShareMenu";
+import LazyImage from "../../components/common/LazyImage";
 import { generateEventSharingData } from "../../utils/shareUtils";
 import StatusBadge from "../../components/common/StatusBadge";
 import { getEventStatus } from "../../utils/eventUtils";
@@ -110,19 +113,6 @@ const EventCard = ({ event, cacheInfo = null }) => {
     });
   }, [event.id]);
 
-  const handleCopyLink = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    navigator.clipboard
-      .writeText(`${window.location.origin}/events/${event.id}`)
-      .then(() => {
-        toast.success("Event link copied to clipboard!", { autoClose: 2000 });
-      })
-      .catch(() => {
-        toast.error("Could not copy link. Please try again.", { autoClose: 2500 });
-      });
-  }, [event.id]);
 
   const handleBookmarkToggle = useCallback((e) => {
     e.preventDefault();
@@ -170,28 +160,19 @@ const EventCard = ({ event, cacheInfo = null }) => {
           title={isBookmarked ? "Remove bookmark" : "Bookmark event"}
           className={`min-h-[36px] min-w-[36px] rounded-full border p-2 shadow transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500 ${
             isBookmarked
-              ? "border-indigo-200 bg-indigo-50/95 text-indigo-600"
-              : "border-gray-200 bg-white/90 text-gray-600 hover:border-indigo-200 hover:text-indigo-600"
+              ? "border-indigo-200 bg-indigo-50/95 text-indigo-600 dark:border-indigo-800 dark:bg-indigo-950/95 dark:text-indigo-400"
+              : "border-gray-200 bg-white/90 text-gray-600 hover:border-indigo-200 hover:text-indigo-600 dark:border-gray-700 dark:bg-gray-800/90 dark:text-gray-300 dark:hover:border-indigo-500 dark:hover:text-indigo-400"
           }`}
         >
           {isBookmarked ? <BookmarkCheck size={14} fill="currentColor" /> : <Bookmark size={14} />}
         </button>
 
         <ShareMenu shareData={eventSharingData} position="above" menuClassName="!z-[999] shadow-2xl">
-          <div className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm">
-            <Share2 size={14} className="text-gray-600" aria-hidden="true" />
+          <div className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm cursor-pointer hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500 transition-all duration-200">
+            <Share2 size={14} className="text-gray-600 dark:text-gray-300" aria-hidden="true" />
           </div>
         </ShareMenu>
 
-        <button
-          type="button"
-          onClick={handleCopyLink}
-          className="relative min-h-[36px] min-w-[36px] rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm focus-visible:ring-2 focus-visible:ring-indigo-500"
-          title="Copy Event Link"
-          aria-label={`Copy link for ${event.title}`}
-        >
-          <Share2 size={14} className="text-gray-600" aria-hidden="true" />
-        </button>
 
         <a
           href={addEventToGoogleCalendar(event)}
@@ -200,11 +181,9 @@ const EventCard = ({ event, cacheInfo = null }) => {
           onClick={(e) => e.stopPropagation()}
           title="Add to Google Calendar"
           aria-label={`Add ${event.title} to Google Calendar`}
-          className="rounded-full focus-visible:ring-2 focus-visible:ring-indigo-500"
+          className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500"
         >
-          <div className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm">
-            <Calendar size={14} className="text-gray-600" aria-hidden="true" />
-          </div>
+          <Calendar size={14} className="text-gray-600 dark:text-gray-300" aria-hidden="true" />
         </a>
       </div>
 
@@ -218,15 +197,14 @@ const EventCard = ({ event, cacheInfo = null }) => {
         <StatusBadge status={computedStatus} />
       </div>
 
-      <div className="relative aspect-video overflow-hidden bg-gray-100 dark:bg-gray-800">
-        <img
-          loading="lazy"
-          decoding="async"
+      {/* Image */}
+      <div className="relative h-40 overflow-hidden">
+        <LazyImage
           src={event.image}
           alt={event.imageAlt || `${event.title} event thumbnail`}
-          width={640}
-          height={360}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          width={800}
+          height={160}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
         {cacheInfo && (
