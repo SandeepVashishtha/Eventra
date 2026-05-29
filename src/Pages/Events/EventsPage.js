@@ -9,7 +9,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
 import StyledDropdown from "../../components/StyledDropdown";
 import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
@@ -293,7 +292,6 @@ const EventsPage = () => {
       </div>
 
       <EventCTA />
-      <FeedbackButton />
     </div>
   );
 };
