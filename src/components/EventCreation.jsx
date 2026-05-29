@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
-import { Download } from "lucide-react";
+import { Download, X } from "lucide-react";
 import useReducedMotion from "../hooks/useReducedMotion";
-import {} from "../utils/eventDraftUtils";
 import CharacterCounter from "./common/CharacterCounter";
 import { exportAttendeesToCSV } from "../utils/exportCsv";
 import { logger } from "../utils/logger";
@@ -17,6 +16,8 @@ import {
   TagIcon,
   CheckCircleIcon,
   PencilIcon,
+  AlertCircleIcon,
+  Trash2Icon,
 } from "@heroicons/react/24/solid";
 import { API_ENDPOINTS, apiUtils } from "../config/api";
 import {
@@ -24,18 +25,19 @@ import {
   MapPin,
   Link2,
   Users,
-  Image,
+  Image as ImageIcon,
   ClipboardList,
   FileText,
   Layers,
   Globe,
   CalendarPlus,
   CalendarX,
-  Map,
+  Map as MapIcon,
   Navigation,
   Compass,
   Upload,
   Plus,
+  Loader2,
 } from "lucide-react";
 import { useFormSubmit } from "../hooks/useFormSubmit";
 import { LoadingButton } from "./ui/LoadingButton";
@@ -50,276 +52,619 @@ import {
   parseTimeToMinutes,
   formatDate,
   formatTime,
- validateCoordinates,
+  validateCoordinates,
 } from "../utils/eventCreationUtils";
 
+// 🎯 Constants for better maintainability
+const MAX_BANNER_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_TITLE_LENGTH = 200;
+const MIN_TITLE_LENGTH = 3;
+const MAX_DESCRIPTION_LENGTH = 500;
+const MAX_CAPACITY = 100000;
+const DEBOUNCE_DELAY = 1000; // 1 second for localStorage saves
+
+// 🧩 Helper Components (Extracted for reusability)
+const FormField = ({ label, icon: Icon, error, children, required, hint }) => (
+  <div className="space-y-2">
+    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+      {Icon && <Icon className="w-5 h-5 text-indigo-500 inline-block mr-2" />}
+      {label}
+      {required && <span className="text-red-600 ml-1">*</span>}
+    </label>
+    {children}
+    {hint && <p className="text-xs text-gray-500 dark:text-gray-400">{hint}</p>}
+    {error && (
+      <motion.p 
+        initial={{ opacity: 0, y: -5 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-red-500 text-sm flex items-center gap-1"
+      >
+        <AlertCircleIcon className="w-4 h-4" />
+        {error}
+      </motion.p>
+    )}
+  </div>
+);
+
+const TagInput = ({ tags, onAdd, onRemove, newTag, setNewTag, placeholder = "Add a tag" }) => {
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      onAdd();
+    }
+  }, [onAdd]);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={newTag}
+          onChange={(e) => setNewTag(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          aria-label="Add new tag"
+          className="flex-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg p-2 
+                   bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 
+                   focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                   transition-all duration-200"
+        />
+        <motion.button
+          type="button"
+          onClick={onAdd}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          disabled={!newTag.trim()}
+          className="flex items-center justify-center gap-1 px-4 py-2 rounded-lg 
+                   bg-indigo-600 text-white font-medium text-sm
+                   hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed
+                   transition-colors duration-200"
+          aria-label="Add tag"
+        >
+          <Plus className="w-4 h-4" />
+          Add
+        </motion.button>
+      </div>
+      
+      <AnimatePresence mode="popLayout">
+        <div className="flex flex-wrap gap-2 min-h-[32px]">
+          {tags.map((tag, index) => (
+            <motion.span
+              key={`${tag}-${index}`}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.2 }}
+              className="inline-flex items-center gap-1 bg-indigo-100 dark:bg-indigo-900/50 
+                       text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-sm font-medium"
+            >
+              #{tag}
+              <button
+                type="button"
+                onClick={() => onRemove(tag)}
+                className="ml-1 hover:text-red-500 transition-colors duration-200 
+                         focus:outline-none focus:ring-2 focus:ring-red-500 rounded-full p-0.5"
+                aria-label={`Remove tag ${tag}`}
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </motion.span>
+          ))}
+        </div>
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const TicketTierCard = ({ tier, index, onChange, onRemove, canRemove, errors }) => {
+  const handleChange = useCallback((field, value) => {
+    onChange(index, field, value);
+  }, [index, onChange]);
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 
+               rounded-xl p-4 space-y-4"
+    >
+      <div className="flex justify-between items-center">
+        <h4 className="font-semibold text-gray-700 dark:text-gray-300">
+          Tier {index + 1}
+        </h4>
+        {canRemove && (
+          <motion.button
+            type="button"
+            onClick={() => onRemove(index)}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            className="flex items-center gap-1 text-red-500 hover:text-red-700 
+                     text-sm font-medium transition-colors duration-200
+                     focus:outline-none focus:ring-2 focus:ring-red-500 rounded-lg p-1"
+            aria-label={`Remove ticket tier ${index + 1}`}
+          >
+            <Trash2Icon className="w-4 h-4" />
+            Remove
+          </motion.button>
+        )}
+      </div>
+
+      <div className="space-y-3">
+        <FormField label="Tier Name" required>
+          <input
+            type="text"
+            placeholder="e.g., Early Bird, VIP, General Admission"
+            value={tier.name}
+            onChange={(e) => handleChange("name", e.target.value)}
+            className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-600 
+                     text-gray-900 dark:text-gray-100 focus:outline-none 
+                     focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                     transition-all duration-200 ${
+                       errors[`ticketTier_${index}_name`] 
+                         ? "border-red-500 focus:ring-red-500" 
+                         : "border-gray-300 dark:border-gray-600"
+                     }`}
+            aria-invalid={!!errors[`ticketTier_${index}_name`]}
+            aria-describedby={errors[`ticketTier_${index}_name`] ? `tier-name-error-${index}` : undefined}
+          />
+        </FormField>
+
+        <div className="grid grid-cols-2 gap-3">
+          <FormField label="Price (₹)" required>
+            <input
+              type="number"
+              placeholder="0.00"
+              min="0"
+              step="0.01"
+              value={tier.price}
+              onChange={(e) => handleChange("price", e.target.value)}
+              className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-600 
+                       text-gray-900 dark:text-gray-100 focus:outline-none 
+                       focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                       transition-all duration-200 ${
+                         errors[`ticketTier_${index}_price`] 
+                           ? "border-red-500 focus:ring-red-500" 
+                           : "border-gray-300 dark:border-gray-600"
+                       }`}
+              aria-invalid={!!errors[`ticketTier_${index}_price`]}
+            />
+          </FormField>
+          
+          <FormField label="Capacity (Optional)">
+            <input
+              type="number"
+              placeholder="Unlimited"
+              min="1"
+              value={tier.capacity}
+              onChange={(e) => handleChange("capacity", e.target.value)}
+              className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-600 
+                       text-gray-900 dark:text-gray-100 focus:outline-none 
+                       focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                       transition-all duration-200 ${
+                         errors[`ticketTier_${index}_capacity`] 
+                           ? "border-red-500 focus:ring-red-500" 
+                           : "border-gray-300 dark:border-gray-600"
+                       }`}
+              aria-invalid={!!errors[`ticketTier_${index}_capacity`]}
+            />
+          </FormField>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Description
+          </label>
+          <textarea
+            placeholder="What's included in this tier?"
+            value={tier.description}
+            onChange={(e) => handleChange("description", e.target.value)}
+            rows={2}
+            maxLength={200}
+            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 
+                     bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 
+                     focus:outline-none focus:ring-2 focus:ring-indigo-500 
+                     focus:border-transparent transition-all duration-200 resize-none"
+          />
+          <div className="flex justify-end">
+            <CharacterCounter current={tier.description.length} max={200} />
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+// 🎨 Main Component
 const EventCreation = () => {
   const prefersReducedMotion = useReducedMotion();
-
+  
+  // 📊 State Management
   const [currentStep, setCurrentStep] = useState("form");
+  const [formData, setFormData] = useState(initialFormData);
+  const [errors, setErrors] = useState({});
+  const [newTag, setNewTag] = useState("");
+  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  
+  // 🔄 Refs for optimization
+  const formDataRef = useRef(formData);
+  const saveDraftTimeoutRef = useRef(null);
+  const fileInputRef = useRef(null);
 
-  const { handleSubmit: submitEventForm, isSubmitting, error: submitError, success: submitSuccess } = useFormSubmit(async (eventData) => {
-    const token = sessionStorage.getItem("token");
-    if (!token) {
-      throw new Error("Authentication required. Please log in and try again.");
-    }
+  // Keep ref in sync with state
+  useEffect(() => {
+    formDataRef.current = formData;
+  }, [formData]);
 
-    // SECURITY: Respect API configuration from environment, not NODE_ENV.
-    // Only use mock behavior when API endpoint is not configured.
-    // This allows developers to test real API behavior in development mode.
+  // 🎯 Form Submission Hook
+  const { 
+    handleSubmit: submitEventForm, 
+    isSubmitting, 
+    error: submitError, 
+    success: submitSuccess 
+  } = useFormSubmit(async (eventData) => {
+    // Auth is handled by the HttpOnly session cookie — apiUtils sends it
+    // automatically via withCredentials. Never read tokens from sessionStorage;
+    // setToken was removed as part of the HttpOnly cookie migration.
     if (!API_ENDPOINTS.EVENTS.CREATE) {
-      // Mock event creation success (API endpoint not configured)
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      return;
+      return { id: "mock-event-id", success: true };
     }
 
-    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData, {
-      headers: {
-        Authorization: token
-      }
-    });
+    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData);
+    
     const result = response.data;
-
-    if (!(response.status === 200 && result.success)) {
-      const errorMessage = result.message || result.error || `Server error: ${response.status}`;
+    if (!(response.status === 200 && result?.success)) {
+      const errorMessage = result?.message || result?.error || `Server error: ${response.status}`;
       throw new Error(errorMessage);
     }
+    
+    return result;
   });
 
+  // 🎉 Success Handler
   useEffect(() => {
     if (submitSuccess) {
-      toast.success("Event created successfully!");
+      toast.success("🎉 Event created successfully!");
       resetForm();
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, [submitSuccess]);
 
-  const [formData, setFormData] = useState(initialFormData);
-  const [errors, setErrors] = useState({});
-  const [newTag, setNewTag] = useState("");
-  // Track whether draft has been loaded to avoid overwriting on initial mount
-  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
-  const [showRestoreModal, setShowRestoreModal] = useState(false);
+  // 🗄️ Draft Management
+  useEffect(() => {
+    const checkForDraft = () => {
+      try {
+        const saved = localStorage.getItem(DRAFT_KEY);
+        if (saved) {
+          setShowRestoreModal(true);
+        }
+      } catch (error) {
+        logger.error("Failed to check for saved draft:", error);
+      } finally {
+        setIsDraftLoaded(true);
+      }
+    };
+    
+    // Small delay to avoid flash on mount
+    const timer = setTimeout(checkForDraft, 300);
+    return () => clearTimeout(timer);
+  }, []);
 
+  // 💾 Debounced Draft Saving
+  useEffect(() => {
+    if (!isDraftLoaded) return;
 
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.title.trim()) {
-      newErrors.title = "Event title is required";
-    } else if (formData.title.length < 3 || formData.title.length > 200) {
-      newErrors.title = "Title must be between 3 and 200 characters";
+    if (saveDraftTimeoutRef.current) {
+      clearTimeout(saveDraftTimeoutRef.current);
     }
 
-    if (!formData.description.trim()) newErrors.description = "Event description is required";
-    if (!formData.category) newErrors.category = "Please select a category";
-
-    if (formData.isMultiDay) {
-      if (!formData.startDate) newErrors.startDate = "Start date is required";
-      if (!formData.endDate) newErrors.endDate = "End date is required";
-
-      if (formData.startDate && formData.endDate) {
-        if (new Date(formData.endDate) < new Date(formData.startDate)) {
-          newErrors.endDate = "End date must be after start date";
+    saveDraftTimeoutRef.current = setTimeout(() => {
+      try {
+        const { banner, bannerPreview, ...saveable } = formDataRef.current;
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
+      } catch (error) {
+        logger.error("Failed to save draft:", error);
+        // Fallback: try to save without complex objects
+        try {
+          const minimal = {
+            title: formDataRef.current.title,
+            description: formDataRef.current.description,
+            date: formDataRef.current.date,
+          };
+          localStorage.setItem(DRAFT_KEY, JSON.stringify(minimal));
+        } catch (e) {
+          logger.error("Critical: Could not save draft:", e);
         }
       }
-    } else {
-      if (!formData.date) newErrors.date = "Event date is required";
+    }, DEBOUNCE_DELAY);
+
+    return () => {
+      if (saveDraftTimeoutRef.current) {
+        clearTimeout(saveDraftTimeoutRef.current);
+      }
+    };
+  }, [formData, isDraftLoaded]);
+
+  // ⚠️ Before Unload Warning (Memoized)
+  const hasUnsavedChanges = useMemo(() => {
+    return Object.entries(formData).some(([key, value]) => {
+      if (["banner", "bannerPreview"].includes(key)) return false;
+      if (typeof value === "string") return value.trim() !== (initialFormData[key] || "");
+      if (Array.isArray(value)) return value.length > 0;
+      if (typeof value === "object" && value !== null) {
+        return JSON.stringify(value) !== JSON.stringify(initialFormData[key] || {});
+      }
+      return Boolean(value) !== Boolean(initialFormData[key]);
+    });
+  }, [formData]);
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  // 🔍 Validation Logic (Extracted & Optimized)
+  const validateForm = useCallback(() => {
+    const newErrors = {};
+    const data = formDataRef.current;
+
+    // Title validation
+    const title = data.title?.trim();
+    if (!title) {
+      newErrors.title = "Event title is required";
+    } else if (title.length < MIN_TITLE_LENGTH || title.length > MAX_TITLE_LENGTH) {
+      newErrors.title = `Title must be between ${MIN_TITLE_LENGTH} and ${MAX_TITLE_LENGTH} characters`;
     }
 
-    if (!formData.startTime) newErrors.startTime = "Start time is required";
-    if (!formData.endTime) newErrors.endTime = "End time is required";
+    // Required fields
+    if (!data.description?.trim()) newErrors.description = "Event description is required";
+    if (!data.category) newErrors.category = "Please select a category";
 
-    if (!newErrors.startTime && !newErrors.endTime && !formData.isMultiDay) {
-      // Convert time strings (HH:MM format) to minutes for proper comparison
-      const startMinutes = parseTimeToMinutes(formData.startTime);
-      const endMinutes = parseTimeToMinutes(formData.endTime);
+    // Date validation
+    if (data.isMultiDay) {
+      if (!data.startDate) newErrors.startDate = "Start date is required";
+      if (!data.endDate) newErrors.endDate = "End date is required";
+      if (data.startDate && data.endDate && new Date(data.endDate) < new Date(data.startDate)) {
+        newErrors.endDate = "End date must be after start date";
+      }
+    } else {
+      if (!data.date) newErrors.date = "Event date is required";
+    }
+
+    // Time validation
+    if (!data.startTime) newErrors.startTime = "Start time is required";
+    if (!data.endTime) newErrors.endTime = "End time is required";
+
+    if (!newErrors.startTime && !newErrors.endTime && !data.isMultiDay) {
+      const startMinutes = parseTimeToMinutes(data.startTime);
+      const endMinutes = parseTimeToMinutes(data.endTime);
       if (startMinutes >= endMinutes) {
         newErrors.endTime = "End time must be after start time";
       }
     }
 
-    if (!formData.isVirtual && !formData.location.name.trim()) {
-      newErrors.location = "Location name is required for offline events";
+    // Location/Virtual validation
+    if (!data.isVirtual && !data.location?.name?.trim()) {
+      newErrors.location = "Location name is required for in-person events";
     }
-
-    if (formData.isVirtual && !formData.virtualLink.trim()) {
+    if (data.isVirtual && !data.virtualLink?.trim()) {
       newErrors.virtualLink = "Virtual link is required for online events";
     }
 
-    if (formData.capacity) {
-      const capacity = Number(formData.capacity);
+    // Capacity validation
+    if (data.capacity) {
+      const capacity = Number(data.capacity);
       if (!capacity || capacity <= 0) {
-        newErrors.capacity = "Please enter a valid number of attendees";
-      } else if (capacity > 100000) {
-        newErrors.capacity = "Maximum capacity is 100,000 attendees";
+        newErrors.capacity = "Please enter a valid number";
+      } else if (capacity > MAX_CAPACITY) {
+        newErrors.capacity = `Maximum capacity is ${MAX_CAPACITY.toLocaleString()} attendees`;
       }
     }
 
-    if (formData.registrationStart && formData.registrationEnd) {
-      if (new Date(formData.registrationStart) >= new Date(formData.registrationEnd)) {
-        newErrors.registrationEnd = "Registration end must be after registration start";
+    // Registration dates
+    if (data.registrationStart && data.registrationEnd) {
+      if (new Date(data.registrationStart) >= new Date(data.registrationEnd)) {
+        newErrors.registrationEnd = "Registration end must be after start";
       }
     }
 
-    // Validate ticket tiers
-    if (formData.ticketTiers && formData.ticketTiers.length > 0) {
-      formData.ticketTiers.forEach((tier, index) => {
-        if (tier.name && tier.name.trim()) {
-          const price = Number(tier.price);
-          if (price < 0) {
-            newErrors[`ticketTier_${index}_price`] = "Ticket price cannot be negative";
-          }
-          if (tier.capacity) {
-            const capacity = Number(tier.capacity);
-            if (capacity <= 0) {
-              newErrors[`ticketTier_${index}_capacity`] = "Ticket capacity must be greater than 0";
-            }
-          }
+    // Ticket tiers validation
+    data.ticketTiers?.forEach((tier, index) => {
+      if (tier.name?.trim()) {
+        const price = Number(tier.price);
+        if (price < 0) newErrors[`ticketTier_${index}_price`] = "Price cannot be negative";
+        
+        if (tier.capacity) {
+          const cap = Number(tier.capacity);
+          if (cap <= 0) newErrors[`ticketTier_${index}_capacity`] = "Capacity must be greater than 0";
         }
-      });
-    }
+      }
+    });
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  }, []); // No dependencies needed as we use formDataRef
 
-  const handleInputChange = (e) => {
+  // 📝 Input Handlers
+  const handleInputChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
-    if (name.startsWith("location.coordinates.")) {
-      const coordField = name.split(".")[2];
-      setFormData((prev) => ({
-        ...prev,
-        location: {
-          ...prev.location,
-          coordinates: {
-            ...prev.location.coordinates,
-            [coordField]: value,
-          },
-        },
-      }));
-    } else if (name.startsWith("location.")) {
-      const locationField = name.split(".")[1];
-      setFormData((prev) => ({
-        ...prev,
-        location: {
-          ...prev.location,
-          [locationField]: value,
-        },
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: type === "checkbox" ? checked : value,
-      }));
-    }
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-  };
+    
+    setFormData(prev => {
+      if (name.startsWith("location.coordinates.")) {
+        const coordField = name.split(".")[2];
+        return {
+          ...prev,
+          location: {
+            ...prev.location,
+            coordinates: { ...prev.location.coordinates, [coordField]: value }
+          }
+        };
+      } else if (name.startsWith("location.")) {
+        const locationField = name.split(".")[1];
+        return {
+          ...prev,
+          location: { ...prev.location, [locationField]: value }
+        };
+      }
+      return { ...prev, [name]: type === "checkbox" ? checked : value };
+    });
 
-  const handleTicketTierChange = (index, field, value) => {
-    setFormData((prev) => ({
+    // Clear error for this field
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: "" }));
+    }
+  }, [errors]);
+
+  const handleTicketTierChange = useCallback((index, field, value) => {
+    setFormData(prev => ({
       ...prev,
       ticketTiers: prev.ticketTiers.map((tier, i) =>
         i === index ? { ...tier, [field]: value } : tier
-      ),
+      )
     }));
+    
     const errorKey = `ticketTier_${index}_${field}`;
-
     if (errors[errorKey]) {
-      setErrors((prev) => ({ ...prev, [errorKey]: "" }));
+      setErrors(prev => ({ ...prev, [errorKey]: "" }));
     }
-  };
+  }, [errors]);
 
-  const addTicketTier = () => {
-    setFormData((prev) => ({
-      ...prev,
-      ticketTiers: [
-        ...prev.ticketTiers,
-        {
-          name: "",
-          price: 0,
-          capacity: "",
-          description: "",
-        },
-      ],
-    }));
-  };
-
-  const removeTicketTier = (index) => {
-    if (formData.ticketTiers.length > 1) {
-      setFormData((prev) => ({
-        ...prev,
-        ticketTiers: prev.ticketTiers.filter((_, i) => i !== index),
-      }));
-    }
-  };
-
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setErrors((prev) => ({
-          ...prev,
-          banner: "Image size should be less than 5MB",
-        }));
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setFormData((prev) => ({
-          ...prev,
-          banner: file,
-          bannerPreview: event.target.result,
-        }));
-      };
-      reader.readAsDataURL(file);
-      if (errors.banner) {
-        setErrors((prev) => ({ ...prev, banner: "" }));
-      }
-    }
-  };
-
-  const addTag = () => {
+  // 🏷️ Tag Management
+  const addTag = useCallback(() => {
     const trimmed = newTag.trim();
-    if (trimmed && !formData.tags.some((tag) => tag.toLowerCase() === trimmed.toLowerCase())) {
-      setFormData((prev) => ({
-        ...prev,
-        tags: [...prev.tags, trimmed],
-      }));
+    if (trimmed && !formData.tags.some(tag => tag.toLowerCase() === trimmed.toLowerCase())) {
+      setFormData(prev => ({ ...prev, tags: [...prev.tags, trimmed] }));
       setNewTag("");
     }
-  };
+  }, [newTag, formData.tags]);
 
-  const removeTag = (tagToRemove) => {
-    setFormData((prev) => ({
+  const removeTag = useCallback((tagToRemove) => {
+    setFormData(prev => ({
       ...prev,
-      tags: prev.tags.filter((tag) => tag !== tagToRemove),
+      tags: prev.tags.filter(tag => tag !== tagToRemove)
     }));
-  };
+  }, []);
 
-  const handleSubmit = () => {
+  // 🖼️ Image Upload with Validation
+  const handleImageUpload = useCallback(async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setErrors(prev => ({ ...prev, banner: "Please upload a valid image file" }));
+      toast.error("❌ Invalid file type. Please upload an image.");
+      return;
+    }
+
+    // Validate file size
+    if (file.size > MAX_BANNER_SIZE) {
+      setErrors(prev => ({ ...prev, banner: "Image size should be less than 5MB" }));
+      toast.error(`❌ Image too large. Max size is ${(MAX_BANNER_SIZE / 1024 / 1024).toFixed(0)}MB`);
+      return;
+    }
+
+    setIsUploading(true);
+    
+    try {
+      const reader = new FileReader();
+      
+      reader.onload = (event) => {
+        setFormData(prev => ({
+          ...prev,
+          banner: file,
+          bannerPreview: event.target?.result
+        }));
+        if (errors.banner) {
+          setErrors(prev => ({ ...prev, banner: "" }));
+        }
+        toast.success("✅ Banner uploaded successfully!");
+      };
+      
+      reader.onerror = () => {
+        toast.error("❌ Failed to read image file");
+        setErrors(prev => ({ ...prev, banner: "Failed to process image" }));
+      };
+      
+      reader.readAsDataURL(file);
+    } catch (error) {
+      logger.error("Image upload error:", error);
+      toast.error("❌ Upload failed. Please try again.");
+      setErrors(prev => ({ ...prev, banner: "Upload error occurred" }));
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  }, [errors.banner]);
+
+  // 🎫 Ticket Tier Management
+  const addTicketTier = useCallback(() => {
+    setFormData(prev => ({
+      ...prev,
+      ticketTiers: [...prev.ticketTiers, {
+        name: "",
+        price: 0,
+        capacity: "",
+        description: ""
+      }]
+    }));
+    toast.info("➕ New ticket tier added");
+  }, []);
+
+  const removeTicketTier = useCallback((index) => {
+    if (formData.ticketTiers.length > 1) {
+      setFormData(prev => ({
+        ...prev,
+        ticketTiers: prev.ticketTiers.filter((_, i) => i !== index)
+      }));
+      toast.info("🗑️ Ticket tier removed");
+    }
+  }, [formData.ticketTiers.length]);
+
+  // 🚀 Form Submission Flow
+  const handlePreview = useCallback(() => {
     if (validateForm()) {
       setCurrentStep("preview");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      toast.info("👀 Review your event details below");
+    } else {
+      toast.error("⚠️ Please fix the errors before proceeding");
+      // Scroll to first error
+      const firstError = Object.keys(errors)[0];
+      if (firstError) {
+        const element = document.querySelector(`[name="${firstError}"]`);
+        element?.scrollIntoView({ behavior: "smooth", block: "center" });
+        element?.focus();
+      }
     }
-  };
+  }, [validateForm, errors]);
 
-  const createEvent = () => {
-    setSuccessMessage("");
-    setGeneralError("");
+  const createEvent = useCallback(async () => {
     try {
       let coordinates = null;
-      if (formData.location.coordinates.latitude && formData.location.coordinates.longitude) {
+      if (formData.location.coordinates?.latitude && formData.location.coordinates?.longitude) {
         coordinates = validateCoordinates(
           formData.location.coordinates.latitude,
           formData.location.coordinates.longitude
         );
       }
 
-      const eventStartDate = new Date(
-        `${formData.isMultiDay ? formData.startDate : formData.date}T${formData.startTime}`
-      );
+      const eventDate = formData.isMultiDay ? formData.startDate : formData.date;
+      const eventStartDate = new Date(`${eventDate}T${formData.startTime}`);
       const eventEndDate = new Date(
         `${formData.isMultiDay ? formData.endDate : formData.date}T${formData.endTime}`
       );
@@ -333,13 +678,13 @@ const EventCreation = () => {
         description: formData.description.trim(),
         startDate: eventStartDate.toISOString(),
         endDate: eventEndDate.toISOString(),
-        timezone: formData.timezone,
+        timezone: formData.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
         location: formData.isVirtual
           ? null
           : {
               name: formData.location.name.trim(),
               address: formData.location.address?.trim() || "",
-              coordinates: coordinates,
+              coordinates
             },
         isVirtual: formData.isVirtual,
         virtualLink: formData.isVirtual ? formData.virtualLink.trim() : null,
@@ -353,1455 +698,1115 @@ const EventCreation = () => {
           ? new Date(formData.registrationEnd).toISOString()
           : null,
         category: formData.category,
-        tags: formData.tags.filter((tag) => tag.trim()),
+        tags: formData.tags.filter(tag => tag.trim()),
         ticketTiers: formData.ticketTiers
-          .filter((tier) => tier.name.trim())
-          .map((tier) => ({
+          .filter(tier => tier.name?.trim())
+          .map(tier => ({
             name: tier.name.trim(),
             price: Number(tier.price) || 0,
             capacity: tier.capacity ? Number(tier.capacity) : null,
-            description: tier.description?.trim() || "",
-          })),
+            description: tier.description?.trim() || ""
+          }))
       };
 
-      submitEventForm(eventData);
+      await submitEventForm(eventData);
     } catch (error) {
-      logger.error("Error creating event:", error);
-      const backendMessage = error.response?.data?.message || error.response?.data?.error;
-      let errorMessage = "Failed to create event. ";
-      if (backendMessage) {
-        errorMessage += backendMessage;
-      } else if (error.message.includes("Invalid date")) {
-        errorMessage += "Please check your date and time values.";
-      } else {
-        errorMessage += error.message || "Please try again.";
-      }
-      toast.error(errorMessage);
+      logger.error("Event creation failed:", error);
+      
+      // Avoid duplicate toasts - useFormSubmit already handles error display
+      // Just ensure we're back on form step
       setCurrentStep("form");
     }
-  };
+  }, [formData, submitEventForm]);
 
-  useEffect(() => {
-    const saved = localStorage.getItem(DRAFT_KEY);
-
-    if (saved) {
-      setShowRestoreModal(true);
-    }
-
-    setIsDraftLoaded(true);
-  }, []);
-  const handleRestoreDraft = () => {
+  // 🔄 Draft Actions
+  const handleRestoreDraft = useCallback(() => {
     try {
       const saved = localStorage.getItem(DRAFT_KEY);
-
       if (saved) {
         const parsed = JSON.parse(saved);
-
-        setFormData((prev) => ({
-          ...prev,
+        setFormData(prev => ({
+          ...initialFormData, // Start fresh, then merge saved data
           ...parsed,
-          banner: null,
-          bannerPreview: null,
+          banner: null, // Don't restore file objects
+          bannerPreview: null
         }));
-
-        toast.success("Draft restored successfully!");
+        toast.success("📝 Draft restored successfully!");
       }
     } catch (error) {
-      logger.error(error);
+      logger.error("Failed to restore draft:", error);
+      toast.error("❌ Could not restore draft");
     }
-
     setShowRestoreModal(false);
-  };
-  const handleDiscardDraft = () => {
+  }, []);
+
+  const handleDiscardDraft = useCallback(() => {
     localStorage.removeItem(DRAFT_KEY);
-
     setShowRestoreModal(false);
+    toast.info("🗑️ Draft discarded");
+  }, []);
 
-    toast.info("Saved draft discarded.");
-  };
-  useEffect(() => {
-    if (successMessage || generalError) {
-      const timer = setTimeout(() => {
-        setSuccessMessage("");
-        setGeneralError("");
-      }, 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [successMessage, generalError]);
-
-  useEffect(() => {
-    // Prevent saving before draft restoration
-    if (!isDraftLoaded) return;
-
-    const { banner, bannerPreview, ...saveable } = formData;
-
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
-  }, [formData, isDraftLoaded]);
-
-  /**
-   * Warn user before accidental refresh,
-   * tab close, or browser close
-   */
-  useEffect(() => {
-    const hasUnsavedChanges = Object.entries(formData).some(([key, value]) => {
-      // Ignore banner fields
-      if (key === "banner" || key === "bannerPreview") {
-        return false;
-      }
-
-      // Handle strings
-      if (typeof value === "string") {
-        return value.trim() !== "";
-      }
-
-      // Handle arrays
-      if (Array.isArray(value)) {
-        return value.length > 0;
-      }
-
-      // Handle objects
-      if (typeof value === "object" && value !== null) {
-        return JSON.stringify(value) !== "{}";
-      }
-
-      // Handle booleans/numbers
-      return Boolean(value);
-    });
-
-    const handleBeforeUnload = (e) => {
-      if (hasUnsavedChanges) {
-        e.preventDefault();
-
-        // Required for browser warning
-        e.returnValue = "";
-      }
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, [formData]);
-
-  const resetForm = () => {
+  // 🧹 Reset Form
+  const resetForm = useCallback(() => {
     setFormData(initialFormData);
     setErrors({});
-    localStorage.removeItem(DRAFT_KEY);
     setNewTag("");
     setCurrentStep("form");
-  };
+    localStorage.removeItem(DRAFT_KEY);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, []);
+
+  // 🎨 Animation Variants
+  const fadeInUp = useMemo(() => ({
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: prefersReducedMotion ? 0 : 0.4 }
+  }), [prefersReducedMotion]);
+
+  const staggerContainer = useMemo(() => ({
+    animate: {
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2
+      }
+    }
+  }), []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-indigo-100 to-white dark:from-gray-900 dark:to-black flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      {showRestoreModal && (
-        <div
-          className="
-      fixed inset-0 z-50
-      flex items-center justify-center
-      bg-black/50
-      px-4
-    "
-        >
-          <div
-            className="
-        w-full max-w-md
-        bg-white dark:bg-gray-900
-        rounded-3xl
-        p-8
-        shadow-2xl
-        border border-gray-200
-        dark:border-gray-700
-      "
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 
+                  dark:from-gray-900 dark:via-gray-900 dark:to-indigo-950 
+                  py-8 px-4 sm:px-6 lg:px-8">
+      
+      {/* 🔄 Restore Draft Modal */}
+      <AnimatePresence>
+        {showRestoreModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 
+                     bg-black/50 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="restore-draft-title"
           >
-            <h2
-              className="
-          text-2xl font-bold
-          text-gray-900 dark:text-white
-          mb-3
-        "
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl 
+                       shadow-2xl border border-gray-200 dark:border-gray-700 p-6"
             >
-              Restore Draft?
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg">
+                  <ClipboardDocumentListIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <h2 id="restore-draft-title" className="text-xl font-bold text-gray-900 dark:text-white">
+                  Restore Draft?
+                </h2>
+              </div>
+              
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                We found a previously saved event draft. Would you like to restore it or start fresh?
+              </p>
+              
+              <div className="flex gap-3 justify-end">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleDiscardDraft}
+                  className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                           text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 
+                           font-medium transition-colors duration-200"
+                >
+                  Start Fresh
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleRestoreDraft}
+                  className="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 
+                           text-white font-medium shadow-lg shadow-indigo-500/25 
+                           transition-all duration-200"
+                >
+                  Restore Draft
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 📋 Main Content */}
+      <motion.div 
+        variants={staggerContainer}
+        initial="initial"
+        animate="animate"
+        className="max-w-5xl mx-auto"
+      >
+        {/* Header */}
+        <motion.div variants={fadeInUp} className="text-center mb-10">
+          <h1 className="text-4xl sm:text-5xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 
+                       bg-clip-text text-transparent mb-4">
+            Create Your Event
+          </h1>
+          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            Fill in the details below and bring your event to life! ✨
+          </p>
+        </motion.div>
+
+        {/* Action Bar */}
+        <motion.div variants={fadeInUp} className="flex justify-end mb-6">
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => {
+              exportAttendeesToCSV(mockAttendees, "event-attendees.csv");
+              toast.success("📥 CSV exported successfully!");
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl 
+                     bg-emerald-600 hover:bg-emerald-700 text-white font-medium 
+                     shadow-lg shadow-emerald-500/25 transition-all duration-200"
+          >
+            <Download className="w-4 h-4" />
+            Export Sample CSV
+          </motion.button>
+        </motion.div>
+
+        {/* Guidelines Card */}
+        <motion.div 
+          variants={fadeInUp}
+          className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm 
+                   border border-gray-200 dark:border-gray-700 
+                   shadow-xl rounded-2xl p-6 mb-8"
+        >
+          <div className="flex items-center gap-2 mb-4">
+            <ClipboardDocumentListIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Quick Guidelines
             </h2>
-
-            <p
-              className="
-          text-gray-600 dark:text-gray-400
-          mb-6
-        "
-            >
-              A previously saved event draft was found. Would you like to restore it?
-            </p>
-
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={handleDiscardDraft}
-                className="
-            px-4 py-2
-            rounded-xl
-            border border-gray-300
-            dark:border-gray-700
-            hover:bg-gray-100
-            dark:hover:bg-gray-800
-            transition
-          "
-              >
-                Discard
-              </button>
-
-              <button
-                onClick={handleRestoreDraft}
-                className="
-            px-5 py-2
-            rounded-xl
-            bg-indigo-600
-            hover:bg-indigo-700
-            text-white
-            font-medium
-            transition
-          "
-              >
-                Restore Draft
-              </button>
-            </div>
           </div>
-        </div>
-      )}
-      {successMessage && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 px-6 py-4 rounded-xl bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 font-medium shadow-md text-center"
-        >
-          {successMessage}
+          <ul className="grid sm:grid-cols-2 gap-3 text-sm text-gray-600 dark:text-gray-400">
+            {[
+              "Title: 3-200 characters, clear & catchy",
+              "Description: Explain what attendees can expect",
+              "Dates: Ensure end is after start",
+              "Virtual/In-person: Provide correct details",
+              "Tickets: Set clear pricing & capacity",
+              "Tags: Add relevant keywords for discovery",
+              "Banner: Max 5MB, eye-catching image",
+              "Preview: Always review before publishing"
+            ].map((guideline, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <CheckCircleIcon className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                <span>{guideline}</span>
+              </li>
+            ))}
+          </ul>
         </motion.div>
-      )}
 
-      {generalError && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 px-6 py-4 rounded-xl bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 font-medium shadow-md text-center"
-        >
-          {generalError}
-        </motion.div>
-      )}
-
-      {currentStep === "form" ? (
-        <>
-          {/* Heading Section */}
-          <div className="w-full max-w-4xl flex justify-end mb-6">
-            <button
-              onClick={() => {
-                exportAttendeesToCSV(mockAttendees, "event-attendees.csv");
-
-                toast.success("CSV exported successfully!");
-              }}
-              className="
-      inline-flex
-      items-center
-      gap-2
-      px-5
-      py-3
-      rounded-2xl
-      bg-emerald-600
-      hover:bg-emerald-700
-      text-white
-      font-semibold
-      shadow-md
-      hover:shadow-lg
-      transition-all
-      duration-300
-    "
+        {/* Form / Preview Toggle */}
+        <AnimatePresence mode="wait">
+          {currentStep === "form" ? (
+            <motion.form
+              key="form"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.3 }}
+              onSubmit={(e) => { e.preventDefault(); handlePreview(); }}
+              className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-6 sm:p-8 
+                       border border-gray-200 dark:border-gray-700 space-y-6"
             >
-              <Download size={18} />
-              Download CSV
-            </button>
-          </div>
-          <motion.div
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
-            className="text-center mb-10"
-          >
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-indigo-800 dark:text-indigo-300 mb-4">
-              Create Your Event
-            </h1>
-            <p className="text-xs sm:text-base text-gray-600 dark:text-gray-400">
-              Fill in the details below and bring your event to life!
-            </p>
-          </motion.div>
-
-          {/* Guidelines Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
-            className="w-full max-w-4xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-2xl p-6 mb-10"
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <ClipboardDocumentListIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-              <h2 className="text-xl font-semibold text-indigo-700 dark:text-indigo-400">
-                Guidelines
-              </h2>
-            </div>
-            <ul className="list-disc pl-6 space-y-3 text-gray-700 dark:text-gray-300 text-sm sm:text-base">
-              <li>
-                Provide a <span className="font-medium">clear and catchy title</span> that
-                accurately represents your event (3-200 characters).
-              </li>
-              <li>
-                Write a <span className="font-medium">detailed description</span> explaining what
-                attendees can expect and why they should join.
-              </li>
-              <li>
-                Set <span className="font-medium">accurate dates and times</span> to avoid
-                confusion. Make sure the end time is after the start time.
-              </li>
-              <li>
-                Choose between <span className="font-medium">virtual or in-person</span> format and
-                provide the necessary details (link or location).
-              </li>
-              <li>
-                Define <span className="font-medium">ticket tiers</span> if applicable, with clear
-                pricing and capacity limits.
-              </li>
-              <li>
-                Add relevant <span className="font-medium">tags and categories</span> to help people
-                discover your event.
-              </li>
-              <li>
-                Upload an <span className="font-medium">eye-catching banner image</span> (max 5MB)
-                to make your event stand out.
-              </li>
-              <li>
-                Review all details in the <span className="font-medium">preview</span> before
-                publishing your event.
-              </li>
-            </ul>
-          </motion.div>
-
-          {/* Form Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
-            className="w-full max-w-4xl bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 border border-indigo-300 dark:border-gray-700"
-          >
-            <div className="space-y-6">
               {/* Event Title */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
-              >
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  <FileText className="w-5 h-5 text-indigo-500 inline-block mr-2" />
-                  Event Title <span className="text-red-600">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleInputChange}
-                  placeholder="React Summit 2026 / AI Hackathon Gujarat / Open Source Meetup"
-                  maxLength={200}
-                  className={`w-full border ${
-                    errors.title ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-                  } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
-                />
-                {errors.title && <span className="text-red-500 text-sm mt-1">{errors.title}</span>}
+              <motion.div variants={fadeInUp}>
+                <FormField 
+                  label="Event Title" 
+                  icon={FileText} 
+                  error={errors.title} 
+                  required
+                  hint={`${formData.title.length}/${MAX_TITLE_LENGTH} characters`}
+                >
+                  <input
+                    type="text"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleInputChange}
+                    placeholder="React Summit 2026 • AI Hackathon • Tech Meetup"
+                    maxLength={MAX_TITLE_LENGTH}
+                    className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 
+                             text-gray-900 dark:text-gray-100 focus:outline-none 
+                             focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                             transition-all duration-200 ${
+                               errors.title 
+                                 ? "border-red-500 focus:ring-red-500" 
+                                 : "border-gray-300 dark:border-gray-600"
+                             }`}
+                    aria-invalid={!!errors.title}
+                  />
+                </FormField>
               </motion.div>
 
               {/* Event Banner */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.1 }}
-              >
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
-                  <Image className="w-5 h-5 text-indigo-500 inline-block mr-2" />
-                  Event Banner (Max 5MB)
-                </label>
-
-                <div className="relative flex flex-col items-start gap-3">
-                  {/* Hidden File Input */}
-                  <input
-                    type="file"
-                    id="bannerUpload"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-
-                  {/* Show Choose File only if no banner is uploaded */}
-                  {!formData.banner && (
-                    <label
-                      htmlFor="bannerUpload"
-                      className="
-        cursor-pointer
-        inline-flex items-center justify-center gap-2
-        bg-black
-        text-white font-medium
-        px-4 py-2 rounded-2xl
-        shadow-md hover:shadow-lg
-        hover:bg-zinc-800
-        transition-all duration-300
-        focus:ring-2 focus:ring-offset-2 focus:ring-indigo-400
-        transform hover:scale-[1.03] active:scale-[0.97] text-sm
-      "
-                    >
-                      <Upload className="w-4 h-4" />
-                      Choose File
-                    </label>
-                  )}
-
-                  {/* Remove Button (only when uploaded) */}
-                  {formData.banner && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          banner: null,
-                          bannerPreview: null,
-                        }))
-                      }
-                      className="
-        text-red-500 dark:text-red-400
-        font-medium text-sm
-        flex items-center gap-2
-        hover:text-red-600 dark:hover:text-red-300
-        transition-all duration-300
-        transform hover:scale-[1.05]
-      "
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-4 h-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
+              <motion.div variants={fadeInUp}>
+                <FormField label="Event Banner" icon={ImageIcon} error={errors.banner}>
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap gap-3 items-center">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        id="bannerUpload"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        disabled={isUploading}
+                        className="hidden"
+                        aria-label="Upload event banner"
+                      />
+                      
+                      <motion.label
+                        htmlFor="bannerUpload"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 
+                                 rounded-lg bg-gray-900 text-white font-medium 
+                                 hover:bg-gray-800 transition-colors duration-200
+                                 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                      Remove Banner
-                    </button>
-                  )}
+                        {isUploading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4" />
+                            {formData.bannerPreview ? "Change Image" : "Choose File"}
+                          </>
+                        )}
+                      </motion.label>
 
-                  {/* Show file name */}
-                  {formData.banner && (
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
-                      {formData.banner.name}
-                    </span>
-                  )}
-
-                  {/* Error Message */}
-                  {errors.banner && <span className="text-red-500 text-sm">{errors.banner}</span>}
-
-                  {/* Preview Section */}
-                  {formData.bannerPreview && (
-                    <div className="rounded-lg overflow-hidden border border-indigo-200 dark:border-gray-700 shadow-md">
-                     <img
-  loading="lazy"
-  decoding="async"
-  src={formData.bannerPreview}
-  alt="Banner preview"
-  className="
-    w-full
-    h-48
-    sm:h-56
-    md:h-64
-    object-cover
-    rounded-xl
-    hover:scale-[1.02]
-    transition-all
-    duration-300
-    bg-slate-200
-    dark:bg-slate-800
-  "
-/>
+                      {formData.bannerPreview && (
+                        <motion.button
+                          type="button"
+                          onClick={() => {
+                            setFormData(prev => ({ ...prev, banner: null, bannerPreview: null }));
+                            if (fileInputRef.current) fileInputRef.current.value = "";
+                            toast.info("🗑️ Banner removed");
+                          }}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg 
+                                   text-red-600 hover:text-red-700 hover:bg-red-50 
+                                   dark:hover:bg-red-900/20 font-medium text-sm 
+                                   transition-colors duration-200"
+                        >
+                          <Trash2Icon className="w-4 h-4" />
+                          Remove
+                        </motion.button>
+                      )}
                     </div>
-                  )}
-                </div>
+
+                    {formData.banner && !isUploading && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        📁 {formData.banner.name} • {(formData.banner.size / 1024).toFixed(1)} KB
+                      </p>
+                    )}
+
+                    <AnimatePresence>
+                      {formData.bannerPreview && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="rounded-xl overflow-hidden border-2 border-dashed 
+                                   border-gray-200 dark:border-gray-600"
+                        >
+                          <img
+                            loading="lazy"
+                            decoding="async"
+                            src={formData.bannerPreview}
+                            alt="Banner preview"
+                            className="w-full h-48 sm:h-64 object-cover 
+                                     transition-transform duration-300 hover:scale-[1.02]"
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </FormField>
               </motion.div>
 
-              {/* Description */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  <ClipboardList className="w-5 h-5 text-indigo-500 inline-block mr-2" />
-                  Description <span className="text-red-600">*</span>
-                </label>
-               <p
-  className={`text-sm text-right mt-1 ${
-    formData.description.length > 450
-      ? "text-red-500"
-      : formData.description.length > 350
-      ? "text-yellow-500"
-      : "text-gray-400"
-  }`}
->
-  {formData.description.length}/500 characters
-</p>
-
-                {/* Character counter + error row */}
-                <div className="flex justify-between items-start mt-1">
-                  <div className="flex-1">
-                    {errors.description && (
-                      <span className="text-red-500 text-sm">{errors.description}</span>
-                    )}
-                  </div>
-                  {(() => {
-                    const len = formData.description.length;
-                    const max = 500;
-                    const ratio = len / max;
-                    const counterColor =
-                      ratio >= 0.95
-                        ? "text-red-500"
-                        : ratio >= 0.8
-                          ? "text-amber-500"
-                          : "text-gray-500 dark:text-gray-400";
-                    return (
-                      <span
-                        className={`text-xs font-medium ml-2 tabular-nums ${counterColor}`}
-                        aria-live="polite"
-                      >
-                        {len} / {max}
+              {/* Description with Character Counter */}
+              <motion.div variants={fadeInUp}>
+                <FormField 
+                  label="Description" 
+                  icon={ClipboardList} 
+                  error={errors.description} 
+                  required
+                >
+                  <div className="space-y-2">
+                    <textarea
+                      name="description"
+                      value={formData.description}
+                      onChange={handleInputChange}
+                      placeholder="Describe your event: agenda, speakers, what attendees will learn..."
+                      rows={4}
+                      maxLength={MAX_DESCRIPTION_LENGTH}
+                      className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 
+                               text-gray-900 dark:text-gray-100 focus:outline-none 
+                               focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                               transition-all duration-200 resize-none ${
+                                 errors.description 
+                                   ? "border-red-500 focus:ring-red-500" 
+                                   : "border-gray-300 dark:border-gray-600"
+                               }`}
+                      aria-invalid={!!errors.description}
+                    />
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-gray-500 dark:text-gray-400">
+                        Pro tip: Be specific about value for attendees
                       </span>
-                    );
-                  })()}
-                </div>
+                      <CharacterCounter 
+                        current={formData.description.length} 
+                        max={MAX_DESCRIPTION_LENGTH} 
+                      />
+                    </div>
+                  </div>
+                </FormField>
               </motion.div>
 
               {/* Category */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-              >
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  <Layers className="w-5 h-5 text-indigo-500 inline-block mr-2" />
-                  Category <span className="text-red-600">*</span>
-                </label>
-                <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                  className={`w-full border ${
-                    errors.category ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-                  } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all duration-300`}
-                >
-                  <option value="">Select a category</option>
-                  {categories.map((cat) => (
-                    <option key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </option>
-                  ))}
-                </select>
-                {errors.category && (
-                  <span className="text-red-500 text-sm mt-1">{errors.category}</span>
-                )}
+              <motion.div variants={fadeInUp}>
+                <FormField label="Category" icon={Layers} error={errors.category} required>
+                  <select
+                    name="category"
+                    value={formData.category}
+                    onChange={handleInputChange}
+                    className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 
+                             text-gray-900 dark:text-gray-100 focus:outline-none 
+                             focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                             transition-all duration-200 ${
+                               errors.category 
+                                 ? "border-red-500 focus:ring-red-500" 
+                                 : "border-gray-300 dark:border-gray-600"
+                             }`}
+                    aria-invalid={!!errors.category}
+                  >
+                    <option value="">Select a category</option>
+                    {categories.map((cat) => (
+                      <option key={cat.value} value={cat.value}>{cat.label}</option>
+                    ))}
+                  </select>
+                </FormField>
               </motion.div>
 
-              {/* Event Duration Type */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
-              >
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  <Calendar className="w-5 h-5 text-indigo-500 inline-block mr-2" />
-                  Event Duration
-                </label>
-                <div className="flex gap-6">
-                  {/* Single-day Event Option */}
-                  <label className="flex items-center text-gray-700 dark:text-white gap-2">
-                    <input
-                      type="radio"
-                      name="eventType"
-                      checked={!formData.isMultiDay}
-                      onChange={() => {
-                        setFormData((prev) => ({
+              {/* Event Duration Toggle */}
+              <motion.div variants={fadeInUp}>
+                <FormField label="Event Duration" icon={Calendar}>
+                  <div className="flex flex-wrap gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center 
+                                    transition-colors duration-200 ${
+                                      !formData.isMultiDay 
+                                        ? "border-indigo-600 bg-indigo-600" 
+                                        : "border-gray-300 dark:border-gray-600 group-hover:border-indigo-400"
+                                    }`}>
+                        {!formData.isMultiDay && (
+                          <div className="w-2.5 h-2.5 rounded-full bg-white" />
+                        )}
+                      </div>
+                      <input
+                        type="radio"
+                        name="eventType"
+                        checked={!formData.isMultiDay}
+                        onChange={() => setFormData(prev => ({
                           ...prev,
                           isMultiDay: false,
                           startDate: "",
                           endDate: "",
                           date: "",
                           startTime: "",
-                          endTime: "",
-                        }));
-                        setErrors({});
-                      }}
-                    />
-                    Single-day Event
-                  </label>
+                          endTime: ""
+                        }))}
+                        className="sr-only"
+                      />
+                      <span className="text-gray-700 dark:text-gray-300 font-medium">
+                        Single-day Event
+                      </span>
+                    </label>
 
-                  {/* Multi-day Event Option */}
-                  <label className="flex items-center text-gray-700 dark:text-white gap-2">
-                    <input
-                      type="radio"
-                      name="eventType"
-                      checked={formData.isMultiDay}
-                      onChange={() => {
-                        setFormData((prev) => ({
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center 
+                                    transition-colors duration-200 ${
+                                      formData.isMultiDay 
+                                        ? "border-indigo-600 bg-indigo-600" 
+                                        : "border-gray-300 dark:border-gray-600 group-hover:border-indigo-400"
+                                    }`}>
+                        {formData.isMultiDay && (
+                          <div className="w-2.5 h-2.5 rounded-full bg-white" />
+                        )}
+                      </div>
+                      <input
+                        type="radio"
+                        name="eventType"
+                        checked={formData.isMultiDay}
+                        onChange={() => setFormData(prev => ({
                           ...prev,
                           isMultiDay: true,
                           date: "",
                           startDate: "",
                           endDate: "",
                           startTime: "",
-                          endTime: "",
-                        }));
-                        setErrors({});
-                      }}
-                    />
-                    Multi-day Event
-                  </label>
-                </div>
+                          endTime: ""
+                        }))}
+                        className="sr-only"
+                      />
+                      <span className="text-gray-700 dark:text-gray-300 font-medium">
+                        Multi-day Event
+                      </span>
+                    </label>
+                  </div>
+                </FormField>
               </motion.div>
 
-              {/* Date and Time Fields */}
-              {formData.isMultiDay ? (
-                // 🔹 Multi-day Event
-                <motion.div
-                  className="grid grid-cols-1 sm:grid-cols-4 gap-4"
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.1 }}
-                >
-                  {/* Start Date */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Start Date <span className="text-red-600">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      name="startDate"
-                      value={formData.startDate}
-                      onChange={handleInputChange}
-                      min={todayString}
-                      className={`w-full border ${
-                        errors.startDate ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
-                    />
-                    {errors.startDate && (
-                      <span className="text-red-500 text-sm mt-1 block">{errors.startDate}</span>
-                    )}
-                  </div>
-
-                  {/* End Date */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      End Date <span className="text-red-600">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      name="endDate"
-                      value={formData.endDate}
-                      onChange={handleInputChange}
-                      min={formData.startDate || todayString}
-                      className={`w-full border ${
-                        errors.endDate ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
-                    />
-                    {errors.endDate && (
-                      <span className="text-red-500 text-sm mt-1 block">{errors.endDate}</span>
-                    )}
-                  </div>
-
-                  {/* Start Time */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Start Time <span className="text-red-600">*</span>
-                    </label>
-                    <input
-                      type="time"
-                      name="startTime"
-                      value={formData.startTime}
-                      onChange={handleInputChange}
-                      className={`w-full border ${
-                        errors.startTime ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
-                    />
-                    {errors.startTime && (
-                      <span className="text-red-500 text-sm mt-1 block">{errors.startTime}</span>
-                    )}
-                  </div>
-
-                  {/* End Time */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      End Time <span className="text-red-600">*</span>
-                    </label>
-                    <input
-                      type="time"
-                      name="endTime"
-                      value={formData.endTime}
-                      onChange={handleInputChange}
-                      className={`w-full border ${
-                        errors.endTime ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
-                    />
-                    {errors.endTime && (
-                      <span className="text-red-500 text-sm mt-1 block">{errors.endTime}</span>
-                    )}
-                  </div>
-                </motion.div>
-              ) : (
-                // 🔸 Single-day Event
-                <motion.div
-                  className="grid grid-cols-1 sm:grid-cols-3 gap-4"
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.1 }}
-                >
-                  {/* Event Date */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Event Date <span className="text-red-600">*</span>
-                    </label>
+              {/* Date & Time Fields */}
+              <motion.div variants={fadeInUp} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {formData.isMultiDay ? (
+                  <>
+                    <FormField label="Start Date" required error={errors.startDate}>
+                      <input
+                        type="date"
+                        name="startDate"
+                        value={formData.startDate}
+                        onChange={handleInputChange}
+                        min={todayString}
+                        className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 
+                                 text-gray-900 dark:text-gray-100 focus:outline-none 
+                                 focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                                 transition-all duration-200 ${
+                                   errors.startDate 
+                                     ? "border-red-500 focus:ring-red-500" 
+                                     : "border-gray-300 dark:border-gray-600"
+                                 }`}
+                      />
+                    </FormField>
+                    <FormField label="End Date" required error={errors.endDate}>
+                      <input
+                        type="date"
+                        name="endDate"
+                        value={formData.endDate}
+                        onChange={handleInputChange}
+                        min={formData.startDate || todayString}
+                        className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 
+                                 text-gray-900 dark:text-gray-100 focus:outline-none 
+                                 focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                                 transition-all duration-200 ${
+                                   errors.endDate 
+                                     ? "border-red-500 focus:ring-red-500" 
+                                     : "border-gray-300 dark:border-gray-600"
+                                 }`}
+                      />
+                    </FormField>
+                  </>
+                ) : (
+                  <FormField label="Event Date" required error={errors.date}>
                     <input
                       type="date"
                       name="date"
                       value={formData.date}
                       onChange={handleInputChange}
                       min={todayString}
-                      className={`w-full border ${
-                        errors.date ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
+                      className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 
+                               text-gray-900 dark:text-gray-100 focus:outline-none 
+                               focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                               transition-all duration-200 ${
+                                 errors.date 
+                                   ? "border-red-500 focus:ring-red-500" 
+                                   : "border-gray-300 dark:border-gray-600"
+                               }`}
                     />
-                    {errors.date && (
-                      <span className="text-red-500 text-sm mt-1 block">{errors.date}</span>
-                    )}
-                  </div>
+                  </FormField>
+                )}
+                
+                <FormField label="Start Time" required error={errors.startTime}>
+                  <input
+                    type="time"
+                    name="startTime"
+                    value={formData.startTime}
+                    onChange={handleInputChange}
+                    className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 
+                             text-gray-900 dark:text-gray-100 focus:outline-none 
+                             focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                             transition-all duration-200 ${
+                               errors.startTime 
+                                 ? "border-red-500 focus:ring-red-500" 
+                                 : "border-gray-300 dark:border-gray-600"
+                             }`}
+                  />
+                </FormField>
+                <FormField label="End Time" required error={errors.endTime}>
+                  <input
+                    type="time"
+                    name="endTime"
+                    value={formData.endTime}
+                    onChange={handleInputChange}
+                    className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 
+                             text-gray-900 dark:text-gray-100 focus:outline-none 
+                             focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                             transition-all duration-200 ${
+                               errors.endTime 
+                                 ? "border-red-500 focus:ring-red-500" 
+                                 : "border-gray-300 dark:border-gray-600"
+                             }`}
+                  />
+                </FormField>
+              </motion.div>
 
-                  {/* Start Time */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Start Time <span className="text-red-600">*</span>
-                    </label>
-                    <input
-                      type="time"
-                      name="startTime"
-                      value={formData.startTime}
-                      onChange={handleInputChange}
-                      className={`w-full border ${
-                        errors.startTime ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
-                    />
-                    {errors.startTime && (
-                      <span className="text-red-500 text-sm mt-1 block">{errors.startTime}</span>
-                    )}
+              {/* Virtual Event Toggle */}
+              <motion.div variants={fadeInUp}>
+                <label className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 
+                                border border-gray-200 dark:border-gray-600 cursor-pointer 
+                                hover:border-indigo-300 dark:hover:border-indigo-500 
+                                transition-colors duration-200 group">
+                  <div className={`w-11 h-6 rounded-full p-1 transition-colors duration-200 ${
+                    formData.isVirtual ? "bg-indigo-600" : "bg-gray-300 dark:bg-gray-600"
+                  }`}>
+                    <div className={`w-4 h-4 rounded-full bg-white shadow transform transition-transform duration-200 ${
+                      formData.isVirtual ? "translate-x-5" : "translate-x-0"
+                    }`} />
                   </div>
-
-                  {/* End Time */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      End Time <span className="text-red-600">*</span>
-                    </label>
-                    <input
-                      type="time"
-                      name="endTime"
-                      value={formData.endTime}
-                      onChange={handleInputChange}
-                      className={`w-full border ${
-                        errors.endTime ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
-                    />
-                    {errors.endTime && (
-                      <span className="text-red-500 text-sm mt-1 block">{errors.endTime}</span>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Virtual Event Checkbox */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-              >
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                   <input
                     type="checkbox"
                     name="isVirtual"
                     checked={formData.isVirtual}
                     onChange={handleInputChange}
-                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                    className="sr-only"
                   />
-                  <Globe className="w-5 h-5 text-indigo-500 inline-block" />
-                  This is a virtual event
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    <span className="font-medium text-gray-700 dark:text-gray-300">
+                      This is a virtual event
+                    </span>
+                  </div>
                 </label>
               </motion.div>
 
-              {/* Virtual Link or Location */}
-              {formData.isVirtual ? (
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <Link2 className="w-5 h-5 text-indigo-500 inline-block mr-2" />
-                    Virtual Event Link <span className="text-red-600">*</span>
-                  </label>
-                  <input
-                    type="url"
-                    name="virtualLink"
-                    value={formData.virtualLink}
-                    onChange={handleInputChange}
-                    placeholder="https://zoom.us/j/..."
-                    className={`w-full border ${
-                      errors.virtualLink ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
-                  />
-                  {errors.virtualLink && (
-                    <span className="text-red-500 text-sm mt-1">{errors.virtualLink}</span>
-                  )}
-                </motion.div>
-              ) : (
-                <>
+              {/* Location / Virtual Link */}
+              <AnimatePresence mode="wait">
+                {formData.isVirtual ? (
                   <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5 }}
+                    key="virtual"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
                   >
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      <MapPin className="w-5 h-5 text-indigo-500 inline-block mr-2" />
-                      Location Name <span className="text-red-600">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="location.name"
-                      value={formData.location.name}
-                      onChange={handleInputChange}
-                      placeholder="Convention Center, Community Hall, etc."
-                      className={`w-full border ${
-                        errors.location ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-                      } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
-                    />
-                    {errors.location && (
-                      <span className="text-red-500 text-sm mt-1">{errors.location}</span>
-                    )}
-                  </motion.div>
-
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.1 }}
-                  >
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      <Map className="w-5 h-5 text-indigo-500 inline-block mr-2" />
-                      Address
-                    </label>
-                    <input
-                      type="text"
-                      name="location.address"
-                      value={formData.location.address}
-                      onChange={handleInputChange}
-                      placeholder="123 Main St, City, State ZIP"
-                      className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300"
-                    />
-                  </motion.div>
-
-                  <motion.div
-                    className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                  >
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        <Navigation className="w-5 h-5 text-indigo-500 inline-block mr-2" />
-                        Latitude (optional)
-                      </label>
+                    <FormField label="Virtual Event Link" icon={Link2} error={errors.virtualLink} required>
                       <input
-                        type="number"
-                        name="location.coordinates.latitude"
-                        value={formData.location.coordinates.latitude}
+                        type="url"
+                        name="virtualLink"
+                        value={formData.virtualLink}
                         onChange={handleInputChange}
-                        placeholder="40.7128"
-                        step="any"
-                        className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300"
+                        placeholder="https://zoom.us/j/... • https://meet.google.com/..."
+                        className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 
+                                 text-gray-900 dark:text-gray-100 focus:outline-none 
+                                 focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                                 transition-all duration-200 ${
+                                   errors.virtualLink 
+                                     ? "border-red-500 focus:ring-red-500" 
+                                     : "border-gray-300 dark:border-gray-600"
+                                 }`}
                       />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        <Compass className="w-5 h-5 text-indigo-500 inline-block mr-2" />
-                        Longitude (optional)
-                      </label>
+                    </FormField>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="location"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-4 overflow-hidden"
+                  >
+                    <FormField label="Venue Name" icon={MapPin} error={errors.location} required>
                       <input
-                        type="number"
-                        name="location.coordinates.longitude"
-                        value={formData.location.coordinates.longitude}
+                        type="text"
+                        name="location.name"
+                        value={formData.location.name}
                         onChange={handleInputChange}
-                        placeholder="-74.0060"
-                        step="any"
-                        className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300"
+                        placeholder="Convention Center • Community Hall • Office Address"
+                        className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 
+                                 text-gray-900 dark:text-gray-100 focus:outline-none 
+                                 focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                                 transition-all duration-200 ${
+                                   errors.location 
+                                     ? "border-red-500 focus:ring-red-500" 
+                                     : "border-gray-300 dark:border-gray-600"
+                                 }`}
                       />
+                    </FormField>
+
+                    <FormField label="Full Address" icon={MapIcon}>
+                      <input
+                        type="text"
+                        name="location.address"
+                        value={formData.location.address}
+                        onChange={handleInputChange}
+                        placeholder="123 Tech Street, Innovation City, TC 12345"
+                        className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 
+                                 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 
+                                 focus:outline-none focus:ring-2 focus:ring-indigo-500 
+                                 focus:border-transparent transition-all duration-200"
+                      />
+                    </FormField>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField label="Latitude (Optional)" icon={Navigation}>
+                        <input
+                          type="number"
+                          name="location.coordinates.latitude"
+                          value={formData.location.coordinates.latitude}
+                          onChange={handleInputChange}
+                          placeholder="40.7128"
+                          step="any"
+                          className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 
+                                   bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 
+                                   focus:outline-none focus:ring-2 focus:ring-indigo-500 
+                                   focus:border-transparent transition-all duration-200"
+                        />
+                      </FormField>
+                      <FormField label="Longitude (Optional)" icon={Compass}>
+                        <input
+                          type="number"
+                          name="location.coordinates.longitude"
+                          value={formData.location.coordinates.longitude}
+                          onChange={handleInputChange}
+                          placeholder="-74.0060"
+                          step="any"
+                          className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 
+                                   bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 
+                                   focus:outline-none focus:ring-2 focus:ring-indigo-500 
+                                   focus:border-transparent transition-all duration-200"
+                        />
+                      </FormField>
                     </div>
                   </motion.div>
-                </>
-              )}
+                )}
+              </AnimatePresence>
 
               {/* Capacity */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.6 }}
-              >
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  <Users className="w-5 h-5 text-indigo-500 inline-block mr-2" />
-                  Maximum Attendees
-                </label>
-                <input
-                  type="number"
-                  name="capacity"
-                  value={formData.capacity}
-                  onChange={handleInputChange}
-                  placeholder="Leave empty for unlimited (max: 100,000)"
-                  min="1"
-                  max="100000"
-                  className={`w-full border ${
-                    errors.capacity ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-                  } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
-                />
-                {errors.capacity && (
-                  <span className="text-red-500 text-sm mt-1">{errors.capacity}</span>
-                )}
+              <motion.div variants={fadeInUp}>
+                <FormField label="Maximum Attendees" icon={Users} error={errors.capacity}>
+                  <input
+                    type="number"
+                    name="capacity"
+                    value={formData.capacity}
+                    onChange={handleInputChange}
+                    placeholder="Leave empty for unlimited"
+                    min="1"
+                    max={MAX_CAPACITY}
+                    className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 
+                             text-gray-900 dark:text-gray-100 focus:outline-none 
+                             focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                             transition-all duration-200 ${
+                               errors.capacity 
+                                 ? "border-red-500 focus:ring-red-500" 
+                                 : "border-gray-300 dark:border-gray-600"
+                             }`}
+                  />
+                </FormField>
               </motion.div>
 
-              {/* Registration Dates */}
-              <motion.div
-                className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.7 }}
-              >
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <CalendarPlus className="w-5 h-5 text-indigo-500 inline-block mr-2" />
-                    Registration Start
-                  </label>
+              {/* Registration Window */}
+              <motion.div variants={fadeInUp} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField label="Registration Opens" icon={CalendarPlus}>
                   <input
                     type="datetime-local"
                     name="registrationStart"
                     value={formData.registrationStart}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 
+                             bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 
+                             focus:outline-none focus:ring-2 focus:ring-indigo-500 
+                             focus:border-transparent transition-all duration-200"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <CalendarX className="w-5 h-5 text-indigo-500 inline-block mr-2" />
-                    Registration End
-                  </label>
+                </FormField>
+                <FormField label="Registration Closes" icon={CalendarX} error={errors.registrationEnd}>
                   <input
                     type="datetime-local"
                     name="registrationEnd"
                     value={formData.registrationEnd}
                     onChange={handleInputChange}
-                    className={`w-full border ${
-                      errors.registrationEnd
-                        ? "border-red-500"
-                        : "border-gray-300 dark:border-gray-600"
-                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
+                    className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 
+                             text-gray-900 dark:text-gray-100 focus:outline-none 
+                             focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                             transition-all duration-200 ${
+                               errors.registrationEnd 
+                                 ? "border-red-500 focus:ring-red-500" 
+                                 : "border-gray-300 dark:border-gray-600"
+                             }`}
                   />
-                  {errors.registrationEnd && (
-                    <span className="text-red-500 text-sm mt-1">{errors.registrationEnd}</span>
-                  )}
-                </div>
+                </FormField>
               </motion.div>
 
-              {/* Public and Approval Checkboxes */}
-              <motion.div
-                className="space-y-3"
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.8 }}
-              >
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+              {/* Visibility & Approval */}
+              <motion.div variants={fadeInUp} className="space-y-3">
+                <label className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 
+                                dark:hover:bg-gray-700/50 transition-colors duration-200 cursor-pointer">
                   <input
                     type="checkbox"
                     name="isPublic"
                     checked={formData.isPublic}
                     onChange={handleInputChange}
-                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded 
+                             focus:ring-indigo-500 focus:ring-offset-0"
                   />
-                  Make this event public
+                  <span className="text-gray-700 dark:text-gray-300 font-medium">
+                    Make this event public (discoverable in listings)
+                  </span>
                 </label>
 
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 
+                                dark:hover:bg-gray-700/50 transition-colors duration-200 cursor-pointer">
                   <input
                     type="checkbox"
                     name="requiresApproval"
                     checked={formData.requiresApproval}
                     onChange={handleInputChange}
-                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded 
+                             focus:ring-indigo-500 focus:ring-offset-0"
                   />
-                  Require approval for registration
+                  <span className="text-gray-700 dark:text-gray-300 font-medium">
+                    Require approval for registrations
+                  </span>
                 </label>
               </motion.div>
 
-              {/* Ticket Tiers Section */}
-              {/* Ticket Tiers Section */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.9 }}
-                className="border-t border-gray-200 dark:border-gray-600 pt-6"
-              >
-                {/* Header with "Add Tier" button */}
+              {/* Ticket Tiers */}
+              <motion.div variants={fadeInUp} className="border-t border-gray-200 dark:border-gray-700 pt-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <TicketIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                    <label className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                      Ticket Tiers
-                    </label>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={addTicketTier}
-                    className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-3xl text-sm font-medium shadow-md hover:bg-zinc-800 transition-all duration-300 transform hover:scale-[1.03] active:scale-[0.97]"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Tier
-                  </button>
-                </div>
-
-                {formData.ticketTiers.map((tier, index) => (
-                  <div
-                    key={index}
-                    className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4 mb-4"
-                  >
-                    <div className="flex justify-between items-center mb-3">
-                      <h4 className="font-semibold text-gray-700 dark:text-gray-300">
-                        Tier {index + 1}
-                      </h4>
-                      {formData.ticketTiers.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeTicketTier(index)}
-                          className="text-red-500 hover:text-red-700 text-sm font-medium"
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </div>
-                    <div className="space-y-3">
-                      <div>
-                        <input
-                          type="text"
-                          placeholder="Tier name"
-                          value={tier.name}
-                          onChange={(e) => handleTicketTierChange(index, "name", e.target.value)}
-                          className={`w-full border ${errors[`ticketTier_${index}_name`] ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500`}
-                        />
-                        {errors[`ticketTier_${index}_name`] && (
-                          <span className="text-red-500 text-sm mt-1 block">
-                            {errors[`ticketTier_${index}_name`]}
-                          </span>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <input
-                            type="number"
-                            placeholder="Price"
-                            min="0"
-                            step="0.01"
-                            value={tier.price}
-                            onChange={(e) => handleTicketTierChange(index, "price", e.target.value)}
-                            className={`w-full border ${errors[`ticketTier_${index}_price`] ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500`}
-                          />
-                          {errors[`ticketTier_${index}_price`] && (
-                            <span className="text-red-500 text-sm mt-1 block">
-                              {errors[`ticketTier_${index}_price`]}
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          <input
-                            type="number"
-                            placeholder="Capacity (optional)"
-                            min="1"
-                            value={tier.capacity}
-                            onChange={(e) =>
-                              handleTicketTierChange(index, "capacity", e.target.value)
-                            }
-                            className={`w-full border ${errors[`ticketTier_${index}_capacity`] ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500`}
-                          />
-                          {errors[`ticketTier_${index}_capacity`] && (
-                            <span className="text-red-500 text-sm mt-1 block">
-                              {errors[`ticketTier_${index}_capacity`]}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                     <div className="space-y-2">
-  <textarea
-    placeholder="Description"
-    value={tier.description}
-    onChange={(e) =>
-      handleTicketTierChange(
-        index,
-        "description",
-        e.target.value
-      )
-    }
-    rows={2}
-    maxLength={200}
-    className="
-      w-full
-      border border-gray-300
-      dark:border-gray-600
-      rounded-lg
-      p-3
-      bg-white dark:bg-gray-600
-      text-gray-900 dark:text-gray-100
-      focus:outline-none
-      focus:ring-1
-      focus:ring-indigo-500
-    "
-  />
-
-  <div className="flex justify-end">
-    <CharacterCounter
-      current={
-        tier.description.length
-      }
-      max={200}
-    />
-  </div>
-</div>
-                    </div>
-                  </div>
-                ))}
-              </motion.div>
-
-              {/* Tags Section */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 1.0 }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <TagIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Tags
-                  </label>
-                </div>
-                <div className="flex gap-2 mb-3">
-                  <input
-                    type="text"
-                    value={newTag}
-                    onChange={(e) => setNewTag(e.target.value)}
-                    placeholder="Add a tag"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addTag();
-                      }
-                    }}
-                    className="flex-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={addTag}
-                    className="
-        flex items-center justify-center gap-2
-        px-4 py-2
-        rounded-3xl font-semibold
-        text-white
-        bg-black
-        shadow-md hover:shadow-lg
-        hover:bg-zinc-800
-        transform hover:scale-[1.03] active:scale-[0.97]
-        transition-all duration-300
-        focus:ring-2 focus:ring-offset-2 focus:ring-indigo-400 text-sm
-      "
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {formData.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center gap-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-sm font-medium"
-                    >
-                      #{tag}
-                      <button
-                        type="button"
-                        onClick={() => removeTag(tag)}
-                        className="ml-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 font-bold"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </motion.div>
-
-              {/* Submit Button */}
-              <motion.button
-                type="button"
-                onClick={handleSubmit}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full flex items-center justify-center gap-2 bg-black text-white font-semibold p-4 rounded-xl shadow-lg hover:bg-zinc-800 transition-all duration-300"
-              >
-                Preview Event <ArrowRightIcon className="w-5 h-5" />
-              </motion.button>
-            </div>
-          </motion.div>
-
-          {/* Stats Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-            className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-4xl mt-12"
-          >
-            {[
-              { number: "10k+", label: "Events Created", icon: CalendarIcon },
-              { number: "500k+", label: "Attendees", icon: UsersIcon },
-              { number: "98%", label: "Success Rate", icon: CheckCircleIcon },
-            ].map((stat, index) => (
-              <motion.div
-                key={index}
-                whileHover={{ scale: 1.08, rotate: 1 }}
-                className="bg-white dark:bg-gray-800 border border-indigo-200 dark:border-gray-700 rounded-2xl shadow-md p-6 text-center flex flex-col items-center"
-              >
-                <stat.icon className="w-10 h-10 text-indigo-600 dark:text-indigo-400 mb-3 animate-bounce" />
-                <h3 className="text-3xl font-bold text-indigo-700 dark:text-indigo-400">
-                  {stat.number}
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mt-2">{stat.label}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </>
-      ) : (
-        /* Preview Section */
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="w-full max-w-4xl"
-        >
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-extrabold text-indigo-800 dark:text-indigo-300 mb-4">
-              Preview Your Event
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">Review all details before publishing</p>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl overflow-hidden border border-indigo-300 dark:border-gray-700">
-            {formData.bannerPreview && (
-              <div className="w-full h-64 overflow-hidden">
-                <img
-                  loading="lazy"
-                  src={formData.bannerPreview}
-                  alt="Event banner"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
-
-            <div className="p-8">
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                {formData.title}
-              </h2>
-              <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-                {formData.description}
-              </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg">
-                  <TagIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
-                  <div>
-                    <p className="font-semibold text-gray-700 dark:text-gray-300">Category</p>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      {categories.find((cat) => cat.value === formData.category)?.label}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg">
-                  <CalendarIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
-                  <div>
-                    <p className="font-semibold text-gray-700 dark:text-gray-300">Date & Time</p>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      {formData.isMultiDay
-                        ? `${formatDate(formData.startDate)} - ${formatDate(formData.endDate)}`
-                        : formatDate(formData.date)}
-                    </p>
-
-                    <p className="text-gray-600 dark:text-gray-400">
-                      {formatTime(formData.startTime)} - {formatTime(formData.endTime)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg">
-                  <MapPinIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
-                  <div>
-                    <p className="font-semibold text-gray-700 dark:text-gray-300">Location</p>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      {formData.isVirtual ? "Virtual Event" : formData.location.name}
-                    </p>
-                    {formData.location.address && !formData.isVirtual && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {formData.location.address}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg">
-                  <UsersIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
-                  <div>
-                    <p className="font-semibold text-gray-700 dark:text-gray-300">Capacity</p>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      {formData.capacity === "" ? "Unlimited" : `${formData.capacity} attendees`}
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {formData.isPublic ? "Public" : "Private"} Event
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {formData.ticketTiers.length > 0 && formData.ticketTiers[0].name && (
-                <div className="mb-6">
-                  <div className="flex items-center gap-2 mb-3">
-                    <TicketIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                    <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                       Ticket Tiers
                     </h3>
                   </div>
-                  <div className="space-y-3">
+                  <motion.button
+                    type="button"
+                    onClick={addTicketTier}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600 
+                             text-white text-sm font-medium hover:bg-indigo-700 
+                             transition-colors duration-200"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Tier
+                  </motion.button>
+                </div>
+
+                <AnimatePresence mode="popLayout">
+                  <div className="space-y-4">
                     {formData.ticketTiers.map((tier, index) => (
-                      <div
+                      <TicketTierCard
                         key={index}
-                        className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                      >
+                        tier={tier}
+                        index={index}
+                        onChange={handleTicketTierChange}
+                        onRemove={removeTicketTier}
+                        canRemove={formData.ticketTiers.length > 1}
+                        errors={errors}
+                      />
+                    ))}
+                  </div>
+                </AnimatePresence>
+              </motion.div>
+
+              {/* Tags */}
+              <motion.div variants={fadeInUp}>
+                <FormField label="Tags" icon={TagIcon}>
+                  <TagInput
+                    tags={formData.tags}
+                    onAdd={addTag}
+                    onRemove={removeTag}
+                    newTag={newTag}
+                    setNewTag={setNewTag}
+                  />
+                </FormField>
+              </motion.div>
+
+              {/* Submit Button */}
+              <motion.div variants={fadeInUp} className="pt-4">
+                <motion.button
+                  type="submit"
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  disabled={isSubmitting}
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r 
+                           from-indigo-600 to-purple-600 text-white font-semibold p-4 
+                           rounded-xl shadow-lg shadow-indigo-500/25 hover:shadow-xl 
+                           hover:shadow-indigo-500/40 transition-all duration-300 
+                           disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  Preview Event
+                  <ArrowRightIcon className="w-5 h-5" />
+                </motion.button>
+                <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Your progress is auto-saved locally ✨
+                </p>
+              </motion.div>
+            </motion.form>
+          ) : (
+            /* Preview Step */
+            <motion.div
+              key="preview"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6"
+            >
+              {/* Preview Header */}
+              <div className="text-center">
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 
+                             bg-clip-text text-transparent mb-2">
+                  Preview Your Event
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Review all details before publishing
+                </p>
+              </div>
+
+              {/* Preview Card */}
+              <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl overflow-hidden 
+                            border border-gray-200 dark:border-gray-700">
+                {/* Banner */}
+                {formData.bannerPreview && (
+                  <div className="relative h-64 sm:h-80">
+                    <img
+                      loading="lazy"
+                      src={formData.bannerPreview}
+                      alt="Event banner preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                    <div className="absolute bottom-4 left-4 right-4">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full 
+                                     bg-white/20 backdrop-blur-sm text-white text-sm font-medium">
+                        {formData.isVirtual ? "🌐 Virtual Event" : "📍 In-Person"}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="p-6 sm:p-8 space-y-6">
+                  {/* Title & Category */}
+                  <div>
+                    <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                      {formData.title || "Untitled Event"}
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="inline-flex items-center px-3 py-1 rounded-lg 
+                                     bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 
+                                     dark:text-indigo-300 text-sm font-medium">
+                        {categories.find(c => c.value === formData.category)?.label || "Uncategorized"}
+                      </span>
+                      {formData.tags.slice(0, 3).map((tag, i) => (
+                        <span key={i} className="inline-flex items-center px-2.5 py-0.5 
+                                               rounded-full bg-gray-100 dark:bg-gray-700 
+                                               text-gray-700 dark:text-gray-300 text-xs">
+                          #{tag}
+                        </span>
+                      ))}
+                      {formData.tags.length > 3 && (
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          +{formData.tags.length - 3} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                    {formData.description || "No description provided."}
+                  </p>
+
+                  {/* Details Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[
+                      {
+                        icon: CalendarIcon,
+                        label: "Date & Time",
+                        value: formData.isMultiDay
+                          ? `${formatDate(formData.startDate)} - ${formatDate(formData.endDate)}`
+                          : formatDate(formData.date),
+                        subValue: `${formatTime(formData.startTime)} - ${formatTime(formData.endTime)}`
+                      },
+                      {
+                        icon: MapPinIcon,
+                        label: "Location",
+                        value: formData.isVirtual 
+                          ? "Virtual Event" 
+                          : formData.location.name || "Not specified",
+                        subValue: !formData.isVirtual && formData.location.address
+                      },
+                      {
+                        icon: UsersIcon,
+                        label: "Capacity",
+                        value: formData.capacity 
+                          ? `${formData.capacity.toLocaleString()} attendees` 
+                          : "Unlimited",
+                        subValue: formData.isPublic ? "Public Event" : "Private Event"
+                      },
+                      {
+                        icon: TicketIcon,
+                        label: "Tickets",
+                        value: formData.ticketTiers.filter(t => t.name).length > 0
+                          ? `${formData.ticketTiers.filter(t => t.name).length} tier(s) available`
+                          : "Free / No tiers set",
+                        subValue: formData.requiresApproval && "Approval required"
+                      }
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-start gap-3 p-4 rounded-xl 
+                                            bg-gray-50 dark:bg-gray-700/50">
+                        <item.icon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-0.5 flex-shrink-0" />
                         <div>
-                          <p className="font-semibold text-gray-900 dark:text-white">{tier.name}</p>
-                          {tier.description && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              {tier.description}
-                            </p>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
-                            ₹{Number(tier.price).toFixed(2)}
-                          </p>
-                          {tier.capacity && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              {tier.capacity} available
-                            </p>
+                          <p className="font-medium text-gray-700 dark:text-gray-300">{item.label}</p>
+                          <p className="text-gray-900 dark:text-white font-semibold">{item.value}</p>
+                          {item.subValue && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{item.subValue}</p>
                           )}
                         </div>
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
 
-              {formData.tags.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                    Tags
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {formData.tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="inline-block bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-sm font-medium"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+                  {/* Ticket Tiers Preview */}
+                  {formData.ticketTiers.filter(t => t.name).length > 0 && (
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                        <TicketIcon className="w-4 h-4 text-indigo-600" />
+                        Available Tickets
+                      </h4>
+                      <div className="space-y-2">
+                        {formData.ticketTiers.filter(t => t.name).map((tier, i) => (
+                          <div key={i} className="flex justify-between items-center p-3 
+                                                rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                            <div>
+                              <p className="font-medium text-gray-900 dark:text-white">{tier.name}</p>
+                              {tier.description && (
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  {tier.description}
+                                </p>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <p className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                                ₹{Number(tier.price).toFixed(2)}
+                              </p>
+                              {tier.capacity && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  {tier.capacity} spots
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-              {formData.requiresApproval && (
-                <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                  <p className="text-yellow-800 dark:text-yellow-300 font-medium">
-                    ⚠️ This event requires approval for registration
-                  </p>
+                  {/* Warning for Approval */}
+                  {formData.requiresApproval && (
+                    <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 
+                                  border border-amber-200 dark:border-amber-800">
+                      <div className="flex items-start gap-3">
+                        <AlertCircleIcon className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+                        <p className="text-amber-800 dark:text-amber-200 font-medium">
+                          Registrations will require manual approval before confirmation
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-8 flex flex-col items-center">
-            {submitError && (
-              <div className="error-banner w-full mb-4" role="alert">
-                ❌ {submitError}
               </div>
-            )}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center w-full">
-              <motion.button
-                onClick={() => setCurrentStep("form")}
-                disabled={isSubmitting}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex items-center justify-center gap-2 bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 border-2 border-indigo-500 font-semibold px-8 py-3 rounded-xl shadow-lg hover:bg-indigo-50 dark:hover:bg-gray-600 transition-all duration-300"
-              >
-                <PencilIcon className="w-5 h-5" />
-                Edit Event
-              </motion.button>
 
-              <LoadingButton
-                onClick={createEvent}
-                isLoading={isSubmitting}
-                loadingText="Creating Event..."
-                className="flex items-center justify-center gap-2 bg-black text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:bg-zinc-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <CheckCircleIcon className="w-5 h-5" />
-                Create Event
-              </LoadingButton>
-            </div>
-          </div>
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <motion.button
+                  onClick={() => setCurrentStep("form")}
+                  disabled={isSubmitting}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 
+                           px-6 py-3 rounded-xl border-2 border-indigo-500 text-indigo-600 
+                           dark:text-indigo-400 font-semibold hover:bg-indigo-50 
+                           dark:hover:bg-indigo-900/20 transition-all duration-200
+                           disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <PencilIcon className="w-5 h-5" />
+                  Edit Details
+                </motion.button>
+
+                <LoadingButton
+                  onClick={createEvent}
+                  isLoading={isSubmitting}
+                  loadingText="Creating Event..."
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 
+                           px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 
+                           text-white font-semibold shadow-lg shadow-indigo-500/25 
+                           hover:shadow-xl hover:shadow-indigo-500/40 transition-all duration-300
+                           disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  <CheckCircleIcon className="w-5 h-5" />
+                  {isSubmitting ? "Publishing..." : "Publish Event"}
+                </LoadingButton>
+              </div>
+
+              {/* Error Display */}
+              {submitError && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 
+                           dark:border-red-800 text-red-800 dark:text-red-200 text-center"
+                  role="alert"
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <AlertCircleIcon className="w-5 h-5" />
+                    <span>{submitError}</span>
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Stats Section */}
+        <motion.div 
+          variants={fadeInUp}
+          className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-12"
+        >
+          {[
+            { number: "10k+", label: "Events Created", icon: CalendarIcon, color: "indigo" },
+            { number: "500k+", label: "Happy Attendees", icon: UsersIcon, color: "emerald" },
+            { number: "98%", label: "Success Rate", icon: CheckCircleIcon, color: "purple" },
+          ].map((stat, index) => (
+            <motion.div
+              key={index}
+              whileHover={{ y: -4 }}
+              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm 
+                       border border-gray-200 dark:border-gray-700 rounded-xl p-5 
+                       text-center shadow-lg"
+            >
+              <stat.icon className={`w-8 h-8 mx-auto mb-3 text-${stat.color}-600 dark:text-${stat.color}-400`} />
+              <h4 className="text-2xl font-bold text-gray-900 dark:text-white">{stat.number}</h4>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">{stat.label}</p>
+            </motion.div>
+          ))}
         </motion.div>
-      )}
+      </motion.div>
     </div>
   );
 };

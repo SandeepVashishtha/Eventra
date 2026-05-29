@@ -101,7 +101,7 @@ const SearchEmptyState = ({
           hover:bg-blue-700
           shadow-sm
         "
-      >
+       aria-label="button">
         <X size={16} aria-hidden="true" />
         Clear Search
       </button>

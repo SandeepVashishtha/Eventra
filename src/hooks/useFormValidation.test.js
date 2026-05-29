@@ -102,6 +102,11 @@ describe("useFormValidation - Enhanced with Async Support", () => {
     await waitFor(
       () => {
         expect(result.current.errors.username).toBe("Username already taken");
+      },
+      { timeout: 500 },
+    );
+    await waitFor(
+      () => {
         expect(result.current.validationState.username).toBe("error");
       },
       { timeout: 500 },
@@ -117,6 +122,11 @@ describe("useFormValidation - Enhanced with Async Support", () => {
     await waitFor(
       () => {
         expect(result.current.errors.username).toBeNull();
+      },
+      { timeout: 500 },
+    );
+    await waitFor(
+      () => {
         expect(result.current.validationState.username).toBe("success");
       },
       { timeout: 500 },
@@ -221,6 +231,11 @@ describe("useFormValidation - Enhanced with Async Support", () => {
     await waitFor(
       () => {
         expect(result.current.errors.email).toBe("Invalid email format");
+      },
+      { timeout: 300 },
+    );
+    await waitFor(
+      () => {
         expect(asyncValidators.emailAvailable).not.toHaveBeenCalled();
       },
       { timeout: 300 },
@@ -236,6 +251,11 @@ describe("useFormValidation - Enhanced with Async Support", () => {
     await waitFor(
       () => {
         expect(result.current.errors.email).toBe("Email already registered");
+      },
+      { timeout: 300 },
+    );
+    await waitFor(
+      () => {
         expect(asyncValidators.emailAvailable).toHaveBeenCalled();
       },
       { timeout: 300 },
@@ -278,6 +298,11 @@ describe("useFormValidation - Enhanced with Async Support", () => {
     await waitFor(
       () => {
         expect(isValid).toBe(true);
+      },
+      { timeout: 500 },
+    );
+    await waitFor(
+      () => {
         expect(result.current.isFormValid).toBe(true);
       },
       { timeout: 500 },

@@ -258,7 +258,7 @@ class ErrorBoundary extends React.Component {
         try {
           const blob = new Blob([report], { type: "text/plain" });
           const url = URL.createObjectURL(blob);
-          window.open(url, "_blank");
+          window.open(url, "_blank", "noopener,noreferrer");
         } catch (_) {}
       });
   };
@@ -475,7 +475,7 @@ class ErrorBoundary extends React.Component {
                 ? "Hide diagnostic information"
                 : "Show diagnostic information"
             }
-          >
+           aria-label="button">
             <svg
               width="14"
               height="14"

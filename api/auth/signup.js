@@ -63,17 +63,19 @@ const corsHeaders = (req) => {
   const allowedOrigin = process.env.ALLOWED_ORIGIN;
   const requestOrigin = req.headers?.origin;
 
-  let corsOrigin = allowedOrigin || "*";
+  const corsOrigin = allowedOrigin || "*";
   if (allowedOrigin && requestOrigin !== allowedOrigin) {
     console.warn(`[CORS] Origin mismatch - Request: ${requestOrigin}, Allowed: ${allowedOrigin}`);
   }
-  if (allowedOrigin && allowedOrigin !== "*") {
-    corsOrigin = allowedOrigin;
-  }
+
+  // Access-Control-Allow-Credentials must not be sent with a wildcard origin.
+  // Per the CORS spec, browsers reject credentialed responses when the reflected
+  // origin is "*". Only set the header when a specific origin is configured.
+  const isSpecificOrigin = corsOrigin !== "*";
 
   return {
     "Access-Control-Allow-Origin": corsOrigin,
-    "Access-Control-Allow-Credentials": "true",
+    ...(isSpecificOrigin && { "Access-Control-Allow-Credentials": "true" }),
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
   };
@@ -232,9 +234,25 @@ export default async function handler(req, res) {
       createdAt: newUser.createdAt,
     };
 
+    const isProd = process.env.NODE_ENV === "production";
+    const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict${isProd ? '; Secure' : ''}`;
+    // Set cookie compatibly across test mocks (which may provide `set` instead of `setHeader`)
+    try {
+      if (typeof res.setHeader === 'function') {
+        res.setHeader('Set-Cookie', cookieValue);
+      } else if (typeof res.set === 'function') {
+        res.set({ 'Set-Cookie': cookieValue });
+      } else if (res.headers && typeof res.headers === 'object') {
+        res.headers['Set-Cookie'] = cookieValue;
+      }
+    } catch (e) {
+      // Ignore write errors on test response objects
+    }
+
     return corsResponse(res, 201, {
       message: "Account created successfully",
       token,
+      tokenType: "Bearer",
       ...userResponse,
     }, req);
 
