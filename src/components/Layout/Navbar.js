@@ -678,6 +678,7 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
 
           <div className="flex-grow p-3.5 sm:p-4 space-y-2 overflow-y-auto">
             <NavList
+              location={location}
               openDropdown={openDropdown}
               onToggleGroup={(name) => setOpenDropdown(openDropdown === name ? null : name)}
               onLinkClick={closeAllMenus}
