@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 
-global.navigator = {
-  clipboard: undefined
-};
+Object.defineProperty(global, "navigator", {
+  value: { clipboard: undefined },
+  writable: true,
+  configurable: true
+});
 global.document = {
   createElement: () => ({
     value: "",

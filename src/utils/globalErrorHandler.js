@@ -1,6 +1,4 @@
-import { ENV } from "../config/env";
-
-const dsn = ENV.SENTRY_DSN;
+import { ENV } from "../config/env.js";
 const isProduction = process.env.NODE_ENV === "production";
 const Sentry = {
   captureException: () => {},

@@ -44,8 +44,8 @@ assert.equal(
 );
 assert.equal(
   captured[0][0],
-  "[GlobalErrorBoundary]",
-  "first call is tagged [GlobalErrorBoundary]"
+  "Error:",
+  "first call is tagged Error:"
 );
 assert.equal(
   captured[0][1],
@@ -54,13 +54,13 @@ assert.equal(
 );
 assert.equal(
   captured[1][0],
-  "[ComponentStack]",
-  "second call is tagged [ComponentStack]"
+  "Component Stack:",
+  "second call is tagged Component Stack:"
 );
 assert.equal(
   captured[1][1],
-  info,
-  "second call passes the errorInfo through"
+  info.componentStack,
+  "second call passes the componentStack through"
 );
 
 // logError must not throw for null / undefined inputs
