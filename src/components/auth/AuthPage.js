@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { AlertCircle, X as XIcon } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import useReducedMotion from "../../hooks/useReducedMotion";
-import LoginForm from './LoginForm';
-import SignupForm from './SignupForm';
+
+const LoginForm = lazy(() => import('./LoginForm'));
+const SignupForm = lazy(() => import('./SignupForm'));
 
 const AuthPage = () => {
   const prefersReducedMotion = useReducedMotion();
@@ -147,19 +148,25 @@ const AuthPage = () => {
                 </button>
               </motion.div>
             )}
-            <AnimatePresence mode="wait" custom={isLogin}>
-              <motion.div
-                key={isLogin ? "login" : "signup"}
-                custom={isLogin}
-                variants={formVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                className="w-full max-w-md mx-auto"
-              >
-                {isLogin ? <LoginForm /> : <SignupForm />}
-              </motion.div>
-            </AnimatePresence>
+            <Suspense fallback={
+              <div className="flex items-center justify-center min-h-[400px]">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+              </div>
+            }>
+              <AnimatePresence mode="wait" custom={isLogin}>
+                <motion.div
+                  key={isLogin ? "login" : "signup"}
+                  custom={isLogin}
+                  variants={formVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  className="w-full max-w-md mx-auto"
+                >
+                  {isLogin ? <LoginForm /> : <SignupForm />}
+                </motion.div>
+              </AnimatePresence>
+            </Suspense>
           </div>
 
         </div>
