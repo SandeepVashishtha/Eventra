@@ -198,7 +198,7 @@ class ErrorBoundary extends React.Component {
     window.location.reload();
   };
 
-  handleCopyReport = () => {
+  handleCopyReport = async () => {
     const { error, errorInfo } = this.state;
 
     const safeError =
@@ -242,14 +242,13 @@ ${safeLocalStorage}
 
     try {
       await navigator.clipboard.writeText(report);
-
       this.setState({ copied: true });
-
-        setTimeout(() => {
-          this.setState({ copied: false });
-        }, 2000);
-      })
-      .catch(console.error);
+      setTimeout(() => {
+        this.setState({ copied: false });
+      }, 2000);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   render() {
