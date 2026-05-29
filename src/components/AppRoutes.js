@@ -48,6 +48,7 @@ const AppRoutes = () => {
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   </Suspense>
-);
+  );
+};
 
 export default AppRoutes;
